@@ -4,3 +4,6 @@
 [submodule "libraries/wgpu"]
 	path = libraries/wgpu
 	url = https://github.com/eliemichel/WebGPU-distribution
+[submodule "libraries/openxr"]
+	path = libraries/openxr
+	url = https://github.com/KhronosGroup/OpenXR-SDK

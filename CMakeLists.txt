@@ -53,4 +53,8 @@ set(GLFW_BUILD_INSTALL OFF CACHE BOOL "" FORCE)
 add_subdirectory(libraries/glfw)
 target_link_libraries(${PROJECT} glfw)
 
+# openxr
+add_subdirectory(libraries/openxr)
+target_link_libraries(${PROJECT} openxr_loader)
+
 target_copy_webgpu_binaries(${PROJECT})
