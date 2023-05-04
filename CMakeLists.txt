@@ -6,6 +6,9 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 set(PROJECT "wgpuEngine")
 
+# vulkan
+find_package(Vulkan REQUIRED)
+
 project(${PROJECT} LANGUAGES C CXX)
 
 # PROJECT SOURCE
@@ -44,6 +47,10 @@ set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT $
 add_subdirectory(libraries/wgpu)
 target_include_directories(${PROJECT} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/libraries/wgpu/include/webgpu")
 target_link_libraries(${PROJECT} webgpu)
+
+# vulkan
+target_link_libraries(${PROJECT_NAME} ${Vulkan_LIBRARIES})
+include_directories(${Vulkan_INCLUDE_DIR})
 
 # GLFW
 set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)

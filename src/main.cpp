@@ -48,6 +48,7 @@ int main() {
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     window = glfwCreateWindow(640, 480, "WebGPU", NULL, NULL);
     
+    wgpu_instance.initialize_openxr();
     wgpu_instance.initialize(window, NULL);
 
     // Wait until all the async stuff has been done
