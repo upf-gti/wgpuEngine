@@ -6,8 +6,6 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 set(PROJECT "wgpuEngine")
 
-# vulkan
-find_package(Vulkan REQUIRED)
 
 project(${PROJECT} LANGUAGES C CXX)
 
@@ -49,6 +47,7 @@ target_include_directories(${PROJECT} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/librar
 target_link_libraries(${PROJECT} webgpu)
 
 # vulkan
+find_package(Vulkan REQUIRED)
 target_link_libraries(${PROJECT_NAME} ${Vulkan_LIBRARIES})
 include_directories(${Vulkan_INCLUDE_DIR})
 
