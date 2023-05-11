@@ -1,8 +1,7 @@
 #pragma once
 
-#include <webgpu.h>
+#include <dawn/webgpu.h>
 #include "utils.h"
-#include "wgpu.h"
 
 #include <GLFW/glfw3.h>
 #include <array>

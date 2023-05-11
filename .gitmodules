@@ -7,3 +7,15 @@
 [submodule "libraries/openxr"]
 	path = libraries/openxr
 	url = https://github.com/KhronosGroup/OpenXR-SDK
+[submodule "libraries/dawnxr"]
+	path = libraries/dawnxr
+	url = https://github.com/blitz-research/dawnxr
+[submodule "src/dawnxr"]
+	path = src/dawnxr
+	url = https://github.com/blitz-research/dawnxr
+[submodule "src/dawn"]
+	path = src/dawn
+	url = https://github.com/blitz-research/dawn.git
+[submodule "libraries/webgpu"]
+	path = libraries/webgpu
+	url = https://github.com/upf-gti/WebGPU-distribution

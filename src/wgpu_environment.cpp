@@ -1,6 +1,4 @@
 #include "wgpu_environment.h"
-#include "webgpu.h"
-#include "wgpu.h"
 
 #include "raw_shaders.h"
 
@@ -254,8 +252,6 @@ void WGPUEnv::sInstance::_config_render_pipeline() {
         };
         WGPUShaderModuleDescriptor shader_descr = {
             .nextInChain = &shader_code_desc.chain,
-            .hintCount = 0,
-            .hints = NULL,
         };
 
         shader_module = wgpuDeviceCreateShaderModule(device, &shader_descr);
@@ -394,10 +390,10 @@ std::vector<const char*> WGPUEnv::sInstance::getRequiredExtensions() {
 }
 
 void WGPUEnv::sInstance::clean() {
-    wgpuInstanceRelease(wgpuInstance);
-    wgpuSwapChainDrop(swapchain);
-    wgpuDeviceDrop(device);
-    wgpuAdapterDrop(adapter);
+    //wgpuInstanceRelease(wgpuInstance);
+    //wgpuSwapChainDrop(swapchain);
+    //wgpuDeviceDrop(device);
+    //wgpuAdapterDrop(adapter);
 }
 
 
@@ -445,7 +441,7 @@ void WGPUEnv::sInstance::render_frame() {
         }
         wgpuRenderPassEncoderEnd(render_pass);
 
-        wgpuTextureViewDrop(current_texture_view);
+        wgpuTextureViewRelease(current_texture_view);
     }
 
     //
@@ -520,7 +516,7 @@ void WGPUEnv::sInstance::e_device_request_ended(WGPURequestDeviceStatus status,
 
     // Create Swapchain
     {
-        instace->swapchain_format = wgpuSurfaceGetPreferredFormat(instace->surface, instace->adapter);
+        instace->swapchain_format = WGPUTextureFormat_BGRA8Unorm; // wgpuSurfaceGetPreferredFormat(instace->surface, instace->adapter);
         WGPUSwapChainDescriptor swapchain_descr = {
             .nextInChain = NULL,
             .usage = WGPUTextureUsage_RenderAttachment,
