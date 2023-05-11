@@ -101,7 +101,7 @@ namespace WGPUEnv {
     };
 
 
-    struct sPayload {
+    struct sWGPUInitializationPayload {
         sInstance  *wgpu_man_instance = NULL; 
         GLFWwindow *window = NULL;
         void *callback = NULL;

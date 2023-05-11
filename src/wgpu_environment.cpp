@@ -38,7 +38,7 @@ WGPUSurface get_surface(GLFWwindow *window, WGPUInstance wgpuInstance) {
 
 void WGPUEnv::sInstance::initialize(GLFWwindow *window, void *callback) {
     // Create the payload that stores the data during the async generation
-    sPayload payload = {
+    sWGPUInitializationPayload payload = {
         .wgpu_man_instance = this,
         .window = window, 
         .callback = callback
@@ -129,7 +129,7 @@ int WGPUEnv::sInstance::initialize_openxr()
     }
 
     // --- Create XrInstance
-    int enabled_ext_count = 1;
+    uint32_t enabled_ext_count = 1;
     const char* enabled_exts[3] = { "XR_KHR_vulkan_enable2" };
 
     if (hand_tracking.supported) {
@@ -468,7 +468,7 @@ void  WGPUEnv::sInstance::e_adapter_request_ended(WGPURequestAdapterStatus statu
                                                   char const* message, 
                                                   void* user_data) {
     assert_msg(status == WGPURequestAdapterStatus_Success, "Error loading adapter");
-    ((sPayload*) user_data)->wgpu_man_instance->adapter = adapter;
+    ((sWGPUInitializationPayload*) user_data)->wgpu_man_instance->adapter = adapter;
     
     // Inspect adapter features
     uint32_t function_count = wgpuAdapterEnumerateFeatures(adapter, NULL);
@@ -502,7 +502,7 @@ void WGPUEnv::sInstance::e_device_request_ended(WGPURequestDeviceStatus status,
                                                 char const * message, 
                                                 void *user_data) {
     //
-    WGPUEnv::sInstance *instace = ((sPayload*) user_data)->wgpu_man_instance;
+    WGPUEnv::sInstance *instace = ((sWGPUInitializationPayload*) user_data)->wgpu_man_instance;
     assert_msg(status == WGPURequestDeviceStatus_Success, "Error loading the device");
     instace->device = device;
 
