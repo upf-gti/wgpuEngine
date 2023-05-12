@@ -1,6 +1,6 @@
 #pragma once
 
-#include <dawn/webgpu.h>
+#include <dawnxr/dawnxr.h>
 #include "utils.h"
 
 #include <GLFW/glfw3.h>
@@ -9,8 +9,14 @@
 
 #include "vulkan/vulkan.h"
 
+#include <dawn/native/DawnNative.h>
+
 #define XR_USE_GRAPHICS_API_VULKAN
 #include "openxr/openxr_platform.h"
+
+namespace dawnxr::internal {
+    struct Session;
+}
 
 //https://eliemichel.github.io/LearnWebGPU/getting-started/hello-webgpu.html
 // Add this in order to remain compatible with Dawn
@@ -55,34 +61,53 @@ namespace WGPUEnv {
     //} cylinder;
 
     struct sInstance {
-        WGPUInstance            wgpuInstance;
-        WGPUAdapter             adapter;
-        WGPUSurface             surface;
-        WGPUDevice              device;
-        WGPUQueue               device_queue;
-        WGPUCommandEncoder      device_command_encoder;
-        WGPUTextureFormat       swapchain_format;
-        WGPUSwapChain           swapchain;
-        WGPUShaderModule        shader_module;
-        WGPURenderPipeline      render_pipeline;
-        WGPUPipelineLayout      render_pipeline_layout;
+        dawn::native::Instance*   dawnInstance;
+        //wgpu::Instance            wgpuInstance;
+        //wgpu::Adapter             adapter;
+        //wgpu::Surface             surface;
+        wgpu::Device              device;
+        wgpu::Queue               device_queue;
+        wgpu::CommandEncoder      device_command_encoder;
+        wgpu::TextureFormat       swapchain_format;
+        //wgpu::SwapChain           swapchain;
+        wgpu::ShaderModule        shader_module;
+        wgpu::RenderPipeline      render_pipeline;
+        wgpu::PipelineLayout      render_pipeline_layout;
 
-        bool                    is_initialized = false;
-        WGPUTextureView         current_texture_view;
+        bool                      is_initialized = false;
+        wgpu::TextureView         current_texture_view;
+
+        dawn::native::AdapterDiscoveryOptionsBase** options;
 
         // OpenXR ==========================
-        XrInstance              openXRInstance = XR_NULL_HANDLE;
-        XrSystemId              systemId;
+        XrInstance              xr_instance = XR_NULL_HANDLE;
+        XrSystemId              xr_system_id;
+        XrSession               xr_session;
+        XrSwapchain             xr_swapchain;
+        uint32_t                xr_view_count;
+        XrFrameState            xr_frame_state;
+
+        std::vector<uint32_t>   last_acquired;
+
+        std::vector<dawnxr::SwapchainImageDawn> images;
+
+        std::vector<XrViewConfigurationView> viewconfig_views;
+
+        XrGraphicsBindingVulkan2KHR graphics_binding_gl;
+
+        // Play space is usually local (head is origin, seated) or stage (room scale)
+        XrSpace			        play_space;
+
+        std::vector<XrCompositionLayerProjectionView>	projection_views;
+
         int initialize_openxr();
         bool xr_result(XrInstance wgpuInstance, XrResult result, const char* format, ...);
         bool check_vulkan_version(XrGraphicsRequirementsVulkanKHR* vulkan_reqs);
-
-        // Vulkan ==========================
-        VkInstance              vulkanInstance;
-        std::vector<const char*> getRequiredExtensions();
+        void print_viewconfig_view_info();
+        void print_reference_spaces();
 
         // Methods =========================
-        void initialize(GLFWwindow *window, void* callback);
+        int initialize(GLFWwindow *window, void* callback);
         void clean();
 
         void render_frame();
@@ -93,11 +118,6 @@ namespace WGPUEnv {
 
         // Events =========================
         static void e_device_error(WGPUErrorType type, char const* message, void* user_data);
-        static void e_adapter_request_ended(WGPURequestAdapterStatus status, 
-                                            WGPUAdapter adapter, 
-                                            char const* message, 
-                                            void* user_data);
-        static void e_device_request_ended(WGPURequestDeviceStatus status, WGPUDevice device, char const * message, void *user_data);
     };
 
 
