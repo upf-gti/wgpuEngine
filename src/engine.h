@@ -6,8 +6,6 @@
 #include "openxr_context.h"
 #include "webgpu_context.h"
 
-#define USE_MIRROR_WINDOW
-
 class Engine {
 
     OpenXRContext xr_context;

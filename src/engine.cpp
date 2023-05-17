@@ -41,7 +41,7 @@ int Engine::initialize(GLFWwindow *window) {
         return 1;
     }
     
-    if (webgpu_context.initialize(&xr_context)) {
+    if (webgpu_context.initialize(&xr_context, window)) {
         std::cout << "Could not initialize WebGPU context" << std::endl;
         return 1;
     }
@@ -61,7 +61,7 @@ void Engine::render_frame() {
 
     // Get the current texture in the swapchain
     {
-        webgpu_context.current_texture_view = webgpu_context.images[1].textureView;
+        webgpu_context.current_texture_view = webgpu_context.mirror_swapchain.GetCurrentTextureView();
         assert_msg(webgpu_context.current_texture_view != NULL, "Error, dont resize the window please!!");
     }
 
@@ -79,7 +79,6 @@ void Engine::render_frame() {
         // Prepare the color attachment
         wgpu::RenderPassColorAttachment render_pass_color_attachment = {
             .view = webgpu_context.current_texture_view,
-            .resolveTarget = nullptr, // for MS
             .loadOp = wgpu::LoadOp::Clear,
             .storeOp = wgpu::StoreOp::Store,
             .clearValue = {0.0f,0.0f,1.0f,1.0f}
@@ -87,17 +86,18 @@ void Engine::render_frame() {
         wgpu::RenderPassDescriptor render_pass_descr = {
             .colorAttachmentCount = 1,
             .colorAttachments = &render_pass_color_attachment,
-            .depthStencilAttachment = nullptr,
         };
-        render_pass = webgpu_context.device_command_encoder.BeginRenderPass(&render_pass_descr);
         {
+            render_pass = webgpu_context.device_command_encoder.BeginRenderPass(&render_pass_descr);
+
             // Bind Pipeline
             render_pass.SetPipeline(webgpu_context.render_pipeline);
             // Submit drawcall
             render_pass.Draw(3, 1, 0, 0);
+
+            render_pass.End();
+            //render_pass.Release();
         }
-        render_pass.End();
-        render_pass.Release();
     }
 
     //
@@ -108,17 +108,19 @@ void Engine::render_frame() {
         };
 
         wgpu::CommandBuffer commander = webgpu_context.device_command_encoder.Finish(&cmd_buff_descriptor);
-        webgpu_context.device_command_encoder.Release();
+        //webgpu_context.device_command_encoder.Release();
         webgpu_context.device_queue.Submit(1, &commander);
 
-        commander.Release();
+        //commander.Release();
         //current_texture_view.Release();
     }
 
-    // Submit frame
+#ifdef USE_MIRROR_WINDOW
+    // Submit frame to mirror window
     {
-        //wgpu::SwapChainPresent(swapchain);
+        webgpu_context.mirror_swapchain.Present();
     }
+#endif
 
     xr_context.endFrame();
 }

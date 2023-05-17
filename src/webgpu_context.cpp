@@ -6,9 +6,18 @@
 #include "dawnxr/dawnxr_internal.h"
 #include <dawn/native/VulkanBackend.h>
 
+#include "webgpu/webgpu_glfw.h"
 #include "openxr_context.h"
 
+#ifdef _WIN32
+#define GLFW_EXPOSE_NATIVE_WIN32
+#endif
+
+#include "GLFW/glfw3native.h"
+
 #include "raw_shaders.h"
+
+#include "utils.h"
 
 using namespace dawnxr::internal;
 
@@ -16,7 +25,7 @@ using namespace dawnxr::internal;
 static XrPosef identity_pose = { .orientation = {.x = 0, .y = 0, .z = 0, .w = 1.0},
                                  .position = {.x = 0, .y = 0, .z = 0} };
 
-int WebGPUContext::initialize(OpenXRContext* xr_context)
+int WebGPUContext::initialize(OpenXRContext* xr_context, GLFWwindow* window)
 {
     options = new dawn::native::AdapterDiscoveryOptionsBase * ();
     createVulkanAdapterDiscoveryOptions(xr_context->xr_instance, xr_context->xr_system_id, options);
@@ -53,6 +62,25 @@ int WebGPUContext::initialize(OpenXRContext* xr_context)
 
     device = static_cast<wgpu::Device>(backendAdapter.CreateDevice(&deviceDesc));
     DawnProcTable backendProcs = dawn::native::GetProcs();
+
+    int width, height;
+    glfwGetWindowSize(window, &width, &height);
+
+#ifdef USE_MIRROR_WINDOW
+    // Create the swapchain for mirror mode
+    auto surfaceChainedDesc = wgpu::glfw::SetupWindowAndGetSurfaceDescriptor(window);
+    wgpu::SurfaceDescriptor surfaceDesc;
+    surfaceDesc.nextInChain = surfaceChainedDesc.get();
+    wgpu::Surface surface = get_surface(window);
+
+    wgpu::SwapChainDescriptor swapChainDesc = {};
+    swapChainDesc.usage = wgpu::TextureUsage::RenderAttachment;
+    swapChainDesc.format = wgpu::TextureFormat::BGRA8Unorm;
+    swapChainDesc.width = width;
+    swapChainDesc.height = height;
+    swapChainDesc.presentMode = wgpu::PresentMode::Mailbox;
+    mirror_swapchain = device.CreateSwapChain(surface, &swapChainDesc);
+#endif
 
     dawnxr::GraphicsBindingDawn binding = { .device = device };
 
@@ -231,4 +259,26 @@ void WebGPUContext::config_render_pipeline()
 
         render_pipeline = device.CreateRenderPipeline(&pipeline_descr);
     }
+}
+
+wgpu::Surface WebGPUContext::get_surface(GLFWwindow* window)
+{
+#ifdef _WIN32
+    HWND hwnd = glfwGetWin32Window(window);
+    HINSTANCE hinstance = GetModuleHandle(NULL);
+
+    wgpu::SurfaceDescriptorFromWindowsHWND chained;
+    chained.hinstance = hinstance;
+    chained.hwnd = hwnd;
+
+    wgpu::SurfaceDescriptor descriptor = {
+        .nextInChain = &chained,
+        .label = nullptr,
+    };
+
+    wgpu::Surface surface = wgpu::Instance::Acquire(dawnInstance->Get()).CreateSurface(&descriptor);
+#endif
+
+    assert_msg(surface, "Error creating surface");
+    return surface;
 }
