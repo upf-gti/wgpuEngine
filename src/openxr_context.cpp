@@ -149,6 +149,14 @@ int OpenXRContext::initialize()
     return 0;
 }
 
+void OpenXRContext::clean()
+{
+    xrDestroySwapchain(xr_swapchain);
+    xrDestroySpace(play_space);
+    xrDestroySession(xr_session);
+    xrDestroyInstance(xr_instance);
+}
+
 bool OpenXRContext::xr_result(XrInstance xrInstance, XrResult result, const char* format, ...)
 {
     if (XR_SUCCEEDED(result))

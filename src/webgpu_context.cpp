@@ -408,6 +408,8 @@ void WebGPUContext::config_render_pipeline()
 
         render_pipeline = device.CreateRenderPipeline(&pipeline_descr);
     }
+
+    shader_module.Release();
 }
 
 wgpu::Surface WebGPUContext::get_surface(GLFWwindow* window)

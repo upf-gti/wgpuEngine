@@ -66,6 +66,7 @@ struct OpenXRContext {
     bool initialized = false;
 
     int initialize();
+    void clean();
     bool xr_result(XrInstance xrInstance, XrResult result, const char* format, ...);
     void print_viewconfig_view_info();
     bool check_vulkan_version(XrGraphicsRequirementsVulkanKHR* vulkan_reqs);

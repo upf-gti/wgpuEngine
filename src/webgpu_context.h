@@ -28,7 +28,6 @@ struct WebGPUContext {
     wgpu::ShaderModule        mirror_shader_module;
 
     bool                      is_initialized = false;
-    wgpu::TextureView         current_texture_view;
 
     GLFWwindow* window = nullptr;
 

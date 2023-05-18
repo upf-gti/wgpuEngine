@@ -21,6 +21,8 @@ int Engine::initialize(GLFWwindow *window) {
 }
 
 void Engine::clean() {
+    xr_context.clean();
+
     //wgpuInstance.Release();
     //swapchain.Release();
     //device.Release();
@@ -29,25 +31,26 @@ void Engine::clean() {
 
 void Engine::render_frame() {
 
-    renderXr();
+    if (xr_context.initialized) {
+        xr_context.initFrame();
+
+        renderXr(webgpu_context.images[0].textureView);
+        //renderXr(webgpu_context.images[1].textureView, false);
+
+        xr_context.endFrame();
+    }
 
 #ifdef USE_MIRROR_WINDOW
     renderMirror();
 #endif
 }
 
-void Engine::renderXr()
+void Engine::renderXr(wgpu::TextureView current_texture_view)
 {
-    // --- Begin frame
-    if (xr_context.initialized) {
-        xr_context.initFrame();
-    }
 
     // Get the current texture in the swapchain
     {
-        webgpu_context.current_texture_view = webgpu_context.images[0].textureView;
-        //webgpu_context.current_texture_view = webgpu_context.mirror_swapchain.GetCurrentTextureView();
-        assert_msg(webgpu_context.current_texture_view != NULL, "Error, dont resize the window please!!");
+        assert_msg(current_texture_view != NULL, "Error, dont resize the window please!!");
     }
 
     // Create the command encoder
@@ -63,10 +66,10 @@ void Engine::renderXr()
     {
         // Prepare the color attachment
         wgpu::RenderPassColorAttachment render_pass_color_attachment = {
-            .view = webgpu_context.current_texture_view,
+            .view = current_texture_view,
             .loadOp = wgpu::LoadOp::Clear,
             .storeOp = wgpu::StoreOp::Store,
-            .clearValue = {0.0f,0.0f,1.0f,1.0f}
+            .clearValue = wgpu::Color(0.0f, 0.0f, 1.0f, 1.0f)
         };
         wgpu::RenderPassDescriptor render_pass_descr = {
             .colorAttachmentCount = 1,
@@ -100,10 +103,6 @@ void Engine::renderXr()
         //current_texture_view.Release();
     }
 
-    if (xr_context.initialized) {
-        xr_context.endFrame();
-    }
-
     // Check validation errors
     dawn::native::InstanceProcessEvents(webgpu_context.dawnInstance->Get());
 }
@@ -111,10 +110,8 @@ void Engine::renderXr()
 void Engine::renderMirror()
 {
     // Get the current texture in the swapchain
-    {
-        webgpu_context.current_texture_view = webgpu_context.mirror_swapchain.GetCurrentTextureView();
-        assert_msg(webgpu_context.current_texture_view != NULL, "Error, dont resize the window please!!");
-    }
+    wgpu::TextureView current_texture_view = webgpu_context.mirror_swapchain.GetCurrentTextureView();
+    assert_msg(current_texture_view != NULL, "Error, dont resize the window please!!");
 
     // Create the command encoder
     {
@@ -129,7 +126,7 @@ void Engine::renderMirror()
     {
         // Prepare the color attachment
         wgpu::RenderPassColorAttachment render_pass_color_attachment = {
-            .view = webgpu_context.current_texture_view,
+            .view = current_texture_view,
             .loadOp = wgpu::LoadOp::Clear,
             .storeOp = wgpu::StoreOp::Store,
             .clearValue = {0.0f,0.0f,1.0f,1.0f}

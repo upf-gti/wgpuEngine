@@ -17,6 +17,6 @@ public:
     void clean();
 
     void render_frame();
-    void renderXr();
+    void renderXr(wgpu::TextureView current_texture_view);
     void renderMirror();
 };
