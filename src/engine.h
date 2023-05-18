@@ -17,4 +17,6 @@ public:
     void clean();
 
     void render_frame();
+    void renderXr();
+    void renderMirror();
 };

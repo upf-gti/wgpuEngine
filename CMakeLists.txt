@@ -8,14 +8,6 @@ set(WGPU_DIR_SOURCES "${WGPU_DIR_ROOT}/src")
 
 project(webgpuEngine LANGUAGES C CXX)
 
-# PROJECT SOURCE
-# file(GLOB CPP_SOURCES "src/*.cpp")
-# file(GLOB CPP_SUBFOLDER_SOURCES "src/**/*.cpp")
-# file(GLOB H_SOURCES "src/*.h")
-# file(GLOB C_SOURCES "src/*.c")
-# file(GLOB C_SUBFOLDER_SOURCES "src/**/*.c")
-# set(includes_dir "includes/")
-
 add_definitions(-DWEBGPU_BACKEND=DAWN)
 
 # Macro to map filters to folder structure for MSVC projects
@@ -56,14 +48,9 @@ set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT $
 
 set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 20)
 
-# add_subdirectory(libraries/wgpu)
-# target_include_directories(${PROJECT_NAME} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/libraries/wgpu/include/webgpu")
-# target_link_libraries(${PROJECT_NAME} webgpu)
-
 # dawn
 add_subdirectory(libraries/webgpu)
 target_link_libraries(${PROJECT_NAME} webgpu)
-# target_include_directories(${PROJECT_NAME} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/libraries/wgpu/include/webgpu")
 
 # vulkan
 find_package(Vulkan REQUIRED)
@@ -71,7 +58,6 @@ target_link_libraries(${PROJECT_NAME} ${Vulkan_LIBRARIES})
 include_directories(${Vulkan_INCLUDE_DIR})
 
 # glfw
-# add_subdirectory(glfw)
 target_link_libraries(${PROJECT_NAME} glfw)
 
 # openxr

@@ -144,16 +144,22 @@ int OpenXRContext::initialize()
 
     print_viewconfig_view_info();
 
+    initialized = true;
+
     return 0;
 }
 
-bool OpenXRContext::xr_result(XrInstance wgpuInstance, XrResult result, const char* format, ...)
+bool OpenXRContext::xr_result(XrInstance xrInstance, XrResult result, const char* format, ...)
 {
     if (XR_SUCCEEDED(result))
         return true;
 
+    if (!xrInstance)
+        std::cout << format << std::endl;
+        return false;
+
     char resultString[XR_MAX_RESULT_STRING_SIZE];
-    xrResultToString(wgpuInstance, result, resultString);
+    xrResultToString(xrInstance, result, resultString);
 
     size_t len1 = strlen(format);
     size_t len2 = strlen(resultString) + 1;

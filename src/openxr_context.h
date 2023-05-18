@@ -63,8 +63,10 @@ struct OpenXRContext {
 
     std::vector<XrCompositionLayerProjectionView>	projection_views;
 
+    bool initialized = false;
+
     int initialize();
-    bool xr_result(XrInstance wgpuInstance, XrResult result, const char* format, ...);
+    bool xr_result(XrInstance xrInstance, XrResult result, const char* format, ...);
     void print_viewconfig_view_info();
     bool check_vulkan_version(XrGraphicsRequirementsVulkanKHR* vulkan_reqs);
     void print_reference_spaces();

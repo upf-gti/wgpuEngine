@@ -5,6 +5,7 @@
 #define XR_USE_GRAPHICS_API_VULKAN
 #include "dawnxr/dawnxr_internal.h"
 #include <dawn/native/VulkanBackend.h>
+#include "dawn/dawn_proc.h"
 
 #include "webgpu/webgpu_glfw.h"
 #include "openxr_context.h"
@@ -25,15 +26,54 @@ using namespace dawnxr::internal;
 static XrPosef identity_pose = { .orientation = {.x = 0, .y = 0, .z = 0, .w = 1.0},
                                  .position = {.x = 0, .y = 0, .z = 0} };
 
+void PrintDeviceError(WGPUErrorType errorType, const char* message, void*) {
+    const char* errorTypeName = "";
+    switch (errorType) {
+    case WGPUErrorType_Validation:
+        errorTypeName = "Validation";
+        break;
+    case WGPUErrorType_OutOfMemory:
+        errorTypeName = "Out of memory";
+        break;
+    case WGPUErrorType_Unknown:
+        errorTypeName = "Unknown";
+        break;
+    case WGPUErrorType_DeviceLost:
+        errorTypeName = "Device lost";
+        break;
+    default:
+        return;
+    }
+    std::cout << errorTypeName << " error: " << message << std::endl;
+}
+
+void DeviceLostCallback(WGPUDeviceLostReason reason, const char* message, void*) {
+    std::cout << "Device lost: " << message << std::endl;
+}
+
+void PrintGLFWError(int code, const char* message) {
+    std::cout << "GLFW error: " << code << " - " << message << std::endl;
+}
+
+void DeviceLogCallback(WGPULoggingType type, const char* message, void*) {
+    std::cout << "Device log: " << message << std::endl;
+}
+
 int WebGPUContext::initialize(OpenXRContext* xr_context, GLFWwindow* window)
 {
-    options = new dawn::native::AdapterDiscoveryOptionsBase * ();
-    createVulkanAdapterDiscoveryOptions(xr_context->xr_instance, xr_context->xr_system_id, options);
-
     dawnInstance = new dawn::native::Instance();
 
-    // This call creates internal vulkan instance
-    dawnInstance->DiscoverAdapters(*options);
+    options = new dawn::native::AdapterDiscoveryOptionsBase * ();
+
+    if (xr_context->initialized) {
+        createVulkanAdapterDiscoveryOptions(xr_context->xr_instance, xr_context->xr_system_id, options);
+
+        // This call creates internal vulkan instance
+        dawnInstance->DiscoverAdapters(*options);
+    }
+    else {
+        dawnInstance->DiscoverDefaultAdapters();
+    }
 
     // Get an adapter for the backend to use, and create the device.
     dawn::native::Adapter backendAdapter;
@@ -60,18 +100,24 @@ int WebGPUContext::initialize(OpenXRContext* xr_context, GLFWwindow* window)
     WGPUDeviceDescriptor deviceDesc = {};
     deviceDesc.nextInChain = reinterpret_cast<WGPUChainedStruct*>(&toggles);
 
-    device = static_cast<wgpu::Device>(backendAdapter.CreateDevice(&deviceDesc));
+    device = wgpu::Device::Acquire(backendAdapter.CreateDevice(&deviceDesc));
     DawnProcTable backendProcs = dawn::native::GetProcs();
 
-    int width, height;
-    glfwGetWindowSize(window, &width, &height);
+    dawnProcSetProcs(&backendProcs);
+
+    backendProcs.deviceSetUncapturedErrorCallback(device.Get(), PrintDeviceError, nullptr);
+    backendProcs.deviceSetDeviceLostCallback(device.Get(), DeviceLostCallback, nullptr);
+    backendProcs.deviceSetLoggingCallback(device.Get(), DeviceLogCallback, nullptr);
 
 #ifdef USE_MIRROR_WINDOW
     // Create the swapchain for mirror mode
+    int width, height;
+    glfwGetWindowSize(window, &width, &height);
+
     auto surfaceChainedDesc = wgpu::glfw::SetupWindowAndGetSurfaceDescriptor(window);
     wgpu::SurfaceDescriptor surfaceDesc;
     surfaceDesc.nextInChain = surfaceChainedDesc.get();
-    wgpu::Surface surface = get_surface(window);
+    surface = get_surface(window);
 
     wgpu::SwapChainDescriptor swapChainDesc = {};
     swapChainDesc.usage = wgpu::TextureUsage::RenderAttachment;
@@ -80,7 +126,20 @@ int WebGPUContext::initialize(OpenXRContext* xr_context, GLFWwindow* window)
     swapChainDesc.height = height;
     swapChainDesc.presentMode = wgpu::PresentMode::Mailbox;
     mirror_swapchain = device.CreateSwapChain(surface, &swapChainDesc);
+
+    mirror_swapchain_format = wgpu::TextureFormat::BGRA8Unorm;
+    config_mirror_render_pipeline();
 #endif
+
+    device_queue = device.GetQueue();
+
+    dawn::native::InstanceProcessEvents(dawnInstance->Get());
+
+    // Don't init xr stuff if not loaded
+    if (!xr_context->initialized) {
+        is_initialized = true;
+        return 0;
+    }
 
     dawnxr::GraphicsBindingDawn binding = { .device = device };
 
@@ -99,6 +158,10 @@ int WebGPUContext::initialize(OpenXRContext* xr_context, GLFWwindow* window)
     result = dawnxr::enumerateSwapchainFormats(xr_context->xr_session, swapchain_format_count, &swapchain_format_count, swapchain_formats.data());
     if (!xr_context->xr_result(xr_context->xr_instance, result, "Failed to enumerate swapchain formats"))
         return 1;
+
+    swapchain_format = static_cast<wgpu::TextureFormat>(swapchain_formats[0]);
+
+    config_render_pipeline();
 
     XrSwapchainCreateInfo swapchain_create_info;
     swapchain_create_info.type = XR_TYPE_SWAPCHAIN_CREATE_INFO;
@@ -125,8 +188,6 @@ int WebGPUContext::initialize(OpenXRContext* xr_context, GLFWwindow* window)
     result = dawnxr::enumerateSwapchainImages(xr_context->xr_swapchain, swapchain_length, &swapchain_length, (XrSwapchainImageBaseHeader*)images.data());
     if (!xr_context->xr_result(xr_context->xr_instance, result, "Failed to enumerate swapchain images"))
         return 1;
-
-    device_queue = device.GetQueue();
 
     XrReferenceSpaceType play_space_type = XR_REFERENCE_SPACE_TYPE_LOCAL;
     // We could check if our ref space type is supported, but next call will error anyway if not
@@ -164,11 +225,99 @@ int WebGPUContext::initialize(OpenXRContext* xr_context, GLFWwindow* window)
 
     xr_context->init_actions();
 
-    config_render_pipeline();
-
     is_initialized = true;
 
     return 0;
+}
+
+void WebGPUContext::config_mirror_render_pipeline()
+{
+    // Load the shader module https://eliemichel.github.io/LearnWebGPU/basic-3d-rendering/hello-triangle.html
+    {
+        wgpu::ShaderModuleWGSLDescriptor shader_code_desc;
+        shader_code_desc.code = RAW_SHADERS::simple_shaders;
+
+        wgpu::ShaderModuleDescriptor shader_descr;
+        shader_descr.nextInChain = &shader_code_desc;
+
+        mirror_shader_module = device.CreateShaderModule(&shader_descr);
+    }
+
+    // Config the render target
+    wgpu::ColorTargetState color_target;
+    wgpu::BlendState blend_state;
+    {
+        blend_state = {
+            .color = {
+                .operation = wgpu::BlendOperation::Add,
+                .srcFactor = wgpu::BlendFactor::SrcAlpha,
+                .dstFactor = wgpu::BlendFactor::OneMinusSrcAlpha,
+            },
+            .alpha = {
+                .operation = wgpu::BlendOperation::Add,
+                .srcFactor = wgpu::BlendFactor::Zero,
+                .dstFactor = wgpu::BlendFactor::One,
+            }
+        };
+
+        color_target = {
+            .format = mirror_swapchain_format,
+            .blend = &blend_state,
+            .writeMask = wgpu::ColorWriteMask::All
+        };
+    }
+
+    // Layout descriptor (bind goups, buffers, uniforms)
+    {
+        wgpu::PipelineLayoutDescriptor layout_descr = {
+            .nextInChain = NULL,
+            .bindGroupLayoutCount = 0,
+            .bindGroupLayouts = NULL,
+        };
+
+        mirror_render_pipeline_layout = device.CreatePipelineLayout(&layout_descr);
+    }
+
+    // Config the render pipeline
+    {
+        wgpu::FragmentState fragment_state = {
+            .module = mirror_shader_module,
+            .entryPoint = "fs_main",
+            .constantCount = 0,
+            .constants = NULL,
+            .targetCount = 1,
+            .targets = &color_target
+        };
+
+        wgpu::RenderPipelineDescriptor pipeline_descr = {
+            .nextInChain = NULL,
+            .layout = mirror_render_pipeline_layout,
+            .vertex = {
+                .module = mirror_shader_module,
+                .entryPoint = "vs_main",
+                .constantCount = 0,
+                .constants = NULL,
+                .bufferCount = 0,
+                .buffers = NULL,
+
+            },
+            .primitive = {
+                .topology = wgpu::PrimitiveTopology::TriangleList,
+                .stripIndexFormat = wgpu::IndexFormat::Undefined, // order of the connected vertices
+                .frontFace = wgpu::FrontFace::CCW,
+                .cullMode = wgpu::CullMode::None
+            },
+            .depthStencil = NULL,
+            .multisample = {
+                .count = 1,
+                .mask = ~0u,
+                .alphaToCoverageEnabled = false
+            },
+            .fragment = &fragment_state,
+        };
+
+        mirror_render_pipeline = device.CreateRenderPipeline(&pipeline_descr);
+    }
 }
 
 void WebGPUContext::config_render_pipeline()

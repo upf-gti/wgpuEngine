@@ -11,7 +11,7 @@ struct WebGPUContext {
     dawn::native::Instance*   dawnInstance;
     //wgpu::Instance            wgpuInstance;
     //wgpu::Adapter             adapter;
-    //wgpu::Surface             surface;
+    wgpu::Surface             surface;
     wgpu::Device              device;
     wgpu::Queue               device_queue;
     wgpu::CommandEncoder      device_command_encoder;
@@ -22,6 +22,10 @@ struct WebGPUContext {
     wgpu::PipelineLayout      render_pipeline_layout;
 
     wgpu::SwapChain           mirror_swapchain;
+    wgpu::TextureFormat       mirror_swapchain_format;
+    wgpu::RenderPipeline      mirror_render_pipeline;
+    wgpu::PipelineLayout      mirror_render_pipeline_layout;
+    wgpu::ShaderModule        mirror_shader_module;
 
     bool                      is_initialized = false;
     wgpu::TextureView         current_texture_view;
@@ -34,6 +38,8 @@ struct WebGPUContext {
 
     int initialize(OpenXRContext* xr_context, GLFWwindow* window);
     void config_render_pipeline();
+    void config_mirror_render_pipeline();
+
     wgpu::Surface get_surface(GLFWwindow* window);
 
 };

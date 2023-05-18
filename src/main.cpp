@@ -29,7 +29,7 @@ int main() {
 #else
     //while (!wgpu_instance.is_initialized) {};
     while (true) {
-        wgpu_instance.render_frame();
+        engine.render_frame();
     }
 #endif
 
