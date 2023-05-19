@@ -22,11 +22,6 @@ int Engine::initialize(GLFWwindow *window) {
 
 void Engine::clean() {
     xr_context.clean();
-
-    //wgpuInstance.Release();
-    //swapchain.Release();
-    //device.Release();
-    //adapter.Release();
 }
 
 void Engine::render_frame() {
@@ -34,8 +29,7 @@ void Engine::render_frame() {
     if (xr_context.initialized) {
         xr_context.initFrame();
 
-        renderXr(webgpu_context.images[0].textureView);
-        //renderXr(webgpu_context.images[1].textureView, false);
+        renderXr();
 
         xr_context.endFrame();
     }
@@ -45,14 +39,8 @@ void Engine::render_frame() {
 #endif
 }
 
-void Engine::renderXr(wgpu::TextureView current_texture_view)
+void Engine::renderXr()
 {
-
-    // Get the current texture in the swapchain
-    {
-        assert_msg(current_texture_view != NULL, "Error, dont resize the window please!!");
-    }
-
     // Create the command encoder
     {
         wgpu::CommandEncoderDescriptor encoder_desc;
@@ -63,48 +51,41 @@ void Engine::renderXr(wgpu::TextureView current_texture_view)
 
     // Create & fill the render pass (encoder)
     wgpu::RenderPassEncoder render_pass;
+
+    // Prepare the color attachment
+    wgpu::RenderPassColorAttachment render_pass_color_attachment = {
+        .view = webgpu_context.images[xr_context.swapchains[0].image_index].textureView,
+        .loadOp = wgpu::LoadOp::Clear,
+        .storeOp = wgpu::StoreOp::Store,
+        .clearValue = wgpu::Color(0.0f, 0.0f, 1.0f, 1.0f)
+    };
+    wgpu::RenderPassDescriptor render_pass_descr = {
+        .colorAttachmentCount = 1,
+        .colorAttachments = &render_pass_color_attachment,
+    };
     {
-        // Prepare the color attachment
-        wgpu::RenderPassColorAttachment render_pass_color_attachment = {
-            .view = current_texture_view,
-            .loadOp = wgpu::LoadOp::Clear,
-            .storeOp = wgpu::StoreOp::Store,
-            .clearValue = wgpu::Color(0.0f, 0.0f, 1.0f, 1.0f)
-        };
-        wgpu::RenderPassDescriptor render_pass_descr = {
-            .colorAttachmentCount = 1,
-            .colorAttachments = &render_pass_color_attachment,
-        };
-        {
-            render_pass = webgpu_context.device_command_encoder.BeginRenderPass(&render_pass_descr);
+        render_pass = webgpu_context.device_command_encoder.BeginRenderPass(&render_pass_descr);
 
-            // Bind Pipeline
-            render_pass.SetPipeline(webgpu_context.render_pipeline);
-            // Submit drawcall
-            render_pass.Draw(3, 1, 0, 0);
+        // Bind Pipeline
+        render_pass.SetPipeline(webgpu_context.render_pipeline);
+        // Submit drawcall
+        render_pass.Draw(3, 1, 0, 0);
 
-            render_pass.End();
-            //render_pass.Release();
-        }
+        render_pass.End();
+        //render_pass.Release();
     }
 
-    //
-    {
-        wgpu::CommandBufferDescriptor cmd_buff_descriptor = {
-            .nextInChain = NULL,
-            .label = "Command buffer"
-        };
+    wgpu::CommandBufferDescriptor cmd_buff_descriptor = {
+        .nextInChain = NULL,
+        .label = "Command buffer"
+    };
 
-        wgpu::CommandBuffer commander = webgpu_context.device_command_encoder.Finish(&cmd_buff_descriptor);
-        //webgpu_context.device_command_encoder.Release();
-        webgpu_context.device_queue.Submit(1, &commander);
-
-        //commander.Release();
-        //current_texture_view.Release();
-    }
+    wgpu::CommandBuffer commander = webgpu_context.device_command_encoder.Finish(&cmd_buff_descriptor);
+    //webgpu_context.device_command_encoder.Release();
+    webgpu_context.device_queue.Submit(1, &commander);
 
     // Check validation errors
-    dawn::native::InstanceProcessEvents(webgpu_context.dawnInstance->Get());
+    dawn::native::InstanceProcessEvents(webgpu_context.instance->Get());
 }
 
 void Engine::renderMirror()
@@ -169,5 +150,5 @@ void Engine::renderMirror()
     }
 
     // Check validation errors
-    dawn::native::InstanceProcessEvents(webgpu_context.dawnInstance->Get());
+    dawn::native::InstanceProcessEvents(webgpu_context.instance->Get());
 }

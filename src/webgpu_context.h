@@ -8,15 +8,12 @@ class OpenXRContext;
 
 struct WebGPUContext {
 
-    dawn::native::Instance*   dawnInstance;
-    //wgpu::Instance            wgpuInstance;
-    //wgpu::Adapter             adapter;
+    dawn::native::Instance*   instance;
     wgpu::Surface             surface;
     wgpu::Device              device;
     wgpu::Queue               device_queue;
     wgpu::CommandEncoder      device_command_encoder;
     wgpu::TextureFormat       swapchain_format;
-    //wgpu::SwapChain           swapchain;
     wgpu::ShaderModule        shader_module;
     wgpu::RenderPipeline      render_pipeline;
     wgpu::PipelineLayout      render_pipeline_layout;

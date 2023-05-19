@@ -61,24 +61,24 @@ void DeviceLogCallback(WGPULoggingType type, const char* message, void*) {
 
 int WebGPUContext::initialize(OpenXRContext* xr_context, GLFWwindow* window)
 {
-    dawnInstance = new dawn::native::Instance();
+    instance = new dawn::native::Instance();
 
     options = new dawn::native::AdapterDiscoveryOptionsBase * ();
 
     if (xr_context->initialized) {
-        createVulkanAdapterDiscoveryOptions(xr_context->xr_instance, xr_context->xr_system_id, options);
+        createVulkanAdapterDiscoveryOptions(xr_context->instance, xr_context->system_id, options);
 
         // This call creates internal vulkan instance
-        dawnInstance->DiscoverAdapters(*options);
+        instance->DiscoverAdapters(*options);
     }
     else {
-        dawnInstance->DiscoverDefaultAdapters();
+        instance->DiscoverDefaultAdapters();
     }
 
     // Get an adapter for the backend to use, and create the device.
     dawn::native::Adapter backendAdapter;
     {
-        std::vector<dawn::native::Adapter> adapters = dawnInstance->GetAdapters();
+        std::vector<dawn::native::Adapter> adapters = instance->GetAdapters();
         auto adapterIt = std::find_if(adapters.begin(), adapters.end(),
             [](const dawn::native::Adapter adapter) -> bool {
                 wgpu::AdapterProperties properties;
@@ -137,7 +137,7 @@ int WebGPUContext::initialize(OpenXRContext* xr_context, GLFWwindow* window)
 
     device_queue = device.GetQueue();
 
-    dawn::native::InstanceProcessEvents(dawnInstance->Get());
+    dawn::native::InstanceProcessEvents(instance->Get());
 
     // Don't init xr stuff if not loaded
     if (!xr_context->initialized) {
@@ -147,20 +147,20 @@ int WebGPUContext::initialize(OpenXRContext* xr_context, GLFWwindow* window)
 
     dawnxr::GraphicsBindingDawn binding = { .device = device };
 
-    XrSessionCreateInfo xrCreateInfo = { .type = XR_TYPE_SESSION_CREATE_INFO, .next = &binding, .systemId = xr_context->xr_system_id };
-    dawnxr::createSession(xr_context->xr_instance, &xrCreateInfo, &xr_context->xr_session);
+    XrSessionCreateInfo xrCreateInfo = { .type = XR_TYPE_SESSION_CREATE_INFO, .next = &binding, .systemId = xr_context->system_id };
+    dawnxr::createSession(xr_context->instance, &xrCreateInfo, &xr_context->session);
 
     XrResult result;
 
     uint32_t swapchain_format_count;
-    result = dawnxr::enumerateSwapchainFormats(xr_context->xr_session, 0, &swapchain_format_count, NULL);
-    if (!xr_context->xr_result(xr_context->xr_instance, result, "Failed to get number of supported swapchain formats"))
+    result = dawnxr::enumerateSwapchainFormats(xr_context->session, 0, &swapchain_format_count, NULL);
+    if (!xr_context->xr_result(xr_context->instance, result, "Failed to get number of supported swapchain formats"))
         return 1;
 
     printf("Runtime supports %d swapchain formats\n", swapchain_format_count);
     std::vector<int64_t> swapchain_formats(swapchain_format_count);
-    result = dawnxr::enumerateSwapchainFormats(xr_context->xr_session, swapchain_format_count, &swapchain_format_count, swapchain_formats.data());
-    if (!xr_context->xr_result(xr_context->xr_instance, result, "Failed to enumerate swapchain formats"))
+    result = dawnxr::enumerateSwapchainFormats(xr_context->session, swapchain_format_count, &swapchain_format_count, swapchain_formats.data());
+    if (!xr_context->xr_result(xr_context->instance, result, "Failed to enumerate swapchain formats"))
         return 1;
 
     swapchain_format = static_cast<wgpu::TextureFormat>(swapchain_formats[0]);
@@ -180,17 +180,19 @@ int WebGPUContext::initialize(OpenXRContext* xr_context, GLFWwindow* window)
     swapchain_create_info.mipCount = 1;
     swapchain_create_info.next = NULL;
 
-    dawnxr::createSwapchain(xr_context->xr_session, &swapchain_create_info, &xr_context->xr_swapchain);
+    xr_context->swapchains.resize(xr_context->view_count);
+
+    dawnxr::createSwapchain(xr_context->session, &swapchain_create_info, &xr_context->swapchains[0].swapchain);
 
     uint32_t swapchain_length;
-    result = dawnxr::enumerateSwapchainImages(xr_context->xr_swapchain, 0, &swapchain_length, nullptr);
-    if (!xr_context->xr_result(xr_context->xr_instance, result, "Failed to enumerate swapchains"))
+    result = dawnxr::enumerateSwapchainImages(xr_context->swapchains[0].swapchain, 0, &swapchain_length, nullptr);
+    if (!xr_context->xr_result(xr_context->instance, result, "Failed to enumerate swapchains"))
         return 1;
 
     // these are wrappers for the actual OpenGL texture id
     images.resize(swapchain_length);
-    result = dawnxr::enumerateSwapchainImages(xr_context->xr_swapchain, swapchain_length, &swapchain_length, (XrSwapchainImageBaseHeader*)images.data());
-    if (!xr_context->xr_result(xr_context->xr_instance, result, "Failed to enumerate swapchain images"))
+    result = dawnxr::enumerateSwapchainImages(xr_context->swapchains[0].swapchain, swapchain_length, &swapchain_length, (XrSwapchainImageBaseHeader*)images.data());
+    if (!xr_context->xr_result(xr_context->instance, result, "Failed to enumerate swapchain images"))
         return 1;
 
     XrReferenceSpaceType play_space_type = XR_REFERENCE_SPACE_TYPE_LOCAL;
@@ -202,17 +204,17 @@ int WebGPUContext::initialize(OpenXRContext* xr_context, GLFWwindow* window)
                                                          .referenceSpaceType = play_space_type,
                                                          .poseInReferenceSpace = identity_pose };
 
-    result = xrCreateReferenceSpace(xr_context->xr_session, &play_space_create_info, &xr_context->play_space);
-    if (!xr_context->xr_result(xr_context->xr_instance, result, "Failed to create play space!"))
+    result = xrCreateReferenceSpace(xr_context->session, &play_space_create_info, &xr_context->play_space);
+    if (!xr_context->xr_result(xr_context->instance, result, "Failed to create play space!"))
         return 1;
 
-    xr_context->projection_views.resize(xr_context->xr_view_count);
-    for (uint32_t i = 0; i < xr_context->xr_view_count; i++) {
+    xr_context->projection_views.resize(xr_context->view_count);
+    for (uint32_t i = 0; i < xr_context->view_count; i++) {
         xr_context->projection_views[i].type = XR_TYPE_COMPOSITION_LAYER_PROJECTION_VIEW;
         xr_context->projection_views[i].next = NULL;
         xr_context->projection_views[i].pose = { .orientation = { 0.0f, 0.0f, 0.0f, 1.0f }, .position = { 0.0f, 0.0f, 0.0f } };
 
-        xr_context->projection_views[i].subImage.swapchain = xr_context->xr_swapchain;
+        xr_context->projection_views[i].subImage.swapchain = xr_context->swapchains[0].swapchain;
         xr_context->projection_views[i].subImage.imageArrayIndex = 0;
         xr_context->projection_views[i].subImage.imageRect.offset.x = 0;
         xr_context->projection_views[i].subImage.imageRect.offset.y = 0;
@@ -223,8 +225,8 @@ int WebGPUContext::initialize(OpenXRContext* xr_context, GLFWwindow* window)
     };
 
     XrSessionBeginInfo session_begin_info = { .type = XR_TYPE_SESSION_BEGIN_INFO, .next = NULL, .primaryViewConfigurationType = XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO };
-    result = xrBeginSession(xr_context->xr_session, &session_begin_info);
-    if (!xr_context->xr_result(xr_context->xr_instance, result, "Failed to begin session!"))
+    result = xrBeginSession(xr_context->session, &session_begin_info);
+    if (!xr_context->xr_result(xr_context->instance, result, "Failed to begin session!"))
         return 1;
 
     xr_context->init_actions();
@@ -431,7 +433,7 @@ wgpu::Surface WebGPUContext::get_surface(GLFWwindow* window)
         .label = nullptr,
     };
 
-    wgpu::Surface surface = wgpu::Instance::Acquire(dawnInstance->Get()).CreateSurface(&descriptor);
+    wgpu::Surface surface = wgpu::Instance::Acquire(instance->Get()).CreateSurface(&descriptor);
 #endif
 
     assert_msg(surface, "Error creating surface");
