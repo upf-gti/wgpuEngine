@@ -17,6 +17,6 @@ public:
     void clean();
 
     void render_frame();
-    void renderXr();
+    void renderXr(int swapchain_index);
     void renderMirror();
 };

@@ -182,18 +182,21 @@ int WebGPUContext::initialize(OpenXRContext* xr_context, GLFWwindow* window)
 
     xr_context->swapchains.resize(xr_context->view_count);
 
-    dawnxr::createSwapchain(xr_context->session, &swapchain_create_info, &xr_context->swapchains[0].swapchain);
+    for (uint32_t i = 0; i < xr_context->view_count; i++) {
+        dawnxr::createSwapchain(xr_context->session, &swapchain_create_info, &xr_context->swapchains[i].swapchain);
 
-    uint32_t swapchain_length;
-    result = dawnxr::enumerateSwapchainImages(xr_context->swapchains[0].swapchain, 0, &swapchain_length, nullptr);
-    if (!xr_context->xr_result(xr_context->instance, result, "Failed to enumerate swapchains"))
-        return 1;
+        uint32_t swapchain_length;
+        result = dawnxr::enumerateSwapchainImages(xr_context->swapchains[i].swapchain, 0, &swapchain_length, nullptr);
+        if (!xr_context->xr_result(xr_context->instance, result, "Failed to enumerate swapchains"))
+            return 1;
 
-    // these are wrappers for the actual OpenGL texture id
-    images.resize(swapchain_length);
-    result = dawnxr::enumerateSwapchainImages(xr_context->swapchains[0].swapchain, swapchain_length, &swapchain_length, (XrSwapchainImageBaseHeader*)images.data());
-    if (!xr_context->xr_result(xr_context->instance, result, "Failed to enumerate swapchain images"))
-        return 1;
+        // these are wrappers for the actual OpenGL texture id
+        xr_context->swapchains[i].images.resize(swapchain_length);
+        result = dawnxr::enumerateSwapchainImages(xr_context->swapchains[i].swapchain, swapchain_length, &swapchain_length, (XrSwapchainImageBaseHeader*)xr_context->swapchains[i].images.data());
+        if (!xr_context->xr_result(xr_context->instance, result, "Failed to enumerate swapchain images"))
+            return 1;
+    }
+
 
     XrReferenceSpaceType play_space_type = XR_REFERENCE_SPACE_TYPE_LOCAL;
     // We could check if our ref space type is supported, but next call will error anyway if not
@@ -214,7 +217,7 @@ int WebGPUContext::initialize(OpenXRContext* xr_context, GLFWwindow* window)
         xr_context->projection_views[i].next = NULL;
         xr_context->projection_views[i].pose = { .orientation = { 0.0f, 0.0f, 0.0f, 1.0f }, .position = { 0.0f, 0.0f, 0.0f } };
 
-        xr_context->projection_views[i].subImage.swapchain = xr_context->swapchains[0].swapchain;
+        xr_context->projection_views[i].subImage.swapchain = xr_context->swapchains[i].swapchain;
         xr_context->projection_views[i].subImage.imageArrayIndex = 0;
         xr_context->projection_views[i].subImage.imageRect.offset.x = 0;
         xr_context->projection_views[i].subImage.imageRect.offset.y = 0;

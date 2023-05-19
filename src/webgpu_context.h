@@ -30,8 +30,6 @@ struct WebGPUContext {
 
     dawn::native::AdapterDiscoveryOptionsBase** options;
 
-    std::vector<dawnxr::SwapchainImageDawn> images;
-
     int initialize(OpenXRContext* xr_context, GLFWwindow* window);
     void config_render_pipeline();
     void config_mirror_render_pipeline();

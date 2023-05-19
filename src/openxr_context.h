@@ -10,6 +10,8 @@
 #define XR_USE_GRAPHICS_API_VULKAN
 #include "openxr/openxr_platform.h"
 
+#include <dawnxr/dawnxr.h>
+
 // small helper so we don't forget whether we treat 0 as left or right hand
 enum OPENXR_HANDS
 {
@@ -21,6 +23,7 @@ enum OPENXR_HANDS
 struct sSwapchainData {
     XrSwapchain swapchain;
     uint32_t    image_index;
+    std::vector<dawnxr::SwapchainImageDawn> images;
 };
 
 struct
@@ -76,5 +79,7 @@ struct OpenXRContext {
     void init_actions();
 
     void initFrame();
+    void acquireSwapchain(int swapchain_index);
+    void releaseSwapchain(int swapchain_index);
     void endFrame();
 };

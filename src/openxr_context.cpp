@@ -498,12 +498,17 @@ void OpenXRContext::initFrame()
         (viewState.viewStateFlags & XR_VIEW_STATE_ORIENTATION_VALID_BIT) == 0) {
         return;  // There is no valid tracking poses for the views.
     }
+}
+
+void OpenXRContext::acquireSwapchain(int swapchain_index)
+{
+    XrResult result;
 
     XrSwapchainImageAcquireInfo acquire_info = {
         .type = XR_TYPE_SWAPCHAIN_IMAGE_ACQUIRE_INFO,
     };
 
-    result = xrAcquireSwapchainImage(swapchains[0].swapchain, &acquire_info, &swapchains[0].image_index);
+    result = xrAcquireSwapchainImage(swapchains[swapchain_index].swapchain, &acquire_info, &swapchains[swapchain_index].image_index);
     if (!xr_result(instance, result, "failed to acquire swapchain image!"))
         return;
 
@@ -511,13 +516,13 @@ void OpenXRContext::initFrame()
       .type = XR_TYPE_SWAPCHAIN_IMAGE_WAIT_INFO,
       .timeout = INT64_MAX,
     };
-    result = xrWaitSwapchainImage(swapchains[0].swapchain, &wait_info);
+
+    result = xrWaitSwapchainImage(swapchains[swapchain_index].swapchain, &wait_info);
     if (!xr_result(instance, result, "failed to wait for swapchain image!"))
         return;
-
 }
 
-void OpenXRContext::endFrame()
+void OpenXRContext::releaseSwapchain(int swapchain_index)
 {
     XrResult result;
 
@@ -525,9 +530,14 @@ void OpenXRContext::endFrame()
     .type = XR_TYPE_SWAPCHAIN_IMAGE_RELEASE_INFO,
     };
 
-    result = xrReleaseSwapchainImage(swapchains[0].swapchain, &info);
+    result = xrReleaseSwapchainImage(swapchains[swapchain_index].swapchain, &info);
     if (!xr_result(instance, result, "failed to release swapchain image!"))
         return;
+}
+
+void OpenXRContext::endFrame()
+{
+    XrResult result;
 
     XrCompositionLayerProjection projection_layer = {
             .type = XR_TYPE_COMPOSITION_LAYER_PROJECTION,

@@ -27,9 +27,17 @@ void Engine::clean() {
 void Engine::render_frame() {
 
     if (xr_context.initialized) {
+
         xr_context.initFrame();
 
-        renderXr();
+        for (int i = 0; i < xr_context.view_count; ++i) {
+
+            xr_context.acquireSwapchain(i);
+
+            renderXr(i);
+
+            xr_context.releaseSwapchain(i);
+        }
 
         xr_context.endFrame();
     }
@@ -39,7 +47,7 @@ void Engine::render_frame() {
 #endif
 }
 
-void Engine::renderXr()
+void Engine::renderXr(int swapchain_index)
 {
     // Create the command encoder
     {
@@ -52,12 +60,14 @@ void Engine::renderXr()
     // Create & fill the render pass (encoder)
     wgpu::RenderPassEncoder render_pass;
 
+    const sSwapchainData &swapchainData = xr_context.swapchains[swapchain_index];
+
     // Prepare the color attachment
     wgpu::RenderPassColorAttachment render_pass_color_attachment = {
-        .view = webgpu_context.images[xr_context.swapchains[0].image_index].textureView,
+        .view = swapchainData.images[swapchainData.image_index].textureView,
         .loadOp = wgpu::LoadOp::Clear,
         .storeOp = wgpu::StoreOp::Store,
-        .clearValue = wgpu::Color(0.0f, 0.0f, 1.0f, 1.0f)
+        .clearValue = swapchain_index == 0 ? wgpu::Color(0.0f, 0.0f, 1.0f, 1.0f) : wgpu::Color(1.0f, 0.0f, 1.0f, 1.0f)
     };
     wgpu::RenderPassDescriptor render_pass_descr = {
         .colorAttachmentCount = 1,
