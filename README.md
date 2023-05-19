@@ -1,10 +1,8 @@
 ## Dependencies
-* wgpu-native's submodules: git submodule update --init --recursive
-* clang: scoop install llvm
-* Rust (Cargo): scoop install rust
+* Install depot-tools from Google: https://commondatastorage.googleapis.com/chrome-infra-docs/flat/depot_tools/docs/html/depot_tools_tutorial.html#_setting_up
 
-## Installation:
+## How To Build:
 git submodule update --init --recursive
-scoop install llvm rust
-cd wgpu-native
-make lib-native lib-native-release
+mkdir build
+cd build
+cmake ..
