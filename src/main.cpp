@@ -2,6 +2,13 @@
 
 #include <GLFW/glfw3.h>
 
+void closeWindow(GLFWwindow* window) {
+#ifdef USE_MIRROR_WINDOW
+    glfwDestroyWindow(window);
+    glfwTerminate();
+#endif
+}
+
 int main() {
 
     Engine engine;
@@ -17,7 +24,11 @@ int main() {
     window = glfwCreateWindow(640, 480, "WebGPU", NULL, NULL);
 #endif
 
-    engine.initialize(window);
+    if (engine.initialize(window)) {
+        std::cout << "Could not initialize engine" << std::endl;
+        closeWindow(window);
+        return 1;
+    }
 
     // Wait until all the async stuff has been done
 #ifdef USE_MIRROR_WINDOW
@@ -35,10 +46,7 @@ int main() {
 
     engine.clean();
 
-#ifdef USE_MIRROR_WINDOW
-    glfwDestroyWindow(window);
-    glfwTerminate();
-#endif
+    closeWindow(window);
 
     return 0;
 }

@@ -151,6 +151,10 @@ int OpenXRContext::initialize()
 
 void OpenXRContext::clean()
 {
+    if (!initialized) {
+        return;
+    }
+
     xrDestroySwapchain(xr_swapchain);
     xrDestroySpace(play_space);
     xrDestroySession(xr_session);

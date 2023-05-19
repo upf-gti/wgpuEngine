@@ -85,7 +85,11 @@ int WebGPUContext::initialize(OpenXRContext* xr_context, GLFWwindow* window)
         adapter.GetProperties(&properties);
         return properties.backendType == wgpu::BackendType::Vulkan;
             });
-        assert(adapterIt != adapters.end());
+
+        if (adapterIt == adapters.end()) {
+            std::cout << "Could not find backend adapters" << std::endl;
+            return 1;
+        }
         backendAdapter = *adapterIt;
     }
 
