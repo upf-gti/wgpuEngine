@@ -204,7 +204,7 @@ int WebGPUContext::initialize(OpenXRContext* xr_context, GLFWwindow* window)
 
     XrReferenceSpaceCreateInfo play_space_create_info = { .type = XR_TYPE_REFERENCE_SPACE_CREATE_INFO,
                                                          .next = NULL,
-                                                         .referenceSpaceType = play_space_type,
+                                                         .referenceSpaceType = XR_REFERENCE_SPACE_TYPE_STAGE, //play_space_type,
                                                          .poseInReferenceSpace = identity_pose };
 
     result = xrCreateReferenceSpace(xr_context->session, &play_space_create_info, &xr_context->play_space);

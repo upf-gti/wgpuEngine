@@ -135,7 +135,9 @@ int OpenXRContext::initialize()
     if (!xr_result(instance, result, "Failed to get view configuration count"))
         return 1;
 
+    views.resize(view_count, { XR_TYPE_VIEW });
     viewconfig_views.resize(view_count, { XR_TYPE_VIEW_CONFIGURATION_VIEW, nullptr });
+    projection_views.resize(view_count);
 
     result = xrEnumerateViewConfigurationViews(instance, system_id, XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO, view_count, &view_count, viewconfig_views.data());
     if (!xr_result(instance, result, "Failed to enumerate view configuration views!"))
@@ -485,14 +487,18 @@ void OpenXRContext::initFrame()
 
     XrViewState viewState{ XR_TYPE_VIEW_STATE };
     uint32_t viewCapacityInput = (uint32_t)views.size();
-    uint32_t viewCountOutput;
 
     XrViewLocateInfo viewLocateInfo{ XR_TYPE_VIEW_LOCATE_INFO };
     viewLocateInfo.viewConfigurationType = XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO;
     viewLocateInfo.displayTime = frame_state.predictedDisplayTime;
     viewLocateInfo.space = play_space;
+    result = xrLocateViews(session, &viewLocateInfo, &viewState, viewCapacityInput, &viewCapacityInput, views.data());
 
-    result = xrLocateViews(session, &viewLocateInfo, &viewState, viewCapacityInput, &viewCountOutput, views.data());
+    //Set the projection view to the pose and FOV for each eye
+    for (uint16_t i = 0; i < views.size(); i++) {
+        projection_views[i].pose = views[i].pose;
+        projection_views[i].fov = views[i].fov;
+    }
 
     if ((viewState.viewStateFlags & XR_VIEW_STATE_POSITION_VALID_BIT) == 0 ||
         (viewState.viewStateFlags & XR_VIEW_STATE_ORIENTATION_VALID_BIT) == 0) {
