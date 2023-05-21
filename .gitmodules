@@ -7,3 +7,6 @@
 [submodule "src/dawnxr"]
 	path = src/dawnxr
 	url = https://github.com/upf-gti/dawnxr
+[submodule "libraries/glm"]
+	path = libraries/glm
+	url = https://github.com/g-truc/glm.git

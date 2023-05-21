@@ -2,6 +2,14 @@
 
 #include <iostream>
 #include <cstdarg>
+#include <glm/glm.hpp>
+#include <glm/gtc/quaternion.hpp>
+#include <glm/gtc/type_ptr.hpp>
+
+
+// Helper functions for pose to GLM
+glm::mat4x4 parse_OpenXR_projection_to_glm(const XrFovf& fov, float nearZ = 0.01f, float farZ = 10000.0f);
+glm::mat4x4 parse_OpenXR_pose_to_glm(const XrPosef& p);
 
 int OpenXRContext::initialize()
 {
@@ -138,6 +146,7 @@ int OpenXRContext::initialize()
     views.resize(view_count, { XR_TYPE_VIEW });
     viewconfig_views.resize(view_count, { XR_TYPE_VIEW_CONFIGURATION_VIEW, nullptr });
     projection_views.resize(view_count);
+    per_view_data.resize(view_count);
 
     result = xrEnumerateViewConfigurationViews(instance, system_id, XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO, view_count, &view_count, viewconfig_views.data());
     if (!xr_result(instance, result, "Failed to enumerate view configuration views!"))
@@ -498,6 +507,9 @@ void OpenXRContext::initFrame()
     for (uint16_t i = 0; i < views.size(); i++) {
         projection_views[i].pose = views[i].pose;
         projection_views[i].fov = views[i].fov;
+
+        per_view_data[i].view_matrix = glm::inverse(parse_OpenXR_pose_to_glm(views[i].pose));
+        per_view_data[i].projection_matrix = parse_OpenXR_projection_to_glm(views[i].fov);
     }
 
     if ((viewState.viewStateFlags & XR_VIEW_STATE_POSITION_VALID_BIT) == 0 ||
@@ -568,4 +580,49 @@ void OpenXRContext::endFrame()
     result = xrEndFrame(session, &frameEndInfo);
     if (!xr_result(instance, result, "failed to end frame!"))
         return;
+}
+
+
+// HELPER FUNCTIONS
+// From: https://github.com/jherico/OpenXR-Samples/blob/master/src/examples/sdl2_gl_single_file_example.cpp
+inline glm::mat4x4 parse_OpenXR_projection_to_glm(const XrFovf& fov, float nearZ, float farZ) {
+    const auto& tanAngleRight = tanf(fov.angleRight);
+    const auto& tanAngleLeft = tanf(fov.angleLeft);
+    const auto& tanAngleUp = tanf(fov.angleUp);
+    const auto& tanAngleDown = tanf(fov.angleDown);
+
+    const float tanAngleWidth = tanAngleRight - tanAngleLeft;
+    const float tanAngleHeight = (tanAngleDown - tanAngleUp); // For vulkan projection
+    const float offsetZ = 0;
+
+    glm::mat4 resultm{};
+    float* result = &resultm[0][0];
+    // normal projection
+    result[0] = 2 / tanAngleWidth;
+    result[4] = 0;
+    result[8] = (tanAngleRight + tanAngleLeft) / tanAngleWidth;
+    result[12] = 0;
+
+    result[1] = 0;
+    result[5] = 2 / tanAngleHeight;
+    result[9] = (tanAngleUp + tanAngleDown) / tanAngleHeight;
+    result[13] = 0;
+
+    result[2] = 0;
+    result[6] = 0;
+    result[10] = -(farZ + offsetZ) / (farZ - nearZ);
+    result[14] = -(farZ * (nearZ + offsetZ)) / (farZ - nearZ);
+
+    result[3] = 0;
+    result[7] = 0;
+    result[11] = -1;
+    result[15] = 0;
+
+    return resultm;
+}
+
+inline glm::mat4x4 parse_OpenXR_pose_to_glm(const XrPosef& p) {
+    glm::mat4 orientation = glm::mat4_cast(glm::make_quat(&p.orientation.x));
+    glm::mat4 translation = glm::translate(glm::mat4{ 1 }, glm::make_vec3(&p.position.x));
+    return translation * orientation;
 }

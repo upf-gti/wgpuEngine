@@ -61,4 +61,8 @@ target_link_libraries(${PROJECT_NAME} glfw)
 add_subdirectory(libraries/openxr)
 target_link_libraries(${PROJECT_NAME} openxr_loader)
 
+# glm
+add_subdirectory(libraries/glm)
+target_link_libraries(${PROJECT_NAME} glm)
+
 target_copy_webgpu_binaries(${PROJECT_NAME})

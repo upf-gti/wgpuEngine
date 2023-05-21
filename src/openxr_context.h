@@ -12,12 +12,19 @@
 
 #include <dawnxr/dawnxr.h>
 
+#include <glm/glm.hpp>
+
 // small helper so we don't forget whether we treat 0 as left or right hand
 enum OPENXR_HANDS
 {
     HAND_LEFT = 0,
     HAND_RIGHT = 1,
     HAND_COUNT
+};
+
+struct sViewData {
+    glm::mat4x4 projection_matrix;
+    glm::mat4x4 view_matrix;
 };
 
 struct sSwapchainData {
@@ -60,6 +67,8 @@ struct OpenXRContext {
     std::vector<XrView>                             views;
     std::vector<XrViewConfigurationView>            viewconfig_views;
     std::vector<XrCompositionLayerProjectionView>	projection_views;
+
+    std::vector<sViewData>                          per_view_data;
 
     XrGraphicsBindingVulkan2KHR graphics_binding_gl;
 
