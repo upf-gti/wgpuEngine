@@ -67,17 +67,29 @@ void Engine::renderXr(int swapchain_index)
         .view = swapchainData.images[swapchainData.image_index].textureView,
         .loadOp = wgpu::LoadOp::Clear,
         .storeOp = wgpu::StoreOp::Store,
-        .clearValue = swapchain_index == 0 ? wgpu::Color(0.0f, 0.0f, 1.0f, 1.0f) : wgpu::Color(1.0f, 0.0f, 1.0f, 1.0f)
+        .clearValue = wgpu::Color(0.0f, 0.0f, 1.0f, 1.0f)
     };
     wgpu::RenderPassDescriptor render_pass_descr = {
         .colorAttachmentCount = 1,
         .colorAttachments = &render_pass_color_attachment,
     };
     {
+        const glm::mat4x4 &view = xr_context.per_view_data[swapchain_index].view_matrix;
+        const glm::mat4x4 &projection = xr_context.per_view_data[swapchain_index].projection_matrix;
+
+        glm::mat4x4 view_projection = projection * view;
+
+        // Update uniform buffer
+        webgpu_context.device_queue.WriteBuffer(webgpu_context.uniform_buffer, 0, &(view_projection), sizeof(glm::mat4x4));
+
         render_pass = webgpu_context.device_command_encoder.BeginRenderPass(&render_pass_descr);
 
         // Bind Pipeline
         render_pass.SetPipeline(webgpu_context.render_pipeline);
+
+        // Set binding group
+        render_pass.SetBindGroup(0, webgpu_context.uniform_bind_group, 0, nullptr);
+
         // Submit drawcall
         render_pass.Draw(3, 1, 0, 0);
 

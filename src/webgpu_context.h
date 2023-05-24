@@ -18,6 +18,9 @@ struct WebGPUContext {
     wgpu::RenderPipeline      render_pipeline;
     wgpu::PipelineLayout      render_pipeline_layout;
 
+    wgpu::Buffer              uniform_buffer;
+    wgpu::BindGroup           uniform_bind_group;
+
     wgpu::SwapChain           mirror_swapchain;
     wgpu::TextureFormat       mirror_swapchain_format;
     wgpu::RenderPipeline      mirror_render_pipeline;

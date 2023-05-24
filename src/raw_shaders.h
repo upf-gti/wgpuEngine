@@ -2,17 +2,20 @@
 
 namespace RAW_SHADERS {
     const char simple_shaders[] = R"(
+
+@group(0) @binding(0) var<uniform> uViewProjection: mat4x4f;
+
 @vertex
 fn vs_main(@builtin(vertex_index) in_vertex_index: u32) -> @builtin(position) vec4<f32> {
-    var p = vec2<f32>(0.0, 0.0);
+    var p = vec4<f32>(0.0, 0.0, -5.0, 1.0);
     if (in_vertex_index == 0u) {
-        p = vec2<f32>(-0.5, -0.5);
+        p = vec4<f32>(-0.5, -0.5, -5.0, 1.0);
     } else if (in_vertex_index == 1u) {
-        p = vec2<f32>(0.5, -0.5);
+        p = vec4<f32>(0.5, -0.5, -5.0, 1.0);
     } else {
-        p = vec2<f32>(0.0, 0.5);
+        p = vec4<f32>(0.0, 0.5, -5.0, 1.0);
     }
-    return vec4<f32>(p, 0.0, 1.0);
+    return uViewProjection * p;
 }
 
 @fragment

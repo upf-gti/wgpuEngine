@@ -113,6 +113,23 @@ int WebGPUContext::initialize(OpenXRContext* xr_context, GLFWwindow* window)
     backendProcs.deviceSetDeviceLostCallback(device.Get(), DeviceLostCallback, nullptr);
     backendProcs.deviceSetLoggingCallback(device.Get(), DeviceLogCallback, nullptr);
 
+    device_queue = device.GetQueue();
+
+    // Create uniform buffer
+    wgpu::BufferDescriptor bufferDesc{};
+
+    // The buffer will only contain 1 view projection
+    bufferDesc.size = sizeof(glm::mat4x4);
+
+    // Make sure to flag the buffer as BufferUsage::Uniform
+    bufferDesc.usage = wgpu::BufferUsage::CopyDst | wgpu::BufferUsage::Uniform;
+
+    bufferDesc.mappedAtCreation = false;
+    uniform_buffer = device.CreateBuffer(&bufferDesc);
+
+    float currentTime = 1.0f;
+    device_queue.WriteBuffer(uniform_buffer, 0, &currentTime, sizeof(float));
+
 #ifdef USE_MIRROR_WINDOW
     // Create the swapchain for mirror mode
     int width, height;
@@ -134,8 +151,6 @@ int WebGPUContext::initialize(OpenXRContext* xr_context, GLFWwindow* window)
     mirror_swapchain_format = wgpu::TextureFormat::BGRA8Unorm;
     config_mirror_render_pipeline();
 #endif
-
-    device_queue = device.GetQueue();
 
     dawn::native::InstanceProcessEvents(instance->Get());
 
@@ -198,13 +213,13 @@ int WebGPUContext::initialize(OpenXRContext* xr_context, GLFWwindow* window)
     }
 
 
-    XrReferenceSpaceType play_space_type = XR_REFERENCE_SPACE_TYPE_LOCAL;
+    XrReferenceSpaceType play_space_type = XR_REFERENCE_SPACE_TYPE_STAGE;
     // We could check if our ref space type is supported, but next call will error anyway if not
     xr_context->print_reference_spaces();
 
     XrReferenceSpaceCreateInfo play_space_create_info = { .type = XR_TYPE_REFERENCE_SPACE_CREATE_INFO,
                                                          .next = NULL,
-                                                         .referenceSpaceType = XR_REFERENCE_SPACE_TYPE_STAGE, //play_space_type,
+                                                         .referenceSpaceType = play_space_type, //play_space_type,
                                                          .poseInReferenceSpace = identity_pose };
 
     result = xrCreateReferenceSpace(xr_context->session, &play_space_create_info, &xr_context->play_space);
@@ -368,13 +383,52 @@ void WebGPUContext::config_render_pipeline()
 
     // Layout descriptor (bind goups, buffers, uniforms)
     {
+        // Create binding layout
+        wgpu::BindGroupLayoutEntry bindingLayout = {};
+
+        // The binding index as used in the @binding attribute in the shader
+        bindingLayout.binding = 0;
+
+        // The stage that needs to access this resource
+        bindingLayout.visibility = wgpu::ShaderStage::Vertex;
+
+        bindingLayout.buffer.type = wgpu::BufferBindingType::Uniform;
+        bindingLayout.buffer.minBindingSize = sizeof(glm::mat4x4);
+
+        // Create a bind group layout
+        wgpu::BindGroupLayoutDescriptor bindGroupLayoutDesc{};
+        bindGroupLayoutDesc.entryCount = 1;
+        bindGroupLayoutDesc.entries = &bindingLayout;
+        wgpu::BindGroupLayout bindGroupLayout = device.CreateBindGroupLayout(&bindGroupLayoutDesc);
+
         wgpu::PipelineLayoutDescriptor layout_descr = {
             .nextInChain = NULL,
-            .bindGroupLayoutCount = 0,
-            .bindGroupLayouts = NULL,
+            .bindGroupLayoutCount = 1,
+            .bindGroupLayouts = &bindGroupLayout
         };
 
         render_pipeline_layout = device.CreatePipelineLayout(&layout_descr);
+
+        // Create a binding
+        wgpu::BindGroupEntry binding{};
+
+        // The index of the binding (the entries in bindGroupDesc can be in any order)
+        binding.binding = 0;
+        // The buffer it is actually bound to
+        binding.buffer = uniform_buffer;
+        // We can specify an offset within the buffer, so that a single buffer can hold
+        // multiple uniform blocks.
+        binding.offset = 0;
+        // And we specify again the size of the buffer.
+        binding.size = sizeof(glm::mat4x4);
+
+        // A bind group contains one or multiple bindings
+        wgpu::BindGroupDescriptor bindGroupDesc{};
+        bindGroupDesc.layout = bindGroupLayout;
+        // There must be as many bindings as declared in the layout!
+        bindGroupDesc.entryCount = bindGroupLayoutDesc.entryCount;
+        bindGroupDesc.entries = &binding;
+        uniform_bind_group = device.CreateBindGroup(&bindGroupDesc);
     }
 
     // Config the render pipeline

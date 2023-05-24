@@ -2,10 +2,6 @@
 
 #include <iostream>
 #include <cstdarg>
-#include <glm/glm.hpp>
-#include <glm/gtc/quaternion.hpp>
-#include <glm/gtc/type_ptr.hpp>
-
 
 // Helper functions for pose to GLM
 glm::mat4x4 parse_OpenXR_projection_to_glm(const XrFovf& fov, float nearZ = 0.01f, float farZ = 10000.0f);
