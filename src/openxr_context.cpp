@@ -1,13 +1,169 @@
 #include "openxr_context.h"
 
+#ifdef USE_XR
+
 #include <iostream>
 #include <cstdarg>
+
+// we need an identity pose for creating spaces without offsets
+static XrPosef identity_pose = { .orientation = {.x = 0, .y = 0, .z = 0, .w = 1.0},
+                                 .position = {.x = 0, .y = 0, .z = 0} };
 
 // Helper functions for pose to GLM
 glm::mat4x4 parse_OpenXR_projection_to_glm(const XrFovf& fov, float nearZ = 0.01f, float farZ = 10000.0f);
 glm::mat4x4 parse_OpenXR_pose_to_glm(const XrPosef& p);
 
-int OpenXRContext::initialize()
+int OpenXRContext::initialize(WebGPUContext* webgpu_context)
+{
+    XrResult result;
+
+    uint32_t blend_modes_count = 0;
+    result = xrEnumerateEnvironmentBlendModes(instance, system_id, XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO, 0, &blend_modes_count, NULL);
+    if (!xr_result(NULL, result, "Failed to enumerate number of blend modes"))
+        return 1;
+
+    std::vector<XrEnvironmentBlendMode> blendModes(blend_modes_count);
+    result = xrEnumerateEnvironmentBlendModes(instance, system_id, XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO, blend_modes_count, &blend_modes_count, blendModes.data());
+    if (!xr_result(NULL, result, "Failed to enumerate blend modes"))
+        return 1;
+
+    XrGraphicsRequirementsVulkanKHR vulkan_reqs = { .type = XR_TYPE_GRAPHICS_REQUIREMENTS_VULKAN2_KHR };
+
+    PFN_xrGetVulkanGraphicsRequirements2KHR pfnGetVulkanGraphicsRequirements2KHR = NULL;
+    {
+        result = xrGetInstanceProcAddr(instance, "xrGetVulkanGraphicsRequirements2KHR", (PFN_xrVoidFunction*)&pfnGetVulkanGraphicsRequirements2KHR);
+        if (!xr_result(instance, result, "Failed to get Vulkan graphics requirements function!"))
+            return 1;
+    }
+
+    pfnGetVulkanGraphicsRequirements2KHR(instance, system_id, &vulkan_reqs);
+
+    check_vulkan_version(&vulkan_reqs);
+
+    view_count = 0;
+    result = xrEnumerateViewConfigurationViews(instance, system_id, XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO, 0, &view_count, NULL);
+    if (!xr_result(instance, result, "Failed to get view configuration count"))
+        return 1;
+
+    views.resize(view_count, { XR_TYPE_VIEW });
+    viewconfig_views.resize(view_count, { XR_TYPE_VIEW_CONFIGURATION_VIEW, nullptr });
+    projection_views.resize(view_count);
+    per_view_data.resize(view_count);
+
+    result = xrEnumerateViewConfigurationViews(instance, system_id, XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO, view_count, &view_count, viewconfig_views.data());
+    if (!xr_result(instance, result, "Failed to enumerate view configuration views!"))
+        return 1;
+
+    print_viewconfig_view_info();
+
+    dawnxr::GraphicsBindingDawn binding = { .device = webgpu_context->device };
+
+    XrSessionCreateInfo xrCreateInfo = { .type = XR_TYPE_SESSION_CREATE_INFO, .next = &binding, .systemId = system_id };
+    dawnxr::createSession(instance, &xrCreateInfo, &session);
+
+    uint32_t swapchain_format_count;
+    result = dawnxr::enumerateSwapchainFormats(session, 0, &swapchain_format_count, NULL);
+    if (!xr_result(instance, result, "Failed to get number of supported swapchain formats"))
+        return 1;
+
+    printf("Runtime supports %d swapchain formats\n", swapchain_format_count);
+    swapchain_formats.resize(swapchain_format_count);
+    result = dawnxr::enumerateSwapchainFormats(session, swapchain_format_count, &swapchain_format_count, swapchain_formats.data());
+    if (!xr_result(instance, result, "Failed to enumerate swapchain formats"))
+        return 1;
+
+    //webgpu_context->swapchain_format = static_cast<wgpu::TextureFormat>(swapchain_formats[0]);
+
+    //config_render_pipeline();
+
+    XrSwapchainCreateInfo swapchain_create_info;
+    swapchain_create_info.type = XR_TYPE_SWAPCHAIN_CREATE_INFO;
+    swapchain_create_info.usageFlags = XR_SWAPCHAIN_USAGE_SAMPLED_BIT | XR_SWAPCHAIN_USAGE_COLOR_ATTACHMENT_BIT;
+    swapchain_create_info.createFlags = 0;
+    swapchain_create_info.format = swapchain_formats[0];
+    swapchain_create_info.sampleCount = viewconfig_views[0].recommendedSwapchainSampleCount;
+    swapchain_create_info.width = viewconfig_views[0].recommendedImageRectWidth;
+    swapchain_create_info.height = viewconfig_views[0].recommendedImageRectHeight;
+    swapchain_create_info.faceCount = 1;
+    swapchain_create_info.arraySize = 1;
+    swapchain_create_info.mipCount = 1;
+    swapchain_create_info.next = NULL;
+
+    swapchains.resize(view_count);
+
+    for (uint32_t i = 0; i < view_count; i++) {
+        dawnxr::createSwapchain(session, &swapchain_create_info, &swapchains[i].swapchain);
+
+        uint32_t swapchain_length;
+        result = dawnxr::enumerateSwapchainImages(swapchains[i].swapchain, 0, &swapchain_length, nullptr);
+        if (!xr_result(instance, result, "Failed to enumerate swapchains"))
+            return 1;
+
+        // these are wrappers for the actual OpenGL texture id
+        swapchains[i].images.resize(swapchain_length);
+        result = dawnxr::enumerateSwapchainImages(swapchains[i].swapchain, swapchain_length, &swapchain_length, (XrSwapchainImageBaseHeader*)swapchains[i].images.data());
+        if (!xr_result(instance, result, "Failed to enumerate swapchain images"))
+            return 1;
+    }
+
+
+    XrReferenceSpaceType play_space_type = XR_REFERENCE_SPACE_TYPE_STAGE;
+    // We could check if our ref space type is supported, but next call will error anyway if not
+    print_reference_spaces();
+
+    XrReferenceSpaceCreateInfo play_space_create_info = { .type = XR_TYPE_REFERENCE_SPACE_CREATE_INFO,
+                                                         .next = NULL,
+                                                         .referenceSpaceType = play_space_type, //play_space_type,
+                                                         .poseInReferenceSpace = identity_pose };
+
+    result = xrCreateReferenceSpace(session, &play_space_create_info, &play_space);
+    if (!xr_result(instance, result, "Failed to create play space!"))
+        return 1;
+
+    projection_views.resize(view_count);
+    for (uint32_t i = 0; i < view_count; i++) {
+        projection_views[i].type = XR_TYPE_COMPOSITION_LAYER_PROJECTION_VIEW;
+        projection_views[i].next = NULL;
+        projection_views[i].pose = { .orientation = { 0.0f, 0.0f, 0.0f, 1.0f }, .position = { 0.0f, 0.0f, 0.0f } };
+
+        projection_views[i].subImage.swapchain = swapchains[i].swapchain;
+        projection_views[i].subImage.imageArrayIndex = 0;
+        projection_views[i].subImage.imageRect.offset.x = 0;
+        projection_views[i].subImage.imageRect.offset.y = 0;
+        projection_views[i].subImage.imageRect.extent.width = viewconfig_views[i].recommendedImageRectWidth;
+        projection_views[i].subImage.imageRect.extent.height = viewconfig_views[i].recommendedImageRectHeight;
+
+        // projection_views[i].pose (and fov) have to be filled every frame in frame loop
+    };
+
+    XrSessionBeginInfo session_begin_info = { .type = XR_TYPE_SESSION_BEGIN_INFO, .next = NULL, .primaryViewConfigurationType = XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO };
+    result = xrBeginSession(session, &session_begin_info);
+    if (!xr_result(instance, result, "Failed to begin session!"))
+        return 1;
+
+    init_actions();
+
+    initialized = true;
+
+    return 0;
+}
+
+void OpenXRContext::clean()
+{
+    if (!initialized) {
+        return;
+    }
+
+    for (int i = 0; i < view_count; ++i) {
+        xrDestroySwapchain(swapchains[i].swapchain);
+    }
+    
+    xrDestroySpace(play_space);
+    xrDestroySession(session);
+    xrDestroyInstance(instance);
+}
+
+int OpenXRContext::createInstance()
 {
     XrResult result;
 
@@ -111,63 +267,7 @@ int OpenXRContext::initialize()
     if (!xr_result(instance, result, "Failed to get system for HMD form factor."))
         return 1;
 
-    uint32_t blend_modes_count = 0;
-    result = xrEnumerateEnvironmentBlendModes(instance, system_id, XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO, 0, &blend_modes_count, NULL);
-    if (!xr_result(NULL, result, "Failed to enumerate number of blend modes"))
-        return 1;
-
-    std::vector<XrEnvironmentBlendMode> blendModes(blend_modes_count);
-    result = xrEnumerateEnvironmentBlendModes(instance, system_id, XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO, blend_modes_count, &blend_modes_count, blendModes.data());
-    if (!xr_result(NULL, result, "Failed to enumerate blend modes"))
-        return 1;
-
-    XrGraphicsRequirementsVulkanKHR vulkan_reqs = { .type = XR_TYPE_GRAPHICS_REQUIREMENTS_VULKAN2_KHR };
-
-    PFN_xrGetVulkanGraphicsRequirements2KHR pfnGetVulkanGraphicsRequirements2KHR = NULL;
-    {
-        result = xrGetInstanceProcAddr(instance, "xrGetVulkanGraphicsRequirements2KHR", (PFN_xrVoidFunction*)&pfnGetVulkanGraphicsRequirements2KHR);
-        if (!xr_result(instance, result, "Failed to get Vulkan graphics requirements function!"))
-            return 1;
-    }
-
-    pfnGetVulkanGraphicsRequirements2KHR(instance, system_id, &vulkan_reqs);
-
-    check_vulkan_version(&vulkan_reqs);
-
-    view_count = 0;
-    result = xrEnumerateViewConfigurationViews(instance, system_id, XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO, 0, &view_count, NULL);
-    if (!xr_result(instance, result, "Failed to get view configuration count"))
-        return 1;
-
-    views.resize(view_count, { XR_TYPE_VIEW });
-    viewconfig_views.resize(view_count, { XR_TYPE_VIEW_CONFIGURATION_VIEW, nullptr });
-    projection_views.resize(view_count);
-    per_view_data.resize(view_count);
-
-    result = xrEnumerateViewConfigurationViews(instance, system_id, XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO, view_count, &view_count, viewconfig_views.data());
-    if (!xr_result(instance, result, "Failed to enumerate view configuration views!"))
-        return 1;
-
-    print_viewconfig_view_info();
-
-    initialized = true;
-
     return 0;
-}
-
-void OpenXRContext::clean()
-{
-    if (!initialized) {
-        return;
-    }
-
-    for (int i = 0; i < view_count; ++i) {
-        xrDestroySwapchain(swapchains[i].swapchain);
-    }
-    
-    xrDestroySpace(play_space);
-    xrDestroySession(session);
-    xrDestroyInstance(instance);
 }
 
 bool OpenXRContext::xr_result(XrInstance xrInstance, XrResult result, const char* format, ...)
@@ -622,3 +722,5 @@ inline glm::mat4x4 parse_OpenXR_pose_to_glm(const XrPosef& p) {
     glm::mat4 translation = glm::translate(glm::mat4{ 1 }, glm::vec3(p.position.x, p.position.y, p.position.z));
     return translation * orientation;
 }
+
+#endif

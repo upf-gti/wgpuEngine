@@ -35,12 +35,12 @@ int main() {
     //while(!glfwWindowShouldClose(window) && !wgpu_instance.is_initialized) {};
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
-        engine.render_frame();
+        engine.render();
     }
 #else
     //while (!wgpu_instance.is_initialized) {};
     while (true) {
-        engine.render_frame();
+        engine.render();
     }
 #endif
 

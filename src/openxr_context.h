@@ -5,7 +5,10 @@
 
 #include "vulkan/vulkan.h"
 
+#define USE_XR
 // #define USE_MIRROR_WINDOW
+
+#ifdef USE_XR
 
 #define XR_USE_GRAPHICS_API_VULKAN
 #include "openxr/openxr_platform.h"
@@ -19,6 +22,7 @@
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+#include "graphics/webgpu_context.h"
 
 // small helper so we don't forget whether we treat 0 as left or right hand
 enum OPENXR_HANDS
@@ -76,6 +80,8 @@ struct OpenXRContext {
 
     std::vector<sViewData>                          per_view_data;
 
+    std::vector<int64_t>                            swapchain_formats;
+
     XrGraphicsBindingVulkan2KHR graphics_binding_gl;
 
     // Play space is usually local (head is origin, seated) or stage (room scale)
@@ -85,8 +91,9 @@ struct OpenXRContext {
 
     bool initialized = false;
 
-    int initialize();
+    int initialize(WebGPUContext* webgpu_context);
     void clean();
+    int createInstance();
     bool xr_result(XrInstance xrInstance, XrResult result, const char* format, ...);
     void print_viewconfig_view_info();
     bool check_vulkan_version(XrGraphicsRequirementsVulkanKHR* vulkan_reqs);
@@ -98,3 +105,5 @@ struct OpenXRContext {
     void releaseSwapchain(int swapchain_index);
     void endFrame();
 };
+
+#endif

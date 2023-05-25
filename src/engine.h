@@ -3,20 +3,16 @@
 #include <GLFW/glfw3.h>
 
 #include "utils.h"
-#include "openxr_context.h"
-#include "webgpu_context.h"
+#include "graphics/renderer.h"
 
 class Engine {
 
-    OpenXRContext xr_context;
-    WebGPUContext webgpu_context;
+    Renderer renderer;
 
 public:
     // Methods =========================
     int initialize(GLFWwindow *window);
     void clean();
 
-    void render_frame();
-    void renderXr(int swapchain_index);
-    void renderMirror();
+    void render();
 };
