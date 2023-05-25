@@ -81,7 +81,7 @@ void Engine::renderXr(int swapchain_index)
         glm::mat4x4 view_projection = projection * view;
 
         // Update uniform buffer
-        webgpu_context.device_queue.WriteBuffer(webgpu_context.uniform_buffer, 0, &(view_projection), sizeof(glm::mat4x4));
+        webgpu_context.device_queue.WriteBuffer(std::get<wgpu::Buffer>(webgpu_context.uniform_buffer.data), 0, &(view_projection), sizeof(glm::mat4x4));
 
         render_pass = webgpu_context.device_command_encoder.BeginRenderPass(&render_pass_descr);
 

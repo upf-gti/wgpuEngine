@@ -116,19 +116,8 @@ int WebGPUContext::initialize(OpenXRContext* xr_context, GLFWwindow* window)
     device_queue = device.GetQueue();
 
     // Create uniform buffer
-    wgpu::BufferDescriptor bufferDesc{};
-
-    // The buffer will only contain 1 view projection
-    bufferDesc.size = sizeof(glm::mat4x4);
-
-    // Make sure to flag the buffer as BufferUsage::Uniform
-    bufferDesc.usage = wgpu::BufferUsage::CopyDst | wgpu::BufferUsage::Uniform;
-
-    bufferDesc.mappedAtCreation = false;
-    uniform_buffer = device.CreateBuffer(&bufferDesc);
-
-    float currentTime = 1.0f;
-    device_queue.WriteBuffer(uniform_buffer, 0, &currentTime, sizeof(float));
+    uniform_buffer.data = createBuffer(sizeof(glm::mat4x4), wgpu::BufferUsage::CopyDst | wgpu::BufferUsage::Uniform, nullptr);
+    uniform_buffer.binding = 0;
 
 #ifdef USE_MIRROR_WINDOW
     // Create the swapchain for mirror mode
@@ -344,6 +333,68 @@ void WebGPUContext::config_mirror_render_pipeline()
     }
 }
 
+wgpu::Buffer WebGPUContext::createBuffer(uint64_t size, wgpu::BufferUsage usage, const void* data)
+{
+    wgpu::BufferDescriptor bufferDesc{};
+
+    bufferDesc.size = size;
+    bufferDesc.usage = usage;
+    bufferDesc.mappedAtCreation = false;
+
+    wgpu::Buffer buffer = device.CreateBuffer(&bufferDesc);
+
+    if (data != nullptr) {
+        device_queue.WriteBuffer(buffer, 0, data, size);
+    }
+
+    return buffer;
+}
+
+wgpu::BindGroupLayout WebGPUContext::create_bind_group_layout(const std::vector<Uniform>& uniforms)
+{
+    std::vector<wgpu::BindGroupLayoutEntry> entries(uniforms.size());
+
+    for (int i = 0; i < uniforms.size(); ++i) {
+        entries[i] = uniforms[i].get_bind_group_layout_entry();
+    }
+
+    // Create a bind group layout
+    wgpu::BindGroupLayoutDescriptor bindGroupLayoutDesc{};
+    bindGroupLayoutDesc.entryCount = entries.size();
+    bindGroupLayoutDesc.entries = entries.data();
+
+    return device.CreateBindGroupLayout(&bindGroupLayoutDesc);
+}
+
+wgpu::BindGroup WebGPUContext::create_bind_group(const std::vector<Uniform>& uniforms)
+{
+    std::vector<wgpu::BindGroupEntry> entries(uniforms.size());
+
+    for (int i = 0; i < uniforms.size(); ++i) {
+        entries[i] = uniforms[i].get_bind_group_entry();
+    }
+
+    // A bind group contains one or multiple bindings
+    wgpu::BindGroupDescriptor bindGroupDesc{};
+    bindGroupDesc.layout = render_bind_group_layout;
+    // There must be as many bindings as declared in the layout!
+    bindGroupDesc.entryCount = entries.size();
+    bindGroupDesc.entries = entries.data();
+
+    return device.CreateBindGroup(&bindGroupDesc);
+}
+
+wgpu::PipelineLayout WebGPUContext::create_pipeline_layout(const std::vector<wgpu::BindGroupLayout>& bind_group_layouts)
+{
+    wgpu::PipelineLayoutDescriptor layout_descr = {
+        .nextInChain = NULL,
+        .bindGroupLayoutCount = static_cast<uint32_t>(bind_group_layouts.size()),
+        .bindGroupLayouts = bind_group_layouts.data()
+    };
+
+    return device.CreatePipelineLayout(&layout_descr);
+}
+
 void WebGPUContext::config_render_pipeline()
 {
     // Load the shader module https://eliemichel.github.io/LearnWebGPU/basic-3d-rendering/hello-triangle.html
@@ -383,52 +434,11 @@ void WebGPUContext::config_render_pipeline()
 
     // Layout descriptor (bind goups, buffers, uniforms)
     {
-        // Create binding layout
-        wgpu::BindGroupLayoutEntry bindingLayout = {};
+        std::vector<Uniform> uniforms = { uniform_buffer };
 
-        // The binding index as used in the @binding attribute in the shader
-        bindingLayout.binding = 0;
-
-        // The stage that needs to access this resource
-        bindingLayout.visibility = wgpu::ShaderStage::Vertex;
-
-        bindingLayout.buffer.type = wgpu::BufferBindingType::Uniform;
-        bindingLayout.buffer.minBindingSize = sizeof(glm::mat4x4);
-
-        // Create a bind group layout
-        wgpu::BindGroupLayoutDescriptor bindGroupLayoutDesc{};
-        bindGroupLayoutDesc.entryCount = 1;
-        bindGroupLayoutDesc.entries = &bindingLayout;
-        wgpu::BindGroupLayout bindGroupLayout = device.CreateBindGroupLayout(&bindGroupLayoutDesc);
-
-        wgpu::PipelineLayoutDescriptor layout_descr = {
-            .nextInChain = NULL,
-            .bindGroupLayoutCount = 1,
-            .bindGroupLayouts = &bindGroupLayout
-        };
-
-        render_pipeline_layout = device.CreatePipelineLayout(&layout_descr);
-
-        // Create a binding
-        wgpu::BindGroupEntry binding{};
-
-        // The index of the binding (the entries in bindGroupDesc can be in any order)
-        binding.binding = 0;
-        // The buffer it is actually bound to
-        binding.buffer = uniform_buffer;
-        // We can specify an offset within the buffer, so that a single buffer can hold
-        // multiple uniform blocks.
-        binding.offset = 0;
-        // And we specify again the size of the buffer.
-        binding.size = sizeof(glm::mat4x4);
-
-        // A bind group contains one or multiple bindings
-        wgpu::BindGroupDescriptor bindGroupDesc{};
-        bindGroupDesc.layout = bindGroupLayout;
-        // There must be as many bindings as declared in the layout!
-        bindGroupDesc.entryCount = bindGroupLayoutDesc.entryCount;
-        bindGroupDesc.entries = &binding;
-        uniform_bind_group = device.CreateBindGroup(&bindGroupDesc);
+        render_bind_group_layout = create_bind_group_layout(uniforms);
+        render_pipeline_layout = create_pipeline_layout({ render_bind_group_layout });
+        render_bind_group = create_bind_group(uniforms);
     }
 
     // Config the render pipeline
@@ -495,4 +505,38 @@ wgpu::Surface WebGPUContext::get_surface(GLFWwindow* window)
 
     assert_msg(surface, "Error creating surface");
     return surface;
+}
+
+wgpu::BindGroupLayoutEntry Uniform::get_bind_group_layout_entry() const
+{
+    wgpu::BindGroupLayoutEntry bindingLayout = {};
+
+    // The binding index as used in the @binding attribute in the shader
+    bindingLayout.binding = binding;
+
+    // The stage that needs to access this resource
+    bindingLayout.visibility = visibility;
+
+    bindingLayout.buffer.type = wgpu::BufferBindingType::Uniform;
+    //bindingLayout.buffer.minBindingSize = sizeof(glm::mat4x4);
+
+    return bindingLayout;
+}
+
+wgpu::BindGroupEntry Uniform::get_bind_group_entry() const
+{
+    // Create a binding
+    wgpu::BindGroupEntry binding{};
+
+    // The index of the binding (the entries in bindGroupDesc can be in any order)
+    binding.binding = 0;
+    // The buffer it is actually bound to
+    binding.buffer = std::get<wgpu::Buffer>(data);
+    // We can specify an offset within the buffer, so that a single buffer can hold
+    // multiple uniform blocks.
+    binding.offset = 0;
+    // And we specify again the size of the buffer.
+    binding.size = binding.buffer.GetSize();
+
+    return binding;
 }
