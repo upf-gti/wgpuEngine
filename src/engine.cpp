@@ -75,7 +75,8 @@ void Engine::renderXr(int swapchain_index)
     };
     {
         const glm::mat4x4 &view = xr_context.per_view_data[swapchain_index].view_matrix;
-        const glm::mat4x4 &projection = xr_context.per_view_data[swapchain_index].projection_matrix;
+        glm::mat4x4 &projection = xr_context.per_view_data[swapchain_index].projection_matrix;
+        projection[1][1] *= -1;
 
         glm::mat4x4 view_projection = projection * view;
 

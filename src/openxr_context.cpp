@@ -618,7 +618,7 @@ inline glm::mat4x4 parse_OpenXR_projection_to_glm(const XrFovf& fov, float nearZ
 }
 
 inline glm::mat4x4 parse_OpenXR_pose_to_glm(const XrPosef& p) {
-    glm::mat4 orientation = glm::mat4_cast(glm::make_quat(&p.orientation.x));
-    glm::mat4 translation = glm::translate(glm::mat4{ 1 }, glm::make_vec3(&p.position.x));
+    glm::mat4 orientation = glm::mat4_cast(glm::quat(p.orientation.w, p.orientation.x, p.orientation.y, p.orientation.z));
+    glm::mat4 translation = glm::translate(glm::mat4{ 1 }, glm::vec3(p.position.x, p.position.y, p.position.z));
     return translation * orientation;
 }
