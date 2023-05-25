@@ -21,7 +21,7 @@ int main() {
     }
 
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-    window = glfwCreateWindow(640, 480, "WebGPU", NULL, NULL);
+    window = glfwCreateWindow(1280, 720, "WebGPU", NULL, NULL);
 #endif
 
     if (engine.initialize(window)) {

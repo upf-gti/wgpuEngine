@@ -2,11 +2,8 @@
 
 #include <vector>
 #include <array>
-
+#include "includes.h"
 #include "vulkan/vulkan.h"
-
-#define USE_XR
-// #define USE_MIRROR_WINDOW
 
 #ifdef USE_XR
 

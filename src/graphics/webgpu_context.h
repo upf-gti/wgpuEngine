@@ -1,5 +1,7 @@
 #pragma once
 
+#include "includes.h"
+
 #include <dawnxr/dawnxr.h>
 #include <dawn/native/DawnNative.h>
 #include "GLFW/glfw3.h"
@@ -25,7 +27,10 @@ struct WebGPUContext {
     wgpu::Surface             surface;
     wgpu::Device              device;
     wgpu::Queue               device_queue;
-    wgpu::CommandEncoder      device_command_encoder;
+
+#if !defined(USE_XR) || defined(USE_MIRROR_WINDOW)
+    wgpu::SwapChain           screen_swapchain;
+#endif
 
     wgpu::TextureFormat       swapchain_format       = wgpu::TextureFormat::BGRA8Unorm;
     wgpu::TextureFormat       xr_swapchain_format    = wgpu::TextureFormat::BGRA8UnormSrgb;
@@ -41,6 +46,9 @@ struct WebGPUContext {
     wgpu::ShaderModule      create_shader_module(char const* code);
 
     wgpu::Buffer            create_buffer(uint64_t size, wgpu::BufferUsage usage, const void* data);
+
+    //TODO
+    wgpu::Texture           create_texture();
 
     wgpu::BindGroupLayout   create_bind_group_layout(const std::vector<Uniform>& uniforms);
     wgpu::BindGroup         create_bind_group(const std::vector<Uniform>& uniforms, wgpu::BindGroupLayout bind_group_layout);

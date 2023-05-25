@@ -39,25 +39,7 @@ int Renderer::initialize(GLFWwindow* window)
     initPipeline();
 
 #ifdef USE_MIRROR_WINDOW
-    // Create the swapchain for mirror mode
-    int width, height;
-    glfwGetWindowSize(window, &width, &height);
-
-    auto surfaceChainedDesc = wgpu::glfw::SetupWindowAndGetSurfaceDescriptor(window);
-    wgpu::SurfaceDescriptor surfaceDesc;
-    surfaceDesc.nextInChain = surfaceChainedDesc.get();
-    surface = get_surface(window);
-
-    wgpu::SwapChainDescriptor swapChainDesc = {};
-    swapChainDesc.usage = wgpu::TextureUsage::RenderAttachment;
-    swapChainDesc.format = wgpu::TextureFormat::BGRA8Unorm;
-    swapChainDesc.width = width;
-    swapChainDesc.height = height;
-    swapChainDesc.presentMode = wgpu::PresentMode::Mailbox;
-    mirror_swapchain = device.CreateSwapChain(surface, &swapChainDesc);
-
-    mirror_swapchain_format = wgpu::TextureFormat::BGRA8Unorm;
-    config_mirror_render_pipeline();
+    initMirrorPipeline();
 #endif
 
     return 0;
@@ -94,13 +76,11 @@ void Renderer::render()
 void Renderer::renderXr(int swapchain_index)
 {
     // Create the command encoder
-    {
-        wgpu::CommandEncoderDescriptor encoder_desc;
-        encoder_desc.label = "Device command encoder";
+    wgpu::CommandEncoderDescriptor encoder_desc;
+    encoder_desc.label = "Device command encoder";
 
-        webgpu_context.device_command_encoder = webgpu_context.device.CreateCommandEncoder(&encoder_desc);
-    }
-
+    wgpu::CommandEncoder device_command_encoder = webgpu_context.device.CreateCommandEncoder(&encoder_desc);
+    
     // Create & fill the render pass (encoder)
     wgpu::RenderPassEncoder render_pass;
 
@@ -127,7 +107,7 @@ void Renderer::renderXr(int swapchain_index)
         // Update uniform buffer
         webgpu_context.device_queue.WriteBuffer(std::get<wgpu::Buffer>(uniform_viewprojection.data), 0, &(view_projection), sizeof(glm::mat4x4));
 
-        render_pass = webgpu_context.device_command_encoder.BeginRenderPass(&render_pass_descr);
+        render_pass = device_command_encoder.BeginRenderPass(&render_pass_descr);
 
         // Bind Pipeline
         render_pass.SetPipeline(render_pipeline);
@@ -147,7 +127,7 @@ void Renderer::renderXr(int swapchain_index)
         .label = "Command buffer"
     };
 
-    wgpu::CommandBuffer commander = webgpu_context.device_command_encoder.Finish(&cmd_buff_descriptor);
+    wgpu::CommandBuffer commander = device_command_encoder.Finish(&cmd_buff_descriptor);
     //webgpu_context.device_command_encoder.Release();
     webgpu_context.device_queue.Submit(1, &commander);
 
@@ -157,18 +137,16 @@ void Renderer::renderXr(int swapchain_index)
 
 void Renderer::renderMirror()
 {
-    /*
     // Get the current texture in the swapchain
-    wgpu::TextureView current_texture_view = mirror_swapchain.GetCurrentTextureView();
+    wgpu::TextureView current_texture_view = webgpu_context.screen_swapchain.GetCurrentTextureView();
     assert_msg(current_texture_view != NULL, "Error, dont resize the window please!!");
 
     // Create the command encoder
-    {
-        wgpu::CommandEncoderDescriptor encoder_desc;
-        encoder_desc.label = "Device command encoder";
+    wgpu::CommandEncoderDescriptor encoder_desc;
+    encoder_desc.label = "Device command encoder";
 
-        webgpu_context.device_command_encoder = webgpu_context.device.CreateCommandEncoder(&encoder_desc);
-    }
+    wgpu::CommandEncoder device_command_encoder = webgpu_context.device.CreateCommandEncoder(&encoder_desc);
+    
 
     // Create & fill the render pass (encoder)
     wgpu::RenderPassEncoder render_pass;
@@ -185,10 +163,14 @@ void Renderer::renderMirror()
             .colorAttachments = &render_pass_color_attachment,
         };
         {
-            render_pass = webgpu_context.device_command_encoder.BeginRenderPass(&render_pass_descr);
+            render_pass = device_command_encoder.BeginRenderPass(&render_pass_descr);
 
             // Bind Pipeline
-            render_pass.SetPipeline(mirror_render_pipeline);
+            render_pass.SetPipeline(mirror_pipeline);
+
+            // Set binding group
+            render_pass.SetBindGroup(0, mirror_bind_group, 0, nullptr);
+
             // Submit drawcall
             render_pass.Draw(3, 1, 0, 0);
 
@@ -204,7 +186,7 @@ void Renderer::renderMirror()
             .label = "Command buffer"
         };
 
-        wgpu::CommandBuffer commander = webgpu_context.device_command_encoder.Finish(&cmd_buff_descriptor);
+        wgpu::CommandBuffer commander = device_command_encoder.Finish(&cmd_buff_descriptor);
         //webgpu_context.device_command_encoder.Release();
         webgpu_context.device_queue.Submit(1, &commander);
 
@@ -214,12 +196,11 @@ void Renderer::renderMirror()
 
     // Submit frame to mirror window
     {
-        mirror_swapchain.Present();
+        webgpu_context.screen_swapchain.Present();
     }
 
     // Check validation errors
     dawn::native::InstanceProcessEvents(webgpu_context.instance->Get());
-    */
 }
 
 void Renderer::initPipeline()
@@ -269,5 +250,41 @@ void Renderer::initPipeline()
 
 void Renderer::initMirrorPipeline()
 {
+    // Create uniform for left eye texture view
+    uniform_left_eye_view.data = xr_context.swapchains[0].images[0].textureView;
+    uniform_left_eye_view.binding = 0;
 
+    mirror_shader_module = webgpu_context.create_shader_module(RAW_SHADERS::mirror_shaders);
+
+    // Layout descriptor (bind goups, buffers, uniforms)
+    {
+        std::vector<Uniform> uniforms = { uniform_left_eye_view };
+
+        mirror_bind_group_layout = webgpu_context.create_bind_group_layout(uniforms);
+        mirror_pipeline_layout = webgpu_context.create_pipeline_layout({ mirror_bind_group_layout });
+        mirror_bind_group = webgpu_context.create_bind_group(uniforms, mirror_bind_group_layout);
+    }
+
+    wgpu::TextureFormat swapchain_format = webgpu_context.swapchain_format;
+
+    wgpu::BlendState blend_state = {
+        .color = {
+            .operation = wgpu::BlendOperation::Add,
+            .srcFactor = wgpu::BlendFactor::SrcAlpha,
+            .dstFactor = wgpu::BlendFactor::OneMinusSrcAlpha,
+        },
+        .alpha = {
+            .operation = wgpu::BlendOperation::Add,
+            .srcFactor = wgpu::BlendFactor::Zero,
+            .dstFactor = wgpu::BlendFactor::One,
+        }
+    };
+
+    wgpu::ColorTargetState color_target = {
+        .format = swapchain_format,
+        .blend = &blend_state,
+        .writeMask = wgpu::ColorWriteMask::All
+    };
+
+    mirror_pipeline = webgpu_context.create_render_pipeline(color_target, mirror_shader_module, mirror_pipeline_layout);
 }

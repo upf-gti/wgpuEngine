@@ -18,11 +18,14 @@ class Renderer {
     wgpu::BindGroupLayout     render_bind_group_layout;
     wgpu::BindGroup           render_bind_group;
 
-#if defined(USE_XR) && defined(USE_MIRROR_WINDOW)
-    wgpu::SwapChain           mirror_swapchain;
-    wgpu::RenderPipeline      mirror_render_pipeline;
-    wgpu::PipelineLayout      mirror_render_pipeline_layout;
+#ifdef USE_MIRROR_WINDOW
+    wgpu::RenderPipeline      mirror_pipeline;
+    wgpu::PipelineLayout      mirror_pipeline_layout;
+    wgpu::BindGroupLayout     mirror_bind_group_layout;
+    wgpu::BindGroup           mirror_bind_group;
     wgpu::ShaderModule        mirror_shader_module;
+
+    Uniform                   uniform_left_eye_view;
 #endif
 
     Uniform                   uniform_viewprojection;

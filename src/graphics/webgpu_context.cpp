@@ -94,6 +94,25 @@ int WebGPUContext::initialize(GLFWwindow* window)
 
     device_queue = device.GetQueue();
 
+#if !defined(USE_XR) || defined(USE_MIRROR_WINDOW)
+    // Create the swapchain for mirror mode
+    int width, height;
+    glfwGetWindowSize(window, &width, &height);
+
+    auto surfaceChainedDesc = wgpu::glfw::SetupWindowAndGetSurfaceDescriptor(window);
+    wgpu::SurfaceDescriptor surfaceDesc;
+    surfaceDesc.nextInChain = surfaceChainedDesc.get();
+    surface = get_surface(window);
+
+    wgpu::SwapChainDescriptor swapChainDesc = {};
+    swapChainDesc.usage = wgpu::TextureUsage::RenderAttachment;
+    swapChainDesc.format = wgpu::TextureFormat::BGRA8Unorm;
+    swapChainDesc.width = width;
+    swapChainDesc.height = height;
+    swapChainDesc.presentMode = wgpu::PresentMode::Mailbox;
+    screen_swapchain = device.CreateSwapChain(surface, &swapChainDesc);
+#endif
+
     dawn::native::InstanceProcessEvents(instance->Get());
 
     is_initialized = true;
@@ -133,6 +152,11 @@ wgpu::Buffer WebGPUContext::create_buffer(uint64_t size, wgpu::BufferUsage usage
     }
 
     return buffer;
+}
+
+wgpu::Texture WebGPUContext::create_texture()
+{
+    return wgpu::Texture();
 }
 
 wgpu::BindGroupLayout WebGPUContext::create_bind_group_layout(const std::vector<Uniform>& uniforms)
@@ -250,12 +274,16 @@ wgpu::BindGroupLayoutEntry Uniform::get_bind_group_layout_entry() const
 
     // The binding index as used in the @binding attribute in the shader
     bindingLayout.binding = binding;
-
     // The stage that needs to access this resource
     bindingLayout.visibility = visibility;
 
-    bindingLayout.buffer.type = wgpu::BufferBindingType::Uniform;
-    //bindingLayout.buffer.minBindingSize = sizeof(glm::mat4x4);
+    if (std::holds_alternative<wgpu::Buffer>(data)) {
+        bindingLayout.buffer.type = wgpu::BufferBindingType::Uniform;
+    } else 
+    if (std::holds_alternative<wgpu::TextureView>(data)) {
+        bindingLayout.texture.sampleType = wgpu::TextureSampleType::Float;
+        bindingLayout.texture.viewDimension = wgpu::TextureViewDimension::e2D;
+    }
 
     return bindingLayout;
 }
@@ -263,17 +291,23 @@ wgpu::BindGroupLayoutEntry Uniform::get_bind_group_layout_entry() const
 wgpu::BindGroupEntry Uniform::get_bind_group_entry() const
 {
     // Create a binding
-    wgpu::BindGroupEntry binding{};
+    wgpu::BindGroupEntry bindingGroup{};
 
     // The index of the binding (the entries in bindGroupDesc can be in any order)
-    binding.binding = 0;
-    // The buffer it is actually bound to
-    binding.buffer = std::get<wgpu::Buffer>(data);
-    // We can specify an offset within the buffer, so that a single buffer can hold
-    // multiple uniform blocks.
-    binding.offset = 0;
-    // And we specify again the size of the buffer.
-    binding.size = binding.buffer.GetSize();
+    bindingGroup.binding = binding;
 
-    return binding;
+    if (std::holds_alternative<wgpu::Buffer>(data)) {
+        // The buffer it is actually bound to
+        bindingGroup.buffer = std::get<wgpu::Buffer>(data);
+        // We can specify an offset within the buffer, so that a single buffer can hold
+        // multiple uniform blocks.
+        bindingGroup.offset = 0;
+        // And we specify again the size of the buffer.
+        bindingGroup.size = bindingGroup.buffer.GetSize();
+    } else
+    if (std::holds_alternative<wgpu::TextureView>(data)) {
+        bindingGroup.textureView = std::get<wgpu::TextureView>(data);
+    }
+
+    return bindingGroup;
 }
