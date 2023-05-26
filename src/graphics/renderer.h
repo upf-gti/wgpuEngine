@@ -25,7 +25,10 @@ class Renderer {
     wgpu::BindGroup           mirror_bind_group;
     wgpu::ShaderModule        mirror_shader_module;
 
+    wgpu::Buffer              vertex_buffer;
+
     Uniform                   uniform_left_eye_view;
+
 #endif
 
     Uniform                   uniform_viewprojection;
@@ -36,11 +39,15 @@ public:
     void clean();
 
     void render();
-    void renderXr(int swapchain_index);
-    void renderMirror();
 
 private:
 
-    void initPipeline();
+    void renderXr(int swapchain_index);
+
+#ifdef USE_MIRROR_WINDOW
+    void renderMirror();
     void initMirrorPipeline();
+#endif
+
+    void initPipeline();
 };

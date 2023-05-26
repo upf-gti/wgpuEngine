@@ -135,6 +135,8 @@ void Renderer::renderXr(int swapchain_index)
     dawn::native::InstanceProcessEvents(webgpu_context.instance->Get());
 }
 
+#ifdef USE_MIRROR_WINDOW
+
 void Renderer::renderMirror()
 {
     // Get the current texture in the swapchain
@@ -171,8 +173,11 @@ void Renderer::renderMirror()
             // Set binding group
             render_pass.SetBindGroup(0, mirror_bind_group, 0, nullptr);
 
+            // Set vertex buffer while encoding the render pass
+            render_pass.SetVertexBuffer(0, vertex_buffer, 0, vertex_buffer.GetSize());
+
             // Submit drawcall
-            render_pass.Draw(3, 1, 0, 0);
+            render_pass.Draw(6, 1, 0, 0);
 
             render_pass.End();
             //render_pass.Release();
@@ -202,6 +207,8 @@ void Renderer::renderMirror()
     // Check validation errors
     dawn::native::InstanceProcessEvents(webgpu_context.instance->Get());
 }
+
+#endif
 
 void Renderer::initPipeline()
 {
@@ -245,8 +252,10 @@ void Renderer::initPipeline()
         .writeMask = wgpu::ColorWriteMask::All
     };
 
-    render_pipeline = webgpu_context.create_render_pipeline(color_target, shader_module, render_pipeline_layout);
+    render_pipeline = webgpu_context.create_render_pipeline({}, color_target, shader_module, render_pipeline_layout);
 }
+
+#ifdef USE_MIRROR_WINDOW
 
 void Renderer::initMirrorPipeline()
 {
@@ -264,6 +273,33 @@ void Renderer::initMirrorPipeline()
         mirror_pipeline_layout = webgpu_context.create_pipeline_layout({ mirror_bind_group_layout });
         mirror_bind_group = webgpu_context.create_bind_group(uniforms, mirror_bind_group_layout);
     }
+
+    // Vertex attributes
+    wgpu::VertexAttribute vertex_attrib_position;
+    vertex_attrib_position.shaderLocation = 0;
+    vertex_attrib_position.format = wgpu::VertexFormat::Float32x2;
+    vertex_attrib_position.offset = 0;
+
+    wgpu::VertexAttribute vertex_attrib_uv;
+    vertex_attrib_uv.shaderLocation = 1;
+    vertex_attrib_uv.format = wgpu::VertexFormat::Float32x2;
+    vertex_attrib_uv.offset = 2 * sizeof(float);
+
+    const std::vector<wgpu::VertexAttribute> vertex_attributes = { vertex_attrib_position, vertex_attrib_uv };
+    wgpu::VertexBufferLayout vertex_layout = webgpu_context.create_vertex_buffer_layout(vertex_attributes, 4 * sizeof(float), wgpu::VertexStepMode::Vertex);
+
+    std::vector<float> vertexData = {
+    //  position    uv
+        -1.0, 1.0,  0.0, 1.0,
+        -1.0,-1.0,  0.0, 0.0,
+         1.0,-1.0,  1.0, 0.0,
+
+        -1.0, 1.0,  0.0, 1.0,
+         1.0,-1.0,  1.0, 0.0,
+         1.0, 1.0,  1.0, 1.0
+    };
+
+    vertex_buffer = webgpu_context.create_buffer(vertexData.size() * sizeof(float), wgpu::BufferUsage::CopyDst | wgpu::BufferUsage::Vertex, vertexData.data());
 
     wgpu::TextureFormat swapchain_format = webgpu_context.swapchain_format;
 
@@ -286,5 +322,7 @@ void Renderer::initMirrorPipeline()
         .writeMask = wgpu::ColorWriteMask::All
     };
 
-    mirror_pipeline = webgpu_context.create_render_pipeline(color_target, mirror_shader_module, mirror_pipeline_layout);
+    mirror_pipeline = webgpu_context.create_render_pipeline({ vertex_layout }, color_target, mirror_shader_module, mirror_pipeline_layout);
 }
+
+#endif

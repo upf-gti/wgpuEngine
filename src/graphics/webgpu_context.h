@@ -41,20 +41,22 @@ struct WebGPUContext {
 
     int initialize(GLFWwindow* window);
 
-    void                    create_instance();
+    void                     create_instance();
 
-    wgpu::ShaderModule      create_shader_module(char const* code);
+    wgpu::ShaderModule       create_shader_module(char const* code);
 
-    wgpu::Buffer            create_buffer(uint64_t size, wgpu::BufferUsage usage, const void* data);
+    wgpu::Buffer             create_buffer(uint64_t size, wgpu::BufferUsage usage, const void* data);
 
     //TODO
-    wgpu::Texture           create_texture();
+    wgpu::Texture            create_texture();
 
-    wgpu::BindGroupLayout   create_bind_group_layout(const std::vector<Uniform>& uniforms);
-    wgpu::BindGroup         create_bind_group(const std::vector<Uniform>& uniforms, wgpu::BindGroupLayout bind_group_layout);
-    wgpu::PipelineLayout    create_pipeline_layout(const std::vector<wgpu::BindGroupLayout>& bind_group_layouts);
+    wgpu::BindGroupLayout    create_bind_group_layout(const std::vector<Uniform>& uniforms);
+    wgpu::BindGroup          create_bind_group(const std::vector<Uniform>& uniforms, wgpu::BindGroupLayout bind_group_layout);
+    wgpu::PipelineLayout     create_pipeline_layout(const std::vector<wgpu::BindGroupLayout>& bind_group_layouts);
 
-    wgpu::RenderPipeline    create_render_pipeline(wgpu::ColorTargetState color_target, wgpu::ShaderModule shader_module, wgpu::PipelineLayout pipeline_layout);
+    wgpu::RenderPipeline     create_render_pipeline(const std::vector<wgpu::VertexBufferLayout>& vertex_attributes, wgpu::ColorTargetState color_target, wgpu::ShaderModule shader_module, wgpu::PipelineLayout pipeline_layout);
+
+    wgpu::VertexBufferLayout create_vertex_buffer_layout(const std::vector<wgpu::VertexAttribute>& vertex_attributes, uint64_t stride, wgpu::VertexStepMode step_mode);
 
     wgpu::Surface get_surface(GLFWwindow* window);
 

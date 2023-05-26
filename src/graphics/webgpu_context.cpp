@@ -204,15 +204,15 @@ wgpu::PipelineLayout WebGPUContext::create_pipeline_layout(const std::vector<wgp
     return device.CreatePipelineLayout(&layout_descr);
 }
 
-wgpu::RenderPipeline WebGPUContext::create_render_pipeline(wgpu::ColorTargetState color_target, wgpu::ShaderModule shader_module, wgpu::PipelineLayout pipeline_layout)
+wgpu::RenderPipeline WebGPUContext::create_render_pipeline(const std::vector<wgpu::VertexBufferLayout>& vertex_attributes, wgpu::ColorTargetState color_target, wgpu::ShaderModule shader_module, wgpu::PipelineLayout pipeline_layout)
 {    
     wgpu::VertexState vertex_state = {
         .module = shader_module,
         .entryPoint = "vs_main",
         .constantCount = 0,
         .constants = NULL,
-        .bufferCount = 0,
-        .buffers = NULL,
+        .bufferCount = static_cast<uint32_t>(vertex_attributes.size()),
+        .buffers = vertex_attributes.data(),
     };
 
     wgpu::FragmentState fragment_state = {
@@ -244,6 +244,17 @@ wgpu::RenderPipeline WebGPUContext::create_render_pipeline(wgpu::ColorTargetStat
     };
 
     return device.CreateRenderPipeline(&pipeline_descr);
+}
+
+wgpu::VertexBufferLayout WebGPUContext::create_vertex_buffer_layout(const std::vector<wgpu::VertexAttribute>& vertex_attributes, uint64_t stride, wgpu::VertexStepMode step_mode)
+{
+    wgpu::VertexBufferLayout vertexBufferLayout;
+    vertexBufferLayout.attributeCount = vertex_attributes.size();
+    vertexBufferLayout.attributes = vertex_attributes.data();
+    vertexBufferLayout.arrayStride = stride;
+    vertexBufferLayout.stepMode = step_mode;
+
+    return vertexBufferLayout;
 }
 
 wgpu::Surface WebGPUContext::get_surface(GLFWwindow* window)
