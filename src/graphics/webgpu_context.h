@@ -17,6 +17,21 @@ struct Uniform {
     uint32_t binding = 0;
     wgpu::ShaderStage visibility = wgpu::ShaderStage::Vertex | wgpu::ShaderStage::Fragment;
 
+    wgpu::BufferBindingType buffer_binding_type = wgpu::BufferBindingType::Uniform;
+
+    wgpu::TextureBindingLayout texture_binding_layout = {
+        .sampleType = wgpu::TextureSampleType::Float,
+        .viewDimension = wgpu::TextureViewDimension::e2D
+    };
+
+    wgpu::StorageTextureBindingLayout storage_texture_binding_layout = {
+        .access = wgpu::StorageTextureAccess::WriteOnly,
+        .format = wgpu::TextureFormat::RGBA8Unorm,
+        .viewDimension = wgpu::TextureViewDimension::e2D
+    };
+
+    bool is_storage_texture = false;
+
     wgpu::BindGroupLayoutEntry get_bind_group_layout_entry() const;
     wgpu::BindGroupEntry       get_bind_group_entry() const;
 };
@@ -30,6 +45,8 @@ struct WebGPUContext {
 
 #if !defined(USE_XR) || (defined(USE_XR) && defined(USE_MIRROR_WINDOW))
     wgpu::SwapChain           screen_swapchain;
+    int                       screen_width = 0;
+    int                       screen_height = 0;
 #endif
 
     wgpu::TextureFormat       swapchain_format       = wgpu::TextureFormat::BGRA8Unorm;
@@ -46,15 +63,15 @@ struct WebGPUContext {
     wgpu::ShaderModule       create_shader_module(char const* code);
 
     wgpu::Buffer             create_buffer(uint64_t size, wgpu::BufferUsage usage, const void* data);
-
-    //TODO
-    wgpu::Texture            create_texture();
+    wgpu::Texture            create_texture(wgpu::TextureDimension dimension, wgpu::TextureFormat format, wgpu::Extent3D size, wgpu::TextureUsage usage, uint32_t mipmaps);
+    wgpu::TextureView        create_texture_view(wgpu::Texture texture, wgpu::TextureViewDimension dimension, wgpu::TextureFormat format);
 
     wgpu::BindGroupLayout    create_bind_group_layout(const std::vector<Uniform>& uniforms);
     wgpu::BindGroup          create_bind_group(const std::vector<Uniform>& uniforms, wgpu::BindGroupLayout bind_group_layout);
     wgpu::PipelineLayout     create_pipeline_layout(const std::vector<wgpu::BindGroupLayout>& bind_group_layouts);
 
-    wgpu::RenderPipeline     create_render_pipeline(const std::vector<wgpu::VertexBufferLayout>& vertex_attributes, wgpu::ColorTargetState color_target, wgpu::ShaderModule shader_module, wgpu::PipelineLayout pipeline_layout);
+    wgpu::RenderPipeline     create_render_pipeline(const std::vector<wgpu::VertexBufferLayout>& vertex_attributes, wgpu::ColorTargetState color_target, wgpu::ShaderModule render_shader_module, wgpu::PipelineLayout pipeline_layout);
+    wgpu::ComputePipeline    create_compute_pipeline(wgpu::ShaderModule compute_shader_module, wgpu::PipelineLayout pipeline_layout);
 
     wgpu::VertexBufferLayout create_vertex_buffer_layout(const std::vector<wgpu::VertexAttribute>& vertex_attributes, uint64_t stride, wgpu::VertexStepMode step_mode);
 

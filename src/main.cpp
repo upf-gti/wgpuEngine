@@ -30,6 +30,8 @@ int main() {
         return 1;
     }
 
+    std::cout << "Engine initialized" << std::endl;
+
     // Wait until all the async stuff has been done
 #if !defined(USE_XR) || (defined(USE_XR) && defined(USE_MIRROR_WINDOW))
     //while(!glfwWindowShouldClose(window) && !wgpu_instance.is_initialized) {};

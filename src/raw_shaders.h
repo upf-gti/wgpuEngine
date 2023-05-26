@@ -21,7 +21,9 @@ fn vs_main(@builtin(vertex_index) in_vertex_index: u32) -> @builtin(position) ve
 @fragment
 fn fs_main() -> @location(0) vec4<f32> {
     return vec4<f32>(0.0, 0.4, 1.0, 1.0);
-})";
+}
+
+)";
 
     const char mirror_shaders[] = R"(
 
@@ -55,4 +57,16 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4f {
 }
 
 )";
+
+    const char compute_shader[] = R"(
+
+@group(0) @binding(0) var render_target: texture_storage_2d<rgba8unorm,write>;
+
+@compute @workgroup_size(16, 16, 1)
+fn compute(@builtin(global_invocation_id) id: vec3<u32>) {
+    textureStore(render_target, id.xy, vec4f(1.0, 1.0, 0.0, 1.0));
+}
+
+)";
+
 };

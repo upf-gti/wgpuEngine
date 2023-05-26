@@ -96,8 +96,7 @@ int WebGPUContext::initialize(GLFWwindow* window)
 
 #if !defined(USE_XR) || (defined(USE_XR) && defined(USE_MIRROR_WINDOW))
     // Create the swapchain for mirror mode
-    int width, height;
-    glfwGetWindowSize(window, &width, &height);
+    glfwGetWindowSize(window, &screen_width, &screen_height);
 
     auto surfaceChainedDesc = wgpu::glfw::SetupWindowAndGetSurfaceDescriptor(window);
     wgpu::SurfaceDescriptor surfaceDesc;
@@ -107,8 +106,8 @@ int WebGPUContext::initialize(GLFWwindow* window)
     wgpu::SwapChainDescriptor swapChainDesc = {};
     swapChainDesc.usage = wgpu::TextureUsage::RenderAttachment;
     swapChainDesc.format = wgpu::TextureFormat::BGRA8Unorm;
-    swapChainDesc.width = width;
-    swapChainDesc.height = height;
+    swapChainDesc.width = screen_width;
+    swapChainDesc.height = screen_height;
     swapChainDesc.presentMode = wgpu::PresentMode::Mailbox;
     screen_swapchain = device.CreateSwapChain(surface, &swapChainDesc);
 #endif
@@ -154,9 +153,34 @@ wgpu::Buffer WebGPUContext::create_buffer(uint64_t size, wgpu::BufferUsage usage
     return buffer;
 }
 
-wgpu::Texture WebGPUContext::create_texture()
+wgpu::Texture WebGPUContext::create_texture(wgpu::TextureDimension dimension, wgpu::TextureFormat format, wgpu::Extent3D size, wgpu::TextureUsage usage, uint32_t mipmaps)
 {
-    return wgpu::Texture();
+    wgpu::TextureDescriptor textureDesc;
+    textureDesc.dimension = dimension;
+    textureDesc.format = format;
+    textureDesc.size = size;
+    textureDesc.sampleCount = 1;
+    textureDesc.viewFormatCount = 0;
+    textureDesc.viewFormats = nullptr;
+    textureDesc.usage = usage;
+    textureDesc.mipLevelCount = mipmaps;
+
+    return device.CreateTexture(&textureDesc);
+}
+
+wgpu::TextureView WebGPUContext::create_texture_view(wgpu::Texture texture, wgpu::TextureViewDimension dimension, wgpu::TextureFormat format)
+{
+    wgpu::TextureViewDescriptor textureViewDesc;
+    textureViewDesc.aspect = wgpu::TextureAspect::All;
+    textureViewDesc.baseArrayLayer = 0;
+    textureViewDesc.arrayLayerCount = 1;
+    textureViewDesc.dimension = dimension;
+    textureViewDesc.format = format;
+    textureViewDesc.mipLevelCount = 1;
+    textureViewDesc.baseMipLevel = 0;
+    textureViewDesc.label = "Input View";
+
+    return texture.CreateView(&textureViewDesc);
 }
 
 wgpu::BindGroupLayout WebGPUContext::create_bind_group_layout(const std::vector<Uniform>& uniforms)
@@ -204,10 +228,10 @@ wgpu::PipelineLayout WebGPUContext::create_pipeline_layout(const std::vector<wgp
     return device.CreatePipelineLayout(&layout_descr);
 }
 
-wgpu::RenderPipeline WebGPUContext::create_render_pipeline(const std::vector<wgpu::VertexBufferLayout>& vertex_attributes, wgpu::ColorTargetState color_target, wgpu::ShaderModule shader_module, wgpu::PipelineLayout pipeline_layout)
+wgpu::RenderPipeline WebGPUContext::create_render_pipeline(const std::vector<wgpu::VertexBufferLayout>& vertex_attributes, wgpu::ColorTargetState color_target, wgpu::ShaderModule render_shader_module, wgpu::PipelineLayout pipeline_layout)
 {    
     wgpu::VertexState vertex_state = {
-        .module = shader_module,
+        .module = render_shader_module,
         .entryPoint = "vs_main",
         .constantCount = 0,
         .constants = NULL,
@@ -216,7 +240,7 @@ wgpu::RenderPipeline WebGPUContext::create_render_pipeline(const std::vector<wgp
     };
 
     wgpu::FragmentState fragment_state = {
-        .module = shader_module,
+        .module = render_shader_module,
         .entryPoint = "fs_main",
         .constantCount = 0,
         .constants = NULL,
@@ -244,6 +268,17 @@ wgpu::RenderPipeline WebGPUContext::create_render_pipeline(const std::vector<wgp
     };
 
     return device.CreateRenderPipeline(&pipeline_descr);
+}
+
+wgpu::ComputePipeline WebGPUContext::create_compute_pipeline(wgpu::ShaderModule compute_shader_module, wgpu::PipelineLayout pipeline_layout)
+{
+    wgpu::ComputePipelineDescriptor computePipelineDesc;
+    computePipelineDesc.compute.constantCount = 0;
+    computePipelineDesc.compute.constants = nullptr;
+    computePipelineDesc.compute.entryPoint = "compute";
+    computePipelineDesc.compute.module = compute_shader_module;
+    computePipelineDesc.layout = pipeline_layout;
+    return device.CreateComputePipeline(&computePipelineDesc);
 }
 
 wgpu::VertexBufferLayout WebGPUContext::create_vertex_buffer_layout(const std::vector<wgpu::VertexAttribute>& vertex_attributes, uint64_t stride, wgpu::VertexStepMode step_mode)
@@ -289,11 +324,15 @@ wgpu::BindGroupLayoutEntry Uniform::get_bind_group_layout_entry() const
     bindingLayout.visibility = visibility;
 
     if (std::holds_alternative<wgpu::Buffer>(data)) {
-        bindingLayout.buffer.type = wgpu::BufferBindingType::Uniform;
+        bindingLayout.buffer.type = buffer_binding_type;
     } else 
     if (std::holds_alternative<wgpu::TextureView>(data)) {
-        bindingLayout.texture.sampleType = wgpu::TextureSampleType::Float;
-        bindingLayout.texture.viewDimension = wgpu::TextureViewDimension::e2D;
+        if (is_storage_texture) {
+            bindingLayout.storageTexture = storage_texture_binding_layout;
+        }
+        else {
+            bindingLayout.texture = texture_binding_layout;
+        }
     }
 
     return bindingLayout;

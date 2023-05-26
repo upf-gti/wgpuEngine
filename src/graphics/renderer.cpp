@@ -34,9 +34,16 @@ int Renderer::initialize(GLFWwindow* window)
         std::cout << "Could not initialize OpenXR context" << std::endl;
         return 1;
     }
+
+    render_width = xr_context.viewconfig_views[0].recommendedImageRectWidth;
+    render_height = xr_context.viewconfig_views[0].recommendedImageRectHeight;
+#else
+    render_width = webgpu_context.screen_width;
+    render_height = webgpu_context.screen_height;
 #endif
 
-    initPipeline();
+    initRenderPipeline();
+    initComputePipeline();
 
 #if defined(USE_XR) && defined(USE_MIRROR_WINDOW)
     initMirrorPipeline();
@@ -92,10 +99,10 @@ void Renderer::render()
 
 void Renderer::render(wgpu::TextureView swapchain_view, const glm::mat4x4& view_projection)
 {
-    // Create the command encoder
-    wgpu::CommandEncoderDescriptor encoder_desc;
-    encoder_desc.label = "Device command encoder";
+    compute();
 
+    // Create the command encoder
+    wgpu::CommandEncoderDescriptor encoder_desc = {};
     wgpu::CommandEncoder device_command_encoder = webgpu_context.device.CreateCommandEncoder(&encoder_desc);
     
     // Create & fill the render pass (encoder)
@@ -106,7 +113,7 @@ void Renderer::render(wgpu::TextureView swapchain_view, const glm::mat4x4& view_
         .view = swapchain_view,
         .loadOp = wgpu::LoadOp::Clear,
         .storeOp = wgpu::StoreOp::Store,
-        .clearValue = wgpu::Color(0.0f, 0.0f, 1.0f, 1.0f)
+        .clearValue = wgpu::Color(0.0f, 0.0f, 0.0f, 1.0f)
     };
     wgpu::RenderPassDescriptor render_pass_descr = {
         .colorAttachmentCount = 1,
@@ -144,6 +151,40 @@ void Renderer::render(wgpu::TextureView swapchain_view, const glm::mat4x4& view_
     dawn::native::InstanceProcessEvents(webgpu_context.instance->Get());
 }
 
+void Renderer::compute()
+{
+    // Initialize a command encoder
+    wgpu::CommandEncoderDescriptor encoder_desc = {};
+    wgpu::CommandEncoder encoder = webgpu_context.device.CreateCommandEncoder(&encoder_desc);
+
+    // Create compute pass
+    wgpu::ComputePassDescriptor compute_pass_desc;
+    compute_pass_desc.timestampWriteCount = 0;
+    compute_pass_desc.timestampWrites = nullptr;
+    wgpu::ComputePassEncoder compute_pass = encoder.BeginComputePass(&compute_pass_desc);
+
+    // Use compute pass
+    compute_pass.SetPipeline(compute_pipeline);
+    compute_pass.SetBindGroup(0, compute_bind_group, 0, nullptr);
+
+    uint32_t workgroupSize = 16;
+    // This ceils invocationCount / workgroupSize
+    uint32_t workgroupWidth = (render_width + workgroupSize - 1) / workgroupSize;
+    uint32_t workgroupHeight = (render_height + workgroupSize - 1) / workgroupSize;
+    compute_pass.DispatchWorkgroups(workgroupWidth, workgroupHeight, 1);
+
+    // Finalize compute pass
+    compute_pass.End();
+
+    wgpu::CommandBufferDescriptor cmd_buff_descriptor = {};
+
+    // Encode and submit the GPU commands
+    wgpu::CommandBuffer commands = encoder.Finish(&cmd_buff_descriptor);
+    webgpu_context.device_queue.Submit(1, &commands);
+
+    dawn::native::InstanceProcessEvents(webgpu_context.instance->Get());
+}
+
 #if defined(USE_XR) && defined(USE_MIRROR_WINDOW)
 
 void Renderer::renderMirror()
@@ -167,7 +208,7 @@ void Renderer::renderMirror()
             .view = current_texture_view,
             .loadOp = wgpu::LoadOp::Clear,
             .storeOp = wgpu::StoreOp::Store,
-            .clearValue = {0.0f,0.0f,1.0f,1.0f}
+            .clearValue = {0.0f,0.0f,0.0f,1.0f}
         };
         wgpu::RenderPassDescriptor render_pass_descr = {
             .colorAttachmentCount = 1,
@@ -219,13 +260,13 @@ void Renderer::renderMirror()
 
 #endif
 
-void Renderer::initPipeline()
+void Renderer::initRenderPipeline()
 {
     // Create uniform buffer
     uniform_viewprojection.data = webgpu_context.create_buffer(sizeof(glm::mat4x4), wgpu::BufferUsage::CopyDst | wgpu::BufferUsage::Uniform, nullptr);
     uniform_viewprojection.binding = 0;
 
-    shader_module = webgpu_context.create_shader_module(RAW_SHADERS::simple_shaders);
+    render_shader_module = webgpu_context.create_shader_module(RAW_SHADERS::simple_shaders);
 
     // Layout descriptor (bind goups, buffers, uniforms)
     {
@@ -261,7 +302,34 @@ void Renderer::initPipeline()
         .writeMask = wgpu::ColorWriteMask::All
     };
 
-    render_pipeline = webgpu_context.create_render_pipeline({}, color_target, shader_module, render_pipeline_layout);
+    render_pipeline = webgpu_context.create_render_pipeline({}, color_target, render_shader_module, render_pipeline_layout);
+}
+
+void Renderer::initComputePipeline()
+{
+    // Create uniform buffer
+    compute_texture = webgpu_context.create_texture(
+        wgpu::TextureDimension::e2D,
+        wgpu::TextureFormat::RGBA8Unorm,
+        { render_width, render_height, 1 },
+        wgpu::TextureUsage::TextureBinding | wgpu::TextureUsage::StorageBinding,
+        1);
+
+    uniform_compute_texture.data = webgpu_context.create_texture_view(compute_texture, wgpu::TextureViewDimension::e2D, wgpu::TextureFormat::RGBA8Unorm);
+    uniform_compute_texture.binding = 0;
+    uniform_compute_texture.visibility = wgpu::ShaderStage::Fragment | wgpu::ShaderStage::Compute;
+    uniform_compute_texture.is_storage_texture = true;
+
+    // Load compute shader
+    compute_shader_module = webgpu_context.create_shader_module(RAW_SHADERS::compute_shader);
+
+    std::vector<Uniform> uniforms = { uniform_compute_texture };
+
+    compute_bind_group_layout = webgpu_context.create_bind_group_layout(uniforms);
+    compute_pipeline_layout = webgpu_context.create_pipeline_layout({ compute_bind_group_layout });
+    compute_bind_group = webgpu_context.create_bind_group(uniforms, compute_bind_group_layout);
+
+    compute_pipeline = webgpu_context.create_compute_pipeline(compute_shader_module, compute_pipeline_layout);
 }
 
 #if defined(USE_XR) && defined(USE_MIRROR_WINDOW)
