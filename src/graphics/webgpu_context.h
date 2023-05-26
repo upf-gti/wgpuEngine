@@ -28,7 +28,7 @@ struct WebGPUContext {
     wgpu::Device              device;
     wgpu::Queue               device_queue;
 
-#if !defined(USE_XR) || defined(USE_MIRROR_WINDOW)
+#if !defined(USE_XR) || (defined(USE_XR) && defined(USE_MIRROR_WINDOW))
     wgpu::SwapChain           screen_swapchain;
 #endif
 

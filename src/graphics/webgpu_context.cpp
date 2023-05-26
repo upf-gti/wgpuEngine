@@ -94,7 +94,7 @@ int WebGPUContext::initialize(GLFWwindow* window)
 
     device_queue = device.GetQueue();
 
-#if !defined(USE_XR) || defined(USE_MIRROR_WINDOW)
+#if !defined(USE_XR) || (defined(USE_XR) && defined(USE_MIRROR_WINDOW))
     // Create the swapchain for mirror mode
     int width, height;
     glfwGetWindowSize(window, &width, &height);

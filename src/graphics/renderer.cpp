@@ -38,7 +38,7 @@ int Renderer::initialize(GLFWwindow* window)
 
     initPipeline();
 
-#ifdef USE_MIRROR_WINDOW
+#if defined(USE_XR) && defined(USE_MIRROR_WINDOW)
     initMirrorPipeline();
 #endif
 
@@ -52,6 +52,7 @@ void Renderer::clean()
 void Renderer::render()
 {
 
+#ifdef USE_XR
     if (xr_context.initialized) {
 
         xr_context.initFrame();
@@ -60,20 +61,36 @@ void Renderer::render()
 
             xr_context.acquireSwapchain(i);
 
-            renderXr(i);
+            const sSwapchainData& swapchainData = xr_context.swapchains[i];
+
+            const glm::mat4x4& view = xr_context.per_view_data[i].view_matrix;
+            glm::mat4x4& projection = xr_context.per_view_data[i].projection_matrix;
+            projection[1][1] *= -1;
+
+            glm::mat4x4 view_projection = projection * view;
+
+            render(swapchainData.images[swapchainData.image_index].textureView, view_projection);
 
             xr_context.releaseSwapchain(i);
         }
 
         xr_context.endFrame();
     }
+#else
+    glm::mat4x4 view = glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    glm::mat4x4 projection = glm::perspective(glm::radians(45.0f), 16.0f/9.0f, 0.1f, 100.0f);
 
-#ifdef USE_MIRROR_WINDOW
+    glm::mat4x4 view_projection = projection * view;
+    render(webgpu_context.screen_swapchain.GetCurrentTextureView(), view_projection);
+    webgpu_context.screen_swapchain.Present();
+#endif
+
+#if defined(USE_XR) && defined(USE_MIRROR_WINDOW)
     renderMirror();
 #endif
 }
 
-void Renderer::renderXr(int swapchain_index)
+void Renderer::render(wgpu::TextureView swapchain_view, const glm::mat4x4& view_projection)
 {
     // Create the command encoder
     wgpu::CommandEncoderDescriptor encoder_desc;
@@ -84,11 +101,9 @@ void Renderer::renderXr(int swapchain_index)
     // Create & fill the render pass (encoder)
     wgpu::RenderPassEncoder render_pass;
 
-    const sSwapchainData& swapchainData = xr_context.swapchains[swapchain_index];
-
     // Prepare the color attachment
     wgpu::RenderPassColorAttachment render_pass_color_attachment = {
-        .view = swapchainData.images[swapchainData.image_index].textureView,
+        .view = swapchain_view,
         .loadOp = wgpu::LoadOp::Clear,
         .storeOp = wgpu::StoreOp::Store,
         .clearValue = wgpu::Color(0.0f, 0.0f, 1.0f, 1.0f)
@@ -98,12 +113,6 @@ void Renderer::renderXr(int swapchain_index)
         .colorAttachments = &render_pass_color_attachment,
     };
     {
-        const glm::mat4x4& view = xr_context.per_view_data[swapchain_index].view_matrix;
-        glm::mat4x4& projection = xr_context.per_view_data[swapchain_index].projection_matrix;
-        projection[1][1] *= -1;
-
-        glm::mat4x4 view_projection = projection * view;
-
         // Update uniform buffer
         webgpu_context.device_queue.WriteBuffer(std::get<wgpu::Buffer>(uniform_viewprojection.data), 0, &(view_projection), sizeof(glm::mat4x4));
 
@@ -135,7 +144,7 @@ void Renderer::renderXr(int swapchain_index)
     dawn::native::InstanceProcessEvents(webgpu_context.instance->Get());
 }
 
-#ifdef USE_MIRROR_WINDOW
+#if defined(USE_XR) && defined(USE_MIRROR_WINDOW)
 
 void Renderer::renderMirror()
 {
@@ -255,7 +264,7 @@ void Renderer::initPipeline()
     render_pipeline = webgpu_context.create_render_pipeline({}, color_target, shader_module, render_pipeline_layout);
 }
 
-#ifdef USE_MIRROR_WINDOW
+#if defined(USE_XR) && defined(USE_MIRROR_WINDOW)
 
 void Renderer::initMirrorPipeline()
 {

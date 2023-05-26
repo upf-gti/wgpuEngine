@@ -3,7 +3,7 @@
 #include <GLFW/glfw3.h>
 
 void closeWindow(GLFWwindow* window) {
-#ifdef USE_MIRROR_WINDOW
+#if !defined(USE_XR) || (defined(USE_XR) && defined(USE_MIRROR_WINDOW))
     glfwDestroyWindow(window);
     glfwTerminate();
 #endif
@@ -14,7 +14,7 @@ int main() {
     Engine engine;
     GLFWwindow* window = nullptr;
 
-#ifdef USE_MIRROR_WINDOW
+#if !defined(USE_XR) || (defined(USE_XR) && defined(USE_MIRROR_WINDOW))
     if(!glfwInit()) {
         // Quit
         std::cout << "NO!" << std::endl;
@@ -31,7 +31,7 @@ int main() {
     }
 
     // Wait until all the async stuff has been done
-#ifdef USE_MIRROR_WINDOW
+#if !defined(USE_XR) || (defined(USE_XR) && defined(USE_MIRROR_WINDOW))
     //while(!glfwWindowShouldClose(window) && !wgpu_instance.is_initialized) {};
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();

@@ -18,7 +18,7 @@ class Renderer {
     wgpu::BindGroupLayout     render_bind_group_layout;
     wgpu::BindGroup           render_bind_group;
 
-#ifdef USE_MIRROR_WINDOW
+#if defined(USE_XR) && defined(USE_MIRROR_WINDOW)
     wgpu::RenderPipeline      mirror_pipeline;
     wgpu::PipelineLayout      mirror_pipeline_layout;
     wgpu::BindGroupLayout     mirror_bind_group_layout;
@@ -42,9 +42,9 @@ public:
 
 private:
 
-    void renderXr(int swapchain_index);
+    void render(wgpu::TextureView swapchain_view, const glm::mat4x4& view_projection);
 
-#ifdef USE_MIRROR_WINDOW
+#if defined(USE_XR) && defined(USE_MIRROR_WINDOW)
     void renderMirror();
     void initMirrorPipeline();
 #endif
