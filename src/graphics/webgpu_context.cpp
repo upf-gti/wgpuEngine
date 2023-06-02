@@ -19,6 +19,9 @@
 
 using namespace dawnxr::internal;
 
+wgpu::TextureFormat WebGPUContext::swapchain_format = wgpu::TextureFormat::BGRA8Unorm;
+wgpu::TextureFormat WebGPUContext::xr_swapchain_format = wgpu::TextureFormat::BGRA8UnormSrgb;
+
 void PrintDeviceError(WGPUErrorType errorType, const char* message, void*) {
     const char* errorTypeName = "";
     switch (errorType) {
@@ -105,7 +108,7 @@ int WebGPUContext::initialize(GLFWwindow* window)
 
     wgpu::SwapChainDescriptor swapChainDesc = {};
     swapChainDesc.usage = wgpu::TextureUsage::RenderAttachment;
-    swapChainDesc.format = wgpu::TextureFormat::BGRA8Unorm;
+    swapChainDesc.format = swapchain_format;
     swapChainDesc.width = screen_width;
     swapChainDesc.height = screen_height;
     swapChainDesc.presentMode = wgpu::PresentMode::Mailbox;
@@ -183,12 +186,12 @@ wgpu::TextureView WebGPUContext::create_texture_view(wgpu::Texture texture, wgpu
     return texture.CreateView(&textureViewDesc);
 }
 
-wgpu::BindGroupLayout WebGPUContext::create_bind_group_layout(const std::vector<Uniform>& uniforms)
+wgpu::BindGroupLayout WebGPUContext::create_bind_group_layout(const std::vector<Uniform*>& uniforms)
 {
     std::vector<wgpu::BindGroupLayoutEntry> entries(uniforms.size());
 
     for (int i = 0; i < uniforms.size(); ++i) {
-        entries[i] = uniforms[i].get_bind_group_layout_entry();
+        entries[i] = uniforms[i]->get_bind_group_layout_entry();
     }
 
     // Create a bind group layout
@@ -199,12 +202,12 @@ wgpu::BindGroupLayout WebGPUContext::create_bind_group_layout(const std::vector<
     return device.CreateBindGroupLayout(&bindGroupLayoutDesc);
 }
 
-wgpu::BindGroup WebGPUContext::create_bind_group(const std::vector<Uniform>& uniforms, wgpu::BindGroupLayout bind_group_layout)
+wgpu::BindGroup WebGPUContext::create_bind_group(const std::vector<Uniform*>& uniforms, wgpu::BindGroupLayout bind_group_layout)
 {
     std::vector<wgpu::BindGroupEntry> entries(uniforms.size());
 
     for (int i = 0; i < uniforms.size(); ++i) {
-        entries[i] = uniforms[i].get_bind_group_entry();
+        entries[i] = uniforms[i]->get_bind_group_entry();
     }
 
     // A bind group contains one or multiple bindings

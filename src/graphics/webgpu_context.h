@@ -49,8 +49,8 @@ struct WebGPUContext {
     int                       screen_height = 0;
 #endif
 
-    wgpu::TextureFormat       swapchain_format       = wgpu::TextureFormat::BGRA8Unorm;
-    wgpu::TextureFormat       xr_swapchain_format    = wgpu::TextureFormat::BGRA8UnormSrgb;
+    static wgpu::TextureFormat swapchain_format;
+    static wgpu::TextureFormat xr_swapchain_format;
 
     bool                      is_initialized = false;
 
@@ -66,8 +66,8 @@ struct WebGPUContext {
     wgpu::Texture            create_texture(wgpu::TextureDimension dimension, wgpu::TextureFormat format, wgpu::Extent3D size, wgpu::TextureUsage usage, uint32_t mipmaps);
     wgpu::TextureView        create_texture_view(wgpu::Texture texture, wgpu::TextureViewDimension dimension, wgpu::TextureFormat format);
 
-    wgpu::BindGroupLayout    create_bind_group_layout(const std::vector<Uniform>& uniforms);
-    wgpu::BindGroup          create_bind_group(const std::vector<Uniform>& uniforms, wgpu::BindGroupLayout bind_group_layout);
+    wgpu::BindGroupLayout    create_bind_group_layout(const std::vector<Uniform*>& uniforms);
+    wgpu::BindGroup          create_bind_group(const std::vector<Uniform*>& uniforms, wgpu::BindGroupLayout bind_group_layout);
     wgpu::PipelineLayout     create_pipeline_layout(const std::vector<wgpu::BindGroupLayout>& bind_group_layouts);
 
     wgpu::RenderPipeline     create_render_pipeline(const std::vector<wgpu::VertexBufferLayout>& vertex_attributes, wgpu::ColorTargetState color_target, wgpu::ShaderModule render_shader_module, wgpu::PipelineLayout pipeline_layout);

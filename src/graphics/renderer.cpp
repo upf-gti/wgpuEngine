@@ -2,6 +2,7 @@
 
 #include "dawnxr/dawnxr_internal.h"
 #include "raw_shaders.h"
+#include <intrin.h>
 
 int Renderer::initialize(GLFWwindow* window)
 {
@@ -121,7 +122,7 @@ void Renderer::render(wgpu::TextureView swapchain_view, const glm::mat4x4& view_
     };
     {
         // Update uniform buffer
-        webgpu_context.device_queue.WriteBuffer(std::get<wgpu::Buffer>(uniform_viewprojection.data), 0, &(view_projection), sizeof(glm::mat4x4));
+        webgpu_context.device_queue.WriteBuffer(std::get<wgpu::Buffer>(u_buffer_viewprojection.data), 0, &(view_projection), sizeof(glm::mat4x4));
 
         render_pass = device_command_encoder.BeginRenderPass(&render_pass_descr);
 
@@ -131,8 +132,11 @@ void Renderer::render(wgpu::TextureView swapchain_view, const glm::mat4x4& view_
         // Set binding group
         render_pass.SetBindGroup(0, render_bind_group, 0, nullptr);
 
+        // Set vertex buffer while encoding the render pass
+        render_pass.SetVertexBuffer(0, quad_vertex_buffer, 0, quad_vertex_buffer.GetSize());
+
         // Submit drawcall
-        render_pass.Draw(3, 1, 0, 0);
+        render_pass.Draw(6, 1, 0, 0);
 
         render_pass.End();
         //render_pass.Release();
@@ -148,7 +152,9 @@ void Renderer::render(wgpu::TextureView swapchain_view, const glm::mat4x4& view_
     webgpu_context.device_queue.Submit(1, &commander);
 
     // Check validation errors
-    dawn::native::InstanceProcessEvents(webgpu_context.instance->Get());
+    if (dawn::native::InstanceProcessEvents(webgpu_context.instance->Get())) {
+        //__debugbreak();
+    }
 }
 
 void Renderer::compute()
@@ -182,7 +188,10 @@ void Renderer::compute()
     wgpu::CommandBuffer commands = encoder.Finish(&cmd_buff_descriptor);
     webgpu_context.device_queue.Submit(1, &commands);
 
-    dawn::native::InstanceProcessEvents(webgpu_context.instance->Get());
+    // Check validation errors
+    if (dawn::native::InstanceProcessEvents(webgpu_context.instance->Get())) {
+        //__debugbreak();
+    }
 }
 
 #if defined(USE_XR) && defined(USE_MIRROR_WINDOW)
@@ -199,7 +208,6 @@ void Renderer::renderMirror()
 
     wgpu::CommandEncoder device_command_encoder = webgpu_context.device.CreateCommandEncoder(&encoder_desc);
     
-
     // Create & fill the render pass (encoder)
     wgpu::RenderPassEncoder render_pass;
     {
@@ -224,7 +232,7 @@ void Renderer::renderMirror()
             render_pass.SetBindGroup(0, mirror_bind_group, 0, nullptr);
 
             // Set vertex buffer while encoding the render pass
-            render_pass.SetVertexBuffer(0, vertex_buffer, 0, vertex_buffer.GetSize());
+            render_pass.SetVertexBuffer(0, quad_vertex_buffer, 0, quad_vertex_buffer.GetSize());
 
             // Submit drawcall
             render_pass.Draw(6, 1, 0, 0);
@@ -255,27 +263,74 @@ void Renderer::renderMirror()
     }
 
     // Check validation errors
-    dawn::native::InstanceProcessEvents(webgpu_context.instance->Get());
+    if (dawn::native::InstanceProcessEvents(webgpu_context.instance->Get())) {
+        //__debugbreak();
+    }
 }
 
 #endif
 
 void Renderer::initRenderPipeline()
 {
-    // Create uniform buffer
-    uniform_viewprojection.data = webgpu_context.create_buffer(sizeof(glm::mat4x4), wgpu::BufferUsage::CopyDst | wgpu::BufferUsage::Uniform, nullptr);
-    uniform_viewprojection.binding = 0;
+    left_eye_texture = webgpu_context.create_texture(
+        wgpu::TextureDimension::e2D,
+        wgpu::TextureFormat::RGBA8Unorm,
+        { render_width, render_height, 1 },
+        wgpu::TextureUsage::TextureBinding | wgpu::TextureUsage::StorageBinding,
+        1);
+
+    right_eye_texture = webgpu_context.create_texture(
+        wgpu::TextureDimension::e2D,
+        wgpu::TextureFormat::RGBA8Unorm,
+        { render_width, render_height, 1 },
+        wgpu::TextureUsage::TextureBinding | wgpu::TextureUsage::StorageBinding,
+        1);
+
+    u_render_texture_left_eye.data = webgpu_context.create_texture_view(left_eye_texture, wgpu::TextureViewDimension::e2D, wgpu::TextureFormat::RGBA8Unorm);
+    u_render_texture_left_eye.binding = 0;
+    u_render_texture_left_eye.visibility = wgpu::ShaderStage::Fragment;
+
+    u_render_texture_right_eye.data = webgpu_context.create_texture_view(right_eye_texture, wgpu::TextureViewDimension::e2D, wgpu::TextureFormat::RGBA8Unorm);
+    u_render_texture_right_eye.binding = 1;
+    u_render_texture_right_eye.visibility = wgpu::ShaderStage::Fragment;
 
     render_shader_module = webgpu_context.create_shader_module(RAW_SHADERS::simple_shaders);
 
     // Layout descriptor (bind goups, buffers, uniforms)
     {
-        std::vector<Uniform> uniforms = { uniform_viewprojection };
+        std::vector<Uniform*> uniforms = { &u_render_texture_left_eye, &u_render_texture_right_eye };
 
         render_bind_group_layout = webgpu_context.create_bind_group_layout(uniforms);
         render_pipeline_layout = webgpu_context.create_pipeline_layout({ render_bind_group_layout });
         render_bind_group = webgpu_context.create_bind_group(uniforms, render_bind_group_layout);
     }
+
+    // Vertex attributes
+    wgpu::VertexAttribute vertex_attrib_position;
+    vertex_attrib_position.shaderLocation = 0;
+    vertex_attrib_position.format = wgpu::VertexFormat::Float32x2;
+    vertex_attrib_position.offset = 0;
+
+    wgpu::VertexAttribute vertex_attrib_uv;
+    vertex_attrib_uv.shaderLocation = 1;
+    vertex_attrib_uv.format = wgpu::VertexFormat::Float32x2;
+    vertex_attrib_uv.offset = 2 * sizeof(float);
+
+    quad_vertex_attributes = { vertex_attrib_position, vertex_attrib_uv };
+    quad_vertex_layout = webgpu_context.create_vertex_buffer_layout(quad_vertex_attributes, 4 * sizeof(float), wgpu::VertexStepMode::Vertex);
+
+    std::vector<float> vertexData = {
+        //  position    uv
+            -1.0, 1.0,  0.0, 1.0,
+            -1.0,-1.0,  0.0, 0.0,
+             1.0,-1.0,  1.0, 0.0,
+
+            -1.0, 1.0,  0.0, 1.0,
+             1.0,-1.0,  1.0, 0.0,
+             1.0, 1.0,  1.0, 1.0
+    };
+
+    quad_vertex_buffer = webgpu_context.create_buffer(vertexData.size() * sizeof(float), wgpu::BufferUsage::CopyDst | wgpu::BufferUsage::Vertex, vertexData.data());
 
 #ifdef USE_XR
     wgpu::TextureFormat swapchain_format = webgpu_context.xr_swapchain_format;
@@ -302,28 +357,38 @@ void Renderer::initRenderPipeline()
         .writeMask = wgpu::ColorWriteMask::All
     };
 
-    render_pipeline = webgpu_context.create_render_pipeline({}, color_target, render_shader_module, render_pipeline_layout);
+    render_pipeline = webgpu_context.create_render_pipeline({ quad_vertex_layout }, color_target, render_shader_module, render_pipeline_layout);
 }
 
 void Renderer::initComputePipeline()
 {
-    // Create uniform buffer
-    compute_texture = webgpu_context.create_texture(
-        wgpu::TextureDimension::e2D,
-        wgpu::TextureFormat::RGBA8Unorm,
-        { render_width, render_height, 1 },
-        wgpu::TextureUsage::TextureBinding | wgpu::TextureUsage::StorageBinding,
-        1);
+    u_buffer_viewprojection.data = webgpu_context.create_buffer(sizeof(glm::mat4x4), wgpu::BufferUsage::CopyDst | wgpu::BufferUsage::Uniform, nullptr);
+    u_buffer_viewprojection.binding = 0;
 
-    uniform_compute_texture.data = webgpu_context.create_texture_view(compute_texture, wgpu::TextureViewDimension::e2D, wgpu::TextureFormat::RGBA8Unorm);
-    uniform_compute_texture.binding = 0;
-    uniform_compute_texture.visibility = wgpu::ShaderStage::Fragment | wgpu::ShaderStage::Compute;
-    uniform_compute_texture.is_storage_texture = true;
+    u_compute_texture_left_eye.data = webgpu_context.create_texture_view(left_eye_texture, wgpu::TextureViewDimension::e2D, wgpu::TextureFormat::RGBA8Unorm);
+    u_compute_texture_left_eye.binding = 0;
+    u_compute_texture_left_eye.visibility = wgpu::ShaderStage::Compute;
+    u_compute_texture_left_eye.is_storage_texture = true;
+    u_compute_texture_left_eye.storage_texture_binding_layout = {
+        .access = wgpu::StorageTextureAccess::WriteOnly,
+        .format = wgpu::TextureFormat::RGBA8Unorm,
+        .viewDimension = wgpu::TextureViewDimension::e2D
+    };
 
+    u_compute_texture_right_eye.data = webgpu_context.create_texture_view(right_eye_texture, wgpu::TextureViewDimension::e2D, wgpu::TextureFormat::RGBA8Unorm);
+    u_compute_texture_right_eye.binding = 1;
+    u_compute_texture_right_eye.visibility = wgpu::ShaderStage::Compute;
+    u_compute_texture_right_eye.is_storage_texture = true;
+    u_compute_texture_right_eye.storage_texture_binding_layout = {
+        .access = wgpu::StorageTextureAccess::WriteOnly,
+        .format = wgpu::TextureFormat::RGBA8Unorm,
+        .viewDimension = wgpu::TextureViewDimension::e2D
+    };
+    
     // Load compute shader
     compute_shader_module = webgpu_context.create_shader_module(RAW_SHADERS::compute_shader);
-
-    std::vector<Uniform> uniforms = { uniform_compute_texture };
+    
+    std::vector<Uniform*> uniforms = { &u_compute_texture_left_eye, &u_compute_texture_right_eye };
 
     compute_bind_group_layout = webgpu_context.create_bind_group_layout(uniforms);
     compute_pipeline_layout = webgpu_context.create_pipeline_layout({ compute_bind_group_layout });
@@ -344,39 +409,12 @@ void Renderer::initMirrorPipeline()
 
     // Layout descriptor (bind goups, buffers, uniforms)
     {
-        std::vector<Uniform> uniforms = { uniform_left_eye_view };
+        std::vector<Uniform*> uniforms = { &uniform_left_eye_view };
 
         mirror_bind_group_layout = webgpu_context.create_bind_group_layout(uniforms);
         mirror_pipeline_layout = webgpu_context.create_pipeline_layout({ mirror_bind_group_layout });
         mirror_bind_group = webgpu_context.create_bind_group(uniforms, mirror_bind_group_layout);
     }
-
-    // Vertex attributes
-    wgpu::VertexAttribute vertex_attrib_position;
-    vertex_attrib_position.shaderLocation = 0;
-    vertex_attrib_position.format = wgpu::VertexFormat::Float32x2;
-    vertex_attrib_position.offset = 0;
-
-    wgpu::VertexAttribute vertex_attrib_uv;
-    vertex_attrib_uv.shaderLocation = 1;
-    vertex_attrib_uv.format = wgpu::VertexFormat::Float32x2;
-    vertex_attrib_uv.offset = 2 * sizeof(float);
-
-    const std::vector<wgpu::VertexAttribute> vertex_attributes = { vertex_attrib_position, vertex_attrib_uv };
-    wgpu::VertexBufferLayout vertex_layout = webgpu_context.create_vertex_buffer_layout(vertex_attributes, 4 * sizeof(float), wgpu::VertexStepMode::Vertex);
-
-    std::vector<float> vertexData = {
-    //  position    uv
-        -1.0, 1.0,  0.0, 1.0,
-        -1.0,-1.0,  0.0, 0.0,
-         1.0,-1.0,  1.0, 0.0,
-
-        -1.0, 1.0,  0.0, 1.0,
-         1.0,-1.0,  1.0, 0.0,
-         1.0, 1.0,  1.0, 1.0
-    };
-
-    vertex_buffer = webgpu_context.create_buffer(vertexData.size() * sizeof(float), wgpu::BufferUsage::CopyDst | wgpu::BufferUsage::Vertex, vertexData.data());
 
     wgpu::TextureFormat swapchain_format = webgpu_context.swapchain_format;
 
@@ -399,7 +437,7 @@ void Renderer::initMirrorPipeline()
         .writeMask = wgpu::ColorWriteMask::All
     };
 
-    mirror_pipeline = webgpu_context.create_render_pipeline({ vertex_layout }, color_target, mirror_shader_module, mirror_pipeline_layout);
+    mirror_pipeline = webgpu_context.create_render_pipeline({ quad_vertex_layout }, color_target, mirror_shader_module, mirror_pipeline_layout);
 }
 
 #endif

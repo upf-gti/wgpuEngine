@@ -24,10 +24,19 @@ class Renderer {
     wgpu::BindGroupLayout     compute_bind_group_layout;
     wgpu::BindGroup           compute_bind_group;
 
-    wgpu::Texture             compute_texture;
-    Uniform                   uniform_compute_texture;
+    wgpu::Texture             left_eye_texture;
+    wgpu::Texture             right_eye_texture;
 
-    Uniform                   uniform_viewprojection;
+    // Uniforms
+    Uniform                   u_buffer_viewprojection;
+    Uniform                   u_compute_texture_left_eye;
+    Uniform                   u_compute_texture_right_eye;
+    Uniform                   u_render_texture_left_eye;
+    Uniform                   u_render_texture_right_eye;
+
+    std::vector<wgpu::VertexAttribute>  quad_vertex_attributes;
+    wgpu::VertexBufferLayout            quad_vertex_layout;
+    wgpu::Buffer                        quad_vertex_buffer;
 
 #if defined(USE_XR) && defined(USE_MIRROR_WINDOW)
     wgpu::RenderPipeline      mirror_pipeline;
@@ -36,7 +45,6 @@ class Renderer {
     wgpu::BindGroup           mirror_bind_group;
     wgpu::ShaderModule        mirror_shader_module;
 
-    wgpu::Buffer              vertex_buffer;
     Uniform                   uniform_left_eye_view;
 #endif
 

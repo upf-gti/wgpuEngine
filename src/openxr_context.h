@@ -63,6 +63,7 @@ struct OpenXRContext {
     uint32_t                    view_count;
     XrFrameState                frame_state {XR_TYPE_FRAME_STATE};
     std::vector<sSwapchainData> swapchains;
+    uint32_t                    swapchain_length; // Number of textures per swapchain
 
     std::vector<XrView>                             views;
     std::vector<XrViewConfigurationView>            viewconfig_views;

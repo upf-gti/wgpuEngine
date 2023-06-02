@@ -94,7 +94,6 @@ int OpenXRContext::initialize(WebGPUContext* webgpu_context)
     for (uint32_t i = 0; i < view_count; i++) {
         dawnxr::createSwapchain(session, &swapchain_create_info, &swapchains[i].swapchain);
 
-        uint32_t swapchain_length;
         result = dawnxr::enumerateSwapchainImages(swapchains[i].swapchain, 0, &swapchain_length, nullptr);
         if (!xr_result(instance, result, "Failed to enumerate swapchains"))
             return 1;
