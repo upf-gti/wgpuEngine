@@ -10,9 +10,12 @@ class Engine {
     Renderer renderer;
 
 public:
-    // Methods =========================
-    int initialize(GLFWwindow *window);
+
+    int initialize(GLFWwindow *window, bool use_mirror_screen);
     void clean();
+
+    bool isOpenXRAvailable();
+    bool useMirrorWindow();
 
     void render();
 };

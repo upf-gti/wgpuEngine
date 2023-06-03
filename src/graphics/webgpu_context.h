@@ -43,11 +43,9 @@ struct WebGPUContext {
     wgpu::Device              device;
     wgpu::Queue               device_queue;
 
-#if !defined(USE_XR) || (defined(USE_XR) && defined(USE_MIRROR_WINDOW))
     wgpu::SwapChain           screen_swapchain;
     int                       screen_width = 0;
     int                       screen_height = 0;
-#endif
 
     static wgpu::TextureFormat swapchain_format;
     static wgpu::TextureFormat xr_swapchain_format;
@@ -56,7 +54,7 @@ struct WebGPUContext {
 
     GLFWwindow* window = nullptr;
 
-    int initialize(GLFWwindow* window);
+    int initialize(GLFWwindow* window, bool create_screen_swapchain);
 
     void                     create_instance();
 

@@ -5,7 +5,7 @@
 #include "includes.h"
 #include "vulkan/vulkan.h"
 
-#ifdef USE_XR
+#ifdef XR_SUPPORT
 
 #define XR_USE_GRAPHICS_API_VULKAN
 #include "openxr/openxr_platform.h"
@@ -65,6 +65,8 @@ struct OpenXRContext {
     std::vector<sSwapchainData> swapchains;
     uint32_t                    swapchain_length; // Number of textures per swapchain
 
+    uint32_t                    extension_count = 0;
+
     std::vector<XrView>                             views;
     std::vector<XrViewConfigurationView>            viewconfig_views;
     std::vector<XrCompositionLayerProjectionView>	projection_views;
@@ -84,6 +86,7 @@ struct OpenXRContext {
 
     int initialize(WebGPUContext* webgpu_context);
     void clean();
+    bool isOpenXRAvailable();
     int createInstance();
     bool xr_result(XrInstance xrInstance, XrResult result, const char* format, ...);
     void print_viewconfig_view_info();

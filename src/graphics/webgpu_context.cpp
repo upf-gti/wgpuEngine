@@ -55,7 +55,7 @@ void DeviceLogCallback(WGPULoggingType type, const char* message, void*) {
     std::cout << "Device log: " << message << std::endl;
 }
 
-int WebGPUContext::initialize(GLFWwindow* window)
+int WebGPUContext::initialize(GLFWwindow* window, bool create_screen_swapchain)
 {
     // Get an adapter for the backend to use, and create the device.
     dawn::native::Adapter backendAdapter;
@@ -97,23 +97,23 @@ int WebGPUContext::initialize(GLFWwindow* window)
 
     device_queue = device.GetQueue();
 
-#if !defined(USE_XR) || (defined(USE_XR) && defined(USE_MIRROR_WINDOW))
-    // Create the swapchain for mirror mode
-    glfwGetWindowSize(window, &screen_width, &screen_height);
+    if (create_screen_swapchain) {
+        // Create the swapchain for mirror mode
+        glfwGetWindowSize(window, &screen_width, &screen_height);
 
-    auto surfaceChainedDesc = wgpu::glfw::SetupWindowAndGetSurfaceDescriptor(window);
-    wgpu::SurfaceDescriptor surfaceDesc;
-    surfaceDesc.nextInChain = surfaceChainedDesc.get();
-    surface = get_surface(window);
+        auto surfaceChainedDesc = wgpu::glfw::SetupWindowAndGetSurfaceDescriptor(window);
+        wgpu::SurfaceDescriptor surfaceDesc;
+        surfaceDesc.nextInChain = surfaceChainedDesc.get();
+        surface = get_surface(window);
 
-    wgpu::SwapChainDescriptor swapChainDesc = {};
-    swapChainDesc.usage = wgpu::TextureUsage::RenderAttachment;
-    swapChainDesc.format = swapchain_format;
-    swapChainDesc.width = screen_width;
-    swapChainDesc.height = screen_height;
-    swapChainDesc.presentMode = wgpu::PresentMode::Mailbox;
-    screen_swapchain = device.CreateSwapChain(surface, &swapChainDesc);
-#endif
+        wgpu::SwapChainDescriptor swapChainDesc = {};
+        swapChainDesc.usage = wgpu::TextureUsage::RenderAttachment;
+        swapChainDesc.format = swapchain_format;
+        swapChainDesc.width = screen_width;
+        swapChainDesc.height = screen_height;
+        swapChainDesc.presentMode = wgpu::PresentMode::Mailbox;
+        screen_swapchain = device.CreateSwapChain(surface, &swapChainDesc);
+    }
 
     dawn::native::InstanceProcessEvents(instance->Get());
 

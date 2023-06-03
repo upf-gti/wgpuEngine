@@ -4,50 +4,63 @@
 #include "raw_shaders.h"
 #include <intrin.h>
 
-int Renderer::initialize(GLFWwindow* window)
+int Renderer::initialize(GLFWwindow* window, bool use_mirror_screen)
 {
+    this->use_mirror_screen = use_mirror_screen;
 
     webgpu_context.create_instance();
 
-#ifdef USE_XR
-    if (xr_context.createInstance()) {
+#ifdef XR_SUPPORT
+    is_openxr_available = xr_context.isOpenXRAvailable();
+
+    if (is_openxr_available && xr_context.createInstance()) {
         std::cout << "Could not create OpenXR instance" << std::endl;
         return 1;
     }
 
     // Create internal vulkan instance
-    dawn::native::AdapterDiscoveryOptionsBase** options = new dawn::native::AdapterDiscoveryOptionsBase * ();
-    dawnxr::internal::createVulkanAdapterDiscoveryOptions(xr_context.instance, xr_context.system_id, options);
-    webgpu_context.instance->DiscoverAdapters(*options);
+    if (is_openxr_available) {
+
+        dawn::native::AdapterDiscoveryOptionsBase** options = new dawn::native::AdapterDiscoveryOptionsBase * ();
+        dawnxr::internal::createVulkanAdapterDiscoveryOptions(xr_context.instance, xr_context.system_id, options);
+        webgpu_context.instance->DiscoverAdapters(*options);
+    }
+    else {
+        webgpu_context.instance->DiscoverDefaultAdapters();
+    }
 
 #else
     // Create internal vulkan instance
     webgpu_context.instance->DiscoverDefaultAdapters();
 #endif
 
-    if (webgpu_context.initialize(window)) {
+    if (webgpu_context.initialize(window, !is_openxr_available || (is_openxr_available && use_mirror_screen))) {
         std::cout << "Could not initialize WebGPU context" << std::endl;
         return 1;
     }
 
-#ifdef USE_XR
-    if (xr_context.initialize(&webgpu_context)) {
+    render_width = webgpu_context.screen_width;
+    render_height = webgpu_context.screen_height;
+
+#ifdef XR_SUPPORT
+    if (is_openxr_available && xr_context.initialize(&webgpu_context)) {
         std::cout << "Could not initialize OpenXR context" << std::endl;
         return 1;
     }
 
-    render_width = xr_context.viewconfig_views[0].recommendedImageRectWidth;
-    render_height = xr_context.viewconfig_views[0].recommendedImageRectHeight;
-#else
-    render_width = webgpu_context.screen_width;
-    render_height = webgpu_context.screen_height;
+    if (is_openxr_available) {
+        render_width = xr_context.viewconfig_views[0].recommendedImageRectWidth;
+        render_height = xr_context.viewconfig_views[0].recommendedImageRectHeight;
+    }
 #endif
 
     initRenderPipeline();
     initComputePipeline();
 
-#if defined(USE_XR) && defined(USE_MIRROR_WINDOW)
-    initMirrorPipeline();
+#ifdef XR_SUPPORT
+    if (is_openxr_available && use_mirror_screen) {
+        initMirrorPipeline();
+    }
 #endif
 
     return 0;
@@ -60,9 +73,35 @@ void Renderer::clean()
 void Renderer::render()
 {
 
-#ifdef USE_XR
-    if (xr_context.initialized) {
+#if defined(XR_SUPPORT)
+    renderXr();
+#else
+    renderScreen();
+#endif
 
+#if defined(XR_SUPPORT)
+    if (use_mirror_screen && is_openxr_available && xr_context.initialized) {
+        renderMirror();
+    }
+#endif
+}
+
+
+void Renderer::renderScreen()
+{
+    glm::mat4x4 view = glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    glm::mat4x4 projection = glm::perspective(glm::radians(45.0f), 16.0f / 9.0f, 0.1f, 100.0f);
+
+    glm::mat4x4 view_projection = projection * view;
+    render(webgpu_context.screen_swapchain.GetCurrentTextureView(), view_projection);
+    webgpu_context.screen_swapchain.Present();
+}
+
+#if defined(XR_SUPPORT)
+
+void Renderer::renderXr()
+{
+    if (is_openxr_available && xr_context.initialized) {
         xr_context.initFrame();
 
         for (int i = 0; i < xr_context.view_count; ++i) {
@@ -84,19 +123,11 @@ void Renderer::render()
 
         xr_context.endFrame();
     }
-#else
-    glm::mat4x4 view = glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-    glm::mat4x4 projection = glm::perspective(glm::radians(45.0f), 16.0f/9.0f, 0.1f, 100.0f);
-
-    glm::mat4x4 view_projection = projection * view;
-    render(webgpu_context.screen_swapchain.GetCurrentTextureView(), view_projection);
-    webgpu_context.screen_swapchain.Present();
-#endif
-
-#if defined(USE_XR) && defined(USE_MIRROR_WINDOW)
-    renderMirror();
-#endif
+    else {
+        renderScreen();
+    }
 }
+#endif
 
 void Renderer::render(wgpu::TextureView swapchain_view, const glm::mat4x4& view_projection)
 {
@@ -194,7 +225,7 @@ void Renderer::compute()
     }
 }
 
-#if defined(USE_XR) && defined(USE_MIRROR_WINDOW)
+#if defined(XR_SUPPORT) && defined(USE_MIRROR_WINDOW)
 
 void Renderer::renderMirror()
 {
@@ -332,11 +363,14 @@ void Renderer::initRenderPipeline()
 
     quad_vertex_buffer = webgpu_context.create_buffer(vertexData.size() * sizeof(float), wgpu::BufferUsage::CopyDst | wgpu::BufferUsage::Vertex, vertexData.data());
 
-#ifdef USE_XR
-    wgpu::TextureFormat swapchain_format = webgpu_context.xr_swapchain_format;
-#else
-    wgpu::TextureFormat swapchain_format = webgpu_context.swapchain_format;
-#endif
+    wgpu::TextureFormat swapchain_format;
+
+    if (is_openxr_available) {
+        swapchain_format = webgpu_context.xr_swapchain_format;
+    }
+    else {
+        swapchain_format = webgpu_context.swapchain_format;
+    }
 
     wgpu::BlendState blend_state = {
         .color = {
@@ -397,7 +431,12 @@ void Renderer::initComputePipeline()
     compute_pipeline = webgpu_context.create_compute_pipeline(compute_shader_module, compute_pipeline_layout);
 }
 
-#if defined(USE_XR) && defined(USE_MIRROR_WINDOW)
+bool Renderer::isOpenXRAvailable()
+{
+    return is_openxr_available;
+}
+
+#if defined(XR_SUPPORT) && defined(USE_MIRROR_WINDOW)
 
 void Renderer::initMirrorPipeline()
 {

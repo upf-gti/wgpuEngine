@@ -1,6 +1,6 @@
 #include "openxr_context.h"
 
-#ifdef USE_XR
+#ifdef XR_SUPPORT
 
 #include <iostream>
 #include <cstdarg>
@@ -162,18 +162,24 @@ void OpenXRContext::clean()
     xrDestroyInstance(instance);
 }
 
+bool OpenXRContext::isOpenXRAvailable()
+{
+    XrResult result;
+
+    result = xrEnumerateInstanceExtensionProperties(NULL, 0, &extension_count, NULL);
+
+    if (!xr_result(NULL, result, "Could not initilize OpenXR: Failed to enumerate number of extension properties"))
+        return false;
+
+    return true;
+}
+
 int OpenXRContext::createInstance()
 {
     XrResult result;
 
-    uint32_t ext_count = 0;
-    result = xrEnumerateInstanceExtensionProperties(NULL, 0, &ext_count, NULL);
-
-    if (!xr_result(NULL, result, "Failed to enumerate number of extension properties"))
-        return 1;
-
-    std::vector<XrExtensionProperties> extensionProperties(ext_count, { XR_TYPE_EXTENSION_PROPERTIES, nullptr });
-    result = xrEnumerateInstanceExtensionProperties(NULL, ext_count, &ext_count, extensionProperties.data());
+    std::vector<XrExtensionProperties> extensionProperties(extension_count, { XR_TYPE_EXTENSION_PROPERTIES, nullptr });
+    result = xrEnumerateInstanceExtensionProperties(NULL, extension_count, &extension_count, extensionProperties.data());
     if (!xr_result(NULL, result, "Failed to enumerate extension properties"))
         return 1;
 

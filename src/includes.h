@@ -1,6 +1,6 @@
 #pragma once
 
-#define USE_XR
+#define XR_SUPPORT
 #define USE_MIRROR_WINDOW
 
 //#define GLM_FORCE_RADIANS

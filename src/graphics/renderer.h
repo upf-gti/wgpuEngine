@@ -6,7 +6,7 @@
 
 class Renderer {
 
-#ifdef USE_XR
+#ifdef XR_SUPPORT
     OpenXRContext xr_context;
 #endif
 
@@ -38,7 +38,7 @@ class Renderer {
     wgpu::VertexBufferLayout            quad_vertex_layout;
     wgpu::Buffer                        quad_vertex_buffer;
 
-#if defined(USE_XR) && defined(USE_MIRROR_WINDOW)
+#if defined(XR_SUPPORT) && defined(USE_MIRROR_WINDOW)
     wgpu::RenderPipeline      mirror_pipeline;
     wgpu::PipelineLayout      mirror_pipeline_layout;
     wgpu::BindGroupLayout     mirror_bind_group_layout;
@@ -50,23 +50,34 @@ class Renderer {
 
 public:
     // Methods =========================
-    int initialize(GLFWwindow* window);
+    int initialize(GLFWwindow* window, bool use_mirror_screen);
     void clean();
 
     void render();
+
+    bool isOpenXRAvailable();
 
 private:
 
     uint32_t render_width = 0;
     uint32_t render_height = 0;
 
+    bool is_openxr_available = false;
+    bool use_mirror_screen = false;
+
     void render(wgpu::TextureView swapchain_view, const glm::mat4x4& view_projection);
+    void renderScreen();
+
+#if defined(XR_SUPPORT)
+    void renderXr();
+#endif
+    
     void compute();
 
     void initRenderPipeline();
     void initComputePipeline();
 
-#if defined(USE_XR) && defined(USE_MIRROR_WINDOW)
+#if defined(XR_SUPPORT) && defined(USE_MIRROR_WINDOW)
     void renderMirror();
     void initMirrorPipeline();
 #endif
