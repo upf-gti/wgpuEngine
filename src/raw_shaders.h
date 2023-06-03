@@ -21,15 +21,14 @@ fn vs_main(in: VertexInput) -> VertexOutput {
     return out;
 }
 
-@group(0) @binding(0) var left_eye_texture: texture_2d<f32>;
-@group(0) @binding(1) var right_eye_texture: texture_2d<f32>;
+@group(0) @binding(0) var render_texture: texture_2d<f32>;
 
 @fragment
 fn fs_main(in: VertexOutput) -> @location(0) vec4f {
-    var texture_size = textureDimensions(right_eye_texture);
+    var texture_size = textureDimensions(render_texture);
     var uv_flip = in.uv;
     uv_flip.y = 1.0 - uv_flip.y;
-    let color = textureLoad(right_eye_texture, vec2u(uv_flip * vec2f(texture_size)) , 0);
+    let color = textureLoad(render_texture, vec2u(uv_flip * vec2f(texture_size)) , 0);
     return color;
 }
 

@@ -14,9 +14,12 @@ class Renderer {
 
     wgpu::RenderPipeline      render_pipeline;
     wgpu::ShaderModule        render_shader_module;
+
     wgpu::PipelineLayout      render_pipeline_layout;
     wgpu::BindGroupLayout     render_bind_group_layout;
-    wgpu::BindGroup           render_bind_group;
+
+    wgpu::BindGroup           render_bind_group_left_eye;
+    wgpu::BindGroup           render_bind_group_right_eye;
 
     wgpu::ComputePipeline     compute_pipeline;
     wgpu::ShaderModule        compute_shader_module;
@@ -65,7 +68,7 @@ private:
     bool is_openxr_available = false;
     bool use_mirror_screen = false;
 
-    void render(wgpu::TextureView swapchain_view, const glm::mat4x4& view_projection);
+    void render(wgpu::TextureView swapchain_view, wgpu::BindGroup bind_group, const glm::mat4x4& view_projection);
     void renderScreen();
 
 #if defined(XR_SUPPORT)

@@ -93,7 +93,7 @@ void Renderer::renderScreen()
     glm::mat4x4 projection = glm::perspective(glm::radians(45.0f), 16.0f / 9.0f, 0.1f, 100.0f);
 
     glm::mat4x4 view_projection = projection * view;
-    render(webgpu_context.screen_swapchain.GetCurrentTextureView(), view_projection);
+    render(webgpu_context.screen_swapchain.GetCurrentTextureView(), render_bind_group_left_eye, view_projection);
     webgpu_context.screen_swapchain.Present();
 }
 
@@ -116,7 +116,9 @@ void Renderer::renderXr()
 
             glm::mat4x4 view_projection = projection * view;
 
-            render(swapchainData.images[swapchainData.image_index].textureView, view_projection);
+            wgpu::BindGroup bind_group = i == 0 ? render_bind_group_left_eye : render_bind_group_right_eye;
+
+            render(swapchainData.images[swapchainData.image_index].textureView, bind_group, view_projection);
 
             xr_context.releaseSwapchain(i);
         }
@@ -129,7 +131,7 @@ void Renderer::renderXr()
 }
 #endif
 
-void Renderer::render(wgpu::TextureView swapchain_view, const glm::mat4x4& view_projection)
+void Renderer::render(wgpu::TextureView swapchain_view, wgpu::BindGroup bind_group, const glm::mat4x4& view_projection)
 {
     compute();
 
@@ -161,7 +163,7 @@ void Renderer::render(wgpu::TextureView swapchain_view, const glm::mat4x4& view_
         render_pass.SetPipeline(render_pipeline);
 
         // Set binding group
-        render_pass.SetBindGroup(0, render_bind_group, 0, nullptr);
+        render_pass.SetBindGroup(0, bind_group, 0, nullptr);
 
         // Set vertex buffer while encoding the render pass
         render_pass.SetVertexBuffer(0, quad_vertex_buffer, 0, quad_vertex_buffer.GetSize());
@@ -322,19 +324,31 @@ void Renderer::initRenderPipeline()
     u_render_texture_left_eye.visibility = wgpu::ShaderStage::Fragment;
 
     u_render_texture_right_eye.data = webgpu_context.create_texture_view(right_eye_texture, wgpu::TextureViewDimension::e2D, wgpu::TextureFormat::RGBA8Unorm);
-    u_render_texture_right_eye.binding = 1;
+    u_render_texture_right_eye.binding = 0;
     u_render_texture_right_eye.visibility = wgpu::ShaderStage::Fragment;
 
     render_shader_module = webgpu_context.create_shader_module(RAW_SHADERS::simple_shaders);
 
-    // Layout descriptor (bind goups, buffers, uniforms)
-    {
-        std::vector<Uniform*> uniforms = { &u_render_texture_left_eye, &u_render_texture_right_eye };
 
+    // Left eye bind group
+    {
+        std::vector<Uniform*> uniforms = { &u_render_texture_left_eye };
+
+        // shared with right eye
         render_bind_group_layout = webgpu_context.create_bind_group_layout(uniforms);
-        render_pipeline_layout = webgpu_context.create_pipeline_layout({ render_bind_group_layout });
-        render_bind_group = webgpu_context.create_bind_group(uniforms, render_bind_group_layout);
+
+        render_bind_group_left_eye = webgpu_context.create_bind_group(uniforms, render_bind_group_layout);
     }
+
+    // Right eye bind group
+    {
+        std::vector<Uniform*> uniforms = { &u_render_texture_right_eye };
+
+        // render_bind_group_layout is the same as left eye
+        render_bind_group_right_eye = webgpu_context.create_bind_group(uniforms, render_bind_group_layout);
+    }
+
+    render_pipeline_layout = webgpu_context.create_pipeline_layout({ render_bind_group_layout });
 
     // Vertex attributes
     wgpu::VertexAttribute vertex_attrib_position;
