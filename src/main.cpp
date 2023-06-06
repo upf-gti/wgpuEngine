@@ -26,7 +26,7 @@ int main() {
         }
 
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-            window = glfwCreateWindow(1280, 720, "WebGPU Engine", NULL, NULL);
+        window = glfwCreateWindow(1280, 720, "WebGPU Engine", NULL, NULL);
     }
 
     if (engine.initialize(window, use_mirror_screen)) {

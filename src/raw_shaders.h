@@ -193,8 +193,7 @@ fn compute(@builtin(global_invocation_id) id: vec3<u32>) {
     let rayDir = getRayDirection(1.0 / pixel_size, uv);
 
     textureStore(left_eye_texture, id.xy, vec4f(raymarch(rayDir), 1.0));
-
-    //textureStore(right_eye_texture, id.xy, vec4f(1.0, 0.0, 0.0, 1.0));
+    textureStore(right_eye_texture, id.xy, vec4f(raymarch(rayDir), 1.0));
 }
 
 )";

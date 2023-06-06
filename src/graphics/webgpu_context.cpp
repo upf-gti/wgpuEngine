@@ -2,12 +2,17 @@
 
 #include <cassert>
 
-#define XR_USE_GRAPHICS_API_VULKAN
+#ifdef XR_SUPPORT
 #include "dawnxr/dawnxr_internal.h"
 #include <dawn/native/VulkanBackend.h>
-#include "dawn/dawn_proc.h"
+using namespace dawnxr::internal;
+#endif
 
-#include "webgpu/webgpu_glfw.h"
+#ifndef __EMSCRIPTEN__
+#define XR_USE_GRAPHICS_API_VULKAN
+//#include "dawn/dawn_proc.h"
+//#include "webgpu/webgpu_glfw.h"
+#endif
 
 #ifdef _WIN32
 #define GLFW_EXPOSE_NATIVE_WIN32
@@ -16,8 +21,6 @@
 #include "GLFW/glfw3native.h"
 
 #include "utils.h"
-
-using namespace dawnxr::internal;
 
 wgpu::TextureFormat WebGPUContext::swapchain_format = wgpu::TextureFormat::BGRA8Unorm;
 wgpu::TextureFormat WebGPUContext::xr_swapchain_format = wgpu::TextureFormat::BGRA8UnormSrgb;
@@ -91,11 +94,11 @@ int WebGPUContext::initialize(GLFWwindow* window, bool create_screen_swapchain)
 
     dawnProcSetProcs(&backendProcs);
 
-    backendProcs.deviceSetUncapturedErrorCallback(device.Get(), PrintDeviceError, nullptr);
-    backendProcs.deviceSetDeviceLostCallback(device.Get(), DeviceLostCallback, nullptr);
-    backendProcs.deviceSetLoggingCallback(device.Get(), DeviceLogCallback, nullptr);
+    backendProcs.deviceSetUncapturedErrorCallback(device, PrintDeviceError, nullptr);
+    backendProcs.deviceSetDeviceLostCallback(device, DeviceLostCallback, nullptr);
+    backendProcs.deviceSetLoggingCallback(device, DeviceLogCallback, nullptr);
 
-    device_queue = device.GetQueue();
+    device_queue = device.getQueue();
 
     if (create_screen_swapchain) {
         // Create the swapchain for mirror mode
@@ -112,10 +115,10 @@ int WebGPUContext::initialize(GLFWwindow* window, bool create_screen_swapchain)
         swapChainDesc.width = screen_width;
         swapChainDesc.height = screen_height;
         swapChainDesc.presentMode = wgpu::PresentMode::Mailbox;
-        screen_swapchain = device.CreateSwapChain(surface, &swapChainDesc);
+        screen_swapchain = device.createSwapChain(surface, swapChainDesc);
     }
 
-    dawn::native::InstanceProcessEvents(instance->Get());
+    printErrors();
 
     is_initialized = true;
 
@@ -136,10 +139,10 @@ wgpu::ShaderModule WebGPUContext::create_shader_module(char const* code)
     wgpu::ShaderModuleDescriptor shader_descr;
     shader_descr.nextInChain = &shader_code_desc;
 
-    return device.CreateShaderModule(&shader_descr);
+    return device.createShaderModule(shader_descr);
 }
 
-wgpu::Buffer WebGPUContext::create_buffer(uint64_t size, wgpu::BufferUsage usage, const void* data)
+wgpu::Buffer WebGPUContext::create_buffer(uint64_t size, int usage, const void* data)
 {
     wgpu::BufferDescriptor bufferDesc{};
 
@@ -147,16 +150,16 @@ wgpu::Buffer WebGPUContext::create_buffer(uint64_t size, wgpu::BufferUsage usage
     bufferDesc.usage = usage;
     bufferDesc.mappedAtCreation = false;
 
-    wgpu::Buffer buffer = device.CreateBuffer(&bufferDesc);
+    wgpu::Buffer buffer = device.createBuffer(bufferDesc);
 
     if (data != nullptr) {
-        device_queue.WriteBuffer(buffer, 0, data, size);
+        device_queue.writeBuffer(buffer, 0, data, size);
     }
 
     return buffer;
 }
 
-wgpu::Texture WebGPUContext::create_texture(wgpu::TextureDimension dimension, wgpu::TextureFormat format, wgpu::Extent3D size, wgpu::TextureUsage usage, uint32_t mipmaps)
+wgpu::Texture WebGPUContext::create_texture(wgpu::TextureDimension dimension, wgpu::TextureFormat format, wgpu::Extent3D size, int usage, uint32_t mipmaps)
 {
     wgpu::TextureDescriptor textureDesc;
     textureDesc.dimension = dimension;
@@ -168,10 +171,10 @@ wgpu::Texture WebGPUContext::create_texture(wgpu::TextureDimension dimension, wg
     textureDesc.usage = usage;
     textureDesc.mipLevelCount = mipmaps;
 
-    return device.CreateTexture(&textureDesc);
+    return device.createTexture(textureDesc);
 }
 
-wgpu::TextureView WebGPUContext::create_texture_view(wgpu::Texture texture, wgpu::TextureViewDimension dimension, wgpu::TextureFormat format)
+wgpu::TextureView WebGPUContext::create_texture_view(const wgpu::Texture &texture, wgpu::TextureViewDimension dimension, wgpu::TextureFormat format)
 {
     wgpu::TextureViewDescriptor textureViewDesc;
     textureViewDesc.aspect = wgpu::TextureAspect::All;
@@ -183,7 +186,7 @@ wgpu::TextureView WebGPUContext::create_texture_view(wgpu::Texture texture, wgpu
     textureViewDesc.baseMipLevel = 0;
     textureViewDesc.label = "Input View";
 
-    return texture.CreateView(&textureViewDesc);
+    return texture.createView(textureViewDesc);
 }
 
 wgpu::BindGroupLayout WebGPUContext::create_bind_group_layout(const std::vector<Uniform*>& uniforms)
@@ -199,7 +202,7 @@ wgpu::BindGroupLayout WebGPUContext::create_bind_group_layout(const std::vector<
     bindGroupLayoutDesc.entryCount = entries.size();
     bindGroupLayoutDesc.entries = entries.data();
 
-    return device.CreateBindGroupLayout(&bindGroupLayoutDesc);
+    return device.createBindGroupLayout(bindGroupLayoutDesc);
 }
 
 wgpu::BindGroup WebGPUContext::create_bind_group(const std::vector<Uniform*>& uniforms, wgpu::BindGroupLayout bind_group_layout)
@@ -217,39 +220,43 @@ wgpu::BindGroup WebGPUContext::create_bind_group(const std::vector<Uniform*>& un
     bindGroupDesc.entryCount = entries.size();
     bindGroupDesc.entries = entries.data();
 
-    return device.CreateBindGroup(&bindGroupDesc);
+    return device.createBindGroup(bindGroupDesc);
+}
+
+void WebGPUContext::printErrors()
+{
+#ifndef __EMSCRIPTEN__
+    dawn::native::InstanceProcessEvents(instance->Get());
+#endif
 }
 
 wgpu::PipelineLayout WebGPUContext::create_pipeline_layout(const std::vector<wgpu::BindGroupLayout>& bind_group_layouts)
 {
-    wgpu::PipelineLayoutDescriptor layout_descr = {
-        .nextInChain = NULL,
-        .bindGroupLayoutCount = static_cast<uint32_t>(bind_group_layouts.size()),
-        .bindGroupLayouts = bind_group_layouts.data()
-    };
+    wgpu::PipelineLayoutDescriptor layout_descr = {};
+    layout_descr.nextInChain = NULL;
+    layout_descr.bindGroupLayoutCount = static_cast<uint32_t>(bind_group_layouts.size());
+    layout_descr.bindGroupLayouts = bind_group_layouts.data();
 
-    return device.CreatePipelineLayout(&layout_descr);
+    return device.createPipelineLayout(layout_descr);
 }
 
 wgpu::RenderPipeline WebGPUContext::create_render_pipeline(const std::vector<wgpu::VertexBufferLayout>& vertex_attributes, wgpu::ColorTargetState color_target, wgpu::ShaderModule render_shader_module, wgpu::PipelineLayout pipeline_layout)
 {    
-    wgpu::VertexState vertex_state = {
-        .module = render_shader_module,
-        .entryPoint = "vs_main",
-        .constantCount = 0,
-        .constants = NULL,
-        .bufferCount = static_cast<uint32_t>(vertex_attributes.size()),
-        .buffers = vertex_attributes.data(),
-    };
+    wgpu::VertexState vertex_state = {};
+    vertex_state.module = render_shader_module;
+    vertex_state.entryPoint = "vs_main";
+    vertex_state.constantCount = 0;
+    vertex_state.constants = NULL;
+    vertex_state.bufferCount = static_cast<uint32_t>(vertex_attributes.size());
+    vertex_state.buffers = vertex_attributes.data();
 
-    wgpu::FragmentState fragment_state = {
-        .module = render_shader_module,
-        .entryPoint = "fs_main",
-        .constantCount = 0,
-        .constants = NULL,
-        .targetCount = 1,
-        .targets = &color_target
-    };
+    wgpu::FragmentState fragment_state = {};
+    fragment_state.module = render_shader_module;
+    fragment_state.entryPoint = "fs_main";
+    fragment_state.constantCount = 0;
+    fragment_state.constants = NULL;
+    fragment_state.targetCount = 1;
+    fragment_state.targets = &color_target;
 
     wgpu::RenderPipelineDescriptor pipeline_descr = {
         .nextInChain = NULL,
@@ -270,7 +277,7 @@ wgpu::RenderPipeline WebGPUContext::create_render_pipeline(const std::vector<wgp
         .fragment = &fragment_state,
     };
 
-    return device.CreateRenderPipeline(&pipeline_descr);
+    return device.createRenderPipeline(pipeline_descr);
 }
 
 wgpu::ComputePipeline WebGPUContext::create_compute_pipeline(wgpu::ShaderModule compute_shader_module, wgpu::PipelineLayout pipeline_layout)
@@ -281,7 +288,7 @@ wgpu::ComputePipeline WebGPUContext::create_compute_pipeline(wgpu::ShaderModule 
     computePipelineDesc.compute.entryPoint = "compute";
     computePipelineDesc.compute.module = compute_shader_module;
     computePipelineDesc.layout = pipeline_layout;
-    return device.CreateComputePipeline(&computePipelineDesc);
+    return device.createComputePipeline(computePipelineDesc);
 }
 
 wgpu::VertexBufferLayout WebGPUContext::create_vertex_buffer_layout(const std::vector<wgpu::VertexAttribute>& vertex_attributes, uint64_t stride, wgpu::VertexStepMode step_mode)
@@ -305,16 +312,25 @@ wgpu::Surface WebGPUContext::get_surface(GLFWwindow* window)
     chained.hinstance = hinstance;
     chained.hwnd = hwnd;
 
-    wgpu::SurfaceDescriptor descriptor = {
-        .nextInChain = &chained,
-        .label = nullptr,
-    };
-
+    wgpu::SurfaceDescriptor descriptor = {};
+    descriptor.nextInChain = &chained;
+    descriptor.label = nullptr;
+    
     wgpu::Surface surface = wgpu::Instance::Acquire(instance->Get()).CreateSurface(&descriptor);
 #endif
 
     assert_msg(surface, "Error creating surface");
     return surface;
+}
+
+Uniform::Uniform()
+{
+    texture_binding_layout.sampleType = wgpu::TextureSampleType::Float;
+    texture_binding_layout.viewDimension = wgpu::TextureViewDimension::_2D;
+
+    storage_texture_binding_layout.access = wgpu::StorageTextureAccess::WriteOnly;
+    storage_texture_binding_layout.format = wgpu::TextureFormat::RGBA8Unorm;
+    storage_texture_binding_layout.viewDimension = wgpu::TextureViewDimension::_2D;
 }
 
 wgpu::BindGroupLayoutEntry Uniform::get_bind_group_layout_entry() const

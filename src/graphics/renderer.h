@@ -1,7 +1,13 @@
 #pragma once
 
 #include "utils.h"
-#include "openxr_context.h"
+
+#ifdef XR_SUPPORT
+
+#include "xr/openxr_context.h"
+
+#endif
+
 #include "graphics/webgpu_context.h"
 
 class Renderer {

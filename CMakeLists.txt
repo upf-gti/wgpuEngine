@@ -36,8 +36,12 @@ macro(WGPU_SOURCES_APPEND)
 endmacro()
 
 WGPU_SOURCES_APPEND(${WGPU_DIR_SOURCES})
-WGPU_SOURCES_APPEND(${WGPU_DIR_SOURCES}/dawnxr)
 WGPU_SOURCES_APPEND(${WGPU_DIR_SOURCES}/graphics)
+
+if (NOT EMSCRIPTEN)
+    WGPU_SOURCES_APPEND(${WGPU_DIR_SOURCES}/xr)
+    # WGPU_SOURCES_APPEND(${WGPU_DIR_SOURCES}/dawnxr)
+endif()
 
 add_executable(${PROJECT_NAME} ${WGPU_SOURCES})
 target_include_directories(${PROJECT_NAME} PUBLIC ${WGPU_DIR_SOURCES})
@@ -51,17 +55,41 @@ set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 20)
 add_subdirectory(libraries/webgpu)
 target_link_libraries(${PROJECT_NAME} webgpu)
 
-# vulkan
-find_package(Vulkan REQUIRED)
-target_link_libraries(${PROJECT_NAME} ${Vulkan_LIBRARIES})
-include_directories(${Vulkan_INCLUDE_DIR})
+if (EMSCRIPTEN)
+	set(SHELL_FILE shell.html)
+
+	target_link_options(${PROJECT_NAME} PRIVATE
+		-sUSE_GLFW=3
+		-sUSE_WEBGPU
+		-sALLOW_MEMORY_GROWTH
+		--shell-file "${CMAKE_CURRENT_SOURCE_DIR}/${SHELL_FILE}"
+	)
+
+	# Make sure to re-link when the shell file changes
+	set_property(
+		TARGET ${PROJECT_NAME}
+		PROPERTY LINK_DEPENDS
+		"${CMAKE_CURRENT_SOURCE_DIR}/${SHELL_FILE}"
+	)
+
+	set_target_properties(${PROJECT_NAME} PROPERTIES SUFFIX ".html")
+endif()
+
+if (NOT EMSCRIPTEN)
+
+    # vulkan
+    find_package(Vulkan REQUIRED)
+    target_link_libraries(${PROJECT_NAME} ${Vulkan_LIBRARIES})
+    include_directories(${Vulkan_INCLUDE_DIR})
+
+    # openxr
+    add_subdirectory(libraries/openxr)
+    target_link_libraries(${PROJECT_NAME} openxr_loader)
+
+endif()
 
 # glfw
 target_link_libraries(${PROJECT_NAME} glfw)
-
-# openxr
-add_subdirectory(libraries/openxr)
-target_link_libraries(${PROJECT_NAME} openxr_loader)
 
 # glm
 add_subdirectory(libraries/glm)

@@ -2,33 +2,33 @@
 
 #include "includes.h"
 
+#ifdef XR_SUPPORT
 #include <dawnxr/dawnxr.h>
-#include <dawn/native/DawnNative.h>
+#else
+#include "webgpu/webgpu.hpp"
+#endif
+
+#ifndef __EMSCRIPTEN__
+//#include <dawn/native/DawnNative.h>
 #include "GLFW/glfw3.h"
+#endif
 
 #include <variant>
 #include <functional>
 
-class OpenXRContext;
-
 struct Uniform {
+
+    Uniform();
+
     std::variant<wgpu::Buffer, wgpu::Sampler, wgpu::TextureView> data;
 
     uint32_t binding = 0;
-    wgpu::ShaderStage visibility = wgpu::ShaderStage::Vertex | wgpu::ShaderStage::Fragment;
+    uint32_t visibility = wgpu::ShaderStage::Vertex | wgpu::ShaderStage::Fragment;
 
     wgpu::BufferBindingType buffer_binding_type = wgpu::BufferBindingType::Uniform;
 
-    wgpu::TextureBindingLayout texture_binding_layout = {
-        .sampleType = wgpu::TextureSampleType::Float,
-        .viewDimension = wgpu::TextureViewDimension::e2D
-    };
-
-    wgpu::StorageTextureBindingLayout storage_texture_binding_layout = {
-        .access = wgpu::StorageTextureAccess::WriteOnly,
-        .format = wgpu::TextureFormat::RGBA8Unorm,
-        .viewDimension = wgpu::TextureViewDimension::e2D
-    };
+    wgpu::TextureBindingLayout texture_binding_layout;
+    wgpu::StorageTextureBindingLayout storage_texture_binding_layout;
 
     bool is_storage_texture = false;
 
@@ -60,9 +60,9 @@ struct WebGPUContext {
 
     wgpu::ShaderModule       create_shader_module(char const* code);
 
-    wgpu::Buffer             create_buffer(uint64_t size, wgpu::BufferUsage usage, const void* data);
-    wgpu::Texture            create_texture(wgpu::TextureDimension dimension, wgpu::TextureFormat format, wgpu::Extent3D size, wgpu::TextureUsage usage, uint32_t mipmaps);
-    wgpu::TextureView        create_texture_view(wgpu::Texture texture, wgpu::TextureViewDimension dimension, wgpu::TextureFormat format);
+    wgpu::Buffer             create_buffer(uint64_t size, int usage, const void* data);
+    wgpu::Texture            create_texture(wgpu::TextureDimension dimension, wgpu::TextureFormat format, wgpu::Extent3D size, int usage, uint32_t mipmaps);
+    wgpu::TextureView        create_texture_view(const wgpu::Texture& texture, wgpu::TextureViewDimension dimension, wgpu::TextureFormat format);
 
     wgpu::BindGroupLayout    create_bind_group_layout(const std::vector<Uniform*>& uniforms);
     wgpu::BindGroup          create_bind_group(const std::vector<Uniform*>& uniforms, wgpu::BindGroupLayout bind_group_layout);
@@ -74,5 +74,7 @@ struct WebGPUContext {
     wgpu::VertexBufferLayout create_vertex_buffer_layout(const std::vector<wgpu::VertexAttribute>& vertex_attributes, uint64_t stride, wgpu::VertexStepMode step_mode);
 
     wgpu::Surface get_surface(GLFWwindow* window);
+
+    void printErrors();
 
 };
