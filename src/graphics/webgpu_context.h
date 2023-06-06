@@ -18,14 +18,23 @@
 
 struct Uniform {
 
+    enum eType {
+        BUFFER,
+        SAMPLER,
+        TEXTURE_VIEW
+    };
+
     Uniform();
 
-    std::variant<wgpu::Buffer, wgpu::Sampler, wgpu::TextureView> data;
+    std::variant<WGPUBuffer, WGPUSampler, WGPUTextureView> data;
+
+    eType type = BUFFER;
 
     uint32_t binding = 0;
     uint32_t visibility = wgpu::ShaderStage::Vertex | wgpu::ShaderStage::Fragment;
 
     wgpu::BufferBindingType buffer_binding_type = wgpu::BufferBindingType::Uniform;
+    uint64_t buffer_size;
 
     wgpu::TextureBindingLayout texture_binding_layout;
     wgpu::StorageTextureBindingLayout storage_texture_binding_layout;
@@ -38,12 +47,12 @@ struct Uniform {
 
 struct WebGPUContext {
 
-    dawn::native::Instance*   instance;
-    wgpu::Surface             surface;
-    wgpu::Device              device;
-    wgpu::Queue               device_queue;
+    wgpu::Instance            instance = nullptr;
+    wgpu::Surface             surface = nullptr;
+    wgpu::Device              device = nullptr;
+    wgpu::Queue               device_queue = nullptr;
 
-    wgpu::SwapChain           screen_swapchain;
+    wgpu::SwapChain           screen_swapchain = nullptr;
     int                       screen_width = 0;
     int                       screen_height = 0;
 
@@ -51,6 +60,8 @@ struct WebGPUContext {
     static wgpu::TextureFormat xr_swapchain_format;
 
     bool                      is_initialized = false;
+
+    std::unique_ptr<wgpu::ErrorCallback> error_callback;
 
     GLFWwindow* window = nullptr;
 
@@ -62,7 +73,7 @@ struct WebGPUContext {
 
     wgpu::Buffer             create_buffer(uint64_t size, int usage, const void* data);
     wgpu::Texture            create_texture(wgpu::TextureDimension dimension, wgpu::TextureFormat format, wgpu::Extent3D size, int usage, uint32_t mipmaps);
-    wgpu::TextureView        create_texture_view(const wgpu::Texture& texture, wgpu::TextureViewDimension dimension, wgpu::TextureFormat format);
+    wgpu::TextureView        create_texture_view(wgpu::Texture texture, wgpu::TextureViewDimension dimension, wgpu::TextureFormat format);
 
     wgpu::BindGroupLayout    create_bind_group_layout(const std::vector<Uniform*>& uniforms);
     wgpu::BindGroup          create_bind_group(const std::vector<Uniform*>& uniforms, wgpu::BindGroupLayout bind_group_layout);

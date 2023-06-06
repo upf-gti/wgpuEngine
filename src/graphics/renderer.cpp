@@ -36,7 +36,7 @@ int Renderer::initialize(GLFWwindow* window, bool use_mirror_screen)
 
 #else
     // Create internal vulkan instance
-    webgpu_context.instance->DiscoverDefaultAdapters();
+    //webgpu_context.instance->DiscoverDefaultAdapters();
 #endif
 
     if (webgpu_context.initialize(window, !is_openxr_available || (is_openxr_available && use_mirror_screen))) {
@@ -156,7 +156,7 @@ void Renderer::render(wgpu::TextureView swapchain_view, wgpu::BindGroup bind_gro
 
     {
         // Update uniform buffer
-        webgpu_context.device_queue.writeBuffer(std::get<wgpu::Buffer>(u_buffer_viewprojection.data), 0, &(view_projection), sizeof(glm::mat4x4));
+        webgpu_context.device_queue.writeBuffer(std::get<WGPUBuffer>(u_buffer_viewprojection.data), 0, &(view_projection), sizeof(glm::mat4x4));
 
         // Create & fill the render pass (encoder)
         wgpu::RenderPassEncoder render_pass = device_command_encoder.beginRenderPass(render_pass_descr);
@@ -318,10 +318,12 @@ void Renderer::initRenderPipeline()
     u_render_texture_left_eye.data = webgpu_context.create_texture_view(left_eye_texture, wgpu::TextureViewDimension::_2D, wgpu::TextureFormat::RGBA8Unorm);
     u_render_texture_left_eye.binding = 0;
     u_render_texture_left_eye.visibility = wgpu::ShaderStage::Fragment;
+    u_render_texture_left_eye.type =  Uniform::TEXTURE_VIEW;
 
     u_render_texture_right_eye.data = webgpu_context.create_texture_view(right_eye_texture, wgpu::TextureViewDimension::_2D, wgpu::TextureFormat::RGBA8Unorm);
     u_render_texture_right_eye.binding = 0;
     u_render_texture_right_eye.visibility = wgpu::ShaderStage::Fragment;
+    u_render_texture_right_eye.type = Uniform::TEXTURE_VIEW;
 
     render_shader_module = webgpu_context.create_shader_module(RAW_SHADERS::simple_shaders);
 
@@ -375,24 +377,22 @@ void Renderer::initRenderPipeline()
 
     wgpu::TextureFormat swapchain_format = is_openxr_available ? webgpu_context.xr_swapchain_format : webgpu_context.swapchain_format;
 
-    wgpu::BlendState blend_state = {
-        .color = {
+    wgpu::BlendState blend_state;
+    blend_state.color = {
             .operation = wgpu::BlendOperation::Add,
             .srcFactor = wgpu::BlendFactor::SrcAlpha,
             .dstFactor = wgpu::BlendFactor::OneMinusSrcAlpha,
-        },
-        .alpha = {
+    };
+    blend_state.alpha = {
             .operation = wgpu::BlendOperation::Add,
             .srcFactor = wgpu::BlendFactor::Zero,
             .dstFactor = wgpu::BlendFactor::One,
-        }
     };
 
-    wgpu::ColorTargetState color_target = {
-        .format = swapchain_format,
-        .blend = &blend_state,
-        .writeMask = wgpu::ColorWriteMask::All
-    };
+    wgpu::ColorTargetState color_target;
+    color_target.format = swapchain_format;
+    color_target.blend = &blend_state;
+    color_target.writeMask = wgpu::ColorWriteMask::All;
 
     render_pipeline = webgpu_context.create_render_pipeline({ quad_vertex_layout }, color_target, render_shader_module, render_pipeline_layout);
 }
@@ -409,15 +409,17 @@ void Renderer::initComputePipeline()
     u_compute_texture_left_eye.storage_texture_binding_layout.access = wgpu::StorageTextureAccess::WriteOnly;
     u_compute_texture_left_eye.storage_texture_binding_layout.format = wgpu::TextureFormat::RGBA8Unorm;
     u_compute_texture_left_eye.storage_texture_binding_layout.viewDimension = wgpu::TextureViewDimension::_2D;
+    u_compute_texture_left_eye.type = Uniform::TEXTURE_VIEW;
 
     u_compute_texture_right_eye.data = webgpu_context.create_texture_view(right_eye_texture, wgpu::TextureViewDimension::_2D, wgpu::TextureFormat::RGBA8Unorm);
     u_compute_texture_right_eye.binding = 1;
     u_compute_texture_right_eye.visibility = wgpu::ShaderStage::Compute;
     u_compute_texture_right_eye.is_storage_texture = true;
-    u_compute_texture_left_eye.storage_texture_binding_layout.access = wgpu::StorageTextureAccess::WriteOnly;
-    u_compute_texture_left_eye.storage_texture_binding_layout.format = wgpu::TextureFormat::RGBA8Unorm;
-    u_compute_texture_left_eye.storage_texture_binding_layout.viewDimension = wgpu::TextureViewDimension::_2D;
-    
+    u_compute_texture_right_eye.storage_texture_binding_layout.access = wgpu::StorageTextureAccess::WriteOnly;
+    u_compute_texture_right_eye.storage_texture_binding_layout.format = wgpu::TextureFormat::RGBA8Unorm;
+    u_compute_texture_right_eye.storage_texture_binding_layout.viewDimension = wgpu::TextureViewDimension::_2D;
+    u_compute_texture_right_eye.type = Uniform::TEXTURE_VIEW;
+
     // Load compute shader
     compute_shader_module = webgpu_context.create_shader_module(RAW_SHADERS::compute_shader);
     

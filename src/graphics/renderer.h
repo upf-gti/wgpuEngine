@@ -18,23 +18,23 @@ class Renderer {
 
     WebGPUContext webgpu_context;
 
-    wgpu::RenderPipeline      render_pipeline;
-    wgpu::ShaderModule        render_shader_module;
+    wgpu::RenderPipeline      render_pipeline = nullptr;
+    wgpu::ShaderModule        render_shader_module = nullptr;
 
-    wgpu::PipelineLayout      render_pipeline_layout;
-    wgpu::BindGroupLayout     render_bind_group_layout;
+    wgpu::PipelineLayout      render_pipeline_layout = nullptr;
+    wgpu::BindGroupLayout     render_bind_group_layout = nullptr;
 
-    wgpu::BindGroup           render_bind_group_left_eye;
-    wgpu::BindGroup           render_bind_group_right_eye;
+    wgpu::BindGroup           render_bind_group_left_eye = nullptr;
+    wgpu::BindGroup           render_bind_group_right_eye = nullptr;
 
-    wgpu::ComputePipeline     compute_pipeline;
-    wgpu::ShaderModule        compute_shader_module;
-    wgpu::PipelineLayout      compute_pipeline_layout;
-    wgpu::BindGroupLayout     compute_bind_group_layout;
-    wgpu::BindGroup           compute_bind_group;
+    wgpu::ComputePipeline     compute_pipeline = nullptr;
+    wgpu::ShaderModule        compute_shader_module = nullptr;
+    wgpu::PipelineLayout      compute_pipeline_layout = nullptr;
+    wgpu::BindGroupLayout     compute_bind_group_layout = nullptr;
+    wgpu::BindGroup           compute_bind_group = nullptr;
 
-    wgpu::Texture             left_eye_texture;
-    wgpu::Texture             right_eye_texture;
+    wgpu::Texture             left_eye_texture = nullptr;
+    wgpu::Texture             right_eye_texture = nullptr;
 
     // Uniforms
     Uniform                   u_buffer_viewprojection;
@@ -45,7 +45,7 @@ class Renderer {
 
     std::vector<wgpu::VertexAttribute>  quad_vertex_attributes;
     wgpu::VertexBufferLayout            quad_vertex_layout;
-    wgpu::Buffer                        quad_vertex_buffer;
+    wgpu::Buffer                        quad_vertex_buffer = nullptr;
 
 #if defined(XR_SUPPORT) && defined(USE_MIRROR_WINDOW)
     wgpu::RenderPipeline      mirror_pipeline;
@@ -58,7 +58,7 @@ class Renderer {
 #endif
 
 public:
-    // Methods =========================
+
     int initialize(GLFWwindow* window, bool use_mirror_screen);
     void clean();
 

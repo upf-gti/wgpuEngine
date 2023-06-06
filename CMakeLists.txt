@@ -89,7 +89,8 @@ if (NOT EMSCRIPTEN)
 endif()
 
 # glfw
-target_link_libraries(${PROJECT_NAME} glfw)
+add_subdirectory(libraries/glfw3webgpu)
+target_link_libraries(${PROJECT_NAME} glfw glfw3webgpu)
 
 # glm
 add_subdirectory(libraries/glm)
