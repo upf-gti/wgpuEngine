@@ -18,73 +18,70 @@
 
 struct Uniform {
 
-    enum eType {
-        BUFFER,
-        SAMPLER,
-        TEXTURE_VIEW
-    };
-
     Uniform();
 
     std::variant<WGPUBuffer, WGPUSampler, WGPUTextureView> data;
 
-    eType type = BUFFER;
-
     uint32_t binding = 0;
-    uint32_t visibility = wgpu::ShaderStage::Vertex | wgpu::ShaderStage::Fragment;
+    uint32_t visibility = WGPUShaderStage_Vertex | WGPUShaderStage_Fragment;
 
-    wgpu::BufferBindingType buffer_binding_type = wgpu::BufferBindingType::Uniform;
+    WGPUBufferBindingType buffer_binding_type = WGPUBufferBindingType_Uniform;
     uint64_t buffer_size;
 
-    wgpu::TextureBindingLayout texture_binding_layout;
-    wgpu::StorageTextureBindingLayout storage_texture_binding_layout;
+    WGPUTextureBindingLayout texture_binding_layout;
+    WGPUStorageTextureBindingLayout storage_texture_binding_layout;
 
     bool is_storage_texture = false;
 
-    wgpu::BindGroupLayoutEntry get_bind_group_layout_entry() const;
-    wgpu::BindGroupEntry       get_bind_group_entry() const;
+    WGPUBindGroupLayoutEntry get_bind_group_layout_entry() const;
+    WGPUBindGroupEntry       get_bind_group_entry() const;
 };
 
 struct WebGPUContext {
 
-    wgpu::Instance            instance = nullptr;
-    wgpu::Surface             surface = nullptr;
-    wgpu::Device              device = nullptr;
-    wgpu::Queue               device_queue = nullptr;
+#ifndef __EMSCRIPTEN__
+    dawn::native::Instance* instance;
+#else
+    WGPUInstance            instance = nullptr;
+#endif
 
-    wgpu::SwapChain           screen_swapchain = nullptr;
-    int                       screen_width = 0;
-    int                       screen_height = 0;
+    WGPUSurface             surface = nullptr;
+    WGPUDevice              device = nullptr;
+    WGPUQueue               device_queue = nullptr;
 
-    static wgpu::TextureFormat swapchain_format;
-    static wgpu::TextureFormat xr_swapchain_format;
+    WGPUSwapChain           screen_swapchain = nullptr;
+    int                     screen_width = 0;
+    int                     screen_height = 0;
+
+    static WGPUTextureFormat swapchain_format;
+    static WGPUTextureFormat xr_swapchain_format;
 
     bool                      is_initialized = false;
-
-    std::unique_ptr<wgpu::ErrorCallback> error_callback;
 
     GLFWwindow* window = nullptr;
 
     int initialize(GLFWwindow* window, bool create_screen_swapchain);
 
-    void                     create_instance();
+    void                   create_instance();
 
-    wgpu::ShaderModule       create_shader_module(char const* code);
+    WGPUInstance           get_instance();
 
-    wgpu::Buffer             create_buffer(uint64_t size, int usage, const void* data);
-    wgpu::Texture            create_texture(wgpu::TextureDimension dimension, wgpu::TextureFormat format, wgpu::Extent3D size, int usage, uint32_t mipmaps);
-    wgpu::TextureView        create_texture_view(wgpu::Texture texture, wgpu::TextureViewDimension dimension, wgpu::TextureFormat format);
+    WGPUShaderModule       create_shader_module(char const* code);
 
-    wgpu::BindGroupLayout    create_bind_group_layout(const std::vector<Uniform*>& uniforms);
-    wgpu::BindGroup          create_bind_group(const std::vector<Uniform*>& uniforms, wgpu::BindGroupLayout bind_group_layout);
-    wgpu::PipelineLayout     create_pipeline_layout(const std::vector<wgpu::BindGroupLayout>& bind_group_layouts);
+    WGPUBuffer             create_buffer(uint64_t size, int usage, const void* data);
+    WGPUTexture            create_texture(WGPUTextureDimension dimension, WGPUTextureFormat format, WGPUExtent3D size, int usage, uint32_t mipmaps);
+    WGPUTextureView        create_texture_view(WGPUTexture texture, WGPUTextureViewDimension dimension, WGPUTextureFormat format);
 
-    wgpu::RenderPipeline     create_render_pipeline(const std::vector<wgpu::VertexBufferLayout>& vertex_attributes, wgpu::ColorTargetState color_target, wgpu::ShaderModule render_shader_module, wgpu::PipelineLayout pipeline_layout);
-    wgpu::ComputePipeline    create_compute_pipeline(wgpu::ShaderModule compute_shader_module, wgpu::PipelineLayout pipeline_layout);
+    WGPUBindGroupLayout    create_bind_group_layout(const std::vector<Uniform*>& uniforms);
+    WGPUBindGroup          create_bind_group(const std::vector<Uniform*>& uniforms, WGPUBindGroupLayout bind_group_layout);
+    WGPUPipelineLayout     create_pipeline_layout(const std::vector<WGPUBindGroupLayout>& bind_group_layouts);
 
-    wgpu::VertexBufferLayout create_vertex_buffer_layout(const std::vector<wgpu::VertexAttribute>& vertex_attributes, uint64_t stride, wgpu::VertexStepMode step_mode);
+    WGPURenderPipeline     create_render_pipeline(const std::vector<WGPUVertexBufferLayout>& vertex_attributes, WGPUColorTargetState color_target, WGPUShaderModule render_shader_module, WGPUPipelineLayout pipeline_layout);
+    WGPUComputePipeline    create_compute_pipeline(WGPUShaderModule compute_shader_module, WGPUPipelineLayout pipeline_layout);
 
-    wgpu::Surface get_surface(GLFWwindow* window);
+    WGPUVertexBufferLayout create_vertex_buffer_layout(const std::vector<WGPUVertexAttribute>& vertex_attributes, uint64_t stride, WGPUVertexStepMode step_mode);
+
+    WGPUSurface get_surface(GLFWwindow* window);
 
     void printErrors();
 

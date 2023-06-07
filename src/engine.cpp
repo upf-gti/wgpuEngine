@@ -18,7 +18,7 @@ bool Engine::isOpenXRAvailable()
 bool Engine::useMirrorWindow()
 {
 #ifdef USE_MIRROR_WINDOW
-    return renderer.isOpenXRAvailable();
+    return true;
 #else
     return false;
 #endif

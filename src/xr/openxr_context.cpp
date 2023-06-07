@@ -72,7 +72,7 @@ int OpenXRContext::initialize(WebGPUContext* webgpu_context)
     if (!xr_result(instance, result, "Failed to enumerate swapchain formats"))
         return 1;
 
-    //webgpu_context->swapchain_format = static_cast<wgpu::TextureFormat>(swapchain_formats[0]);
+    //webgpu_context->swapchain_format = static_cast<WGPUTextureFormat>(swapchain_formats[0]);
 
     //config_render_pipeline();
 
@@ -162,42 +162,36 @@ void OpenXRContext::clean()
     xrDestroyInstance(instance);
 }
 
-bool OpenXRContext::isOpenXRAvailable()
+bool OpenXRContext::create_instance()
 {
     XrResult result;
 
+    uint32_t extension_count = 0;
     result = xrEnumerateInstanceExtensionProperties(NULL, 0, &extension_count, NULL);
 
     if (!xr_result(NULL, result, "Could not initilize OpenXR: Failed to enumerate number of extension properties"))
         return false;
 
-    return true;
-}
-
-int OpenXRContext::createInstance()
-{
-    XrResult result;
-
     std::vector<XrExtensionProperties> extensionProperties(extension_count, { XR_TYPE_EXTENSION_PROPERTIES, nullptr });
     result = xrEnumerateInstanceExtensionProperties(NULL, extension_count, &extension_count, extensionProperties.data());
     if (!xr_result(NULL, result, "Failed to enumerate extension properties"))
-        return 1;
+        return false;
 
     uint32_t layer_count = 0;
     result = xrEnumerateApiLayerProperties(0, &layer_count, NULL);
 
     if (!xr_result(NULL, result, "Failed to enumerate layer properties"))
-        return 1;
+        return false;
 
     std::vector<XrApiLayerProperties> layerProperties(layer_count, { XR_TYPE_API_LAYER_PROPERTIES, nullptr });
     result = xrEnumerateApiLayerProperties(layer_count, &layer_count, layerProperties.data());
     if (!xr_result(NULL, result, "Failed to enumerate extension properties"))
-        return 1;
+        return false;
 
     bool vulkan_ext = false;
 
     std::cout << "OpenXR extensions:" << std::endl;
-    for (auto ext : extensionProperties) {
+    for (const auto &ext : extensionProperties) {
         std::cout << "\t" << ext.extensionName << " " << ext.extensionVersion << std::endl;
 
         if (strcmp("XR_KHR_vulkan_enable2", ext.extensionName) == 0) {
@@ -220,7 +214,7 @@ int OpenXRContext::createInstance()
     // A graphics extension is required to draw anything in VR
     if (!vulkan_ext) {
         std::cout << "Runtime does not support Vulkan extension!" << std::endl;
-        return 1;
+        return false;
     }
 
     // --- Create XrInstance
@@ -251,7 +245,7 @@ int OpenXRContext::createInstance()
 
     result = xrCreateInstance(&instance_create_info, &instance);
     if (!xr_result(NULL, result, "Failed to create XR instance."))
-        return 1;
+        return false;
 
     XrInstanceProperties instance_props = {
         .type = XR_TYPE_INSTANCE_PROPERTIES,
@@ -260,7 +254,7 @@ int OpenXRContext::createInstance()
 
     result = xrGetInstanceProperties(instance, &instance_props);
     if (!xr_result(NULL, result, "Failed to get instance info"))
-        return 1;
+        return false;
 
     std::cout
         << "Runtime Name: " << instance_props.runtimeName << "\n"
@@ -270,9 +264,9 @@ int OpenXRContext::createInstance()
     result = xrGetSystem(instance, &system_get_info, &system_id);
 
     if (!xr_result(instance, result, "Failed to get system for HMD form factor."))
-        return 1;
+        return false;
 
-    return 0;
+    return true;
 }
 
 bool OpenXRContext::xr_result(XrInstance xrInstance, XrResult result, const char* format, ...)
@@ -573,7 +567,7 @@ void OpenXRContext::init_actions()
     (xrAttachSessionActionSets(session, &attachInfo));
 }
 
-void OpenXRContext::initFrame()
+void OpenXRContext::init_frame()
 {
     XrResult result;
 
@@ -619,7 +613,7 @@ void OpenXRContext::initFrame()
     }
 }
 
-void OpenXRContext::acquireSwapchain(int swapchain_index)
+void OpenXRContext::acquire_swapchain(int swapchain_index)
 {
     XrResult result;
 
@@ -641,7 +635,7 @@ void OpenXRContext::acquireSwapchain(int swapchain_index)
         return;
 }
 
-void OpenXRContext::releaseSwapchain(int swapchain_index)
+void OpenXRContext::release_swapchain(int swapchain_index)
 {
     XrResult result;
 
@@ -654,7 +648,7 @@ void OpenXRContext::releaseSwapchain(int swapchain_index)
         return;
 }
 
-void OpenXRContext::endFrame()
+void OpenXRContext::end_frame()
 {
     XrResult result;
 

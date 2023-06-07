@@ -66,8 +66,6 @@ struct OpenXRContext {
     std::vector<sSwapchainData> swapchains;
     uint32_t                    swapchain_length; // Number of textures per swapchain
 
-    uint32_t                    extension_count = 0;
-
     std::vector<XrView>                             views;
     std::vector<XrViewConfigurationView>            viewconfig_views;
     std::vector<XrCompositionLayerProjectionView>	projection_views;
@@ -85,20 +83,19 @@ struct OpenXRContext {
 
     bool initialized = false;
 
-    int initialize(WebGPUContext* webgpu_context);
+    int  initialize(WebGPUContext* webgpu_context);
     void clean();
-    bool isOpenXRAvailable();
-    int createInstance();
+    bool create_instance();
     bool xr_result(XrInstance xrInstance, XrResult result, const char* format, ...);
     void print_viewconfig_view_info();
     bool check_vulkan_version(XrGraphicsRequirementsVulkanKHR* vulkan_reqs);
     void print_reference_spaces();
     void init_actions();
 
-    void initFrame();
-    void acquireSwapchain(int swapchain_index);
-    void releaseSwapchain(int swapchain_index);
-    void endFrame();
+    void init_frame();
+    void acquire_swapchain(int swapchain_index);
+    void release_swapchain(int swapchain_index);
+    void end_frame();
 };
 
 #endif

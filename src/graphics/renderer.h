@@ -1,14 +1,13 @@
 #pragma once
 
 #include "utils.h"
-
-#ifdef XR_SUPPORT
-
-#include "xr/openxr_context.h"
-
-#endif
+#include "framework/mesh.h"
 
 #include "graphics/webgpu_context.h"
+
+#ifdef XR_SUPPORT
+#include "xr/openxr_context.h"
+#endif
 
 class Renderer {
 
@@ -18,41 +17,42 @@ class Renderer {
 
     WebGPUContext webgpu_context;
 
-    wgpu::RenderPipeline      render_pipeline = nullptr;
-    wgpu::ShaderModule        render_shader_module = nullptr;
+    WGPURenderPipeline      render_pipeline = nullptr;
+    WGPUShaderModule        render_shader_module = nullptr;
 
-    wgpu::PipelineLayout      render_pipeline_layout = nullptr;
-    wgpu::BindGroupLayout     render_bind_group_layout = nullptr;
+    WGPUPipelineLayout      render_pipeline_layout = nullptr;
+    WGPUBindGroupLayout     render_bind_group_layout = nullptr;
 
-    wgpu::BindGroup           render_bind_group_left_eye = nullptr;
-    wgpu::BindGroup           render_bind_group_right_eye = nullptr;
+    WGPUBindGroup           render_bind_group_left_eye = nullptr;
+    WGPUBindGroup           render_bind_group_right_eye = nullptr;
 
-    wgpu::ComputePipeline     compute_pipeline = nullptr;
-    wgpu::ShaderModule        compute_shader_module = nullptr;
-    wgpu::PipelineLayout      compute_pipeline_layout = nullptr;
-    wgpu::BindGroupLayout     compute_bind_group_layout = nullptr;
-    wgpu::BindGroup           compute_bind_group = nullptr;
+    WGPUComputePipeline     compute_pipeline = nullptr;
+    WGPUShaderModule        compute_shader_module = nullptr;
+    WGPUPipelineLayout      compute_pipeline_layout = nullptr;
+    WGPUBindGroupLayout     compute_bind_group_layout = nullptr;
+    WGPUBindGroup           compute_bind_group = nullptr;
 
-    wgpu::Texture             left_eye_texture = nullptr;
-    wgpu::Texture             right_eye_texture = nullptr;
+    WGPUTexture             left_eye_texture = nullptr;
+    WGPUTexture             right_eye_texture = nullptr;
 
     // Uniforms
-    Uniform                   u_buffer_viewprojection;
-    Uniform                   u_compute_texture_left_eye;
-    Uniform                   u_compute_texture_right_eye;
-    Uniform                   u_render_texture_left_eye;
-    Uniform                   u_render_texture_right_eye;
+    Uniform                 u_buffer_viewprojection;
+    Uniform                 u_compute_texture_left_eye;
+    Uniform                 u_compute_texture_right_eye;
+    Uniform                 u_render_texture_left_eye;
+    Uniform                 u_render_texture_right_eye;
 
-    std::vector<wgpu::VertexAttribute>  quad_vertex_attributes;
-    wgpu::VertexBufferLayout            quad_vertex_layout;
-    wgpu::Buffer                        quad_vertex_buffer = nullptr;
+    Mesh                              quad_mesh;
+    std::vector<WGPUVertexAttribute>  quad_vertex_attributes;
+    WGPUVertexBufferLayout            quad_vertex_layout;
+    WGPUBuffer                        quad_vertex_buffer = nullptr;
 
 #if defined(XR_SUPPORT) && defined(USE_MIRROR_WINDOW)
-    wgpu::RenderPipeline      mirror_pipeline;
-    wgpu::PipelineLayout      mirror_pipeline_layout;
-    wgpu::BindGroupLayout     mirror_bind_group_layout;
-    wgpu::BindGroup           mirror_bind_group;
-    wgpu::ShaderModule        mirror_shader_module;
+    WGPURenderPipeline      mirror_pipeline;
+    WGPUPipelineLayout      mirror_pipeline_layout;
+    WGPUBindGroupLayout     mirror_bind_group_layout;
+    WGPUBindGroup           mirror_bind_group;
+    WGPUShaderModule        mirror_shader_module;
 
     Uniform                   uniform_left_eye_view;
 #endif
@@ -74,7 +74,7 @@ private:
     bool is_openxr_available = false;
     bool use_mirror_screen = false;
 
-    void render(wgpu::TextureView swapchain_view, wgpu::BindGroup bind_group, const glm::mat4x4& view_projection);
+    void render(WGPUTextureView swapchain_view, WGPUBindGroup bind_group, const glm::mat4x4& view_projection);
     void renderScreen();
 
 #if defined(XR_SUPPORT)

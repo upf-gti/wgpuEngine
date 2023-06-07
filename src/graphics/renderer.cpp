@@ -16,12 +16,7 @@ int Renderer::initialize(GLFWwindow* window, bool use_mirror_screen)
     webgpu_context.create_instance();
 
 #ifdef XR_SUPPORT
-    is_openxr_available = xr_context.isOpenXRAvailable();
-
-    if (is_openxr_available && xr_context.createInstance()) {
-        std::cout << "Could not create OpenXR instance" << std::endl;
-        return 1;
-    }
+    is_openxr_available = xr_context.create_instance();
 
     // Create internal vulkan instance
     if (is_openxr_available) {
@@ -29,9 +24,6 @@ int Renderer::initialize(GLFWwindow* window, bool use_mirror_screen)
         dawn::native::AdapterDiscoveryOptionsBase** options = new dawn::native::AdapterDiscoveryOptionsBase * ();
         dawnxr::internal::createVulkanAdapterDiscoveryOptions(xr_context.instance, xr_context.system_id, options);
         webgpu_context.instance->DiscoverAdapters(*options);
-    }
-    else {
-        webgpu_context.instance->DiscoverDefaultAdapters();
     }
 
 #else
@@ -78,14 +70,15 @@ void Renderer::clean()
 void Renderer::render()
 {
 
-#if defined(XR_SUPPORT)
-    renderXr();
-#else
-    renderScreen();
-#endif
+    if (is_openxr_available) {
+        renderXr();
+    }
+    else {
+        renderScreen();
+    }
 
 #if defined(XR_SUPPORT)
-    if (use_mirror_screen && is_openxr_available && xr_context.initialized) {
+    if (use_mirror_screen && is_openxr_available) {
         renderMirror();
     }
 #endif
@@ -97,20 +90,20 @@ void Renderer::renderScreen()
     glm::mat4x4 projection = glm::perspective(glm::radians(45.0f), 16.0f / 9.0f, 0.1f, 100.0f);
 
     glm::mat4x4 view_projection = projection * view;
-    render(webgpu_context.screen_swapchain.getCurrentTextureView(), render_bind_group_left_eye, view_projection);
-    webgpu_context.screen_swapchain.present();
+    render(wgpuSwapChainGetCurrentTextureView(webgpu_context.screen_swapchain), render_bind_group_left_eye, view_projection);
+    wgpuSwapChainPresent(webgpu_context.screen_swapchain);
 }
 
 #if defined(XR_SUPPORT)
 
 void Renderer::renderXr()
 {
-    if (is_openxr_available && xr_context.initialized) {
-        xr_context.initFrame();
+    if (is_openxr_available) {
+        xr_context.init_frame();
 
         for (int i = 0; i < xr_context.view_count; ++i) {
 
-            xr_context.acquireSwapchain(i);
+            xr_context.acquire_swapchain(i);
 
             const sSwapchainData& swapchainData = xr_context.swapchains[i];
 
@@ -120,14 +113,14 @@ void Renderer::renderXr()
 
             glm::mat4x4 view_projection = projection * view;
 
-            wgpu::BindGroup bind_group = i == 0 ? render_bind_group_left_eye : render_bind_group_right_eye;
+            WGPUBindGroup bind_group = i == 0 ? render_bind_group_left_eye : render_bind_group_right_eye;
 
             render(swapchainData.images[swapchainData.image_index].textureView, bind_group, view_projection);
 
-            xr_context.releaseSwapchain(i);
+            xr_context.release_swapchain(i);
         }
 
-        xr_context.endFrame();
+        xr_context.end_frame();
     }
     else {
         renderScreen();
@@ -135,55 +128,56 @@ void Renderer::renderXr()
 }
 #endif
 
-void Renderer::render(wgpu::TextureView swapchain_view, wgpu::BindGroup bind_group, const glm::mat4x4& view_projection)
+void Renderer::render(WGPUTextureView swapchain_view, WGPUBindGroup bind_group, const glm::mat4x4& view_projection)
 {
     compute();
 
     // Create the command encoder
-    wgpu::CommandEncoderDescriptor encoder_desc = {};
-    wgpu::CommandEncoder device_command_encoder = webgpu_context.device.createCommandEncoder(encoder_desc);
+    WGPUCommandEncoderDescriptor encoder_desc = {};
+    WGPUCommandEncoder command_encoder = wgpuDeviceCreateCommandEncoder(webgpu_context.device, &encoder_desc);
     
     // Prepare the color attachment
-    wgpu::RenderPassColorAttachment render_pass_color_attachment = {};
+    WGPURenderPassColorAttachment render_pass_color_attachment = {};
     render_pass_color_attachment.view = swapchain_view;
-    render_pass_color_attachment.loadOp = wgpu::LoadOp::Clear;
-    render_pass_color_attachment.storeOp = wgpu::StoreOp::Store;
-    render_pass_color_attachment.clearValue = wgpu::Color(0.0f, 0.0f, 0.0f, 1.0f);
+    render_pass_color_attachment.loadOp = WGPULoadOp_Clear;
+    render_pass_color_attachment.storeOp = WGPUStoreOp_Store;
+    render_pass_color_attachment.clearValue = WGPUColor(0.0f, 0.0f, 0.0f, 1.0f);
 
-    wgpu::RenderPassDescriptor render_pass_descr = {};
+    WGPURenderPassDescriptor render_pass_descr = {};
     render_pass_descr.colorAttachmentCount = 1;
     render_pass_descr.colorAttachments = &render_pass_color_attachment;
 
     {
         // Update uniform buffer
-        webgpu_context.device_queue.writeBuffer(std::get<WGPUBuffer>(u_buffer_viewprojection.data), 0, &(view_projection), sizeof(glm::mat4x4));
+        wgpuQueueWriteBuffer(webgpu_context.device_queue, std::get<WGPUBuffer>(u_buffer_viewprojection.data), 0, &(view_projection), sizeof(glm::mat4x4));
 
         // Create & fill the render pass (encoder)
-        wgpu::RenderPassEncoder render_pass = device_command_encoder.beginRenderPass(render_pass_descr);
+        WGPURenderPassEncoder render_pass = wgpuCommandEncoderBeginRenderPass(command_encoder, &render_pass_descr);
 
         // Bind Pipeline
-        render_pass.setPipeline(render_pipeline);
+        wgpuRenderPassEncoderSetPipeline(render_pass, render_pipeline);
 
         // Set binding group
-        render_pass.setBindGroup(0, bind_group, 0, nullptr);
+        wgpuRenderPassEncoderSetBindGroup(render_pass, 0, bind_group, 0, nullptr);
 
         // Set vertex buffer while encoding the render pass
-        render_pass.setVertexBuffer(0, quad_vertex_buffer, 0, quad_vertex_buffer.getSize());
+        wgpuRenderPassEncoderSetVertexBuffer(render_pass, 0, quad_vertex_buffer, 0, quad_mesh.getSize() * sizeof(float));
 
         // Submit drawcall
-        render_pass.draw(6, 1, 0, 0);
+        wgpuRenderPassEncoderDraw(render_pass, 6, 1, 0, 0);
 
-        render_pass.end();
+        wgpuRenderPassEncoderEnd(render_pass);
         //render_pass.Release();
     }
 
-    wgpu::CommandBufferDescriptor cmd_buff_descriptor = {};
+    WGPUCommandBufferDescriptor cmd_buff_descriptor = {};
     cmd_buff_descriptor.nextInChain = NULL;
     cmd_buff_descriptor.label = "Command buffer";
 
-    wgpu::CommandBuffer commander = device_command_encoder.finish(cmd_buff_descriptor);
+    WGPUCommandBuffer commands = wgpuCommandEncoderFinish(command_encoder, &cmd_buff_descriptor);
+   
+    wgpuQueueSubmit(webgpu_context.device_queue, 1, &commands);
     //webgpu_context.device_command_encoder.Release();
-    webgpu_context.device_queue.submit(1, &commander);
 
     // Check validation errors
     webgpu_context.printErrors();
@@ -193,33 +187,33 @@ void Renderer::render(wgpu::TextureView swapchain_view, wgpu::BindGroup bind_gro
 void Renderer::compute()
 {
     // Initialize a command encoder
-    wgpu::CommandEncoderDescriptor encoder_desc = {};
-    wgpu::CommandEncoder encoder = webgpu_context.device.createCommandEncoder(encoder_desc);
+    WGPUCommandEncoderDescriptor encoder_desc = {};
+    WGPUCommandEncoder command_encoder = wgpuDeviceCreateCommandEncoder(webgpu_context.device, &encoder_desc);
 
     // Create compute pass
-    wgpu::ComputePassDescriptor compute_pass_desc;
+    WGPUComputePassDescriptor compute_pass_desc = {};
     compute_pass_desc.timestampWriteCount = 0;
     compute_pass_desc.timestampWrites = nullptr;
-    wgpu::ComputePassEncoder compute_pass = encoder.beginComputePass(compute_pass_desc);
+    WGPUComputePassEncoder compute_pass = wgpuCommandEncoderBeginComputePass(command_encoder, &compute_pass_desc);
 
     // Use compute pass
-    compute_pass.setPipeline(compute_pipeline);
-    compute_pass.setBindGroup(0, compute_bind_group, 0, nullptr);
+    wgpuComputePassEncoderSetPipeline(compute_pass, compute_pipeline);
+    wgpuComputePassEncoderSetBindGroup(compute_pass, 0, compute_bind_group, 0, nullptr);
 
     uint32_t workgroupSize = 16;
     // This ceils invocationCount / workgroupSize
     uint32_t workgroupWidth = (render_width + workgroupSize - 1) / workgroupSize;
     uint32_t workgroupHeight = (render_height + workgroupSize - 1) / workgroupSize;
-    compute_pass.dispatchWorkgroups(workgroupWidth, workgroupHeight, 1);
+    wgpuComputePassEncoderDispatchWorkgroups(compute_pass, workgroupWidth, workgroupHeight, 1);
 
     // Finalize compute pass
-    compute_pass.end();
+    wgpuComputePassEncoderEnd(compute_pass);
 
-    wgpu::CommandBufferDescriptor cmd_buff_descriptor = {};
+    WGPUCommandBufferDescriptor cmd_buff_descriptor = {};
 
     // Encode and submit the GPU commands
-    wgpu::CommandBuffer commands = encoder.finish(cmd_buff_descriptor);
-    webgpu_context.device_queue.submit(1, &commands);
+    WGPUCommandBuffer commands = wgpuCommandEncoderFinish(command_encoder, &cmd_buff_descriptor);
+    wgpuQueueSubmit(webgpu_context.device_queue, 1, &commands);
 
     // Check validation errors
     webgpu_context.printErrors();
@@ -230,59 +224,55 @@ void Renderer::compute()
 void Renderer::renderMirror()
 {
     // Get the current texture in the swapchain
-    wgpu::TextureView current_texture_view = webgpu_context.screen_swapchain.GetCurrentTextureView();
+    WGPUTextureView current_texture_view = wgpuSwapChainGetCurrentTextureView(webgpu_context.screen_swapchain);
     assert_msg(current_texture_view != NULL, "Error, dont resize the window please!!");
 
     // Create the command encoder
-    wgpu::CommandEncoderDescriptor encoder_desc;
+    WGPUCommandEncoderDescriptor encoder_desc = {};
     encoder_desc.label = "Device command encoder";
 
-    wgpu::CommandEncoder device_command_encoder = webgpu_context.device.CreateCommandEncoder(&encoder_desc);
-    
+    WGPUCommandEncoder command_encoder = wgpuDeviceCreateCommandEncoder(webgpu_context.device, &encoder_desc);
+
     // Create & fill the render pass (encoder)
-    wgpu::RenderPassEncoder render_pass;
     {
         // Prepare the color attachment
-        wgpu::RenderPassColorAttachment render_pass_color_attachment = {
-            .view = current_texture_view,
-            .loadOp = wgpu::LoadOp::Clear,
-            .storeOp = wgpu::StoreOp::Store,
-            .clearValue = {0.0f,0.0f,0.0f,1.0f}
-        };
-        wgpu::RenderPassDescriptor render_pass_descr = {
-            .colorAttachmentCount = 1,
-            .colorAttachments = &render_pass_color_attachment,
-        };
+        WGPURenderPassColorAttachment render_pass_color_attachment = {};
+        render_pass_color_attachment.view = current_texture_view;
+        render_pass_color_attachment.loadOp = WGPULoadOp_Clear;
+        render_pass_color_attachment.storeOp = WGPUStoreOp_Store;
+        render_pass_color_attachment.clearValue = WGPUColor(0.0f, 0.0f, 0.0f, 1.0f);
+
+        WGPURenderPassDescriptor render_pass_descr = {};
+        render_pass_descr.colorAttachmentCount = 1;
+        render_pass_descr.colorAttachments = &render_pass_color_attachment;
+
         {
-            render_pass = device_command_encoder.BeginRenderPass(&render_pass_descr);
+            WGPURenderPassEncoder render_pass = wgpuCommandEncoderBeginRenderPass(command_encoder, &render_pass_descr);
 
             // Bind Pipeline
-            render_pass.SetPipeline(mirror_pipeline);
+            wgpuRenderPassEncoderSetPipeline(render_pass, mirror_pipeline);
 
             // Set binding group
-            render_pass.SetBindGroup(0, mirror_bind_group, 0, nullptr);
+            wgpuRenderPassEncoderSetBindGroup(render_pass, 0, mirror_bind_group, 0, nullptr);
 
             // Set vertex buffer while encoding the render pass
-            render_pass.SetVertexBuffer(0, quad_vertex_buffer, 0, quad_vertex_buffer.GetSize());
+            wgpuRenderPassEncoderSetVertexBuffer(render_pass, 0, quad_vertex_buffer, 0, quad_mesh.getSize() * sizeof(float));
 
             // Submit drawcall
-            render_pass.Draw(6, 1, 0, 0);
+            wgpuRenderPassEncoderDraw(render_pass, 6, 1, 0, 0);
 
-            render_pass.End();
-            //render_pass.Release();
+            wgpuRenderPassEncoderEnd(render_pass);
         }
     }
 
     //
     {
-        wgpu::CommandBufferDescriptor cmd_buff_descriptor = {
-            .nextInChain = NULL,
-            .label = "Command buffer"
-        };
+        WGPUCommandBufferDescriptor cmd_buff_descriptor = {};
+        cmd_buff_descriptor.nextInChain = NULL;
+        cmd_buff_descriptor.label = "Command buffer";
 
-        wgpu::CommandBuffer commander = device_command_encoder.Finish(&cmd_buff_descriptor);
-        //webgpu_context.device_command_encoder.Release();
-        webgpu_context.device_queue.Submit(1, &commander);
+        WGPUCommandBuffer commands = wgpuCommandEncoderFinish(command_encoder, &cmd_buff_descriptor);
+        wgpuQueueSubmit(webgpu_context.device_queue, 1, &commands);
 
         //commander.Release();
         //current_texture_view.Release();
@@ -290,7 +280,7 @@ void Renderer::renderMirror()
 
     // Submit frame to mirror window
     {
-        webgpu_context.screen_swapchain.Present();
+        wgpuSwapChainPresent(webgpu_context.screen_swapchain);
     }
 
     // Check validation errors
@@ -302,28 +292,26 @@ void Renderer::renderMirror()
 void Renderer::initRenderPipeline()
 {
     left_eye_texture = webgpu_context.create_texture(
-        wgpu::TextureDimension::_2D,
-        wgpu::TextureFormat::RGBA8Unorm,
+        WGPUTextureDimension_2D,
+        WGPUTextureFormat_RGBA8Unorm,
         { render_width, render_height, 1 },
-        wgpu::TextureUsage::TextureBinding | wgpu::TextureUsage::StorageBinding,
+        WGPUTextureUsage_TextureBinding | WGPUTextureUsage_StorageBinding,
         1);
 
     right_eye_texture = webgpu_context.create_texture(
-        wgpu::TextureDimension::_2D,
-        wgpu::TextureFormat::RGBA8Unorm,
+        WGPUTextureDimension_2D,
+        WGPUTextureFormat_RGBA8Unorm,
         { render_width, render_height, 1 },
-        wgpu::TextureUsage::TextureBinding | wgpu::TextureUsage::StorageBinding,
+        WGPUTextureUsage_TextureBinding | WGPUTextureUsage_StorageBinding,
         1);
 
-    u_render_texture_left_eye.data = webgpu_context.create_texture_view(left_eye_texture, wgpu::TextureViewDimension::_2D, wgpu::TextureFormat::RGBA8Unorm);
+    u_render_texture_left_eye.data = webgpu_context.create_texture_view(left_eye_texture, WGPUTextureViewDimension_2D, WGPUTextureFormat_RGBA8Unorm);
     u_render_texture_left_eye.binding = 0;
-    u_render_texture_left_eye.visibility = wgpu::ShaderStage::Fragment;
-    u_render_texture_left_eye.type =  Uniform::TEXTURE_VIEW;
+    u_render_texture_left_eye.visibility = WGPUShaderStage_Fragment;
 
-    u_render_texture_right_eye.data = webgpu_context.create_texture_view(right_eye_texture, wgpu::TextureViewDimension::_2D, wgpu::TextureFormat::RGBA8Unorm);
+    u_render_texture_right_eye.data = webgpu_context.create_texture_view(right_eye_texture, WGPUTextureViewDimension_2D, WGPUTextureFormat_RGBA8Unorm);
     u_render_texture_right_eye.binding = 0;
-    u_render_texture_right_eye.visibility = wgpu::ShaderStage::Fragment;
-    u_render_texture_right_eye.type = Uniform::TEXTURE_VIEW;
+    u_render_texture_right_eye.visibility = WGPUShaderStage_Fragment;
 
     render_shader_module = webgpu_context.create_shader_module(RAW_SHADERS::simple_shaders);
 
@@ -349,76 +337,65 @@ void Renderer::initRenderPipeline()
     render_pipeline_layout = webgpu_context.create_pipeline_layout({ render_bind_group_layout });
 
     // Vertex attributes
-    wgpu::VertexAttribute vertex_attrib_position;
+    WGPUVertexAttribute vertex_attrib_position;
     vertex_attrib_position.shaderLocation = 0;
-    vertex_attrib_position.format = wgpu::VertexFormat::Float32x2;
+    vertex_attrib_position.format = WGPUVertexFormat_Float32x2;
     vertex_attrib_position.offset = 0;
 
-    wgpu::VertexAttribute vertex_attrib_uv;
+    WGPUVertexAttribute vertex_attrib_uv;
     vertex_attrib_uv.shaderLocation = 1;
-    vertex_attrib_uv.format = wgpu::VertexFormat::Float32x2;
+    vertex_attrib_uv.format = WGPUVertexFormat_Float32x2;
     vertex_attrib_uv.offset = 2 * sizeof(float);
 
     quad_vertex_attributes = { vertex_attrib_position, vertex_attrib_uv };
-    quad_vertex_layout = webgpu_context.create_vertex_buffer_layout(quad_vertex_attributes, 4 * sizeof(float), wgpu::VertexStepMode::Vertex);
+    quad_vertex_layout = webgpu_context.create_vertex_buffer_layout(quad_vertex_attributes, 4 * sizeof(float), WGPUVertexStepMode_Vertex);
 
-    std::vector<float> vertexData = {
-        //  position    uv
-            -1.0, 1.0,  0.0, 1.0,
-            -1.0,-1.0,  0.0, 0.0,
-             1.0,-1.0,  1.0, 0.0,
+    quad_mesh.createQuad();
 
-            -1.0, 1.0,  0.0, 1.0,
-             1.0,-1.0,  1.0, 0.0,
-             1.0, 1.0,  1.0, 1.0
-    };
+    quad_vertex_buffer = webgpu_context.create_buffer(quad_mesh.getSize() * sizeof(float), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Vertex, quad_mesh.data());
 
-    quad_vertex_buffer = webgpu_context.create_buffer(vertexData.size() * sizeof(float), wgpu::BufferUsage::CopyDst | wgpu::BufferUsage::Vertex, vertexData.data());
+    WGPUTextureFormat swapchain_format = is_openxr_available ? webgpu_context.xr_swapchain_format : webgpu_context.swapchain_format;
 
-    wgpu::TextureFormat swapchain_format = is_openxr_available ? webgpu_context.xr_swapchain_format : webgpu_context.swapchain_format;
-
-    wgpu::BlendState blend_state;
+    WGPUBlendState blend_state;
     blend_state.color = {
-            .operation = wgpu::BlendOperation::Add,
-            .srcFactor = wgpu::BlendFactor::SrcAlpha,
-            .dstFactor = wgpu::BlendFactor::OneMinusSrcAlpha,
+            .operation = WGPUBlendOperation_Add,
+            .srcFactor = WGPUBlendFactor_SrcAlpha,
+            .dstFactor = WGPUBlendFactor_OneMinusSrcAlpha,
     };
     blend_state.alpha = {
-            .operation = wgpu::BlendOperation::Add,
-            .srcFactor = wgpu::BlendFactor::Zero,
-            .dstFactor = wgpu::BlendFactor::One,
+            .operation = WGPUBlendOperation_Add,
+            .srcFactor = WGPUBlendFactor_Zero,
+            .dstFactor = WGPUBlendFactor_One,
     };
 
-    wgpu::ColorTargetState color_target;
+    WGPUColorTargetState color_target = {};
     color_target.format = swapchain_format;
     color_target.blend = &blend_state;
-    color_target.writeMask = wgpu::ColorWriteMask::All;
+    color_target.writeMask = WGPUColorWriteMask_All;
 
     render_pipeline = webgpu_context.create_render_pipeline({ quad_vertex_layout }, color_target, render_shader_module, render_pipeline_layout);
 }
 
 void Renderer::initComputePipeline()
 {
-    u_buffer_viewprojection.data = webgpu_context.create_buffer(sizeof(glm::mat4x4), wgpu::BufferUsage::CopyDst | wgpu::BufferUsage::Uniform, nullptr);
+    u_buffer_viewprojection.data = webgpu_context.create_buffer(sizeof(glm::mat4x4), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform, nullptr);
     u_buffer_viewprojection.binding = 0;
 
-    u_compute_texture_left_eye.data = webgpu_context.create_texture_view(left_eye_texture, wgpu::TextureViewDimension::_2D, wgpu::TextureFormat::RGBA8Unorm);
+    u_compute_texture_left_eye.data = webgpu_context.create_texture_view(left_eye_texture, WGPUTextureViewDimension_2D, WGPUTextureFormat_RGBA8Unorm);
     u_compute_texture_left_eye.binding = 0;
-    u_compute_texture_left_eye.visibility = wgpu::ShaderStage::Compute;
+    u_compute_texture_left_eye.visibility = WGPUShaderStage_Compute;
     u_compute_texture_left_eye.is_storage_texture = true;
-    u_compute_texture_left_eye.storage_texture_binding_layout.access = wgpu::StorageTextureAccess::WriteOnly;
-    u_compute_texture_left_eye.storage_texture_binding_layout.format = wgpu::TextureFormat::RGBA8Unorm;
-    u_compute_texture_left_eye.storage_texture_binding_layout.viewDimension = wgpu::TextureViewDimension::_2D;
-    u_compute_texture_left_eye.type = Uniform::TEXTURE_VIEW;
+    u_compute_texture_left_eye.storage_texture_binding_layout.access = WGPUStorageTextureAccess_WriteOnly;
+    u_compute_texture_left_eye.storage_texture_binding_layout.format = WGPUTextureFormat_RGBA8Unorm;
+    u_compute_texture_left_eye.storage_texture_binding_layout.viewDimension = WGPUTextureViewDimension_2D;
 
-    u_compute_texture_right_eye.data = webgpu_context.create_texture_view(right_eye_texture, wgpu::TextureViewDimension::_2D, wgpu::TextureFormat::RGBA8Unorm);
+    u_compute_texture_right_eye.data = webgpu_context.create_texture_view(right_eye_texture, WGPUTextureViewDimension_2D, WGPUTextureFormat_RGBA8Unorm);
     u_compute_texture_right_eye.binding = 1;
-    u_compute_texture_right_eye.visibility = wgpu::ShaderStage::Compute;
+    u_compute_texture_right_eye.visibility = WGPUShaderStage_Compute;
     u_compute_texture_right_eye.is_storage_texture = true;
-    u_compute_texture_right_eye.storage_texture_binding_layout.access = wgpu::StorageTextureAccess::WriteOnly;
-    u_compute_texture_right_eye.storage_texture_binding_layout.format = wgpu::TextureFormat::RGBA8Unorm;
-    u_compute_texture_right_eye.storage_texture_binding_layout.viewDimension = wgpu::TextureViewDimension::_2D;
-    u_compute_texture_right_eye.type = Uniform::TEXTURE_VIEW;
+    u_compute_texture_right_eye.storage_texture_binding_layout.access = WGPUStorageTextureAccess_WriteOnly;
+    u_compute_texture_right_eye.storage_texture_binding_layout.format = WGPUTextureFormat_RGBA8Unorm;
+    u_compute_texture_right_eye.storage_texture_binding_layout.viewDimension = WGPUTextureViewDimension_2D;
 
     // Load compute shader
     compute_shader_module = webgpu_context.create_shader_module(RAW_SHADERS::compute_shader);
@@ -456,26 +433,24 @@ void Renderer::initMirrorPipeline()
         mirror_bind_group = webgpu_context.create_bind_group(uniforms, mirror_bind_group_layout);
     }
 
-    wgpu::TextureFormat swapchain_format = webgpu_context.swapchain_format;
+    WGPUTextureFormat swapchain_format = webgpu_context.swapchain_format;
 
-    wgpu::BlendState blend_state = {
-        .color = {
-            .operation = wgpu::BlendOperation::Add,
-            .srcFactor = wgpu::BlendFactor::SrcAlpha,
-            .dstFactor = wgpu::BlendFactor::OneMinusSrcAlpha,
-        },
-        .alpha = {
-            .operation = wgpu::BlendOperation::Add,
-            .srcFactor = wgpu::BlendFactor::Zero,
-            .dstFactor = wgpu::BlendFactor::One,
-        }
+    WGPUBlendState blend_state;
+    blend_state.color = {
+            .operation = WGPUBlendOperation_Add,
+            .srcFactor = WGPUBlendFactor_SrcAlpha,
+            .dstFactor = WGPUBlendFactor_OneMinusSrcAlpha,
+    };
+    blend_state.alpha = {
+            .operation = WGPUBlendOperation_Add,
+            .srcFactor = WGPUBlendFactor_Zero,
+            .dstFactor = WGPUBlendFactor_One,
     };
 
-    wgpu::ColorTargetState color_target = {
-        .format = swapchain_format,
-        .blend = &blend_state,
-        .writeMask = wgpu::ColorWriteMask::All
-    };
+    WGPUColorTargetState color_target = {};
+    color_target.format = swapchain_format;
+    color_target.blend = &blend_state;
+    color_target.writeMask = WGPUColorWriteMask_All;
 
     mirror_pipeline = webgpu_context.create_render_pipeline({ quad_vertex_layout }, color_target, mirror_shader_module, mirror_pipeline_layout);
 }
