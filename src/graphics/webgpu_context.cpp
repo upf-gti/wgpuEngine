@@ -2,23 +2,12 @@
 
 #include <cassert>
 
-#ifdef XR_SUPPORT
-//#include "dawnxr/dawnxr_internal.h"
-//#include <dawn/native/VulkanBackend.h>
-//using namespace dawnxr::internal;
-#endif
-
-#ifndef __EMSCRIPTEN__
-//#define XR_USE_GRAPHICS_API_VULKAN
-//#include "webgpu/webgpu_glfw.h"
-#endif
-
-#ifdef _WIN32
-#define GLFW_EXPOSE_NATIVE_WIN32
-#endif
-
-#include "GLFW/glfw3native.h"
+#ifdef __EMSCRIPTEN__
+#include <emscripten/emscripten.h>
+#include <emscripten/html5_webgpu.h>
+#else
 #include "glfw3webgpu.h"
+#endif
 
 #include "utils.h"
 
@@ -52,10 +41,6 @@ void DeviceLostCallback(WGPUDeviceLostReason reason, const char* message, void*)
 
 void PrintGLFWError(int code, const char* message) {
     std::cout << "GLFW error: " << code << " - " << message << std::endl;
-}
-
-void DeviceLogCallback(WGPULoggingType type, const char* message) {
-    std::cout << "Device log: " << message << std::endl;
 }
 
 WGPUAdapter requestAdapter(WGPUInstance instance, WGPURequestAdapterOptions const* options) {
@@ -122,35 +107,25 @@ WGPUDevice requestDevice(WGPUAdapter adapter, WGPUDeviceDescriptor const* descri
 
 int WebGPUContext::initialize(GLFWwindow* window, bool create_screen_swapchain)
 {
-    // Get an adapter for the backend to use, and create the device.
-    //WGPUAdapter backendAdapter;
-    //{
-    //    std::vector<dawn::native::Adapter> adapters = instance->GetAdapters();
-    //    auto adapterIt = std::find_if(adapters.begin(), adapters.end(),
-    //        [](const dawn::native::Adapter adapter) -> bool {
-    //            WGPUAdapterProperties properties;
-    //    adapter.GetProperties(&properties);
-    //    return properties.backendType == WGPUBackendType::Vulkan;
-    //        });
 
-    //    if (adapterIt == adapters.end()) {
-    //        std::cout << "Could not find backend adapters" << std::endl;
-    //        return 1;
-    //    }
-    //}
+#ifdef __EMSCRIPTEN__
+    device = emscripten_webgpu_get_device();
 
+    // emscripten-specific extension not supported by webgpu.cpp
+    WGPUSurfaceDescriptorFromCanvasHTMLSelector canvDesc = {};
+    canvDesc.chain.sType = WGPUSType_SurfaceDescriptorFromCanvasHTMLSelector;
+    canvDesc.selector = "canvas";
+
+    WGPUSurfaceDescriptor surfDesc = {};
+    surfDesc.nextInChain = reinterpret_cast<WGPUChainedStruct*>(&canvDesc);
+
+    surface = wgpuInstanceCreateSurface(nullptr, &surfDesc);
+
+#else // __EMSCRIPTEN__
 
     WGPURequestAdapterOptions adapterOpts = {};
     //adapterOpts.compatibleSurface = surface;
     WGPUAdapter adapter = requestAdapter(get_instance(), &adapterOpts);
-
-    WGPUDawnTogglesDescriptor toggles = {};
-    toggles.chain.sType = WGPUSType_DawnTogglesDescriptor;
-    toggles.chain.next = nullptr;
-    toggles.enabledToggles = nullptr;
-    toggles.enabledTogglesCount = 0;
-    toggles.disabledToggles = nullptr;
-    toggles.disabledTogglesCount = 0;
 
     WGPUSupportedLimits supportedLimits;
     wgpuAdapterGetLimits(adapter, &supportedLimits);
@@ -171,39 +146,39 @@ int WebGPUContext::initialize(GLFWwindow* window, bool create_screen_swapchain)
     deviceDesc.requiredLimits = &requiredLimits;
     deviceDesc.defaultQueue.label = "The default queue";
     deviceDesc.deviceLostCallback = DeviceLostCallback;
+    
     device = requestDevice(adapter, &deviceDesc);
 
-    //device.setLoggingCallback(DeviceLogCallback);
-    auto onDeviceError = [](WGPUErrorType type, char const* message, void* /* pUserData */) {
-        std::cout << "Uncaptured device error: type " << type;
-        if (message) std::cout << " (" << message << ")";
-        std::cout << std::endl;
-    };
+    wgpuDeviceSetUncapturedErrorCallback(device, PrintDeviceError, nullptr);
 
-    wgpuDeviceSetUncapturedErrorCallback(device, onDeviceError, nullptr);
-    
-    device_queue = wgpuDeviceGetQueue(device);
+    if (create_screen_swapchain) {
+        surface = glfwGetWGPUSurface(get_instance(), window);
+    }
+
+    printErrors();
+
+#endif
 
     if (create_screen_swapchain) {
         // Create the swapchain for mirror mode
         glfwGetWindowSize(window, &screen_width, &screen_height);
 
-        surface = glfwGetWGPUSurface(get_instance(), window);
-        //auto surfaceChainedDesc = WGPUglfw::SetupWindowAndGetSurfaceDescriptor(window);
-        //WGPUSurfaceDescriptor surfaceDesc;
-        //surfaceDesc.nextInChain = surfaceChainedDesc.get();
-        //surface = get_surface(window);
-
         WGPUSwapChainDescriptor swapChainDesc = {};
+#ifdef __EMSCRIPTEN__
+        swapChainDesc.usage = WGPUTextureUsage_RenderAttachment | WGPUTextureUsage_TextureBinding;
+        swapChainDesc.presentMode = WGPUPresentMode_Fifo;
+#else
         swapChainDesc.usage = WGPUTextureUsage_RenderAttachment;
+        swapChainDesc.presentMode = WGPUPresentMode_Mailbox;
+#endif
         swapChainDesc.format = swapchain_format;
         swapChainDesc.width = screen_width;
         swapChainDesc.height = screen_height;
-        swapChainDesc.presentMode = WGPUPresentMode_Mailbox;
+
         screen_swapchain = wgpuDeviceCreateSwapChain(device, surface, &swapChainDesc);
     }
 
-    printErrors();
+    device_queue = wgpuDeviceGetQueue(device);
 
     is_initialized = true;
 
@@ -212,11 +187,13 @@ int WebGPUContext::initialize(GLFWwindow* window, bool create_screen_swapchain)
 
 void WebGPUContext::create_instance()
 {
+#ifndef __EMSCRIPTEN__
 #ifdef XR_SUPPORT
     instance = new dawn::native::Instance();
 #else
     WGPUInstanceDescriptor instance_dscr = {};
     instance = wgpuCreateInstance(&instance_dscr);
+#endif
 #endif
 }
 
@@ -225,7 +202,12 @@ WGPUShaderModule WebGPUContext::create_shader_module(char const* code)
     // Load the shader module https://eliemichel.github.io/LearnWebGPU/basic-3d-rendering/hello-triangle.html
     WGPUShaderModuleWGSLDescriptor shader_code_desc = {};
     shader_code_desc.chain.sType = WGPUSType_ShaderModuleWGSLDescriptor;
+
+#ifndef __EMSCRIPTEN__
     shader_code_desc.code = code;
+#else
+    shader_code_desc.source = code;
+#endif
 
     WGPUShaderModuleDescriptor shader_descr = {};
     shader_descr.nextInChain = &shader_code_desc.chain;
@@ -316,7 +298,9 @@ WGPUBindGroup WebGPUContext::create_bind_group(const std::vector<Uniform*>& unif
 
 void WebGPUContext::printErrors()
 {
+#ifndef __EMSCRIPTEN__
     wgpuInstanceProcessEvents(get_instance());
+#endif
 }
 
 WGPUPipelineLayout WebGPUContext::create_pipeline_layout(const std::vector<WGPUBindGroupLayout>& bind_group_layouts)
@@ -401,27 +385,6 @@ WGPUInstance WebGPUContext::get_instance()
 #else
     return instance;
 #endif
-}
-
-WGPUSurface WebGPUContext::get_surface(GLFWwindow* window)
-{
-#ifdef _WIN32
-    HWND hwnd = glfwGetWin32Window(window);
-    HINSTANCE hinstance = GetModuleHandle(NULL);
-
-    WGPUSurfaceDescriptorFromWindowsHWND chained = {};
-    chained.hinstance = hinstance;
-    chained.hwnd = hwnd;
-
-    WGPUSurfaceDescriptor descriptor = {};
-    descriptor.nextInChain = &chained.chain;
-    descriptor.label = nullptr;
-
-    WGPUSurface surface = wgpuInstanceCreateSurface(get_instance(), &descriptor);
-#endif
-
-    assert_msg(surface, "Error creating surface");
-    return surface;
 }
 
 Uniform::Uniform()

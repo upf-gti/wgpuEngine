@@ -146,7 +146,7 @@ fn raymarch(rayDir : vec3f) -> vec3f
     let ambientColor = vec3f(0.4, 0.4, 0.4);
 	let hitColor = vec3f(1.0, 1.0, 1.0);
 	let missColor = vec3f(0.0, 0.0, 0.0);
-    let lightOffset = 4 * vec3f(1.0, 0.0, 0.0);
+    let lightOffset = vec3f(4.0, 0.0, 0.0);
 
 	var depth = 0.0;
 	var minDist = MAX_DIST;

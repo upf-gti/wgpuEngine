@@ -5,13 +5,14 @@
 #ifdef XR_SUPPORT
 #include <dawnxr/dawnxr.h>
 #else
-#include "webgpu/webgpu.hpp"
+#include <webgpu/webgpu.h>
 #endif
 
 #ifndef __EMSCRIPTEN__
-//#include <dawn/native/DawnNative.h>
-#include "GLFW/glfw3.h"
+#include <dawn/native/DawnNative.h>
 #endif
+
+#include "GLFW/glfw3.h"
 
 #include <variant>
 #include <functional>
@@ -26,7 +27,7 @@ struct Uniform {
     uint32_t visibility = WGPUShaderStage_Vertex | WGPUShaderStage_Fragment;
 
     WGPUBufferBindingType buffer_binding_type = WGPUBufferBindingType_Uniform;
-    uint64_t buffer_size;
+    uint64_t buffer_size = 0;
 
     WGPUTextureBindingLayout texture_binding_layout;
     WGPUStorageTextureBindingLayout storage_texture_binding_layout;
@@ -39,7 +40,7 @@ struct Uniform {
 
 struct WebGPUContext {
 
-#ifndef __EMSCRIPTEN__
+#ifdef XR_SUPPORT
     dawn::native::Instance* instance;
 #else
     WGPUInstance            instance = nullptr;
@@ -80,8 +81,6 @@ struct WebGPUContext {
     WGPUComputePipeline    create_compute_pipeline(WGPUShaderModule compute_shader_module, WGPUPipelineLayout pipeline_layout);
 
     WGPUVertexBufferLayout create_vertex_buffer_layout(const std::vector<WGPUVertexAttribute>& vertex_attributes, uint64_t stride, WGPUVertexStepMode step_mode);
-
-    WGPUSurface get_surface(GLFWwindow* window);
 
     void printErrors();
 

@@ -7,10 +7,11 @@
 #endif
 
 #include "raw_shaders.h"
-#include <intrin.h>
 
 int Renderer::initialize(GLFWwindow* window, bool use_mirror_screen)
 {
+    bool create_screen_swapchain = true;
+
     this->use_mirror_screen = use_mirror_screen;
 
     webgpu_context.create_instance();
@@ -24,6 +25,8 @@ int Renderer::initialize(GLFWwindow* window, bool use_mirror_screen)
         dawn::native::AdapterDiscoveryOptionsBase** options = new dawn::native::AdapterDiscoveryOptionsBase * ();
         dawnxr::internal::createVulkanAdapterDiscoveryOptions(xr_context.instance, xr_context.system_id, options);
         webgpu_context.instance->DiscoverAdapters(*options);
+
+        create_screen_swapchain = use_mirror_screen;
     }
 
 #else
@@ -31,7 +34,7 @@ int Renderer::initialize(GLFWwindow* window, bool use_mirror_screen)
     //webgpu_context.instance->DiscoverDefaultAdapters();
 #endif
 
-    if (webgpu_context.initialize(window, !is_openxr_available || (is_openxr_available && use_mirror_screen))) {
+    if (webgpu_context.initialize(window, create_screen_swapchain)) {
         std::cout << "Could not initialize WebGPU context" << std::endl;
         return 1;
     }
@@ -70,16 +73,17 @@ void Renderer::clean()
 void Renderer::render()
 {
 
-    if (is_openxr_available) {
-        renderXr();
-    }
-    else {
+    if (!is_openxr_available) {
         renderScreen();
     }
 
 #if defined(XR_SUPPORT)
-    if (use_mirror_screen && is_openxr_available) {
-        renderMirror();
+    if (is_openxr_available) {
+        renderXr();
+
+        if (use_mirror_screen) {
+            renderMirror();
+        }
     }
 #endif
 }
@@ -91,7 +95,10 @@ void Renderer::renderScreen()
 
     glm::mat4x4 view_projection = projection * view;
     render(wgpuSwapChainGetCurrentTextureView(webgpu_context.screen_swapchain), render_bind_group_left_eye, view_projection);
+
+#ifndef __EMSCRIPTEN__
     wgpuSwapChainPresent(webgpu_context.screen_swapchain);
+#endif
 }
 
 #if defined(XR_SUPPORT)

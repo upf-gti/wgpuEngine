@@ -32,8 +32,6 @@
 
 #include "glfw3webgpu.h"
 
-#include <dawn/webgpu.h>
-
 #define WGPU_TARGET_MACOS 1
 #define WGPU_TARGET_LINUX_X11 2
 #define WGPU_TARGET_WINDOWS 3

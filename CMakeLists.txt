@@ -86,12 +86,12 @@ if (NOT EMSCRIPTEN)
     # openxr
     add_subdirectory(libraries/openxr)
     target_link_libraries(${PROJECT_NAME} openxr_loader)
+    
+    # glfw
+    add_subdirectory(libraries/glfw3webgpu)
+    target_link_libraries(${PROJECT_NAME} glfw glfw3webgpu)
 
 endif()
-
-# glfw
-add_subdirectory(libraries/glfw3webgpu)
-target_link_libraries(${PROJECT_NAME} glfw glfw3webgpu)
 
 # glm
 add_subdirectory(libraries/glm)

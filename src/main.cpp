@@ -2,6 +2,18 @@
 
 #include <GLFW/glfw3.h>
 
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#include <emscripten/html5.h>
+EM_JS(int, canvas_get_width, (), {
+  return canvas.clientWidth;
+});
+
+EM_JS(int, canvas_get_height, (), {
+  return canvas.clientHeight;
+});
+#endif
+
 void closeWindow(GLFWwindow* window) {
 #if !defined(XR_SUPPORT) || (defined(XR_SUPPORT) && defined(USE_MIRROR_WINDOW))
     glfwDestroyWindow(window);
@@ -13,6 +25,14 @@ int main() {
 
     Engine engine;
     GLFWwindow* window = nullptr;
+
+#ifdef __EMSCRIPTEN__
+    int screen_width = canvas_get_width();
+    int screen_height = canvas_get_height();
+#else
+    int screen_width = 1280;
+    int screen_height = 720;
+#endif
 
     const bool use_xr = engine.isOpenXRAvailable();
     const bool use_mirror_screen = engine.useMirrorWindow();
@@ -26,7 +46,7 @@ int main() {
         }
 
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-        window = glfwCreateWindow(1280, 720, "WebGPU Engine", NULL, NULL);
+        window = glfwCreateWindow(screen_width, screen_height, "WebGPU Engine", NULL, NULL);
     }
 
     if (engine.initialize(window, use_mirror_screen)) {
@@ -36,6 +56,19 @@ int main() {
     }
 
     std::cout << "Engine initialized" << std::endl;
+
+#ifdef __EMSCRIPTEN__
+
+    emscripten_set_main_loop_arg(
+        [](void* userData) {
+            Engine& engine = *reinterpret_cast<Engine*>(userData);
+            engine.render();
+        },
+        (void*)&engine,
+        0, true
+    );
+
+#else
 
     if (use_glfw) {
         while (!glfwWindowShouldClose(window)) {
@@ -48,6 +81,8 @@ int main() {
             engine.render();
         }
     }
+
+#endif
 
     engine.clean();
 
