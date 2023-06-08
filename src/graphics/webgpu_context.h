@@ -20,7 +20,7 @@ struct WebGPUContext {
     WGPUQueue               device_queue = nullptr;
 
     WGPUSwapChain           screen_swapchain = nullptr;
-    int                     screen_width = 0;
+    int                     render_width = 0;
     int                     screen_height = 0;
 
     bool                    is_initialized = false;

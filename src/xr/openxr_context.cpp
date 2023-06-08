@@ -603,8 +603,11 @@ void OpenXRContext::init_frame()
         projection_views[i].pose = views[i].pose;
         projection_views[i].fov = views[i].fov;
 
+        per_view_data[i].position = glm::vec3(views[i].pose.position.x, views[i].pose.position.y, views[i].pose.position.z);
         per_view_data[i].view_matrix = glm::inverse(parse_OpenXR_pose_to_glm(views[i].pose));
         per_view_data[i].projection_matrix = parse_OpenXR_projection_to_glm(views[i].fov);
+
+        per_view_data[i].view_projection_matrix = per_view_data[i].projection_matrix * per_view_data[i].view_matrix;
     }
 
     if ((viewState.viewStateFlags & XR_VIEW_STATE_POSITION_VALID_BIT) == 0 ||

@@ -69,8 +69,20 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4f {
 
     const char compute_shader[] = R"(
 
+struct sComputeData {
+    inv_view_projection_left_eye : mat4x4f,
+    inv_view_projection_right_eye : mat4x4f,
+
+    left_eye_pos : vec3f,
+    render_height : f32,
+    right_eye_pos : vec3f,
+    render_width : f32,
+};
+
 @group(0) @binding(0) var left_eye_texture: texture_storage_2d<rgba8unorm,write>;
 @group(0) @binding(1) var right_eye_texture: texture_storage_2d<rgba8unorm,write>;
+
+@group(1) @binding(0) var<uniform> compute_data : sComputeData;
 
 const MAX_DIST = 40.0;
 const MIN_HIT_DIST = 0.0001;
@@ -105,8 +117,8 @@ fn sdSphere( p : vec3f, c : vec3f, s : f32, color : vec3f) -> vec4f
 fn sdf(p : vec3f) -> vec4f
 {
     var res : vec4f = opSmoothUnion(
-        sdSphere(p, vec3f( 1.0, 0.0, -5.0), 1.0, vec3f(1.0, 0.0, 0.0)),
-        sdSphere(p, vec3f(-1.0, 0.0, -5.0), 1.0, vec3f(0.0, 1.0, 0.0)), 0.5);
+        sdSphere(p, vec3f( 1.0, 0.0, -2.0), 1.0, vec3f(1.0, 0.0, 0.0)),
+        sdSphere(p, vec3f(-1.0, 0.0, -2.0), 1.0, vec3f(0.0, 1.0, 0.0)), 0.5);
 
     res = opSmoothUnion(res,
         sdPlane(p, vec3f(0.0, -0.4, 0.0), vec3f(0.0, 1.0, 0.0), 0.0, vec3f(0.0, 0.0, 1.0)), 0.4);
@@ -141,7 +153,7 @@ fn blinnPhong(position : vec3f, lightPosition : vec3f, ambient : vec3f, diffuse 
     return ambientFactor + diffuseFactor + specularFactor;
 }
 
-fn raymarch(rayDir : vec3f) -> vec3f
+fn raymarch(rayOrigin : vec3f, rayDir : vec3f) -> vec3f
 {
     let ambientColor = vec3f(0.4, 0.4, 0.4);
 	let hitColor = vec3f(1.0, 1.0, 1.0);
@@ -152,7 +164,7 @@ fn raymarch(rayDir : vec3f) -> vec3f
 	var minDist = MAX_DIST;
 	for (var i : i32 = 0; depth < MAX_DIST && i < 100; i++)
 	{
-		let pos = vec3f(0.0, 0.0, 0.0) + rayDir * depth;
+		let pos = rayOrigin + rayDir * depth;
 		let dist : vec4f = sdf(pos);
 		minDist = min(minDist, dist.x);
 		if (minDist < MIN_HIT_DIST) {
@@ -164,36 +176,28 @@ fn raymarch(rayDir : vec3f) -> vec3f
     return missColor;
 }
 
-fn getRayDirection(resolution : vec2f, uv : vec2f) -> vec3f
+fn getRayDirection(inv_view_projection : mat4x4f, uv : vec2f) -> vec3f
 {
-	let aspect = resolution.x / resolution.y;
-	let fov2 = radians(fov) / 2.0;
-
 	// convert coordinates from [0, 1] to [-1, 1]
-	// and invert y axis to flow from bottom to top
-	var screenCoord : vec2f = (uv - 0.5) * 2.0;
-	screenCoord.x *= aspect;
-	screenCoord.y = -screenCoord.y;
+	var screenCoord : vec4f = vec4f((uv - 0.5) * 2.0, 1.0, 1.0);
 
-	let offsets : vec2f = screenCoord * tan(fov2);
+	var rayDir : vec4f = inv_view_projection * screenCoord;
+    rayDir = rayDir / rayDir.w;
 
-	let rayFront = normalize(vec3f(0.0, 0.0, -1.0));
-	let rayRight = normalize(cross(rayFront, normalize(up)));
-	let rayUp = cross(rayRight, rayFront);
-	let rayDir = rayFront + rayRight * offsets.x + rayUp * offsets.y;
-
-	return normalize(rayDir);
+	return normalize(rayDir.xyz);
 }
 
 @compute @workgroup_size(16, 16, 1)
 fn compute(@builtin(global_invocation_id) id: vec3<u32>) {
 
-    let pixel_size = 1.0 / vec2f(1280.0, 720.0);
-    let uv = vec2f(id.xy) * pixel_size;
-    let rayDir = getRayDirection(1.0 / pixel_size, uv);
+    let pixel_size = 1.0 / vec2f(compute_data.render_width, compute_data.render_height);
+    var uv = vec2f(id.xy) * pixel_size;
+    //uv.y = 1.0 - uv.y;
+    let ray_dir_left = getRayDirection(compute_data.inv_view_projection_left_eye, uv);
+    let ray_dir_right = getRayDirection(compute_data.inv_view_projection_right_eye, uv);
 
-    textureStore(left_eye_texture, id.xy, vec4f(raymarch(rayDir), 1.0));
-    textureStore(right_eye_texture, id.xy, vec4f(raymarch(rayDir), 1.0));
+    textureStore(left_eye_texture, id.xy, vec4f(raymarch(compute_data.left_eye_pos, ray_dir_left), 1.0));
+    textureStore(right_eye_texture, id.xy, vec4f(raymarch(compute_data.right_eye_pos, ray_dir_right), 1.0));
 }
 
 )";

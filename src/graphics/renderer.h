@@ -28,15 +28,33 @@ class Renderer {
 
     WGPUComputePipeline     compute_pipeline = nullptr;
     WGPUShaderModule        compute_shader_module = nullptr;
+
     WGPUPipelineLayout      compute_pipeline_layout = nullptr;
-    WGPUBindGroupLayout     compute_bind_group_layout = nullptr;
-    WGPUBindGroup           compute_bind_group = nullptr;
+
+    WGPUBindGroupLayout     compute_textures_bind_group_layout = nullptr;
+    WGPUBindGroup           compute_textures_bind_group = nullptr;
+
+    WGPUBindGroupLayout     compute_data_bind_group_layout = nullptr;
+    WGPUBindGroup           compute_data_bind_group = nullptr;
 
     WGPUTexture             left_eye_texture = nullptr;
     WGPUTexture             right_eye_texture = nullptr;
 
     // Uniforms
-    Uniform                 u_buffer_viewprojection;
+
+    struct sComputeData {
+        glm::mat4x4 inv_view_projection_left_eye;
+        glm::mat4x4 inv_view_projection_right_eye;
+
+        glm::vec3 left_eye_pos;
+        float render_height = 0.0f;
+        glm::vec3 right_eye_pos;
+        float render_width = 0.0f;
+    };
+
+    sComputeData            compute_data;
+
+    Uniform                 u_compute_buffer_data;
     Uniform                 u_compute_texture_left_eye;
     Uniform                 u_compute_texture_right_eye;
     Uniform                 u_render_texture_left_eye;
@@ -63,7 +81,7 @@ class Renderer {
     bool is_openxr_available    = false;
     bool use_mirror_screen      = false;
 
-    void render(WGPUTextureView swapchain_view, WGPUBindGroup bind_group, const glm::mat4x4& view_projection);
+    void render(WGPUTextureView swapchain_view, WGPUBindGroup bind_group);
     void render_screen();
 
 #if defined(XR_SUPPORT)

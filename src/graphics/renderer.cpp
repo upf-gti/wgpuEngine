@@ -37,7 +37,7 @@ int Renderer::initialize(GLFWwindow* window, bool use_mirror_screen)
         return 1;
     }
 
-    render_width = webgpu_context.screen_width;
+    render_width = webgpu_context.render_width;
     render_height = webgpu_context.screen_height;
 
 #ifdef XR_SUPPORT
@@ -61,6 +61,9 @@ int Renderer::initialize(GLFWwindow* window, bool use_mirror_screen)
     }
 #endif
 
+    compute_data.render_width = render_width;
+    compute_data.render_height = render_height;
+
     return 0;
 }
 
@@ -71,7 +74,7 @@ void Renderer::clean()
 #endif
 
     // Uniforms
-    u_buffer_viewprojection.destroy();
+    u_compute_buffer_data.destroy();
     u_compute_texture_left_eye.destroy();
     u_compute_texture_right_eye.destroy();
     u_render_texture_left_eye.destroy();
@@ -91,8 +94,10 @@ void Renderer::clean()
     wgpuComputePipelineRelease(compute_pipeline);
     wgpuShaderModuleRelease(compute_shader_module);
     wgpuPipelineLayoutRelease(compute_pipeline_layout);
-    wgpuBindGroupLayoutRelease(compute_bind_group_layout);
-    wgpuBindGroupRelease(compute_bind_group);
+    wgpuBindGroupLayoutRelease(compute_textures_bind_group_layout);
+    wgpuBindGroupRelease(compute_textures_bind_group);
+    wgpuBindGroupLayoutRelease(compute_data_bind_group_layout);
+    wgpuBindGroupRelease(compute_data_bind_group);
 
     wgpuTextureDestroy(left_eye_texture);
     wgpuTextureDestroy(right_eye_texture);
@@ -104,6 +109,7 @@ void Renderer::clean()
 
     wgpuBufferDestroy(quad_vertex_buffer);
 
+#if defined(XR_SUPPORT) && defined(USE_MIRROR_WINDOW)
     if (is_openxr_available) {
         wgpuRenderPipelineRelease(mirror_pipeline);
         wgpuPipelineLayoutRelease(mirror_pipeline_layout);
@@ -113,6 +119,7 @@ void Renderer::clean()
 
         uniform_left_eye_view.destroy();
     }
+#endif
 }
 
 void Renderer::render()
@@ -136,9 +143,16 @@ void Renderer::render_screen()
 {
     glm::mat4x4 view = glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
     glm::mat4x4 projection = glm::perspective(glm::radians(45.0f), 16.0f / 9.0f, 0.1f, 100.0f);
+    projection[1][1] *= -1.0f;
 
     glm::mat4x4 view_projection = projection * view;
-    render(wgpuSwapChainGetCurrentTextureView(webgpu_context.screen_swapchain), render_bind_group_left_eye, view_projection);
+
+    compute_data.inv_view_projection_left_eye = glm::inverse(view_projection);
+    compute_data.left_eye_pos = glm::vec3(0.0, 0.0, 2.0);
+
+    compute();
+
+    render(wgpuSwapChainGetCurrentTextureView(webgpu_context.screen_swapchain), render_bind_group_left_eye);
 
 #ifndef __EMSCRIPTEN__
     wgpuSwapChainPresent(webgpu_context.screen_swapchain);
@@ -153,21 +167,23 @@ void Renderer::render_xr()
 
         xr_context.init_frame();
 
+        compute_data.inv_view_projection_left_eye = glm::inverse(xr_context.per_view_data[0].view_projection_matrix);
+        compute_data.inv_view_projection_right_eye = glm::inverse(xr_context.per_view_data[1].view_projection_matrix);
+
+        compute_data.left_eye_pos = xr_context.per_view_data[0].position;
+        compute_data.right_eye_pos = xr_context.per_view_data[1].position;
+
+        compute();
+
         for (int i = 0; i < xr_context.view_count; ++i) {
 
             xr_context.acquire_swapchain(i);
 
             const sSwapchainData& swapchainData = xr_context.swapchains[i];
 
-            const glm::mat4x4& view = xr_context.per_view_data[i].view_matrix;
-            glm::mat4x4& projection = xr_context.per_view_data[i].projection_matrix;
-            projection[1][1] *= -1;
-
-            glm::mat4x4 view_projection = projection * view;
-
             WGPUBindGroup bind_group = i == 0 ? render_bind_group_left_eye : render_bind_group_right_eye;
 
-            render(swapchainData.images[swapchainData.image_index].textureView, bind_group, view_projection);
+            render(swapchainData.images[swapchainData.image_index].textureView, bind_group);
 
             xr_context.release_swapchain(i);
         }
@@ -180,10 +196,8 @@ void Renderer::render_xr()
 }
 #endif
 
-void Renderer::render(WGPUTextureView swapchain_view, WGPUBindGroup bind_group, const glm::mat4x4& view_projection)
+void Renderer::render(WGPUTextureView swapchain_view, WGPUBindGroup bind_group)
 {
-    compute();
-
     // Create the command encoder
     WGPUCommandEncoderDescriptor encoder_desc = {};
     WGPUCommandEncoder command_encoder = wgpuDeviceCreateCommandEncoder(webgpu_context.device, &encoder_desc);
@@ -200,9 +214,6 @@ void Renderer::render(WGPUTextureView swapchain_view, WGPUBindGroup bind_group, 
     render_pass_descr.colorAttachments = &render_pass_color_attachment;
 
     {
-        // Update uniform buffer
-        wgpuQueueWriteBuffer(webgpu_context.device_queue, std::get<WGPUBuffer>(u_buffer_viewprojection.data), 0, &(view_projection), sizeof(glm::mat4x4));
-
         // Create & fill the render pass (encoder)
         WGPURenderPassEncoder render_pass = wgpuCommandEncoderBeginRenderPass(command_encoder, &render_pass_descr);
 
@@ -250,7 +261,12 @@ void Renderer::compute()
 
     // Use compute pass
     wgpuComputePassEncoderSetPipeline(compute_pass, compute_pipeline);
-    wgpuComputePassEncoderSetBindGroup(compute_pass, 0, compute_bind_group, 0, nullptr);
+
+    // Update uniform buffer
+    wgpuQueueWriteBuffer(webgpu_context.device_queue, std::get<WGPUBuffer>(u_compute_buffer_data.data), 0, &(compute_data), sizeof(sComputeData));
+
+    wgpuComputePassEncoderSetBindGroup(compute_pass, 0, compute_textures_bind_group, 0, nullptr);
+    wgpuComputePassEncoderSetBindGroup(compute_pass, 1, compute_data_bind_group, 0, nullptr);
 
     uint32_t workgroupSize = 16;
     // This ceils invocationCount / workgroupSize
@@ -429,33 +445,47 @@ void Renderer::init_render_pipeline()
 
 void Renderer::init_compute_pipeline()
 {
-    u_buffer_viewprojection.data = webgpu_context.create_buffer(sizeof(glm::mat4x4), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform, nullptr);
-    u_buffer_viewprojection.binding = 0;
-
-    u_compute_texture_left_eye.data = webgpu_context.create_texture_view(left_eye_texture, WGPUTextureViewDimension_2D, WGPUTextureFormat_RGBA8Unorm);
-    u_compute_texture_left_eye.binding = 0;
-    u_compute_texture_left_eye.visibility = WGPUShaderStage_Compute;
-    u_compute_texture_left_eye.is_storage_texture = true;
-    u_compute_texture_left_eye.storage_texture_binding_layout.access = WGPUStorageTextureAccess_WriteOnly;
-    u_compute_texture_left_eye.storage_texture_binding_layout.format = WGPUTextureFormat_RGBA8Unorm;
-    u_compute_texture_left_eye.storage_texture_binding_layout.viewDimension = WGPUTextureViewDimension_2D;
-
-    u_compute_texture_right_eye.data = webgpu_context.create_texture_view(right_eye_texture, WGPUTextureViewDimension_2D, WGPUTextureFormat_RGBA8Unorm);
-    u_compute_texture_right_eye.binding = 1;
-    u_compute_texture_right_eye.visibility = WGPUShaderStage_Compute;
-    u_compute_texture_right_eye.is_storage_texture = true;
-    u_compute_texture_right_eye.storage_texture_binding_layout.access = WGPUStorageTextureAccess_WriteOnly;
-    u_compute_texture_right_eye.storage_texture_binding_layout.format = WGPUTextureFormat_RGBA8Unorm;
-    u_compute_texture_right_eye.storage_texture_binding_layout.viewDimension = WGPUTextureViewDimension_2D;
-
     // Load compute shader
     compute_shader_module = webgpu_context.create_shader_module(RAW_SHADERS::compute_shader);
     
-    std::vector<Uniform*> uniforms = { &u_compute_texture_left_eye, &u_compute_texture_right_eye };
+    // Texture uniforms
+    {
+        u_compute_texture_left_eye.data = webgpu_context.create_texture_view(left_eye_texture, WGPUTextureViewDimension_2D, WGPUTextureFormat_RGBA8Unorm);
+        u_compute_texture_left_eye.binding = 0;
+        u_compute_texture_left_eye.visibility = WGPUShaderStage_Compute;
+        u_compute_texture_left_eye.is_storage_texture = true;
+        u_compute_texture_left_eye.storage_texture_binding_layout.access = WGPUStorageTextureAccess_WriteOnly;
+        u_compute_texture_left_eye.storage_texture_binding_layout.format = WGPUTextureFormat_RGBA8Unorm;
+        u_compute_texture_left_eye.storage_texture_binding_layout.viewDimension = WGPUTextureViewDimension_2D;
 
-    compute_bind_group_layout = webgpu_context.create_bind_group_layout(uniforms);
-    compute_pipeline_layout = webgpu_context.create_pipeline_layout({ compute_bind_group_layout });
-    compute_bind_group = webgpu_context.create_bind_group(uniforms, compute_bind_group_layout);
+        u_compute_texture_right_eye.data = webgpu_context.create_texture_view(right_eye_texture, WGPUTextureViewDimension_2D, WGPUTextureFormat_RGBA8Unorm);
+        u_compute_texture_right_eye.binding = 1;
+        u_compute_texture_right_eye.visibility = WGPUShaderStage_Compute;
+        u_compute_texture_right_eye.is_storage_texture = true;
+        u_compute_texture_right_eye.storage_texture_binding_layout.access = WGPUStorageTextureAccess_WriteOnly;
+        u_compute_texture_right_eye.storage_texture_binding_layout.format = WGPUTextureFormat_RGBA8Unorm;
+        u_compute_texture_right_eye.storage_texture_binding_layout.viewDimension = WGPUTextureViewDimension_2D;
+
+        std::vector<Uniform*> uniforms = { &u_compute_texture_left_eye, &u_compute_texture_right_eye };
+
+        compute_textures_bind_group_layout = webgpu_context.create_bind_group_layout(uniforms);
+        compute_textures_bind_group = webgpu_context.create_bind_group(uniforms, compute_textures_bind_group_layout);
+    }
+
+    // Compute data uniforms
+    {
+        u_compute_buffer_data.data = webgpu_context.create_buffer(sizeof(sComputeData), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform, nullptr);
+        u_compute_buffer_data.binding = 0;
+        u_compute_buffer_data.visibility = WGPUShaderStage_Compute;
+        u_compute_buffer_data.buffer_size = sizeof(sComputeData);
+
+        std::vector<Uniform*> uniforms = { &u_compute_buffer_data };
+
+        compute_data_bind_group_layout = webgpu_context.create_bind_group_layout(uniforms);
+        compute_data_bind_group = webgpu_context.create_bind_group(uniforms, compute_data_bind_group_layout);
+    }
+
+    compute_pipeline_layout = webgpu_context.create_pipeline_layout({ compute_textures_bind_group_layout, compute_data_bind_group_layout });
 
     compute_pipeline = webgpu_context.create_compute_pipeline(compute_shader_module, compute_pipeline_layout);
 }

@@ -27,11 +27,11 @@ int main() {
     GLFWwindow* window = nullptr;
 
 #ifdef __EMSCRIPTEN__
-    int screen_width = canvas_get_width();
-    int screen_height = canvas_get_height();
+    int render_width = canvas_get_width();
+    int render_height = canvas_get_height();
 #else
-    int screen_width = 1280;
-    int screen_height = 720;
+    int render_width = 1280;
+    int render_height = 720;
 #endif
 
     const bool use_xr = engine.get_openxr_available();
@@ -46,7 +46,7 @@ int main() {
         }
 
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-        window = glfwCreateWindow(screen_width, screen_height, "WebGPU Engine", NULL, NULL);
+        window = glfwCreateWindow(render_width, render_height, "WebGPU Engine", NULL, NULL);
     }
 
     if (engine.initialize(window, use_mirror_screen)) {

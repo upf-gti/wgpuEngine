@@ -158,7 +158,7 @@ int WebGPUContext::initialize(GLFWwindow* window, bool create_screen_swapchain)
 
     if (create_screen_swapchain) {
         // Create the swapchain for mirror mode
-        glfwGetWindowSize(window, &screen_width, &screen_height);
+        glfwGetWindowSize(window, &render_width, &screen_height);
 
         WGPUSwapChainDescriptor swapChainDesc = {};
 #ifdef __EMSCRIPTEN__
@@ -169,7 +169,7 @@ int WebGPUContext::initialize(GLFWwindow* window, bool create_screen_swapchain)
         swapChainDesc.presentMode = WGPUPresentMode_Mailbox;
 #endif
         swapChainDesc.format = swapchain_format;
-        swapChainDesc.width = screen_width;
+        swapChainDesc.width = render_width;
         swapChainDesc.height = screen_height;
 
         screen_swapchain = wgpuDeviceCreateSwapChain(device, surface, &swapChainDesc);
