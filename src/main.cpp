@@ -34,8 +34,8 @@ int main() {
     int screen_height = 720;
 #endif
 
-    const bool use_xr = engine.isOpenXRAvailable();
-    const bool use_mirror_screen = engine.useMirrorWindow();
+    const bool use_xr = engine.get_openxr_available();
+    const bool use_mirror_screen = engine.get_use_mirror_window();
 
     // Only init glfw if no xr or using mirror
     const bool use_glfw = !use_xr || (use_xr && use_mirror_screen);

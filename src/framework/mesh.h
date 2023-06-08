@@ -4,15 +4,13 @@
 
 class Mesh {
 
-public:
-
-	void createQuad();
-
-	void* data();
-	size_t getSize();
-
-private:
-
 	std::vector<float> vertices;
 
+public:
+
+	void create_quad();
+
+	void* data();
+	size_t get_size();
+	void destroy();
 };

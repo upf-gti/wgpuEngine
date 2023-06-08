@@ -12,10 +12,10 @@
 class Renderer {
 
 #ifdef XR_SUPPORT
-    OpenXRContext xr_context;
+    OpenXRContext           xr_context;
 #endif
 
-    WebGPUContext webgpu_context;
+    WebGPUContext           webgpu_context;
 
     WGPURenderPipeline      render_pipeline = nullptr;
     WGPUShaderModule        render_shader_module = nullptr;
@@ -54,7 +54,30 @@ class Renderer {
     WGPUBindGroup           mirror_bind_group;
     WGPUShaderModule        mirror_shader_module;
 
-    Uniform                   uniform_left_eye_view;
+    Uniform                 uniform_left_eye_view;
+#endif
+
+    uint32_t render_width   = 0;
+    uint32_t render_height  = 0;
+
+    bool is_openxr_available    = false;
+    bool use_mirror_screen      = false;
+
+    void render(WGPUTextureView swapchain_view, WGPUBindGroup bind_group, const glm::mat4x4& view_projection);
+    void render_screen();
+
+#if defined(XR_SUPPORT)
+    void render_xr();
+#endif
+    
+    void compute();
+
+    void init_render_pipeline();
+    void init_compute_pipeline();
+
+#if defined(XR_SUPPORT) && defined(USE_MIRROR_WINDOW)
+    void render_mirror();
+    void init_mirror_pipeline();
 #endif
 
 public:
@@ -64,30 +87,5 @@ public:
 
     void render();
 
-    bool isOpenXRAvailable();
-
-private:
-
-    uint32_t render_width = 0;
-    uint32_t render_height = 0;
-
-    bool is_openxr_available = false;
-    bool use_mirror_screen = false;
-
-    void render(WGPUTextureView swapchain_view, WGPUBindGroup bind_group, const glm::mat4x4& view_projection);
-    void renderScreen();
-
-#if defined(XR_SUPPORT)
-    void renderXr();
-#endif
-    
-    void compute();
-
-    void initRenderPipeline();
-    void initComputePipeline();
-
-#if defined(XR_SUPPORT) && defined(USE_MIRROR_WINDOW)
-    void renderMirror();
-    void initMirrorPipeline();
-#endif
+    bool get_openxr_available();
 };

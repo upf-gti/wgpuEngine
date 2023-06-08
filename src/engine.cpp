@@ -2,20 +2,22 @@
 
 #include "utils.h"
 
-int Engine::initialize(GLFWwindow *window, bool use_mirror_screen) {
+int Engine::initialize(GLFWwindow *window, bool use_mirror_screen)
+{
     return renderer.initialize(window, use_mirror_screen);
 }
 
-void Engine::clean() {
+void Engine::clean()
+{
     renderer.clean();
 }
 
-bool Engine::isOpenXRAvailable()
+bool Engine::get_openxr_available()
 {
-    return renderer.isOpenXRAvailable();
+    return renderer.get_openxr_available();
 }
 
-bool Engine::useMirrorWindow()
+bool Engine::get_use_mirror_window()
 {
 #ifdef USE_MIRROR_WINDOW
     return true;
@@ -24,7 +26,7 @@ bool Engine::useMirrorWindow()
 #endif
 }
 
-void Engine::render() {
-
+void Engine::render()
+{
     renderer.render();
 }

@@ -14,8 +14,8 @@ public:
     int initialize(GLFWwindow *window, bool use_mirror_screen);
     void clean();
 
-    bool isOpenXRAvailable();
-    bool useMirrorWindow();
+    bool get_openxr_available();
+    bool get_use_mirror_window();
 
     void render();
 };

@@ -2,41 +2,10 @@
 
 #include "includes.h"
 
-#ifdef XR_SUPPORT
-#include <dawnxr/dawnxr.h>
-#else
-#include <webgpu/webgpu.h>
-#endif
-
-#ifndef __EMSCRIPTEN__
-#include <dawn/native/DawnNative.h>
-#endif
+// Already includes dawnxr/webgpu
+#include "uniform.h" 
 
 #include "GLFW/glfw3.h"
-
-#include <variant>
-#include <functional>
-
-struct Uniform {
-
-    Uniform();
-
-    std::variant<WGPUBuffer, WGPUSampler, WGPUTextureView> data;
-
-    uint32_t binding = 0;
-    uint32_t visibility = WGPUShaderStage_Vertex | WGPUShaderStage_Fragment;
-
-    WGPUBufferBindingType buffer_binding_type = WGPUBufferBindingType_Uniform;
-    uint64_t buffer_size = 0;
-
-    WGPUTextureBindingLayout texture_binding_layout;
-    WGPUStorageTextureBindingLayout storage_texture_binding_layout;
-
-    bool is_storage_texture = false;
-
-    WGPUBindGroupLayoutEntry get_bind_group_layout_entry() const;
-    WGPUBindGroupEntry       get_bind_group_entry() const;
-};
 
 struct WebGPUContext {
 
@@ -54,14 +23,15 @@ struct WebGPUContext {
     int                     screen_width = 0;
     int                     screen_height = 0;
 
-    static WGPUTextureFormat swapchain_format;
-    static WGPUTextureFormat xr_swapchain_format;
+    bool                    is_initialized = false;
 
-    bool                      is_initialized = false;
+    GLFWwindow*             window = nullptr;
 
-    GLFWwindow* window = nullptr;
+    static WGPUTextureFormat    swapchain_format;
+    static WGPUTextureFormat    xr_swapchain_format;
 
-    int initialize(GLFWwindow* window, bool create_screen_swapchain);
+    int                    initialize(GLFWwindow* window, bool create_screen_swapchain);
+    void                   destroy();
 
     void                   create_instance();
 

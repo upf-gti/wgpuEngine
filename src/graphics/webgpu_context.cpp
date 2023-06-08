@@ -1,6 +1,5 @@
 #include "webgpu_context.h"
-
-#include <cassert>
+#include "utils.h"
 
 #ifdef __EMSCRIPTEN__
 #include <emscripten/emscripten.h>
@@ -8,8 +7,6 @@
 #else
 #include "glfw3webgpu.h"
 #endif
-
-#include "utils.h"
 
 WGPUTextureFormat WebGPUContext::swapchain_format = WGPUTextureFormat_BGRA8Unorm;
 WGPUTextureFormat WebGPUContext::xr_swapchain_format = WGPUTextureFormat_BGRA8UnormSrgb;
@@ -183,6 +180,23 @@ int WebGPUContext::initialize(GLFWwindow* window, bool create_screen_swapchain)
     is_initialized = true;
 
     return 0;
+}
+
+void WebGPUContext::destroy()
+{
+#ifdef XR_SUPPORT
+    wgpuInstanceRelease(instance->Get());
+#else
+    wgpuInstanceRelease(instance);
+#endif
+
+    wgpuSurfaceRelease(surface);
+    wgpuDeviceDestroy(device);
+    wgpuQueueRelease(device_queue);
+    wgpuSwapChainRelease(screen_swapchain);
+
+    // This has to be done at the end 100%?
+    // glfwDestroyWindow(window);
 }
 
 void WebGPUContext::create_instance()
@@ -385,63 +399,4 @@ WGPUInstance WebGPUContext::get_instance()
 #else
     return instance;
 #endif
-}
-
-Uniform::Uniform()
-{
-    texture_binding_layout.sampleType = WGPUTextureSampleType_Float;
-    texture_binding_layout.viewDimension = WGPUTextureViewDimension_2D;
-    texture_binding_layout.multisampled = false;
-
-    storage_texture_binding_layout.access = WGPUStorageTextureAccess_WriteOnly;
-    storage_texture_binding_layout.format = WGPUTextureFormat_RGBA8Unorm;
-    storage_texture_binding_layout.viewDimension = WGPUTextureViewDimension_2D;
-}
-
-WGPUBindGroupLayoutEntry Uniform::get_bind_group_layout_entry() const
-{
-    WGPUBindGroupLayoutEntry bindingLayout = {};
-
-    // The binding index as used in the @binding attribute in the shader
-    bindingLayout.binding = binding;
-    // The stage that needs to access this resource
-    bindingLayout.visibility = visibility;
-
-    if (std::holds_alternative<WGPUBuffer>(data)) {
-        bindingLayout.buffer.type = buffer_binding_type;
-    } else 
-    if (std::holds_alternative<WGPUTextureView>(data)) {
-        if (is_storage_texture) {
-            bindingLayout.storageTexture = storage_texture_binding_layout;
-        }
-        else {
-            bindingLayout.texture = texture_binding_layout;
-        }
-    }
-
-    return bindingLayout;
-}
-
-WGPUBindGroupEntry Uniform::get_bind_group_entry() const
-{
-    // Create a binding
-    WGPUBindGroupEntry bindingGroup = {};
-
-    // The index of the binding (the entries in bindGroupDesc can be in any order)
-    bindingGroup.binding = binding;
-
-    if (std::holds_alternative<WGPUBuffer>(data)) {
-        // The buffer it is actually bound to
-        bindingGroup.buffer = std::get<WGPUBuffer>(data);
-        // We can specify an offset within the buffer, so that a single buffer can hold
-        // multiple uniform blocks.
-        bindingGroup.offset = 0;
-        // And we specify again the size of the buffer.
-        bindingGroup.size = buffer_size;
-    } else
-    if (std::holds_alternative<WGPUTextureView>(data)) {
-        bindingGroup.textureView = std::get<WGPUTextureView>(data);
-    }
-
-    return bindingGroup;
 }

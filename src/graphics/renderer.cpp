@@ -1,9 +1,7 @@
 #include "renderer.h"
 
 #ifdef XR_SUPPORT
-
 #include "dawnxr/dawnxr_internal.h"
-
 #endif
 
 #include "raw_shaders.h"
@@ -54,12 +52,12 @@ int Renderer::initialize(GLFWwindow* window, bool use_mirror_screen)
     }
 #endif
 
-    initRenderPipeline();
-    initComputePipeline();
+    init_render_pipeline();
+    init_compute_pipeline();
 
 #ifdef XR_SUPPORT
     if (is_openxr_available && use_mirror_screen) {
-        initMirrorPipeline();
+        init_mirror_pipeline();
     }
 #endif
 
@@ -68,27 +66,73 @@ int Renderer::initialize(GLFWwindow* window, bool use_mirror_screen)
 
 void Renderer::clean()
 {
+#ifdef XR_SUPPORT
+    xr_context.clean();
+#endif
+
+    // Uniforms
+    u_buffer_viewprojection.destroy();
+    u_compute_texture_left_eye.destroy();
+    u_compute_texture_right_eye.destroy();
+    u_render_texture_left_eye.destroy();
+    u_render_texture_right_eye.destroy();
+
+    webgpu_context.destroy();
+
+    // Render pipeline
+    wgpuRenderPipelineRelease(render_pipeline);
+    wgpuShaderModuleRelease(render_shader_module);
+    wgpuPipelineLayoutRelease(render_pipeline_layout);
+    wgpuBindGroupLayoutRelease(render_bind_group_layout);
+    wgpuBindGroupRelease(render_bind_group_left_eye);
+    wgpuBindGroupRelease(render_bind_group_right_eye);
+
+    // Compute pipeline
+    wgpuComputePipelineRelease(compute_pipeline);
+    wgpuShaderModuleRelease(compute_shader_module);
+    wgpuPipelineLayoutRelease(compute_pipeline_layout);
+    wgpuBindGroupLayoutRelease(compute_bind_group_layout);
+    wgpuBindGroupRelease(compute_bind_group);
+
+    wgpuTextureDestroy(left_eye_texture);
+    wgpuTextureDestroy(right_eye_texture);
+
+    // Mesh
+    quad_mesh.destroy();
+//    std::vector<WGPUVertexAttribute>  quad_vertex_attributes;
+//    WGPUVertexBufferLayout            quad_vertex_layout;
+
+    wgpuBufferDestroy(quad_vertex_buffer);
+
+    if (is_openxr_available) {
+        wgpuRenderPipelineRelease(mirror_pipeline);
+        wgpuPipelineLayoutRelease(mirror_pipeline_layout);
+        wgpuBindGroupLayoutRelease(mirror_bind_group_layout);
+        wgpuBindGroupRelease(mirror_bind_group);
+        wgpuShaderModuleRelease(mirror_shader_module);
+
+        uniform_left_eye_view.destroy();
+    }
 }
 
 void Renderer::render()
 {
-
     if (!is_openxr_available) {
-        renderScreen();
+        render_screen();
     }
 
 #if defined(XR_SUPPORT)
     if (is_openxr_available) {
-        renderXr();
+        render_xr();
 
         if (use_mirror_screen) {
-            renderMirror();
+            render_mirror();
         }
     }
 #endif
 }
 
-void Renderer::renderScreen()
+void Renderer::render_screen()
 {
     glm::mat4x4 view = glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
     glm::mat4x4 projection = glm::perspective(glm::radians(45.0f), 16.0f / 9.0f, 0.1f, 100.0f);
@@ -103,9 +147,10 @@ void Renderer::renderScreen()
 
 #if defined(XR_SUPPORT)
 
-void Renderer::renderXr()
+void Renderer::render_xr()
 {
     if (is_openxr_available) {
+
         xr_context.init_frame();
 
         for (int i = 0; i < xr_context.view_count; ++i) {
@@ -130,7 +175,7 @@ void Renderer::renderXr()
         xr_context.end_frame();
     }
     else {
-        renderScreen();
+        render_screen();
     }
 }
 #endif
@@ -168,7 +213,7 @@ void Renderer::render(WGPUTextureView swapchain_view, WGPUBindGroup bind_group, 
         wgpuRenderPassEncoderSetBindGroup(render_pass, 0, bind_group, 0, nullptr);
 
         // Set vertex buffer while encoding the render pass
-        wgpuRenderPassEncoderSetVertexBuffer(render_pass, 0, quad_vertex_buffer, 0, quad_mesh.getSize() * sizeof(float));
+        wgpuRenderPassEncoderSetVertexBuffer(render_pass, 0, quad_vertex_buffer, 0, quad_mesh.get_size() * sizeof(float));
 
         // Submit drawcall
         wgpuRenderPassEncoderDraw(render_pass, 6, 1, 0, 0);
@@ -228,7 +273,7 @@ void Renderer::compute()
 
 #if defined(XR_SUPPORT) && defined(USE_MIRROR_WINDOW)
 
-void Renderer::renderMirror()
+void Renderer::render_mirror()
 {
     // Get the current texture in the swapchain
     WGPUTextureView current_texture_view = wgpuSwapChainGetCurrentTextureView(webgpu_context.screen_swapchain);
@@ -263,7 +308,7 @@ void Renderer::renderMirror()
             wgpuRenderPassEncoderSetBindGroup(render_pass, 0, mirror_bind_group, 0, nullptr);
 
             // Set vertex buffer while encoding the render pass
-            wgpuRenderPassEncoderSetVertexBuffer(render_pass, 0, quad_vertex_buffer, 0, quad_mesh.getSize() * sizeof(float));
+            wgpuRenderPassEncoderSetVertexBuffer(render_pass, 0, quad_vertex_buffer, 0, quad_mesh.get_size() * sizeof(float));
 
             // Submit drawcall
             wgpuRenderPassEncoderDraw(render_pass, 6, 1, 0, 0);
@@ -296,7 +341,7 @@ void Renderer::renderMirror()
 
 #endif
 
-void Renderer::initRenderPipeline()
+void Renderer::init_render_pipeline()
 {
     left_eye_texture = webgpu_context.create_texture(
         WGPUTextureDimension_2D,
@@ -321,7 +366,6 @@ void Renderer::initRenderPipeline()
     u_render_texture_right_eye.visibility = WGPUShaderStage_Fragment;
 
     render_shader_module = webgpu_context.create_shader_module(RAW_SHADERS::simple_shaders);
-
 
     // Left eye bind group
     {
@@ -357,9 +401,9 @@ void Renderer::initRenderPipeline()
     quad_vertex_attributes = { vertex_attrib_position, vertex_attrib_uv };
     quad_vertex_layout = webgpu_context.create_vertex_buffer_layout(quad_vertex_attributes, 4 * sizeof(float), WGPUVertexStepMode_Vertex);
 
-    quad_mesh.createQuad();
+    quad_mesh.create_quad();
 
-    quad_vertex_buffer = webgpu_context.create_buffer(quad_mesh.getSize() * sizeof(float), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Vertex, quad_mesh.data());
+    quad_vertex_buffer = webgpu_context.create_buffer(quad_mesh.get_size() * sizeof(float), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Vertex, quad_mesh.data());
 
     WGPUTextureFormat swapchain_format = is_openxr_available ? webgpu_context.xr_swapchain_format : webgpu_context.swapchain_format;
 
@@ -383,7 +427,7 @@ void Renderer::initRenderPipeline()
     render_pipeline = webgpu_context.create_render_pipeline({ quad_vertex_layout }, color_target, render_shader_module, render_pipeline_layout);
 }
 
-void Renderer::initComputePipeline()
+void Renderer::init_compute_pipeline()
 {
     u_buffer_viewprojection.data = webgpu_context.create_buffer(sizeof(glm::mat4x4), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform, nullptr);
     u_buffer_viewprojection.binding = 0;
@@ -416,14 +460,14 @@ void Renderer::initComputePipeline()
     compute_pipeline = webgpu_context.create_compute_pipeline(compute_shader_module, compute_pipeline_layout);
 }
 
-bool Renderer::isOpenXRAvailable()
+bool Renderer::get_openxr_available()
 {
     return is_openxr_available;
 }
 
 #if defined(XR_SUPPORT) && defined(USE_MIRROR_WINDOW)
 
-void Renderer::initMirrorPipeline()
+void Renderer::init_mirror_pipeline()
 {
     // Create uniform for left eye texture view
     uniform_left_eye_view.data = xr_context.swapchains[0].images[0].textureView;

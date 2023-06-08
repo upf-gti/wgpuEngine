@@ -1,6 +1,6 @@
 #include "mesh.h"
 
-void Mesh::createQuad()
+void Mesh::create_quad()
 {
     vertices = {
       // position   uv
@@ -16,10 +16,15 @@ void Mesh::createQuad()
 
 void* Mesh::data()
 {
-    return vertices.data();;
+    return vertices.data();
 }
 
-size_t Mesh::getSize()
+size_t Mesh::get_size()
 {
     return vertices.size();
+}
+
+void Mesh::destroy()
+{
+    vertices.clear();
 }
