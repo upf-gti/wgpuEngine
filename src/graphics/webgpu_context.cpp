@@ -184,6 +184,9 @@ int WebGPUContext::initialize(GLFWwindow* window, bool create_screen_swapchain)
 
 void WebGPUContext::destroy()
 {
+    if (!is_initialized)
+        return;
+
 #ifdef XR_SUPPORT
     wgpuInstanceRelease(instance->Get());
 #else
