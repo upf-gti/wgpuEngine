@@ -118,7 +118,7 @@ int WebGPUContext::initialize(GLFWwindow* window, bool create_screen_swapchain)
 
     surface = wgpuInstanceCreateSurface(nullptr, &surfDesc);
 
-#else // __EMSCRIPTEN__
+#else
 
     WGPURequestAdapterOptions adapterOpts = {};
     //adapterOpts.compatibleSurface = surface;

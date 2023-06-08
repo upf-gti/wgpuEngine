@@ -29,7 +29,7 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4f {
     var uv_flip = in.uv;
     uv_flip.y = 1.0 - uv_flip.y;
     let color = textureLoad(render_texture, vec2u(uv_flip * vec2f(texture_size)) , 0);
-    return color;
+    return pow(color, vec4(2.2, 2.2, 2.2, 1.0));
 }
 
 )";
@@ -135,10 +135,10 @@ fn estimateNormal(p : vec3f) -> vec3f
     ));
 }
 
-fn blinnPhong(position : vec3f, lightPosition : vec3f, ambient : vec3f, diffuse : vec3f) -> vec3f
+fn blinnPhong(rayOrigin : vec3f, position : vec3f, lightPosition : vec3f, ambient : vec3f, diffuse : vec3f) -> vec3f
 {
     let normal : vec3f = estimateNormal(position);
-    let toEye : vec3f = normalize(vec3(0.0, 0.0, 0.0) - position);
+    let toEye : vec3f = normalize(rayOrigin - position);
     let toLight : vec3f = normalize(lightPosition - position);
     // let reflection : vec3f = reflect(-toLight, normal); // uncomment for Phong model
     let halfwayDir : vec3f = normalize(toLight + toEye);
@@ -155,7 +155,7 @@ fn blinnPhong(position : vec3f, lightPosition : vec3f, ambient : vec3f, diffuse 
 
 fn raymarch(rayOrigin : vec3f, rayDir : vec3f) -> vec3f
 {
-    let ambientColor = vec3f(0.4, 0.4, 0.4);
+    let ambientColor = vec3f(0.2, 0.2, 0.2);
 	let hitColor = vec3f(1.0, 1.0, 1.0);
 	let missColor = vec3f(0.0, 0.0, 0.0);
     let lightOffset = vec3f(4.0, 0.0, 0.0);
@@ -168,7 +168,7 @@ fn raymarch(rayOrigin : vec3f, rayDir : vec3f) -> vec3f
 		let dist : vec4f = sdf(pos);
 		minDist = min(minDist, dist.x);
 		if (minDist < MIN_HIT_DIST) {
-            let lightningColor : vec3f = blinnPhong(pos, lightPos + lightOffset, ambientColor, dist.yzw);
+            let lightningColor : vec3f = blinnPhong(rayOrigin, pos, lightPos + lightOffset, ambientColor, dist.yzw);
 			return lightningColor;
 		}
 		depth += dist.x;
