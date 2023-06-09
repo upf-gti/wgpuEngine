@@ -67,19 +67,6 @@ int main() {
 
     std::cout << "Engine initialized" << std::endl;
 
-#ifdef __EMSCRIPTEN__
-
-    emscripten_set_main_loop_arg(
-        [](void* userData) {
-            Engine& engine = *reinterpret_cast<Engine*>(userData);
-            engine.render();
-        },
-        (void*)&engine,
-        0, true
-    );
-
-#else
-
     double start_time = glfwGetTime();
     double now = start_time;
     double delta_time = 0.0;
@@ -94,10 +81,12 @@ int main() {
         now = glfwGetTime();
 
         delta_time = (now - last_time);
+
+#ifdef __EMSCRIPTEN__
+        emscripten_sleep(1);
+#endif
     }
     
-#endif
-
     engine.clean();
 
     closeWindow(window);

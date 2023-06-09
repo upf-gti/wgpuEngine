@@ -33,7 +33,7 @@ struct Edit {
     radius     : f32,
     size       : vec3f,
     blendOp    : u32,
-	color      : vec3f,
+    color      : vec3f,
     primitive  : u32,
 };
 

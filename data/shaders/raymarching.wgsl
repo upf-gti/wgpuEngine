@@ -80,7 +80,7 @@ fn raymarch(rayOrigin : vec3f, rayDir : vec3f) -> vec3f
 
 	var depth = 0.0;
 	var minDist = MAX_DIST;
-	for (var i : i32 = 0; depth < MAX_DIST && i < 150; i++)
+	for (var i : i32 = 0; depth < MAX_DIST && i < 250; i++)
 	{
 		let pos = rayOrigin + rayDir * depth;
         let surface : Surface = sampleSdf(pos);

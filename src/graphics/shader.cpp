@@ -18,7 +18,7 @@ void Shader::load(const std::string& shader_path, const std::vector<std::string>
 {
 	path = shader_path;
 
-	std::cout << "Loading shader: " << shader_path << std::endl;
+	std::cout << "Loading shader: " << path << std::endl;
 
 	std::string libraries_content;
 	for (const auto& library_path : libraries) {
@@ -32,7 +32,7 @@ void Shader::load(const std::string& shader_path, const std::vector<std::string>
 	}
 
 	std::string shader_content;
-	if (!readFile(shader_path, shader_content))
+	if (!readFile(path, shader_content))
 		return;
 
 	shader_content = libraries_content + shader_content;
@@ -43,7 +43,7 @@ void Shader::load(const std::string& shader_path, const std::vector<std::string>
 
 Shader* Shader::get(const std::string& shader_path, const std::vector<std::string>& libraries)
 {
-	std::string name;
+	std::string name = shader_path;
 
 	// check if already loaded
 	std::map<std::string, Shader*>::iterator it = shaders.find(shader_path);

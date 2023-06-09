@@ -47,7 +47,7 @@ endif()
 add_executable(${PROJECT_NAME} ${WGPU_SOURCES})
 target_include_directories(${PROJECT_NAME} PUBLIC ${WGPU_DIR_SOURCES})
 
-set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT ${PROJECT_NAME})
+set_property(DIRECTORY ${WGPU_DIR_ROOT} PROPERTY VS_STARTUP_PROJECT ${PROJECT_NAME})
 
 set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 20)
 
@@ -62,18 +62,20 @@ if (EMSCRIPTEN)
     set(SHELL_FILE shell.html)
 
     target_link_options(${PROJECT_NAME} PRIVATE
+        -O3
         -sUSE_GLFW=3
         -sUSE_WEBGPU
         -sALLOW_MEMORY_GROWTH
-        --shell-file "${CMAKE_CURRENT_SOURCE_DIR}/${SHELL_FILE}"
-        --preload-file "${CMAKE_CURRENT_SOURCE_DIR}/data"
+        -sASYNCIFY
+        --shell-file "${WGPU_DIR_ROOT}/${SHELL_FILE}"
+        --preload-file "${WGPU_DIR_ROOT}/data/shaders@/data/shaders"
 	)
 
 	# Make sure to re-link when the shell file changes
     set_property(
         TARGET ${PROJECT_NAME}
         PROPERTY LINK_DEPENDS
-        "${CMAKE_CURRENT_SOURCE_DIR}/${SHELL_FILE}"
+        "${WGPU_DIR_ROOT}/${SHELL_FILE}"
     )
 
     set_target_properties(${PROJECT_NAME} PROPERTIES SUFFIX ".html")

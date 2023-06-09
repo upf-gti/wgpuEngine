@@ -2,6 +2,7 @@
 
 #include <cassert>
 #include <iostream>
+#include <fstream>
 
 #define assert_msg(condition, msg) if (!(condition)) {std::cout << msg << std::endl; assert(false);}
 #define _STR(m_x) #m_x
@@ -22,26 +23,18 @@ inline bool readFile(const std::string& filename, std::string& content)
 {
 	content.clear();
 
-	long count = 0;
-
-	FILE* fp = fopen(filename.c_str(), "rb");
-	if (fp == NULL)
-	{
+	std::ifstream file(filename);
+	if (!file.is_open()) {
 		std::cerr << "File not found " << filename << std::endl;
 		return false;
 	}
 
-	fseek(fp, 0, SEEK_END);
-	count = ftell(fp);
-	rewind(fp);
+	file.seekg(0, std::ios::end);
+	size_t size = file.tellg();
+	content.resize(size, ' ');
 
-	content.resize(count);
-	if (count > 0)
-	{
-		count = fread(&content[0], sizeof(char), count, fp);
-	}
-
-	fclose(fp);
+	file.seekg(0);
+	file.read(content.data(), size);
 
 	return true;
 }
