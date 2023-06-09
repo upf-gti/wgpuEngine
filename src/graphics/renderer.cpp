@@ -4,7 +4,10 @@
 #include "dawnxr/dawnxr_internal.h"
 #endif
 
-#include "raw_shaders.h"
+Renderer::Renderer()
+{
+    Shader::webgpu_context = &webgpu_context;
+}
 
 int Renderer::initialize(GLFWwindow* window, bool use_mirror_screen)
 {
@@ -84,7 +87,6 @@ void Renderer::clean()
 
     // Render pipeline
     wgpuRenderPipelineRelease(render_pipeline);
-    wgpuShaderModuleRelease(render_shader_module);
     wgpuPipelineLayoutRelease(render_pipeline_layout);
     wgpuBindGroupLayoutRelease(render_bind_group_layout);
     wgpuBindGroupRelease(render_bind_group_left_eye);
@@ -92,7 +94,6 @@ void Renderer::clean()
 
     // Compute pipeline
     wgpuComputePipelineRelease(compute_pipeline);
-    wgpuShaderModuleRelease(compute_shader_module);
     wgpuPipelineLayoutRelease(compute_pipeline_layout);
     wgpuBindGroupLayoutRelease(compute_textures_bind_group_layout);
     wgpuBindGroupRelease(compute_textures_bind_group);
@@ -115,7 +116,6 @@ void Renderer::clean()
         wgpuPipelineLayoutRelease(mirror_pipeline_layout);
         wgpuBindGroupLayoutRelease(mirror_bind_group_layout);
         wgpuBindGroupRelease(mirror_bind_group);
-        wgpuShaderModuleRelease(mirror_shader_module);
 
         uniform_left_eye_view.destroy();
     }
@@ -381,7 +381,7 @@ void Renderer::init_render_pipeline()
     u_render_texture_right_eye.binding = 0;
     u_render_texture_right_eye.visibility = WGPUShaderStage_Fragment;
 
-    render_shader_module = webgpu_context.create_shader_module(RAW_SHADERS::simple_shaders);
+    render_shader = Shader::get("data/shaders/quad_eye.wgsl");
 
     // Left eye bind group
     {
@@ -440,13 +440,13 @@ void Renderer::init_render_pipeline()
     color_target.blend = &blend_state;
     color_target.writeMask = WGPUColorWriteMask_All;
 
-    render_pipeline = webgpu_context.create_render_pipeline({ quad_vertex_layout }, color_target, render_shader_module, render_pipeline_layout);
+    render_pipeline = webgpu_context.create_render_pipeline({ quad_vertex_layout }, color_target, render_shader->get_module(), render_pipeline_layout);
 }
 
 void Renderer::init_compute_pipeline()
 {
     // Load compute shader
-    compute_shader_module = webgpu_context.create_shader_module(RAW_SHADERS::compute_shader);
+    compute_shader = Shader::get("data/shaders/raymarching.wgsl", { "data/shaders/raymarching_functions.wgsl" });
     
     // Texture uniforms
     {
@@ -487,12 +487,17 @@ void Renderer::init_compute_pipeline()
 
     compute_pipeline_layout = webgpu_context.create_pipeline_layout({ compute_textures_bind_group_layout, compute_data_bind_group_layout });
 
-    compute_pipeline = webgpu_context.create_compute_pipeline(compute_shader_module, compute_pipeline_layout);
+    compute_pipeline = webgpu_context.create_compute_pipeline(compute_shader->get_module(), compute_pipeline_layout);
 }
 
 bool Renderer::get_openxr_available()
 {
     return is_openxr_available;
+}
+
+void Renderer::update(double delta_time)
+{
+    compute_data.time += delta_time;
 }
 
 #if defined(XR_SUPPORT) && defined(USE_MIRROR_WINDOW)
@@ -503,7 +508,7 @@ void Renderer::init_mirror_pipeline()
     uniform_left_eye_view.data = xr_context.swapchains[0].images[0].textureView;
     uniform_left_eye_view.binding = 0;
 
-    mirror_shader_module = webgpu_context.create_shader_module(RAW_SHADERS::mirror_shaders);
+    mirror_shader = Shader::get("data/shaders/quad_mirror.wgsl");
 
     // Layout descriptor (bind goups, buffers, uniforms)
     {
@@ -533,7 +538,7 @@ void Renderer::init_mirror_pipeline()
     color_target.blend = &blend_state;
     color_target.writeMask = WGPUColorWriteMask_All;
 
-    mirror_pipeline = webgpu_context.create_render_pipeline({ quad_vertex_layout }, color_target, mirror_shader_module, mirror_pipeline_layout);
+    mirror_pipeline = webgpu_context.create_render_pipeline({ quad_vertex_layout }, color_target, mirror_shader->get_module(), mirror_pipeline_layout);
 }
 
 #endif

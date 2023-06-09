@@ -1,8 +1,10 @@
 #pragma once
 
 #include "utils.h"
+
 #include "framework/mesh.h"
 
+#include "graphics/shader.h"
 #include "graphics/webgpu_context.h"
 
 #ifdef XR_SUPPORT
@@ -18,7 +20,7 @@ class Renderer {
     WebGPUContext           webgpu_context;
 
     WGPURenderPipeline      render_pipeline = nullptr;
-    WGPUShaderModule        render_shader_module = nullptr;
+    Shader*                 render_shader = nullptr;
 
     WGPUPipelineLayout      render_pipeline_layout = nullptr;
     WGPUBindGroupLayout     render_bind_group_layout = nullptr;
@@ -27,7 +29,7 @@ class Renderer {
     WGPUBindGroup           render_bind_group_right_eye = nullptr;
 
     WGPUComputePipeline     compute_pipeline = nullptr;
-    WGPUShaderModule        compute_shader_module = nullptr;
+    Shader*                 compute_shader = nullptr;
 
     WGPUPipelineLayout      compute_pipeline_layout = nullptr;
 
@@ -50,6 +52,11 @@ class Renderer {
         float render_height = 0.0f;
         glm::vec3 right_eye_pos;
         float render_width = 0.0f;
+
+        float time = 0.0f;
+        float dummy0 = 0.0f;
+        float dummy1 = 0.0f;
+        float dummy2 = 0.0f;
     };
 
     sComputeData            compute_data;
@@ -70,7 +77,7 @@ class Renderer {
     WGPUPipelineLayout      mirror_pipeline_layout;
     WGPUBindGroupLayout     mirror_bind_group_layout;
     WGPUBindGroup           mirror_bind_group;
-    WGPUShaderModule        mirror_shader_module;
+    Shader*                 mirror_shader;
 
     Uniform                 uniform_left_eye_view;
 #endif
@@ -100,9 +107,12 @@ class Renderer {
 
 public:
 
+    Renderer();
+
     int initialize(GLFWwindow* window, bool use_mirror_screen);
     void clean();
-
+    
+    void update(double delta_time);
     void render();
 
     bool get_openxr_available();

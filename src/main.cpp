@@ -21,6 +21,16 @@ void closeWindow(GLFWwindow* window) {
 #endif
 }
 
+bool shouldClose(bool use_glfw, GLFWwindow* window) {
+    return glfwWindowShouldClose(window);
+}
+
+void pollEvents(bool use_glfw) {
+    if (use_glfw) {
+        glfwPollEvents();
+    }
+}
+
 int main() {
 
     Engine engine;
@@ -70,18 +80,22 @@ int main() {
 
 #else
 
-    if (use_glfw) {
-        while (!glfwWindowShouldClose(window)) {
-            glfwPollEvents();
-            engine.render();
-        }
-    }
-    else {
-        while (true) {
-            engine.render();
-        }
-    }
+    double start_time = glfwGetTime();
+    double now = start_time;
+    double delta_time = 0.0;
 
+    while (!shouldClose(use_glfw, window)) {
+        pollEvents(use_glfw);
+
+        engine.update(delta_time);
+        engine.render();
+
+        double last_time = now;
+        now = glfwGetTime();
+
+        delta_time = (now - last_time);
+    }
+    
 #endif
 
     engine.clean();

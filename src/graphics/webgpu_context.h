@@ -2,7 +2,10 @@
 
 #include "includes.h"
 
-// Already includes dawnxr/webgpu
+#ifdef XR_SUPPORT
+#include <dawnxr/dawnxr.h>
+#endif
+
 #include "uniform.h" 
 
 #include "GLFW/glfw3.h"

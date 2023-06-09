@@ -17,5 +17,6 @@ public:
     bool get_openxr_available();
     bool get_use_mirror_window();
 
+    void update(double delta_time);
     void render();
 };

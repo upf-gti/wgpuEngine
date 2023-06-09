@@ -51,29 +51,32 @@ set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT $
 
 set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 20)
 
+set_property(TARGET ${PROJECT_NAME} PROPERTY VS_DEBUGGER_WORKING_DIRECTORY "${WGPU_DIR_ROOT}")
+
 # dawn
 set_target_properties(${PROJECT_NAME} PROPERTIES VS_DEBUGGER_ENVIRONMENT "DAWN_DEBUG_BREAK_ON_ERROR=1")
 add_subdirectory(libraries/webgpu)
 target_link_libraries(${PROJECT_NAME} webgpu)
 
 if (EMSCRIPTEN)
-	set(SHELL_FILE shell.html)
+    set(SHELL_FILE shell.html)
 
-	target_link_options(${PROJECT_NAME} PRIVATE
-		-sUSE_GLFW=3
-		-sUSE_WEBGPU
-		-sALLOW_MEMORY_GROWTH
-		--shell-file "${CMAKE_CURRENT_SOURCE_DIR}/${SHELL_FILE}"
+    target_link_options(${PROJECT_NAME} PRIVATE
+        -sUSE_GLFW=3
+        -sUSE_WEBGPU
+        -sALLOW_MEMORY_GROWTH
+        --shell-file "${CMAKE_CURRENT_SOURCE_DIR}/${SHELL_FILE}"
+        --preload-file "${CMAKE_CURRENT_SOURCE_DIR}/data"
 	)
 
 	# Make sure to re-link when the shell file changes
-	set_property(
-		TARGET ${PROJECT_NAME}
-		PROPERTY LINK_DEPENDS
-		"${CMAKE_CURRENT_SOURCE_DIR}/${SHELL_FILE}"
-	)
+    set_property(
+        TARGET ${PROJECT_NAME}
+        PROPERTY LINK_DEPENDS
+        "${CMAKE_CURRENT_SOURCE_DIR}/${SHELL_FILE}"
+    )
 
-	set_target_properties(${PROJECT_NAME} PROPERTIES SUFFIX ".html")
+    set_target_properties(${PROJECT_NAME} PROPERTIES SUFFIX ".html")
 endif()
 
 if (NOT EMSCRIPTEN)

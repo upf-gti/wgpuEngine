@@ -2,15 +2,7 @@
 
 #include "includes.h"
 
-#ifdef XR_SUPPORT
-#include <dawnxr/dawnxr.h>
-#else
 #include <webgpu/webgpu.h>
-#endif
-
-#ifndef __EMSCRIPTEN__
-#include <dawn/native/DawnNative.h>
-#endif
 
 #include <variant>
 #include <functional>

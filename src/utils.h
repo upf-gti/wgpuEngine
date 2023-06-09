@@ -18,6 +18,34 @@ inline void printError(const char* p_function, const char* p_file, int p_line, c
 	std::cout << p_function << "(line " << p_line << ") at " << p_file << std::endl << p_error << " - " << p_message << std::endl;
 }
 
+inline bool readFile(const std::string& filename, std::string& content)
+{
+	content.clear();
+
+	long count = 0;
+
+	FILE* fp = fopen(filename.c_str(), "rb");
+	if (fp == NULL)
+	{
+		std::cerr << "File not found " << filename << std::endl;
+		return false;
+	}
+
+	fseek(fp, 0, SEEK_END);
+	count = ftell(fp);
+	rewind(fp);
+
+	content.resize(count);
+	if (count > 0)
+	{
+		count = fread(&content[0], sizeof(char), count, fp);
+	}
+
+	fclose(fp);
+
+	return true;
+}
+
 enum Error {
 	OK,
 	FAILED,

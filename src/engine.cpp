@@ -26,6 +26,11 @@ bool Engine::get_use_mirror_window()
 #endif
 }
 
+void Engine::update(double delta_time)
+{
+    renderer.update(delta_time);
+}
+
 void Engine::render()
 {
     renderer.render();
