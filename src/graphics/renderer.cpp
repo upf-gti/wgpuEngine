@@ -381,7 +381,11 @@ void Renderer::init_render_pipeline()
     u_render_texture_right_eye.binding = 0;
     u_render_texture_right_eye.visibility = WGPUShaderStage_Fragment;
 
-    render_shader = Shader::get("data/shaders/quad_eye.wgsl");
+    if (is_openxr_available) {
+        render_shader = Shader::get("data/shaders/quad_eye.wgsl");
+    } else {
+        render_shader = Shader::get("data/shaders/quad_mirror.wgsl");
+    }
 
     // Left eye bind group
     {

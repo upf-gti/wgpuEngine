@@ -79,7 +79,7 @@ fn sminN( a : f32, b : f32, k : f32, n : f32 ) -> vec2f
 
 fn opSmoothUnion( s1 : Surface, s2 : Surface, k : f32 ) -> Surface
 {
-    let smin : vec2f = sminN(s2.distance, s1.distance, k, 2.0);
+    let smin : vec2f = sminN(s2.distance, s1.distance, k, 3.0);
     var sf : Surface;
     sf.distance = smin.x;
     sf.color = colorMix(s2.color, s1.color, smin.y);

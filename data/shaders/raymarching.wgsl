@@ -85,7 +85,7 @@ fn raymarch(rayOrigin : vec3f, rayDir : vec3f) -> vec3f
 		let pos = rayOrigin + rayDir * depth;
         let surface : Surface = sampleSdf(pos);
 		if (surface.distance < MIN_HIT_DIST) {
-			return surface.color;//linnPhong(rayOrigin, pos, lightPos + lightOffset, ambientColor, surface.color);
+			return blinnPhong(rayOrigin, pos, lightPos + lightOffset, ambientColor, surface.color);
 		}
 		depth += min(surface.distance, 0.5);
 	}
