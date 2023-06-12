@@ -83,7 +83,7 @@ int main() {
         delta_time = (now - last_time);
 
 #ifdef __EMSCRIPTEN__
-        emscripten_sleep(1);
+        emscripten_sleep(32);
 #endif
     }
     
