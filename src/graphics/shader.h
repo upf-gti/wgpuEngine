@@ -15,9 +15,9 @@ public:
 
 	static WebGPUContext* webgpu_context;
 
-	void load(const std::string& shader_path, const std::vector<std::string>& libraries = {});
+	void load(const std::string& shader_path);
 
-	static Shader* get(const std::string& shader_path, const std::vector<std::string>& libraries = {});
+	static Shader* get(const std::string& shader_path);
 
 	WGPUShaderModule& get_module();
 

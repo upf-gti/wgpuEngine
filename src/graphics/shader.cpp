@@ -3,6 +3,7 @@
 #include "utils.h"
 
 #include <iostream>
+#include <sstream>
 
 std::map<std::string, Shader*> Shader::shaders;
 WebGPUContext* Shader::webgpu_context = nullptr;
@@ -14,34 +15,53 @@ Shader::~Shader()
 	}
 }
 
-void Shader::load(const std::string& shader_path, const std::vector<std::string>& libraries)
+void Shader::load(const std::string& shader_path)
 {
 	path = shader_path;
 
-	std::cout << "Loading shader: " << path << std::endl;
-
-	std::string libraries_content;
-	for (const auto& library_path : libraries) {
-		std::string library_content;
-		if (!readFile(library_path, library_content)) {
-			std::cerr << "Could not load shader library: " << library_path << std::endl;
-			return;
-		}
-
-		libraries_content += library_content;
-	}
+	std::cout << "Loading shader: " << path;
 
 	std::string shader_content;
 	if (!readFile(path, shader_content))
 		return;
 
-	shader_content = libraries_content + shader_content;
+	std::istringstream f(shader_content);
+	std::string include_content;
+	std::string line;
+
+	size_t ix = path.find_last_of('/');
+	std::string _directory = path.substr(0, ix + 1);
+
+	while (std::getline(f, line)) {
+
+		auto tokens = tokenize(line);
+		const std::string& tag = tokens[0];
+		if (tag == "#include")
+		{
+			const std::string& include_name = tokens[1];
+			const std::string& include_path = _directory + include_name;
+			std::string new_content;
+			if (!readFile(include_path, new_content)) {
+				std::cerr << "Could not load shader include: " << include_path << std::endl;
+				return;
+			}
+
+			std::cout << " [" << include_name << "]";
+			shader_content.replace(shader_content.find(tag), line.length() + 1, "");
+			include_content += new_content;
+		}
+		// add other pres
+		// else if (tag == "#...") { }
+	}
+
+	shader_content = include_content + shader_content;
 
 	shader_module = webgpu_context->create_shader_module(shader_content.c_str());
 	loaded = true;
+	std::cout << " [OK]" << std::endl;
 }
 
-Shader* Shader::get(const std::string& shader_path, const std::vector<std::string>& libraries)
+Shader* Shader::get(const std::string& shader_path)
 {
 	std::string name = shader_path;
 
@@ -51,7 +71,7 @@ Shader* Shader::get(const std::string& shader_path, const std::vector<std::strin
 		return it->second;
 
 	Shader* sh = new Shader();
-	sh->load(shader_path, libraries);
+	sh->load(shader_path);
 
 	// register in map
 	shaders[name] = sh;

@@ -1,3 +1,4 @@
+#include raymarching_functions.wgsl
 
 struct sComputeData {
     inv_view_projection_left_eye  : mat4x4f,

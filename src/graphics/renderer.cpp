@@ -450,7 +450,7 @@ void Renderer::init_render_pipeline()
 void Renderer::init_compute_pipeline()
 {
     // Load compute shader
-    compute_shader = Shader::get("data/shaders/raymarching.wgsl", { "data/shaders/raymarching_functions.wgsl" });
+    compute_shader = Shader::get("data/shaders/raymarching.wgsl");
     
     // Texture uniforms
     {

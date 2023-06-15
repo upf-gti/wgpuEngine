@@ -1,11 +1,23 @@
 #pragma once
 
+#include <regex>
 #include <cassert>
 #include <iostream>
 #include <fstream>
 
 #define assert_msg(condition, msg) if (!(condition)) {std::cout << msg << std::endl; assert(false);}
 #define _STR(m_x) #m_x
+
+inline std::vector<std::string> tokenize(const std::string& str) {
+	
+	std::regex reg("\\s+");
+
+	std::sregex_token_iterator iter(str.begin(), str.end(), reg, -1);
+	std::sregex_token_iterator end;
+
+	std::vector<std::string> vec(iter, end);
+	return vec;
+}
 
 inline void printLine(const char* line) {
 	std::cout << line << std::endl;
