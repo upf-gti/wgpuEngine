@@ -56,29 +56,6 @@ set_target_properties(${PROJECT_NAME} PROPERTIES VS_DEBUGGER_ENVIRONMENT "DAWN_D
 add_subdirectory(libraries/webgpu)
 target_link_libraries(${PROJECT_NAME} PUBLIC webgpu)
 
-if (EMSCRIPTEN)
-    set(SHELL_FILE shell.html)
-
-    target_link_options(${PROJECT_NAME} PRIVATE
-        -O3
-        -sUSE_GLFW=3
-        -sUSE_WEBGPU
-        -sALLOW_MEMORY_GROWTH
-        -sASYNCIFY
-        --shell-file "${WGPU_DIR_ROOT}/${SHELL_FILE}"
-        --preload-file "${WGPU_DIR_ROOT}/data/shaders@/data/shaders"
-	)
-
-	# Make sure to re-link when the shell file changes
-    set_property(
-        TARGET ${PROJECT_NAME}
-        PROPERTY LINK_DEPENDS
-        "${WGPU_DIR_ROOT}/${SHELL_FILE}"
-    )
-
-    set_target_properties(${PROJECT_NAME} PROPERTIES SUFFIX ".html")
-endif()
-
 if (NOT EMSCRIPTEN)
 
     # vulkan
