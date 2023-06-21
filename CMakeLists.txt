@@ -26,13 +26,12 @@ endmacro()
 GroupSources(src)
 
 # Sources
-macro(WGPU_FILES_APPEND)
-    file(GLOB FILES_APPEND CONFIGURE_DEPENDS ${ARGV})
-    list(APPEND WGPU_SOURCES ${FILES_APPEND})
-endmacro()
 macro(WGPU_SOURCES_APPEND)
-    WGPU_FILES_APPEND(${ARGV0}/*.h)
-    WGPU_FILES_APPEND(${ARGV0}/*.cpp)
+    file(GLOB FILES_APPEND CONFIGURE_DEPENDS ${ARGV0}/*.h)
+    list(APPEND WGPU_HEADERS ${FILES_APPEND})
+
+    file(GLOB FILES_APPEND CONFIGURE_DEPENDS ${ARGV0}/*.cpp)
+    list(APPEND WGPU_SOURCES ${FILES_APPEND})
 endmacro()
 
 WGPU_SOURCES_APPEND(${WGPU_DIR_SOURCES})
@@ -44,19 +43,18 @@ if (NOT EMSCRIPTEN)
     WGPU_SOURCES_APPEND(${WGPU_DIR_SOURCES}/dawnxr)
 endif()
 
-add_executable(${PROJECT_NAME} ${WGPU_SOURCES})
-target_include_directories(${PROJECT_NAME} PUBLIC ${WGPU_DIR_SOURCES})
+add_library(${PROJECT_NAME} ${WGPU_SOURCES} ${WGPU_HEADERS})
 
-set_property(DIRECTORY ${WGPU_DIR_ROOT} PROPERTY VS_STARTUP_PROJECT ${PROJECT_NAME})
+target_include_directories(${PROJECT_NAME} PUBLIC ${WGPU_DIR_SOURCES})
 
 set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 20)
 
-set_property(TARGET ${PROJECT_NAME} PROPERTY VS_DEBUGGER_WORKING_DIRECTORY "${WGPU_DIR_ROOT}")
+# INSTALL(FILES ${WGPU_HEADERS} DESTINATION ${CMAKE_BINARY_DIR})
 
 # dawn
 set_target_properties(${PROJECT_NAME} PROPERTIES VS_DEBUGGER_ENVIRONMENT "DAWN_DEBUG_BREAK_ON_ERROR=1")
 add_subdirectory(libraries/webgpu)
-target_link_libraries(${PROJECT_NAME} webgpu)
+target_link_libraries(${PROJECT_NAME} PUBLIC webgpu)
 
 if (EMSCRIPTEN)
     set(SHELL_FILE shell.html)
@@ -85,21 +83,21 @@ if (NOT EMSCRIPTEN)
 
     # vulkan
     find_package(Vulkan REQUIRED)
-    target_link_libraries(${PROJECT_NAME} ${Vulkan_LIBRARIES})
+    target_link_libraries(${PROJECT_NAME} PUBLIC ${Vulkan_LIBRARIES})
     include_directories(${Vulkan_INCLUDE_DIR})
 
     # openxr
     add_subdirectory(libraries/openxr)
-    target_link_libraries(${PROJECT_NAME} openxr_loader)
+    target_link_libraries(${PROJECT_NAME} PUBLIC openxr_loader)
     
     # glfw
     add_subdirectory(libraries/glfw3webgpu)
-    target_link_libraries(${PROJECT_NAME} glfw glfw3webgpu)
+    target_link_libraries(${PROJECT_NAME} PUBLIC glfw glfw3webgpu)
 
 endif()
 
 # glm
 add_subdirectory(libraries/glm)
-target_link_libraries(${PROJECT_NAME} glm)
+target_link_libraries(${PROJECT_NAME} PUBLIC glm)
 
 target_copy_webgpu_binaries(${PROJECT_NAME})

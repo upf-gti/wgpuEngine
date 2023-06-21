@@ -2,19 +2,20 @@
 
 #include "utils.h"
 
-int Engine::initialize(GLFWwindow *window, bool use_mirror_screen)
+int Engine::initialize(Renderer* renderer, GLFWwindow* window, bool use_mirror_screen)
 {
-    return renderer.initialize(window, use_mirror_screen);
+    this->renderer = renderer;
+    return renderer->initialize(window, use_mirror_screen);
 }
 
 void Engine::clean()
 {
-    renderer.clean();
+    renderer->clean();
 }
 
 bool Engine::get_openxr_available()
 {
-    return renderer.get_openxr_available();
+    return renderer->get_openxr_available();
 }
 
 bool Engine::get_use_mirror_window()
@@ -28,10 +29,10 @@ bool Engine::get_use_mirror_window()
 
 void Engine::update(double delta_time)
 {
-    renderer.update(delta_time);
+    renderer->update(delta_time);
 }
 
 void Engine::render()
 {
-    renderer.render();
+    renderer->render();
 }

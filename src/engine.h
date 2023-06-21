@@ -7,11 +7,11 @@
 
 class Engine {
 
-    Renderer renderer;
-
+    Renderer* renderer = nullptr;
+    
 public:
 
-    int initialize(GLFWwindow *window, bool use_mirror_screen);
+    int initialize(Renderer* renderer, GLFWwindow *window, bool use_mirror_screen);
     void clean();
 
     bool get_openxr_available();
