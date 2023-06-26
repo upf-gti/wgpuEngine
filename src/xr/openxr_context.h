@@ -92,12 +92,25 @@ struct OpenXRContext {
     void print_viewconfig_view_info();
     bool check_vulkan_version(XrGraphicsRequirementsVulkanKHR* vulkan_reqs);
     void print_reference_spaces();
+    
+    // XR Input
     void init_actions();
+    void sync();
 
     void init_frame();
     void acquire_swapchain(int swapchain_index);
     void release_swapchain(int swapchain_index);
     void end_frame();
+
+private:
+    bool create_action(XrActionSet actionSet,
+        XrPath* paths,
+        uint32_t num_paths,
+        const std::string& actionName,
+        const std::string& localizedActionName,
+        XrActionType type,
+        XrAction& action);
+    XrActionStatePose get_action_pose_state(XrAction targetAction, int controller);
 };
 
 #endif

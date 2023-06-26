@@ -36,5 +36,7 @@ public:
     virtual void update(double delta_time) {};
     virtual void render() {};
 
-    bool get_openxr_available();
+    bool get_openxr_available() { return is_openxr_available; }
+    bool get_use_mirror_screen() { return use_mirror_screen; }
+    OpenXRContext* get_openxr_context() { return (is_openxr_available ? &xr_context : nullptr); }
 };

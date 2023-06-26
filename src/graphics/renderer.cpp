@@ -69,8 +69,3 @@ void Renderer::clean()
 
     webgpu_context.destroy();
 }
-
-bool Renderer::get_openxr_available()
-{
-    return is_openxr_available;
-}

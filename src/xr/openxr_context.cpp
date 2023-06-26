@@ -76,18 +76,19 @@ int OpenXRContext::initialize(WebGPUContext* webgpu_context)
 
     //config_render_pipeline();
 
-    XrSwapchainCreateInfo swapchain_create_info;
-    swapchain_create_info.type = XR_TYPE_SWAPCHAIN_CREATE_INFO;
-    swapchain_create_info.usageFlags = XR_SWAPCHAIN_USAGE_SAMPLED_BIT | XR_SWAPCHAIN_USAGE_COLOR_ATTACHMENT_BIT;
-    swapchain_create_info.createFlags = 0;
-    swapchain_create_info.format = swapchain_formats[0];
-    swapchain_create_info.sampleCount = viewconfig_views[0].recommendedSwapchainSampleCount;
-    swapchain_create_info.width = viewconfig_views[0].recommendedImageRectWidth;
-    swapchain_create_info.height = viewconfig_views[0].recommendedImageRectHeight;
-    swapchain_create_info.faceCount = 1;
-    swapchain_create_info.arraySize = 1;
-    swapchain_create_info.mipCount = 1;
-    swapchain_create_info.next = NULL;
+    XrSwapchainCreateInfo swapchain_create_info{
+        .type = XR_TYPE_SWAPCHAIN_CREATE_INFO,
+        .next = NULL,
+        .createFlags = 0,
+        .usageFlags = XR_SWAPCHAIN_USAGE_SAMPLED_BIT | XR_SWAPCHAIN_USAGE_COLOR_ATTACHMENT_BIT,
+        .format = swapchain_formats[0],
+        .sampleCount = viewconfig_views[0].recommendedSwapchainSampleCount,
+        .width = viewconfig_views[0].recommendedImageRectWidth,
+        .height = viewconfig_views[0].recommendedImageRectHeight,
+        .faceCount = 1,
+        .arraySize = 1,
+        .mipCount = 1
+    };
 
     swapchains.resize(view_count);
 
@@ -365,54 +366,38 @@ void OpenXRContext::init_actions()
 {
     // Create an action set.
     {
-        XrActionSetCreateInfo actionSetInfo{ XR_TYPE_ACTION_SET_CREATE_INFO };
-        strcpy(actionSetInfo.actionSetName, "gameplay");
-        strcpy(actionSetInfo.localizedActionSetName, "Gameplay");
-        actionSetInfo.priority = 0;
-        (xrCreateActionSet(instance, &actionSetInfo, &input_state.actionSet));
+        XrActionSetCreateInfo actionSetInfo{
+            .type = XR_TYPE_ACTION_SET_CREATE_INFO,
+            .actionSetName = "gameplay",
+            .localizedActionSetName = "Gameplay",
+            .priority = 0
+        };
+        xrCreateActionSet(instance, &actionSetInfo, &input_state.actionSet);
     }
 
     // Get the XrPath for the left and right hands - we will use them as subaction paths.
-    (xrStringToPath(instance, "/user/hand/left", &input_state.handSubactionPath[HAND_LEFT]));
-    (xrStringToPath(instance, "/user/hand/right",
-        &input_state.handSubactionPath[HAND_RIGHT]));
+    xrStringToPath(instance, "/user/hand/left", &input_state.handSubactionPath[HAND_LEFT]);
+    xrStringToPath(instance, "/user/hand/right", &input_state.handSubactionPath[HAND_RIGHT]);
 
     // Create actions.
     {
         // Create an input action for grabbing objects with the left and right hands.
-        XrActionCreateInfo actionInfo{ XR_TYPE_ACTION_CREATE_INFO };
-        actionInfo.actionType = XR_ACTION_TYPE_FLOAT_INPUT;
-        strcpy(actionInfo.actionName, "grab_object");
-        strcpy(actionInfo.localizedActionName, "Grab Object");
-        actionInfo.countSubactionPaths = HAND_COUNT;
-        actionInfo.subactionPaths = input_state.handSubactionPath;
-        (xrCreateAction(input_state.actionSet, &actionInfo, &input_state.grabAction));
+        create_action(input_state.actionSet, input_state.handSubactionPath, HAND_COUNT,
+            "grab_object", "Grab Object", XR_ACTION_TYPE_FLOAT_INPUT, input_state.grabAction);
 
         // Create an input action getting the left and right hand poses.
-        actionInfo.actionType = XR_ACTION_TYPE_POSE_INPUT;
-        strcpy(actionInfo.actionName, "hand_pose");
-        strcpy(actionInfo.localizedActionName, "Hand Pose");
-        actionInfo.countSubactionPaths = HAND_COUNT;
-        actionInfo.subactionPaths = input_state.handSubactionPath;
-        (xrCreateAction(input_state.actionSet, &actionInfo, &input_state.poseAction));
+        create_action(input_state.actionSet, input_state.handSubactionPath, HAND_COUNT,
+            "hand_pose", "Hand Pose", XR_ACTION_TYPE_POSE_INPUT, input_state.poseAction);
 
         // Create output actions for vibrating the left and right controller.
-        actionInfo.actionType = XR_ACTION_TYPE_VIBRATION_OUTPUT;
-        strcpy(actionInfo.actionName, "vibrate_hand");
-        strcpy(actionInfo.localizedActionName, "Vibrate Hand");
-        actionInfo.countSubactionPaths = HAND_COUNT;
-        actionInfo.subactionPaths = input_state.handSubactionPath;
-        (xrCreateAction(input_state.actionSet, &actionInfo, &input_state.vibrateAction));
+        create_action(input_state.actionSet, input_state.handSubactionPath, HAND_COUNT,
+            "vibrate_hand", "Vibrate Hand", XR_ACTION_TYPE_VIBRATION_OUTPUT, input_state.vibrateAction);
 
         // Create input actions for quitting the session using the left and right controller.
         // Since it doesn't matter which hand did this, we do not specify subaction paths for it.
         // We will just suggest bindings for both hands, where possible.
-        actionInfo.actionType = XR_ACTION_TYPE_BOOLEAN_INPUT;
-        strcpy(actionInfo.actionName, "quit_session");
-        strcpy(actionInfo.localizedActionName, "Quit Session");
-        actionInfo.countSubactionPaths = 0;
-        actionInfo.subactionPaths = nullptr;
-        (xrCreateAction(input_state.actionSet, &actionInfo, &input_state.quitAction));
+        create_action(input_state.actionSet, nullptr, 0,
+            "quit_session", "Quit Session", XR_ACTION_TYPE_BOOLEAN_INPUT, input_state.quitAction);
     }
 
     XrPath selectPath[HAND_COUNT];
@@ -452,6 +437,7 @@ void OpenXRContext::init_actions()
         &triggerValuePath[HAND_LEFT]));
     (xrStringToPath(instance, "/user/hand/right/input/trigger/value",
         &triggerValuePath[HAND_RIGHT]));
+
     // Suggest bindings for KHR Simple.
     {
         XrPath khrSimpleInteractionProfilePath;
@@ -553,18 +539,107 @@ void OpenXRContext::init_actions()
         suggestedBindings.countSuggestedBindings = (uint32_t)bindings.size();
         (xrSuggestInteractionProfileBindings(instance, &suggestedBindings));
     }*/
-    XrActionSpaceCreateInfo actionSpaceInfo{ XR_TYPE_ACTION_SPACE_CREATE_INFO };
-    actionSpaceInfo.action = input_state.poseAction;
-    actionSpaceInfo.poseInActionSpace.orientation.w = 1.f;
-    actionSpaceInfo.subactionPath = input_state.handSubactionPath[HAND_LEFT];
-    (xrCreateActionSpace(session, &actionSpaceInfo, &input_state.handSpace[HAND_LEFT]));
-    actionSpaceInfo.subactionPath = input_state.handSubactionPath[HAND_RIGHT];
-    (xrCreateActionSpace(session, &actionSpaceInfo, &input_state.handSpace[HAND_RIGHT]));
 
-    XrSessionActionSetsAttachInfo attachInfo{ XR_TYPE_SESSION_ACTION_SETS_ATTACH_INFO };
-    attachInfo.countActionSets = 1;
-    attachInfo.actionSets = &input_state.actionSet;
-    (xrAttachSessionActionSets(session, &attachInfo));
+    // Action Spaces for each controller. They will contain the controller poses.
+    for (size_t ci = 0u; ci < HAND_COUNT; ci++)
+    {
+        XrActionSpaceCreateInfo actionSpaceInfo{
+            .type = XR_TYPE_ACTION_SPACE_CREATE_INFO,
+            .action = input_state.poseAction,
+            .subactionPath = input_state.handSubactionPath[ci]
+        };
+        actionSpaceInfo.poseInActionSpace.orientation = { .x = 0, .y = 0, .z = 0, .w = 1.0 };
+        actionSpaceInfo.poseInActionSpace.position = { .x = 0, .y = 0, .z = 0 };
+
+        XrResult result = xrCreateActionSpace(session, &actionSpaceInfo, &input_state.handSpace[ci]);
+        if (!xr_result(instance, result, "Can't create controller  subspace for controller %d", ci))
+            return;
+    }
+
+    // Attach the controller action set
+    XrSessionActionSetsAttachInfo xrSessionAttachInfo{
+        .type = XR_TYPE_SESSION_ACTION_SETS_ATTACH_INFO,
+        .countActionSets = 1,
+        .actionSets = &input_state.actionSet
+    };
+    xrAttachSessionActionSets(session, &xrSessionAttachInfo);
+}
+
+void OpenXRContext::sync()
+{
+    // Sync the actions 
+    const XrActiveActionSet activeActionSet{ input_state.actionSet, XR_NULL_PATH };// Wildcard for all
+
+    XrActionsSyncInfo actionsSyncInfo = { .type = XR_TYPE_ACTIONS_SYNC_INFO,
+                                        .countActiveActionSets = 1u,
+                                        .activeActionSets = &activeActionSet };
+
+    XrResult result = xrSyncActions(session, &actionsSyncInfo);
+    if (!xr_result(instance, result, "Cannot sync actions for XR controllers"))
+        return;
+
+    // Update the actions
+    /*
+    inputData.SizeVectors(ControllerEnum::COUNT, SideEnum::COUNT);
+
+    // [tdbe] Head action poses
+    inputData.eyePoseMatrixes[(int)SideEnum::LEFT] = util::poseToMatrix(eyePoses[(int)SideEnum::LEFT].pose);
+    inputData.eyePoses[(int)SideEnum::LEFT] = util::xrPosefToGlmPosef(eyePoses[(int)SideEnum::LEFT].pose);
+    inputData.eyePoseMatrixes[(int)SideEnum::RIGHT] = util::poseToMatrix(eyePoses[(int)SideEnum::RIGHT].pose);
+    inputData.eyePoses[(int)SideEnum::RIGHT] = util::xrPosefToGlmPosef(eyePoses[(int)SideEnum::RIGHT].pose);
+    // [tdbe] TODO: figure out what/how head poses/joints work in openxr https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html
+    inputData.headPose = {
+        .orientation = util::slerp(inputData.eyePoses[(int)SideEnum::LEFT].orientation, inputData.eyePoses[(int)SideEnum::RIGHT].orientation, .5),
+        .position = util::slerp(inputData.eyePoses[(int)SideEnum::LEFT].position, inputData.eyePoses[(int)SideEnum::RIGHT].position, .5)
+    };
+    inputData.headPoseMatrix = util::poseToMatrix(inputData.headPose);
+
+    // [tdbe] Headset State. Use to detect status / user proximity / user presence / user engagement https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html#session-lifecycle
+    inputData.headsetActivityState = sessionState;
+    */
+
+    /*XrSpace xrReferenceSpace;
+    std::vector<XrView> eyePoses;
+    XrSessionState sessionState;*/
+
+    for (size_t i = 0u; i < HAND_COUNT; i++) {
+        
+        // Pose
+        XrActionStatePose grabPoseState = get_action_pose_state(input_state.grabAction, i);
+        if (grabPoseState.isActive)
+        {
+            XrSpaceLocation spaceLocation{ .type = XR_TYPE_SPACE_LOCATION };
+            result = xrLocateSpace(input_state.handSpace[i], xrReferenceSpace, frame_state.predictedDisplayTime, &spaceLocation);
+            
+            // Check that the position and orientation are valid and tracked
+            constexpr XrSpaceLocationFlags checkFlags =
+                XR_SPACE_LOCATION_POSITION_VALID_BIT | XR_SPACE_LOCATION_POSITION_TRACKED_BIT |
+                XR_SPACE_LOCATION_ORIENTATION_VALID_BIT | XR_SPACE_LOCATION_ORIENTATION_TRACKED_BIT;
+            if ((spaceLocation.locationFlags & checkFlags) == checkFlags)
+            {
+                // inputData.controllerAimPoseMatrixes.at(i) = util::poseToMatrix(spaceLocation.pose);
+                // inputData.controllerAimPoses.at(i) = util::xrPosefToGlmPosef(spaceLocation.pose);
+            }
+        }
+
+        /*
+        // [tdbe] State (input value)
+        XrActionStateFloat grabState = Input::GetActionFloatState(actionSetData.grabAction, ci);
+        inputData.grabState.at(i) = grabState;
+
+        // [tdbe] State
+        XrActionStateVector2f thumbStickState = Input::GetActionVector2fState(actionSetData.thumbstickAction, ci);
+        inputData.thumbStickState.at(i) = thumbStickState;
+
+        // [tdbe] State
+        XrActionStateBoolean menuClickState = Input::GetActionBooleanState(actionSetData.menuClickAction, ci);
+        inputData.menuClickState.at(i) = menuClickState;
+
+        // [tdbe] State
+        XrActionStateBoolean selectClickState = Input::GetActionBooleanState(actionSetData.selectClickAction, ci);
+        inputData.selectClickState.at(i) = selectClickState;
+        */
+    }
 }
 
 void OpenXRContext::init_frame()
@@ -680,6 +755,48 @@ void OpenXRContext::end_frame()
         return;
 }
 
+bool OpenXRContext::create_action(XrActionSet actionSet,
+    XrPath* paths,
+    uint32_t num_paths,
+    const std::string& actionName,
+    const std::string& localizedActionName,
+    XrActionType type,
+    XrAction& action)
+{
+    XrActionCreateInfo actionCreateInfo{ XR_TYPE_ACTION_CREATE_INFO };
+    actionCreateInfo.actionType = type;
+    actionCreateInfo.countSubactionPaths = num_paths;
+    actionCreateInfo.subactionPaths = paths;
+
+    //strcpy_s(actionCreateInfo.actionName, actionName.c_str());
+    //strcpy_s(actionCreateInfo.localizedActionName, localizedActionName.c_str());
+    memcpy(actionCreateInfo.actionName, actionName.data(), actionName.length() + 1u);
+    memcpy(actionCreateInfo.localizedActionName, localizedActionName.data(), localizedActionName.length() + 1u);
+
+    XrResult result = xrCreateAction(actionSet, &actionCreateInfo, &action);
+    if (!xr_result(instance, result, "Can't create XrAction"))
+        return false;
+
+    return true;
+}
+
+XrActionStatePose OpenXRContext::get_action_pose_state(XrAction targetAction, int controller)
+{
+    XrPath path = XR_NULL_PATH;// Wildcard for all
+    if (controller != HAND_COUNT) {
+        path = input_state.handSubactionPath[controller];
+    }
+    XrActionStateGetInfo getInfo = { .type = XR_TYPE_ACTION_STATE_GET_INFO,
+                                    .action = targetAction,
+                                    .subactionPath = path };
+
+    XrActionStatePose poseState{ .type = XR_TYPE_ACTION_STATE_POSE };
+    XrResult result = xrGetActionStatePose(session, &getInfo, &poseState);
+    if (!xr_result(instance, result, "Cannot get action pose state" )) {
+        
+    }
+    return poseState;
+}
 
 // HELPER FUNCTIONS
 // From: https://github.com/jherico/OpenXR-Samples/blob/master/src/examples/sdl2_gl_single_file_example.cpp

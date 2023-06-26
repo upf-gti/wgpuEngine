@@ -1,4 +1,5 @@
 #include "input.h"
+#include "graphics/renderer.h"
 
 glm::vec2 Input::mouse_position; //last mouse position
 glm::vec2 Input::mouse_delta; //mouse movement in the last frame
@@ -12,10 +13,15 @@ uint8_t Input::prev_keystate[GLFW_KEY_LAST];
 
 GLFWwindow* Input::window = nullptr;
 bool Input::use_mirror_screen;
+XrInputData Input::xr_data;
 
-void Input::init(GLFWwindow* _window, bool _use_mirror_screen)
+OpenXRContext* opexr_context = nullptr;
+
+void Input::init(GLFWwindow* _window, Renderer* renderer)
 {	
-	use_mirror_screen = _use_mirror_screen;
+	use_mirror_screen = renderer->get_use_mirror_screen();
+
+	opexr_context = renderer->get_openxr_context();
 
 	if (use_mirror_screen)
 	{
@@ -60,10 +66,12 @@ void Input::update(float delta_time)
 		}
 	}
 
-	// Update controllers
-	for (int i = 0; i < 2; ++i)
+	// Sync XR Controllers
 	{
-		// ...
+		if (!opexr_context)
+			return;
+
+		//  opexr_context->sync( &xr_data );
 	}
 }
 
