@@ -6,36 +6,6 @@
 
 class Renderer;
 
-XrAction grabAction{ XR_NULL_HANDLE };
-XrAction thumbstickAction{ XR_NULL_HANDLE };
-XrAction poseAction{ XR_NULL_HANDLE };
-XrAction vibrateAction{ XR_NULL_HANDLE };
-XrAction quitAction{ XR_NULL_HANDLE };
-
-struct XrInputData {
-    
-    // [tdbe] Poses
-    glm::mat4 eyePoseMatrixes[EYE_COUNT];
-    sPoseData eyePoses[EYE_COUNT];
-    glm::mat4 headPoseMatrix;
-    sPoseData headPose;
-    glm::mat4 controllerAimPoseMatrixes[HAND_COUNT];
-    sPoseData controllerAimPoses[HAND_COUNT];
-    glm::mat4 controllerGripPoseMatrixes[HAND_COUNT];
-    sPoseData controllerGripPoses[HAND_COUNT];
-
-    // [tdbe] Input States. Also includes lastChangeTime, isActive, changedSinceLastSync properties.
-    XrActionStateFloat grabState[HAND_COUNT] = {XR_TYPE_ACTION_STATE_FLOAT};
-    XrActionStateVector2f thumbStickState[HAND_COUNT] = {XR_TYPE_ACTION_STATE_VECTOR2F};
-    XrActionStateBoolean quitClickState[HAND_COUNT] = {XR_TYPE_ACTION_STATE_BOOLEAN};
-    /*XrActionStateBoolean selectClickState[HAND_COUNT] = {XR_TYPE_ACTION_STATE_BOOLEAN};
-    XrActionStateFloat triggerState[HAND_COUNT] = {XR_TYPE_ACTION_STATE_BOOLEAN};*/
-
-
-    // [tdbe] Headset State. Use to detect status / user proximity / user presence / user engagement https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html#session-lifecycle
-    XrSessionState headsetActivityState = XR_SESSION_STATE_UNKNOWN;
-};
-
 class Input {
 
 	// Mouse state
@@ -53,8 +23,6 @@ class Input {
 	static GLFWwindow* window;
 
 	static bool use_mirror_screen;
-
-    static XrInputData xr_data;
 
 public:
 

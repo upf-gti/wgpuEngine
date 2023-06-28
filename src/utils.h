@@ -8,22 +8,6 @@
 #define assert_msg(condition, msg) if (!(condition)) {std::cout << msg << std::endl; assert(false);}
 #define _STR(m_x) #m_x
 
-/*
-*	Math
-*/
-
-float clampf(float num, float left, float right) {
-	if (num < left)
-		num = left;
-	else if (num > right)
-		num = right;
-	return num;
-}
-
-/*
-*	Other
-*/
-
 inline std::vector<std::string> tokenize(const std::string& str) {
 	
 	std::regex reg("\\s+");

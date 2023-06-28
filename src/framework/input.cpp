@@ -13,7 +13,6 @@ uint8_t Input::prev_keystate[GLFW_KEY_LAST];
 
 GLFWwindow* Input::window = nullptr;
 bool Input::use_mirror_screen;
-XrInputData Input::xr_data;
 
 OpenXRContext* opexr_context = nullptr;
 
@@ -65,9 +64,9 @@ void Input::update(float delta_time)
 		if (!opexr_context)
 			return;
 
-		opexr_context->sync( xr_data );
+		opexr_context->sync();
 
-		std::cout << xr_data.grabState->currentState << '\r';
+		// std::cout << opexr_context->input_data.grabState[1].currentState << std::endl;
 	}
 }
 

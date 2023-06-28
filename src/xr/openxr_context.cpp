@@ -1,5 +1,4 @@
 #include "openxr_context.h"
-#include "utils.h"
 
 #ifdef XR_SUPPORT
 
@@ -13,6 +12,7 @@ static XrPosef identity_pose = { .orientation = {.x = 0, .y = 0, .z = 0, .w = 1.
 // Helper functions for pose to GLM
 glm::mat4x4 parse_OpenXR_projection_to_glm(const XrFovf& fov, float nearZ = 0.01f, float farZ = 10000.0f);
 glm::mat4x4 parse_OpenXR_pose_to_glm(const XrPosef& p);
+glm::mat4x4 parse_OpenXR_pose_to_glm(const sPoseData& p);
 inline sPoseData parse_OpenXR_pose_to_sPose(const XrPosef& xrPosef);
 glm::quat slerp(const glm::quat& start, const glm::quat& end, float percent);
 glm::vec3 slerp(const glm::vec3& start, const glm::vec3& end, float percent);
@@ -386,8 +386,16 @@ void OpenXRContext::init_actions()
     // Create actions.
     {
         // Create an input action for grabbing objects with the left and right hands.
-        create_action(input_state.actionSet, input_state.handSubactionPath, HAND_COUNT,
-            "grab_object", "Grab Object", XR_ACTION_TYPE_FLOAT_INPUT, input_state.grabAction);
+        /*create_action(input_state.actionSet, input_state.handSubactionPath, HAND_COUNT,
+            "grab_object", "Grab Object", XR_ACTION_TYPE_FLOAT_INPUT, input_state.grabAction);*/
+
+        XrActionCreateInfo actionInfo{XR_TYPE_ACTION_CREATE_INFO};
+            actionInfo.actionType = XR_ACTION_TYPE_FLOAT_INPUT;
+            strcpy_s(actionInfo.actionName, "grab_object");
+            strcpy_s(actionInfo.localizedActionName, "Grab Object");
+            actionInfo.countSubactionPaths = HAND_COUNT;
+            actionInfo.subactionPaths = input_state.handSubactionPath;
+            xrCreateAction(input_state.actionSet, &actionInfo, &input_state.grabAction);
 
         // Create an input action getting the left and right hand poses.
         create_action(input_state.actionSet, input_state.handSubactionPath, HAND_COUNT,
@@ -460,14 +468,13 @@ void OpenXRContext::init_actions()
         suggestedBindings.interactionProfile = khrSimpleInteractionProfilePath;
         suggestedBindings.suggestedBindings = bindings;
         suggestedBindings.countSuggestedBindings = 8;
-        (xrSuggestInteractionProfileBindings(instance, &suggestedBindings));
+        xrSuggestInteractionProfileBindings(instance, &suggestedBindings);
     }
     // Suggest bindings for the Oculus Touch.
     {
         XrPath oculusTouchInteractionProfilePath;
-        (
-            xrStringToPath(instance, "/interaction_profiles/oculus/touch_controller",
-                &oculusTouchInteractionProfilePath));
+        xrStringToPath(instance, "/interaction_profiles/oculus/touch_controller", &oculusTouchInteractionProfilePath);
+
         XrActionSuggestedBinding bindings[9] = { {input_state.grabAction,    squeezeValuePath[HAND_LEFT]},
                                                 {input_state.grabAction,    squeezeValuePath[HAND_RIGHT]},
                                                 {input_state.poseAction,    posePath[HAND_LEFT]},
@@ -477,12 +484,11 @@ void OpenXRContext::init_actions()
                                                 {input_state.thumbstickAction, thumbstickPath[HAND_RIGHT]},
                                                 {input_state.vibrateAction, hapticPath[HAND_LEFT]},
                                                 {input_state.vibrateAction, hapticPath[HAND_RIGHT]} };
-        XrInteractionProfileSuggestedBinding suggestedBindings{
-                XR_TYPE_INTERACTION_PROFILE_SUGGESTED_BINDING };
+        XrInteractionProfileSuggestedBinding suggestedBindings{ XR_TYPE_INTERACTION_PROFILE_SUGGESTED_BINDING };
         suggestedBindings.interactionProfile = oculusTouchInteractionProfilePath;
         suggestedBindings.suggestedBindings = bindings;
         suggestedBindings.countSuggestedBindings = 9;
-        (xrSuggestInteractionProfileBindings(instance, &suggestedBindings));
+        xrSuggestInteractionProfileBindings(instance, &suggestedBindings);
     }
     // Suggest bindings for the Vive Controller.
     /*{
@@ -569,8 +575,11 @@ void OpenXRContext::init_actions()
     xrAttachSessionActionSets(session, &xrSessionAttachInfo);
 }
 
-void OpenXRContext::sync(XrInputData& input_data)
+void OpenXRContext::sync()
 {
+    input_state.handActive[HAND_LEFT] = XR_FALSE;
+    input_state.handActive[HAND_RIGHT] = XR_FALSE;
+
     // Sync the actions 
     const XrActiveActionSet activeActionSet{ input_state.actionSet, XR_NULL_PATH };// Wildcard for all
 
@@ -582,35 +591,48 @@ void OpenXRContext::sync(XrInputData& input_data)
     if (!xr_result(instance, result, "Cannot sync actions for XR controllers"))
         return;
 
-    
     // Params: 
-    XrSpace xrReferenceSpace;
-    std::vector<XrView> eyePoses;
-    XrSessionState sessionState;
+    // XrSessionState sessionState;
     
     // [tdbe] Head action poses
-    input_data.eyePoseMatrixes[EYE_LEFT] = parse_OpenXR_pose_to_glm(eyePoses[EYE_LEFT].pose);
-    input_data.eyePoses[EYE_LEFT] = parse_OpenXR_pose_to_sPose(eyePoses[EYE_LEFT].pose);
-    input_data.eyePoseMatrixes[EYE_RIGHT] = parse_OpenXR_pose_to_glm(eyePoses[EYE_RIGHT].pose);
-    input_data.eyePoses[EYE_RIGHT] = parse_OpenXR_pose_to_sPose(eyePoses[EYE_RIGHT].pose);
-    // [tdbe] TODO: figure out what/how head poses/joints work in openxr https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html
-    input_data.headPose = {
-        .orientation = slerp(input_data.eyePoses[EYE_LEFT].orientation, input_data.eyePoses[EYE_RIGHT].orientation, .5),
-        .position = slerp(input_data.eyePoses[EYE_LEFT].position, input_data.eyePoses[EYE_RIGHT].position, .5)
-    };
-    input_data.headPoseMatrix = parse_OpenXR_pose_to_glm(input_data.headPose);
+    //input_data.eyePoseMatrixes[EYE_LEFT] = parse_OpenXR_pose_to_glm(projection_views[EYE_LEFT].pose);
+    //input_data.eyePoses[EYE_LEFT] = parse_OpenXR_pose_to_sPose(projection_views[EYE_LEFT].pose);
+    //input_data.eyePoseMatrixes[EYE_RIGHT] = parse_OpenXR_pose_to_glm(projection_views[EYE_RIGHT].pose);
+    //input_data.eyePoses[EYE_RIGHT] = parse_OpenXR_pose_to_sPose(projection_views[EYE_RIGHT].pose);
+    //// [tdbe] TODO: figure out what/how head poses/joints work in openxr https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html
+    //input_data.headPose = {
+    //    .orientation = slerp(input_data.eyePoses[EYE_LEFT].orientation, input_data.eyePoses[EYE_RIGHT].orientation, .5),
+    //    .position = slerp(input_data.eyePoses[EYE_LEFT].position, input_data.eyePoses[EYE_RIGHT].position, .5)
+    //};
+    //input_data.headPoseMatrix = parse_OpenXR_pose_to_glm(input_data.headPose);
 
     // [tdbe] Headset State. Use to detect status / user proximity / user presence / user engagement https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html#session-lifecycle
     // input_data.headsetActivityState = sessionState;
     
     for (size_t i = 0u; i < HAND_COUNT; i++) {
         
+        XrActionStateGetInfo getInfo{ XR_TYPE_ACTION_STATE_GET_INFO };
+        getInfo.action = input_state.grabAction;
+        getInfo.subactionPath = input_state.handSubactionPath[i];
+
+        XrActionStateFloat grabValue{ XR_TYPE_ACTION_STATE_FLOAT };
+        xrGetActionStateFloat(session, &getInfo, &grabValue);
+
+        if (grabValue.isActive == XR_TRUE)
+        {
+            std::cout << "Grab value: " << grabValue.currentState << std::endl;
+        }
+
+        // input_state.handActive[i] = poseState.isActive;
+
+        /*
+
         // Pose
         XrActionStatePose grabPoseState = get_action_pose_state(input_state.grabAction, i);
         if (grabPoseState.isActive)
         {
             XrSpaceLocation spaceLocation{ .type = XR_TYPE_SPACE_LOCATION };
-            result = xrLocateSpace(input_state.handSpace[i], xrReferenceSpace, frame_state.predictedDisplayTime, &spaceLocation);
+            result = xrLocateSpace(input_state.handSpace[i], play_space, frame_state.predictedDisplayTime, &spaceLocation);
             
             // Check that the position and orientation are valid and tracked
             constexpr XrSpaceLocationFlags checkFlags =
@@ -627,6 +649,9 @@ void OpenXRContext::sync(XrInputData& input_data)
         XrActionStateFloat grabState = get_action_float_state(input_state.grabAction, i);
         input_data.grabState[i] = grabState;
 
+        if (grabState.isActive || grabState.currentState > 0.f) 
+            int a = 0;
+
         // [tdbe] State
         XrActionStateVector2f thumbStickState = get_action_vector2f_State(input_state.thumbstickAction, i);
         input_data.thumbStickState[i] = thumbStickState;
@@ -634,6 +659,8 @@ void OpenXRContext::sync(XrInputData& input_data)
         // [tdbe] State
         XrActionStateBoolean quitState = get_action_boolean_state(input_state.quitAction, i);
         input_data.quitClickState[i] = quitState;
+
+        */
     }
 }
 
@@ -758,10 +785,12 @@ bool OpenXRContext::create_action(XrActionSet actionSet,
     XrActionType type,
     XrAction& action)
 {
-    XrActionCreateInfo actionCreateInfo{ XR_TYPE_ACTION_CREATE_INFO };
-    actionCreateInfo.actionType = type;
-    actionCreateInfo.countSubactionPaths = num_paths;
-    actionCreateInfo.subactionPaths = paths;
+    XrActionCreateInfo actionCreateInfo{
+        .type = XR_TYPE_ACTION_CREATE_INFO,
+        .actionType = type,
+        .countSubactionPaths = num_paths,
+        .subactionPaths = paths
+    };
 
     //strcpy_s(actionCreateInfo.actionName, actionName.c_str());
     //strcpy_s(actionCreateInfo.localizedActionName, localizedActionName.c_str());
@@ -821,7 +850,9 @@ XrActionStateFloat OpenXRContext::get_action_float_state(XrAction targetAction, 
     XrActionStateFloat poseState{ .type = XR_TYPE_ACTION_STATE_FLOAT };
     XrResult result = xrGetActionStateFloat(session, &getInfo, &poseState);
 
-    if (!xr_result(instance, result, "Cannot get action float state")) {}
+    if (!xr_result(instance, result, "Cannot get action float state")) {
+        int i = 0;
+    }
     return poseState;
 }
 
@@ -891,7 +922,7 @@ inline glm::mat4x4 parse_OpenXR_pose_to_glm(const XrPosef& p) {
     return translation * orientation;
 }
 
-inline glm::mat4 parse_OpenXR_pose_to_glm(const sPoseData& p) {
+inline glm::mat4x4 parse_OpenXR_pose_to_glm(const sPoseData& p) {
     glm::mat4 translation = glm::translate(glm::mat4{ 1.f }, glm::vec3(p.position.x, p.position.y, p.position.z));
     glm::mat4 orientation = glm::mat4_cast(glm::quat(p.orientation.w, p.orientation.x, p.orientation.y, p.orientation.z));
     return translation * orientation;
@@ -935,7 +966,7 @@ glm::vec3 slerp(const glm::vec3& start, const glm::vec3& end, float percent)
     // Clamp it to be in the range of Acos()
     // This may be unnecessary, but floating point
     // precision can be a fickle mistress.
-    dot = clampf(dot, -1.0f, 1.0f);
+    dot = glm::clamp(dot, -1.0f, 1.0f);
 
     // Acos(dot) returns the angle between start and end,
     // And multiplying that by percent returns the angle between

@@ -59,6 +59,7 @@ struct
 } hand_tracking;
 
 struct sInputState {
+
     XrActionSet actionSet{ XR_NULL_HANDLE };
     XrAction grabAction{ XR_NULL_HANDLE };
     XrAction poseAction{ XR_NULL_HANDLE };
@@ -70,6 +71,27 @@ struct sInputState {
     XrSpace handSpace[HAND_COUNT];
     float handScale[HAND_COUNT] = { 1.0f, 1.0f };
     XrBool32 handActive[HAND_COUNT];
+};
+
+struct XrInputData {
+
+    // [tdbe] Poses
+    glm::mat4x4 eyePoseMatrixes[EYE_COUNT];
+    sPoseData eyePoses[EYE_COUNT];
+    glm::mat4x4 headPoseMatrix;
+    sPoseData headPose;
+    glm::mat4x4 controllerAimPoseMatrixes[HAND_COUNT];
+    sPoseData controllerAimPoses[HAND_COUNT];
+    glm::mat4x4 controllerGripPoseMatrixes[HAND_COUNT];
+    sPoseData controllerGripPoses[HAND_COUNT];
+
+    // [tdbe] Input States. Also includes lastChangeTime, isActive, changedSinceLastSync properties.
+    XrActionStateFloat grabState[HAND_COUNT];
+    XrActionStateVector2f thumbStickState[HAND_COUNT];
+    XrActionStateBoolean quitClickState[HAND_COUNT];
+
+    // [tdbe] Headset State. Use to detect status / user proximity / user presence / user engagement https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html#session-lifecycle
+    XrSessionState headsetActivityState = XR_SESSION_STATE_UNKNOWN;
 };
 
 struct OpenXRContext {
@@ -96,6 +118,7 @@ struct OpenXRContext {
     XrSpace play_space;
 
     sInputState input_state;
+    XrInputData input_data;
 
     bool initialized = false;
 
@@ -109,7 +132,7 @@ struct OpenXRContext {
     
     // XR Input
     void init_actions();
-    void sync(XrInputData& input_data);
+    void sync();
 
     void init_frame();
     void acquire_swapchain(int swapchain_index);

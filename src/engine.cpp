@@ -6,12 +6,12 @@ int Engine::initialize(Renderer* renderer, GLFWwindow* window, bool use_mirror_s
 {
     this->renderer = renderer;
 
-    if(  renderer->initialize(window, use_mirror_screen) ) {
+    if(  !renderer->initialize(window, use_mirror_screen) ) {
         Input::init(window, renderer);
-        return true;
+        return 0;
     }
 
-    return false;
+    return 1;
 }
 
 void Engine::clean()
