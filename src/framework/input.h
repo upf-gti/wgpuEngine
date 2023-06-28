@@ -6,44 +6,34 @@
 
 class Renderer;
 
+XrAction grabAction{ XR_NULL_HANDLE };
+XrAction thumbstickAction{ XR_NULL_HANDLE };
+XrAction poseAction{ XR_NULL_HANDLE };
+XrAction vibrateAction{ XR_NULL_HANDLE };
+XrAction quitAction{ XR_NULL_HANDLE };
+
 struct XrInputData {
-    /*
+    
     // [tdbe] Poses
-    std::vector<glm::mat4> eyePoseMatrixes;//(int)SideEnum::COUNT
-    std::vector<util::posef> eyePoses;//(int)SideEnum::COUNT
+    glm::mat4 eyePoseMatrixes[EYE_COUNT];
+    sPoseData eyePoses[EYE_COUNT];
     glm::mat4 headPoseMatrix;
-    util::posef headPose;
-    std::vector<glm::mat4> controllerAimPoseMatrixes;//(int)ControllerEnum::COUNT
-    std::vector<util::posef> controllerAimPoses;
-    std::vector<glm::mat4> controllerGripPoseMatrixes;
-    std::vector<util::posef> controllerGripPoses;
+    sPoseData headPose;
+    glm::mat4 controllerAimPoseMatrixes[HAND_COUNT];
+    sPoseData controllerAimPoses[HAND_COUNT];
+    glm::mat4 controllerGripPoseMatrixes[HAND_COUNT];
+    sPoseData controllerGripPoses[HAND_COUNT];
 
     // [tdbe] Input States. Also includes lastChangeTime, isActive, changedSinceLastSync properties.
-    std::vector<XrActionStateFloat> grabState{XR_TYPE_ACTION_STATE_FLOAT};
-    std::vector<XrActionStateVector2f> thumbStickState{XR_TYPE_ACTION_STATE_VECTOR2F};
-    std::vector<XrActionStateBoolean> menuClickState{XR_TYPE_ACTION_STATE_BOOLEAN};
-    std::vector<XrActionStateBoolean> selectClickState{XR_TYPE_ACTION_STATE_BOOLEAN};
-    std::vector<XrActionStateFloat> triggerState{XR_TYPE_ACTION_STATE_BOOLEAN};
+    XrActionStateFloat grabState[HAND_COUNT] = {XR_TYPE_ACTION_STATE_FLOAT};
+    XrActionStateVector2f thumbStickState[HAND_COUNT] = {XR_TYPE_ACTION_STATE_VECTOR2F};
+    XrActionStateBoolean quitClickState[HAND_COUNT] = {XR_TYPE_ACTION_STATE_BOOLEAN};
+    /*XrActionStateBoolean selectClickState[HAND_COUNT] = {XR_TYPE_ACTION_STATE_BOOLEAN};
+    XrActionStateFloat triggerState[HAND_COUNT] = {XR_TYPE_ACTION_STATE_BOOLEAN};*/
 
 
     // [tdbe] Headset State. Use to detect status / user proximity / user presence / user engagement https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html#session-lifecycle
     XrSessionState headsetActivityState = XR_SESSION_STATE_UNKNOWN;
-
-    void SizeVectors(ControllerEnum controllers, SideEnum sides) {
-        eyePoseMatrixes.resize((int)sides);
-        eyePoses.resize((int)sides);
-
-        controllerAimPoseMatrixes.resize((int)controllers);
-        controllerAimPoses.resize((int)controllers);
-        controllerGripPoseMatrixes.resize((int)controllers);
-        controllerGripPoses.resize((int)controllers);
-        grabState.resize((int)controllers);
-        thumbStickState.resize((int)controllers);
-        menuClickState.resize((int)controllers);
-        selectClickState.resize((int)controllers);
-        triggerState.resize((int)controllers);
-    }
-    */
 };
 
 class Input {

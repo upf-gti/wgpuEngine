@@ -3,6 +3,7 @@
 #include <vector>
 #include <array>
 #include "includes.h"
+#include "framework/input.h"
 
 #ifdef XR_SUPPORT
 
@@ -21,6 +22,18 @@ enum OPENXR_HANDS
     HAND_LEFT = 0,
     HAND_RIGHT = 1,
     HAND_COUNT
+};
+
+enum OPENXR_EYES
+{
+    EYE_LEFT = 0,
+    EYE_RIGHT = 1,
+    EYE_COUNT
+};
+
+struct sPoseData {
+    glm::quat orientation;
+    glm::vec3 position;
 };
 
 struct sViewData {
@@ -50,6 +63,7 @@ struct sInputState {
     XrAction grabAction{ XR_NULL_HANDLE };
     XrAction poseAction{ XR_NULL_HANDLE };
     XrAction vibrateAction{ XR_NULL_HANDLE };
+    XrAction thumbstickAction{ XR_NULL_HANDLE };
     XrAction quitAction{ XR_NULL_HANDLE };
 
     XrPath handSubactionPath[HAND_COUNT];
@@ -95,7 +109,7 @@ struct OpenXRContext {
     
     // XR Input
     void init_actions();
-    void sync();
+    void sync(XrInputData& input_data);
 
     void init_frame();
     void acquire_swapchain(int swapchain_index);
@@ -103,6 +117,7 @@ struct OpenXRContext {
     void end_frame();
 
 private:
+    
     bool create_action(XrActionSet actionSet,
         XrPath* paths,
         uint32_t num_paths,
@@ -110,7 +125,11 @@ private:
         const std::string& localizedActionName,
         XrActionType type,
         XrAction& action);
+
     XrActionStatePose get_action_pose_state(XrAction targetAction, int controller);
+    XrActionStateBoolean get_action_boolean_state(XrAction targetAction, int controller);
+    XrActionStateFloat get_action_float_state(XrAction targetAction, int controller);
+    XrActionStateVector2f get_action_vector2f_State(XrAction targetAction, int controller);
 };
 
 #endif

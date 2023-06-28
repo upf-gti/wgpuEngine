@@ -32,12 +32,6 @@ void Input::init(GLFWwindow* _window, Renderer* renderer)
 		Input::mouse_position.y = y;
 		mouse_wheel = 0.0;
 	}
-
-	for (int i = 0; i < 2; ++i)
-	{
-		// Start controllers?
-		// ...
-	}
 }
 
 void Input::update(float delta_time)
@@ -71,7 +65,9 @@ void Input::update(float delta_time)
 		if (!opexr_context)
 			return;
 
-		//  opexr_context->sync( &xr_data );
+		opexr_context->sync( xr_data );
+
+		std::cout << xr_data.grabState->currentState << '\r';
 	}
 }
 

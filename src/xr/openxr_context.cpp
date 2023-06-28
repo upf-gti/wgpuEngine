@@ -1,4 +1,5 @@
 #include "openxr_context.h"
+#include "utils.h"
 
 #ifdef XR_SUPPORT
 
@@ -12,6 +13,9 @@ static XrPosef identity_pose = { .orientation = {.x = 0, .y = 0, .z = 0, .w = 1.
 // Helper functions for pose to GLM
 glm::mat4x4 parse_OpenXR_projection_to_glm(const XrFovf& fov, float nearZ = 0.01f, float farZ = 10000.0f);
 glm::mat4x4 parse_OpenXR_pose_to_glm(const XrPosef& p);
+inline sPoseData parse_OpenXR_pose_to_sPose(const XrPosef& xrPosef);
+glm::quat slerp(const glm::quat& start, const glm::quat& end, float percent);
+glm::vec3 slerp(const glm::vec3& start, const glm::vec3& end, float percent);
 
 int OpenXRContext::initialize(WebGPUContext* webgpu_context)
 {
@@ -393,6 +397,10 @@ void OpenXRContext::init_actions()
         create_action(input_state.actionSet, input_state.handSubactionPath, HAND_COUNT,
             "vibrate_hand", "Vibrate Hand", XR_ACTION_TYPE_VIBRATION_OUTPUT, input_state.vibrateAction);
 
+        // Create output actions for vibrating the left and right controller.
+        create_action(input_state.actionSet, input_state.handSubactionPath, HAND_COUNT,
+            "thumbstick_action", "Thumbstick Action", XR_ACTION_TYPE_VECTOR2F_INPUT, input_state.thumbstickAction);
+
         // Create input actions for quitting the session using the left and right controller.
         // Since it doesn't matter which hand did this, we do not specify subaction paths for it.
         // We will just suggest bindings for both hands, where possible.
@@ -409,34 +417,28 @@ void OpenXRContext::init_actions()
     XrPath menuClickPath[HAND_COUNT];
     XrPath bClickPath[HAND_COUNT];
     XrPath triggerValuePath[HAND_COUNT];
-    (xrStringToPath(instance, "/user/hand/left/input/select/click", &selectPath[HAND_LEFT]));
-    (xrStringToPath(instance, "/user/hand/right/input/select/click",
-        &selectPath[HAND_RIGHT]));
-    (xrStringToPath(instance, "/user/hand/left/input/squeeze/value",
-        &squeezeValuePath[HAND_LEFT]));
-    (xrStringToPath(instance, "/user/hand/right/input/squeeze/value",
-        &squeezeValuePath[HAND_RIGHT]));
-    (xrStringToPath(instance, "/user/hand/left/input/squeeze/force",
-        &squeezeForcePath[HAND_LEFT]));
-    (xrStringToPath(instance, "/user/hand/right/input/squeeze/force",
-        &squeezeForcePath[HAND_RIGHT]));
-    (xrStringToPath(instance, "/user/hand/left/input/squeeze/click",
-        &squeezeClickPath[HAND_LEFT]));
-    (xrStringToPath(instance, "/user/hand/right/input/squeeze/click",
-        &squeezeClickPath[HAND_RIGHT]));
-    (xrStringToPath(instance, "/user/hand/left/input/grip/pose", &posePath[HAND_LEFT]));
-    (xrStringToPath(instance, "/user/hand/right/input/grip/pose", &posePath[HAND_RIGHT]));
-    (xrStringToPath(instance, "/user/hand/left/output/haptic", &hapticPath[HAND_LEFT]));
-    (xrStringToPath(instance, "/user/hand/right/output/haptic", &hapticPath[HAND_RIGHT]));
-    (xrStringToPath(instance, "/user/hand/left/input/menu/click", &menuClickPath[HAND_LEFT]));
-    (xrStringToPath(instance, "/user/hand/right/input/menu/click",
-        &menuClickPath[HAND_RIGHT]));
-    (xrStringToPath(instance, "/user/hand/left/input/b/click", &bClickPath[HAND_LEFT]));
-    (xrStringToPath(instance, "/user/hand/right/input/b/click", &bClickPath[HAND_RIGHT]));
-    (xrStringToPath(instance, "/user/hand/left/input/trigger/value",
-        &triggerValuePath[HAND_LEFT]));
-    (xrStringToPath(instance, "/user/hand/right/input/trigger/value",
-        &triggerValuePath[HAND_RIGHT]));
+    XrPath thumbstickPath[HAND_COUNT];
+
+    xrStringToPath(instance, "/user/hand/left/input/select/click", &selectPath[HAND_LEFT]);
+    xrStringToPath(instance, "/user/hand/right/input/select/click", &selectPath[HAND_RIGHT]);
+    xrStringToPath(instance, "/user/hand/left/input/squeeze/value", &squeezeValuePath[HAND_LEFT]);
+    xrStringToPath(instance, "/user/hand/right/input/squeeze/value", &squeezeValuePath[HAND_RIGHT]);
+    xrStringToPath(instance, "/user/hand/left/input/squeeze/force", &squeezeForcePath[HAND_LEFT]);
+    xrStringToPath(instance, "/user/hand/right/input/squeeze/force", &squeezeForcePath[HAND_RIGHT]);
+    xrStringToPath(instance, "/user/hand/left/input/squeeze/click", &squeezeClickPath[HAND_LEFT]);
+    xrStringToPath(instance, "/user/hand/right/input/squeeze/click", &squeezeClickPath[HAND_RIGHT]);
+    xrStringToPath(instance, "/user/hand/left/input/grip/pose", &posePath[HAND_LEFT]);
+    xrStringToPath(instance, "/user/hand/right/input/grip/pose", &posePath[HAND_RIGHT]);
+    xrStringToPath(instance, "/user/hand/left/output/haptic", &hapticPath[HAND_LEFT]);
+    xrStringToPath(instance, "/user/hand/right/output/haptic", &hapticPath[HAND_RIGHT]);
+    xrStringToPath(instance, "/user/hand/left/input/menu/click", &menuClickPath[HAND_LEFT]);
+    xrStringToPath(instance, "/user/hand/right/input/menu/click", &menuClickPath[HAND_RIGHT]);
+    xrStringToPath(instance, "/user/hand/left/input/b/click", &bClickPath[HAND_LEFT]);
+    xrStringToPath(instance, "/user/hand/right/input/b/click", &bClickPath[HAND_RIGHT]);
+    xrStringToPath(instance, "/user/hand/left/input/trigger/value", &triggerValuePath[HAND_LEFT]);
+    xrStringToPath(instance, "/user/hand/right/input/trigger/value", &triggerValuePath[HAND_RIGHT]);
+    xrStringToPath(instance, "/user/hand/left/input/thumbstick", &thumbstickPath[HAND_LEFT]);
+    xrStringToPath(instance, "/user/hand/right/input/thumbstick", &thumbstickPath[HAND_RIGHT]);
 
     // Suggest bindings for KHR Simple.
     {
@@ -466,18 +468,20 @@ void OpenXRContext::init_actions()
         (
             xrStringToPath(instance, "/interaction_profiles/oculus/touch_controller",
                 &oculusTouchInteractionProfilePath));
-        XrActionSuggestedBinding bindings[7] = { {input_state.grabAction,    squeezeValuePath[HAND_LEFT]},
+        XrActionSuggestedBinding bindings[9] = { {input_state.grabAction,    squeezeValuePath[HAND_LEFT]},
                                                 {input_state.grabAction,    squeezeValuePath[HAND_RIGHT]},
                                                 {input_state.poseAction,    posePath[HAND_LEFT]},
                                                 {input_state.poseAction,    posePath[HAND_RIGHT]},
                                                 {input_state.quitAction,    menuClickPath[HAND_LEFT]},
+                                                {input_state.thumbstickAction, thumbstickPath[HAND_LEFT]},
+                                                {input_state.thumbstickAction, thumbstickPath[HAND_RIGHT]},
                                                 {input_state.vibrateAction, hapticPath[HAND_LEFT]},
                                                 {input_state.vibrateAction, hapticPath[HAND_RIGHT]} };
         XrInteractionProfileSuggestedBinding suggestedBindings{
                 XR_TYPE_INTERACTION_PROFILE_SUGGESTED_BINDING };
         suggestedBindings.interactionProfile = oculusTouchInteractionProfilePath;
         suggestedBindings.suggestedBindings = bindings;
-        suggestedBindings.countSuggestedBindings = 7;
+        suggestedBindings.countSuggestedBindings = 9;
         (xrSuggestInteractionProfileBindings(instance, &suggestedBindings));
     }
     // Suggest bindings for the Vive Controller.
@@ -565,7 +569,7 @@ void OpenXRContext::init_actions()
     xrAttachSessionActionSets(session, &xrSessionAttachInfo);
 }
 
-void OpenXRContext::sync()
+void OpenXRContext::sync(XrInputData& input_data)
 {
     // Sync the actions 
     const XrActiveActionSet activeActionSet{ input_state.actionSet, XR_NULL_PATH };// Wildcard for all
@@ -578,30 +582,27 @@ void OpenXRContext::sync()
     if (!xr_result(instance, result, "Cannot sync actions for XR controllers"))
         return;
 
-    // Update the actions
-    /*
-    inputData.SizeVectors(ControllerEnum::COUNT, SideEnum::COUNT);
-
+    
+    // Params: 
+    XrSpace xrReferenceSpace;
+    std::vector<XrView> eyePoses;
+    XrSessionState sessionState;
+    
     // [tdbe] Head action poses
-    inputData.eyePoseMatrixes[(int)SideEnum::LEFT] = util::poseToMatrix(eyePoses[(int)SideEnum::LEFT].pose);
-    inputData.eyePoses[(int)SideEnum::LEFT] = util::xrPosefToGlmPosef(eyePoses[(int)SideEnum::LEFT].pose);
-    inputData.eyePoseMatrixes[(int)SideEnum::RIGHT] = util::poseToMatrix(eyePoses[(int)SideEnum::RIGHT].pose);
-    inputData.eyePoses[(int)SideEnum::RIGHT] = util::xrPosefToGlmPosef(eyePoses[(int)SideEnum::RIGHT].pose);
+    input_data.eyePoseMatrixes[EYE_LEFT] = parse_OpenXR_pose_to_glm(eyePoses[EYE_LEFT].pose);
+    input_data.eyePoses[EYE_LEFT] = parse_OpenXR_pose_to_sPose(eyePoses[EYE_LEFT].pose);
+    input_data.eyePoseMatrixes[EYE_RIGHT] = parse_OpenXR_pose_to_glm(eyePoses[EYE_RIGHT].pose);
+    input_data.eyePoses[EYE_RIGHT] = parse_OpenXR_pose_to_sPose(eyePoses[EYE_RIGHT].pose);
     // [tdbe] TODO: figure out what/how head poses/joints work in openxr https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html
-    inputData.headPose = {
-        .orientation = util::slerp(inputData.eyePoses[(int)SideEnum::LEFT].orientation, inputData.eyePoses[(int)SideEnum::RIGHT].orientation, .5),
-        .position = util::slerp(inputData.eyePoses[(int)SideEnum::LEFT].position, inputData.eyePoses[(int)SideEnum::RIGHT].position, .5)
+    input_data.headPose = {
+        .orientation = slerp(input_data.eyePoses[EYE_LEFT].orientation, input_data.eyePoses[EYE_RIGHT].orientation, .5),
+        .position = slerp(input_data.eyePoses[EYE_LEFT].position, input_data.eyePoses[EYE_RIGHT].position, .5)
     };
-    inputData.headPoseMatrix = util::poseToMatrix(inputData.headPose);
+    input_data.headPoseMatrix = parse_OpenXR_pose_to_glm(input_data.headPose);
 
     // [tdbe] Headset State. Use to detect status / user proximity / user presence / user engagement https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html#session-lifecycle
-    inputData.headsetActivityState = sessionState;
-    */
-
-    /*XrSpace xrReferenceSpace;
-    std::vector<XrView> eyePoses;
-    XrSessionState sessionState;*/
-
+    // input_data.headsetActivityState = sessionState;
+    
     for (size_t i = 0u; i < HAND_COUNT; i++) {
         
         // Pose
@@ -617,28 +618,22 @@ void OpenXRContext::sync()
                 XR_SPACE_LOCATION_ORIENTATION_VALID_BIT | XR_SPACE_LOCATION_ORIENTATION_TRACKED_BIT;
             if ((spaceLocation.locationFlags & checkFlags) == checkFlags)
             {
-                // inputData.controllerAimPoseMatrixes.at(i) = util::poseToMatrix(spaceLocation.pose);
-                // inputData.controllerAimPoses.at(i) = util::xrPosefToGlmPosef(spaceLocation.pose);
+                input_data.controllerAimPoseMatrixes[i] = parse_OpenXR_pose_to_glm(spaceLocation.pose);
+                input_data.controllerAimPoses[i] = parse_OpenXR_pose_to_sPose(spaceLocation.pose);
             }
         }
 
-        /*
         // [tdbe] State (input value)
-        XrActionStateFloat grabState = Input::GetActionFloatState(actionSetData.grabAction, ci);
-        inputData.grabState.at(i) = grabState;
+        XrActionStateFloat grabState = get_action_float_state(input_state.grabAction, i);
+        input_data.grabState[i] = grabState;
 
         // [tdbe] State
-        XrActionStateVector2f thumbStickState = Input::GetActionVector2fState(actionSetData.thumbstickAction, ci);
-        inputData.thumbStickState.at(i) = thumbStickState;
+        XrActionStateVector2f thumbStickState = get_action_vector2f_State(input_state.thumbstickAction, i);
+        input_data.thumbStickState[i] = thumbStickState;
 
         // [tdbe] State
-        XrActionStateBoolean menuClickState = Input::GetActionBooleanState(actionSetData.menuClickAction, ci);
-        inputData.menuClickState.at(i) = menuClickState;
-
-        // [tdbe] State
-        XrActionStateBoolean selectClickState = Input::GetActionBooleanState(actionSetData.selectClickAction, ci);
-        inputData.selectClickState.at(i) = selectClickState;
-        */
+        XrActionStateBoolean quitState = get_action_boolean_state(input_state.quitAction, i);
+        input_data.quitClickState[i] = quitState;
     }
 }
 
@@ -792,13 +787,67 @@ XrActionStatePose OpenXRContext::get_action_pose_state(XrAction targetAction, in
 
     XrActionStatePose poseState{ .type = XR_TYPE_ACTION_STATE_POSE };
     XrResult result = xrGetActionStatePose(session, &getInfo, &poseState);
-    if (!xr_result(instance, result, "Cannot get action pose state" )) {
-        
-    }
+    if (!xr_result(instance, result, "Cannot get action pose state" )) { }
     return poseState;
 }
 
-// HELPER FUNCTIONS
+XrActionStateBoolean OpenXRContext::get_action_boolean_state(XrAction targetAction, int controller)
+{
+    XrPath path = XR_NULL_PATH;// Wildcard for all
+    if (controller != HAND_COUNT) {
+        path = input_state.handSubactionPath[controller];
+    }
+    XrActionStateGetInfo getInfo = { .type = XR_TYPE_ACTION_STATE_GET_INFO,
+                                    .action = targetAction,
+                                    .subactionPath = path };
+
+    XrActionStateBoolean poseState{ .type = XR_TYPE_ACTION_STATE_BOOLEAN };
+    XrResult result = xrGetActionStateBoolean(session, &getInfo, &poseState);
+
+    if (!xr_result(instance, result, "Cannot get action boolean state")) { }
+    return poseState;
+}
+
+XrActionStateFloat OpenXRContext::get_action_float_state(XrAction targetAction, int controller)
+{
+    XrPath path = XR_NULL_PATH;// Wildcard for all
+    if (controller != HAND_COUNT) {
+        path = input_state.handSubactionPath[controller];
+    }
+    XrActionStateGetInfo getInfo = { .type = XR_TYPE_ACTION_STATE_GET_INFO,
+                                    .action = targetAction,
+                                    .subactionPath = path };
+
+    XrActionStateFloat poseState{ .type = XR_TYPE_ACTION_STATE_FLOAT };
+    XrResult result = xrGetActionStateFloat(session, &getInfo, &poseState);
+
+    if (!xr_result(instance, result, "Cannot get action float state")) {}
+    return poseState;
+}
+
+XrActionStateVector2f OpenXRContext::get_action_vector2f_State(XrAction targetAction, int controller)
+{
+    XrPath path = XR_NULL_PATH;// Wildcard for all
+    if (controller != HAND_COUNT) {
+        path = input_state.handSubactionPath[controller];
+    }
+    XrActionStateGetInfo getInfo = { .type = XR_TYPE_ACTION_STATE_GET_INFO,
+                                    .action = targetAction,
+                                    .subactionPath = path };
+
+    XrActionStateVector2f poseState{ .type = XR_TYPE_ACTION_STATE_VECTOR2F };
+    XrResult result = xrGetActionStateVector2f(session, &getInfo, &poseState);
+
+    if (!xr_result(instance, result, "Cannot get action vector2f state")) {}
+    return poseState;
+}
+
+/*
+    
+    HELPER FUNCTIONS
+    
+*/
+
 // From: https://github.com/jherico/OpenXR-Samples/blob/master/src/examples/sdl2_gl_single_file_example.cpp
 inline glm::mat4x4 parse_OpenXR_projection_to_glm(const XrFovf& fov, float nearZ, float farZ) {
     const auto& tanAngleRight = tanf(fov.angleRight);
@@ -837,9 +886,71 @@ inline glm::mat4x4 parse_OpenXR_projection_to_glm(const XrFovf& fov, float nearZ
 }
 
 inline glm::mat4x4 parse_OpenXR_pose_to_glm(const XrPosef& p) {
+    glm::mat4 translation = glm::translate(glm::mat4{ 1.f }, glm::vec3(p.position.x, p.position.y, p.position.z));
     glm::mat4 orientation = glm::mat4_cast(glm::quat(p.orientation.w, p.orientation.x, p.orientation.y, p.orientation.z));
-    glm::mat4 translation = glm::translate(glm::mat4{ 1 }, glm::vec3(p.position.x, p.position.y, p.position.z));
     return translation * orientation;
+}
+
+inline glm::mat4 parse_OpenXR_pose_to_glm(const sPoseData& p) {
+    glm::mat4 translation = glm::translate(glm::mat4{ 1.f }, glm::vec3(p.position.x, p.position.y, p.position.z));
+    glm::mat4 orientation = glm::mat4_cast(glm::quat(p.orientation.w, p.orientation.x, p.orientation.y, p.orientation.z));
+    return translation * orientation;
+}
+
+inline sPoseData parse_OpenXR_pose_to_sPose(const XrPosef& xrPosef) {
+    
+    return sPoseData{
+        .orientation = glm::quat(xrPosef.orientation.x, xrPosef.orientation.y, xrPosef.orientation.z, xrPosef.orientation.w),
+        .position = glm::vec3(xrPosef.position.x, xrPosef.position.y, xrPosef.position.z)
+    };
+}
+
+glm::quat slerp(const glm::quat& start, const glm::quat& end, float percent)
+{
+    float cosTheta = glm::dot(start, end);
+    glm::quat temp(end);
+
+
+    if (cosTheta < 0.0f) {
+        cosTheta *= -1.0f;
+        temp = temp * -1.0f;
+    }
+
+    float theta = glm::acos(cosTheta);
+    float sinThetaDenom = 1.0f / glm::sin(theta);
+
+    glm::quat res = (
+        ((glm::quat)(start * glm::sin(theta * (1.0f - percent)))) +
+        ((glm::quat)(temp * glm::sin(percent * theta)))
+        ) / sinThetaDenom;
+
+    return res;
+}
+
+glm::vec3 slerp(const glm::vec3& start, const glm::vec3& end, float percent)
+{
+    // Dot product - the cosine of the angle between 2 vectors.
+    float dot = glm::dot(start, end);
+
+    // Clamp it to be in the range of Acos()
+    // This may be unnecessary, but floating point
+    // precision can be a fickle mistress.
+    dot = clampf(dot, -1.0f, 1.0f);
+
+    // Acos(dot) returns the angle between start and end,
+    // And multiplying that by percent returns the angle between
+    // start and the final result.
+    float theta = glm::acos(dot) * percent;
+    glm::vec3 startDotted = start * dot;
+
+    glm::vec3 relativeVec = {};
+    relativeVec = end - startDotted;
+
+    relativeVec = glm::normalize(relativeVec);
+
+    // Orthonormal basis
+    // The final result.
+    return ((start * glm::cos(theta)) + (relativeVec * glm::sin(theta)));
 }
 
 #endif
