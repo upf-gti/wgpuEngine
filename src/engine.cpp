@@ -35,9 +35,9 @@ bool Engine::get_use_mirror_window()
 
 void Engine::update(double delta_time)
 {
-    renderer->update(delta_time);
-
     Input::update(delta_time);
+
+    renderer->update(delta_time);
 }
 
 void Engine::render()

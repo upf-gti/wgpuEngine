@@ -64,9 +64,9 @@ void Input::update(float delta_time)
 		if (!opexr_context)
 			return;
 
-		opexr_context->sync();
+		opexr_context->poll_actions();
 
-		// std::cout << opexr_context->input_data.grabState[1].currentState << std::endl;
+		std::cout << opexr_context->input_data.grabState[1].currentState << std::endl;
 	}
 }
 

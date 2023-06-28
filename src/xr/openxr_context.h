@@ -8,15 +8,12 @@
 #ifdef XR_SUPPORT
 
 #include "vulkan/vulkan.h"
-
 #define XR_USE_GRAPHICS_API_VULKAN
 #include "openxr/openxr_platform.h"
-
 #include <dawnxr/dawnxr.h>
-
 #include "graphics/webgpu_context.h"
 
-// small helper so we don't forget whether we treat 0 as left or right hand
+// Small helper so we don't forget whether we treat 0 as left or right hand
 enum OPENXR_HANDS
 {
     HAND_LEFT = 0,
@@ -31,7 +28,7 @@ enum OPENXR_EYES
     EYE_COUNT
 };
 
-struct sPoseData {
+struct sPoseDataf {
     glm::quat orientation;
     glm::vec3 position;
 };
@@ -77,13 +74,13 @@ struct XrInputData {
 
     // [tdbe] Poses
     glm::mat4x4 eyePoseMatrixes[EYE_COUNT];
-    sPoseData eyePoses[EYE_COUNT];
+    sPoseDataf eyePoses[EYE_COUNT];
     glm::mat4x4 headPoseMatrix;
-    sPoseData headPose;
+    sPoseDataf headPose;
     glm::mat4x4 controllerAimPoseMatrixes[HAND_COUNT];
-    sPoseData controllerAimPoses[HAND_COUNT];
+    sPoseDataf controllerAimPoses[HAND_COUNT];
     glm::mat4x4 controllerGripPoseMatrixes[HAND_COUNT];
-    sPoseData controllerGripPoses[HAND_COUNT];
+    sPoseDataf controllerGripPoses[HAND_COUNT];
 
     // [tdbe] Input States. Also includes lastChangeTime, isActive, changedSinceLastSync properties.
     XrActionStateFloat grabState[HAND_COUNT];
@@ -96,48 +93,71 @@ struct XrInputData {
 
 struct OpenXRContext {
 
-    XrInstance                  instance = XR_NULL_HANDLE;
-    XrSystemId                  system_id;
-    XrSession                   session;
-    uint32_t                    view_count;
-    XrFrameState                frame_state {XR_TYPE_FRAME_STATE};
-    std::vector<sSwapchainData> swapchains;
-    uint32_t                    swapchain_length; // Number of textures per swapchain
+    
+    bool initialized = false;
 
-    std::vector<XrView>                             views;
-    std::vector<XrViewConfigurationView>            viewconfig_views;
-    std::vector<XrCompositionLayerProjectionView>	projection_views;
+    int init(WebGPUContext* webgpu_context);
+    void clean();
+    bool create_instance();
+    
+    /*
+    * XR General
+    */
 
-    std::vector<sViewData>                          per_view_data;
-
-    std::vector<int64_t>                            swapchain_formats;
-
-    XrGraphicsBindingVulkan2KHR graphics_binding_gl;
-
+    XrInstance instance = XR_NULL_HANDLE;
+    XrSystemId system_id;
     // Play space is usually local (head is origin, seated) or stage (room scale)
     XrSpace play_space;
+
+    /*
+    * XR Input
+    */
 
     sInputState input_state;
     XrInputData input_data;
 
-    bool initialized = false;
-
-    int  initialize(WebGPUContext* webgpu_context);
-    void clean();
-    bool create_instance();
-    bool xr_result(XrInstance xrInstance, XrResult result, const char* format, ...);
-    void print_viewconfig_view_info();
-    bool check_vulkan_version(XrGraphicsRequirementsVulkanKHR* vulkan_reqs);
-    void print_reference_spaces();
-    
-    // XR Input
     void init_actions();
-    void sync();
+    void poll_actions();
+
+    /*
+    * XR Session
+    */
+
+    XrSession session;
+    XrSessionState session_state;
+
+    bool begin_session();
+    bool end_session();
+
+    /*
+    * Render
+    */
+
+    uint32_t view_count;
+    XrFrameState frame_state{ XR_TYPE_FRAME_STATE };
+    uint32_t swapchain_length; // Number of textures per swapchain
+    XrGraphicsBindingVulkan2KHR graphics_binding_gl;
+
+    std::vector<sSwapchainData> swapchains;
+    std::vector<XrView> views;
+    std::vector<XrViewConfigurationView> viewconfig_views;
+    std::vector<XrCompositionLayerProjectionView> projection_views;
+    std::vector<sViewData> per_view_data;
+    std::vector<int64_t> swapchain_formats;
 
     void init_frame();
     void acquire_swapchain(int swapchain_index);
     void release_swapchain(int swapchain_index);
     void end_frame();
+
+    /*
+    * Debug & Errors
+    */
+
+    void print_viewconfig_view_info();
+    bool check_vulkan_version(XrGraphicsRequirementsVulkanKHR* vulkan_reqs);
+    void print_reference_spaces();
+    bool xr_result(XrInstance xrInstance, XrResult result, const char* format, ...);
 
 private:
     
