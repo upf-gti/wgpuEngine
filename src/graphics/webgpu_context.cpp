@@ -135,6 +135,9 @@ int WebGPUContext::initialize(GLFWwindow* window, bool create_screen_swapchain)
     requiredLimits.limits.maxUniformBufferBindingSize = 16 * 4 * sizeof(float);
     requiredLimits.limits.minUniformBufferOffsetAlignment = 64;
     requiredLimits.limits.minStorageBufferOffsetAlignment = 16;
+    requiredLimits.limits.maxBufferSize = 512 * 512 * 512 * sizeof(float) * 4;
+    requiredLimits.limits.maxStorageBufferBindingSize = 512 * 512 * 512 * sizeof(float) * 4;
+    requiredLimits.limits.maxComputeInvocationsPerWorkgroup = 512;
 
     // Create device
     WGPUDeviceDescriptor deviceDesc = {};
@@ -289,7 +292,7 @@ WGPUBindGroupLayout WebGPUContext::create_bind_group_layout(const std::vector<Un
 
     // Create a bind group layout
     WGPUBindGroupLayoutDescriptor bindGroupLayoutDesc = {};
-    bindGroupLayoutDesc.entryCount = entries.size();
+    bindGroupLayoutDesc.entryCount = static_cast<uint32_t>(entries.size());
     bindGroupLayoutDesc.entries = entries.data();
 
     return wgpuDeviceCreateBindGroupLayout(device, &bindGroupLayoutDesc);
@@ -307,7 +310,7 @@ WGPUBindGroup WebGPUContext::create_bind_group(const std::vector<Uniform*>& unif
     WGPUBindGroupDescriptor bindGroupDesc = {};
     bindGroupDesc.layout = bind_group_layout;
     // There must be as many bindings as declared in the layout!
-    bindGroupDesc.entryCount = entries.size();
+    bindGroupDesc.entryCount = static_cast<uint32_t>(entries.size());
     bindGroupDesc.entries = entries.data();
 
     return wgpuDeviceCreateBindGroup(device, &bindGroupDesc);
@@ -387,7 +390,7 @@ WGPUComputePipeline WebGPUContext::create_compute_pipeline(WGPUShaderModule comp
 WGPUVertexBufferLayout WebGPUContext::create_vertex_buffer_layout(const std::vector<WGPUVertexAttribute>& vertex_attributes, uint64_t stride, WGPUVertexStepMode step_mode)
 {
     WGPUVertexBufferLayout vertexBufferLayout = {};
-    vertexBufferLayout.attributeCount = vertex_attributes.size();
+    vertexBufferLayout.attributeCount = static_cast<uint32_t>(vertex_attributes.size());
     vertexBufferLayout.attributes = vertex_attributes.data();
     vertexBufferLayout.arrayStride = stride;
     vertexBufferLayout.stepMode = step_mode;
