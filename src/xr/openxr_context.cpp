@@ -12,8 +12,8 @@ static XrPosef identity_pose = { .orientation = {.x = 0, .y = 0, .z = 0, .w = 1.
 // Helper functions for pose to GLM
 glm::mat4x4 parse_OpenXR_projection_to_glm(const XrFovf& fov, float nearZ = 0.01f, float farZ = 10000.0f);
 glm::mat4x4 parse_OpenXR_pose_to_glm(const XrPosef& p);
-glm::mat4x4 parse_OpenXR_pose_to_glm(const sPoseDataf& p);
-inline sPoseDataf parse_OpenXR_pose_to_sPose(const XrPosef& xrPosef);
+glm::mat4x4 parse_OpenXR_pose_to_glm(const XrInputPose& p);
+inline XrInputPose parse_OpenXR_pose_to_sPose(const XrPosef& xrPosef);
 glm::quat slerp(const glm::quat& start, const glm::quat& end, float percent);
 glm::vec3 slerp(const glm::vec3& start, const glm::vec3& end, float percent);
 
@@ -597,7 +597,7 @@ void OpenXRContext::init_actions()
         return;
 }
 
-void OpenXRContext::poll_actions()
+void OpenXRContext::poll_actions(XrInputData& data)
 {
     input_state.handActive[HAND_LEFT] = XR_FALSE;
     input_state.handActive[HAND_RIGHT] = XR_FALSE;
@@ -616,19 +616,19 @@ void OpenXRContext::poll_actions()
         return;
 
     // [tdbe] Head action poses
-    input_data.eyePoseMatrixes[EYE_LEFT] = parse_OpenXR_pose_to_glm(projection_views[EYE_LEFT].pose);
-    input_data.eyePoses[EYE_LEFT] = parse_OpenXR_pose_to_sPose(projection_views[EYE_LEFT].pose);
-    input_data.eyePoseMatrixes[EYE_RIGHT] = parse_OpenXR_pose_to_glm(projection_views[EYE_RIGHT].pose);
-    input_data.eyePoses[EYE_RIGHT] = parse_OpenXR_pose_to_sPose(projection_views[EYE_RIGHT].pose);
+    data.eyePoseMatrixes[EYE_LEFT] = parse_OpenXR_pose_to_glm(projection_views[EYE_LEFT].pose);
+    data.eyePoses[EYE_LEFT] = parse_OpenXR_pose_to_sPose(projection_views[EYE_LEFT].pose);
+    data.eyePoseMatrixes[EYE_RIGHT] = parse_OpenXR_pose_to_glm(projection_views[EYE_RIGHT].pose);
+    data.eyePoses[EYE_RIGHT] = parse_OpenXR_pose_to_sPose(projection_views[EYE_RIGHT].pose);
     // [tdbe] TODO: figure out what/how head poses/joints work in openxr https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html
-    input_data.headPose = {
-        .orientation = slerp(input_data.eyePoses[EYE_LEFT].orientation, input_data.eyePoses[EYE_RIGHT].orientation, .5),
-        .position = slerp(input_data.eyePoses[EYE_LEFT].position, input_data.eyePoses[EYE_RIGHT].position, .5)
+    data.headPose = {
+        .orientation = slerp(data.eyePoses[EYE_LEFT].orientation, data.eyePoses[EYE_RIGHT].orientation, .5),
+        .position = slerp(data.eyePoses[EYE_LEFT].position, data.eyePoses[EYE_RIGHT].position, .5)
     };
-    input_data.headPoseMatrix = parse_OpenXR_pose_to_glm(input_data.headPose);
+    data.headPoseMatrix = parse_OpenXR_pose_to_glm(data.headPose);
 
     // [tdbe] Headset State. Use to detect status / user proximity / user presence / user engagement https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html#session-lifecycle
-    input_data.headsetActivityState = session_state;
+    data.headsetActivityState = session_state;
     
     for (size_t i = 0u; i < HAND_COUNT; i++) {
         
@@ -647,22 +647,22 @@ void OpenXRContext::poll_actions()
                 XR_SPACE_LOCATION_ORIENTATION_VALID_BIT | XR_SPACE_LOCATION_ORIENTATION_TRACKED_BIT;
             if ((spaceLocation.locationFlags & checkFlags) == checkFlags)
             {
-                input_data.controllerAimPoseMatrixes[i] = parse_OpenXR_pose_to_glm(spaceLocation.pose);
-                input_data.controllerAimPoses[i] = parse_OpenXR_pose_to_sPose(spaceLocation.pose);
+                data.controllerAimPoseMatrixes[i] = parse_OpenXR_pose_to_glm(spaceLocation.pose);
+                data.controllerAimPoses[i] = parse_OpenXR_pose_to_sPose(spaceLocation.pose);
             }
         }
 
         // [tdbe] State (input value)
         XrActionStateFloat grabState = get_action_float_state(input_state.grabAction, i);
-        input_data.grabState[i] = grabState;
+        data.grabState[i] = grabState;
 
         // [tdbe] State
         XrActionStateVector2f thumbStickState = get_action_vector2f_State(input_state.thumbstickAction, i);
-        input_data.thumbStickState[i] = thumbStickState;
+        data.thumbStickState[i] = thumbStickState;
 
         // [tdbe] State
         XrActionStateBoolean quitState = get_action_boolean_state(input_state.quitAction, i);
-        input_data.quitClickState[i] = quitState;
+        data.quitClickState[i] = quitState;
     }
 }
 
@@ -895,9 +895,7 @@ XrActionStateFloat OpenXRContext::get_action_float_state(XrAction targetAction, 
     XrActionStateFloat poseState{ .type = XR_TYPE_ACTION_STATE_FLOAT };
     XrResult result = xrGetActionStateFloat(session, &getInfo, &poseState);
 
-    if (!xr_result(instance, result, "Cannot get action float state")) {
-        int i = 0;
-    }
+    xr_result(instance, result, "Cannot get action float state");
     return poseState;
 }
 
@@ -967,15 +965,15 @@ inline glm::mat4x4 parse_OpenXR_pose_to_glm(const XrPosef& p) {
     return translation * orientation;
 }
 
-inline glm::mat4x4 parse_OpenXR_pose_to_glm(const sPoseDataf& p) {
+inline glm::mat4x4 parse_OpenXR_pose_to_glm(const XrInputPose& p) {
     glm::mat4 translation = glm::translate(glm::mat4{ 1.f }, glm::vec3(p.position.x, p.position.y, p.position.z));
     glm::mat4 orientation = glm::mat4_cast(glm::quat(p.orientation.w, p.orientation.x, p.orientation.y, p.orientation.z));
     return translation * orientation;
 }
 
-inline sPoseDataf parse_OpenXR_pose_to_sPose(const XrPosef& xrPosef) {
+inline XrInputPose parse_OpenXR_pose_to_sPose(const XrPosef& xrPosef) {
     
-    return sPoseDataf{
+    return XrInputPose{
         .orientation = glm::quat(xrPosef.orientation.x, xrPosef.orientation.y, xrPosef.orientation.z, xrPosef.orientation.w),
         .position = glm::vec3(xrPosef.position.x, xrPosef.position.y, xrPosef.position.z)
     };

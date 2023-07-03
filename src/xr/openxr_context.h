@@ -13,26 +13,6 @@
 #include <dawnxr/dawnxr.h>
 #include "graphics/webgpu_context.h"
 
-// Small helper so we don't forget whether we treat 0 as left or right hand
-enum OPENXR_HANDS
-{
-    HAND_LEFT = 0,
-    HAND_RIGHT = 1,
-    HAND_COUNT
-};
-
-enum OPENXR_EYES
-{
-    EYE_LEFT = 0,
-    EYE_RIGHT = 1,
-    EYE_COUNT
-};
-
-struct sPoseDataf {
-    glm::quat orientation;
-    glm::vec3 position;
-};
-
 struct sViewData {
     glm::vec3   position;
     glm::mat4x4 projection_matrix;
@@ -70,27 +50,6 @@ struct sInputState {
     XrBool32 handActive[HAND_COUNT];
 };
 
-struct XrInputData {
-
-    // [tdbe] Poses
-    glm::mat4x4 eyePoseMatrixes[EYE_COUNT];
-    sPoseDataf eyePoses[EYE_COUNT];
-    glm::mat4x4 headPoseMatrix;
-    sPoseDataf headPose;
-    glm::mat4x4 controllerAimPoseMatrixes[HAND_COUNT];
-    sPoseDataf controllerAimPoses[HAND_COUNT];
-    glm::mat4x4 controllerGripPoseMatrixes[HAND_COUNT];
-    sPoseDataf controllerGripPoses[HAND_COUNT];
-
-    // [tdbe] Input States. Also includes lastChangeTime, isActive, changedSinceLastSync properties.
-    XrActionStateFloat grabState[HAND_COUNT];
-    XrActionStateVector2f thumbStickState[HAND_COUNT];
-    XrActionStateBoolean quitClickState[HAND_COUNT];
-
-    // [tdbe] Headset State. Use to detect status / user proximity / user presence / user engagement https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html#session-lifecycle
-    XrSessionState headsetActivityState = XR_SESSION_STATE_UNKNOWN;
-};
-
 struct OpenXRContext {
 
     
@@ -114,10 +73,9 @@ struct OpenXRContext {
     */
 
     sInputState input_state;
-    XrInputData input_data;
 
     void init_actions();
-    void poll_actions();
+    void poll_actions(XrInputData& data);
 
     /*
     * XR Session

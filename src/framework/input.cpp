@@ -14,13 +14,18 @@ uint8_t Input::prev_keystate[GLFW_KEY_LAST];
 GLFWwindow* Input::window = nullptr;
 bool Input::use_mirror_screen;
 
-OpenXRContext* opexr_context = nullptr;
+#ifdef XR_SUPPORT
+XrInputData Input::xr_data;
+OpenXRContext* openxr_context = nullptr;
+#endif
 
 void Input::init(GLFWwindow* _window, Renderer* renderer)
 {	
 	use_mirror_screen = renderer->get_use_mirror_screen();
 
-	opexr_context = renderer->get_openxr_context();
+#ifdef XR_SUPPORT
+	openxr_context = renderer->get_openxr_context();
+#endif
 
 	if (use_mirror_screen)
 	{
@@ -59,15 +64,16 @@ void Input::update(float delta_time)
 		}
 	}
 
+#ifdef XR_SUPPORT
+
 	// Sync XR Controllers
-	{
-		if (!opexr_context)
-			return;
+	if (!openxr_context)
+		return;
 
-		opexr_context->poll_actions();
+	openxr_context->poll_actions(xr_data);
 
-		std::cout << opexr_context->input_data.grabState[1].currentState << std::endl;
-	}
+	std::cout << xr_data.grabState[1].currentState << std::endl;
+#endif
 }
 
 void Input::center_mouse()
