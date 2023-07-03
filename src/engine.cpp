@@ -1,9 +1,11 @@
 #include "engine.h"
 
 #include "utils.h"
+#include "framework/input.h"
 
 int Engine::initialize(Renderer* renderer, GLFWwindow* window, bool use_mirror_screen)
 {
+    Input::init(window, use_mirror_screen);
     this->renderer = renderer;
     return renderer->initialize(window, use_mirror_screen);
 }
@@ -29,6 +31,8 @@ bool Engine::get_use_mirror_window()
 
 void Engine::update(float delta_time)
 {
+    Input::update(delta_time);
+
     renderer->update(delta_time);
 }
 

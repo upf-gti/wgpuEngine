@@ -135,7 +135,7 @@ int WebGPUContext::initialize(GLFWwindow* window, bool create_screen_swapchain)
     requiredLimits.limits.maxUniformBufferBindingSize = 16 * 4 * sizeof(float);
     requiredLimits.limits.minUniformBufferOffsetAlignment = 64;
     requiredLimits.limits.minStorageBufferOffsetAlignment = 16;
-    requiredLimits.limits.maxBufferSize = 512 * 512 * 512 * sizeof(float) * 4;
+    requiredLimits.limits.maxBufferSize = 512 * 512 * 512 * sizeof(float) * 4 + 4; // TODO: remove this +4 when fixed in Dawn
     requiredLimits.limits.maxStorageBufferBindingSize = 512 * 512 * 512 * sizeof(float) * 4;
     requiredLimits.limits.maxComputeInvocationsPerWorkgroup = 512;
 
@@ -146,6 +146,16 @@ int WebGPUContext::initialize(GLFWwindow* window, bool create_screen_swapchain)
     deviceDesc.requiredLimits = &requiredLimits;
     deviceDesc.defaultQueue.label = "The default queue";
     deviceDesc.deviceLostCallback = DeviceLostCallback;
+
+#if !defined(__EMSCRIPTEN__) && !defined(NDEBUG)
+    const char* const enabledToggles[] = { "disable_symbol_renaming" };
+
+    WGPUDawnTogglesDescriptor deviceTogglesDesc = {};
+    deviceTogglesDesc.enabledToggles = enabledToggles;
+    deviceTogglesDesc.enabledTogglesCount = 1;
+
+    deviceDesc.nextInChain = reinterpret_cast<WGPUChainedStruct*>(&deviceTogglesDesc);
+#endif
     
     device = requestDevice(adapter, &deviceDesc);
 
@@ -378,10 +388,10 @@ WGPURenderPipeline WebGPUContext::create_render_pipeline(const std::vector<WGPUV
 WGPUComputePipeline WebGPUContext::create_compute_pipeline(WGPUShaderModule compute_shader_module, WGPUPipelineLayout pipeline_layout)
 {
     WGPUComputePipelineDescriptor computePipelineDesc = {};
-    computePipelineDesc.compute.constantCount = 0;
-    computePipelineDesc.compute.constants = nullptr;
-    computePipelineDesc.compute.entryPoint = "compute";
-    computePipelineDesc.compute.module = compute_shader_module;
+    computePipelineDesc.compute_raymarching.constantCount = 0;
+    computePipelineDesc.compute_raymarching.constants = nullptr;
+    computePipelineDesc.compute_raymarching.entryPoint = "compute";
+    computePipelineDesc.compute_raymarching.module = compute_shader_module;
     computePipelineDesc.layout = pipeline_layout;
 
     return wgpuDeviceCreateComputePipeline(device, &computePipelineDesc);
