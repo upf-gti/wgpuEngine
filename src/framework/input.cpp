@@ -25,6 +25,31 @@ void Input::init(GLFWwindow* _window, Renderer* renderer)
 
 #ifdef XR_SUPPORT
 	openxr_context = renderer->get_openxr_context();
+
+	// Add mapped buttons.
+	XrMappedButtonState mb{ .name = "button_a", .hand = HAND_RIGHT };
+	mb.click.path = "/user/hand/right/input/a/click";
+	mb.touch.path = "/user/hand/right/input/a/touch";
+	xr_data.buttonsState.push_back(mb);
+
+	mb = { .name = "button_b", .hand = HAND_RIGHT };
+	mb.click.path = "/user/hand/right/input/b/click";
+	mb.touch.path = "/user/hand/right/input/b/touch";
+	xr_data.buttonsState.push_back(mb);
+
+	mb = { .name = "button_x", .hand = HAND_LEFT };
+	mb.click.path = "/user/left/right/input/x/click";
+	mb.touch.path = "/user/left/right/input/x/touch";
+	xr_data.buttonsState.push_back(mb);
+
+	mb = { .name = "button_y", .hand = HAND_LEFT };
+	mb.click.path = "/user/left/right/input/y/click";
+	mb.touch.path = "/user/left/right/input/y/touch";
+	xr_data.buttonsState.push_back(mb);
+
+
+	// Init Xr Actions.
+	openxr_context->init_actions( xr_data );
 #endif
 
 	if (use_mirror_screen)
@@ -71,8 +96,6 @@ void Input::update(float delta_time)
 		return;
 
 	openxr_context->poll_actions(xr_data);
-
-	std::cout << xr_data.grabState[1].currentState << std::endl;
 #endif
 }
 

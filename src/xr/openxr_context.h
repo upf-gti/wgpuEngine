@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <array>
+#include <map>
 #include "includes.h"
 #include "framework/input.h"
 
@@ -38,11 +39,14 @@ struct
 struct sInputState {
 
     XrActionSet actionSet{ XR_NULL_HANDLE };
+    
     XrAction grabAction{ XR_NULL_HANDLE };
     XrAction poseAction{ XR_NULL_HANDLE };
     XrAction vibrateAction{ XR_NULL_HANDLE };
     XrAction thumbstickAction{ XR_NULL_HANDLE };
-    XrAction quitAction{ XR_NULL_HANDLE };
+
+    // Buttons.
+    // There are stored in data input...
 
     XrPath handSubactionPath[HAND_COUNT];
     XrSpace handSpace[HAND_COUNT];
@@ -74,7 +78,7 @@ struct OpenXRContext {
 
     sInputState input_state;
 
-    void init_actions();
+    void init_actions(XrInputData& data);
     void poll_actions(XrInputData& data);
 
     /*

@@ -144,8 +144,6 @@ int OpenXRContext::init(WebGPUContext* webgpu_context)
 
         // projection_views[i].pose (and fov) have to be filled every frame in frame loop
     };
-    
-    init_actions();
 
     initialized = true;
 
@@ -392,7 +390,7 @@ void OpenXRContext::print_reference_spaces()
     }
 }
 
-void OpenXRContext::init_actions()
+void OpenXRContext::init_actions(XrInputData& data)
 {
     XrResult result;
 
@@ -427,15 +425,25 @@ void OpenXRContext::init_actions()
         create_action(input_state.actionSet, input_state.handSubactionPath, HAND_COUNT,
             "vibrate_hand", "Vibrate Hand", XR_ACTION_TYPE_VIBRATION_OUTPUT, input_state.vibrateAction);
 
-        // Create output actions for vibrating the left and right controller.
+        // Create an input action getting the left and right thumbsticks
         create_action(input_state.actionSet, input_state.handSubactionPath, HAND_COUNT,
             "thumbstick_action", "Thumbstick Action", XR_ACTION_TYPE_VECTOR2F_INPUT, input_state.thumbstickAction);
+
+        // Create an input actions getting button states
+
+        for (auto& mb : data.buttonsState)
+        {
+            create_action(input_state.actionSet, &input_state.handSubactionPath[mb.hand], 1,
+                mb.name + "_click_action", mb.name + " Click Action", XR_ACTION_TYPE_BOOLEAN_INPUT, mb.click.action);
+            create_action(input_state.actionSet, &input_state.handSubactionPath[mb.hand], 1,
+                mb.name + "_touch_action", mb.name + " Touch Action", XR_ACTION_TYPE_BOOLEAN_INPUT, mb.touch.action);
+        }
 
         // Create input actions for quitting the session using the left and right controller.
         // Since it doesn't matter which hand did this, we do not specify subaction paths for it.
         // We will just suggest bindings for both hands, where possible.
-        create_action(input_state.actionSet, nullptr, 0,
-            "quit_session", "Quit Session", XR_ACTION_TYPE_BOOLEAN_INPUT, input_state.quitAction);
+        /*create_action(input_state.actionSet, nullptr, 0,
+            "quit_session", "Quit Session", XR_ACTION_TYPE_BOOLEAN_INPUT, input_state.quitAction);*/
     }
 
     XrPath selectPath[HAND_COUNT];
@@ -445,7 +453,6 @@ void OpenXRContext::init_actions()
     XrPath posePath[HAND_COUNT];
     XrPath hapticPath[HAND_COUNT];
     XrPath menuClickPath[HAND_COUNT];
-    XrPath bClickPath[HAND_COUNT];
     XrPath triggerValuePath[HAND_COUNT];
     XrPath thumbstickPath[HAND_COUNT];
 
@@ -463,8 +470,6 @@ void OpenXRContext::init_actions()
     xrStringToPath(instance, "/user/hand/right/output/haptic", &hapticPath[HAND_RIGHT]);
     xrStringToPath(instance, "/user/hand/left/input/menu/click", &menuClickPath[HAND_LEFT]);
     xrStringToPath(instance, "/user/hand/right/input/menu/click", &menuClickPath[HAND_RIGHT]);
-    xrStringToPath(instance, "/user/hand/left/input/b/click", &bClickPath[HAND_LEFT]);
-    xrStringToPath(instance, "/user/hand/right/input/b/click", &bClickPath[HAND_RIGHT]);
     xrStringToPath(instance, "/user/hand/left/input/trigger/value", &triggerValuePath[HAND_LEFT]);
     xrStringToPath(instance, "/user/hand/right/input/trigger/value", &triggerValuePath[HAND_RIGHT]);
     xrStringToPath(instance, "/user/hand/left/input/thumbstick", &thumbstickPath[HAND_LEFT]);
@@ -479,8 +484,8 @@ void OpenXRContext::init_actions()
                 {input_state.grabAction,    selectPath[HAND_RIGHT]},
                 {input_state.poseAction,    posePath[HAND_LEFT]},
                 {input_state.poseAction,    posePath[HAND_RIGHT]},
-                {input_state.quitAction,    menuClickPath[HAND_LEFT]},
-                {input_state.quitAction,    menuClickPath[HAND_RIGHT]},
+               /* {input_state.quitAction,    menuClickPath[HAND_LEFT]},
+                {input_state.quitAction,    menuClickPath[HAND_RIGHT]},*/
                 {input_state.vibrateAction, hapticPath[HAND_LEFT]},
                 {input_state.vibrateAction, hapticPath[HAND_RIGHT]} };
         XrInteractionProfileSuggestedBinding suggestedBindings { XR_TYPE_INTERACTION_PROFILE_SUGGESTED_BINDING };
@@ -498,12 +503,26 @@ void OpenXRContext::init_actions()
             {input_state.grabAction,    squeezeValuePath[HAND_RIGHT]},
             {input_state.poseAction,    posePath[HAND_LEFT]},
             {input_state.poseAction,    posePath[HAND_RIGHT]},
-            {input_state.quitAction,    menuClickPath[HAND_LEFT]},
+            //{input_state.quitAction,    menuClickPath[HAND_LEFT]},
             {input_state.thumbstickAction, thumbstickPath[HAND_LEFT]},
             {input_state.thumbstickAction, thumbstickPath[HAND_RIGHT]},
             {input_state.vibrateAction, hapticPath[HAND_LEFT]},
-            {input_state.vibrateAction, hapticPath[HAND_RIGHT]} 
+            {input_state.vibrateAction, hapticPath[HAND_RIGHT]}
         };
+
+        // Add button mappings.
+        for (auto& mb : data.buttonsState)
+        {
+            XrPath aClickPath;
+            XrPath aTouchPath;
+
+            xrStringToPath(instance, mb.click.path.c_str(), &aClickPath);
+            xrStringToPath(instance, mb.touch.path.c_str(), &aTouchPath);
+
+            bindings.push_back({ mb.click.action, aClickPath });
+            bindings.push_back({ mb.touch.action, aTouchPath });
+        }
+
         XrInteractionProfileSuggestedBinding suggestedBindings{ XR_TYPE_INTERACTION_PROFILE_SUGGESTED_BINDING };
         suggestedBindings.interactionProfile = oculusTouchInteractionProfilePath;
         suggestedBindings.suggestedBindings = bindings.data();
@@ -652,17 +671,20 @@ void OpenXRContext::poll_actions(XrInputData& data)
             }
         }
 
-        // [tdbe] State (input value)
+        // Grab State
         XrActionStateFloat grabState = get_action_float_state(input_state.grabAction, i);
         data.grabState[i] = grabState;
 
-        // [tdbe] State
+        // Thumbstick State
         XrActionStateVector2f thumbStickState = get_action_vector2f_State(input_state.thumbstickAction, i);
         data.thumbStickState[i] = thumbStickState;
+    }
 
-        // [tdbe] State
-        XrActionStateBoolean quitState = get_action_boolean_state(input_state.quitAction, i);
-        data.quitClickState[i] = quitState;
+    // State (Buttons).
+    for (auto& mb : data.buttonsState)
+    {
+        mb.click.state = get_action_boolean_state(mb.click.action, mb.hand);
+        mb.touch.state = get_action_boolean_state(mb.touch.action, mb.hand);
     }
 }
 

@@ -3,6 +3,7 @@
 #include "includes.h"
 #include <GLFW/glfw3.h>
 #include <vector>
+#include <string>
 
 // Small helper so we don't forget whether we treat 0 as left or right hand
 enum OPENXR_HANDS
@@ -30,9 +31,22 @@ struct XrInputPose {
 	glm::vec3 position;
 };
 
+struct XrActionStorage {
+	std::string path;
+	XrAction action;
+	XrActionStateBoolean state;
+};
+
+struct XrMappedButtonState {
+	std::string name;
+	uint8_t hand;
+	XrActionStorage click;
+	XrActionStorage touch;
+};
+
 struct XrInputData {
 
-	// [tdbe] Poses
+	// Poses
 	glm::mat4x4 eyePoseMatrixes[EYE_COUNT];
 	XrInputPose eyePoses[EYE_COUNT];
 	glm::mat4x4 headPoseMatrix;
@@ -42,12 +56,14 @@ struct XrInputData {
 	glm::mat4x4 controllerGripPoseMatrixes[HAND_COUNT];
 	XrInputPose controllerGripPoses[HAND_COUNT];
 
-	// [tdbe] Input States. Also includes lastChangeTime, isActive, changedSinceLastSync properties.
+	// Input States. Also includes lastChangeTime, isActive, changedSinceLastSync properties.
 	XrActionStateFloat grabState[HAND_COUNT];
 	XrActionStateVector2f thumbStickState[HAND_COUNT];
-	XrActionStateBoolean quitClickState[HAND_COUNT];
 
-	// [tdbe] Headset State. Use to detect status / user proximity / user presence / user engagement https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html#session-lifecycle
+	// Buttons.
+	std::vector<XrMappedButtonState> buttonsState;
+
+	// Headset State. Use to detect status / user proximity / user presence / user engagement https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html#session-lifecycle
 	XrSessionState headsetActivityState = XR_SESSION_STATE_UNKNOWN;
 };
 
@@ -75,6 +91,13 @@ class Input {
 
 #ifdef XR_SUPPORT
 	static XrInputData xr_data;
+
+	/*
+	*	Conversors
+	*/
+	
+	static bool XrBool32_to_bool(XrBool32 v) { return static_cast<bool>(v); }
+	static glm::vec2 XrVector2f_to_glm(XrVector2f v) { return glm::vec2(v.x, v.y); }
 #endif
 
 public:
@@ -92,6 +115,14 @@ public:
 	static bool was_mouse_pressed(uint8_t button) { return prev_buttons[button] == GLFW_RELEASE && buttons[button] == GLFW_PRESS; }
 
 #ifdef XR_SUPPORT
-	// static glm::vec2 get_axis(uint8_t button) { return buttons[button] == GLFW_PRESS; }
+
+	/*
+	*	API
+	*/
+
+	// static bool get_button_value(uint8_t controller) { return XrBool32_to_bool(xr_data.quitClickState[controller].currentState); }
+	static float get_grab_value(uint8_t controller) { return xr_data.grabState[controller].currentState; }
+	static glm::vec2 get_thumbstick_axis(uint8_t controller) { return XrVector2f_to_glm(xr_data.thumbStickState[controller].currentState); }
+
 #endif
 };
