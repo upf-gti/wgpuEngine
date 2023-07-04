@@ -154,7 +154,9 @@ int WebGPUContext::initialize(GLFWwindow* window, bool create_screen_swapchain)
     deviceTogglesDesc.enabledToggles = enabledToggles;
     deviceTogglesDesc.enabledTogglesCount = 1;
 
-    deviceDesc.nextInChain = reinterpret_cast<WGPUChainedStruct*>(&deviceTogglesDesc);
+    WGPUChainedStruct* chainDes = reinterpret_cast<WGPUChainedStruct*>(&deviceTogglesDesc);
+    chainDes->sType = WGPUSType_DawnTogglesDescriptor;
+    deviceDesc.nextInChain = chainDes;
 #endif
     
     device = requestDevice(adapter, &deviceDesc);
