@@ -33,7 +33,7 @@ public:
     virtual int initialize(GLFWwindow* window, bool use_mirror_screen = false);
     virtual void clean();
     
-    virtual void update(double delta_time) {};
+    virtual void update(float delta_time) {};
     virtual void render() {};
 
     bool get_openxr_available() { return is_openxr_available; }

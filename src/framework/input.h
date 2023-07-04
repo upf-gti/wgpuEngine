@@ -26,9 +26,11 @@ enum OPENXR_EYES
 #define XR_USE_GRAPHICS_API_VULKAN
 #include "openxr/openxr_platform.h"
 
-struct XrInputPose {
-	glm::quat orientation;
-	glm::vec3 position;
+enum {
+	A_BUTTON = 0,
+	B_BUTTON,
+	X_BUTTON,
+	Y_BUTTON
 };
 
 struct XrActionStorage {
@@ -44,6 +46,11 @@ struct XrMappedButtonState {
 	XrActionStorage touch;
 };
 
+struct XrInputPose {
+	glm::quat orientation;
+	glm::vec3 position;
+};
+
 struct XrInputData {
 
 	// Poses
@@ -51,9 +58,9 @@ struct XrInputData {
 	XrInputPose eyePoses[EYE_COUNT];
 	glm::mat4x4 headPoseMatrix;
 	XrInputPose headPose;
-	glm::mat4x4 controllerAimPoseMatrixes[HAND_COUNT];
+	glm::mat4x4 controllerAimPoseMatrices[HAND_COUNT];
 	XrInputPose controllerAimPoses[HAND_COUNT];
-	glm::mat4x4 controllerGripPoseMatrixes[HAND_COUNT];
+	glm::mat4x4 controllerGripPoseMatrices[HAND_COUNT];
 	XrInputPose controllerGripPoses[HAND_COUNT];
 
 	// Input States. Also includes lastChangeTime, isActive, changedSinceLastSync properties.
@@ -96,6 +103,11 @@ class Input {
 	*	Conversors
 	*/
 	
+	struct XrButtonValue {
+		bool click_value;
+		bool touch_value;
+	};
+
 	static bool XrBool32_to_bool(XrBool32 v) { return static_cast<bool>(v); }
 	static glm::vec2 XrVector2f_to_glm(XrVector2f v) { return glm::vec2(v.x, v.y); }
 #endif
@@ -120,7 +132,12 @@ public:
 	*	API
 	*/
 
-	// static bool get_button_value(uint8_t controller) { return XrBool32_to_bool(xr_data.quitClickState[controller].currentState); }
+	static XrButtonValue get_button_value(uint8_t button_idx) { 
+		return {
+			XrBool32_to_bool(xr_data.buttonsState[button_idx].click.state.currentState), 
+			XrBool32_to_bool(xr_data.buttonsState[button_idx].touch.state.currentState) 
+		}; 
+	}
 	static float get_grab_value(uint8_t controller) { return xr_data.grabState[controller].currentState; }
 	static glm::vec2 get_thumbstick_axis(uint8_t controller) { return XrVector2f_to_glm(xr_data.thumbStickState[controller].currentState); }
 

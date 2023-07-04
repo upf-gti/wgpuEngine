@@ -320,6 +320,8 @@ bool OpenXRContext::xr_result(XrInstance xrInstance, XrResult result, const char
     vprintf(formatRes, args);
     va_end(args);
 
+    std::cout << std::string(formatRes) << std::endl;
+
     delete[] formatRes;
     return false;
 }
@@ -417,9 +419,11 @@ void OpenXRContext::init_actions(XrInputData& data)
         create_action(input_state.actionSet, input_state.handSubactionPath, HAND_COUNT,
             "grab_object", "Grab Object", XR_ACTION_TYPE_FLOAT_INPUT, input_state.grabAction);
 
-        // Create an input action getting the left and right hand poses.
+        // Create an input action getting the left and right hand poses (aim and grip)
         create_action(input_state.actionSet, input_state.handSubactionPath, HAND_COUNT,
-            "hand_pose", "Hand Pose", XR_ACTION_TYPE_POSE_INPUT, input_state.poseAction);
+            "hand_pose", "Hand Pose", XR_ACTION_TYPE_POSE_INPUT, input_state.aimPoseAction);
+        create_action(input_state.actionSet, input_state.handSubactionPath, HAND_COUNT,
+            "grid_pose", "Grid Pose", XR_ACTION_TYPE_POSE_INPUT, input_state.gripPoseAction);
 
         // Create output actions for vibrating the left and right controller.
         create_action(input_state.actionSet, input_state.handSubactionPath, HAND_COUNT,
@@ -450,7 +454,8 @@ void OpenXRContext::init_actions(XrInputData& data)
     XrPath squeezeValuePath[HAND_COUNT];
     XrPath squeezeForcePath[HAND_COUNT];
     XrPath squeezeClickPath[HAND_COUNT];
-    XrPath posePath[HAND_COUNT];
+    XrPath aimPosePath[HAND_COUNT];
+    XrPath gripPosePath[HAND_COUNT];
     XrPath hapticPath[HAND_COUNT];
     XrPath menuClickPath[HAND_COUNT];
     XrPath triggerValuePath[HAND_COUNT];
@@ -464,8 +469,10 @@ void OpenXRContext::init_actions(XrInputData& data)
     xrStringToPath(instance, "/user/hand/right/input/squeeze/force", &squeezeForcePath[HAND_RIGHT]);
     xrStringToPath(instance, "/user/hand/left/input/squeeze/click", &squeezeClickPath[HAND_LEFT]);
     xrStringToPath(instance, "/user/hand/right/input/squeeze/click", &squeezeClickPath[HAND_RIGHT]);
-    xrStringToPath(instance, "/user/hand/left/input/grip/pose", &posePath[HAND_LEFT]);
-    xrStringToPath(instance, "/user/hand/right/input/grip/pose", &posePath[HAND_RIGHT]);
+    xrStringToPath(instance, "/user/hand/left/input/aim/pose", &aimPosePath[HAND_LEFT]);
+    xrStringToPath(instance, "/user/hand/right/input/aim/pose", &aimPosePath[HAND_RIGHT]);
+    xrStringToPath(instance, "/user/hand/left/input/grip/pose", &gripPosePath[HAND_LEFT]);
+    xrStringToPath(instance, "/user/hand/right/input/grip/pose", &gripPosePath[HAND_RIGHT]);
     xrStringToPath(instance, "/user/hand/left/output/haptic", &hapticPath[HAND_LEFT]);
     xrStringToPath(instance, "/user/hand/right/output/haptic", &hapticPath[HAND_RIGHT]);
     xrStringToPath(instance, "/user/hand/left/input/menu/click", &menuClickPath[HAND_LEFT]);
@@ -480,14 +487,17 @@ void OpenXRContext::init_actions(XrInputData& data)
         XrPath khrSimpleInteractionProfilePath;
         xrStringToPath(instance, "/interaction_profiles/khr/simple_controller", &khrSimpleInteractionProfilePath);
         std::vector<XrActionSuggestedBinding> bindings = {// Fall back to a click input for the grab action.
-                {input_state.grabAction,    selectPath[HAND_LEFT]},
-                {input_state.grabAction,    selectPath[HAND_RIGHT]},
-                {input_state.poseAction,    posePath[HAND_LEFT]},
-                {input_state.poseAction,    posePath[HAND_RIGHT]},
-               /* {input_state.quitAction,    menuClickPath[HAND_LEFT]},
-                {input_state.quitAction,    menuClickPath[HAND_RIGHT]},*/
-                {input_state.vibrateAction, hapticPath[HAND_LEFT]},
-                {input_state.vibrateAction, hapticPath[HAND_RIGHT]} };
+                {input_state.grabAction,        selectPath[HAND_LEFT]},
+                {input_state.grabAction,        selectPath[HAND_RIGHT]},
+                {input_state.aimPoseAction,     aimPosePath[HAND_LEFT]},
+                {input_state.aimPoseAction,     aimPosePath[HAND_RIGHT]},
+                {input_state.gripPoseAction,    gripPosePath[HAND_LEFT]},
+                {input_state.gripPoseAction,    gripPosePath[HAND_RIGHT]},
+               /* {input_state.quitAction,      menuClickPath[HAND_LEFT]},
+                {input_state.quitAction,        menuClickPath[HAND_RIGHT]},*/
+                {input_state.vibrateAction,     hapticPath[HAND_LEFT]},
+                {input_state.vibrateAction,     hapticPath[HAND_RIGHT]} };
+
         XrInteractionProfileSuggestedBinding suggestedBindings { XR_TYPE_INTERACTION_PROFILE_SUGGESTED_BINDING };
         suggestedBindings.interactionProfile = khrSimpleInteractionProfilePath;
         suggestedBindings.suggestedBindings = bindings.data();
@@ -499,15 +509,17 @@ void OpenXRContext::init_actions(XrInputData& data)
         XrPath oculusTouchInteractionProfilePath;
         xrStringToPath(instance, "/interaction_profiles/oculus/touch_controller", &oculusTouchInteractionProfilePath);
         std::vector<XrActionSuggestedBinding> bindings = { 
-            {input_state.grabAction,    squeezeValuePath[HAND_LEFT]},
-            {input_state.grabAction,    squeezeValuePath[HAND_RIGHT]},
-            {input_state.poseAction,    posePath[HAND_LEFT]},
-            {input_state.poseAction,    posePath[HAND_RIGHT]},
-            //{input_state.quitAction,    menuClickPath[HAND_LEFT]},
-            {input_state.thumbstickAction, thumbstickPath[HAND_LEFT]},
-            {input_state.thumbstickAction, thumbstickPath[HAND_RIGHT]},
-            {input_state.vibrateAction, hapticPath[HAND_LEFT]},
-            {input_state.vibrateAction, hapticPath[HAND_RIGHT]}
+            {input_state.grabAction,        squeezeValuePath[HAND_LEFT]},
+            {input_state.grabAction,        squeezeValuePath[HAND_RIGHT]},
+            {input_state.aimPoseAction,     aimPosePath[HAND_LEFT]},
+            {input_state.aimPoseAction,     aimPosePath[HAND_RIGHT]},
+            {input_state.gripPoseAction,    gripPosePath[HAND_LEFT]},
+            {input_state.gripPoseAction,    gripPosePath[HAND_RIGHT]},
+            //{input_state.quitAction,      menuClickPath[HAND_LEFT]},
+            {input_state.thumbstickAction,  thumbstickPath[HAND_LEFT]},
+            {input_state.thumbstickAction,  thumbstickPath[HAND_RIGHT]},
+            {input_state.vibrateAction,     hapticPath[HAND_LEFT]},
+            {input_state.vibrateAction,     hapticPath[HAND_RIGHT]}
         };
 
         // Add button mappings.
@@ -594,13 +606,18 @@ void OpenXRContext::init_actions(XrInputData& data)
     {
         XrActionSpaceCreateInfo actionSpaceInfo{
             .type = XR_TYPE_ACTION_SPACE_CREATE_INFO,
-            .action = input_state.poseAction,
+            .action = input_state.aimPoseAction,
             .subactionPath = input_state.handSubactionPath[ci]
         };
         actionSpaceInfo.poseInActionSpace.orientation = { .x = 0, .y = 0, .z = 0, .w = 1.0 };
         actionSpaceInfo.poseInActionSpace.position = { .x = 0, .y = 0, .z = 0 };
 
-        XrResult result = xrCreateActionSpace(session, &actionSpaceInfo, &input_state.handSpace[ci]);
+        XrResult result = xrCreateActionSpace(session, &actionSpaceInfo, &input_state.aimHandSpace[ci]);
+        if (!xr_result(instance, result, "Can't create action space for controller %d", ci))
+            return;
+
+        actionSpaceInfo.action = input_state.gripPoseAction;
+        result = xrCreateActionSpace(session, &actionSpaceInfo, &input_state.gridHandSpace[ci]);
         if (!xr_result(instance, result, "Can't create action space for controller %d", ci))
             return;
     }
@@ -653,12 +670,12 @@ void OpenXRContext::poll_actions(XrInputData& data)
         
         // input_state.handActive[i] = poseState.isActive;
 
-        // Pose
-        XrActionStatePose grabPoseState = get_action_pose_state(input_state.grabAction, i);
-        if (grabPoseState.isActive)
+        // Aim Pose
+        XrActionStatePose aimPoseState = get_action_pose_state(input_state.aimPoseAction, i);
+        if (aimPoseState.isActive)
         {
             XrSpaceLocation spaceLocation{ .type = XR_TYPE_SPACE_LOCATION };
-            result = xrLocateSpace(input_state.handSpace[i], play_space, frame_state.predictedDisplayTime, &spaceLocation);
+            result = xrLocateSpace(input_state.aimHandSpace[i], play_space, frame_state.predictedDisplayTime, &spaceLocation);
             
             // Check that the position and orientation are valid and tracked
             constexpr XrSpaceLocationFlags checkFlags =
@@ -666,8 +683,26 @@ void OpenXRContext::poll_actions(XrInputData& data)
                 XR_SPACE_LOCATION_ORIENTATION_VALID_BIT | XR_SPACE_LOCATION_ORIENTATION_TRACKED_BIT;
             if ((spaceLocation.locationFlags & checkFlags) == checkFlags)
             {
-                data.controllerAimPoseMatrixes[i] = parse_OpenXR_pose_to_glm(spaceLocation.pose);
+                data.controllerAimPoseMatrices[i] = parse_OpenXR_pose_to_glm(spaceLocation.pose);
                 data.controllerAimPoses[i] = parse_OpenXR_pose_to_sPose(spaceLocation.pose);
+            }
+        }
+
+        // Grip Pose
+        XrActionStatePose gripPoseState = get_action_pose_state(input_state.aimPoseAction, i);
+        if (gripPoseState.isActive)
+        {
+            XrSpaceLocation spaceLocation{ .type = XR_TYPE_SPACE_LOCATION };
+            result = xrLocateSpace(input_state.gridHandSpace[i], play_space, frame_state.predictedDisplayTime, &spaceLocation);
+
+            // Check that the position and orientation are valid and tracked
+            constexpr XrSpaceLocationFlags checkFlags =
+                XR_SPACE_LOCATION_POSITION_VALID_BIT | XR_SPACE_LOCATION_POSITION_TRACKED_BIT |
+                XR_SPACE_LOCATION_ORIENTATION_VALID_BIT | XR_SPACE_LOCATION_ORIENTATION_TRACKED_BIT;
+            if ((spaceLocation.locationFlags & checkFlags) == checkFlags)
+            {
+                data.controllerGripPoseMatrices[i] = parse_OpenXR_pose_to_glm(spaceLocation.pose);
+                data.controllerGripPoses[i] = parse_OpenXR_pose_to_sPose(spaceLocation.pose);
             }
         }
 

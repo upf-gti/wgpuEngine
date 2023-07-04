@@ -2,16 +2,14 @@
 
 #include <vector>
 #include <array>
-#include <map>
 #include "includes.h"
 #include "framework/input.h"
 
 #ifdef XR_SUPPORT
 
-#include "vulkan/vulkan.h"
-#define XR_USE_GRAPHICS_API_VULKAN
-#include "openxr/openxr_platform.h"
 #include <dawnxr/dawnxr.h>
+#include "openxr/openxr_platform.h"
+
 #include "graphics/webgpu_context.h"
 
 struct sViewData {
@@ -40,8 +38,12 @@ struct sInputState {
 
     XrActionSet actionSet{ XR_NULL_HANDLE };
     
+    // hand pose: point in the world using the input source, according to the platform’s conventions for aiming with that kind of source.
+    XrAction aimPoseAction{ XR_NULL_HANDLE };
+    // hand pose: render a virtual object held in the user’s hand, whether it is tracked directly or by a motion controller.
+    XrAction gripPoseAction{ XR_NULL_HANDLE };
+
     XrAction grabAction{ XR_NULL_HANDLE };
-    XrAction poseAction{ XR_NULL_HANDLE };
     XrAction vibrateAction{ XR_NULL_HANDLE };
     XrAction thumbstickAction{ XR_NULL_HANDLE };
 
@@ -49,7 +51,8 @@ struct sInputState {
     // There are stored in data input...
 
     XrPath handSubactionPath[HAND_COUNT];
-    XrSpace handSpace[HAND_COUNT];
+    XrSpace aimHandSpace[HAND_COUNT];
+    XrSpace gridHandSpace[HAND_COUNT];
     float handScale[HAND_COUNT] = { 1.0f, 1.0f };
     XrBool32 handActive[HAND_COUNT];
 };
