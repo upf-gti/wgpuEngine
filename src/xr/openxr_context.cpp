@@ -422,10 +422,6 @@ void OpenXRContext::init_actions(XrInputData& data)
     {
         bool is_ok = true;   
 
-        // Create an input action for grabbing objects with the left and right hands.
-        is_ok &= create_action(input_state.actionSet, input_state.handSubactionPath, HAND_COUNT,
-            "grab_object", "Grab Object", XR_ACTION_TYPE_FLOAT_INPUT, input_state.grabAction);
-
         // Create an input action getting the left and right hand poses (aim)
         is_ok &= create_action(input_state.actionSet, input_state.handSubactionPath, HAND_COUNT,
             "hand_pose", "Hand Pose", XR_ACTION_TYPE_POSE_INPUT, input_state.aimPoseAction);
@@ -437,6 +433,10 @@ void OpenXRContext::init_actions(XrInputData& data)
         // Create output actions for vibrating the left and right controller.
         is_ok &= create_action(input_state.actionSet, input_state.handSubactionPath, HAND_COUNT,
             "vibrate_hand", "Vibrate Hand", XR_ACTION_TYPE_VIBRATION_OUTPUT, input_state.vibrateAction);
+
+        // Create an input action for grabbing objects with the left and right hands.
+        is_ok &= create_action(input_state.actionSet, input_state.handSubactionPath, HAND_COUNT,
+            "grab_action", "Grab Action", XR_ACTION_TYPE_FLOAT_INPUT, input_state.grabAction);
 
         // Create an input action getting the left and right thumbsticks
         is_ok &= create_action(input_state.actionSet, input_state.handSubactionPath, HAND_COUNT,

@@ -44,12 +44,12 @@ struct sInputState {
     XrAction gripPoseAction{ XR_NULL_HANDLE };
 
     XrAction grabAction{ XR_NULL_HANDLE };
-    XrAction vibrateAction{ XR_NULL_HANDLE };
     XrAction thumbstickValueAction{ XR_NULL_HANDLE };
     XrAction thumbstickClickAction{ XR_NULL_HANDLE };
     XrAction thumbstickTouchAction{ XR_NULL_HANDLE };
     XrAction triggerValueAction{ XR_NULL_HANDLE };
     XrAction triggerTouchAction{ XR_NULL_HANDLE };
+    XrAction vibrateAction{ XR_NULL_HANDLE };
 
     // Buttons.
     // There are stored in data input...

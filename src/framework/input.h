@@ -27,10 +27,10 @@ enum OPENXR_EYES
 #include "openxr/openxr_platform.h"
 
 enum {
-	A_BUTTON = 0,
-	B_BUTTON,
-	X_BUTTON,
-	Y_BUTTON
+	XR_BUTTON_A = 0,
+	XR_BUTTON_B,
+	XR_BUTTON_X,
+	XR_BUTTON_Y
 };
 
 struct XrActionStorage {
@@ -133,20 +133,39 @@ public:
 
 #ifdef XR_SUPPORT
 
-	/*
-	*	API
-	*/
-
 	static bool init_xr(OpenXRContext* context);
 
-	static XrButtonValue get_button_value(uint8_t button_idx) { 
-		return {
-			XrBool32_to_bool(xr_data.buttonsState[button_idx].click.state.currentState), 
-			XrBool32_to_bool(xr_data.buttonsState[button_idx].touch.state.currentState) 
-		}; 
-	}
-	// static float get_grab_value(uint8_t controller) { return xr_data.grabState[controller].currentState; }
-	// static glm::vec2 get_thumbstick_axis(uint8_t controller) { return XrVector2f_to_glm(xr_data.thumbStickValueState[controller].currentState); }
+	/*
+	*	Buttons
+	*/
+
+	static bool is_button_pressed(uint8_t button) { return xr_data.buttonsState[button].click.state.currentState; }
+	static bool was_button_pressed(uint8_t button) { return (xr_data.buttonsState[button].click.state.currentState
+		&& xr_data.buttonsState[button].click.state.changedSinceLastSync); }
+	static bool is_button_touched(uint8_t button) { return xr_data.buttonsState[button].touch.state.currentState; }
+	static bool was_button_touched(uint8_t button) { return (xr_data.buttonsState[button].touch.state.currentState
+			&& xr_data.buttonsState[button].touch.state.changedSinceLastSync); }
+
+	/*
+	*	Grabs
+	*/
+
+	static float get_grab_value(uint8_t controller) { return xr_data.grabState[controller].currentState; }
+
+	/*
+	*	Triggers
+	*/
+
+	static float get_trigger_value(uint8_t controller) { return xr_data.triggerValueState[controller].currentState; }
+	static bool is_trigger_touched(uint8_t controller) { return XrBool32_to_bool(xr_data.triggerTouchState[controller].currentState); }
+
+	/*
+	*	Thumbsticks
+	*/
+
+	static glm::vec2 get_thumbstick_value(uint8_t controller) { return XrVector2f_to_glm(xr_data.thumbStickValueState[controller].currentState); }
+	static bool is_thumbstick_pressed(uint8_t controller) { return XrBool32_to_bool(xr_data.thumbStickClickState[controller].currentState); }
+	static bool is_thumbstick_touched(uint8_t controller) { return XrBool32_to_bool(xr_data.thumbStickTouchState[controller].currentState); }
 
 #endif
 };
