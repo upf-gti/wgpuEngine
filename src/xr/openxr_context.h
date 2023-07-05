@@ -45,7 +45,11 @@ struct sInputState {
 
     XrAction grabAction{ XR_NULL_HANDLE };
     XrAction vibrateAction{ XR_NULL_HANDLE };
-    XrAction thumbstickAction{ XR_NULL_HANDLE };
+    XrAction thumbstickValueAction{ XR_NULL_HANDLE };
+    XrAction thumbstickClickAction{ XR_NULL_HANDLE };
+    XrAction thumbstickTouchAction{ XR_NULL_HANDLE };
+    XrAction triggerValueAction{ XR_NULL_HANDLE };
+    XrAction triggerTouchAction{ XR_NULL_HANDLE };
 
     // Buttons.
     // There are stored in data input...
@@ -53,19 +57,10 @@ struct sInputState {
     XrPath handSubactionPath[HAND_COUNT];
     XrSpace aimHandSpace[HAND_COUNT];
     XrSpace gridHandSpace[HAND_COUNT];
-    float handScale[HAND_COUNT] = { 1.0f, 1.0f };
-    XrBool32 handActive[HAND_COUNT];
 };
 
 struct OpenXRContext {
 
-    
-    bool initialized = false;
-
-    int init(WebGPUContext* webgpu_context);
-    void clean();
-    bool create_instance();
-    
     /*
     * XR General
     */
@@ -74,6 +69,12 @@ struct OpenXRContext {
     XrSystemId system_id;
     // Play space is usually local (head is origin, seated) or stage (room scale)
     XrSpace play_space;
+    bool initialized = false;
+
+    int init(WebGPUContext* webgpu_context);
+    void clean();
+    bool create_instance();
+    XrInstance* get_instance() { return &instance; }
 
     /*
     * XR Input

@@ -34,7 +34,7 @@ enum {
 };
 
 struct XrActionStorage {
-	std::string path;
+	XrPath path;
 	XrAction action;
 	XrActionStateBoolean state;
 };
@@ -65,7 +65,11 @@ struct XrInputData {
 
 	// Input States. Also includes lastChangeTime, isActive, changedSinceLastSync properties.
 	XrActionStateFloat grabState[HAND_COUNT];
-	XrActionStateVector2f thumbStickState[HAND_COUNT];
+	XrActionStateVector2f thumbStickValueState[HAND_COUNT];
+	XrActionStateBoolean thumbStickClickState[HAND_COUNT];
+	XrActionStateBoolean thumbStickTouchState[HAND_COUNT];
+	XrActionStateFloat triggerValueState[HAND_COUNT];
+	XrActionStateBoolean triggerTouchState[HAND_COUNT];
 
 	// Buttons.
 	std::vector<XrMappedButtonState> buttonsState;
@@ -77,6 +81,7 @@ struct XrInputData {
 #endif
 
 class Renderer;
+class OpenXRContext;
 
 class Input {
 
@@ -132,14 +137,16 @@ public:
 	*	API
 	*/
 
+	static bool init_xr(OpenXRContext* context);
+
 	static XrButtonValue get_button_value(uint8_t button_idx) { 
 		return {
 			XrBool32_to_bool(xr_data.buttonsState[button_idx].click.state.currentState), 
 			XrBool32_to_bool(xr_data.buttonsState[button_idx].touch.state.currentState) 
 		}; 
 	}
-	static float get_grab_value(uint8_t controller) { return xr_data.grabState[controller].currentState; }
-	static glm::vec2 get_thumbstick_axis(uint8_t controller) { return XrVector2f_to_glm(xr_data.thumbStickState[controller].currentState); }
+	// static float get_grab_value(uint8_t controller) { return xr_data.grabState[controller].currentState; }
+	// static glm::vec2 get_thumbstick_axis(uint8_t controller) { return XrVector2f_to_glm(xr_data.thumbStickValueState[controller].currentState); }
 
 #endif
 };

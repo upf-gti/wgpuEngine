@@ -145,6 +145,11 @@ int OpenXRContext::init(WebGPUContext* webgpu_context)
         // projection_views[i].pose (and fov) have to be filled every frame in frame loop
     };
 
+    if (Input::init_xr(this)) {
+        std::cout << "Can't initialize xr input" << std::endl;
+        return 1;
+    }
+
     initialized = true;
 
     return 0;
@@ -415,31 +420,54 @@ void OpenXRContext::init_actions(XrInputData& data)
 
     // Create actions.
     {
+        bool is_ok = true;   
+
         // Create an input action for grabbing objects with the left and right hands.
-        create_action(input_state.actionSet, input_state.handSubactionPath, HAND_COUNT,
+        is_ok &= create_action(input_state.actionSet, input_state.handSubactionPath, HAND_COUNT,
             "grab_object", "Grab Object", XR_ACTION_TYPE_FLOAT_INPUT, input_state.grabAction);
 
-        // Create an input action getting the left and right hand poses (aim and grip)
-        create_action(input_state.actionSet, input_state.handSubactionPath, HAND_COUNT,
+        // Create an input action getting the left and right hand poses (aim)
+        is_ok &= create_action(input_state.actionSet, input_state.handSubactionPath, HAND_COUNT,
             "hand_pose", "Hand Pose", XR_ACTION_TYPE_POSE_INPUT, input_state.aimPoseAction);
-        create_action(input_state.actionSet, input_state.handSubactionPath, HAND_COUNT,
-            "grid_pose", "Grid Pose", XR_ACTION_TYPE_POSE_INPUT, input_state.gripPoseAction);
+
+        // (grip)
+        is_ok &= create_action(input_state.actionSet, input_state.handSubactionPath, HAND_COUNT,
+            "grip_pose", "Grip Pose", XR_ACTION_TYPE_POSE_INPUT, input_state.gripPoseAction);
 
         // Create output actions for vibrating the left and right controller.
-        create_action(input_state.actionSet, input_state.handSubactionPath, HAND_COUNT,
+        is_ok &= create_action(input_state.actionSet, input_state.handSubactionPath, HAND_COUNT,
             "vibrate_hand", "Vibrate Hand", XR_ACTION_TYPE_VIBRATION_OUTPUT, input_state.vibrateAction);
 
         // Create an input action getting the left and right thumbsticks
-        create_action(input_state.actionSet, input_state.handSubactionPath, HAND_COUNT,
-            "thumbstick_action", "Thumbstick Action", XR_ACTION_TYPE_VECTOR2F_INPUT, input_state.thumbstickAction);
+        is_ok &= create_action(input_state.actionSet, input_state.handSubactionPath, HAND_COUNT,
+            "thumbstick_action", "Thumbstick Action", XR_ACTION_TYPE_VECTOR2F_INPUT, input_state.thumbstickValueAction);
+
+        // thumbsticks (click)
+        is_ok &= create_action(input_state.actionSet, input_state.handSubactionPath, HAND_COUNT,
+            "thumbstick_click_action", "Thumbstick Click Action", XR_ACTION_TYPE_BOOLEAN_INPUT, input_state.thumbstickClickAction);
+
+        // thumbsticks (touch)
+        is_ok &= create_action(input_state.actionSet, input_state.handSubactionPath, HAND_COUNT,
+            "thumbstick_touch_action", "Thumbstick Touch Action", XR_ACTION_TYPE_BOOLEAN_INPUT, input_state.thumbstickTouchAction);
+
+        // Create an input action getting the left and right triggers
+        is_ok &= create_action(input_state.actionSet, input_state.handSubactionPath, HAND_COUNT,
+            "trigger_action", "Trigger Action", XR_ACTION_TYPE_FLOAT_INPUT, input_state.triggerValueAction);
+
+        // triggers (touch)
+        is_ok &= create_action(input_state.actionSet, input_state.handSubactionPath, HAND_COUNT,
+            "trigger_touch_action", "Trigger Touch Action", XR_ACTION_TYPE_BOOLEAN_INPUT, input_state.triggerTouchAction);
 
         // Create an input actions getting button states
 
         for (auto& mb : data.buttonsState)
         {
-            create_action(input_state.actionSet, &input_state.handSubactionPath[mb.hand], 1,
+            // Click action
+            is_ok &= create_action(input_state.actionSet, &input_state.handSubactionPath[mb.hand], 1,
                 mb.name + "_click_action", mb.name + " Click Action", XR_ACTION_TYPE_BOOLEAN_INPUT, mb.click.action);
-            create_action(input_state.actionSet, &input_state.handSubactionPath[mb.hand], 1,
+
+            // Touch action
+            is_ok &= create_action(input_state.actionSet, &input_state.handSubactionPath[mb.hand], 1,
                 mb.name + "_touch_action", mb.name + " Touch Action", XR_ACTION_TYPE_BOOLEAN_INPUT, mb.touch.action);
         }
 
@@ -448,6 +476,12 @@ void OpenXRContext::init_actions(XrInputData& data)
         // We will just suggest bindings for both hands, where possible.
         /*create_action(input_state.actionSet, nullptr, 0,
             "quit_session", "Quit Session", XR_ACTION_TYPE_BOOLEAN_INPUT, input_state.quitAction);*/
+
+        if (!is_ok)
+        {
+            std::cout << "ERROR creating XR actions!" << std::endl;
+            return;
+        }
     }
 
     XrPath selectPath[HAND_COUNT];
@@ -459,7 +493,10 @@ void OpenXRContext::init_actions(XrInputData& data)
     XrPath hapticPath[HAND_COUNT];
     XrPath menuClickPath[HAND_COUNT];
     XrPath triggerValuePath[HAND_COUNT];
-    XrPath thumbstickPath[HAND_COUNT];
+    XrPath triggerTouchPath[HAND_COUNT];
+    XrPath thumbstickValuePath[HAND_COUNT];
+    XrPath thumbstickClickPath[HAND_COUNT];
+    XrPath thumbstickTouchPath[HAND_COUNT];
 
     xrStringToPath(instance, "/user/hand/left/input/select/click", &selectPath[HAND_LEFT]);
     xrStringToPath(instance, "/user/hand/right/input/select/click", &selectPath[HAND_RIGHT]);
@@ -479,8 +516,14 @@ void OpenXRContext::init_actions(XrInputData& data)
     xrStringToPath(instance, "/user/hand/right/input/menu/click", &menuClickPath[HAND_RIGHT]);
     xrStringToPath(instance, "/user/hand/left/input/trigger/value", &triggerValuePath[HAND_LEFT]);
     xrStringToPath(instance, "/user/hand/right/input/trigger/value", &triggerValuePath[HAND_RIGHT]);
-    xrStringToPath(instance, "/user/hand/left/input/thumbstick", &thumbstickPath[HAND_LEFT]);
-    xrStringToPath(instance, "/user/hand/right/input/thumbstick", &thumbstickPath[HAND_RIGHT]);
+    xrStringToPath(instance, "/user/hand/left/input/trigger/touch", &triggerTouchPath[HAND_LEFT]);
+    xrStringToPath(instance, "/user/hand/right/input/trigger/touch", &triggerTouchPath[HAND_RIGHT]);
+    xrStringToPath(instance, "/user/hand/left/input/thumbstick", &thumbstickValuePath[HAND_LEFT]);
+    xrStringToPath(instance, "/user/hand/right/input/thumbstick", &thumbstickValuePath[HAND_RIGHT]);
+    xrStringToPath(instance, "/user/hand/left/input/thumbstick/click", &thumbstickClickPath[HAND_LEFT]);
+    xrStringToPath(instance, "/user/hand/right/input/thumbstick/click", &thumbstickClickPath[HAND_RIGHT]);
+    xrStringToPath(instance, "/user/hand/left/input/thumbstick/touch", &thumbstickTouchPath[HAND_LEFT]);
+    xrStringToPath(instance, "/user/hand/right/input/thumbstick/touch", &thumbstickTouchPath[HAND_RIGHT]);
 
     // Suggest bindings for KHR Simple.
     {
@@ -509,30 +552,32 @@ void OpenXRContext::init_actions(XrInputData& data)
         XrPath oculusTouchInteractionProfilePath;
         xrStringToPath(instance, "/interaction_profiles/oculus/touch_controller", &oculusTouchInteractionProfilePath);
         std::vector<XrActionSuggestedBinding> bindings = { 
-            {input_state.grabAction,        squeezeValuePath[HAND_LEFT]},
-            {input_state.grabAction,        squeezeValuePath[HAND_RIGHT]},
-            {input_state.aimPoseAction,     aimPosePath[HAND_LEFT]},
-            {input_state.aimPoseAction,     aimPosePath[HAND_RIGHT]},
-            {input_state.gripPoseAction,    gripPosePath[HAND_LEFT]},
-            {input_state.gripPoseAction,    gripPosePath[HAND_RIGHT]},
-            //{input_state.quitAction,      menuClickPath[HAND_LEFT]},
-            {input_state.thumbstickAction,  thumbstickPath[HAND_LEFT]},
-            {input_state.thumbstickAction,  thumbstickPath[HAND_RIGHT]},
-            {input_state.vibrateAction,     hapticPath[HAND_LEFT]},
-            {input_state.vibrateAction,     hapticPath[HAND_RIGHT]}
+            {input_state.grabAction,            squeezeValuePath[HAND_LEFT]},
+            {input_state.grabAction,            squeezeValuePath[HAND_RIGHT]},
+            {input_state.aimPoseAction,         aimPosePath[HAND_LEFT]},
+            {input_state.aimPoseAction,         aimPosePath[HAND_RIGHT]},
+            {input_state.gripPoseAction,        gripPosePath[HAND_LEFT]},
+            {input_state.gripPoseAction,        gripPosePath[HAND_RIGHT]},
+            //{input_state.quitAction,          menuClickPath[HAND_LEFT]},
+            {input_state.thumbstickValueAction, thumbstickValuePath[HAND_LEFT]},
+            {input_state.thumbstickValueAction, thumbstickValuePath[HAND_RIGHT]},
+            {input_state.thumbstickClickAction, thumbstickClickPath[HAND_LEFT]},
+            {input_state.thumbstickClickAction, thumbstickClickPath[HAND_RIGHT]},
+            {input_state.thumbstickTouchAction, thumbstickTouchPath[HAND_LEFT]},
+            {input_state.thumbstickTouchAction, thumbstickTouchPath[HAND_RIGHT]},
+            {input_state.triggerValueAction,    triggerValuePath[HAND_LEFT]},
+            {input_state.triggerValueAction,    triggerValuePath[HAND_RIGHT]},
+            {input_state.triggerTouchAction,    triggerTouchPath[HAND_LEFT]},
+            {input_state.triggerTouchAction,    triggerTouchPath[HAND_RIGHT]},
+            {input_state.vibrateAction,         hapticPath[HAND_LEFT]},
+            {input_state.vibrateAction,         hapticPath[HAND_RIGHT]}
         };
 
         // Add button mappings.
         for (auto& mb : data.buttonsState)
         {
-            XrPath aClickPath;
-            XrPath aTouchPath;
-
-            xrStringToPath(instance, mb.click.path.c_str(), &aClickPath);
-            xrStringToPath(instance, mb.touch.path.c_str(), &aTouchPath);
-
-            bindings.push_back({ mb.click.action, aClickPath });
-            bindings.push_back({ mb.touch.action, aTouchPath });
+            bindings.push_back({ mb.click.action, mb.click.path });
+            bindings.push_back({ mb.touch.action, mb.touch.path });
         }
 
         XrInteractionProfileSuggestedBinding suggestedBindings{ XR_TYPE_INTERACTION_PROFILE_SUGGESTED_BINDING };
@@ -613,12 +658,12 @@ void OpenXRContext::init_actions(XrInputData& data)
         actionSpaceInfo.poseInActionSpace.position = { .x = 0, .y = 0, .z = 0 };
 
         XrResult result = xrCreateActionSpace(session, &actionSpaceInfo, &input_state.aimHandSpace[ci]);
-        if (!xr_result(instance, result, "Can't create action space for controller %d", ci))
+        if (!xr_result(instance, result, "Can't create aim action space for controller %d", ci))
             return;
 
         actionSpaceInfo.action = input_state.gripPoseAction;
         result = xrCreateActionSpace(session, &actionSpaceInfo, &input_state.gridHandSpace[ci]);
-        if (!xr_result(instance, result, "Can't create action space for controller %d", ci))
+        if (!xr_result(instance, result, "Can't create grip action space for controller %d", ci))
             return;
     }
 
@@ -635,9 +680,6 @@ void OpenXRContext::init_actions(XrInputData& data)
 
 void OpenXRContext::poll_actions(XrInputData& data)
 {
-    input_state.handActive[HAND_LEFT] = XR_FALSE;
-    input_state.handActive[HAND_RIGHT] = XR_FALSE;
-
     // Sync the actions 
     std::vector<XrActiveActionSet> activeActionSets = { 
         { input_state.actionSet, XR_NULL_PATH } 
@@ -668,8 +710,6 @@ void OpenXRContext::poll_actions(XrInputData& data)
     
     for (size_t i = 0u; i < HAND_COUNT; i++) {
         
-        // input_state.handActive[i] = poseState.isActive;
-
         // Aim Pose
         XrActionStatePose aimPoseState = get_action_pose_state(input_state.aimPoseAction, i);
         if (aimPoseState.isActive)
@@ -707,12 +747,31 @@ void OpenXRContext::poll_actions(XrInputData& data)
         }
 
         // Grab State
-        XrActionStateFloat grabState = get_action_float_state(input_state.grabAction, i);
-        data.grabState[i] = grabState;
+        {
+            XrActionStateFloat grabState = get_action_float_state(input_state.grabAction, i);
+            data.grabState[i] = grabState;
+        }
 
         // Thumbstick State
-        XrActionStateVector2f thumbStickState = get_action_vector2f_State(input_state.thumbstickAction, i);
-        data.thumbStickState[i] = thumbStickState;
+        {
+            XrActionStateVector2f thumbStickValueState = get_action_vector2f_State(input_state.thumbstickValueAction, i);
+            data.thumbStickValueState[i] = thumbStickValueState;
+
+            XrActionStateBoolean thumbStickClickState = get_action_boolean_state(input_state.thumbstickClickAction, i);
+            data.thumbStickClickState[i] = thumbStickClickState;
+
+            XrActionStateBoolean thumbStickTouchState = get_action_boolean_state(input_state.thumbstickTouchAction, i);
+            data.thumbStickTouchState[i] = thumbStickTouchState;
+        }
+        
+        // Triggers State
+        {
+            XrActionStateFloat triggerValueState = get_action_float_state(input_state.triggerValueAction, i);
+            data.triggerValueState[i] = triggerValueState;
+
+            XrActionStateBoolean triggerTouchState = get_action_boolean_state(input_state.triggerTouchAction, i);
+            data.triggerTouchState[i] = triggerTouchState;
+        }
     }
 
     // State (Buttons).

@@ -23,38 +23,6 @@ void Input::init(GLFWwindow* _window, Renderer* renderer)
 {	
 	use_mirror_screen = renderer->get_use_mirror_screen();
 
-#ifdef XR_SUPPORT
-	openxr_context = renderer->get_openxr_context();
-
-	if (openxr_context)
-	{
-		// Add mapped buttons using enum order (input.h).
-		XrMappedButtonState mb{ .name = "button_a", .hand = HAND_RIGHT };
-		mb.click.path = "/user/hand/right/input/a/click";
-		mb.touch.path = "/user/hand/right/input/a/touch";
-		xr_data.buttonsState.push_back(mb);
-
-		mb = { .name = "button_b", .hand = HAND_RIGHT };
-		mb.click.path = "/user/hand/right/input/b/click";
-		mb.touch.path = "/user/hand/right/input/b/touch";
-		xr_data.buttonsState.push_back(mb);
-
-		mb = { .name = "button_x", .hand = HAND_LEFT };
-		mb.click.path = "/user/left/right/input/x/click";
-		mb.touch.path = "/user/left/right/input/x/touch";
-		xr_data.buttonsState.push_back(mb);
-
-		mb = { .name = "button_y", .hand = HAND_LEFT };
-		mb.click.path = "/user/left/right/input/y/click";
-		mb.touch.path = "/user/left/right/input/y/touch";
-		xr_data.buttonsState.push_back(mb);
-
-		// Init Xr Actions.
-		openxr_context->init_actions(xr_data);
-	}
-	
-#endif
-
 	if (use_mirror_screen)
 	{
 		double x, y;
@@ -64,6 +32,44 @@ void Input::init(GLFWwindow* _window, Renderer* renderer)
 		Input::mouse_position.y = y;
 		mouse_wheel = 0.0;
 	}
+}
+
+bool Input::init_xr(OpenXRContext* context)
+{
+#ifdef XR_SUPPORT
+
+	if (!context)
+		return 1;
+
+	openxr_context = context;
+
+	XrInstance* instance = openxr_context->get_instance();
+
+	// Add mapped buttons using enum order (input.h).
+	XrMappedButtonState mb{ .name = "button_a", .hand = HAND_RIGHT };
+	xrStringToPath(*instance, "/user/hand/right/input/a/click", &mb.click.path);
+	xrStringToPath(*instance, "/user/hand/right/input/a/touch", &mb.touch.path);
+	xr_data.buttonsState.push_back(mb);
+
+	mb = { .name = "button_b", .hand = HAND_RIGHT };
+	xrStringToPath(*instance, "/user/hand/right/input/b/click", &mb.click.path);
+	xrStringToPath(*instance, "/user/hand/right/input/b/touch", &mb.touch.path);
+	xr_data.buttonsState.push_back(mb);
+
+	mb = { .name = "button_x", .hand = HAND_LEFT };
+	xrStringToPath(*instance, "/user/hand/left/input/x/click", &mb.click.path);
+	xrStringToPath(*instance, "/user/hand/left/input/x/touch", &mb.touch.path);
+	xr_data.buttonsState.push_back(mb);
+
+	mb = { .name = "button_y", .hand = HAND_LEFT };
+	xrStringToPath(*instance, "/user/hand/left/input/y/click", &mb.click.path);
+	xrStringToPath(*instance, "/user/hand/left/input/y/touch", &mb.touch.path);
+	xr_data.buttonsState.push_back(mb);
+
+	openxr_context->init_actions(xr_data);
+#endif
+
+	return 0;
 }
 
 void Input::update(float delta_time)
