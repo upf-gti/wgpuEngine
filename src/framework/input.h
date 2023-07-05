@@ -30,10 +30,12 @@ enum {
 	XR_BUTTON_A = 0,
 	XR_BUTTON_B,
 	XR_BUTTON_X,
-	XR_BUTTON_Y
+	XR_BUTTON_Y,
+	XR_BUTTON_MENU,
 };
 
 struct XrActionStorage {
+	bool active = false;
 	XrPath path;
 	XrAction action;
 	XrActionStateBoolean state;
@@ -44,6 +46,9 @@ struct XrMappedButtonState {
 	uint8_t hand;
 	XrActionStorage click;
 	XrActionStorage touch;
+
+	void bind_click(XrInstance* instance, const char* path) { click.active = true; xrStringToPath(*instance, path, &click.path); }
+	void bind_touch(XrInstance* instance, const char* path) { touch.active = true; xrStringToPath(*instance, path, &touch.path); }
 };
 
 struct XrInputPose {
@@ -108,11 +113,6 @@ class Input {
 	*	Conversors
 	*/
 	
-	struct XrButtonValue {
-		bool click_value;
-		bool touch_value;
-	};
-
 	static bool XrBool32_to_bool(XrBool32 v) { return static_cast<bool>(v); }
 	static glm::vec2 XrVector2f_to_glm(XrVector2f v) { return glm::vec2(v.x, v.y); }
 #endif
@@ -158,6 +158,8 @@ public:
 
 	static float get_trigger_value(uint8_t controller) { return xr_data.triggerValueState[controller].currentState; }
 	static bool is_trigger_touched(uint8_t controller) { return XrBool32_to_bool(xr_data.triggerTouchState[controller].currentState); }
+	static bool was_trigger_touched(uint8_t controller) { return (XrBool32_to_bool(xr_data.triggerTouchState[controller].currentState)
+		&& XrBool32_to_bool(xr_data.triggerTouchState[controller].changedSinceLastSync)); }
 
 	/*
 	*	Thumbsticks
@@ -165,7 +167,10 @@ public:
 
 	static glm::vec2 get_thumbstick_value(uint8_t controller) { return XrVector2f_to_glm(xr_data.thumbStickValueState[controller].currentState); }
 	static bool is_thumbstick_pressed(uint8_t controller) { return XrBool32_to_bool(xr_data.thumbStickClickState[controller].currentState); }
+	static bool was_thumbstick_pressed(uint8_t controller) { return (XrBool32_to_bool(xr_data.thumbStickClickState[controller].currentState)
+		&& XrBool32_to_bool(xr_data.thumbStickClickState[controller].changedSinceLastSync)); }
 	static bool is_thumbstick_touched(uint8_t controller) { return XrBool32_to_bool(xr_data.thumbStickTouchState[controller].currentState); }
-
+	static bool was_thumbstick_touched(uint8_t controller) { return (XrBool32_to_bool(xr_data.thumbStickTouchState[controller].currentState)
+		&& XrBool32_to_bool(xr_data.thumbStickTouchState[controller].changedSinceLastSync)); }
 #endif
 };

@@ -460,15 +460,16 @@ void OpenXRContext::init_actions(XrInputData& data)
 
         // Create an input actions getting button states
 
-        for (auto& mb : data.buttonsState)
-        {
+        for (auto& mb : data.buttonsState) {
             // Click action
             is_ok &= create_action(input_state.actionSet, &input_state.handSubactionPath[mb.hand], 1,
                 mb.name + "_click_action", mb.name + " Click Action", XR_ACTION_TYPE_BOOLEAN_INPUT, mb.click.action);
 
-            // Touch action
-            is_ok &= create_action(input_state.actionSet, &input_state.handSubactionPath[mb.hand], 1,
-                mb.name + "_touch_action", mb.name + " Touch Action", XR_ACTION_TYPE_BOOLEAN_INPUT, mb.touch.action);
+            if (mb.touch.active) {
+                // Touch action
+                is_ok &= create_action(input_state.actionSet, &input_state.handSubactionPath[mb.hand], 1,
+                    mb.name + "_touch_action", mb.name + " Touch Action", XR_ACTION_TYPE_BOOLEAN_INPUT, mb.touch.action);
+            }
         }
 
         // Create input actions for quitting the session using the left and right controller.
@@ -577,7 +578,7 @@ void OpenXRContext::init_actions(XrInputData& data)
         for (auto& mb : data.buttonsState)
         {
             bindings.push_back({ mb.click.action, mb.click.path });
-            bindings.push_back({ mb.touch.action, mb.touch.path });
+            if (mb.touch.active) bindings.push_back({ mb.touch.action, mb.touch.path });
         }
 
         XrInteractionProfileSuggestedBinding suggestedBindings{ XR_TYPE_INTERACTION_PROFILE_SUGGESTED_BINDING };
@@ -778,7 +779,7 @@ void OpenXRContext::poll_actions(XrInputData& data)
     for (auto& mb : data.buttonsState)
     {
         mb.click.state = get_action_boolean_state(mb.click.action, mb.hand);
-        mb.touch.state = get_action_boolean_state(mb.touch.action, mb.hand);
+        if (mb.touch.active) mb.touch.state = get_action_boolean_state(mb.touch.action, mb.hand);
     }
 }
 

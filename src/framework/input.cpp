@@ -47,23 +47,27 @@ bool Input::init_xr(OpenXRContext* context)
 
 	// Add mapped buttons using enum order (input.h).
 	XrMappedButtonState mb{ .name = "button_a", .hand = HAND_RIGHT };
-	xrStringToPath(*instance, "/user/hand/right/input/a/click", &mb.click.path);
-	xrStringToPath(*instance, "/user/hand/right/input/a/touch", &mb.touch.path);
+	mb.bind_click(instance, "/user/hand/right/input/a/click");
+	mb.bind_touch(instance, "/user/hand/right/input/a/touch");
 	xr_data.buttonsState.push_back(mb);
 
 	mb = { .name = "button_b", .hand = HAND_RIGHT };
-	xrStringToPath(*instance, "/user/hand/right/input/b/click", &mb.click.path);
-	xrStringToPath(*instance, "/user/hand/right/input/b/touch", &mb.touch.path);
+	mb.bind_click(instance, "/user/hand/right/input/b/click");
+	mb.bind_touch(instance, "/user/hand/right/input/b/touch");
 	xr_data.buttonsState.push_back(mb);
 
 	mb = { .name = "button_x", .hand = HAND_LEFT };
-	xrStringToPath(*instance, "/user/hand/left/input/x/click", &mb.click.path);
-	xrStringToPath(*instance, "/user/hand/left/input/x/touch", &mb.touch.path);
+	mb.bind_click(instance, "/user/hand/left/input/x/click");
+	mb.bind_touch(instance, "/user/hand/left/input/x/touch");
 	xr_data.buttonsState.push_back(mb);
 
 	mb = { .name = "button_y", .hand = HAND_LEFT };
-	xrStringToPath(*instance, "/user/hand/left/input/y/click", &mb.click.path);
-	xrStringToPath(*instance, "/user/hand/left/input/y/touch", &mb.touch.path);
+	mb.bind_click(instance, "/user/hand/left/input/y/click");
+	mb.bind_touch(instance, "/user/hand/left/input/y/touch");
+	xr_data.buttonsState.push_back(mb); 
+
+	mb = { .name = "button_menu", .hand = HAND_LEFT };
+	mb.bind_click(instance, "/user/hand/left/input/menu/click");
 	xr_data.buttonsState.push_back(mb);
 
 	openxr_context->init_actions(xr_data);
