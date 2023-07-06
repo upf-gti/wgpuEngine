@@ -52,7 +52,7 @@ inline bool readFile(const std::string& filename, std::string& content)
 }
 
 inline float random(float range = 1.0f, int offset = 0) {
-	return ((rand() % 10000) / (10000.0)) * range + offset;
+	return ((rand() % 10000) / (10000.0f)) * range + offset;
 }
 
 enum Error {

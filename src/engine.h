@@ -5,10 +5,13 @@
 #include "utils.h"
 #include "graphics/renderer.h"
 
+class FileWatcher;
+
 class Engine {
 
     Renderer* renderer = nullptr;
-    
+    FileWatcher* shader_reload_watcher = nullptr;
+
 public:
 
     int initialize(Renderer* renderer, GLFWwindow *window, bool use_mirror_screen);

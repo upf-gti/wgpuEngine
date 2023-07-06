@@ -5,6 +5,7 @@
 #include "framework/mesh.h"
 
 #include "graphics/shader.h"
+#include "graphics/pipeline.h"
 #include "graphics/webgpu_context.h"
 
 #ifdef XR_SUPPORT

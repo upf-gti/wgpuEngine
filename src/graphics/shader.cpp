@@ -5,6 +5,8 @@
 #include <iostream>
 #include <sstream>
 
+#include "pipeline.h"
+
 std::map<std::string, Shader*> Shader::shaders;
 WebGPUContext* Shader::webgpu_context = nullptr;
 
@@ -57,8 +59,20 @@ void Shader::load(const std::string& shader_path)
 	shader_content = include_content + shader_content;
 
 	shader_module = webgpu_context->create_shader_module(shader_content.c_str());
+
 	loaded = true;
 	std::cout << " [OK]" << std::endl;
+}
+
+void Shader::reload()
+{
+	wgpuShaderModuleRelease(shader_module);
+
+	load(path);
+
+	if (pipeline_ref) {
+		pipeline_ref->reload(this);
+	}
 }
 
 Shader* Shader::get(const std::string& shader_path)
@@ -79,7 +93,12 @@ Shader* Shader::get(const std::string& shader_path)
 	return sh;
 }
 
-WGPUShaderModule& Shader::get_module()
+WGPUShaderModule Shader::get_module() const
 {
 	return shader_module;
+}
+
+void Shader::set_pipeline(Pipeline* pipeline)
+{
+	pipeline_ref = pipeline;
 }

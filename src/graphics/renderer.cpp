@@ -7,6 +7,7 @@
 Renderer::Renderer()
 {
     Shader::webgpu_context = &webgpu_context;
+    Pipeline::webgpu_context = &webgpu_context;
 
 #ifdef XR_SUPPORT
     is_openxr_available = xr_context.create_instance();
