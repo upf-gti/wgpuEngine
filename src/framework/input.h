@@ -1,8 +1,92 @@
 #pragma once
 
+#include "includes.h"
 #include <GLFW/glfw3.h>
-#include "glm/glm.hpp"
 #include <vector>
+#include <string>
+
+// Small helper so we don't forget whether we treat 0 as left or right hand
+enum OPENXR_HANDS
+{
+	HAND_LEFT = 0,
+	HAND_RIGHT = 1,
+	HAND_COUNT
+};
+
+enum OPENXR_EYES
+{
+	EYE_LEFT = 0,
+	EYE_RIGHT = 1,
+	EYE_COUNT
+};
+
+#ifdef XR_SUPPORT
+
+#include "vulkan/vulkan.h"
+#define XR_USE_GRAPHICS_API_VULKAN
+#include "openxr/openxr_platform.h"
+
+enum {
+	XR_BUTTON_A = 0,
+	XR_BUTTON_B,
+	XR_BUTTON_X,
+	XR_BUTTON_Y,
+	XR_BUTTON_MENU,
+};
+
+struct XrActionStorage {
+	bool active = false;
+	XrPath path;
+	XrAction action;
+	XrActionStateBoolean state;
+};
+
+struct XrMappedButtonState {
+	std::string name;
+	uint8_t hand;
+	XrActionStorage click;
+	XrActionStorage touch;
+
+	void bind_click(XrInstance* instance, const char* path) { click.active = true; xrStringToPath(*instance, path, &click.path); }
+	void bind_touch(XrInstance* instance, const char* path) { touch.active = true; xrStringToPath(*instance, path, &touch.path); }
+};
+
+struct XrInputPose {
+	glm::quat orientation;
+	glm::vec3 position;
+};
+
+struct XrInputData {
+
+	// Poses
+	glm::mat4x4 eyePoseMatrixes[EYE_COUNT];
+	XrInputPose eyePoses[EYE_COUNT];
+	glm::mat4x4 headPoseMatrix;
+	XrInputPose headPose;
+	glm::mat4x4 controllerAimPoseMatrices[HAND_COUNT];
+	XrInputPose controllerAimPoses[HAND_COUNT];
+	glm::mat4x4 controllerGripPoseMatrices[HAND_COUNT];
+	XrInputPose controllerGripPoses[HAND_COUNT];
+
+	// Input States. Also includes lastChangeTime, isActive, changedSinceLastSync properties.
+	XrActionStateFloat grabState[HAND_COUNT];
+	XrActionStateVector2f thumbStickValueState[HAND_COUNT];
+	XrActionStateBoolean thumbStickClickState[HAND_COUNT];
+	XrActionStateBoolean thumbStickTouchState[HAND_COUNT];
+	XrActionStateFloat triggerValueState[HAND_COUNT];
+	XrActionStateBoolean triggerTouchState[HAND_COUNT];
+
+	// Buttons.
+	std::vector<XrMappedButtonState> buttonsState;
+
+	// Headset State. Use to detect status / user proximity / user presence / user engagement https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html#session-lifecycle
+	XrSessionState headsetActivityState = XR_SESSION_STATE_UNKNOWN;
+};
+
+#endif
+
+class Renderer;
+class OpenXRContext;
 
 class Input {
 
@@ -22,9 +106,20 @@ class Input {
 
 	static bool use_mirror_screen;
 
+#ifdef XR_SUPPORT
+	static XrInputData xr_data;
+
+	/*
+	*	Conversors
+	*/
+	
+	static bool XrBool32_to_bool(XrBool32 v) { return static_cast<bool>(v); }
+	static glm::vec2 XrVector2f_to_glm(XrVector2f v) { return glm::vec2(v.x, v.y); }
+#endif
+
 public:
 
-	static void init(GLFWwindow* window, bool _use_mirror_screen);
+	static void init(GLFWwindow* window, Renderer* renderer);
 	static void update(float delta_time);
 	static void center_mouse();
 
@@ -35,4 +130,47 @@ public:
 	// https://www.glfw.org/docs/3.3/group__buttons.html
 	static bool is_mouse_pressed(uint8_t button) { return buttons[button] == GLFW_PRESS; }
 	static bool was_mouse_pressed(uint8_t button) { return prev_buttons[button] == GLFW_RELEASE && buttons[button] == GLFW_PRESS; }
+
+#ifdef XR_SUPPORT
+
+	static bool init_xr(OpenXRContext* context);
+
+	/*
+	*	Buttons
+	*/
+
+	static bool is_button_pressed(uint8_t button) { return xr_data.buttonsState[button].click.state.currentState; }
+	static bool was_button_pressed(uint8_t button) { return (xr_data.buttonsState[button].click.state.currentState
+		&& xr_data.buttonsState[button].click.state.changedSinceLastSync); }
+	static bool is_button_touched(uint8_t button) { return xr_data.buttonsState[button].touch.state.currentState; }
+	static bool was_button_touched(uint8_t button) { return (xr_data.buttonsState[button].touch.state.currentState
+			&& xr_data.buttonsState[button].touch.state.changedSinceLastSync); }
+
+	/*
+	*	Grabs
+	*/
+
+	static float get_grab_value(uint8_t controller) { return xr_data.grabState[controller].currentState; }
+
+	/*
+	*	Triggers
+	*/
+
+	static float get_trigger_value(uint8_t controller) { return xr_data.triggerValueState[controller].currentState; }
+	static bool is_trigger_touched(uint8_t controller) { return XrBool32_to_bool(xr_data.triggerTouchState[controller].currentState); }
+	static bool was_trigger_touched(uint8_t controller) { return (XrBool32_to_bool(xr_data.triggerTouchState[controller].currentState)
+		&& XrBool32_to_bool(xr_data.triggerTouchState[controller].changedSinceLastSync)); }
+
+	/*
+	*	Thumbsticks
+	*/
+
+	static glm::vec2 get_thumbstick_value(uint8_t controller) { return XrVector2f_to_glm(xr_data.thumbStickValueState[controller].currentState); }
+	static bool is_thumbstick_pressed(uint8_t controller) { return XrBool32_to_bool(xr_data.thumbStickClickState[controller].currentState); }
+	static bool was_thumbstick_pressed(uint8_t controller) { return (XrBool32_to_bool(xr_data.thumbStickClickState[controller].currentState)
+		&& XrBool32_to_bool(xr_data.thumbStickClickState[controller].changedSinceLastSync)); }
+	static bool is_thumbstick_touched(uint8_t controller) { return XrBool32_to_bool(xr_data.thumbStickTouchState[controller].currentState); }
+	static bool was_thumbstick_touched(uint8_t controller) { return (XrBool32_to_bool(xr_data.thumbStickTouchState[controller].currentState)
+		&& XrBool32_to_bool(xr_data.thumbStickTouchState[controller].changedSinceLastSync)); }
+#endif
 };

@@ -1,4 +1,5 @@
 #include "input.h"
+#include "graphics/renderer.h"
 
 glm::vec2 Input::mouse_position; //last mouse position
 glm::vec2 Input::mouse_delta; //mouse movement in the last frame
@@ -13,9 +14,14 @@ uint8_t Input::prev_keystate[GLFW_KEY_LAST];
 GLFWwindow* Input::window = nullptr;
 bool Input::use_mirror_screen;
 
-void Input::init(GLFWwindow* _window, bool _use_mirror_screen)
+#ifdef XR_SUPPORT
+XrInputData Input::xr_data;
+OpenXRContext* openxr_context = nullptr;
+#endif
+
+void Input::init(GLFWwindow* _window, Renderer* renderer)
 {	
-	use_mirror_screen = _use_mirror_screen;
+	use_mirror_screen = renderer->get_use_mirror_screen();
 
 	if (use_mirror_screen)
 	{
@@ -26,12 +32,48 @@ void Input::init(GLFWwindow* _window, bool _use_mirror_screen)
 		Input::mouse_position.y = y;
 		mouse_wheel = 0.0;
 	}
+}
 
-	for (int i = 0; i < 2; ++i)
-	{
-		// Start controllers?
-		// ...
-	}
+bool Input::init_xr(OpenXRContext* context)
+{
+#ifdef XR_SUPPORT
+
+	if (!context)
+		return 1;
+
+	openxr_context = context;
+
+	XrInstance* instance = openxr_context->get_instance();
+
+	// Add mapped buttons using enum order (input.h).
+	XrMappedButtonState mb{ .name = "button_a", .hand = HAND_RIGHT };
+	mb.bind_click(instance, "/user/hand/right/input/a/click");
+	mb.bind_touch(instance, "/user/hand/right/input/a/touch");
+	xr_data.buttonsState.push_back(mb);
+
+	mb = { .name = "button_b", .hand = HAND_RIGHT };
+	mb.bind_click(instance, "/user/hand/right/input/b/click");
+	mb.bind_touch(instance, "/user/hand/right/input/b/touch");
+	xr_data.buttonsState.push_back(mb);
+
+	mb = { .name = "button_x", .hand = HAND_LEFT };
+	mb.bind_click(instance, "/user/hand/left/input/x/click");
+	mb.bind_touch(instance, "/user/hand/left/input/x/touch");
+	xr_data.buttonsState.push_back(mb);
+
+	mb = { .name = "button_y", .hand = HAND_LEFT };
+	mb.bind_click(instance, "/user/hand/left/input/y/click");
+	mb.bind_touch(instance, "/user/hand/left/input/y/touch");
+	xr_data.buttonsState.push_back(mb); 
+
+	mb = { .name = "button_menu", .hand = HAND_LEFT };
+	mb.bind_click(instance, "/user/hand/left/input/menu/click");
+	xr_data.buttonsState.push_back(mb);
+
+	openxr_context->init_actions(xr_data);
+#endif
+
+	return 0;
 }
 
 void Input::update(float delta_time)
@@ -60,11 +102,14 @@ void Input::update(float delta_time)
 		}
 	}
 
-	// Update controllers
-	for (int i = 0; i < 2; ++i)
-	{
-		// ...
-	}
+#ifdef XR_SUPPORT
+
+	// Sync XR Controllers
+	if (!openxr_context)
+		return;
+
+	openxr_context->poll_actions(xr_data);
+#endif
 }
 
 void Input::center_mouse()

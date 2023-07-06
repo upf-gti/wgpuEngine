@@ -1,13 +1,11 @@
 #include "engine.h"
-
+#include "framework/input.h"
 #include "utils.h"
 #include "framework/input.h"
 #include "framework/file_watcher.h"
 
 int Engine::initialize(Renderer* renderer, GLFWwindow* window, bool use_mirror_screen)
 {
-    Input::init(window, use_mirror_screen);
-
     shader_reload_watcher = new FileWatcher("./data/shaders/", 1.0f, [](std::string path_to_watch, eFileStatus status) -> void {
 
         // Process only regular files, all other file types are ignored
@@ -29,7 +27,13 @@ int Engine::initialize(Renderer* renderer, GLFWwindow* window, bool use_mirror_s
     });
 
     this->renderer = renderer;
-    return renderer->initialize(window, use_mirror_screen);
+
+    if(!renderer->initialize(window, use_mirror_screen)) {
+        Input::init(window, renderer);
+        return 0;
+    }
+
+    return 1;
 }
 
 void Engine::clean()

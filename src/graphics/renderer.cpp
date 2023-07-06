@@ -48,7 +48,7 @@ int Renderer::initialize(GLFWwindow* window, bool use_mirror_screen)
     render_height = webgpu_context.screen_height;
 
 #ifdef XR_SUPPORT
-    if (is_openxr_available && xr_context.initialize(&webgpu_context)) {
+    if (is_openxr_available && xr_context.init(&webgpu_context)) {
         std::cout << "Could not initialize OpenXR context" << std::endl;
         return 1;
     }
@@ -69,9 +69,4 @@ void Renderer::clean()
 #endif
 
     webgpu_context.destroy();
-}
-
-bool Renderer::get_openxr_available()
-{
-    return is_openxr_available;
 }
