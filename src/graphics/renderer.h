@@ -39,5 +39,9 @@ public:
 
     bool get_openxr_available() { return is_openxr_available; }
     bool get_use_mirror_screen() { return use_mirror_screen; }
+
+#ifdef XR_SUPPORT
     OpenXRContext* get_openxr_context() { return (is_openxr_available ? &xr_context : nullptr); }
+#endif
+
 };
