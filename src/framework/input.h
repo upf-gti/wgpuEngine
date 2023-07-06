@@ -30,8 +30,7 @@ enum {
 
 #ifdef XR_SUPPORT
 
-#include "vulkan/vulkan.h"
-#define XR_USE_GRAPHICS_API_VULKAN
+#include "dawnxr/dawnxr.h"
 #include "openxr/openxr_platform.h"
 
 struct XrActionStorage {
@@ -86,7 +85,7 @@ struct XrInputData {
 #endif
 
 class Renderer;
-class OpenXRContext;
+struct OpenXRContext;
 
 class Input {
 

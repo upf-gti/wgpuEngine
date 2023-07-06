@@ -161,7 +161,7 @@ void OpenXRContext::clean()
         return;
     }
 
-    for (int i = 0; i < view_count; ++i) {
+    for (uint32_t i = 0; i < view_count; ++i) {
         xrDestroySwapchain(swapchains[i].swapchain);
     }
     
@@ -545,7 +545,7 @@ void OpenXRContext::init_actions(XrInputData& data)
         XrInteractionProfileSuggestedBinding suggestedBindings { XR_TYPE_INTERACTION_PROFILE_SUGGESTED_BINDING };
         suggestedBindings.interactionProfile = khrSimpleInteractionProfilePath;
         suggestedBindings.suggestedBindings = bindings.data();
-        suggestedBindings.countSuggestedBindings = bindings.size();
+        suggestedBindings.countSuggestedBindings = static_cast<uint32_t>(bindings.size());
         xrSuggestInteractionProfileBindings(instance, &suggestedBindings);
     }
     // Suggest bindings for the Oculus Touch.
@@ -584,7 +584,7 @@ void OpenXRContext::init_actions(XrInputData& data)
         XrInteractionProfileSuggestedBinding suggestedBindings{ XR_TYPE_INTERACTION_PROFILE_SUGGESTED_BINDING };
         suggestedBindings.interactionProfile = oculusTouchInteractionProfilePath;
         suggestedBindings.suggestedBindings = bindings.data();
-        suggestedBindings.countSuggestedBindings = bindings.size();
+        suggestedBindings.countSuggestedBindings = static_cast<uint32_t>(bindings.size());
         result = xrSuggestInteractionProfileBindings(instance, &suggestedBindings);
     }
     // Suggest bindings for the Vive Controller.
@@ -709,7 +709,7 @@ void OpenXRContext::poll_actions(XrInputData& data)
     // [tdbe] Headset State. Use to detect status / user proximity / user presence / user engagement https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html#session-lifecycle
     data.headsetActivityState = session_state;
     
-    for (size_t i = 0u; i < HAND_COUNT; i++) {
+    for (int i = 0u; i < HAND_COUNT; i++) {
         
         // Aim Pose
         XrActionStatePose aimPoseState = get_action_pose_state(input_state.aimPoseAction, i);

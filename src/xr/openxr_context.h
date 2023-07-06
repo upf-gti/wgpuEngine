@@ -38,9 +38,9 @@ struct sInputState {
 
     XrActionSet actionSet{ XR_NULL_HANDLE };
     
-    // hand pose: point in the world using the input source, according to the platform’s conventions for aiming with that kind of source.
+    // hand pose: point in the world using the input source, according to the platform's conventions for aiming with that kind of source.
     XrAction aimPoseAction{ XR_NULL_HANDLE };
-    // hand pose: render a virtual object held in the user’s hand, whether it is tracked directly or by a motion controller.
+    // hand pose: render a virtual object held in the user's hand, whether it is tracked directly or by a motion controller.
     XrAction gripPoseAction{ XR_NULL_HANDLE };
 
     XrAction grabAction{ XR_NULL_HANDLE };
