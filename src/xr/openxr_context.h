@@ -56,7 +56,7 @@ struct sInputState {
 
     XrPath handSubactionPath[HAND_COUNT];
     XrSpace aimHandSpace[HAND_COUNT];
-    XrSpace gridHandSpace[HAND_COUNT];
+    XrSpace gripHandSpace[HAND_COUNT];
 };
 
 struct OpenXRContext {

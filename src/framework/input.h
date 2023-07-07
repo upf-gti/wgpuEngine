@@ -21,6 +21,11 @@ enum OPENXR_EYES
 };
 
 enum {
+	POSE_GRIP = 0,
+	POSE_AIM
+};
+
+enum {
 	XR_BUTTON_A = 0,
 	XR_BUTTON_B,
 	XR_BUTTON_X,
@@ -133,6 +138,14 @@ public:
 #ifdef XR_SUPPORT
 	static bool init_xr(OpenXRContext* context);
 #endif
+
+	/*
+	*	Poses
+	*/
+
+	static glm::vec3 get_controller_position(uint8_t controller, uint8_t type = POSE_GRIP);
+	static glm::quat get_controller_rotation(uint8_t controller, uint8_t type = POSE_GRIP);
+	static glm::mat4x4 get_controller_pose(uint8_t controller, uint8_t type = POSE_GRIP);
 
 	/*
 	*	Buttons

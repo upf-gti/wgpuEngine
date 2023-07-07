@@ -121,7 +121,6 @@ int OpenXRContext::init(WebGPUContext* webgpu_context)
 
     XrReferenceSpaceCreateInfo play_space_create_info = {
         .type = XR_TYPE_REFERENCE_SPACE_CREATE_INFO,
-        .next = NULL,
         .referenceSpaceType = play_space_type, //play_space_type,
         .poseInReferenceSpace = identity_pose 
     };
@@ -648,7 +647,7 @@ void OpenXRContext::init_actions(XrInputData& data)
     }*/
 
     // Action Spaces for each controller. They will contain the controller poses.
-    for (size_t ci = 0u; ci < HAND_COUNT; ci++)
+    for (int ci = 0u; ci < HAND_COUNT; ci++)
     {
         XrActionSpaceCreateInfo actionSpaceInfo{
             .type = XR_TYPE_ACTION_SPACE_CREATE_INFO,
@@ -663,7 +662,7 @@ void OpenXRContext::init_actions(XrInputData& data)
             return;
 
         actionSpaceInfo.action = input_state.gripPoseAction;
-        result = xrCreateActionSpace(session, &actionSpaceInfo, &input_state.gridHandSpace[ci]);
+        result = xrCreateActionSpace(session, &actionSpaceInfo, &input_state.gripHandSpace[ci]);
         if (!xr_result(instance, result, "Can't create grip action space for controller %d", ci))
             return;
     }
@@ -730,11 +729,11 @@ void OpenXRContext::poll_actions(XrInputData& data)
         }
 
         // Grip Pose
-        XrActionStatePose gripPoseState = get_action_pose_state(input_state.aimPoseAction, i);
+        XrActionStatePose gripPoseState = get_action_pose_state(input_state.gripPoseAction, i);
         if (gripPoseState.isActive)
         {
             XrSpaceLocation spaceLocation{ .type = XR_TYPE_SPACE_LOCATION };
-            result = xrLocateSpace(input_state.gridHandSpace[i], play_space, frame_state.predictedDisplayTime, &spaceLocation);
+            result = xrLocateSpace(input_state.gripHandSpace[i], play_space, frame_state.predictedDisplayTime, &spaceLocation);
 
             // Check that the position and orientation are valid and tracked
             constexpr XrSpaceLocationFlags checkFlags =
