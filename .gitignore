@@ -2,3 +2,4 @@ build/
 build-web/
 .cache/
 .vscode/
+libraries/tinyobjloader/

@@ -24,7 +24,7 @@ void Shader::load(const std::string& shader_path)
 	std::cout << "Loading shader: " << path;
 
 	std::string shader_content;
-	if (!readFile(path, shader_content))
+	if (!read_file(path, shader_content))
 		return;
 
 	std::istringstream f(shader_content);
@@ -43,7 +43,7 @@ void Shader::load(const std::string& shader_path)
 			const std::string& include_name = tokens[1];
 			const std::string& include_path = _directory + include_name;
 			std::string new_content;
-			if (!readFile(include_path, new_content)) {
+			if (!read_file(include_path, new_content)) {
 				std::cerr << "Could not load shader include: " << include_path << std::endl;
 				return;
 			}

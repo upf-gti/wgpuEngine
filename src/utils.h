@@ -19,19 +19,19 @@ inline std::vector<std::string> tokenize(const std::string& str) {
 	return vec;
 }
 
-inline void printLine(const char* line) {
+inline void print_line(const char* line) {
 	std::cout << line << std::endl;
 }
 
-inline void printLine(const std::string & line) {
+inline void print_line(const std::string & line) {
 	std::cout << line << std::endl;
 }
 
-inline void printError(const char* p_function, const char* p_file, int p_line, const char* p_error, const char* p_message) {
+inline void print_error(const char* p_function, const char* p_file, int p_line, const char* p_error, const char* p_message) {
 	std::cout << p_function << "(line " << p_line << ") at " << p_file << std::endl << p_error << " - " << p_message << std::endl;
 }
 
-inline bool readFile(const std::string& filename, std::string& content)
+inline bool read_file(const std::string& filename, std::string& content)
 {
 	content.clear();
 
@@ -65,6 +65,6 @@ enum Error {
 
 #define ERR_FAIL_COND_V_MSG(m_cond, m_retval, m_msg)                                                                                     \
 	if (m_cond) {																														 \
-		printError(__FUNCTION__, __FILE__, __LINE__, "Condition \"" _STR(m_cond) "\" is true. Returning: " _STR(m_retval), m_msg);		 \
+		print_error(__FUNCTION__, __FILE__, __LINE__, "Condition \"" _STR(m_cond) "\" is true. Returning: " _STR(m_retval), m_msg);		 \
 		return m_retval;                                                                                                                 \
 	}

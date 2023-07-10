@@ -1,11 +1,25 @@
 cmake_minimum_required(VERSION 3.13)
 
-set(WGPU_DIR_ROOT     ${CMAKE_CURRENT_LIST_DIR})
+set(WGPU_DIR_ROOT     ${CMAKE_CURRENT_SOURCE_DIR})
 set(WGPU_DIR_SOURCES "${WGPU_DIR_ROOT}/src")
+set(WGPU_DIR_LIBS    "${WGPU_DIR_ROOT}/libraries")
 
 project(webgpuEngine LANGUAGES C CXX)
 
 add_definitions(-DWEBGPU_BACKEND=DAWN)
+
+# enable FetchContent
+include(FetchContent)
+
+# download tinyobjloader
+FetchContent_Declare(
+    tinyobjloader
+    URL https://raw.githubusercontent.com/tinyobjloader/tinyobjloader/release/tiny_obj_loader.h
+    DOWNLOAD_DIR ${WGPU_DIR_LIBS}/tinyobjloader
+    DOWNLOAD_NO_EXTRACT TRUE
+)
+
+FetchContent_MakeAvailable(tinyobjloader)
 
 # Macro to map filters to folder structure for MSVC projects
 macro(GroupSources curdir)
@@ -76,5 +90,8 @@ endif()
 # glm
 add_subdirectory(libraries/glm)
 target_link_libraries(${PROJECT_NAME} PUBLIC glm)
+
+# tinyobjloader
+include_directories(${WGPU_DIR_LIBS}/tinyobjloader)
 
 target_copy_webgpu_binaries(${PROJECT_NAME})
