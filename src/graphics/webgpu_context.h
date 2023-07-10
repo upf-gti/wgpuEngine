@@ -44,7 +44,7 @@ struct WebGPUContext {
 
     WGPUBuffer             create_buffer(uint64_t size, int usage, const void* data);
     WGPUTexture            create_texture(WGPUTextureDimension dimension, WGPUTextureFormat format, WGPUExtent3D size, int usage, uint32_t mipmaps);
-    WGPUTextureView        create_texture_view(WGPUTexture texture, WGPUTextureViewDimension dimension, WGPUTextureFormat format);
+    WGPUTextureView        create_texture_view(WGPUTexture texture, WGPUTextureViewDimension dimension, WGPUTextureFormat format, WGPUTextureAspect aspect = WGPUTextureAspect_All);
 
     WGPUBindGroupLayout    create_bind_group_layout(const std::vector<Uniform*>& uniforms);
     WGPUBindGroup          create_bind_group(const std::vector<Uniform*>& uniforms, WGPUBindGroupLayout bind_group_layout);
