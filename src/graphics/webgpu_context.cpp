@@ -345,7 +345,7 @@ WGPUPipelineLayout WebGPUContext::create_pipeline_layout(const std::vector<WGPUB
     return wgpuDeviceCreatePipelineLayout(device, &layout_descr);
 }
 
-WGPURenderPipeline WebGPUContext::create_render_pipeline(const std::vector<WGPUVertexBufferLayout>& vertex_attributes, WGPUColorTargetState color_target, WGPUShaderModule render_shader_module, WGPUPipelineLayout pipeline_layout)
+WGPURenderPipeline WebGPUContext::create_render_pipeline(const std::vector<WGPUVertexBufferLayout>& vertex_attributes, WGPUColorTargetState color_target, WGPUShaderModule render_shader_module, WGPUPipelineLayout pipeline_layout, bool uses_depth_buffer)
 {    
     WGPUVertexState vertex_state = {};
     vertex_state.module = render_shader_module;
@@ -364,20 +364,23 @@ WGPURenderPipeline WebGPUContext::create_render_pipeline(const std::vector<WGPUV
     fragment_state.targets = &color_target;
 
     WGPUDepthStencilState depth_state = {};
-    depth_state.depthCompare = WGPUCompareFunction_Less;
-    depth_state.depthWriteEnabled = true;
-    depth_state.format = WGPUTextureFormat_Depth16Unorm;
-    depth_state.stencilReadMask = 0;
-    depth_state.stencilWriteMask = 0;
-    // Configure the stencils even if unused
-    depth_state.stencilFront.compare = WGPUCompareFunction_Always;
-    depth_state.stencilFront.failOp = WGPUStencilOperation_Keep;
-    depth_state.stencilFront.depthFailOp = WGPUStencilOperation_Keep;
-    depth_state.stencilFront.passOp = WGPUStencilOperation_Keep;
-    depth_state.stencilBack.compare = WGPUCompareFunction_Always;
-    depth_state.stencilBack.failOp = WGPUStencilOperation_Keep;
-    depth_state.stencilBack.depthFailOp = WGPUStencilOperation_Keep;
-    depth_state.stencilBack.passOp = WGPUStencilOperation_Keep;
+    if (uses_depth_buffer) {
+        depth_state.depthCompare = WGPUCompareFunction_Less;
+        depth_state.depthWriteEnabled = true;
+        depth_state.format = WGPUTextureFormat_Depth16Unorm;
+        depth_state.stencilReadMask = 0;
+        depth_state.stencilWriteMask = 0;
+        // Configure the stencils even if unused
+        depth_state.stencilFront.compare = WGPUCompareFunction_Always;
+        depth_state.stencilFront.failOp = WGPUStencilOperation_Keep;
+        depth_state.stencilFront.depthFailOp = WGPUStencilOperation_Keep;
+        depth_state.stencilFront.passOp = WGPUStencilOperation_Keep;
+        depth_state.stencilBack.compare = WGPUCompareFunction_Always;
+        depth_state.stencilBack.failOp = WGPUStencilOperation_Keep;
+        depth_state.stencilBack.depthFailOp = WGPUStencilOperation_Keep;
+        depth_state.stencilBack.passOp = WGPUStencilOperation_Keep;
+    }
+    
 
     WGPURenderPipelineDescriptor pipeline_descr = {};
     pipeline_descr.nextInChain = NULL;
@@ -391,7 +394,7 @@ WGPURenderPipeline WebGPUContext::create_render_pipeline(const std::vector<WGPUV
         .cullMode = WGPUCullMode_None
     },
 
-    pipeline_descr.depthStencil = &depth_state;
+    pipeline_descr.depthStencil = (uses_depth_buffer) ? &depth_state : nullptr;
     pipeline_descr.multisample = {
             .count = 1,
             .mask = ~0u,
