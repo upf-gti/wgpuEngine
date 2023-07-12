@@ -2,7 +2,98 @@
 
 #include "includes.h"
 
+#define EPSILON 0.00001f
+
 namespace Intersection {
+	inline bool ray_plane(const glm::vec3& ray_origin,
+						  const glm::vec3& ray_direction,
+						  const glm::vec3& plane_origin,
+						  const glm::vec3& plane_orientation,
+						  float* collision_distance) {
+		const float facing = glm::dot(ray_direction, plane_orientation);
+
+		if (glm::abs(facing) > EPSILON) {
+			const glm::vec3 p = plane_origin - ray_origin;
+			const float distance = glm::dot(p, plane_orientation) / facing;
+			
+			*collision_distance = distance;
+
+			return distance >= 0;
+		}
+
+		return false;
+	}
+
+	inline bool ray_quad(const glm::vec3& ray_origin,
+						 const glm::vec3& ray_direction,
+						 const glm::vec3& quad_origin,
+						 const glm::vec2& quad_size,
+						 const glm::quat& quad_rotation,
+						 float* collision_distance) {
+		// Assumtion: the original quad orientation is (0,1,0)
+		const glm::vec3 quad_orientation = quad_rotation * glm::vec3(0.0f, 1.0f, 0.0f);
+
+		// First, plane intersection
+		float plane_intersection_distance;
+		if (!ray_plane(ray_origin, 
+						ray_direction, 
+						quad_origin, 
+						quad_orientation, 
+						&plane_intersection_distance)) {
+			return false;
+		}
+
+		// Second, is the intesected point inside a quat?
+		const glm::quat rotate_to_quad_local = glm::inverse(quad_rotation);
+
+		glm::vec3 intersection_point = (ray_origin + ray_direction * plane_intersection_distance);
+
+		// To local position
+		intersection_point -= quad_origin;
+		intersection_point = rotate_to_quad_local * intersection_point;
+
+		const glm::vec2 quad_halfsize = quad_size * 0.5f;
+		
+		if (quad_halfsize.x > intersection_point.x && -quad_halfsize.x > intersection_point.x) {
+			// Compare intersection z vs quat y due the original orientation of the quat
+			if (quad_halfsize.y > intersection_point.z && -quad_halfsize.y > intersection_point.z) {
+				*collision_distance = plane_intersection_distance;
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	inline bool ray_circle(const glm::vec3& ray_origin,
+						   const glm::vec3& ray_direction,
+						   const glm::vec3& circle_origin,
+						   const float circle_radius,
+						   const glm::quat& circle_rotation,
+						   float* collision_distance) {
+		// Assumtion: the original circle orientation is (0,1,0)
+		const glm::vec3 circle_orientation = circle_rotation * glm::vec3(0.0f, 1.0f, 0.0f);
+
+		// First, plane intersection
+		float plane_intersection_distance;
+		if (!ray_plane(ray_origin,
+					   ray_direction,
+					   circle_origin,
+					   circle_orientation,
+					   &plane_intersection_distance)) {
+			return false;
+		}
+
+		// Second, is the intesected point inside the circle?
+		const glm::vec3 intersection_point = (ray_origin + ray_direction * plane_intersection_distance);
+
+		const float inter_center_distance = glm::abs((intersection_point - circle_origin).length());
+
+		*collision_distance = plane_intersection_distance;
+
+		return inter_center_distance < circle_radius;
+	}
+
 	inline bool ray_AABB(const glm::vec3& ray_origin,
 						 const glm::vec3& ray_direction,
 						 const glm::vec3& box_origin,
