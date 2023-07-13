@@ -1,5 +1,6 @@
 #pragma once
 
+#include <glm/glm.hpp>
 #include <regex>
 #include <cassert>
 #include <iostream>
@@ -53,6 +54,10 @@ inline bool read_file(const std::string& filename, std::string& content)
 
 inline float random(float range = 1.0f, int offset = 0) {
 	return ((rand() % 10000) / (10000.0f)) * range + offset;
+}
+
+inline glm::vec3 get_front(const glm::mat4& pose) {
+	return -glm::normalize(pose[2]);
 }
 
 enum Error {
