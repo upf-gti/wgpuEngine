@@ -42,7 +42,7 @@ struct WebGPUContext {
 
     WGPUShaderModule       create_shader_module(char const* code);
 
-    WGPUBuffer             create_buffer(uint64_t size, int usage, const void* data);
+    WGPUBuffer             create_buffer(uint64_t size, int usage, const void* data, const char* label = nullptr);
     WGPUTexture            create_texture(WGPUTextureDimension dimension, WGPUTextureFormat format, WGPUExtent3D size, int usage, uint32_t mipmaps);
     WGPUTextureView        create_texture_view(WGPUTexture texture, WGPUTextureViewDimension dimension, WGPUTextureFormat format, WGPUTextureAspect aspect = WGPUTextureAspect_All);
 

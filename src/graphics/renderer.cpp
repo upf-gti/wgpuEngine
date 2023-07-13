@@ -4,10 +4,14 @@
 #include "dawnxr/dawnxr_internal.h"
 #endif
 
-#include "framework/mesh.h"
+#include "graphics/mesh.h"
+
+Renderer* Renderer::instance = nullptr;
 
 Renderer::Renderer()
 {
+    instance = this;
+
     Shader::webgpu_context = &webgpu_context;
     Pipeline::webgpu_context = &webgpu_context;
     Mesh::webgpu_context = &webgpu_context;
@@ -72,4 +76,9 @@ void Renderer::clean()
 #endif
 
     webgpu_context.destroy();
+}
+
+void Renderer::add_renderable(EntityMesh *entity)
+{
+    render_list.push_back(entity);
 }

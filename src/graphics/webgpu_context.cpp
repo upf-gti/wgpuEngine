@@ -247,13 +247,14 @@ WGPUShaderModule WebGPUContext::create_shader_module(char const* code)
     return wgpuDeviceCreateShaderModule(device, &shader_descr);
 }
 
-WGPUBuffer WebGPUContext::create_buffer(uint64_t size, int usage, const void* data)
+WGPUBuffer WebGPUContext::create_buffer(uint64_t size, int usage, const void* data, const char* label)
 {
     WGPUBufferDescriptor bufferDesc = {};
 
     bufferDesc.size = size;
     bufferDesc.usage = usage;
     bufferDesc.mappedAtCreation = false;
+    bufferDesc.label = label;
 
     WGPUBuffer buffer = wgpuDeviceCreateBuffer(device, &bufferDesc);
 

@@ -14,12 +14,12 @@ class Engine {
 
 public:
 
-    int initialize(Renderer* renderer, GLFWwindow *window, bool use_mirror_screen);
+    virtual int initialize(Renderer* renderer, GLFWwindow *window, bool use_mirror_screen);
     void clean();
 
     bool get_openxr_available();
     bool get_use_mirror_window();
 
-    void update(float delta_time);
-    void render();
+    virtual void update(float delta_time);
+    virtual void render();
 };
