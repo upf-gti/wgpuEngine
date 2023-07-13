@@ -4,7 +4,8 @@
 
 #define EPSILON 0.00001f
 
-namespace Intersection {
+namespace intersection {
+
 	inline bool ray_plane(const glm::vec3& ray_origin,
 						  const glm::vec3& ray_direction,
 						  const glm::vec3& plane_origin,
@@ -53,11 +54,12 @@ namespace Intersection {
 		intersection_point = rotate_to_quad_local * intersection_point;
 
 		const glm::vec2 quad_halfsize = quad_size * 0.5f;
+
+		*collision_distance = plane_intersection_distance;
 		
-		if (quad_halfsize.x > intersection_point.x && -quad_halfsize.x > intersection_point.x) {
+		if (quad_halfsize.x > intersection_point.x && -quad_halfsize.x < intersection_point.x) {
 			// Compare intersection z vs quat y due the original orientation of the quat
-			if (quad_halfsize.y > intersection_point.z && -quad_halfsize.y > intersection_point.z) {
-				*collision_distance = plane_intersection_distance;
+			if (quad_halfsize.y > intersection_point.z && -quad_halfsize.y < intersection_point.z) {
 				return true;
 			}
 		}
@@ -87,7 +89,7 @@ namespace Intersection {
 		// Second, is the intesected point inside the circle?
 		const glm::vec3 intersection_point = (ray_origin + ray_direction * plane_intersection_distance);
 
-		const float inter_center_distance = glm::abs((intersection_point - circle_origin).length());
+		const float inter_center_distance = glm::length(intersection_point - circle_origin);
 
 		*collision_distance = plane_intersection_distance;
 
@@ -129,7 +131,7 @@ namespace Intersection {
 						const glm::quat& box_rotation,
 						float* collision_distance) {
 		// Translate the Ray to the OBB space, and procede like an AABB
-		const glm::mat3x3 rotate_to_OBB = glm::mat3_cast(glm::inverse(box_rotation));
+		const glm::quat rotate_to_OBB = glm::inverse(box_rotation);
 
 		return ray_AABB(rotate_to_OBB * ray_origin,
 						rotate_to_OBB * ray_direction,
