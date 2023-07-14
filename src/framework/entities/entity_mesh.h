@@ -10,7 +10,7 @@ class EntityMesh : public Entity {
 
 public:
 
-	EntityMesh() {};
+	EntityMesh() : Entity() {};
 	virtual ~EntityMesh() {};
 
 	virtual void render() override;

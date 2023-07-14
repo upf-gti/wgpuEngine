@@ -34,6 +34,7 @@ class Mesh {
 
 	struct sUniformMeshData {
 		glm::mat4x4 model;
+		glm::vec4   color;
 	};
 
 	std::vector<InterleavedData>	 vertices;
@@ -74,6 +75,9 @@ public:
 	WGPUBindGroup& get_bind_group();
 
 	void create_quad();
+
+	void update_model_matrix(const glm::mat4x4& model);
+	void update_material_color(const glm::vec3& color);
 
 	void* data();
 	size_t get_vertex_count();

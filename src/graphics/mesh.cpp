@@ -80,6 +80,14 @@ bool Mesh::load_mesh(const char* filepath)
 
     create_vertex_buffer();
     create_bind_group();
+
+    if (!materials.empty()) {
+        if (materials[0].diffuse_texname.empty()) {
+            update_material_color(glm::vec3(materials[0].diffuse[0], materials[0].diffuse[1], materials[0].diffuse[2]));
+        }
+    }
+
+    return true;
 }
 
 Mesh::~Mesh()
@@ -207,6 +215,16 @@ void Mesh::create_quad()
 
     create_vertex_buffer();
     create_bind_group();
+}
+
+void Mesh::update_model_matrix(const glm::mat4x4& model)
+{
+    wgpuQueueWriteBuffer(webgpu_context->device_queue, std::get<WGPUBuffer>(uniform.data), 0, &model, sizeof(glm::mat4x4));
+}
+
+void Mesh::update_material_color(const glm::vec3& color)
+{
+    wgpuQueueWriteBuffer(webgpu_context->device_queue, std::get<WGPUBuffer>(uniform.data), sizeof(glm::mat4x4), &color, sizeof(glm::vec3));
 }
 
 void* Mesh::data()
