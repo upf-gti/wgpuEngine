@@ -172,8 +172,10 @@ void Mesh::create_vertex_buffer()
 
 void Mesh::create_bind_group()
 {
-    glm::mat4x4 identity(1.0f);
-    uniform.data = webgpu_context->create_buffer(sizeof(sUniformMeshData), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform, &identity);
+    sUniformMeshData default_data;
+    default_data.model = glm::mat4x4(1.0f);
+    default_data.color = glm::vec4(1.0f);
+    uniform.data = webgpu_context->create_buffer(sizeof(sUniformMeshData), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform, &default_data);
     uniform.binding = 0;
     uniform.visibility = WGPUShaderStage_Vertex;
     uniform.buffer_size = sizeof(sUniformMeshData);
