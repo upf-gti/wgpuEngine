@@ -17,7 +17,7 @@ bool Mesh::bind_groups_initialized = false;
 
 Uniform Mesh::default_uniform = {};
 
-bool Mesh::load_mesh(const char* filepath)
+bool Mesh::load(const char* filepath)
 {
     tinyobj::ObjReaderConfig reader_config;
     //reader_config.mtl_search_path = "./"; // Path to material files
@@ -95,6 +95,8 @@ Mesh::~Mesh()
     if (vertices.empty()) return;
 
     wgpuBufferDestroy(vertex_buffer);
+
+    uniform.destroy();
 }
 
 void Mesh::init_vertex_buffer_layouts()
@@ -195,25 +197,41 @@ WGPUBindGroup& Mesh::get_bind_group()
     return bind_group;
 }
 
-void Mesh::create_quad()
+void Mesh::create_quad(float w, float h, const glm::vec3& color)
 {
     vertices.resize(6);
+    
+    vertices[0].position = { -w,  h, 0.f };
+    vertices[1].position = { -w, -h, 0.f };
+    vertices[2].position = {  w, -h, 0.f };
 
-    vertices[0].position = { -1.0, 1.0, 0.0 };
-    vertices[1].position = { -1.0,-1.0, 0.0 };
-    vertices[2].position = {  1.0,-1.0, 0.0 };
+    vertices[3].position = { -w,  h, 0.f };
+    vertices[4].position = {  w, -h, 0.f };
+    vertices[5].position = {  w,  h, 0.f };
 
-    vertices[3].position = { -1.0, 1.0, 0.0 };
-    vertices[4].position = {  1.0,-1.0, 0.0 };
-    vertices[5].position = {  1.0, 1.0, 0.0 };
+    vertices[0].uv = { 0.f, 1.f };
+    vertices[1].uv = { 0.f, 0.f };
+    vertices[2].uv = { 1.f, 0.f };
 
-    vertices[0].uv = { 0.0, 1.0 };
-    vertices[1].uv = { 0.0, 0.0 };
-    vertices[2].uv = { 1.0, 0.0 };
+    vertices[3].uv = { 0.f, 1.f };
+    vertices[4].uv = { 1.f, 0.f };
+    vertices[5].uv = { 1.f, 1.f };
 
-    vertices[3].uv = { 0.0, 1.0 };
-    vertices[4].uv = { 1.0, 0.0 };
-    vertices[5].uv = { 1.0, 1.0 };
+    vertices[0].normal = { 0.f, 1.f, 0.f };
+    vertices[1].normal = { 0.f, 1.f, 0.f };
+    vertices[2].normal = { 0.f, 1.f, 0.f };
+
+    vertices[3].normal = { 0.f, 1.f, 0.f };
+    vertices[4].normal = { 0.f, 1.f, 0.f };
+    vertices[5].normal = { 0.f, 1.f, 0.f };
+
+    vertices[0].color = color;
+    vertices[1].color = color;
+    vertices[2].color = color;
+
+    vertices[3].color = color;
+    vertices[4].color = color;
+    vertices[5].color = color;
 
     create_vertex_buffer();
     create_bind_group();

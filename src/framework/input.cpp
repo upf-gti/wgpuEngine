@@ -155,7 +155,7 @@ glm::mat4x4 Input::get_controller_pose(uint8_t controller, uint8_t type)
 	if (type == POSE_AIM) return xr_data.controllerAimPoseMatrices[controller];
 	else return xr_data.controllerGripPoseMatrices[controller];
 #else
-	return {};
+	return glm::mat4x4(1.f);
 #endif
 }
 

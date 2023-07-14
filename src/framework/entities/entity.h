@@ -21,8 +21,8 @@ public:
 	Entity() : model(1.0f) {};
 	virtual ~Entity() {};
 
-	void addChild(Entity* child);
-	void removeChild(Entity* child);
+	void add_child(Entity* child);
+	void remove_child(Entity* child);
 
 	virtual void render();
 	virtual void update(float delta_time);
@@ -32,5 +32,6 @@ public:
 	void scale(glm::vec3 scale);
 
 	// Some useful methods
-	glm::mat4x4 getGlobalMatrix();
+	glm::mat4x4 get_global_matrix();
+	void set_model(const glm::mat4x4& _model) { model = _model; }
 };

@@ -2,7 +2,7 @@
 
 #include <iostream>
 
-void Entity::addChild(Entity* child)
+void Entity::add_child(Entity* child)
 {
 	if (child->parent) {
 		std::cerr << "Child has already a parent, remove it first!" << std::endl;
@@ -20,7 +20,7 @@ void Entity::addChild(Entity* child)
 	children.push_back(child);
 }
 
-void Entity::removeChild(Entity* child)
+void Entity::remove_child(Entity* child)
 {
 	// Checks if it's a child
 	auto it = std::find(children.begin(), children.end(), child);
@@ -58,11 +58,12 @@ void Entity::render()
 
 void Entity::update(float delta_time)
 {
+
 }
 
-glm::mat4x4 Entity::getGlobalMatrix()
+glm::mat4x4 Entity::get_global_matrix()
 {
 	if (parent)
-		return model * parent->getGlobalMatrix();
+		return model * parent->get_global_matrix();
 	return model;
 }

@@ -10,6 +10,8 @@ class EntityMesh : public Entity {
 
 public:
 
+	bool destroy_after_render = false;
+
 	EntityMesh() : Entity() {};
 	virtual ~EntityMesh() {};
 
