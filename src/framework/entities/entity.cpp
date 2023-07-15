@@ -61,7 +61,12 @@ void Entity::update(float delta_time)
 
 }
 
-glm::mat4x4 Entity::get_global_matrix()
+const glm::vec3& Entity::get_translation()
+{
+	return get_global_matrix()[3];
+}
+
+const glm::mat4x4& Entity::get_global_matrix()
 {
 	if (parent)
 		return model * parent->get_global_matrix();

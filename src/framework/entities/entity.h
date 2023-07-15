@@ -32,6 +32,8 @@ public:
 	void scale(glm::vec3 scale);
 
 	// Some useful methods
-	glm::mat4x4 get_global_matrix();
+
+	const glm::vec3& get_translation();
+	const glm::mat4x4& get_global_matrix();
 	void set_model(const glm::mat4x4& _model) { model = _model; model_dirty = true; }
 };
