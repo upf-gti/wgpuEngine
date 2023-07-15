@@ -94,7 +94,11 @@ Mesh::~Mesh()
 {
     if (vertices.empty()) return;
 
+    vertices.clear();
+
     wgpuBufferDestroy(vertex_buffer);
+
+    wgpuBindGroupRelease(bind_group);
 
     uniform.destroy();
 }

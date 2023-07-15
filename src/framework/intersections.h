@@ -29,10 +29,11 @@ namespace intersection {
 						 const glm::vec3& quad_origin,
 						 const glm::vec2& quad_size,
 						 const glm::quat& quad_rotation,
+						 glm::vec3& intersection,
 						 float& collision_distance) {
 
 		// Assumtion: the original quad orientation is (0,1,0)
-		const glm::vec3 quad_orientation = quad_rotation * glm::vec3(0.f, 1.f, 0.f);
+		const glm::vec3 quad_orientation = quad_rotation * glm::vec3(0.f, 0.f, -1.f);
 
 		// First, plane intersection
 		float plane_intersection_distance;
@@ -49,21 +50,16 @@ namespace intersection {
 		const glm::quat rotate_to_quad_local = glm::inverse(quad_rotation);
 
 		glm::vec3 intersection_point = (ray_origin + ray_direction * plane_intersection_distance);
+		collision_distance = plane_intersection_distance;
+		intersection = intersection_point;
 
 		// To local position
 		intersection_point -= quad_origin;
 		intersection_point = rotate_to_quad_local * intersection_point;
 
-		const glm::vec2 quad_halfsize = quad_size * 0.5f;
-
-		collision_distance = plane_intersection_distance;
-		
-		if (quad_halfsize.x > intersection_point.x && -quad_halfsize.x < intersection_point.x) {
-			// Compare intersection z vs quat y due the original orientation of the quat
-			if (quad_halfsize.y > intersection_point.z && -quad_halfsize.y < intersection_point.z) {
+		if (quad_size.x > intersection_point.x && -quad_size.x < intersection_point.x)
+			if (quad_size.y > intersection_point.y && -quad_size.y < intersection_point.y)
 				return true;
-			}
-		}
 
 		return false;
 	}

@@ -33,5 +33,5 @@ public:
 
 	// Some useful methods
 	glm::mat4x4 get_global_matrix();
-	void set_model(const glm::mat4x4& _model) { model = _model; }
+	void set_model(const glm::mat4x4& _model) { model = _model; model_dirty = true; }
 };
