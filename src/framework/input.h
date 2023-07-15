@@ -153,6 +153,7 @@ public:
 
 	static bool is_button_pressed(uint8_t button);
 	static bool was_button_pressed(uint8_t button);
+	static bool was_button_released(uint8_t button);
 	static bool is_button_touched(uint8_t button);
 	static bool was_button_touched(uint8_t button);
 

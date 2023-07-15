@@ -51,11 +51,11 @@ namespace intersection {
 
 		glm::vec3 intersection_point = (ray_origin + ray_direction * plane_intersection_distance);
 		collision_distance = plane_intersection_distance;
-		intersection = intersection_point;
 
 		// To local position
 		intersection_point -= quad_origin;
 		intersection_point = rotate_to_quad_local * intersection_point;
+		intersection = intersection_point;
 
 		if (quad_size.x > intersection_point.x && -quad_size.x < intersection_point.x)
 			if (quad_size.y > intersection_point.y && -quad_size.y < intersection_point.y)

@@ -177,6 +177,15 @@ bool Input::was_button_pressed(uint8_t button)
 #endif
 }
 
+bool Input::was_button_released(uint8_t button)
+{
+#ifdef XR_SUPPORT
+	return openxr_context && (!xr_data.buttonsState[button].click.state.currentState && xr_data.buttonsState[button].click.state.changedSinceLastSync);
+#else
+	return false;
+#endif
+}
+
 bool Input::is_button_touched(uint8_t button)
 {
 #ifdef XR_SUPPORT

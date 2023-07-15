@@ -61,6 +61,12 @@ void Entity::update(float delta_time)
 
 }
 
+void Entity::set_translation(const glm::vec3& translation)
+{
+	model = glm::translate(glm::mat4x4(1.f), translation);
+	model_dirty = true;
+}
+
 const glm::vec3& Entity::get_translation()
 {
 	return get_global_matrix()[3];
