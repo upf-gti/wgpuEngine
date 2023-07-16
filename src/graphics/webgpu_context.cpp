@@ -67,6 +67,12 @@ WGPUAdapter requestAdapter(WGPUInstance instance, WGPURequestAdapterOptions cons
         (void*)&userData
     );
 
+#ifdef __EMSCRIPTEN__
+    while (!userData.requestEnded) {
+        emscripten_sleep(100);
+    }
+#endif
+
     assert(userData.requestEnded);
 
     return userData.adapter;
@@ -97,6 +103,12 @@ WGPUDevice requestDevice(WGPUAdapter adapter, WGPUDeviceDescriptor const* descri
         (void*)&userData
     );
 
+#ifdef __EMSCRIPTEN__
+    while (!userData.requestEnded) {
+        emscripten_sleep(100);
+    }
+#endif
+
     assert(userData.requestEnded);
 
     return userData.device;
@@ -104,28 +116,12 @@ WGPUDevice requestDevice(WGPUAdapter adapter, WGPUDeviceDescriptor const* descri
 
 int WebGPUContext::initialize(GLFWwindow* window, bool create_screen_swapchain)
 {
-
-#ifdef __EMSCRIPTEN__
-    device = emscripten_webgpu_get_device();
-
-    // emscripten-specific extension not supported by webgpu.cpp
-    WGPUSurfaceDescriptorFromCanvasHTMLSelector canvDesc = {};
-    canvDesc.chain.sType = WGPUSType_SurfaceDescriptorFromCanvasHTMLSelector;
-    canvDesc.selector = "canvas";
-
-    WGPUSurfaceDescriptor surfDesc = {};
-    surfDesc.nextInChain = reinterpret_cast<WGPUChainedStruct*>(&canvDesc);
-
-    surface = wgpuInstanceCreateSurface(nullptr, &surfDesc);
-
-#else
-
     WGPURequestAdapterOptions adapterOpts = {};
     //adapterOpts.compatibleSurface = surface;
     WGPUAdapter adapter = requestAdapter(get_instance(), &adapterOpts);
 
-    WGPUSupportedLimits supportedLimits;
-    wgpuAdapterGetLimits(adapter, &supportedLimits);
+    //WGPUSupportedLimits supportedLimits = {};
+    //wgpuAdapterGetLimits(adapter, &supportedLimits);
   
     WGPURequiredLimits requiredLimits = {};
     requiredLimits.limits.maxVertexAttributes = 4;
@@ -134,7 +130,7 @@ int WebGPUContext::initialize(GLFWwindow* window, bool create_screen_swapchain)
     requiredLimits.limits.maxUniformBuffersPerShaderStage = 1;
     requiredLimits.limits.maxUniformBufferBindingSize = 16 * 4 * sizeof(float);
     requiredLimits.limits.minUniformBufferOffsetAlignment = 256;
-    requiredLimits.limits.minStorageBufferOffsetAlignment = 16;
+    requiredLimits.limits.minStorageBufferOffsetAlignment = 32;
     requiredLimits.limits.maxBufferSize = 512 * 512 * 512 * sizeof(float) * 4 + 4; // TODO: remove this +4 when fixed in Dawn
     requiredLimits.limits.maxStorageBufferBindingSize = 512 * 512 * 512 * sizeof(float) * 4;
     requiredLimits.limits.maxComputeInvocationsPerWorkgroup = 512;
@@ -160,6 +156,18 @@ int WebGPUContext::initialize(GLFWwindow* window, bool create_screen_swapchain)
 #endif
     
     device = requestDevice(adapter, &deviceDesc);
+
+#ifdef __EMSCRIPTEN__
+    // emscripten-specific extension not supported by webgpu.cpp
+    WGPUSurfaceDescriptorFromCanvasHTMLSelector canvDesc = {};
+    canvDesc.chain.sType = WGPUSType_SurfaceDescriptorFromCanvasHTMLSelector;
+    canvDesc.selector = "canvas";
+
+    WGPUSurfaceDescriptor surfDesc = {};
+    surfDesc.nextInChain = reinterpret_cast<WGPUChainedStruct*>(&canvDesc);
+
+    surface = wgpuInstanceCreateSurface(nullptr, &surfDesc);
+#else
 
     wgpuDeviceSetUncapturedErrorCallback(device, PrintDeviceError, nullptr);
 
@@ -234,12 +242,7 @@ WGPUShaderModule WebGPUContext::create_shader_module(char const* code)
     // Load the shader module https://eliemichel.github.io/LearnWebGPU/basic-3d-rendering/hello-triangle.html
     WGPUShaderModuleWGSLDescriptor shader_code_desc = {};
     shader_code_desc.chain.sType = WGPUSType_ShaderModuleWGSLDescriptor;
-
-#ifndef __EMSCRIPTEN__
     shader_code_desc.code = code;
-#else
-    shader_code_desc.source = code;
-#endif
 
     WGPUShaderModuleDescriptor shader_descr = {};
     shader_descr.nextInChain = &shader_code_desc.chain;

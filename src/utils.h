@@ -52,7 +52,7 @@ inline bool read_file(const std::string& filename, std::string& content)
 	return true;
 }
 
-inline float random(float range = 1.0f, int offset = 0) {
+inline float random_f(float range = 1.0f, int offset = 0) {
 	return ((rand() % 10000) / (10000.0f)) * range + offset;
 }
 
