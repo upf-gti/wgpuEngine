@@ -268,7 +268,7 @@ WGPUBuffer WebGPUContext::create_buffer(uint64_t size, int usage, const void* da
     return buffer;
 }
 
-WGPUTexture WebGPUContext::create_texture(WGPUTextureDimension dimension, WGPUTextureFormat format, WGPUExtent3D size, int usage, uint32_t mipmaps)
+WGPUTexture WebGPUContext::create_texture(WGPUTextureDimension dimension, WGPUTextureFormat format, WGPUExtent3D size, WGPUTextureUsage usage, uint32_t mipmaps)
 {
     WGPUTextureDescriptor textureDesc = {};
     textureDesc.dimension = dimension;
@@ -296,6 +296,23 @@ WGPUTextureView WebGPUContext::create_texture_view(WGPUTexture texture, WGPUText
     textureViewDesc.label = "Input View";
 
     return wgpuTextureCreateView(texture, &textureViewDesc);
+}
+
+void WebGPUContext::create_texture_mipmaps(WGPUTexture texture, WGPUExtent3D texture_size, uint32_t mip_level_count, const void* data)
+{
+    WGPUImageCopyTexture destination;
+    destination.texture = texture;
+    destination.mipLevel = 0;
+    destination.origin = { 0, 0, 0 };
+    destination.aspect = WGPUTextureAspect_All;
+
+    WGPUTextureDataLayout source;
+    source.offset = 0;
+    source.bytesPerRow = 4 * texture_size.width;
+    source.rowsPerImage = texture_size.height;
+
+    wgpuQueueWriteTexture(device_queue, &destination, data, 4 * texture_size.width * texture_size.height, &source, &texture_size);
+    //queue.release();
 }
 
 WGPUBindGroupLayout WebGPUContext::create_bind_group_layout(const std::vector<Uniform*>& uniforms)

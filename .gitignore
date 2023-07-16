@@ -3,3 +3,4 @@ build-web/
 .cache/
 .vscode/
 libraries/tinyobjloader/
+libraries/stb/

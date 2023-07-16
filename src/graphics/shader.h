@@ -17,7 +17,6 @@ public:
 
 	static WebGPUContext* webgpu_context;
 
-	void load(const std::string& shader_path);
 	void reload();
 
 	static Shader* get(const std::string& shader_path);
@@ -28,6 +27,8 @@ public:
 
 private:
 	static std::map<std::string, Shader*> shaders;
+
+	void load(const std::string& shader_path);
 
 	std::string path;
 

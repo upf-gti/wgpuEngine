@@ -19,7 +19,15 @@ FetchContent_Declare(
     DOWNLOAD_NO_EXTRACT TRUE
 )
 
-FetchContent_MakeAvailable(tinyobjloader)
+# download tinyobjloader
+FetchContent_Declare(
+    stb_image
+    URL https://raw.githubusercontent.com/nothings/stb/master/stb_image.h
+    DOWNLOAD_DIR ${WGPU_DIR_LIBS}/stb
+    DOWNLOAD_NO_EXTRACT TRUE
+)
+
+FetchContent_MakeAvailable(tinyobjloader stb_image)
 
 # Macro to map filters to folder structure for MSVC projects
 macro(GroupSources curdir)
@@ -94,5 +102,8 @@ target_link_libraries(${PROJECT_NAME} PUBLIC glm)
 
 # tinyobjloader
 include_directories(${WGPU_DIR_LIBS}/tinyobjloader)
+
+# stb
+include_directories(${WGPU_DIR_LIBS}/stb)
 
 target_copy_webgpu_binaries(${PROJECT_NAME})
