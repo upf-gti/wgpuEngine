@@ -63,7 +63,7 @@ public:
 
 	static WebGPUContext* webgpu_context;
 
-	bool load_mesh(const char* filepath);
+	bool load(const char* filepath);
 
 	static void init_vertex_buffer_layouts();
 	static void init_bind_group_layouts();
@@ -74,7 +74,7 @@ public:
 	WGPUBuffer& get_vertex_buffer();
 	WGPUBindGroup& get_bind_group();
 
-	void create_quad();
+	void create_quad(float w = 1.f, float h = 1.f, const glm::vec3& color = {1.f, 1.f, 1.f});
 
 	void update_model_matrix(const glm::mat4x4& model);
 	void update_material_color(const glm::vec3& color);

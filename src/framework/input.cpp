@@ -155,7 +155,7 @@ glm::mat4x4 Input::get_controller_pose(uint8_t controller, uint8_t type)
 	if (type == POSE_AIM) return xr_data.controllerAimPoseMatrices[controller];
 	else return xr_data.controllerGripPoseMatrices[controller];
 #else
-	return {};
+	return glm::mat4x4(1.f);
 #endif
 }
 
@@ -172,6 +172,15 @@ bool Input::was_button_pressed(uint8_t button)
 {
 #ifdef XR_SUPPORT
 	return openxr_context && (xr_data.buttonsState[button].click.state.currentState && xr_data.buttonsState[button].click.state.changedSinceLastSync);
+#else
+	return false;
+#endif
+}
+
+bool Input::was_button_released(uint8_t button)
+{
+#ifdef XR_SUPPORT
+	return openxr_context && (!xr_data.buttonsState[button].click.state.currentState && xr_data.buttonsState[button].click.state.changedSinceLastSync);
 #else
 	return false;
 #endif
