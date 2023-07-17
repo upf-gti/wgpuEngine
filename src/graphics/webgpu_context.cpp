@@ -300,6 +300,8 @@ WGPUTextureView WebGPUContext::create_texture_view(WGPUTexture texture, WGPUText
 
 void WebGPUContext::create_texture_mipmaps(WGPUTexture texture, WGPUExtent3D texture_size, uint32_t mip_level_count, const void* data)
 {
+    WGPUQueue mipmap_queue = wgpuDeviceGetQueue(device);
+
     WGPUImageCopyTexture destination;
     destination.texture = texture;
     destination.mipLevel = 0;
@@ -308,11 +310,51 @@ void WebGPUContext::create_texture_mipmaps(WGPUTexture texture, WGPUExtent3D tex
 
     WGPUTextureDataLayout source;
     source.offset = 0;
-    source.bytesPerRow = 4 * texture_size.width;
-    source.rowsPerImage = texture_size.height;
 
-    wgpuQueueWriteTexture(device_queue, &destination, data, 4 * texture_size.width * texture_size.height, &source, &texture_size);
-    //queue.release();
+    // Create image data
+    WGPUExtent3D mip_level_size = texture_size;
+    std::vector<unsigned char> previous_level_pixels;
+    WGPUExtent3D previous_mip_level_size;
+    for (uint32_t level = 0; level < mip_level_count; ++level) {
+        // Pixel data for the current level
+        std::vector<unsigned char> pixels(4 * mip_level_size.width * mip_level_size.height);
+        if (level == 0) {
+            // We cannot really avoid this copy since we need this
+            // in previous_level_pixels at the next iteration
+            memcpy(pixels.data(), data, pixels.size());
+        }
+        else {
+            // Create mip level data
+            for (uint32_t i = 0; i < mip_level_size.width; ++i) {
+                for (uint32_t j = 0; j < mip_level_size.height; ++j) {
+                    unsigned char* p = &pixels[4 * (j * mip_level_size.width + i)];
+                    // Get the corresponding 4 pixels from the previous level
+                    unsigned char* p00 = &previous_level_pixels[4 * ((2 * j + 0) * previous_mip_level_size.width + (2 * i + 0))];
+                    unsigned char* p01 = &previous_level_pixels[4 * ((2 * j + 0) * previous_mip_level_size.width + (2 * i + 1))];
+                    unsigned char* p10 = &previous_level_pixels[4 * ((2 * j + 1) * previous_mip_level_size.width + (2 * i + 0))];
+                    unsigned char* p11 = &previous_level_pixels[4 * ((2 * j + 1) * previous_mip_level_size.width + (2 * i + 1))];
+                    // Average
+                    p[0] = (p00[0] + p01[0] + p10[0] + p11[0]) / 4;
+                    p[1] = (p00[1] + p01[1] + p10[1] + p11[1]) / 4;
+                    p[2] = (p00[2] + p01[2] + p10[2] + p11[2]) / 4;
+                    p[3] = (p00[3] + p01[3] + p10[3] + p11[3]) / 4;
+                }
+            }
+        }
+
+        // Upload data to the GPU texture
+        destination.mipLevel = level;
+        source.bytesPerRow = 4 * mip_level_size.width;
+        source.rowsPerImage = mip_level_size.height;
+        wgpuQueueWriteTexture(mipmap_queue, &destination, pixels.data(), pixels.size(), &source, &mip_level_size);
+
+        previous_level_pixels = std::move(pixels);
+        previous_mip_level_size = mip_level_size;
+        mip_level_size.width /= 2;
+        mip_level_size.height /= 2;
+    }
+
+    wgpuQueueRelease(mipmap_queue);
 }
 
 WGPUBindGroupLayout WebGPUContext::create_bind_group_layout(const std::vector<Uniform*>& uniforms)

@@ -8,6 +8,8 @@
 
 #include "graphics/webgpu_context.h"
 
+class Texture;
+
 enum eVertexLayoutDefault {
 	POSITION,
 	UV,
@@ -46,6 +48,8 @@ class Mesh {
 	WGPUBindGroup   bind_group = nullptr;
 
 	Uniform			uniform;
+
+	Texture*		diffuse = nullptr;
 
 	static Uniform	default_uniform;
 

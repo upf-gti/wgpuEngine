@@ -45,7 +45,7 @@ void Texture::load(const std::string& texture_path)
     format = WGPUTextureFormat_RGBA8Unorm;
     size = { (unsigned int)width, (unsigned int)height, 1 };
     usage = static_cast<WGPUTextureUsage>(WGPUTextureUsage_TextureBinding | WGPUTextureUsage_CopyDst);
-    mipmaps = 1;
+    mipmaps = std::bit_width(std::max(size.width, size.height));
 
     texture = webgpu_context->create_texture(dimension, format, size, usage, mipmaps);
 

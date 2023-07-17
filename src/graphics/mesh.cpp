@@ -5,6 +5,8 @@
 
 #include "utils.h"
 
+#include "texture.h"
+
 WebGPUContext* Mesh::webgpu_context = nullptr;
 
 std::vector<WGPUVertexAttribute> Mesh::vertex_buffer_attributes[eVertexBufferLayout::VB_SIZE] = {};
@@ -86,6 +88,9 @@ bool Mesh::load(const std::string& mesh_path)
     if (!materials.empty()) {
         if (materials[0].diffuse_texname.empty()) {
             update_material_color(glm::vec3(materials[0].diffuse[0], materials[0].diffuse[1], materials[0].diffuse[2]));
+        }
+        else {
+            diffuse = Texture::get("data/textures/" + materials[0].diffuse_texname);
         }
     }
 
