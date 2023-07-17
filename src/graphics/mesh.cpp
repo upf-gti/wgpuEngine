@@ -15,16 +15,18 @@ WGPUBindGroupLayout Mesh::bind_group_layouts[BG_SIZE] = {};
 bool Mesh::vertex_buffer_layouts_initialized = false;
 bool Mesh::bind_groups_initialized = false;
 
+std::map<std::string, Mesh*> Mesh::meshes;
+
 Uniform Mesh::default_uniform = {};
 
-bool Mesh::load(const char* filepath)
+bool Mesh::load(const std::string& mesh_path)
 {
     tinyobj::ObjReaderConfig reader_config;
     //reader_config.mtl_search_path = "./"; // Path to material files
 
     tinyobj::ObjReader reader;
 
-    if (!reader.ParseFromFile(filepath, reader_config)) {
+    if (!reader.ParseFromFile(mesh_path, reader_config)) {
         if (!reader.Error().empty()) {
             std::cerr << "TinyObjReader: " << reader.Error();
         }
@@ -101,6 +103,24 @@ Mesh::~Mesh()
     wgpuBindGroupRelease(bind_group);
 
     uniform.destroy();
+}
+
+Mesh* Mesh::get(const std::string& mesh_path)
+{
+    std::string name = mesh_path;
+
+    // check if already loaded
+    std::map<std::string, Mesh*>::iterator it = meshes.find(mesh_path);
+    if (it != meshes.end())
+        return it->second;
+
+    Mesh* ms = new Mesh();
+    ms->load(mesh_path);
+
+    // register in map
+    meshes[name] = ms;
+
+    return ms;
 }
 
 void Mesh::init_vertex_buffer_layouts()

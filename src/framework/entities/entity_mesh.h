@@ -2,11 +2,11 @@
 
 #include "entity.h"
 
-#include "graphics/mesh.h"
+class Mesh;
 
 class EntityMesh : public Entity {
 
-	Mesh mesh;
+	Mesh* mesh = nullptr;
 
 public:
 
@@ -18,5 +18,6 @@ public:
 	virtual void render() override;
 	virtual void update(float delta_time) override;
 
-	Mesh* get_mesh() { return &mesh; }
+	void  set_mesh(Mesh* mesh) { this->mesh = mesh; }
+	Mesh* get_mesh() { return mesh; }
 };

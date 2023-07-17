@@ -1,6 +1,9 @@
 #pragma once
 
+#include <map>
 #include <vector>
+#include <string>
+
 #include "includes.h"
 
 #include "graphics/webgpu_context.h"
@@ -54,8 +57,12 @@ class Mesh {
 	static bool vertex_buffer_layouts_initialized;
 	static bool bind_groups_initialized;
 
+	static std::map<std::string, Mesh*> meshes;
+
 	void create_vertex_buffer();
 	void create_bind_group();
+
+	bool load(const std::string& mesh_path);
 
 public:
 
@@ -63,7 +70,7 @@ public:
 
 	static WebGPUContext* webgpu_context;
 
-	bool load(const char* filepath);
+	static Mesh* get(const std::string& mesh_path);
 
 	static void init_vertex_buffer_layouts();
 	static void init_bind_group_layouts();

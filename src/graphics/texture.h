@@ -5,8 +5,6 @@
 
 #include "webgpu_context.h"
 
-#include <webgpu/webgpu.h>
-
 class Texture {
 
 public:
