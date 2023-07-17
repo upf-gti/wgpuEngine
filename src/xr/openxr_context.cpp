@@ -1046,7 +1046,7 @@ inline glm::mat4x4 parse_OpenXR_projection_to_glm(const XrFovf& fov, float nearZ
     const auto& tanAngleDown = tanf(fov.angleDown);
 
     const float tanAngleWidth = tanAngleRight - tanAngleLeft;
-    const float tanAngleHeight = (tanAngleDown - tanAngleUp); // For vulkan projection
+    const float tanAngleHeight = (tanAngleUp - tanAngleDown); // For vulkan projection
     const float offsetZ = 0;
 
     glm::mat4 resultm{};
