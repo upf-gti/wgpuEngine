@@ -1,10 +1,15 @@
 #pragma once
 
 #include "includes.h"
-
+#include "utils.h"
 #include <map>
 #include <string>
 #include <vector>
+
+#include <filesystem>
+namespace fs = std::filesystem;
+
+#include "graphics/texture.h"
 
 struct CKerning {
     int first;
@@ -30,9 +35,14 @@ struct Character {
 
 class Font {
 
-    // json m_font_description;
-    // std::vector<const CTexture*> m_pages;
-    std::map<unsigned char, Character> m_characters;
+public:
+
+    nlohmann::json font_description;
+    std::vector<Texture*> textures;
+    std::map<unsigned char, Character> characters;
+    std::multimap<int, CKerning> kernings;
+
+    static std::map<std::string, Font*> s_fonts;
 
     // Info
     std::string face;
@@ -58,22 +68,9 @@ class Font {
     int redChnl;
     int greenChnl;
     int blueChnl;
-
     int df_range;
 
-    std::multimap<int, CKerning> m_kernings;
-
+    static Font* get(const std::string& font_name);
+    void load(const std::string& font_name);
     float adjust_kerning_pairs(int first, int second);
-
-    /*struct vertex {
-        vec3 pos;    vec2 uv;    vec4 color;
-        vertex(vec3 _pos, vec2 _uv, vec4 _color) :pos(_pos), uv(_uv), color(_color) {};
-    };
-    std::vector<vertex> m_buffer;*/
-
-    static std::map<std::string, Font*> s_fonts;
-
-public:
-
-
 };

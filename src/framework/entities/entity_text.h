@@ -5,23 +5,22 @@
 
 class TextEntity : public EntityMesh {
 
-	/*struct vertex {
-		vec3 pos;    vec2 uv;    vec4 color;
-		vertex(vec3 _pos, vec2 _uv, vec4 _color) :pos(_pos), uv(_uv), color(_color) {};
-	};
-	std::vector<vertex> m_buffer;*/
-	// CMaterial* m_material = nullptr;
+	std::vector<InterleavedData> vertices;
 
 	Font* font = nullptr;
 
 	float scale = 1.f;
+	glm::vec2 box_size;
+	bool wrap = true;
+
+	std::string text = "";
 
 	void write_char(glm::vec3 pos, Character& c);
 
 public:
 
-	TextEntity() : EntityMesh() {};
-	virtual ~TextEntity() {};
+	TextEntity(const std::string& _text, glm::vec2 _box_size, bool _wrap = true);
+	virtual ~TextEntity();
 
 	virtual void render() override;
 	virtual void update(float delta_time) override;
@@ -32,9 +31,5 @@ public:
 
 	int get_text_width(const std::string text);
 	void set_scale(float _scale) { scale = _scale; }
-	void load(std::string font_name);
-	void destroy();
-	void write(glm::vec2 pos, glm::vec2 size, std::wstring text, bool wrap = true);
-	void write(glm::vec3 pos, glm::vec2 size, std::wstring text, bool wrap = true);
-	void write(glm::mat4x4 model, glm::vec2 size, std::wstring text, bool wrap = true);
+	void generate_mesh();
 };

@@ -6,6 +6,8 @@
 
 class EntityMesh : public Entity {
 
+protected:
+
 	Mesh mesh;
 
 public:
