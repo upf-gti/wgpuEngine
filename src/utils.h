@@ -1,10 +1,13 @@
 #pragma once
 
 #include <glm/glm.hpp>
+#include "framework/json.hpp"
 #include <regex>
 #include <cassert>
 #include <iostream>
 #include <fstream>
+
+using json = nlohmann::json;
 
 #define assert_msg(condition, msg) if (!(condition)) {std::cout << msg << std::endl; assert(false);}
 #define _STR(m_x) #m_x
@@ -50,6 +53,46 @@ inline bool read_file(const std::string& filename, std::string& content)
 	file.read(content.data(), size);
 
 	return true;
+}
+
+inline json load_json(const std::string& filename) {
+
+	json j;
+
+    while (true) {
+
+        std::ifstream ifs(filename.c_str());
+        if (!ifs.is_open()) {
+            std::cout << "Failed to open json file" << filename << std::endl;
+            continue;
+        }
+
+#ifdef NDEBUG
+        j = json::parse(ifs, nullptr, false);
+        if (j.is_discarded()) {
+            ifs.close();
+			std::cout << "Failed to parse json file" << filename << std::endl;
+            continue;
+        }
+#else
+        try
+        {
+            j = json::parse(ifs);
+        }
+        catch (json::parse_error& e)
+        {
+            ifs.close();
+            // Output exception information
+			printf("Failed to parse json file %s\n%s\nAt offset: %d"
+                , filename.c_str(), e.what(), e.byte);
+            continue;
+        }
+#endif
+        // The json is correct, we can leave the while loop
+        break;
+    }
+
+    return j;
 }
 
 inline float random_f(float range = 1.0f, int offset = 0) {

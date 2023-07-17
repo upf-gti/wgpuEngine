@@ -6,6 +6,8 @@ class Mesh;
 
 class EntityMesh : public Entity {
 
+protected:
+
 	Mesh* mesh = nullptr;
 
 public:

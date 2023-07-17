@@ -261,6 +261,13 @@ void Mesh::create_quad(float w, float h, const glm::vec3& color)
     create_bind_group();
 }
 
+void Mesh::create_from_vertices(const std::vector<InterleavedData>& _vertices)
+{
+    vertices = _vertices;
+    create_vertex_buffer();
+    create_bind_group();
+}
+
 void Mesh::update_model_matrix(const glm::mat4x4& model)
 {
     wgpuQueueWriteBuffer(webgpu_context->device_queue, std::get<WGPUBuffer>(uniform.data), 0, &model, sizeof(glm::mat4x4));
