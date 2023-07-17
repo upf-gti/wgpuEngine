@@ -28,14 +28,14 @@ enum eBindGroupLayout {
 	BG_SIZE
 };
 
-class Mesh {
+struct InterleavedData {
+	glm::vec3 position;
+	glm::vec2 uv;
+	glm::vec3 normal;
+	glm::vec3 color;
+};
 
-	struct InterleavedData {
-		glm::vec3 position;
-		glm::vec2 uv;
-		glm::vec3 normal;
-		glm::vec3 color;
-	};
+class Mesh {
 
 	struct sUniformMeshData {
 		glm::mat4x4 model;
@@ -86,6 +86,7 @@ public:
 	WGPUBindGroup& get_bind_group();
 
 	void create_quad(float w = 1.f, float h = 1.f, const glm::vec3& color = {1.f, 1.f, 1.f});
+	void create_from_vertices(const std::vector<InterleavedData>& _vertices);
 
 	void update_model_matrix(const glm::mat4x4& model);
 	void update_material_color(const glm::vec3& color);
