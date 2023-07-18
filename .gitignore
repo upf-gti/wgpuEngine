@@ -4,3 +4,4 @@ build-web/
 .vscode/
 libraries/tinyobjloader/
 libraries/stb/
+libraries/nlohmann_json/

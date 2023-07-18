@@ -1,7 +1,7 @@
 #pragma once
 
 #include <glm/glm.hpp>
-#include "framework/json.hpp"
+#include "json.hpp"
 #include <regex>
 #include <cassert>
 #include <iostream>
@@ -83,7 +83,7 @@ inline json load_json(const std::string& filename) {
         {
             ifs.close();
             // Output exception information
-			printf("Failed to parse json file %s\n%s\nAt offset: %d"
+			printf("Failed to parse json file %s\n%s\nAt offset: %zd"
                 , filename.c_str(), e.what(), e.byte);
             continue;
         }

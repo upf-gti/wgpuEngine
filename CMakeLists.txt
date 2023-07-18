@@ -27,7 +27,15 @@ FetchContent_Declare(
     DOWNLOAD_NO_EXTRACT TRUE
 )
 
-FetchContent_MakeAvailable(tinyobjloader stb_image)
+# download nlohmann_json
+FetchContent_Declare(
+    nlohmann_json
+    URL https://raw.githubusercontent.com/nlohmann/json/develop/single_include/nlohmann/json.hpp
+    DOWNLOAD_DIR ${WGPU_DIR_LIBS}/nlohmann_json
+    DOWNLOAD_NO_EXTRACT TRUE
+)
+
+FetchContent_MakeAvailable(tinyobjloader stb_image nlohmann_json)
 
 # Macro to map filters to folder structure for MSVC projects
 macro(GroupSources curdir)
@@ -101,9 +109,17 @@ add_subdirectory(libraries/glm)
 target_link_libraries(${PROJECT_NAME} PUBLIC glm)
 
 # tinyobjloader
-include_directories(${WGPU_DIR_LIBS}/tinyobjloader)
+target_include_directories(${PROJECT_NAME} PUBLIC ${WGPU_DIR_LIBS}/tinyobjloader)
 
 # stb
-include_directories(${WGPU_DIR_LIBS}/stb)
+target_include_directories(${PROJECT_NAME} PUBLIC ${WGPU_DIR_LIBS}/stb)
+
+# nlohmann_json
+target_include_directories(${PROJECT_NAME} PUBLIC ${WGPU_DIR_LIBS}/nlohmann_json)
+
+# wgsl-reflect
+add_subdirectory(libraries/wgsl-reflect/cppts)
+add_subdirectory(libraries/wgsl-reflect/wgsl_reflect)
+target_link_libraries(${PROJECT_NAME} PUBLIC cppts wgsl_reflect)
 
 target_copy_webgpu_binaries(${PROJECT_NAME})
