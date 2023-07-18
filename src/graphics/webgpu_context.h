@@ -48,6 +48,7 @@ struct WebGPUContext {
     void                   create_texture_mipmaps(WGPUTexture texture, WGPUExtent3D texture_size, uint32_t mip_level_count, const void* data);
 
     WGPUBindGroupLayout    create_bind_group_layout(const std::vector<Uniform*>& uniforms);
+    WGPUBindGroupLayout    create_bind_group_layout(const std::vector<WGPUBindGroupLayoutEntry>& entries);
     WGPUBindGroup          create_bind_group(const std::vector<Uniform*>& uniforms, WGPUBindGroupLayout bind_group_layout);
     WGPUPipelineLayout     create_pipeline_layout(const std::vector<WGPUBindGroupLayout>& bind_group_layouts);
 

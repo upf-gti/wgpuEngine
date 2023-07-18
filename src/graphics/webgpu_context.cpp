@@ -373,6 +373,16 @@ WGPUBindGroupLayout WebGPUContext::create_bind_group_layout(const std::vector<Un
     return wgpuDeviceCreateBindGroupLayout(device, &bindGroupLayoutDesc);
 }
 
+WGPUBindGroupLayout WebGPUContext::create_bind_group_layout(const std::vector<WGPUBindGroupLayoutEntry> &entries)
+{
+    // Create a bind group layout
+    WGPUBindGroupLayoutDescriptor bindGroupLayoutDesc = {};
+    bindGroupLayoutDesc.entryCount = static_cast<uint32_t>(entries.size());
+    bindGroupLayoutDesc.entries = entries.data();
+
+    return wgpuDeviceCreateBindGroupLayout(device, &bindGroupLayoutDesc);
+}
+
 WGPUBindGroup WebGPUContext::create_bind_group(const std::vector<Uniform*>& uniforms, WGPUBindGroupLayout bind_group_layout)
 {
     std::vector<WGPUBindGroupEntry> entries(uniforms.size());
