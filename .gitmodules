@@ -10,6 +10,3 @@
 [submodule "libraries/glm"]
 	path = libraries/glm
 	url = https://github.com/g-truc/glm.git
-[submodule "libraries/wgsl-reflect"]
-	path = libraries/wgsl-reflect
-	url = https://github.com/upf-gti/wgsl-reflect
