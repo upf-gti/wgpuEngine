@@ -6,7 +6,7 @@
 
 TextEntity::TextEntity(const std::string& _text, glm::vec2 _box_size, bool _wrap) : EntityMesh()
 {
-    font = Font::get("");
+    font = Font::get("Lato");
     text = _text;
     box_size = _box_size;
     wrap = _wrap;
@@ -19,13 +19,18 @@ TextEntity::~TextEntity()
     if(font) delete font;
 }
 
+void TextEntity::update(float delta_time)
+{
+    
+}
+
 void TextEntity::append_char(glm::vec3 pos, Character& ch)
 {
-	float size = (float)scale / size;
+	float size = (float)m_scale / font->size;
 	for (int k = 0; k < 6; ++k) {
 
         vertices.push_back({
-            .position = (pos + ch.vertices[k]) * size,
+            .position = (pos - ch.vertices[k]) * size,
             .uv = ch.uvs[k],
             .normal = glm::vec3(0.f, 1.f, 0.f),
             .color = colors::WHITE
@@ -37,10 +42,10 @@ void TextEntity::generate_mesh()
 {
     assert(font || "No font set prior to draw!");
 
-    if (text.empty()) 
+    if (text.empty() || !font) 
         return;
 
-    float size = (float)scale / font->size;
+    float size = (float)m_scale / font->size;
     float space = (float)font->characters[' '].xadvance;
     glm::vec3 pos(0.f);
     glm::vec3 initial_pos = pos;
@@ -96,6 +101,7 @@ void TextEntity::generate_mesh()
 
     }
 
+    mesh = new Mesh();
     mesh->create_from_vertices(vertices);
 }
 
