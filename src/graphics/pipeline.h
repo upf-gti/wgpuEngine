@@ -16,6 +16,8 @@ public:
 
 	static WebGPUContext* webgpu_context;
 
+	void create_render(Shader* shader, const std::vector<WGPUVertexBufferLayout>& vertex_attributes, WGPUColorTargetState color_target, bool uses_depth_buffer = false);
+
 	void create_compute(Shader* shader, WGPUPipelineLayout pipeline_layout);
 	void create_compute(Shader* shader);
 

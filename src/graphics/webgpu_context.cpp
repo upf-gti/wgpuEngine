@@ -445,7 +445,7 @@ WGPUPipelineLayout WebGPUContext::create_pipeline_layout(const std::vector<WGPUB
     return wgpuDeviceCreatePipelineLayout(device, &layout_descr);
 }
 
-WGPURenderPipeline WebGPUContext::create_render_pipeline(const std::vector<WGPUVertexBufferLayout>& vertex_attributes, WGPUColorTargetState color_target, WGPUShaderModule render_shader_module, WGPUPipelineLayout pipeline_layout, bool uses_depth_buffer)
+WGPURenderPipeline WebGPUContext::create_render_pipeline(WGPUShaderModule render_shader_module, WGPUPipelineLayout pipeline_layout, const std::vector<WGPUVertexBufferLayout>& vertex_attributes, WGPUColorTargetState color_target, bool uses_depth_buffer)
 {    
     WGPUVertexState vertex_state = {};
     vertex_state.module = render_shader_module;
