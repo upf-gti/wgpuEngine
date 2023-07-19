@@ -9,12 +9,8 @@
 
 WebGPUContext* Mesh::webgpu_context = nullptr;
 
-std::vector<WGPUVertexAttribute> Mesh::vertex_buffer_attributes[eVertexBufferLayout::VB_SIZE] = {};
-WGPUVertexBufferLayout Mesh::vertex_buffer_layouts[eVertexBufferLayout::VB_SIZE] = {};
-
 WGPUBindGroupLayout Mesh::bind_group_layouts[BG_SIZE] = {};
 
-bool Mesh::vertex_buffer_layouts_initialized = false;
 bool Mesh::bind_groups_initialized = false;
 
 std::map<std::string, Mesh*> Mesh::meshes;
@@ -128,32 +124,6 @@ Mesh* Mesh::get(const std::string& mesh_path)
     return ms;
 }
 
-void Mesh::init_vertex_buffer_layouts()
-{
-    std::vector<WGPUVertexAttribute> &default_attributes = vertex_buffer_attributes[VB_DEFAULT];
-    default_attributes.resize(eVertexLayoutDefault::DEFAULT_SIZE);
-
-    default_attributes[eVertexLayoutDefault::POSITION].shaderLocation = 0;
-    default_attributes[eVertexLayoutDefault::POSITION].format = WGPUVertexFormat_Float32x3;
-    default_attributes[eVertexLayoutDefault::POSITION].offset = 0;
-
-    default_attributes[eVertexLayoutDefault::UV].shaderLocation = 1;
-    default_attributes[eVertexLayoutDefault::UV].format = WGPUVertexFormat_Float32x2;
-    default_attributes[eVertexLayoutDefault::UV].offset = sizeof(InterleavedData::position);
-
-    default_attributes[eVertexLayoutDefault::NORMAL].shaderLocation = 2;
-    default_attributes[eVertexLayoutDefault::NORMAL].format = WGPUVertexFormat_Float32x3;
-    default_attributes[eVertexLayoutDefault::NORMAL].offset = sizeof(InterleavedData::position) + sizeof(InterleavedData::uv);
-
-    default_attributes[eVertexLayoutDefault::COLOR].shaderLocation = 3;
-    default_attributes[eVertexLayoutDefault::COLOR].format = WGPUVertexFormat_Float32x3;
-    default_attributes[eVertexLayoutDefault::COLOR].offset = sizeof(InterleavedData::position) + sizeof(InterleavedData::uv) + sizeof(InterleavedData::normal);
-
-    vertex_buffer_layouts[VB_DEFAULT] = webgpu_context->create_vertex_buffer_layout(default_attributes, sizeof(InterleavedData), WGPUVertexStepMode_Vertex);
-
-    vertex_buffer_layouts_initialized = true;
-}
-
 void Mesh::init_bind_group_layouts()
 {
     default_uniform.data = webgpu_context->create_buffer(sizeof(sUniformMeshData), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform, nullptr);
@@ -164,21 +134,6 @@ void Mesh::init_bind_group_layouts()
     bind_group_layouts[BG_DEFAULT] = webgpu_context->create_bind_group_layout( { &default_uniform } );
 
     bind_groups_initialized = true;
-}
-
-WGPUVertexBufferLayout Mesh::get_vertex_buffer_layout(eVertexBufferLayout layout_type)
-{
-    if (!vertex_buffer_layouts_initialized) {
-        init_vertex_buffer_layouts();
-    }
-
-    if (layout_type >= eVertexBufferLayout::VB_SIZE || layout_type < 0) {
-        assert(0);
-        std::cerr << "Vertex Buffer Layout " << layout_type << " does not exist" << std::endl;
-        return {};
-    }
-
-    return vertex_buffer_layouts[layout_type];
 }
 
 WGPUBindGroupLayout Mesh::get_bind_group_layout(eBindGroupLayout bind_group_type)

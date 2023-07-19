@@ -8,7 +8,7 @@ Pipeline::~Pipeline()
 {
 }
 
-void Pipeline::create_render(Shader* shader, const std::vector<WGPUVertexBufferLayout>& vertex_attributes, WGPUColorTargetState color_target, bool uses_depth_buffer)
+void Pipeline::create_render(Shader* shader, WGPUColorTargetState color_target, bool uses_depth_buffer)
 {
 	const std::map<int, WGPUBindGroupLayout> layouts_by_id = shader->get_bind_group_layouts();
 	std::vector<WGPUBindGroupLayout> bind_group_layouts;
@@ -19,7 +19,7 @@ void Pipeline::create_render(Shader* shader, const std::vector<WGPUVertexBufferL
 
 	pipeline_layout = webgpu_context->create_pipeline_layout(bind_group_layouts);
 
-	pipeline = webgpu_context->create_render_pipeline(shader->get_module(), pipeline_layout, vertex_attributes, color_target, uses_depth_buffer);
+	pipeline = webgpu_context->create_render_pipeline(shader->get_module(), pipeline_layout, shader->get_vertex_buffer_layouts(), color_target, uses_depth_buffer);
 }
 
 void Pipeline::create_compute(Shader* shader, WGPUPipelineLayout pipeline_layout)

@@ -10,19 +10,6 @@
 
 class Texture;
 
-enum eVertexLayoutDefault {
-	POSITION,
-	UV,
-	NORMAL,
-	COLOR,
-	DEFAULT_SIZE
-};
-
-enum eVertexBufferLayout {
-	VB_DEFAULT,
-	VB_SIZE
-};
-
 enum eBindGroupLayout {
 	BG_DEFAULT,
 	BG_SIZE
@@ -53,12 +40,8 @@ class Mesh {
 
 	static Uniform	default_uniform;
 
-	static std::vector<WGPUVertexAttribute> vertex_buffer_attributes[VB_SIZE];
-	static WGPUVertexBufferLayout vertex_buffer_layouts[VB_SIZE];
-
 	static WGPUBindGroupLayout bind_group_layouts[BG_SIZE];
 
-	static bool vertex_buffer_layouts_initialized;
 	static bool bind_groups_initialized;
 
 	static std::map<std::string, Mesh*> meshes;
@@ -79,7 +62,6 @@ public:
 	static void init_vertex_buffer_layouts();
 	static void init_bind_group_layouts();
 
-	static WGPUVertexBufferLayout get_vertex_buffer_layout(eVertexBufferLayout layout_type);
 	static WGPUBindGroupLayout get_bind_group_layout(eBindGroupLayout bind_group_type);
 
 	WGPUBuffer& get_vertex_buffer();

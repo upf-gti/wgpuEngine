@@ -23,7 +23,8 @@ public:
 
 	void set_pipeline(Pipeline* pipeline);
 
-	std::map<int, WGPUBindGroupLayout>& get_bind_group_layouts() { return bind_group_layouts; }
+	std::map<int, WGPUBindGroupLayout>&  get_bind_group_layouts()    { return bind_group_layouts; }
+	std::vector<WGPUVertexBufferLayout>& get_vertex_buffer_layouts() { return vertex_buffer_layouts; }
 
 	std::string get_path() { return path; }
 
@@ -31,13 +32,16 @@ private:
 	static std::map<std::string, Shader*> shaders;
 
 	void load(const std::string& shader_path);
-	void create_bind_group_layouts(const std::string& shader_path, const std::string& shader_content);
+	void get_reflection_data(const std::string& shader_path, const std::string& shader_content);
 
 	std::string path;
 
 	WGPUShaderModule shader_module;
 
 	std::map<int, WGPUBindGroupLayout> bind_group_layouts;
+
+	std::vector<WGPUVertexAttribute>	vertex_attributes;
+	std::vector<WGPUVertexBufferLayout> vertex_buffer_layouts;
 
 	// Pipeline that uses this shader
 	Pipeline* pipeline_ref = nullptr;
