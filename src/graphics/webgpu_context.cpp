@@ -8,6 +8,8 @@
 #include "glfw3webgpu.h"
 #endif
 
+#include "shader.h"
+
 WGPUTextureFormat WebGPUContext::swapchain_format = WGPUTextureFormat_BGRA8Unorm;
 WGPUTextureFormat WebGPUContext::xr_swapchain_format = WGPUTextureFormat_BGRA8UnormSrgb;
 
@@ -175,7 +177,7 @@ int WebGPUContext::initialize(GLFWwindow* window, bool create_screen_swapchain)
         surface = glfwGetWGPUSurface(get_instance(), window);
     }
 
-    printErrors();
+    print_errors();
 
 #endif
 
@@ -401,7 +403,32 @@ WGPUBindGroup WebGPUContext::create_bind_group(const std::vector<Uniform*>& unif
     return wgpuDeviceCreateBindGroup(device, &bindGroupDesc);
 }
 
-void WebGPUContext::printErrors()
+WGPUBindGroup WebGPUContext::create_bind_group(const std::vector<Uniform*>& uniforms, Shader* shader, uint16_t bind_group)
+{
+    std::vector<WGPUBindGroupEntry> entries(uniforms.size());
+
+    for (int i = 0; i < uniforms.size(); ++i) {
+        entries[i] = uniforms[i]->get_bind_group_entry();
+    }
+
+    std::map<int, WGPUBindGroupLayout>& layouts_by_id = shader->get_bind_group_layouts();
+
+    if (!layouts_by_id.contains(bind_group)) {
+        std::cout << "Can't find bind group " << bind_group << " in shader: " << shader->get_path() << std::endl;
+        assert(0);
+    }
+
+    // A bind group contains one or multiple bindings
+    WGPUBindGroupDescriptor bindGroupDesc = {};
+    bindGroupDesc.layout = layouts_by_id[bind_group];
+    // There must be as many bindings as declared in the layout!
+    bindGroupDesc.entryCount = static_cast<uint32_t>(entries.size());
+    bindGroupDesc.entries = entries.data();
+
+    return wgpuDeviceCreateBindGroup(device, &bindGroupDesc);
+}
+
+void WebGPUContext::print_errors()
 {
 #ifndef __EMSCRIPTEN__
     wgpuInstanceProcessEvents(get_instance());

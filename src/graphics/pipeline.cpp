@@ -16,6 +16,21 @@ void Pipeline::create_compute(Shader* shader, WGPUPipelineLayout pipeline_layout
 	shader->set_pipeline(this);
 }
 
+void Pipeline::create_compute(Shader* shader)
+{
+	const std::map<int, WGPUBindGroupLayout> layouts_by_id = shader->get_bind_group_layouts();
+	std::vector<WGPUBindGroupLayout> bind_group_layouts;
+
+	for (const auto& bind_group_layout : layouts_by_id) {
+		bind_group_layouts.push_back(bind_group_layout.second);
+	}
+
+	pipeline_layout = webgpu_context->create_pipeline_layout(bind_group_layouts);
+	pipeline = webgpu_context->create_compute_pipeline(shader->get_module(), pipeline_layout);
+
+	shader->set_pipeline(this);
+}
+
 void Pipeline::reload(const Shader* shader)
 {
 	if (std::holds_alternative<WGPURenderPipeline>(pipeline)) {

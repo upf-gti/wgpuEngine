@@ -10,6 +10,8 @@
 
 #include "GLFW/glfw3.h"
 
+class Shader;
+
 struct WebGPUContext {
 
 #ifdef XR_SUPPORT
@@ -50,6 +52,7 @@ struct WebGPUContext {
     WGPUBindGroupLayout    create_bind_group_layout(const std::vector<Uniform*>& uniforms);
     WGPUBindGroupLayout    create_bind_group_layout(const std::vector<WGPUBindGroupLayoutEntry>& entries);
     WGPUBindGroup          create_bind_group(const std::vector<Uniform*>& uniforms, WGPUBindGroupLayout bind_group_layout);
+    WGPUBindGroup          create_bind_group(const std::vector<Uniform*>& uniforms, Shader* shader, uint16_t bind_group);
     WGPUPipelineLayout     create_pipeline_layout(const std::vector<WGPUBindGroupLayout>& bind_group_layouts);
 
     WGPURenderPipeline     create_render_pipeline(const std::vector<WGPUVertexBufferLayout>& vertex_attributes, WGPUColorTargetState color_target, WGPUShaderModule render_shader_module, WGPUPipelineLayout pipeline_layout, bool uses_depth_buffer=false);
@@ -57,6 +60,6 @@ struct WebGPUContext {
 
     WGPUVertexBufferLayout create_vertex_buffer_layout(const std::vector<WGPUVertexAttribute>& vertex_attributes, uint64_t stride, WGPUVertexStepMode step_mode);
 
-    void printErrors();
+    void print_errors();
 
 };

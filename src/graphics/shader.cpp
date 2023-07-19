@@ -64,13 +64,14 @@ void Shader::load(const std::string& shader_path)
 
 	create_bind_group_layouts(shader_path, shader_content);
 
+	webgpu_context->print_errors();
+
 	loaded = true;
 	std::cout << " [OK]" << std::endl;
 }
 
 void Shader::create_bind_group_layouts(const std::string& shader_path, const std::string& shader_content)
 {
-
 	tint::Source::File file(shader_path, shader_content);
 	tint::Program tint_program = tint::reader::wgsl::Parse(&file);
 	tint::inspector::Inspector inspector(&tint_program);
@@ -124,8 +125,7 @@ void Shader::create_bind_group_layouts(const std::string& shader_path, const std
 				break;
 			}
 
-			if (resource_binding.resource_type == ResourceBinding::ResourceType::kSampledTexture ||
-				resource_binding.resource_type == ResourceBinding::ResourceType::kWriteOnlyStorageTexture) {
+			if (resource_binding.resource_type == ResourceBinding::ResourceType::kSampledTexture) {
 				switch (resource_binding.sampled_kind)
 				{
 				case ResourceBinding::SampledKind::kFloat:
@@ -148,6 +148,31 @@ void Shader::create_bind_group_layouts(const std::string& shader_path, const std
 					break;
 				}
 			}
+
+			if (resource_binding.resource_type == ResourceBinding::ResourceType::kWriteOnlyStorageTexture) {
+
+				switch (resource_binding.image_format)
+				{
+				case ResourceBinding::TexelFormat::kRgba8Unorm:
+					entry.storageTexture.format = WGPUTextureFormat_RGBA8Unorm;
+					break;
+				default:
+					std::cerr << "Shader reflection failed: image format not implemented" << std::endl;
+					assert(0);
+					break;
+				}
+
+				switch (resource_binding.dim)
+				{
+				case ResourceBinding::TextureDimension::k2d:
+					entry.storageTexture.viewDimension = WGPUTextureViewDimension_2D;
+					break;
+				default:
+					std::cerr << "Shader reflection failed: storage view dimension not implemented" << std::endl;
+					assert(0);
+					break;
+				}
+			}
 		}
 	}
 
@@ -158,7 +183,7 @@ void Shader::create_bind_group_layouts(const std::string& shader_path, const std
 			entries.push_back(entry.second);
 		}
 
-		bind_group_layouts.push_back(webgpu_context->create_bind_group_layout(entries));
+		bind_group_layouts[bind_group_entries.first] = webgpu_context->create_bind_group_layout(entries);
 
 		entries.clear();
 	}

@@ -17,6 +17,8 @@ public:
 	static WebGPUContext* webgpu_context;
 
 	void create_compute(Shader* shader, WGPUPipelineLayout pipeline_layout);
+	void create_compute(Shader* shader);
+
 	void reload(const Shader* shader);
 
 	void set(const WGPURenderPassEncoder& render_pass);

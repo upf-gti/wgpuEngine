@@ -23,6 +23,10 @@ public:
 
 	void set_pipeline(Pipeline* pipeline);
 
+	std::map<int, WGPUBindGroupLayout>& get_bind_group_layouts() { return bind_group_layouts; }
+
+	std::string get_path() { return path; }
+
 private:
 	static std::map<std::string, Shader*> shaders;
 
@@ -33,7 +37,7 @@ private:
 
 	WGPUShaderModule shader_module;
 
-	std::vector<WGPUBindGroupLayout> bind_group_layouts;
+	std::map<int, WGPUBindGroupLayout> bind_group_layouts;
 
 	// Pipeline that uses this shader
 	Pipeline* pipeline_ref = nullptr;
