@@ -7,6 +7,8 @@
 
 #include "pipeline.h"
 
+#include "tint/tint.h"
+
 std::map<std::string, Shader*> Shader::shaders;
 WebGPUContext* Shader::webgpu_context = nullptr;
 
@@ -60,8 +62,106 @@ void Shader::load(const std::string& shader_path)
 
 	shader_module = webgpu_context->create_shader_module(shader_content.c_str());
 
+	create_bind_group_layouts(shader_path, shader_content);
+
 	loaded = true;
 	std::cout << " [OK]" << std::endl;
+}
+
+void Shader::create_bind_group_layouts(const std::string& shader_path, const std::string& shader_content)
+{
+
+	tint::Source::File file(shader_path, shader_content);
+	tint::Program tint_program = tint::reader::wgsl::Parse(&file);
+	tint::inspector::Inspector inspector(&tint_program);
+
+	std::map<int, std::map<int, WGPUBindGroupLayoutEntry>> entries_by_bind_group;
+
+	using ResourceBinding = tint::inspector::ResourceBinding;
+
+	for (const auto& entry_point : inspector.GetEntryPoints()) {
+
+		for (const auto& resource_binding : inspector.GetResourceBindings(entry_point.name)) {
+
+			// Creates new if didn't exist, otherwise return entry from previous entry_point
+			WGPUBindGroupLayoutEntry& entry = entries_by_bind_group[resource_binding.bind_group][resource_binding.binding];
+
+			// The binding index as used in the @binding attribute in the shader
+			entry.binding = resource_binding.binding;
+
+			// The stages that needs to access this resource
+			switch (entry_point.stage)
+			{
+			case tint::inspector::PipelineStage::kVertex:
+				entry.visibility |= WGPUShaderStage_Vertex;
+				break;
+			case tint::inspector::PipelineStage::kFragment:
+				entry.visibility |= WGPUShaderStage_Fragment;
+				break;
+			case tint::inspector::PipelineStage::kCompute:
+				entry.visibility |= WGPUShaderStage_Compute;
+				break;
+			default:
+				break;
+			}
+
+			switch (resource_binding.resource_type)
+			{
+			case ResourceBinding::ResourceType::kSampledTexture:
+				break;
+			case ResourceBinding::ResourceType::kUniformBuffer:
+				entry.buffer.type = WGPUBufferBindingType_Uniform;
+				break;
+			case ResourceBinding::ResourceType::kStorageBuffer:
+				entry.buffer.type = WGPUBufferBindingType_Storage;
+				break;
+			case ResourceBinding::ResourceType::kWriteOnlyStorageTexture:
+				entry.storageTexture.access = WGPUStorageTextureAccess_WriteOnly;
+				break;
+			default:
+				std::cerr << "Shader reflection failed: Resource type not implemented" << std::endl;
+				assert(0);
+				break;
+			}
+
+			if (resource_binding.resource_type == ResourceBinding::ResourceType::kSampledTexture ||
+				resource_binding.resource_type == ResourceBinding::ResourceType::kWriteOnlyStorageTexture) {
+				switch (resource_binding.sampled_kind)
+				{
+				case ResourceBinding::SampledKind::kFloat:
+					entry.texture.sampleType = WGPUTextureSampleType_Float;
+					break;
+				default:
+					std::cerr << "Shader reflection failed: sample kind not implemented" << std::endl;
+					assert(0);
+					break;
+				}
+
+				switch (resource_binding.dim)
+				{
+				case ResourceBinding::TextureDimension::k2d:
+					entry.texture.viewDimension = WGPUTextureViewDimension_2D;
+					break;
+				default:
+					std::cerr << "Shader reflection failed: view dimension not implemented" << std::endl;
+					assert(0);
+					break;
+				}
+			}
+		}
+	}
+
+	for (const auto& bind_group_entries : entries_by_bind_group) {
+		std::vector<WGPUBindGroupLayoutEntry> entries;
+
+		for (const auto& entry : bind_group_entries.second) {
+			entries.push_back(entry.second);
+		}
+
+		bind_group_layouts.push_back(webgpu_context->create_bind_group_layout(entries));
+
+		entries.clear();
+	}
 }
 
 void Shader::reload()

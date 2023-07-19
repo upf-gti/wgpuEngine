@@ -27,10 +27,13 @@ private:
 	static std::map<std::string, Shader*> shaders;
 
 	void load(const std::string& shader_path);
+	void create_bind_group_layouts(const std::string& shader_path, const std::string& shader_content);
 
 	std::string path;
 
 	WGPUShaderModule shader_module;
+
+	std::vector<WGPUBindGroupLayout> bind_group_layouts;
 
 	// Pipeline that uses this shader
 	Pipeline* pipeline_ref = nullptr;
