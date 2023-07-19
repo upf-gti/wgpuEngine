@@ -117,9 +117,4 @@ target_include_directories(${PROJECT_NAME} PUBLIC ${WGPU_DIR_LIBS}/stb)
 # nlohmann_json
 target_include_directories(${PROJECT_NAME} PUBLIC ${WGPU_DIR_LIBS}/nlohmann_json)
 
-# wgsl-reflect
-add_subdirectory(libraries/wgsl-reflect/cppts)
-add_subdirectory(libraries/wgsl-reflect/wgsl_reflect)
-target_link_libraries(${PROJECT_NAME} PUBLIC cppts wgsl_reflect)
-
 target_copy_webgpu_binaries(${PROJECT_NAME})
