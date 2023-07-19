@@ -2,6 +2,8 @@
 
 using namespace std::string_literals;
 
+std::map<std::string, Font*> Font::s_fonts;
+
 Font* Font::get(const std::string& font_name)
 {
     if (s_fonts.count(font_name))
@@ -18,7 +20,7 @@ Font* Font::get(const std::string& font_name)
 
 void Font::load(const std::string& font_name)
 {
-    json j = font_description = load_json("data/fonts/" + font_name + ".json"); 
+    json j = font_description = load_json("data/fonts/" + font_name + "/" + font_name + ".json"); 
 
     // Load all pages
     {   
@@ -26,8 +28,8 @@ void Font::load(const std::string& font_name)
         for (std::string page : font_pages)
         {
             fs::path page_path = fs::path(page);
-            page_path.replace_extension("dds");
-            std::string filename = "data/fonts/"s + page_path.string();
+            page_path.replace_extension("png");
+            std::string filename = "data/fonts/" + font_name + "/" + page_path.string();
 
             Texture* tex = Texture::get(filename);
             textures.push_back(tex);
