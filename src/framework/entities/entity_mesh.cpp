@@ -10,9 +10,12 @@ void EntityMesh::render()
 		model_dirty = false;
 	}
 
-	Renderer::instance->add_renderable(this);
+	if (mesh && mesh->get_shader()) {
+		mesh->get_shader()->get_pipeline()->add_renderable(this);
+	}
 }
 
 void EntityMesh::update(float delta_time)
 {
+
 }

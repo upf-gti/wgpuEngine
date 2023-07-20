@@ -28,9 +28,6 @@ protected:
     bool is_openxr_available    = false;
     bool use_mirror_screen      = false;
 
-    // Entities to be rendered this frame
-    std::vector < EntityMesh* > render_list;
-
 public:
 
     // Singleton
@@ -43,8 +40,6 @@ public:
     
     virtual void update(float delta_time) = 0;
     virtual void render() = 0;
-
-    void add_renderable(EntityMesh *entity);
 
     bool get_openxr_available() { return is_openxr_available; }
     bool get_use_mirror_screen() { return use_mirror_screen; }

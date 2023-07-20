@@ -3,12 +3,13 @@
 #include "entity.h"
 
 class Mesh;
+class Shader;
 
 class EntityMesh : public Entity {
 
 protected:
 
-	Mesh* mesh = nullptr;
+	Mesh*   mesh = nullptr;
 
 public:
 

@@ -203,8 +203,17 @@ void Shader::get_reflection_data(const std::string& shader_path, const std::stri
 
 				switch (resource_binding.dim)
 				{
+				case ResourceBinding::TextureDimension::k1d:
+					entry.texture.viewDimension = WGPUTextureViewDimension_1D;
+					break;
 				case ResourceBinding::TextureDimension::k2d:
 					entry.texture.viewDimension = WGPUTextureViewDimension_2D;
+					break;
+				case ResourceBinding::TextureDimension::k3d:
+					entry.texture.viewDimension = WGPUTextureViewDimension_3D;
+					break;
+				case ResourceBinding::TextureDimension::kCube:
+					entry.texture.viewDimension = WGPUTextureViewDimension_Cube;
 					break;
 				default:
 					std::cerr << "Shader reflection failed: view dimension not implemented" << std::endl;
@@ -228,8 +237,17 @@ void Shader::get_reflection_data(const std::string& shader_path, const std::stri
 
 				switch (resource_binding.dim)
 				{
+				case ResourceBinding::TextureDimension::k1d:
+					entry.storageTexture.viewDimension = WGPUTextureViewDimension_1D;
+					break;
 				case ResourceBinding::TextureDimension::k2d:
 					entry.storageTexture.viewDimension = WGPUTextureViewDimension_2D;
+					break;
+				case ResourceBinding::TextureDimension::k3d:
+					entry.storageTexture.viewDimension = WGPUTextureViewDimension_3D;
+					break;
+				case ResourceBinding::TextureDimension::kCube:
+					entry.storageTexture.viewDimension = WGPUTextureViewDimension_Cube;
 					break;
 				default:
 					std::cerr << "Shader reflection failed: storage view dimension not implemented" << std::endl;
@@ -256,6 +274,10 @@ void Shader::get_reflection_data(const std::string& shader_path, const std::stri
 void Shader::reload()
 {
 	wgpuShaderModuleRelease(shader_module);
+
+	bind_group_layouts.clear();
+	vertex_attributes.clear();
+	vertex_buffer_layouts.clear();
 
 	load(path);
 

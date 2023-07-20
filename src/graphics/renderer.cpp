@@ -79,8 +79,3 @@ void Renderer::clean()
 
     webgpu_context.destroy();
 }
-
-void Renderer::add_renderable(EntityMesh *entity)
-{
-    render_list.push_back(entity);
-}

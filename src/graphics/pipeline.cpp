@@ -2,6 +2,8 @@
 
 #include "shader.h"
 
+#include "framework/entities/entity_mesh.h"
+
 WebGPUContext* Pipeline::webgpu_context = nullptr;
 
 Pipeline::~Pipeline()
@@ -17,9 +19,15 @@ void Pipeline::create_render(Shader* shader, WGPUColorTargetState color_target, 
 		bind_group_layouts.push_back(bind_group_layout.second);
 	}
 
+	this->color_target = color_target;
+	this->blend_state = *color_target.blend;
+	this->uses_depth_buffer = uses_depth_buffer;
+
 	pipeline_layout = webgpu_context->create_pipeline_layout(bind_group_layouts);
 
 	pipeline = webgpu_context->create_render_pipeline(shader->get_module(), pipeline_layout, shader->get_vertex_buffer_layouts(), color_target, uses_depth_buffer);
+
+	shader->set_pipeline(this);
 }
 
 void Pipeline::create_compute(Shader* shader, WGPUPipelineLayout pipeline_layout)
@@ -45,11 +53,12 @@ void Pipeline::create_compute(Shader* shader)
 	shader->set_pipeline(this);
 }
 
-void Pipeline::reload(const Shader* shader)
+void Pipeline::reload(Shader* shader)
 {
 	if (std::holds_alternative<WGPURenderPipeline>(pipeline)) {
 		wgpuRenderPipelineRelease(std::get<WGPURenderPipeline>(pipeline));
-		//pipeline = webgpu_context->create_render_pipeline(shader->get_module(), pipeline_layout);
+		color_target.blend = &blend_state;
+		pipeline = webgpu_context->create_render_pipeline(shader->get_module(), pipeline_layout, shader->get_vertex_buffer_layouts(), color_target, uses_depth_buffer);
 	}
 	else {
 		wgpuComputePipelineRelease(std::get<WGPUComputePipeline>(pipeline));
@@ -65,4 +74,20 @@ void Pipeline::set(const WGPURenderPassEncoder& render_pass)
 void Pipeline::set(const WGPUComputePassEncoder& compute_pass)
 {
 	wgpuComputePassEncoderSetPipeline(compute_pass, std::get<WGPUComputePipeline>(pipeline));
+}
+
+void Pipeline::add_renderable(EntityMesh* entity)
+{
+	render_list.push_back(entity);
+}
+
+void Pipeline::clean_renderables()
+{
+	// Destroy UI elements
+	for (const auto entity : render_list) {
+		if (entity->destroy_after_render)
+			delete entity;
+	}
+
+	render_list.clear();
 }

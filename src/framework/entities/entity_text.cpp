@@ -17,6 +17,7 @@ TextEntity::TextEntity(const std::string& _text, glm::vec2 _box_size, bool _wrap
 TextEntity::~TextEntity()
 {
     if(font) delete font;
+    if (mesh) delete mesh;
 }
 
 void TextEntity::update(float delta_time)
@@ -103,6 +104,8 @@ void TextEntity::generate_mesh()
 
     mesh = new Mesh();
     mesh->create_from_vertices(vertices);
+    mesh->set_texture(font->textures[0]);
+    mesh->create_bind_group_texture(Shader::get("data/shaders/sdf_fonts.wgsl"), 0);
 }
 
 int TextEntity::get_text_width(const std::string text)
