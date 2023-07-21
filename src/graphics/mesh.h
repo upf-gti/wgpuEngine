@@ -10,11 +10,6 @@
 
 class Texture;
 
-enum eBindGroupLayout {
-	BG_DEFAULT,
-	BG_SIZE
-};
-
 struct InterleavedData {
 	glm::vec3 position;
 	glm::vec2 uv;
@@ -41,12 +36,6 @@ class Mesh {
 
 	Texture*		diffuse = nullptr;
 
-	static Uniform	default_uniform;
-
-	static WGPUBindGroupLayout bind_group_layouts[BG_SIZE];
-
-	static bool bind_groups_initialized;
-
 	static std::map<std::string, Mesh*> meshes;
 
 	void create_vertex_buffer();
@@ -60,10 +49,6 @@ public:
 	static WebGPUContext* webgpu_context;
 
 	static Mesh* get(const std::string& mesh_path);
-
-	static void init_bind_group_layouts();
-
-	static WGPUBindGroupLayout get_bind_group_layout(eBindGroupLayout bind_group_type);
 
 	WGPUBuffer& get_vertex_buffer();
 	WGPUBindGroup& get_bind_group();

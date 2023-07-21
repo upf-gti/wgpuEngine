@@ -11,13 +11,7 @@
 
 WebGPUContext* Mesh::webgpu_context = nullptr;
 
-WGPUBindGroupLayout Mesh::bind_group_layouts[BG_SIZE] = {};
-
-bool Mesh::bind_groups_initialized = false;
-
 std::map<std::string, Mesh*> Mesh::meshes;
-
-Uniform Mesh::default_uniform = {};
 
 bool Mesh::load(const std::string& mesh_path)
 {
@@ -66,7 +60,7 @@ bool Mesh::load(const std::string& mesh_path)
 
                 if (idx.texcoord_index >= 0) {
                     vertex_data.uv.x = attrib.texcoords[2 * size_t(idx.texcoord_index) + 0];
-                    vertex_data.uv.y = 1.0 - attrib.texcoords[2 * size_t(idx.texcoord_index) + 1];
+                    vertex_data.uv.y = 1.0f - attrib.texcoords[2 * size_t(idx.texcoord_index) + 1];
                 }
 
                 vertex_data.color.x = attrib.colors[3*size_t(idx.vertex_index) + 0];
@@ -125,33 +119,6 @@ Mesh* Mesh::get(const std::string& mesh_path)
     meshes[name] = ms;
 
     return ms;
-}
-
-void Mesh::init_bind_group_layouts()
-{
-    default_uniform.data = webgpu_context->create_buffer(sizeof(sUniformMeshData), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform, nullptr);
-    default_uniform.binding = 0;
-    default_uniform.visibility = WGPUShaderStage_Vertex;
-    default_uniform.buffer_size = sizeof(sUniformMeshData);
-
-    bind_group_layouts[BG_DEFAULT] = webgpu_context->create_bind_group_layout( { &default_uniform } );
-
-    bind_groups_initialized = true;
-}
-
-WGPUBindGroupLayout Mesh::get_bind_group_layout(eBindGroupLayout bind_group_type)
-{
-    if (!bind_groups_initialized) {
-        init_bind_group_layouts();
-    }
-
-    if (bind_group_type >= eBindGroupLayout::BG_SIZE || bind_group_type < 0) {
-        assert(0);
-        std::cerr << "Bind Group " << bind_group_type << " does not exist" << std::endl;
-        return {};
-    }
-
-    return bind_group_layouts[bind_group_type];
 }
 
 void Mesh::create_vertex_buffer()
