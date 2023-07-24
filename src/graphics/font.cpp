@@ -144,7 +144,7 @@ float Font::adjust_kerning_pairs(int first, int second) {
 
     typedef std::multimap<int, CKerning>::iterator kiterator;
     if (!kernings.count(first))
-        return 0;
+        return 0.f;
 
     std::pair<kiterator, kiterator> result = kernings.equal_range(first);
 
@@ -156,5 +156,5 @@ float Font::adjust_kerning_pairs(int first, int second) {
         }
     }
 
-    return 0;
+    return 0.f;
 }
