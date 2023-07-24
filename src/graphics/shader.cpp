@@ -174,6 +174,9 @@ void Shader::get_reflection_data(const std::string& shader_path, const std::stri
 			{
 			case ResourceBinding::ResourceType::kSampledTexture:
 				break;
+			case ResourceBinding::ResourceType::kSampler:
+				entry.sampler.type = WGPUSamplerBindingType_Filtering;
+				break;
 			case ResourceBinding::ResourceType::kUniformBuffer:
 				entry.buffer.type = WGPUBufferBindingType_Uniform;
 				break;

@@ -31,6 +31,7 @@ class Mesh {
 
 	Uniform			mesh_data_uniform;
 	Uniform			albedo_uniform;
+	Uniform			sampler_uniform;
 
 	Shader*			shader = nullptr;
 

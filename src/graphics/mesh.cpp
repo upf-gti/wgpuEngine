@@ -100,6 +100,10 @@ Mesh::~Mesh()
 
     wgpuBindGroupRelease(bind_group);
 
+    sampler_uniform.destroy();
+
+    albedo_uniform.destroy();
+
     mesh_data_uniform.destroy();
 }
 
@@ -156,7 +160,10 @@ void Mesh::create_bind_group_texture(Shader* shader, uint16_t bind_group_id)
     albedo_uniform.data = diffuse->get_view();
     albedo_uniform.binding = 1;
 
-    std::vector<Uniform*> uniforms = { &mesh_data_uniform, &albedo_uniform };
+    sampler_uniform.data = webgpu_context->create_sampler(); // Using all default params
+    sampler_uniform.binding = 2;
+
+    std::vector<Uniform*> uniforms = { &mesh_data_uniform, &albedo_uniform, &sampler_uniform };
 
     bind_group = webgpu_context->create_bind_group(uniforms, shader, bind_group_id);
 }

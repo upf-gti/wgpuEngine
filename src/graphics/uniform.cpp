@@ -63,10 +63,12 @@ WGPUBindGroupEntry Uniform::get_bind_group_entry() const
         // And we specify again the size of the buffer.
         bindingGroup.size = buffer_size;
     }
-    else
-        if (std::holds_alternative<WGPUTextureView>(data)) {
-            bindingGroup.textureView = std::get<WGPUTextureView>(data);
-        }
+    else if (std::holds_alternative<WGPUTextureView>(data)) {
+        bindingGroup.textureView = std::get<WGPUTextureView>(data);
+    }
+    else if (std::holds_alternative<WGPUSampler>(data)) {
+        bindingGroup.sampler = std::get<WGPUSampler>(data);
+    }
 
     return bindingGroup;
 }

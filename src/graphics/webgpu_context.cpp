@@ -136,6 +136,7 @@ int WebGPUContext::initialize(GLFWwindow* window, bool create_screen_swapchain)
     requiredLimits.limits.maxBufferSize = 512 * 512 * 512 * sizeof(float) * 4 + 4; // TODO: remove this +4 when fixed in Dawn
     requiredLimits.limits.maxStorageBufferBindingSize = 512 * 512 * 512 * sizeof(float) * 4;
     requiredLimits.limits.maxComputeInvocationsPerWorkgroup = 512;
+    requiredLimits.limits.maxSamplersPerShaderStage = 1;
 
     // Create device
     WGPUDeviceDescriptor deviceDesc = {};
@@ -298,6 +299,23 @@ WGPUTextureView WebGPUContext::create_texture_view(WGPUTexture texture, WGPUText
     textureViewDesc.label = "Input View";
 
     return wgpuTextureCreateView(texture, &textureViewDesc);
+}
+
+WGPUSampler WebGPUContext::create_sampler(WGPUAddressMode wrap, WGPUFilterMode mag_filter, WGPUFilterMode min_filter, WGPUMipmapFilterMode mipmap_filter)
+{
+    WGPUSamplerDescriptor samplerDesc = {};
+    samplerDesc.addressModeU = wrap;
+    samplerDesc.addressModeV = wrap;
+    samplerDesc.addressModeW = wrap;
+    samplerDesc.magFilter = mag_filter;
+    samplerDesc.minFilter = min_filter;
+    samplerDesc.mipmapFilter = mipmap_filter;
+    samplerDesc.lodMinClamp = 0.0f;
+    samplerDesc.lodMaxClamp = 1.0f;
+    samplerDesc.compare = WGPUCompareFunction_Undefined;
+    samplerDesc.maxAnisotropy = 1;
+
+    return wgpuDeviceCreateSampler(device, &samplerDesc);
 }
 
 void WebGPUContext::create_texture_mipmaps(WGPUTexture texture, WGPUExtent3D texture_size, uint32_t mip_level_count, const void* data)
