@@ -100,10 +100,6 @@ Mesh::~Mesh()
 
     wgpuBindGroupRelease(bind_group);
 
-    sampler_uniform.destroy();
-
-    albedo_uniform.destroy();
-
     mesh_data_uniform.destroy();
 }
 

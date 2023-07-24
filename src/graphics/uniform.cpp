@@ -19,6 +19,9 @@ void Uniform::destroy()
     else if (std::holds_alternative<WGPUTextureView>(data)) {
         wgpuTextureViewRelease(std::get<WGPUTextureView>(data));
     }
+    else if (std::holds_alternative<WGPUSampler>(data)) {
+        wgpuSamplerRelease(std::get<WGPUSampler>(data));
+    }
 }
 
 WGPUBindGroupLayoutEntry Uniform::get_bind_group_layout_entry() const
