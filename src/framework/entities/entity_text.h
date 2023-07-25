@@ -3,6 +3,7 @@
 #include <vector>
 #include "entity_mesh.h"
 #include "graphics/font.h"
+#include "framework/colors.h"
 
 struct InterleavedData;
 
@@ -12,8 +13,9 @@ class TextEntity : public EntityMesh {
 
 	Font* font = nullptr;
 
-	float m_scale = 1.f;
+	float font_scale = 1.f;
 	glm::vec2 box_size;
+	glm::vec3 color = colors::WHITE;
 	bool wrap = true;
 
 	std::string text = "";
@@ -22,8 +24,8 @@ class TextEntity : public EntityMesh {
 
 public:
 
-	TextEntity(const std::string& _text, glm::vec2 _box_size, bool _wrap = true);
-	virtual ~TextEntity();
+	TextEntity(const std::string& _text, glm::vec2 _box_size = { 1, 1 }, bool _wrap = false);
+	virtual ~TextEntity() {};
 
 	virtual void update(float delta_time) override;
 
@@ -32,6 +34,7 @@ public:
 	*/
 
 	int get_text_width(const std::string text);
-	void set_scale(float _scale) { m_scale = _scale; }
+	TextEntity* set_color(const glm::vec3& _color) { color = _color; return this; }
+	TextEntity* set_scale(float _scale) { font_scale = _scale; return this; }
 	void generate_mesh();
 };

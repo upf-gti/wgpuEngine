@@ -6,10 +6,10 @@ std::map<std::string, Font*> Font::s_fonts;
 
 Font* Font::get(const std::string& font_name)
 {
-    if (s_fonts.count(font_name))
-    {
-        return s_fonts[font_name];
-    }
+    // check if already loaded
+    std::map<std::string, Font*>::iterator it = s_fonts.find(font_name);
+    if (it != s_fonts.end())
+        return it->second;
 
     Font* font = new Font();
     font->load(font_name);

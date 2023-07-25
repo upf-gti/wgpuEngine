@@ -1,7 +1,6 @@
 #include "entity_text.h"
 #include "graphics/renderer.h"
 #include "graphics/mesh.h"
-#include "framework/colors.h"
 #include <assert.h>
 
 TextEntity::TextEntity(const std::string& _text, glm::vec2 _box_size, bool _wrap) : EntityMesh()
@@ -10,14 +9,6 @@ TextEntity::TextEntity(const std::string& _text, glm::vec2 _box_size, bool _wrap
     text = _text;
     box_size = _box_size;
     wrap = _wrap;
-
-    generate_mesh();
-}
-
-TextEntity::~TextEntity()
-{
-    if(font) delete font;
-    if (mesh) delete mesh;
 }
 
 void TextEntity::update(float delta_time)
@@ -27,14 +18,14 @@ void TextEntity::update(float delta_time)
 
 void TextEntity::append_char(glm::vec3 pos, Character& ch)
 {
-	float size = (float)m_scale / font->size;
+	float size = (float)font_scale / font->size;
 	for (int k = 0; k < 6; ++k) {
 
         vertices.push_back({
             .position = (pos + ch.vertices[k]) * size,
             .uv = ch.uvs[k] / glm::vec2(font->scaleW, font->scaleH),
             .normal = glm::vec3(0.f, 1.f, 0.f),
-            .color = colors::WHITE
+            .color = color
         });
 	}
 }
@@ -46,7 +37,7 @@ void TextEntity::generate_mesh()
     if (text.empty() || !font) 
         return;
 
-    float size = (float)m_scale / font->size;
+    float size = (float)font_scale / font->size;
     float space = (float)font->characters[' '].xadvance;
     glm::vec3 pos(0.f);
     glm::vec3 initial_pos = pos;

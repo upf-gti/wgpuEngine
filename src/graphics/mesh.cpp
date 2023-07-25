@@ -176,6 +176,14 @@ WGPUBindGroup& Mesh::get_bind_group()
 
 void Mesh::create_quad(float w, float h, const glm::vec3& color)
 {
+    // Mesh has vertex data...
+    if (vertex_buffer)
+    {
+        vertices.clear();
+        wgpuBufferDestroy(vertex_buffer);
+        wgpuBindGroupRelease(bind_group);
+    }
+
     vertices.resize(6);
     
     vertices[0].position = { -w,  h, 0.f };
