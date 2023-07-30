@@ -154,7 +154,10 @@ void Mesh::create_bind_group_color(Shader* shader, uint16_t bind_group_id)
 
     bind_group = webgpu_context->create_bind_group(uniforms, shader, bind_group_id);
 
-    update_material_color(color);
+    for (int i = 0; i < instances; ++i)
+    {
+        update_material_color(color, i);
+    }
 }
 
 void Mesh::create_bind_group_texture(Shader* shader, uint16_t bind_group_id)
