@@ -183,6 +183,9 @@ void Shader::get_reflection_data(const std::string& shader_path, const std::stri
 			case ResourceBinding::ResourceType::kStorageBuffer:
 				entry.buffer.type = WGPUBufferBindingType_Storage;
 				break;
+			case ResourceBinding::ResourceType::kReadOnlyStorageBuffer:
+				entry.buffer.type = WGPUBufferBindingType_ReadOnlyStorage;
+				break;
 			case ResourceBinding::ResourceType::kWriteOnlyStorageTexture:
 				entry.storageTexture.access = WGPUStorageTextureAccess_WriteOnly;
 				break;

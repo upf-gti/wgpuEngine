@@ -9,7 +9,8 @@ class EntityMesh : public Entity {
 
 protected:
 
-	Mesh*   mesh = nullptr;
+	Mesh*    mesh = nullptr;
+	uint16_t instance_id = 0;
 
 public:
 
@@ -21,6 +22,6 @@ public:
 	virtual void render() override;
 	virtual void update(float delta_time) override;
 
-	void  set_mesh(Mesh* mesh) { this->mesh = mesh; }
+	void  set_mesh(Mesh* mesh);
 	Mesh* get_mesh() { return mesh; }
 };

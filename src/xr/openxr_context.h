@@ -29,9 +29,9 @@ struct
 {
     bool supported = false;
     // whether the current VR system in use has hand tracking
-    bool system_supported;
-    PFN_xrLocateHandJointsEXT pfnLocateHandJointsEXT;
-    std::array<XrHandTrackerEXT, HAND_COUNT> trackers;
+    bool system_supported = false;
+    PFN_xrLocateHandJointsEXT pfnLocateHandJointsEXT = {};
+    std::array<XrHandTrackerEXT, HAND_COUNT> trackers = {};
 } hand_tracking;
 
 struct sInputState {
