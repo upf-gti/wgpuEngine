@@ -78,7 +78,7 @@ bool Mesh::load(const std::string& mesh_path)
 
     if (!materials.empty()) {
         if (materials[0].diffuse_texname.empty()) {
-            color = glm::vec3(materials[0].diffuse[0], materials[0].diffuse[1], materials[0].diffuse[2]);
+            color = glm::vec4(materials[0].diffuse[0], materials[0].diffuse[1], materials[0].diffuse[2], 1.0f);
         }
         else {
             diffuse = Texture::get("data/textures/" + materials[0].diffuse_texname);
@@ -125,23 +125,23 @@ void Mesh::create_vertex_buffer()
     vertex_buffer = webgpu_context->create_buffer(get_byte_size(), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Vertex, vertices.data());
 }
 
-void Mesh::create_bind_group(uint16_t bind_group_id)
+void Mesh::create_bind_group(Shader* shader, uint16_t bind_group_id)
 {
     if (bind_group) {
         wgpuBindGroupRelease(bind_group);
     }
 
     if (diffuse) {
-        create_bind_group_texture(Shader::get("data/shaders/mesh_texture.wgsl"), bind_group_id);
+        create_bind_group_texture(shader, bind_group_id);
     }
     else {
-        create_bind_group_color(Shader::get("data/shaders/mesh_color.wgsl"), bind_group_id);
+        create_bind_group_color(shader, bind_group_id);
     }
 }
 
 void Mesh::create_bind_group_color(Shader* shader, uint16_t bind_group_id)
 {
-    this->shader = shader;
+    uint16_t instances = instance_data.size();
 
     std::vector<sUniformMeshData> default_data = { instances, { glm::mat4x4(1.0f), glm::vec4(1.0f) } };
 
@@ -158,14 +158,14 @@ void Mesh::create_bind_group_color(Shader* shader, uint16_t bind_group_id)
         update_material_color(color, i);
     }
 
-    instances_dirty = false;
+    instances_gpu_size = instances;
 }
 
 void Mesh::create_bind_group_texture(Shader* shader, uint16_t bind_group_id)
 {
-    this->shader = shader;
+    uint16_t instances = instance_data.size();
 
-    std::vector<sUniformMeshData> default_data = { instances, { glm::mat4x4(1.0f), glm::vec4(1.0f) } };
+    std::vector<sUniformMeshData> default_data = { instances, {glm::mat4x4(1.0f), glm::vec4(1.0f)}};
 
     mesh_data_uniform.data = webgpu_context->create_buffer(sizeof(sUniformMeshData) * instances, WGPUBufferUsage_CopyDst | WGPUBufferUsage_Storage, default_data.data());
     mesh_data_uniform.binding = 0;
@@ -181,7 +181,7 @@ void Mesh::create_bind_group_texture(Shader* shader, uint16_t bind_group_id)
 
     bind_group = webgpu_context->create_bind_group(uniforms, shader, bind_group_id);
 
-    instances_dirty = false;
+    instances_gpu_size = instances;
 }
 
 WGPUBuffer& Mesh::get_vertex_buffer()
@@ -257,9 +257,14 @@ void Mesh::update_material_color(const glm::vec3& color, uint16_t instance_id)
     wgpuQueueWriteBuffer(webgpu_context->device_queue, std::get<WGPUBuffer>(mesh_data_uniform.data), instance_id * sizeof(sUniformMeshData) + sizeof(glm::mat4x4), &color, sizeof(glm::vec3));
 }
 
-Shader* Mesh::get_shader()
+void Mesh::update_instance_model_matrices()
 {
-    return shader;
+    wgpuQueueWriteBuffer(webgpu_context->device_queue, std::get<WGPUBuffer>(mesh_data_uniform.data), 0, instance_data.data(), instance_data.size() * sizeof(sUniformMeshData));
+}
+
+void Mesh::add_instance_data(sUniformMeshData model)
+{
+    instance_data.push_back(model);
 }
 
 void* Mesh::data()

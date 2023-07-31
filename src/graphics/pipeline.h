@@ -5,9 +5,10 @@
 #include "webgpu_context.h"
 
 #include <variant>
+#include <unordered_set>
 
 class Shader;
-class EntityMesh;
+class Mesh;
 
 class Pipeline {
 
@@ -27,10 +28,10 @@ public:
 	void set(const WGPURenderPassEncoder& render_pass);
 	void set(const WGPUComputePassEncoder& compute_pass);
 
-	void add_renderable(EntityMesh* entity);
+	void add_renderable(Mesh* entity);
 	void clean_renderables();
 
-	const std::vector<EntityMesh*>& get_render_list() { return render_list; }
+	const std::unordered_set<Mesh*> & get_render_list() { return render_list; }
 
 private:
 
@@ -38,7 +39,7 @@ private:
 	std::variant< WGPURenderPipeline, WGPUComputePipeline> pipeline;
 
 	// Entities to be rendered this frame
-	std::vector<EntityMesh*> render_list;
+	std::unordered_set<Mesh*> render_list;
 
 	WGPUColorTargetState color_target;
 	WGPUBlendState		 blend_state;

@@ -1,8 +1,7 @@
 #include "pipeline.h"
 
 #include "shader.h"
-
-#include "framework/entities/entity_mesh.h"
+#include "mesh.h"
 
 WebGPUContext* Pipeline::webgpu_context = nullptr;
 
@@ -76,17 +75,15 @@ void Pipeline::set(const WGPUComputePassEncoder& compute_pass)
 	wgpuComputePassEncoderSetPipeline(compute_pass, std::get<WGPUComputePipeline>(pipeline));
 }
 
-void Pipeline::add_renderable(EntityMesh* entity)
+void Pipeline::add_renderable(Mesh* mesh)
 {
-	render_list.push_back(entity);
+	render_list.insert(mesh);
 }
 
 void Pipeline::clean_renderables()
 {
-	// Destroy UI elements
-	for (const auto entity : render_list) {
-		if (entity->destroy_after_render)
-			delete entity;
+	for (const auto mesh: render_list) {
+		mesh->clear_instances();
 	}
 
 	render_list.clear();

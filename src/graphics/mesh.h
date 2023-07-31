@@ -17,12 +17,12 @@ struct InterleavedData {
 	glm::vec3 color;
 };
 
-class Mesh {
+struct sUniformMeshData {
+	glm::mat4x4 model;
+	glm::vec4   color;
+};
 
-	struct sUniformMeshData {
-		glm::mat4x4 model;
-		glm::vec4   color;
-	};
+class Mesh {
 
 	std::vector<InterleavedData>	 vertices;
 
@@ -33,13 +33,12 @@ class Mesh {
 	Uniform			albedo_uniform;
 	Uniform			sampler_uniform;
 
-	Shader*			shader = nullptr;
-
 	Texture*		diffuse = nullptr;
-	glm::vec3		color = { 1.0f, 1.0f, 1.0f };
+	glm::vec4		color = { 1.0f, 1.0f, 1.0f, 1.0f };
 
-	uint16_t		instances = 0;
-	bool			instances_dirty = false;
+	uint16_t		instances_gpu_size = 0;
+
+	std::vector<sUniformMeshData> instance_data;
 
 	static std::map<std::string, Mesh*> meshes;
 
@@ -63,19 +62,22 @@ public:
 	void create_quad(float w = 1.f, float h = 1.f, const glm::vec3& color = {1.f, 1.f, 1.f});
 	void create_from_vertices(const std::vector<InterleavedData>& _vertices);
 
-	void create_bind_group(uint16_t bind_group_id);
+	void create_bind_group(Shader* shader, uint16_t bind_group_id);
 	void create_bind_group_color(Shader* shader, uint16_t bind_group_id);
 	void create_bind_group_texture(Shader* shader, uint16_t bind_group_id);
 
 	void update_model_matrix(const glm::mat4x4& model, uint16_t instance_id = 0);
 	void update_material_color(const glm::vec3& color, uint16_t instance_id = 0);
 
-	Shader* get_shader();
+	void update_instance_model_matrices();
 
-	void     add_instance() { instances++; instances_dirty = true; }
-	uint16_t get_instances() { return instances; }
+	void add_instance_data(sUniformMeshData model);
 
-	bool	 get_instances_dirty() { return instances_dirty; }
+	uint16_t get_instances_size() { return instance_data.size(); }
+	uint16_t get_instances_gpu_size() { return instances_gpu_size; }
+	void	 clear_instances() { instance_data.clear(); }
+
+	glm::vec4 get_color() { return color; }
 
 	void* data();
 	size_t get_vertex_count();

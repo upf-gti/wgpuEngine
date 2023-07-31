@@ -15,7 +15,6 @@ class TextEntity : public EntityMesh {
 
 	float font_scale = 1.f;
 	glm::vec2 box_size;
-	glm::vec3 color = colors::WHITE;
 	bool wrap = true;
 
 	std::string text = "";
@@ -34,7 +33,6 @@ public:
 	*/
 
 	int get_text_width(const std::string text);
-	TextEntity* set_color(const glm::vec3& _color) { color = _color; return this; }
 	TextEntity* set_scale(float _scale) { font_scale = _scale; return this; }
 	void generate_mesh();
 };
