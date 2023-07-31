@@ -96,6 +96,7 @@ void TextEntity::generate_mesh()
     mesh = new Mesh();
     mesh->create_from_vertices(vertices);
     mesh->set_texture(font->textures[0]);
+    mesh->add_instance();
     mesh->create_bind_group_texture(Shader::get("data/shaders/sdf_fonts.wgsl"), 0);
 }
 

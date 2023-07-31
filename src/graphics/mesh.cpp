@@ -96,9 +96,10 @@ Mesh::~Mesh()
 
     wgpuBufferDestroy(vertex_buffer);
 
-    wgpuBindGroupRelease(bind_group);
-
-    mesh_data_uniform.destroy();
+    if (bind_group) {
+        wgpuBindGroupRelease(bind_group);
+        mesh_data_uniform.destroy();
+    }
 }
 
 Mesh* Mesh::get(const std::string& mesh_path)
@@ -136,8 +137,6 @@ void Mesh::create_bind_group(uint16_t bind_group_id)
     else {
         create_bind_group_color(Shader::get("data/shaders/mesh_color.wgsl"), bind_group_id);
     }
-
-    instances_dirty = false;
 }
 
 void Mesh::create_bind_group_color(Shader* shader, uint16_t bind_group_id)
@@ -158,6 +157,8 @@ void Mesh::create_bind_group_color(Shader* shader, uint16_t bind_group_id)
     {
         update_material_color(color, i);
     }
+
+    instances_dirty = false;
 }
 
 void Mesh::create_bind_group_texture(Shader* shader, uint16_t bind_group_id)
@@ -179,6 +180,8 @@ void Mesh::create_bind_group_texture(Shader* shader, uint16_t bind_group_id)
     std::vector<Uniform*> uniforms = { &mesh_data_uniform, &albedo_uniform, &sampler_uniform };
 
     bind_group = webgpu_context->create_bind_group(uniforms, shader, bind_group_id);
+
+    instances_dirty = false;
 }
 
 WGPUBuffer& Mesh::get_vertex_buffer()
@@ -235,16 +238,11 @@ void Mesh::create_quad(float w, float h, const glm::vec3& color)
     vertices[4].color = color;
     vertices[5].color = color;
 
-    instances = 1;
-
     create_vertex_buffer();
-    create_bind_group_color(Shader::get("data/shaders/mesh_color.wgsl"), 0);
 }
 
 void Mesh::create_from_vertices(const std::vector<InterleavedData>& _vertices)
 {
-    instances = 1;
-
     vertices = _vertices;
     create_vertex_buffer();
 }
