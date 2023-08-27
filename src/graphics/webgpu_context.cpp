@@ -116,33 +116,16 @@ WGPUDevice requestDevice(WGPUAdapter adapter, WGPUDeviceDescriptor const* descri
     return userData.device;
 }
 
-int WebGPUContext::initialize(GLFWwindow* window, bool create_screen_swapchain)
+int WebGPUContext::initialize(WGPURequiredLimits required_limits, GLFWwindow* window, bool create_screen_swapchain)
 {
     WGPURequestAdapterOptions adapterOpts = {};
-    //adapterOpts.compatibleSurface = surface;
     WGPUAdapter adapter = requestAdapter(get_instance(), &adapterOpts);
-
-    //WGPUSupportedLimits supportedLimits = {};
-    //wgpuAdapterGetLimits(adapter, &supportedLimits);
-  
-    WGPURequiredLimits requiredLimits = {};
-    requiredLimits.limits.maxVertexAttributes = 4;
-    requiredLimits.limits.maxVertexBuffers = 1;
-    requiredLimits.limits.maxBindGroups = 2;
-    requiredLimits.limits.maxUniformBuffersPerShaderStage = 1;
-    requiredLimits.limits.maxUniformBufferBindingSize = 16 * 4 * sizeof(float);
-    requiredLimits.limits.minUniformBufferOffsetAlignment = 256;
-    requiredLimits.limits.minStorageBufferOffsetAlignment = 32;
-    requiredLimits.limits.maxBufferSize = 512 * 512 * 512 * sizeof(float) * 4 + 4; // TODO: remove this +4 when fixed in Dawn
-    requiredLimits.limits.maxStorageBufferBindingSize = 512 * 512 * 512 * sizeof(float) * 4;
-    requiredLimits.limits.maxComputeInvocationsPerWorkgroup = 512;
-    requiredLimits.limits.maxSamplersPerShaderStage = 1;
 
     // Create device
     WGPUDeviceDescriptor deviceDesc = {};
     deviceDesc.label = "My Device";
     deviceDesc.requiredFeaturesCount = 0;
-    deviceDesc.requiredLimits = &requiredLimits;
+    deviceDesc.requiredLimits = &required_limits;
     deviceDesc.defaultQueue.label = "The default queue";
     deviceDesc.deviceLostCallback = DeviceLostCallback;
 
@@ -223,9 +206,6 @@ void WebGPUContext::destroy()
     wgpuDeviceDestroy(device);
     wgpuQueueRelease(device_queue);
     wgpuSwapChainRelease(screen_swapchain);
-
-    // This has to be done at the end 100%?
-    // glfwDestroyWindow(window);
 }
 
 void WebGPUContext::create_instance()

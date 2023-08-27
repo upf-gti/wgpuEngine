@@ -73,13 +73,13 @@ public:
 
 	void add_instance_data(sUniformMeshData model);
 
-	uint16_t get_instances_size() { return instance_data.size(); }
-	uint16_t get_instances_gpu_size() { return instances_gpu_size; }
+	uint32_t get_instances_size()	  { return static_cast<uint32_t>(instance_data.size()); }
+	uint32_t get_instances_gpu_size() { return static_cast<uint32_t>(instances_gpu_size); }
 	void	 clear_instances() { instance_data.clear(); }
 
 	glm::vec4 get_color() { return color; }
 
 	void* data();
-	size_t get_vertex_count();
-	size_t get_byte_size();
+	uint32_t get_vertex_count();
+	uint64_t get_byte_size();
 };

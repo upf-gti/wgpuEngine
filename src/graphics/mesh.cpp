@@ -141,7 +141,7 @@ void Mesh::create_bind_group(Shader* shader, uint16_t bind_group_id)
 
 void Mesh::create_bind_group_color(Shader* shader, uint16_t bind_group_id)
 {
-    uint16_t instances = instance_data.size();
+    uint32_t instances = instance_data.size();
 
     std::vector<sUniformMeshData> default_data = { instances, { glm::mat4x4(1.0f), glm::vec4(1.0f) } };
 
@@ -163,7 +163,7 @@ void Mesh::create_bind_group_color(Shader* shader, uint16_t bind_group_id)
 
 void Mesh::create_bind_group_texture(Shader* shader, uint16_t bind_group_id)
 {
-    uint16_t instances = instance_data.size();
+    uint32_t instances = instance_data.size();
 
     std::vector<sUniformMeshData> default_data = { instances, {glm::mat4x4(1.0f), glm::vec4(1.0f)}};
 
@@ -272,12 +272,12 @@ void* Mesh::data()
     return vertices.data();
 }
 
-size_t Mesh::get_vertex_count()
+uint32_t Mesh::get_vertex_count()
 {
-    return vertices.size();
+    return static_cast<uint32_t>(vertices.size());
 }
 
-size_t Mesh::get_byte_size()
+uint64_t Mesh::get_byte_size()
 {
     return get_vertex_count() * sizeof(InterleavedData);
 }

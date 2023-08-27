@@ -48,7 +48,7 @@ int Renderer::initialize(GLFWwindow* window, bool use_mirror_screen)
     //webgpu_context.instance->DiscoverDefaultAdapters();
 #endif
 
-    if (webgpu_context.initialize(window, create_screen_swapchain)) {
+    if (webgpu_context.initialize(required_limits, window, create_screen_swapchain)) {
         std::cout << "Could not initialize WebGPU context" << std::endl;
         return 1;
     }

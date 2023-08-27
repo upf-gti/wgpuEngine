@@ -28,6 +28,9 @@ protected:
     bool is_openxr_available    = false;
     bool use_mirror_screen      = false;
 
+    // Required device limits
+    WGPURequiredLimits required_limits = {};
+
 public:
 
     // Singleton
@@ -47,5 +50,7 @@ public:
 #ifdef XR_SUPPORT
     OpenXRContext* get_openxr_context() { return (is_openxr_available ? &xr_context : nullptr); }
 #endif
+
+    void set_required_limits(const WGPURequiredLimits& required_limits) { this->required_limits = required_limits; }
 
 };
