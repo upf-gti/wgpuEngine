@@ -116,10 +116,9 @@ WGPUDevice requestDevice(WGPUAdapter adapter, WGPUDeviceDescriptor const* descri
     return userData.device;
 }
 
-int WebGPUContext::initialize(WGPURequiredLimits required_limits, GLFWwindow* window, bool create_screen_swapchain)
+int WebGPUContext::initialize(WGPURequestAdapterOptions adapter_opts, WGPURequiredLimits required_limits, GLFWwindow* window, bool create_screen_swapchain)
 {
-    WGPURequestAdapterOptions adapterOpts = {};
-    WGPUAdapter adapter = requestAdapter(get_instance(), &adapterOpts);
+    WGPUAdapter adapter = requestAdapter(get_instance(), &adapter_opts);
 
     // Create device
     WGPUDeviceDescriptor deviceDesc = {};

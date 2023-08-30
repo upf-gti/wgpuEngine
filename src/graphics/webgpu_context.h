@@ -35,7 +35,7 @@ struct WebGPUContext {
     static WGPUTextureFormat    swapchain_format;
     static WGPUTextureFormat    xr_swapchain_format;
 
-    int                    initialize(WGPURequiredLimits required_limits, GLFWwindow* window, bool create_screen_swapchain);
+    int                    initialize(WGPURequestAdapterOptions adapter_opts, WGPURequiredLimits required_limits, GLFWwindow* window, bool create_screen_swapchain);
     void                   destroy();
 
     void                   create_instance();

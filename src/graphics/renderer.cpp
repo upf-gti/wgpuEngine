@@ -2,6 +2,7 @@
 
 #ifdef XR_SUPPORT
 #include "dawnxr/dawnxr_internal.h"
+#include "dawn/native/VulkanBackend.h"
 #endif
 
 #include "graphics/mesh.h"
@@ -33,12 +34,22 @@ int Renderer::initialize(GLFWwindow* window, bool use_mirror_screen)
 
 #ifdef XR_SUPPORT
 
+    WGPURequestAdapterOptions adapter_opts = {};
+
+    // To choose dedicated GPU on laptops
+    adapter_opts.powerPreference = WGPUPowerPreference_HighPerformance;
+
+    dawn::native::vulkan::RequestAdapterOptionsOpenXRConfig adapter_opts_xr_config = {};
+
     // Create internal vulkan instance
     if (is_openxr_available) {
 
+        adapter_opts.backendType = WGPUBackendType_Vulkan;
+
         dawn::native::AdapterDiscoveryOptionsBase** options = new dawn::native::AdapterDiscoveryOptionsBase * ();
-        dawnxr::internal::createVulkanAdapterDiscoveryOptions(xr_context.instance, xr_context.system_id, options);
-        webgpu_context.instance->DiscoverAdapters(*options);
+        dawnxr::internal::createVulkanOpenXRConfig(xr_context.instance, xr_context.system_id, (void**)&adapter_opts_xr_config.openXRConfig);
+
+        adapter_opts.nextInChain = reinterpret_cast<WGPUChainedStruct*>(&adapter_opts_xr_config);
 
         create_screen_swapchain = use_mirror_screen;
     }
@@ -48,7 +59,7 @@ int Renderer::initialize(GLFWwindow* window, bool use_mirror_screen)
     //webgpu_context.instance->DiscoverDefaultAdapters();
 #endif
 
-    if (webgpu_context.initialize(required_limits, window, create_screen_swapchain)) {
+    if (webgpu_context.initialize(adapter_opts, required_limits, window, create_screen_swapchain)) {
         std::cout << "Could not initialize WebGPU context" << std::endl;
         return 1;
     }
