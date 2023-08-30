@@ -121,26 +121,26 @@ int WebGPUContext::initialize(WGPURequestAdapterOptions adapter_opts, WGPURequir
     WGPUAdapter adapter = requestAdapter(get_instance(), &adapter_opts);
 
     // Create device
-    WGPUDeviceDescriptor deviceDesc = {};
-    deviceDesc.label = "My Device";
-    deviceDesc.requiredFeaturesCount = 0;
-    deviceDesc.requiredLimits = &required_limits;
-    deviceDesc.defaultQueue.label = "The default queue";
-    deviceDesc.deviceLostCallback = DeviceLostCallback;
+    WGPUDeviceDescriptor device_desc = {};
+    device_desc.label = "My Device";
+    device_desc.requiredFeaturesCount = 0;
+    device_desc.requiredLimits = &required_limits;
+    device_desc.defaultQueue.label = "The default queue";
+    device_desc.deviceLostCallback = DeviceLostCallback;
 
 #if !defined(__EMSCRIPTEN__) && !defined(NDEBUG)
-    const char* const enabledToggles[] = { "disable_symbol_renaming" };
+    const char* const enabled_toggles[] = { "disable_symbol_renaming" };
 
-    WGPUDawnTogglesDescriptor deviceTogglesDesc = {};
-    deviceTogglesDesc.enabledToggles = enabledToggles;
-    deviceTogglesDesc.enabledTogglesCount = 1;
+    WGPUDawnTogglesDescriptor device_toggles_desc = {};
+    device_toggles_desc.enabledToggles = enabled_toggles;
+    device_toggles_desc.enabledTogglesCount = 1;
 
-    WGPUChainedStruct* chainDes = reinterpret_cast<WGPUChainedStruct*>(&deviceTogglesDesc);
-    chainDes->sType = WGPUSType_DawnTogglesDescriptor;
-    deviceDesc.nextInChain = chainDes;
+    WGPUChainedStruct* chain_desc = reinterpret_cast<WGPUChainedStruct*>(&device_toggles_desc);
+    chain_desc->sType = WGPUSType_DawnTogglesDescriptor;
+    device_desc.nextInChain = chain_desc;
 #endif
     
-    device = requestDevice(adapter, &deviceDesc);
+    device = requestDevice(adapter, &device_desc);
 
 #ifdef __EMSCRIPTEN__
     // emscripten-specific extension not supported by webgpu.cpp
@@ -168,19 +168,19 @@ int WebGPUContext::initialize(WGPURequestAdapterOptions adapter_opts, WGPURequir
         // Create the swapchain for mirror mode
         glfwGetWindowSize(window, &render_width, &screen_height);
 
-        WGPUSwapChainDescriptor swapChainDesc = {};
+        WGPUSwapChainDescriptor swap_chain_desc = {};
 #ifdef __EMSCRIPTEN__
-        swapChainDesc.usage = WGPUTextureUsage_RenderAttachment | WGPUTextureUsage_TextureBinding;
-        swapChainDesc.presentMode = WGPUPresentMode_Fifo;
+        swap_chain_desc.usage = WGPUTextureUsage_RenderAttachment | WGPUTextureUsage_TextureBinding;
+        swap_chain_desc.presentMode = WGPUPresentMode_Fifo;
 #else
-        swapChainDesc.usage = WGPUTextureUsage_RenderAttachment;
-        swapChainDesc.presentMode = WGPUPresentMode_Mailbox;
+        swap_chain_desc.usage = WGPUTextureUsage_RenderAttachment;
+        swap_chain_desc.presentMode = WGPUPresentMode_Mailbox;
 #endif
-        swapChainDesc.format = swapchain_format;
-        swapChainDesc.width = render_width;
-        swapChainDesc.height = screen_height;
+        swap_chain_desc.format = swapchain_format;
+        swap_chain_desc.width = render_width;
+        swap_chain_desc.height = screen_height;
 
-        screen_swapchain = wgpuDeviceCreateSwapChain(device, surface, &swapChainDesc);
+        screen_swapchain = wgpuDeviceCreateSwapChain(device, surface, &swap_chain_desc);
     }
 
     device_queue = wgpuDeviceGetQueue(device);
@@ -209,14 +209,30 @@ void WebGPUContext::destroy()
 
 void WebGPUContext::create_instance()
 {
-#ifndef __EMSCRIPTEN__
-#ifdef XR_SUPPORT
-    instance = new dawn::native::Instance();
-#else
     WGPUInstanceDescriptor instance_dscr = {};
+
+#if !defined(__EMSCRIPTEN__)
+
+#if !defined(NDEBUG)
+    // allow_unsafe_apis is currently required to prevent forced breakpoint hit when DAWN_DEBUG_BREAK_ON_ERROR=1
+    const char* const enabled_toggles[] = { "allow_unsafe_apis" };
+
+    WGPUDawnTogglesDescriptor device_toggles_desc = {};
+    device_toggles_desc.enabledToggles = enabled_toggles;
+    device_toggles_desc.enabledTogglesCount = 1;
+
+    WGPUChainedStruct* chain_desc = reinterpret_cast<WGPUChainedStruct*>(&device_toggles_desc);
+    chain_desc->sType = WGPUSType_DawnTogglesDescriptor;
+    instance_dscr.nextInChain = chain_desc;
+#endif // NDEBUG
+
+#ifdef XR_SUPPORT
+    instance = new dawn::native::Instance(&instance_dscr);
+#else
     instance = wgpuCreateInstance(&instance_dscr);
 #endif
-#endif
+
+#endif // __EMSCRIPTEN__
 }
 
 WGPUShaderModule WebGPUContext::create_shader_module(char const* code)

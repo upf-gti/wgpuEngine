@@ -36,7 +36,7 @@ class Mesh {
 	Texture*		diffuse = nullptr;
 	glm::vec4		color = { 1.0f, 1.0f, 1.0f, 1.0f };
 
-	uint16_t		instances_gpu_size = 0;
+	uint32_t		instances_gpu_size = 0;
 
 	std::vector<sUniformMeshData> instance_data;
 
@@ -66,15 +66,15 @@ public:
 	void create_bind_group_color(Shader* shader, uint16_t bind_group_id);
 	void create_bind_group_texture(Shader* shader, uint16_t bind_group_id);
 
-	void update_model_matrix(const glm::mat4x4& model, uint16_t instance_id = 0);
-	void update_material_color(const glm::vec3& color, uint16_t instance_id = 0);
+	void update_model_matrix(const glm::mat4x4& model, uint32_t instance_id = 0);
+	void update_material_color(const glm::vec3& color, uint32_t instance_id = 0);
 
 	void update_instance_model_matrices();
 
 	void add_instance_data(sUniformMeshData model);
 
 	uint32_t get_instances_size()	  { return static_cast<uint32_t>(instance_data.size()); }
-	uint32_t get_instances_gpu_size() { return static_cast<uint32_t>(instances_gpu_size); }
+	uint32_t get_instances_gpu_size() { return instances_gpu_size; }
 	void	 clear_instances() { instance_data.clear(); }
 
 	glm::vec4 get_color() { return color; }

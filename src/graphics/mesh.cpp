@@ -141,7 +141,7 @@ void Mesh::create_bind_group(Shader* shader, uint16_t bind_group_id)
 
 void Mesh::create_bind_group_color(Shader* shader, uint16_t bind_group_id)
 {
-    uint64_t instances = instance_data.size();
+    uint32_t instances = static_cast<uint32_t>(instance_data.size());
 
     std::vector<sUniformMeshData> default_data = { instances, { glm::mat4x4(1.0f), glm::vec4(1.0f) } };
 
@@ -153,7 +153,7 @@ void Mesh::create_bind_group_color(Shader* shader, uint16_t bind_group_id)
 
     bind_group = webgpu_context->create_bind_group(uniforms, shader, bind_group_id);
 
-    for (uint64_t i = 0; i < instances; ++i)
+    for (uint32_t i = 0; i < instances; ++i)
     {
         update_material_color(color, i);
     }
@@ -163,7 +163,7 @@ void Mesh::create_bind_group_color(Shader* shader, uint16_t bind_group_id)
 
 void Mesh::create_bind_group_texture(Shader* shader, uint16_t bind_group_id)
 {
-    uint64_t instances = instance_data.size();
+    uint32_t instances = static_cast<uint32_t>(instance_data.size());
 
     std::vector<sUniformMeshData> default_data = { instances, {glm::mat4x4(1.0f), glm::vec4(1.0f)}};
 
@@ -247,12 +247,12 @@ void Mesh::create_from_vertices(const std::vector<InterleavedData>& _vertices)
     create_vertex_buffer();
 }
 
-void Mesh::update_model_matrix(const glm::mat4x4& model, uint16_t instance_id)
+void Mesh::update_model_matrix(const glm::mat4x4& model, uint32_t instance_id)
 {
     wgpuQueueWriteBuffer(webgpu_context->device_queue, std::get<WGPUBuffer>(mesh_data_uniform.data), instance_id * sizeof(sUniformMeshData), &model, sizeof(glm::mat4x4));
 }
 
-void Mesh::update_material_color(const glm::vec3& color, uint16_t instance_id)
+void Mesh::update_material_color(const glm::vec3& color, uint32_t instance_id)
 {
     wgpuQueueWriteBuffer(webgpu_context->device_queue, std::get<WGPUBuffer>(mesh_data_uniform.data), instance_id * sizeof(sUniformMeshData) + sizeof(glm::mat4x4), &color, sizeof(glm::vec3));
 }
