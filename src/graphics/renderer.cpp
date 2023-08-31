@@ -32,12 +32,12 @@ int Renderer::initialize(GLFWwindow* window, bool use_mirror_screen)
 
     webgpu_context.create_instance();
 
-#ifdef XR_SUPPORT
-
     WGPURequestAdapterOptions adapter_opts = {};
 
     // To choose dedicated GPU on laptops
     adapter_opts.powerPreference = WGPUPowerPreference_HighPerformance;
+
+#ifdef XR_SUPPORT
 
     dawn::native::vulkan::RequestAdapterOptionsOpenXRConfig adapter_opts_xr_config = {};
 

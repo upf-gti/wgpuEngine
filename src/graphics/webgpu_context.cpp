@@ -151,7 +151,7 @@ int WebGPUContext::initialize(WGPURequestAdapterOptions adapter_opts, WGPURequir
     WGPUSurfaceDescriptor surfDesc = {};
     surfDesc.nextInChain = reinterpret_cast<WGPUChainedStruct*>(&canvDesc);
 
-    surface = wgpuInstanceCreateSurface(nullptr, &surfDesc);
+    surface = wgpuInstanceCreateSurface(get_instance(), &surfDesc);
 #else
 
     wgpuDeviceSetUncapturedErrorCallback(device, PrintDeviceError, nullptr);
@@ -224,15 +224,18 @@ void WebGPUContext::create_instance()
     WGPUChainedStruct* chain_desc = reinterpret_cast<WGPUChainedStruct*>(&device_toggles_desc);
     chain_desc->sType = WGPUSType_DawnTogglesDescriptor;
     instance_dscr.nextInChain = chain_desc;
-#endif // NDEBUG
+#endif // !NDEBUG
 
 #ifdef XR_SUPPORT
     instance = new dawn::native::Instance(&instance_dscr);
-#else
+#endif
+
+#endif // !__EMSCRIPTEN__
+
+#if defined(__EMSCRIPTEN__) || !defined(XR_SUPPORT)
     instance = wgpuCreateInstance(&instance_dscr);
 #endif
 
-#endif // __EMSCRIPTEN__
 }
 
 WGPUShaderModule WebGPUContext::create_shader_module(char const* code)
@@ -317,13 +320,13 @@ void WebGPUContext::create_texture_mipmaps(WGPUTexture texture, WGPUExtent3D tex
 {
     WGPUQueue mipmap_queue = wgpuDeviceGetQueue(device);
 
-    WGPUImageCopyTexture destination;
+    WGPUImageCopyTexture destination = {};
     destination.texture = texture;
     destination.mipLevel = 0;
     destination.origin = { 0, 0, 0 };
     destination.aspect = WGPUTextureAspect_All;
 
-    WGPUTextureDataLayout source;
+    WGPUTextureDataLayout source = {};
     source.offset = 0;
 
     // Create image data
@@ -361,6 +364,7 @@ void WebGPUContext::create_texture_mipmaps(WGPUTexture texture, WGPUExtent3D tex
         destination.mipLevel = level;
         source.bytesPerRow = 4 * mip_level_size.width;
         source.rowsPerImage = mip_level_size.height;
+
         wgpuQueueWriteTexture(mipmap_queue, &destination, pixels.data(), pixels.size(), &source, &mip_level_size);
 
         previous_level_pixels = std::move(pixels);
@@ -544,7 +548,7 @@ WGPUVertexBufferLayout WebGPUContext::create_vertex_buffer_layout(const std::vec
 
 WGPUInstance WebGPUContext::get_instance()
 {
-#ifdef XR_SUPPORT
+#if defined(XR_SUPPORT) && !defined(__EMSCRIPTEN__)
     return instance->Get();
 #else
     return instance;

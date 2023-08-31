@@ -85,7 +85,7 @@ set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 20)
 # dawn
 set_target_properties(${PROJECT_NAME} PROPERTIES VS_DEBUGGER_ENVIRONMENT "DAWN_DEBUG_BREAK_ON_ERROR=1")
 add_subdirectory(libraries/webgpu)
-target_link_libraries(${PROJECT_NAME} PUBLIC webgpu libtint)
+target_link_libraries(${PROJECT_NAME} PUBLIC webgpu)
 
 if (NOT EMSCRIPTEN)
 

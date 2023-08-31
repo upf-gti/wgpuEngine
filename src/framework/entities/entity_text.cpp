@@ -1,6 +1,5 @@
 #include "entity_text.h"
 #include "graphics/renderer.h"
-#include "graphics/mesh.h"
 #include <assert.h>
 
 TextEntity::TextEntity(const std::string& _text, glm::vec2 _box_size, bool _wrap) : EntityMesh()

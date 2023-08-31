@@ -4,8 +4,7 @@
 #include "entity_mesh.h"
 #include "graphics/font.h"
 #include "framework/colors.h"
-
-struct InterleavedData;
+#include "graphics/mesh.h"
 
 class TextEntity : public EntityMesh {
 

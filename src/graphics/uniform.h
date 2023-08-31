@@ -2,7 +2,12 @@
 
 #include "includes.h"
 
+#ifdef __EMSCRIPTEN__
+#include <emscripten/emscripten.h>
+#include <emscripten/html5_webgpu.h>
+#else
 #include <webgpu/webgpu.h>
+#endif
 
 #include <variant>
 #include <functional>

@@ -49,7 +49,6 @@ void Texture::load(const std::string& texture_path)
 
     texture = webgpu_context->create_texture(dimension, format, size, usage, mipmaps);
 
-    // Upload data to the GPU texture (to be implemented!)
     webgpu_context->create_texture_mipmaps(texture, size, mipmaps, data);
 
     stbi_image_free(data);
