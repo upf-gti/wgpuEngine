@@ -224,7 +224,7 @@ float Input::get_trigger_value(uint8_t controller)
 	if (!openxr_context) return 0.0f;
 	return xr_data.triggerValueState[controller].currentState;
 #else
-	return false;
+	return 0.0f;
 #endif
 }
 
