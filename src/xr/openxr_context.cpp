@@ -1090,7 +1090,7 @@ inline glm::mat4x4 parse_OpenXR_pose_to_glm(const XrInputPose& p) {
 inline XrInputPose parse_OpenXR_pose_to_sPose(const XrPosef& xrPosef) {
     
     return XrInputPose{
-        .orientation = glm::quat(xrPosef.orientation.x, xrPosef.orientation.y, xrPosef.orientation.z, xrPosef.orientation.w),
+        .orientation = glm::quat(xrPosef.orientation.w, xrPosef.orientation.x, xrPosef.orientation.y, xrPosef.orientation.z),
         .position = glm::vec3(xrPosef.position.x, xrPosef.position.y, xrPosef.position.z)
     };
 }
