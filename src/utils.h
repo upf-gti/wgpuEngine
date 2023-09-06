@@ -95,6 +95,11 @@ inline json load_json(const std::string& filename) {
     return j;
 }
 
+inline glm::vec3 rotate_point_by_quat(const glm::vec3& v, const glm::vec4& q) {
+	const glm::vec3 q_vect = glm::vec3(q.x, q.y, q.z);
+	return v + 2.0f * glm::cross(q_vect, glm::cross(q_vect, v) + q.w * v);
+}
+
 inline float random_f(float range = 1.0f, int offset = 0) {
 	return ((rand() % 10000) / (10000.0f)) * range + offset;
 }
