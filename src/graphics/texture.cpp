@@ -4,6 +4,7 @@
 #include "stb_image.h"
 
 #include <iostream>
+#include <bit>
 
 std::map<std::string, Texture*> Texture::textures;
 WebGPUContext* Texture::webgpu_context = nullptr;
