@@ -10,7 +10,7 @@ static XrPosef identity_pose = { .orientation = {.x = 0, .y = 0, .z = 0, .w = 1.
                                  .position = {.x = 0, .y = 0, .z = 0} };
 
 // Helper functions for pose to GLM
-glm::mat4x4 parse_OpenXR_projection_to_glm(const XrFovf& fov, float nearZ = 0.01f, float farZ = 10000.0f);
+glm::mat4x4 parse_OpenXR_projection_to_glm(const XrFovf& fov, float nearZ = 0.1f, float farZ = 1000.0f);
 glm::mat4x4 parse_OpenXR_pose_to_glm(const XrPosef& p);
 glm::mat4x4 parse_OpenXR_pose_to_glm(const XrInputPose& p);
 inline XrInputPose parse_OpenXR_pose_to_sPose(const XrPosef& xrPosef);
