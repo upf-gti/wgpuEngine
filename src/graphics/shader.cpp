@@ -237,6 +237,12 @@ void Shader::get_reflection_data(const std::string& shader_path, const std::stri
 				case ResourceBinding::TexelFormat::kRgba8Unorm:
 					entry.storageTexture.format = WGPUTextureFormat_RGBA8Unorm;
 					break;
+				case ResourceBinding::TexelFormat::kRgba16Float:
+					entry.storageTexture.format = WGPUTextureFormat_RGBA16Float;
+					break;
+				case ResourceBinding::TexelFormat::kRgba32Float:
+					entry.storageTexture.format = WGPUTextureFormat_RGBA32Float;
+					break;
 				default:
 					std::cerr << "Shader reflection failed: image format not implemented" << std::endl;
 					assert(0);
