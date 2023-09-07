@@ -484,7 +484,7 @@ WGPURenderPipeline WebGPUContext::create_render_pipeline(WGPUShaderModule render
     if (uses_depth_buffer) {
         depth_state.depthCompare = WGPUCompareFunction_Less;
         depth_state.depthWriteEnabled = true;
-        depth_state.format = WGPUTextureFormat_Depth16Unorm;
+        depth_state.format = WGPUTextureFormat_Depth32Float;
         depth_state.stencilReadMask = 0;
         depth_state.stencilWriteMask = 0;
         // Configure the stencils even if unused

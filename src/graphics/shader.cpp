@@ -148,6 +148,8 @@ void Shader::get_reflection_data(const std::string& shader_path, const std::stri
 			vertex_buffer_layouts.push_back(webgpu_context->create_vertex_buffer_layout(vertex_attributes, offset, WGPUVertexStepMode_Vertex));
 		}
 
+		bool has_sampler = false;
+
 		for (const auto& resource_binding : inspector.GetResourceBindings(entry_point.name)) {
 
 			// Creates new if didn't exist, otherwise return entry from previous entry_point
@@ -177,6 +179,7 @@ void Shader::get_reflection_data(const std::string& shader_path, const std::stri
 			case ResourceBinding::ResourceType::kSampledTexture:
 				break;
 			case ResourceBinding::ResourceType::kSampler:
+				has_sampler = true;
 				entry.sampler.type = WGPUSamplerBindingType_Filtering;
 				break;
 			case ResourceBinding::ResourceType::kUniformBuffer:
@@ -201,7 +204,12 @@ void Shader::get_reflection_data(const std::string& shader_path, const std::stri
 				switch (resource_binding.sampled_kind)
 				{
 				case ResourceBinding::SampledKind::kFloat:
-					entry.texture.sampleType = WGPUTextureSampleType_Float;
+					if (has_sampler) {
+						entry.texture.sampleType = WGPUTextureSampleType_Float;
+					}
+					else {
+						entry.texture.sampleType = WGPUTextureSampleType_UnfilterableFloat;
+					}
 					break;
 				default:
 					std::cerr << "Shader reflection failed: sample kind not implemented" << std::endl;
