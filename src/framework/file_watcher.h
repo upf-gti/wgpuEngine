@@ -26,7 +26,16 @@ public:
 
     // Keep a record of files from the base directory and their last modification time
     FileWatcher(std::string path_to_watch, float delay, const std::function<void(std::string, eFileStatus)>& callback) : path_to_watch{ path_to_watch }, delay{ delay }, counter{ delay }, callback(callback) {
-        for(auto &file : std::filesystem::recursive_directory_iterator(path_to_watch)) {
+
+        std::filesystem::path filepath = path_to_watch;
+
+        // Check if path exists
+        if (!std::filesystem::is_directory(filepath.parent_path())) {
+            std::cerr << "File watcher error: Path \"" << path_to_watch << "\" does not exist. Wrong working directory?" << std::endl;
+            return;
+        }
+
+        for(auto &file : std::filesystem::recursive_directory_iterator(filepath)) {
             paths[file.path().string()] = std::filesystem::last_write_time(file);
         }
     }

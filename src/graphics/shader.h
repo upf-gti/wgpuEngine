@@ -32,7 +32,7 @@ public:
 private:
 	static std::map<std::string, Shader*> shaders;
 
-	void load(const std::string& shader_path);
+	bool load(const std::string& shader_path);
 	void get_reflection_data(const std::string& shader_path, const std::string& shader_content);
 
 	std::string path;

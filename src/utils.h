@@ -41,7 +41,7 @@ inline bool read_file(const std::string& filename, std::string& content)
 
 	std::ifstream file(filename);
 	if (!file.is_open()) {
-		std::cerr << "File not found " << filename << std::endl;
+		std::cerr << "\nFile not found " << filename << std::endl;
 		return false;
 	}
 

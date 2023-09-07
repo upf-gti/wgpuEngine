@@ -19,7 +19,7 @@ Shader::~Shader()
 	}
 }
 
-void Shader::load(const std::string& shader_path)
+bool Shader::load(const std::string& shader_path)
 {
 	path = shader_path;
 
@@ -27,7 +27,7 @@ void Shader::load(const std::string& shader_path)
 
 	std::string shader_content;
 	if (!read_file(path, shader_content))
-		return;
+		return false;
 
 	std::istringstream f(shader_content);
 	std::string include_content;
@@ -47,7 +47,7 @@ void Shader::load(const std::string& shader_path)
 			std::string new_content;
 			if (!read_file(include_path, new_content)) {
 				std::cerr << "Could not load shader include: " << include_path << std::endl;
-				return;
+				return false;
 			}
 
 			std::cout << " [" << include_name << "]";
@@ -68,6 +68,8 @@ void Shader::load(const std::string& shader_path)
 
 	loaded = true;
 	std::cout << " [OK]" << std::endl;
+
+	return true;
 }
 
 void Shader::get_reflection_data(const std::string& shader_path, const std::string& shader_content)
@@ -302,7 +304,10 @@ Shader* Shader::get(const std::string& shader_path)
 		return it->second;
 
 	Shader* sh = new Shader();
-	sh->load(shader_path);
+
+	if (!sh->load(shader_path)) {
+		return nullptr;
+	}
 
 	// register in map
 	shaders[name] = sh;
