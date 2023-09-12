@@ -136,4 +136,16 @@ namespace intersection {
 						box_size,
 						collision_distance);
 	}
+
+	inline bool point_AABB(const glm::vec3& point,
+						   const glm::vec3& box_origin,
+						   const glm::vec3& box_size) {
+
+		const glm::vec3 box_halfsize = box_size / 2.0f;
+		const glm::vec3 box_min = box_origin - box_halfsize;
+
+		const glm::vec3 t = point - box_min;
+
+		return box_size.x > t.x && box_size.y > t.y && box_size.z > t.z && t.x > 0.0f && t.y > 0.0f && t.z > 0.0f;
+	}
 }
