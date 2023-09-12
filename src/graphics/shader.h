@@ -29,6 +29,8 @@ public:
 
 	std::string get_path() { return path; }
 
+	bool is_loaded() { return loaded; }
+
 private:
 	static std::map<std::string, Shader*> shaders;
 

@@ -62,14 +62,31 @@ bool Shader::load(const std::string& shader_path)
 
 	shader_module = webgpu_context->create_shader_module(shader_content.c_str());
 
-	get_reflection_data(shader_path, shader_content);
+	struct UserData {
+		bool any_error = false;
+	};
+	UserData user_data;
+
+	auto callback = [](WGPUCompilationInfoRequestStatus status, struct WGPUCompilationInfo const* compilation_info, void* p_user_data) {
+		UserData& user_data = *reinterpret_cast<UserData*>(p_user_data);
+		user_data.any_error = compilation_info->messageCount > 0;
+	};
+
+	wgpuShaderModuleGetCompilationInfo(shader_module, callback, &user_data);
+
+	if (!user_data.any_error) {
+		get_reflection_data(shader_path, shader_content);
+		loaded = true;
+	}
+	else {
+		loaded = false;
+	}
 
 	webgpu_context->print_errors();
 
-	loaded = true;
 	std::cout << " [OK]" << std::endl;
 
-	return true;
+	return loaded;
 }
 
 void Shader::get_reflection_data(const std::string& shader_path, const std::string& shader_content)
