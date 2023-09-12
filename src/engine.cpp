@@ -16,10 +16,14 @@ int Engine::initialize(Renderer* renderer, GLFWwindow* window, bool use_mirror_s
         path_to_watch.erase(0, 2);
 
         switch (status) {
-        case eFileStatus::Modified:
+        case eFileStatus::Modified: {
             std::cout << "Shader modified: " << path_to_watch << '\n';
-            Shader::get(path_to_watch)->reload();
+            Shader* shader = Shader::get(path_to_watch);
+            if (shader) {
+                shader->reload();
+            }
             break;
+        }
         default:
             std::cout << "Error! Unknown file status.\n";
         }
