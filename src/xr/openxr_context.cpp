@@ -1077,20 +1077,20 @@ inline glm::mat4x4 parse_OpenXR_projection_to_glm(const XrFovf& fov, float nearZ
 
 inline glm::mat4x4 parse_OpenXR_pose_to_glm(const XrPosef& p) {
     glm::mat4 translation = glm::translate(glm::mat4{ 1.f }, glm::vec3(p.position.x, p.position.y, p.position.z));
-    glm::mat4 orientation = glm::mat4_cast(glm::quat(p.orientation.w, p.orientation.x, p.orientation.y, p.orientation.z));
+    glm::mat4 orientation = glm::mat4_cast(glm::quat(p.orientation.x, p.orientation.y, p.orientation.z, p.orientation.w));
     return translation * orientation;
 }
 
 inline glm::mat4x4 parse_OpenXR_pose_to_glm(const XrInputPose& p) {
     glm::mat4 translation = glm::translate(glm::mat4{ 1.f }, glm::vec3(p.position.x, p.position.y, p.position.z));
-    glm::mat4 orientation = glm::mat4_cast(glm::quat(p.orientation.w, p.orientation.x, p.orientation.y, p.orientation.z));
+    glm::mat4 orientation = glm::mat4_cast(glm::quat(p.orientation.x, p.orientation.y, p.orientation.z, p.orientation.w));
     return translation * orientation;
 }
 
 inline XrInputPose parse_OpenXR_pose_to_sPose(const XrPosef& xrPosef) {
     
     return XrInputPose{
-        .orientation = glm::quat(xrPosef.orientation.w, xrPosef.orientation.x, xrPosef.orientation.y, xrPosef.orientation.z),
+        .orientation = glm::quat(xrPosef.orientation.x, xrPosef.orientation.y, xrPosef.orientation.z, xrPosef.orientation.w),
         .position = glm::vec3(xrPosef.position.x, xrPosef.position.y, xrPosef.position.z)
     };
 }
