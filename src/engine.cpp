@@ -18,10 +18,16 @@ int Engine::initialize(Renderer* renderer, GLFWwindow* window, bool use_mirror_s
         switch (status) {
         case eFileStatus::Modified: {
             std::cout << "Shader modified: " << path_to_watch << '\n';
-            Shader* shader = Shader::get(path_to_watch);
-            if (shader) {
-                shader->reload();
+
+            const std::vector<std::string> shader_paths = Shader::get_for_reload(path_to_watch);
+
+            for (const auto& shader_path : shader_paths) {
+                Shader* shader = Shader::get(shader_path);
+                if (shader) {
+                    shader->reload();
+                }
             }
+
             break;
         }
         default:
