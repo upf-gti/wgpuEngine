@@ -19,6 +19,8 @@ public:
 
 	WGPUTextureView get_view();
 
+    void load_from_data(const std::string& name, int width, int height, void* data);
+
 private:
 	static std::map<std::string, Texture*> textures;
 

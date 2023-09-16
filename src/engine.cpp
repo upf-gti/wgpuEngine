@@ -3,8 +3,10 @@
 #include "framework/input.h"
 #include "framework/file_watcher.h"
 
-int Engine::initialize(Renderer* renderer, GLFWwindow* window, bool use_mirror_screen)
+int Engine::initialize(Renderer* renderer, GLFWwindow* window, bool use_glfw, bool use_mirror_screen)
 {
+    this->use_glfw = use_glfw;
+
     shader_reload_watcher = new FileWatcher("./data/shaders/", 1.0f, [](std::string path_to_watch, eFileStatus status) -> void {
 
         // Process only regular files, all other file types are ignored
@@ -42,6 +44,8 @@ int Engine::initialize(Renderer* renderer, GLFWwindow* window, bool use_mirror_s
         return 0;
     }
 
+    current_time = glfwGetTime();
+
     return 1;
 }
 
@@ -62,6 +66,21 @@ bool Engine::get_use_mirror_window()
 #else
     return false;
 #endif
+}
+
+void Engine::on_frame()
+{
+    if (use_glfw) {
+        glfwPollEvents();
+    }
+
+    update(delta_time);
+    render();
+
+    double last_time = current_time;
+    current_time = glfwGetTime();
+
+    delta_time = static_cast<float>((current_time - last_time));
 }
 
 void Engine::update(float delta_time)

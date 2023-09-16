@@ -44,7 +44,8 @@ class Mesh {
 
 	void create_vertex_buffer();
 
-	bool load(const std::string& mesh_path);
+    bool load_obj(const std::string& mesh_path);
+    bool load_gltf(const std::string& scene_path);
 
 public:
 

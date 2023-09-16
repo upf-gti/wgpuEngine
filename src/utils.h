@@ -121,3 +121,37 @@ enum Error {
 		print_error(__FUNCTION__, __FILE__, __LINE__, "Condition \"" _STR(m_cond) "\" is true. Returning: " _STR(m_retval), m_msg);		 \
 		return m_retval;                                                                                                                 \
 	}
+
+inline float bytes_to_float(unsigned char b0, unsigned char b1, unsigned char b2, unsigned char b3)
+{
+    float output;
+
+    *((unsigned char*)(&output) + 3) = b3;
+    *((unsigned char*)(&output) + 2) = b2;
+    *((unsigned char*)(&output) + 1) = b1;
+    *((unsigned char*)(&output) + 0) = b0;
+
+    return output;
+};
+
+inline unsigned int bytes_to_uint(unsigned char b0, unsigned char b1, unsigned char b2, unsigned char b3)
+{
+    unsigned int output;
+
+    *((unsigned char*)(&output) + 3) = b3;
+    *((unsigned char*)(&output) + 2) = b2;
+    *((unsigned char*)(&output) + 1) = b1;
+    *((unsigned char*)(&output) + 0) = b0;
+
+    return output;
+};
+
+inline unsigned short bytes_to_ushort(unsigned char b0, unsigned char b1)
+{
+    unsigned short output;
+
+    *((unsigned char*)(&output) + 1) = b1;
+    *((unsigned char*)(&output) + 0) = b0;
+
+    return output;
+};

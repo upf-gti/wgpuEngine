@@ -42,6 +42,15 @@ void Texture::load(const std::string& texture_path)
 
     path = texture_path;
 
+    load_from_data(path, width, height, data);
+
+    stbi_image_free(data);
+
+    std::cout << " [OK]" << std::endl;
+}
+
+void Texture::load_from_data(const std::string& name, int width, int height, void* data)
+{
     dimension = WGPUTextureDimension_2D;
     format = WGPUTextureFormat_RGBA8Unorm;
     size = { (unsigned int)width, (unsigned int)height, 1 };
@@ -51,12 +60,6 @@ void Texture::load(const std::string& texture_path)
     texture = webgpu_context->create_texture(dimension, format, size, usage, mipmaps);
 
     webgpu_context->create_texture_mipmaps(texture, size, mipmaps, data);
-
-    stbi_image_free(data);
-
-    textures[path] = this;
-
-    std::cout << " [OK]" << std::endl;
 }
 
 Texture* Texture::get(const std::string& texture_path)

@@ -81,7 +81,9 @@ bool Shader::load(const std::string& shader_path)
 		user_data.any_error = compilation_info->messageCount > 0;
 	};
 
+#ifndef __EMSCRIPTEN__
 	wgpuShaderModuleGetCompilationInfo(shader_module, callback, &user_data);
+#endif
 
 	if (!user_data.any_error) {
 		get_reflection_data(shader_path, shader_content);
