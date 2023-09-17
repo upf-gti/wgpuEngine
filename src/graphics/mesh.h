@@ -24,10 +24,12 @@ struct sUniformMeshData {
 
 class Mesh {
 
+    std::string alias;
+
 	std::vector<InterleavedData>	 vertices;
 
-	WGPUBuffer		vertex_buffer = nullptr;
-	WGPUBindGroup   bind_group = nullptr;
+	WGPUBuffer		vertex_buffer   = nullptr;
+	WGPUBindGroup   bind_group      = nullptr;
 
 	Uniform			mesh_data_uniform;
 	Uniform			albedo_uniform;
@@ -58,6 +60,7 @@ public:
 	WGPUBuffer& get_vertex_buffer();
 	WGPUBindGroup& get_bind_group();
 
+    void set_alias(const std::string& a) { this->alias = a; }
 	void set_texture(Texture* texture) { this->diffuse = texture; }
 
 	void create_quad(float w = 1.f, float h = 1.f, const glm::vec3& color = {1.f, 1.f, 1.f});
@@ -79,6 +82,7 @@ public:
 	void	 clear_instances() { instance_data.clear(); }
 
 	glm::vec4 get_color() { return color; }
+    const std::string& get_alias() { return alias; };
 
 	void* data();
 	uint32_t get_vertex_count();
