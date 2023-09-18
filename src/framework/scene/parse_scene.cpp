@@ -9,6 +9,8 @@ EntityMesh* parse_scene(const std::string& scene_path)
 {
     std::string extension = scene_path.substr(scene_path.find_last_of(".") + 1);
 
+    std::cout << "Parsing scene: " << scene_path << std::endl;
+
     if (extension == "obj") {
         return parse_obj(scene_path);
     }

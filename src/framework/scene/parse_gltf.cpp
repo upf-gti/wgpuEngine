@@ -84,41 +84,41 @@ EntityMesh* parse_gltf(const std::string& gltf_path)
 
             vertices.resize(index_buffer_size);
 
-            int vertex_idx = 0;
-            for (int j = 0; j < indices_buffer_view.byteLength; j += index_data_size) {
-                int index = 0;
-                size_t buffer_idx = j + indices_buffer_view.byteOffset;
+            for (auto& attrib : primitive.attributes) {
+                tinygltf::Accessor accessor = model.accessors[attrib.second];
 
-                switch (index_accessor.componentType) {
-                case TINYGLTF_COMPONENT_TYPE_BYTE:
-                case TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE:
-                    index = indices_buffer.data[buffer_idx];
-                    break;
-                case TINYGLTF_COMPONENT_TYPE_SHORT:
-                case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT:
-                    index = bytes_to_ushort(indices_buffer.data[buffer_idx + 0], indices_buffer.data[buffer_idx + 1]);
-                    break;
-                case TINYGLTF_COMPONENT_TYPE_INT:
-                case TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT:
-                    index = bytes_to_uint(indices_buffer.data[buffer_idx + 0], indices_buffer.data[buffer_idx + 1], indices_buffer.data[buffer_idx + 2], indices_buffer.data[buffer_idx + 3]);
-                    break;
+                const tinygltf::BufferView& buffer_view = model.bufferViews[accessor.bufferView];
+                const tinygltf::Buffer& buffer = model.buffers[buffer_view.buffer];
+
+                int coponent_size = 1;
+                if (accessor.type != TINYGLTF_TYPE_SCALAR) {
+                    coponent_size = accessor.type;
                 }
 
-                for (auto& attrib : primitive.attributes) {
-                    tinygltf::Accessor accessor = model.accessors[attrib.second];
+                unsigned int vertex_data_size = coponent_size * sizeof(float);
 
-                    const tinygltf::BufferView& buffer_view = model.bufferViews[accessor.bufferView];
-                    const tinygltf::Buffer& buffer = model.buffers[buffer_view.buffer];
+                size_t buffer_size = buffer_view.byteLength / vertex_data_size;
 
-                    int coponent_size = 1;
-                    if (accessor.type != TINYGLTF_TYPE_SCALAR) {
-                        coponent_size = accessor.type;
+                int vertex_idx = 0;
+                for (int j = 0; j < indices_buffer_view.byteLength; j += index_data_size) {
+                    int index = 0;
+                    size_t buffer_idx = j + indices_buffer_view.byteOffset;
+
+                    switch (index_accessor.componentType) {
+                    case TINYGLTF_COMPONENT_TYPE_BYTE:
+                    case TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE:
+                        index = indices_buffer.data[buffer_idx];
+                        break;
+                    case TINYGLTF_COMPONENT_TYPE_SHORT:
+                    case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT:
+                        index = *(unsigned short*)&(indices_buffer.data[buffer_idx + 0]);
+                        break;
+                    case TINYGLTF_COMPONENT_TYPE_INT:
+                    case TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT:
+                        index = *(unsigned int*)&(indices_buffer.data[buffer_idx + 0]);
+                        break;
                     }
-
-                    unsigned int vertex_data_size = coponent_size * sizeof(float);
-
-                    size_t buffer_size = buffer_view.byteLength / vertex_data_size;
-
+       
                     // position
                     if (attrib.first[0] == 'P') {
                         size_t buffer_idx = index * vertex_data_size + buffer_view.byteOffset;
@@ -141,8 +141,9 @@ EntityMesh* parse_gltf(const std::string& gltf_path)
                         vertices[vertex_idx].uv.x = *(float*)&buffer.data[buffer_idx + 0];
                         vertices[vertex_idx].uv.y = *(float*)&buffer.data[buffer_idx + 4];
                     }
+
+                    vertex_idx++;
                 }
-                vertex_idx++;
             }
         }
 
