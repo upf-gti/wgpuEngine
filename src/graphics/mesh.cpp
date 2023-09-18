@@ -33,25 +33,12 @@ Mesh* Mesh::get(const std::string& mesh_path)
     if (it != meshes.end())
         return it->second;
 
-    Mesh* ms = new Mesh();
-
-    //std::string extension = mesh_path.substr(mesh_path.find_last_of(".") + 1);
-
-    //if (extension == "obj") {
-    //    ms->load_obj(mesh_path);
-    //}
-    //else if (extension == "gltf") {
-    //    ms->load_gltf(mesh_path);
-    //}
-    //else {
-    //    std::cerr << "Mesh extension ." << extension << " not supported" << std::endl;
-    //    assert(0);
-    //}
+    Mesh* new_mesh = new Mesh();
 
     // register in map
-    meshes[name] = ms;
+    meshes[name] = new_mesh;
 
-    return ms;
+    return new_mesh;
 }
 
 void Mesh::create_vertex_buffer()

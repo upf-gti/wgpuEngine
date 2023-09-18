@@ -30,11 +30,27 @@ EntityMesh* parse_obj(const std::string& obj_path)
     auto& materials = reader.GetMaterials();
 
     EntityMesh* new_entity = new EntityMesh();
-    Mesh* new_mesh = new Mesh();
-    auto& vertices = new_mesh->get_vertices();
+    Mesh* new_mesh = Mesh::get(obj_path);
+
     new_entity->set_mesh(new_mesh);
 
     Material& material = new_entity->get_material();
+
+    if (!materials.empty()) {
+        if (materials[0].diffuse_texname.empty()) {
+            material.color = glm::vec4(materials[0].diffuse[0], materials[0].diffuse[1], materials[0].diffuse[2], 1.0f);
+            material.shader = Shader::get("data/shaders/mesh_color.wgsl");
+        }
+        else {
+            material.diffuse = Texture::get("data/textures/" + materials[0].diffuse_texname);
+            material.shader = Shader::get("data/shaders/mesh_texture.wgsl");
+        }
+    }
+
+    auto& vertices = new_mesh->get_vertices();
+
+    // Mesh already loaded
+    if (!vertices.empty()) { return new_entity; }
 
     InterleavedData vertex_data;
 
@@ -76,17 +92,6 @@ EntityMesh* parse_obj(const std::string& obj_path)
     }
 
     new_mesh->create_vertex_buffer();
-
-    if (!materials.empty()) {
-        if (materials[0].diffuse_texname.empty()) {
-            material.color = glm::vec4(materials[0].diffuse[0], materials[0].diffuse[1], materials[0].diffuse[2], 1.0f);
-            material.shader = Shader::get("data/shaders/mesh_color.wgsl");
-        }
-        else {
-            material.diffuse = Texture::get("data/textures/" + materials[0].diffuse_texname);
-            material.shader = Shader::get("data/shaders/mesh_texture.wgsl");
-        }
-    }
 
     return new_entity;
 }
