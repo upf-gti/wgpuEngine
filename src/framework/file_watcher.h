@@ -6,6 +6,7 @@
 #include <unordered_map>
 #include <string>
 #include <functional>
+#include <iostream>
 
 // Based on: https://solarianprogrammer.com/2019/01/13/cpp-17-filesystem-write-file-watcher-monitor/
 

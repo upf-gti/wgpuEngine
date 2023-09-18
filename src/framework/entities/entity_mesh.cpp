@@ -5,16 +5,15 @@
 
 void EntityMesh::render()
 {
-	if (!mesh || !shader) return;
+	if (!mesh || !material.shader) return;
 
-	instance_id = mesh->get_instances_size();
-	mesh->add_instance_data({ model, color });
+	mesh->add_instance_data({ model, material.color });
 
 	if (mesh->get_instances_size() > mesh->get_instances_gpu_size()) {
-		mesh->create_bind_group(shader, 0);
+		mesh->create_bind_group(material.shader, 0, material.diffuse);
 	}
 
-	shader->get_pipeline()->add_renderable(mesh);
+	material.shader->get_pipeline()->add_renderable(mesh);
 }
 
 void EntityMesh::update(float delta_time)
@@ -25,5 +24,4 @@ void EntityMesh::update(float delta_time)
 void EntityMesh::set_mesh(Mesh* mesh)
 {
 	this->mesh = mesh;
-	color = mesh->get_color();
 }

@@ -8,6 +8,12 @@ TextEntity::TextEntity(const std::string& _text, glm::vec2 _box_size, bool _wrap
     text = _text;
     box_size = _box_size;
     wrap = _wrap;
+
+    material.shader = Shader::get("data/shaders/sdf_fonts.wgsl");
+
+    if (font) {
+        material.diffuse = font->textures[0];
+    }
 }
 
 void TextEntity::update(float delta_time)
@@ -24,7 +30,7 @@ void TextEntity::append_char(glm::vec3 pos, Character& ch)
             .position = (pos + ch.vertices[k]) * size,
             .uv = ch.uvs[k] / glm::vec2(font->scaleW, font->scaleH),
             .normal = glm::vec3(0.f, 1.f, 0.f),
-            .color = color
+            .color = material.color
         });
 	}
 }
@@ -94,7 +100,6 @@ void TextEntity::generate_mesh()
 
     mesh = new Mesh();
     mesh->create_from_vertices(vertices);
-    mesh->set_texture(font->textures[0]);
 }
 
 int TextEntity::get_text_width(const std::string text)

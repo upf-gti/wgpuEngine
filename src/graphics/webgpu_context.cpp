@@ -10,6 +10,8 @@
 
 #include "shader.h"
 
+#include <iostream>
+
 WGPUTextureFormat WebGPUContext::swapchain_format = WGPUTextureFormat_BGRA8Unorm;
 WGPUTextureFormat WebGPUContext::xr_swapchain_format = WGPUTextureFormat_BGRA8UnormSrgb;
 

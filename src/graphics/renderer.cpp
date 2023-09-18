@@ -8,6 +8,8 @@
 #include "graphics/mesh.h"
 #include "graphics/texture.h"
 
+#include <iostream>
+
 Renderer* Renderer::instance = nullptr;
 
 Renderer::Renderer()

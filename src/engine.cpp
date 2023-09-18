@@ -3,6 +3,8 @@
 #include "framework/input.h"
 #include "framework/file_watcher.h"
 
+#include <iostream>
+
 int Engine::initialize(Renderer* renderer, GLFWwindow* window, bool use_glfw, bool use_mirror_screen)
 {
     this->use_glfw = use_glfw;

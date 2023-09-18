@@ -35,19 +35,11 @@ class Mesh {
 	Uniform			albedo_uniform;
 	Uniform			sampler_uniform;
 
-	Texture*		diffuse = nullptr;
-	glm::vec4		color = { 1.0f, 1.0f, 1.0f, 1.0f };
-
 	uint32_t		instances_gpu_size = 0;
 
 	std::vector<sUniformMeshData> instance_data;
 
 	static std::map<std::string, Mesh*> meshes;
-
-	void create_vertex_buffer();
-
-    bool load_obj(const std::string& mesh_path);
-    bool load_gltf(const std::string& scene_path);
 
 public:
 
@@ -60,15 +52,18 @@ public:
 	WGPUBuffer& get_vertex_buffer();
 	WGPUBindGroup& get_bind_group();
 
+    std::vector<InterleavedData>& get_vertices() { return vertices; }
+
     void set_alias(const std::string& a) { this->alias = a; }
-	void set_texture(Texture* texture) { this->diffuse = texture; }
+	/*void set_texture(Texture* texture) { this->diffuse = texture; }
+    void set_color(const glm::vec4& color) { this->color = color; }*/
 
 	void create_quad(float w = 1.f, float h = 1.f, const glm::vec3& color = {1.f, 1.f, 1.f});
 	void create_from_vertices(const std::vector<InterleavedData>& _vertices);
 
-	void create_bind_group(Shader* shader, uint16_t bind_group_id);
+	void create_bind_group(Shader* shader, uint16_t bind_group_id, Texture* texture);
 	void create_bind_group_color(Shader* shader, uint16_t bind_group_id);
-	void create_bind_group_texture(Shader* shader, uint16_t bind_group_id);
+	void create_bind_group_texture(Shader* shader, uint16_t bind_group_id, Texture* texture);
 
 	void update_model_matrix(const glm::mat4x4& model, uint32_t instance_id = 0);
 	void update_material_color(const glm::vec3& color, uint32_t instance_id = 0);
@@ -77,11 +72,13 @@ public:
 
 	void add_instance_data(sUniformMeshData model);
 
+    void create_vertex_buffer();
+
 	uint32_t get_instances_size()	  { return static_cast<uint32_t>(instance_data.size()); }
 	uint32_t get_instances_gpu_size() { return instances_gpu_size; }
 	void	 clear_instances() { instance_data.clear(); }
 
-	glm::vec4 get_color() { return color; }
+	//glm::vec4 get_color() { return color; }
     const std::string& get_alias() { return alias; };
 
 	void* data();
