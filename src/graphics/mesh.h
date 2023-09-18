@@ -14,7 +14,7 @@ struct InterleavedData {
 	glm::vec3 position;
 	glm::vec2 uv;
 	glm::vec3 normal;
-	glm::vec3 color;
+	glm::vec3 color = glm::vec3(1.0f);
 };
 
 struct sUniformMeshData {

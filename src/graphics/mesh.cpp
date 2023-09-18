@@ -128,7 +128,7 @@ bool Mesh::load_gltf(const std::string& scene_path)
 
             const tinygltf::BufferView& indices_buffer_view = model.bufferViews[index_accessor.bufferView];
             const tinygltf::Buffer& indices_buffer = model.buffers[indices_buffer_view.buffer];
-            int index_buffer_size = 0;
+            size_t index_buffer_size = 0;
 
             int index_coponent_size = 1;
 
@@ -161,7 +161,7 @@ bool Mesh::load_gltf(const std::string& scene_path)
             int vertex_idx = 0;
             for (int j = 0; j < indices_buffer_view.byteLength; j += index_data_size) {
                 int index = 0;
-                int buffer_idx = j + indices_buffer_view.byteOffset;
+                size_t buffer_idx = j + indices_buffer_view.byteOffset;
 
                 switch (index_accessor.componentType) {
                 case TINYGLTF_COMPONENT_TYPE_BYTE:
@@ -191,11 +191,11 @@ bool Mesh::load_gltf(const std::string& scene_path)
 
                     unsigned int vertex_data_size = coponent_size * sizeof(float);
 
-                    int buffer_size = buffer_view.byteLength / vertex_data_size;
+                    size_t buffer_size = buffer_view.byteLength / vertex_data_size;
 
                     // position
                     if (attrib.first[0] == 'P') {
-                        int buffer_idx = index * vertex_data_size + buffer_view.byteOffset;
+                        size_t buffer_idx = index * vertex_data_size + buffer_view.byteOffset;
                         vertices[vertex_idx].position.x = *(float*)&buffer.data[buffer_idx + 0];
                         vertices[vertex_idx].position.y = *(float*)&buffer.data[buffer_idx + 4];
                         vertices[vertex_idx].position.z = *(float*)&buffer.data[buffer_idx + 8];
@@ -203,7 +203,7 @@ bool Mesh::load_gltf(const std::string& scene_path)
 
                     // normal
                     if (attrib.first[0] == 'N') {
-                        int buffer_idx = index * vertex_data_size + buffer_view.byteOffset;
+                        size_t buffer_idx = index * vertex_data_size + buffer_view.byteOffset;
                         vertices[vertex_idx].normal.x = *(float*)&buffer.data[buffer_idx + 0];
                         vertices[vertex_idx].normal.y = *(float*)&buffer.data[buffer_idx + 4];
                         vertices[vertex_idx].normal.z = *(float*)&buffer.data[buffer_idx + 8];
@@ -211,7 +211,7 @@ bool Mesh::load_gltf(const std::string& scene_path)
 
                     // uv
                     if (attrib.first[0] == 'T') {
-                        int buffer_idx = index * vertex_data_size + buffer_view.byteOffset;
+                        size_t buffer_idx = index * vertex_data_size + buffer_view.byteOffset;
                         vertices[vertex_idx].uv.x = *(float*)&buffer.data[buffer_idx + 0];
                         vertices[vertex_idx].uv.y = *(float*)&buffer.data[buffer_idx + 4];
                     }
