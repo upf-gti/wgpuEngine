@@ -95,6 +95,28 @@ inline json load_json(const std::string& filename) {
     return j;
 }
 
+inline glm::vec4 load_vec4(const std::string& str) {
+    glm::vec4 v;
+    int n = sscanf(str.c_str(), "%f %f %f %f", &v.x, &v.y, &v.z, &v.w);
+    if (n == 4) {
+        return v;
+    }
+    printf("Invalid str reading VEC4 %s. Only %d values read. Expected 4", str.c_str(), n);
+
+    return glm::vec4();
+}
+
+inline glm::vec4 load_vec4(const json& j, const char* attr, const glm::vec4& defaultValue) {
+
+    assert(j.is_object());
+    if (j.count(attr)) {
+        const std::string& str = j.value(attr, "");
+        return load_vec4(str);
+    }
+
+    return defaultValue;
+}
+
 inline glm::vec3 rotate_point_by_quat(const glm::vec3& v, const glm::vec4& q) {
 	const glm::vec3 q_vect = glm::vec3(q.x, q.y, q.z);
 	return v + 2.0f * glm::cross(q_vect, glm::cross(q_vect, v) + q.w * v);
