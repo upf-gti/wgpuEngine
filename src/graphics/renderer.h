@@ -47,6 +47,7 @@ public:
 #ifdef XR_SUPPORT
     OpenXRContext* get_openxr_context() { return (is_openxr_available ? &xr_context : nullptr); }
 #endif
+    WebGPUContext* get_webgpu_context() { return &webgpu_context; }
 
     void set_required_limits(const WGPURequiredLimits& required_limits) { this->required_limits = required_limits; }
 
