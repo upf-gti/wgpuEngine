@@ -22,9 +22,6 @@ protected:
 
     WebGPUContext           webgpu_context;
 
-    uint32_t render_width   = 0;
-    uint32_t render_height  = 0;
-
     bool is_openxr_available    = false;
     bool use_mirror_screen      = false;
 
@@ -53,4 +50,5 @@ public:
 
     void set_required_limits(const WGPURequiredLimits& required_limits) { this->required_limits = required_limits; }
 
+    virtual void resize_window(int width, int height);
 };

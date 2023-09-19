@@ -1,13 +1,9 @@
 #include "utils.h"
 
-#include <glm/glm.hpp>
-#include "json.hpp"
 #include <regex>
 #include <cassert>
 #include <iostream>
 #include <fstream>
-
-using json = nlohmann::json;
 
 std::vector<std::string> tokenize(const std::string& str) {
 	
@@ -52,46 +48,6 @@ bool read_file(const std::string& filename, std::string& content)
 	return true;
 }
 
-json load_json(const std::string& filename) {
-
-	json j;
-
-    while (true) {
-
-        std::ifstream ifs(filename.c_str());
-        if (!ifs.is_open()) {
-            std::cout << "Failed to open json file" << filename << std::endl;
-            continue;
-        }
-
-#ifdef NDEBUG
-        j = json::parse(ifs, nullptr, false);
-        if (j.is_discarded()) {
-            ifs.close();
-			std::cout << "Failed to parse json file" << filename << std::endl;
-            continue;
-        }
-#else
-        try
-        {
-            j = json::parse(ifs);
-        }
-        catch (json::parse_error& e)
-        {
-            ifs.close();
-            // Output exception information
-			printf("Failed to parse json file %s\n%s\nAt offset: %zd"
-                , filename.c_str(), e.what(), e.byte);
-            continue;
-        }
-#endif
-        // The json is correct, we can leave the while loop
-        break;
-    }
-
-    return j;
-}
-
 glm::vec4 load_vec4(const std::string& str) {
     glm::vec4 v;
     int n = sscanf(str.c_str(), "%f %f %f %f", &v.x, &v.y, &v.z, &v.w);
@@ -101,17 +57,6 @@ glm::vec4 load_vec4(const std::string& str) {
     printf("Invalid str reading VEC4 %s. Only %d values read. Expected 4", str.c_str(), n);
 
     return glm::vec4();
-}
-
-glm::vec4 load_vec4(const json& j, const char* attr, const glm::vec4& defaultValue) {
-
-    assert(j.is_object());
-    if (j.count(attr)) {
-        const std::string& str = j.value(attr, "");
-        return load_vec4(str);
-    }
-
-    return defaultValue;
 }
 
 glm::vec3 rotate_point_by_quat(const glm::vec3& v, const glm::vec4& q) {

@@ -168,21 +168,10 @@ int WebGPUContext::initialize(WGPURequestAdapterOptions adapter_opts, WGPURequir
 
     if (create_screen_swapchain) {
         // Create the swapchain for mirror mode
-        glfwGetWindowSize(window, &render_width, &screen_height);
+        int width, height;
+        glfwGetWindowSize(window, &width, &height);
 
-        WGPUSwapChainDescriptor swap_chain_desc = {};
-#ifdef __EMSCRIPTEN__
-        swap_chain_desc.usage = WGPUTextureUsage_RenderAttachment | WGPUTextureUsage_TextureBinding;
-        swap_chain_desc.presentMode = WGPUPresentMode_Fifo;
-#else
-        swap_chain_desc.usage = WGPUTextureUsage_RenderAttachment;
-        swap_chain_desc.presentMode = WGPUPresentMode_Mailbox;
-#endif
-        swap_chain_desc.format = swapchain_format;
-        swap_chain_desc.width = render_width;
-        swap_chain_desc.height = screen_height;
-
-        screen_swapchain = wgpuDeviceCreateSwapChain(device, surface, &swap_chain_desc);
+        create_swapchain(width, height);
     }
 
     device_queue = wgpuDeviceGetQueue(device);
@@ -555,4 +544,28 @@ WGPUInstance WebGPUContext::get_instance()
 #else
     return instance;
 #endif
+}
+
+void WebGPUContext::create_swapchain(int width, int height)
+{
+    if (screen_swapchain != nullptr) {
+        wgpuSwapChainRelease(screen_swapchain);
+    }
+
+    render_width = width;
+    render_height = height;
+
+    WGPUSwapChainDescriptor swap_chain_desc = {};
+#ifdef __EMSCRIPTEN__
+    swap_chain_desc.usage = WGPUTextureUsage_RenderAttachment | WGPUTextureUsage_TextureBinding;
+    swap_chain_desc.presentMode = WGPUPresentMode_Fifo;
+#else
+    swap_chain_desc.usage = WGPUTextureUsage_RenderAttachment;
+    swap_chain_desc.presentMode = WGPUPresentMode_Mailbox;
+#endif
+    swap_chain_desc.format = swapchain_format;
+    swap_chain_desc.width = render_width;
+    swap_chain_desc.height = render_height;
+
+    screen_swapchain = wgpuDeviceCreateSwapChain(device, surface, &swap_chain_desc);
 }

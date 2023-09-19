@@ -5,6 +5,15 @@
 
 #include <iostream>
 
+void resize_callback(GLFWwindow* window, int width, int height) {
+
+    std::cout << "Resize callback" << std::endl;
+
+    Engine* engine = reinterpret_cast<Engine*>(glfwGetWindowUserPointer(window));
+    engine->resize_window(width, height);
+
+}
+
 int Engine::initialize(Renderer* renderer, GLFWwindow* window, bool use_glfw, bool use_mirror_screen)
 {
     this->use_glfw = use_glfw;
@@ -41,14 +50,19 @@ int Engine::initialize(Renderer* renderer, GLFWwindow* window, bool use_glfw, bo
 
     this->renderer = renderer;
 
-    if(!renderer->initialize(window, use_mirror_screen)) {
-        Input::init(window, renderer);
-        return 0;
+    if(renderer->initialize(window, use_mirror_screen)) {
+        return 1;
     }
+
+    Input::init(window, renderer);
+
+    glfwSetWindowUserPointer(window, this);
+
+    glfwSetFramebufferSizeCallback(window, resize_callback);
 
     current_time = glfwGetTime();
 
-    return 1;
+    return 0;
 }
 
 void Engine::clean()
@@ -97,4 +111,9 @@ void Engine::update(float delta_time)
 void Engine::render()
 {
     renderer->render();
+}
+
+void Engine::resize_window(int width, int height)
+{
+    renderer->resize_window(width, height);
 }

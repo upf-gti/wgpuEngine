@@ -25,8 +25,8 @@ struct WebGPUContext {
     WGPUQueue               device_queue = nullptr;
 
     WGPUSwapChain           screen_swapchain = nullptr;
-    int                     render_width = 0;
-    int                     screen_height = 0;
+    uint32_t                render_width = 0;
+    uint32_t                render_height = 0;
 
     bool                    is_initialized = false;
 
@@ -41,6 +41,8 @@ struct WebGPUContext {
     void                   create_instance();
 
     WGPUInstance           get_instance();
+
+    void                   create_swapchain(int width, int height);
 
     WGPUShaderModule       create_shader_module(char const* code);
 

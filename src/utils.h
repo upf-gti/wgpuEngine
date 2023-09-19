@@ -1,9 +1,8 @@
 #pragma once
 
 #include <glm/glm.hpp>
-#include "json.hpp"
-
-using json = nlohmann::json;
+#include <vector>
+#include <string>
 
 enum Error {
     OK,
@@ -23,14 +22,11 @@ void print_line(const std::string & line);
 void print_error(const char* p_function, const char* p_file, int p_line, const char* p_error, const char* p_message);
 
 bool read_file(const std::string & filename, std::string & content);
-json load_json(const std::string & filename);
 
 glm::vec4 load_vec4(const std::string & str);
-glm::vec4 load_vec4(const json & j, const char* attr, const glm::vec4 & defaultValue);
 
 float random_f(float range = 1.0f, int offset = 0);
 glm::vec3 get_front(const glm::mat4 & pose);
-
 
 #define ERR_FAIL_COND_V_MSG(m_cond, m_retval, m_msg)                                                                                     \
 	if (m_cond) {																														 \

@@ -66,18 +66,10 @@ int Renderer::initialize(GLFWwindow* window, bool use_mirror_screen)
         return 1;
     }
 
-    render_width = webgpu_context.render_width;
-    render_height = webgpu_context.screen_height;
-
 #ifdef XR_SUPPORT
     if (is_openxr_available && xr_context.init(&webgpu_context)) {
         std::cout << "Could not initialize OpenXR context" << std::endl;
         return 1;
-    }
-
-    if (is_openxr_available) {
-        render_width = xr_context.viewconfig_views[0].recommendedImageRectWidth;
-        render_height = xr_context.viewconfig_views[0].recommendedImageRectHeight;
     }
 #endif
 
@@ -91,4 +83,9 @@ void Renderer::clean()
 #endif
 
     webgpu_context.destroy();
+}
+
+void Renderer::resize_window(int width, int height)
+{
+    webgpu_context.create_swapchain(width, height);
 }

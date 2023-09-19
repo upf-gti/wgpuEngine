@@ -23,6 +23,10 @@ void Texture::create(WGPUTextureDimension dimension, WGPUTextureFormat format, W
     this->usage = usage;
     this->mipmaps = mipmaps;
 
+    if (texture) {
+        wgpuTextureDestroy(texture);
+    }
+
     texture = webgpu_context->create_texture(dimension, format, size, usage, mipmaps);
 
     if (data != nullptr) {

@@ -16,6 +16,8 @@ class Engine {
     float delta_time = 0.0f;
     double current_time = 0.0;
 
+    void window_resize_callback(GLFWwindow* window, int width, int height);
+
 public:
 
     virtual int initialize(Renderer* renderer, GLFWwindow *window, bool use_glfw, bool use_mirror_screen);
@@ -28,4 +30,6 @@ public:
 
     virtual void update(float delta_time);
     virtual void render();
+
+    void resize_window(int width, int height);
 };
