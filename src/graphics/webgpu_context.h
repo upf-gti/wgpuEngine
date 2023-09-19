@@ -25,6 +25,12 @@ struct WebGPUContext {
     WGPUQueue               device_queue = nullptr;
 
     WGPUSwapChain           screen_swapchain = nullptr;
+
+    // For desktop window
+    uint32_t                screen_width = 0;
+    uint32_t                screen_height = 0;
+
+    // Internal render size, may come from openxr
     uint32_t                render_width = 0;
     uint32_t                render_height = 0;
 

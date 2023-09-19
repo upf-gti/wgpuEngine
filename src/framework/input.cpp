@@ -116,11 +116,11 @@ void Input::center_mouse()
 	if (!use_mirror_screen)
 		return;
 
-	int window_width, window_height;
-	glfwGetWindowSize(window, &window_width, &window_height);
+	int screen_width, screen_height;
+	glfwGetWindowSize(window, &screen_width, &screen_height);
 
-	int center_x = (int)floor(window_width * 0.5f);
-	int center_y = (int)floor(window_height * 0.5f);
+	int center_x = (int)floor(screen_width * 0.5f);
+	int center_y = (int)floor(screen_height * 0.5f);
 	glfwSetCursorPos(window, center_x, center_y);
 	Input::mouse_position.x = (float)center_x;
 	Input::mouse_position.y = (float)center_y;

@@ -5,13 +5,13 @@
 
 #include <iostream>
 
-void resize_callback(GLFWwindow* window, int width, int height) {
-
-    std::cout << "Resize callback" << std::endl;
-
+void resize_callback(GLFWwindow* window, int width, int height)
+{
     Engine* engine = reinterpret_cast<Engine*>(glfwGetWindowUserPointer(window));
-    engine->resize_window(width, height);
 
+    if (!engine->get_openxr_available()) {
+        engine->resize_window(width, height);
+    }
 }
 
 int Engine::initialize(Renderer* renderer, GLFWwindow* window, bool use_glfw, bool use_mirror_screen)

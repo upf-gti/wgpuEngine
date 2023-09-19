@@ -552,8 +552,8 @@ void WebGPUContext::create_swapchain(int width, int height)
         wgpuSwapChainRelease(screen_swapchain);
     }
 
-    render_width = width;
-    render_height = height;
+    screen_width = width;
+    screen_height = height;
 
     WGPUSwapChainDescriptor swap_chain_desc = {};
 #ifdef __EMSCRIPTEN__
@@ -564,8 +564,8 @@ void WebGPUContext::create_swapchain(int width, int height)
     swap_chain_desc.presentMode = WGPUPresentMode_Mailbox;
 #endif
     swap_chain_desc.format = swapchain_format;
-    swap_chain_desc.width = render_width;
-    swap_chain_desc.height = render_height;
+    swap_chain_desc.width = screen_width;
+    swap_chain_desc.height = screen_height;
 
     screen_swapchain = wgpuDeviceCreateSwapChain(device, surface, &swap_chain_desc);
 }
