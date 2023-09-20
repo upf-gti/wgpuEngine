@@ -125,7 +125,15 @@ int WebGPUContext::initialize(WGPURequestAdapterOptions adapter_opts, WGPURequir
     // Create device
     WGPUDeviceDescriptor device_desc = {};
     device_desc.label = "My Device";
+
+#ifdef __EMSCRIPTEN__
     device_desc.requiredFeaturesCount = 0;
+#else
+    WGPUFeatureName required_features = { WGPUFeatureName_Float32Filterable };
+    device_desc.requiredFeaturesCount = 1;
+    device_desc.requiredFeatures = &required_features;
+#endif
+
     device_desc.requiredLimits = &required_limits;
     device_desc.defaultQueue.label = "The default queue";
     device_desc.deviceLostCallback = DeviceLostCallback;

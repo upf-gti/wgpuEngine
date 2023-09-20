@@ -17,6 +17,7 @@ public:
 
 	static Texture* get(const std::string& texture_path);
 
+    WGPUTexture     get_texture() { return texture; }
 	WGPUTextureView get_view();
 
     void load_from_data(const std::string& name, int width, int height, void* data);
