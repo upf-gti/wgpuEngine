@@ -104,7 +104,7 @@ void Shader::get_reflection_data(const std::string& shader_path, const std::stri
 {
 	tint::Source::File file(shader_path, shader_content);
 	tint::Program tint_program = tint::wgsl::reader::Parse(&file);
-	tint::inspector::Inspector inspector(&tint_program);
+	tint::inspector::Inspector inspector(tint_program);
 
 	std::map<int, std::map<int, WGPUBindGroupLayoutEntry>> entries_by_bind_group;
 
