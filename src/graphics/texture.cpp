@@ -39,7 +39,7 @@ void Texture::load(const std::string& texture_path)
     std::cout << "Loading texture: " << texture_path;
 
     int width, height, channels;
-    unsigned char* data = stbi_load(texture_path.c_str(), &width, &height, &channels, 0);
+    unsigned char* data = stbi_load(texture_path.c_str(), &width, &height, &channels, 4);
 
     if (!data)
         return;
