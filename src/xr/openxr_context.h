@@ -102,7 +102,6 @@ struct OpenXRContext {
     uint32_t view_count;
     XrFrameState frame_state{ XR_TYPE_FRAME_STATE };
     uint32_t swapchain_length; // Number of textures per swapchain
-    XrGraphicsBindingVulkan2KHR graphics_binding_gl;
 
     std::vector<sSwapchainData> swapchains;
     std::vector<XrView> views;
@@ -121,7 +120,15 @@ struct OpenXRContext {
     */
 
     void print_viewconfig_view_info();
+
+    int check_backend_requirements();
+
+#if defined(BACKEND_VULKAN)
     bool check_vulkan_version(XrGraphicsRequirementsVulkanKHR* vulkan_reqs);
+#elif defined(BACKEND_DX12)
+    bool check_dx12_version(XrGraphicsRequirementsD3D12KHR* dx12_reqs);
+#endif
+
     void print_reference_spaces();
     bool xr_result(XrInstance xrInstance, XrResult result, const char* format, ...);
 

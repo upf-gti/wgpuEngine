@@ -106,10 +106,15 @@ if (NOT EMSCRIPTEN)
     # openxr
     add_subdirectory(libraries/openxr)
     target_link_libraries(${PROJECT_NAME} PUBLIC openxr_loader)
-    
+    set_property(TARGET openxr_loader PROPERTY FOLDER "External/OpenXR")
+    set_property(TARGET generate_openxr_header PROPERTY FOLDER "External/OpenXR")
+    set_property(TARGET xr_global_generated_files PROPERTY FOLDER "External/OpenXR")
+
     # glfw
     add_subdirectory(libraries/glfw3webgpu)
     target_link_libraries(${PROJECT_NAME} PUBLIC glfw glfw3webgpu)
+    set_property(TARGET glfw PROPERTY FOLDER "External/GLFW3")
+    set_property(TARGET glfw3webgpu PROPERTY FOLDER "External/GLFW3")
 
 endif()
 

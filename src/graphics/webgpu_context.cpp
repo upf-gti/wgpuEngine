@@ -139,11 +139,11 @@ int WebGPUContext::initialize(WGPURequestAdapterOptions adapter_opts, WGPURequir
     device_desc.deviceLostCallback = DeviceLostCallback;
 
 #if !defined(__EMSCRIPTEN__) && !defined(NDEBUG)
-    const char* const enabled_toggles[] = { "disable_symbol_renaming" };
+    const char* const enabled_toggles[] = { "use_dxc", "disable_symbol_renaming" };
 
     WGPUDawnTogglesDescriptor device_toggles_desc = {};
     device_toggles_desc.enabledToggles = enabled_toggles;
-    device_toggles_desc.enabledTogglesCount = 1;
+    device_toggles_desc.enabledTogglesCount = 2;
 
     WGPUChainedStruct* chain_desc = reinterpret_cast<WGPUChainedStruct*>(&device_toggles_desc);
     chain_desc->sType = WGPUSType_DawnTogglesDescriptor;

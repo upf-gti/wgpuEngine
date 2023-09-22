@@ -1,8 +1,13 @@
 #include "renderer.h"
 
 #ifdef XR_SUPPORT
-#include "dawnxr/dawnxr_internal.h"
-#include "dawn/native/VulkanBackend.h"
+    #include "dawnxr/dawnxr_internal.h"
+
+    #if defined(BACKEND_DX12)
+    #include <dawn/native/D3D12Backend.h>
+    #elif defined(BACKEND_VULKAN)
+    #include "dawn/native/VulkanBackend.h"
+    #endif
 #endif
 
 #include "graphics/mesh.h"
@@ -41,17 +46,21 @@ int Renderer::initialize(GLFWwindow* window, bool use_mirror_screen)
 
 #ifdef XR_SUPPORT
 
+
+#if defined(BACKEND_DX12)
+    adapter_opts.backendType = WGPUBackendType_D3D12;
+#elif defined(BACKEND_VULKAN)
     dawn::native::vulkan::RequestAdapterOptionsOpenXRConfig adapter_opts_xr_config = {};
+    adapter_opts.backendType = WGPUBackendType_Vulkan;
+#endif
 
     // Create internal vulkan instance
     if (is_openxr_available) {
 
-        adapter_opts.backendType = WGPUBackendType_Vulkan;
-
-        dawn::native::AdapterDiscoveryOptionsBase** options = new dawn::native::AdapterDiscoveryOptionsBase * ();
+#if defined(BACKEND_VULKAN)
         dawnxr::internal::createVulkanOpenXRConfig(xr_context.instance, xr_context.system_id, (void**)&adapter_opts_xr_config.openXRConfig);
-
         adapter_opts.nextInChain = reinterpret_cast<WGPUChainedStruct*>(&adapter_opts_xr_config);
+#endif
 
         create_screen_swapchain = use_mirror_screen;
     }
@@ -69,7 +78,7 @@ int Renderer::initialize(GLFWwindow* window, bool use_mirror_screen)
 #ifdef XR_SUPPORT
     if (is_openxr_available && xr_context.init(&webgpu_context)) {
         std::cout << "Could not initialize OpenXR context" << std::endl;
-        return 1;
+        is_openxr_available = false;
     }
 
     if (is_openxr_available) {

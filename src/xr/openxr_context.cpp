@@ -31,18 +31,9 @@ int OpenXRContext::init(WebGPUContext* webgpu_context)
     if (!xr_result(NULL, result, "Failed to enumerate blend modes"))
         return 1;
 
-    XrGraphicsRequirementsVulkanKHR vulkan_reqs = { .type = XR_TYPE_GRAPHICS_REQUIREMENTS_VULKAN2_KHR };
-
-    PFN_xrGetVulkanGraphicsRequirements2KHR pfnGetVulkanGraphicsRequirements2KHR = NULL;
-    {
-        result = xrGetInstanceProcAddr(instance, "xrGetVulkanGraphicsRequirements2KHR", (PFN_xrVoidFunction*)&pfnGetVulkanGraphicsRequirements2KHR);
-        if (!xr_result(instance, result, "Failed to get Vulkan graphics requirements function!"))
-            return 1;
+    if (check_backend_requirements()) {
+        return 1;
     }
-
-    pfnGetVulkanGraphicsRequirements2KHR(instance, system_id, &vulkan_reqs);
-
-    check_vulkan_version(&vulkan_reqs);
 
     view_count = 0;
     result = xrEnumerateViewConfigurationViews(instance, system_id, XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO, 0, &view_count, NULL);
@@ -196,6 +187,7 @@ bool OpenXRContext::create_instance()
         return false;
 
     bool vulkan_ext = false;
+    bool dx12_ext = false;
 
     std::cout << "OpenXR extensions:" << std::endl;
     for (const auto &ext : extensionProperties) {
@@ -203,6 +195,10 @@ bool OpenXRContext::create_instance()
 
         if (strcmp("XR_KHR_vulkan_enable2", ext.extensionName) == 0) {
             vulkan_ext = true;
+        }
+
+        if (strcmp("XR_KHR_D3D12_enable", ext.extensionName) == 0) {
+            dx12_ext = true;
         }
 
         if (strcmp(XR_EXT_HAND_TRACKING_EXTENSION_NAME, ext.extensionName) == 0) {
@@ -219,14 +215,26 @@ bool OpenXRContext::create_instance()
     }
 
     // A graphics extension is required to draw anything in VR
+
+    uint32_t enabled_ext_count = 1;
+
+#if defined(BACKEND_VULKAN)
     if (!vulkan_ext) {
         std::cout << "Runtime does not support Vulkan extension!" << std::endl;
         return false;
     }
 
-    // --- Create XrInstance
-    uint32_t enabled_ext_count = 1;
     const char* enabled_exts[3] = { "XR_KHR_vulkan_enable2" };
+
+#elif defined(BACKEND_DX12)
+    if (!dx12_ext) {
+        std::cout << "Runtime does not support DX12 extension!" << std::endl;
+        return false;
+    }
+
+    const char* enabled_exts[3] = { "XR_KHR_D3D12_enable" };
+
+#endif
 
     if (hand_tracking.supported) {
         enabled_exts[enabled_ext_count++] = XR_EXT_HAND_TRACKING_EXTENSION_NAME;
@@ -345,6 +353,43 @@ void OpenXRContext::print_viewconfig_view_info()
     }
 }
 
+int OpenXRContext::check_backend_requirements()
+{
+    XrResult result;
+
+#if defined(BACKEND_VULKAN)
+    XrGraphicsRequirementsVulkanKHR vulkan_reqs = { .type = XR_TYPE_GRAPHICS_REQUIREMENTS_VULKAN2_KHR };
+
+    PFN_xrGetVulkanGraphicsRequirements2KHR pfnGetVulkanGraphicsRequirements2KHR = NULL;
+    {
+        result = xrGetInstanceProcAddr(instance, "xrGetVulkanGraphicsRequirements2KHR", (PFN_xrVoidFunction*)&pfnGetVulkanGraphicsRequirements2KHR);
+        if (!xr_result(instance, result, "Failed to get Vulkan graphics requirements function!"))
+            return 1;
+    }
+
+    pfnGetVulkanGraphicsRequirements2KHR(instance, system_id, &vulkan_reqs);
+
+    check_vulkan_version(&vulkan_reqs);
+#elif defined(BACKEND_DX12)
+
+    XrGraphicsRequirementsD3D12KHR dx12_reqs = { .type = XR_TYPE_GRAPHICS_REQUIREMENTS_D3D12_KHR };
+
+    PFN_xrGetD3D12GraphicsRequirementsKHR pfnGetD3D12GraphicsRequirements2KHR = NULL;
+    {
+        result = xrGetInstanceProcAddr(instance, "xrGetD3D12GraphicsRequirementsKHR", (PFN_xrVoidFunction*)&pfnGetD3D12GraphicsRequirements2KHR);
+        if (!xr_result(instance, result, "Failed to get DX12 graphics requirements function!"))
+            return 1;
+    }
+
+    pfnGetD3D12GraphicsRequirements2KHR(instance, system_id, &dx12_reqs);
+
+    check_dx12_version(&dx12_reqs);
+#endif
+
+    return 0;
+}
+
+#if defined(BACKEND_VULKAN)
 bool OpenXRContext::check_vulkan_version(XrGraphicsRequirementsVulkanKHR* vulkan_reqs)
 {
     XrVersion desired_vulkan_version = XR_MAKE_VERSION(1, 0, 0);
@@ -364,6 +409,18 @@ bool OpenXRContext::check_vulkan_version(XrGraphicsRequirementsVulkanKHR* vulkan
     }
     return true;
 }
+#endif
+
+#if defined(BACKEND_DX12)
+bool OpenXRContext::check_dx12_version(XrGraphicsRequirementsD3D12KHR* dx12_reqs)
+{
+    std::cout << "### D3D12 graphics requirements minFeatureLevel: " << dx12_reqs->minFeatureLevel << std::endl;
+    std::cout << "### D3D12 graphics requirements adapterLuid: " << dx12_reqs->adapterLuid.HighPart << " "
+        << dx12_reqs->adapterLuid.LowPart << std::endl;
+
+    return true;
+}
+#endif
 
 void OpenXRContext::print_reference_spaces()
 {
