@@ -13,13 +13,6 @@ enum OPENXR_HANDS
 	HAND_COUNT
 };
 
-enum OPENXR_EYES
-{
-	EYE_LEFT = 0,
-	EYE_RIGHT = 1,
-	EYE_COUNT
-};
-
 enum {
 	POSE_GRIP = 0,
 	POSE_AIM

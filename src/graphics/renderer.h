@@ -25,6 +25,8 @@ protected:
     bool is_openxr_available    = false;
     bool use_mirror_screen      = false;
 
+    glm::vec4 clear_color = { 0.0f, 0.0f, 0.0f, 1.0f };
+
     // Required device limits
     WGPURequiredLimits required_limits = {};
 
@@ -43,6 +45,8 @@ public:
 
     bool get_openxr_available() { return is_openxr_available; }
     bool get_use_mirror_screen() { return use_mirror_screen; }
+
+    glm::vec4 get_clear_color() { return clear_color; }
 
 #ifdef XR_SUPPORT
     OpenXRContext* get_openxr_context() { return (is_openxr_available ? &xr_context : nullptr); }
