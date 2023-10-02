@@ -78,11 +78,7 @@ EntityMesh* parse_gltf(const std::string& gltf_path)
                 break;
             }
 
-            if (!vertices.empty()) {
-                assert(0);
-            }
-
-            vertices.resize(index_buffer_size);
+            vertices.resize(vertices.size() + index_buffer_size);
 
             for (auto& attrib : primitive.attributes) {
                 tinygltf::Accessor accessor = model.accessors[attrib.second];

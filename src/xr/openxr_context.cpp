@@ -10,7 +10,7 @@ static XrPosef identity_pose = { .orientation = {.x = 0, .y = 0, .z = 0, .w = 1.
                                  .position = {.x = 0, .y = 0, .z = 0} };
 
 // Helper functions for pose to GLM
-glm::mat4x4 parse_OpenXR_projection_to_glm(const XrFovf& fov, float nearZ = 0.1f, float farZ = 1000.0f);
+glm::mat4x4 parse_OpenXR_projection_to_glm(const XrFovf& fov, float nearZ, float farZ);
 glm::mat4x4 parse_OpenXR_pose_to_glm(const XrPosef& p);
 glm::mat4x4 parse_OpenXR_pose_to_glm(const XrInputPose& p);
 inline XrInputPose parse_OpenXR_pose_to_sPose(const XrPosef& xrPosef);
@@ -920,7 +920,7 @@ void OpenXRContext::init_frame()
 
         per_view_data[i].position = glm::vec3(views[i].pose.position.x, views[i].pose.position.y, views[i].pose.position.z);
         per_view_data[i].view_matrix = glm::inverse(parse_OpenXR_pose_to_glm(views[i].pose));
-        per_view_data[i].projection_matrix = parse_OpenXR_projection_to_glm(views[i].fov);
+        per_view_data[i].projection_matrix = parse_OpenXR_projection_to_glm(views[i].fov, z_near, z_far);
 
         per_view_data[i].view_projection_matrix = per_view_data[i].projection_matrix * per_view_data[i].view_matrix;
     }
