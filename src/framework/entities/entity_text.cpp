@@ -42,6 +42,12 @@ void TextEntity::generate_mesh()
     if (text.empty() || !font) 
         return;
 
+    // Clear previous mesh
+    if (mesh) {
+        vertices.clear();
+        delete mesh;
+    }
+
     float size = (float)font_scale / font->size;
     float space = (float)font->characters[' '].xadvance;
     glm::vec3 pos(0.f);
@@ -102,7 +108,7 @@ void TextEntity::generate_mesh()
     mesh->create_from_vertices(vertices);
 }
 
-int TextEntity::get_text_width(const std::string text)
+int TextEntity::get_text_width(const std::string& text)
 {
 	int size = 0;
 	int textsize = (int)text.size();

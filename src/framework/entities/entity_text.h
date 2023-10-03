@@ -31,7 +31,9 @@ public:
 	*	Font Rendering
 	*/
 
-	int get_text_width(const std::string text);
-	TextEntity* set_scale(float _scale) { font_scale = _scale; return this; }
+	int get_text_width(const std::string& text);
 	void generate_mesh();
+
+    void set_text(const std::string& p_text) { text = p_text; generate_mesh(); };
+	TextEntity* set_scale(float _scale) { font_scale = _scale; return this; }
 };
