@@ -23,20 +23,30 @@ public:
 	void create_compute(Shader* shader, WGPUPipelineLayout pipeline_layout);
 	void create_compute(Shader* shader);
 
+    static void register_render_pipeline(Shader* shader, WGPUColorTargetState color_target, bool uses_depth_buffer = false);
+    static void register_compute_pipeline(Shader* shader, WGPUPipelineLayout pipeline_layout);
+    static void clean_registered_pipelines_renderables();
+    static void render_registered_pipelines_renderables(const WGPURenderPassEncoder& render_pass, WGPUBindGroup render_bind_group_camera);
+    static void clean_registered_pipelines();
+
 	void reload(Shader* shader);
 
 	void set(const WGPURenderPassEncoder& render_pass);
 	void set(const WGPUComputePassEncoder& compute_pass);
 
 	void add_renderable(Mesh* entity);
-	void clean_renderables();
 
 	const std::unordered_set<Mesh*> & get_render_list() { return render_list; }
 
 private:
 
+    void clean_renderables();
+
 	WGPUPipelineLayout pipeline_layout;
 	std::variant< WGPURenderPipeline, WGPUComputePipeline> pipeline;
+
+    static std::vector<Pipeline*> registered_render_pipelines;
+    static std::vector<Pipeline*> registered_compute_pipelines;
 
 	// Entities to be rendered this frame
 	std::unordered_set<Mesh*> render_list;

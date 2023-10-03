@@ -21,7 +21,7 @@ class Engine {
 public:
 
     virtual int initialize(Renderer* renderer, GLFWwindow *window, bool use_glfw, bool use_mirror_screen);
-    void clean();
+    virtual void clean();
 
     bool get_openxr_available();
     bool get_use_mirror_window();

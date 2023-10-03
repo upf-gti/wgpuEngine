@@ -101,6 +101,8 @@ void Renderer::clean()
     xr_context.clean();
 #endif
 
+    Pipeline::clean_registered_pipelines();
+
     webgpu_context.destroy();
 }
 
