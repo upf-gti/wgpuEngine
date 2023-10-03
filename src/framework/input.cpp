@@ -11,6 +11,8 @@ uint8_t Input::prev_buttons[GLFW_MOUSE_BUTTON_LAST];
 uint8_t Input::keystate[GLFW_KEY_LAST];
 uint8_t Input::prev_keystate[GLFW_KEY_LAST];
 
+bool Input::trigger_released[HAND_COUNT] = {true, true};
+
 GLFWwindow* Input::window = nullptr;
 bool Input::use_mirror_screen;
 
@@ -108,6 +110,13 @@ void Input::update(float delta_time)
 		return;
 
 	openxr_context->poll_actions(xr_data);
+
+    for (int i = 0; i < HAND_COUNT; ++i)
+    {
+        if (get_trigger_value(i) == 0.f)
+            trigger_released[i] = true;
+    }
+
 #endif
 }
 
@@ -225,6 +234,19 @@ float Input::get_trigger_value(uint8_t controller)
 	return xr_data.triggerValueState[controller].currentState;
 #else
 	return 0.0f;
+#endif
+}
+
+bool Input::was_trigger_pressed(uint8_t controller)
+{
+#ifdef XR_SUPPORT
+
+    bool value = openxr_context && trigger_released[controller] && (xr_data.triggerValueState[controller].currentState > 0.5f);
+    if (value) trigger_released[controller] = false;
+    return value;
+
+#else
+    return false;
 #endif
 }
 

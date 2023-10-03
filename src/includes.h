@@ -12,3 +12,9 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtc/type_ptr.hpp>
+
+enum eEYE {
+    EYE_LEFT,
+    EYE_RIGHT,
+    EYE_COUNT // Let's assume this will never be different to 2...
+};

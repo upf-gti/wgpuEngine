@@ -13,13 +13,6 @@ enum OPENXR_HANDS
 	HAND_COUNT
 };
 
-enum OPENXR_EYES
-{
-	EYE_LEFT = 0,
-	EYE_RIGHT = 1,
-	EYE_COUNT
-};
-
 enum {
 	POSE_GRIP = 0,
 	POSE_AIM
@@ -110,6 +103,8 @@ class Input {
 
 	static bool use_mirror_screen;
 
+    static bool trigger_released[HAND_COUNT];
+
 #ifdef XR_SUPPORT
 	static XrInputData xr_data;
 
@@ -168,6 +163,7 @@ public:
 	*/
 
 	static float get_trigger_value(uint8_t controller);
+    static bool was_trigger_pressed(uint8_t controller);
 	static bool is_trigger_touched(uint8_t controller);
 	static bool was_trigger_touched(uint8_t controller);
 
