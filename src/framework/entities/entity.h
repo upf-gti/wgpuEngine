@@ -29,6 +29,7 @@ public:
 
 	void translate(const glm::vec3& translation);
 	void rotate(float angle, const glm::vec3& axis);
+    void rotate(const glm::quat& q);
 	void scale(glm::vec3 scale);
 
 	// Some useful methods

@@ -2,7 +2,7 @@
 
 #include "includes.h"
 
-#define EPSILON 0.00001f
+#define EPSILON 0.0001f
 
 namespace intersection {
 
@@ -148,4 +148,30 @@ namespace intersection {
 
 		return box_size.x > t.x && box_size.y > t.y && box_size.z > t.z && t.x > 0.0f && t.y > 0.0f && t.z > 0.0f;
 	}
+
+    inline bool point_plane(const glm::vec3& point,
+                            const glm::vec3& plane_origin,
+                            const glm::vec3& plane_normal,
+                                  float* distance,
+                            const float  epsilon = EPSILON) {
+        float dist_to_plane = glm::dot(plane_normal, point - plane_origin);
+        *distance = dist_to_plane - epsilon;
+
+        return glm::abs(dist_to_plane) < epsilon;
+    }
+
+
+    inline bool point_circle(const glm::vec3& point,
+                             const glm::vec3& circle_origin,
+                             const glm::vec3& circle_normal,
+                             const float      circle_radius) {
+        float distance;
+
+        if (!point_plane(point, circle_origin, circle_normal, &distance, 0.02f)) {
+            return false;
+        }
+        const glm::vec3 point_in_plane = point - circle_normal * distance;
+        
+        return glm::abs(glm::length(point_in_plane - circle_origin)) < circle_radius;
+    }
 }

@@ -1,5 +1,6 @@
 #include "entity.h"
 
+#include <glm/gtx/quaternion.hpp>
 #include <iostream>
 
 void Entity::add_child(Entity* child)
@@ -43,6 +44,11 @@ void Entity::rotate(float angle, const glm::vec3& axis)
 {
 	model = glm::rotate(model, angle, axis);
 	model_dirty = true;
+}
+
+void Entity::rotate(const glm::quat& q) {
+    model = model * glm::toMat4(q);
+    model_dirty = true;
 }
 
 void Entity::scale(glm::vec3 scale)
