@@ -77,7 +77,7 @@ void Pipeline::clean_registered_pipelines_renderables()
     }
 }
 
-void Pipeline::render_registered_pipelines_renderables(const WGPURenderPassEncoder& render_pass, WGPUBindGroup render_bind_group_camera)
+void Pipeline::render_registered_pipelines_renderables(const WGPURenderPassEncoder& render_pass, const WGPUBindGroup& render_bind_group_camera)
 {
     for (auto* pipeline : registered_render_pipelines) {
 
@@ -98,7 +98,7 @@ void Pipeline::render_registered_pipelines_renderables(const WGPURenderPassEncod
             wgpuRenderPassEncoderSetBindGroup(render_pass, 0, mesh->get_bind_group(), 0, nullptr);
             wgpuRenderPassEncoderSetBindGroup(render_pass, 1, render_bind_group_camera, 0, nullptr);
 
-            //ui::Widget* widget = ui::Controller::get_widget_from_name(mesh->get_alias());
+            //ui::Widget* widget = ui::Controller::get(mesh->get_alias());
             //if (widget)
             //{
             //    wgpuQueueWriteBuffer(webgpu_context->device_queue, std::get<WGPUBuffer>(widget->uniforms.data), 0, &widget->ui_data, sizeof(ui::sUIData));

@@ -26,7 +26,7 @@ public:
     static void register_render_pipeline(Shader* shader, WGPUColorTargetState color_target, bool uses_depth_buffer = false);
     static void register_compute_pipeline(Shader* shader, WGPUPipelineLayout pipeline_layout);
     static void clean_registered_pipelines_renderables();
-    static void render_registered_pipelines_renderables(const WGPURenderPassEncoder& render_pass, WGPUBindGroup render_bind_group_camera);
+    static void render_registered_pipelines_renderables(const WGPURenderPassEncoder& render_pass, const WGPUBindGroup& render_bind_group_camera);
     static void clean_registered_pipelines();
 
 	void reload(Shader* shader);

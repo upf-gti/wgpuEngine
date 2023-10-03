@@ -138,12 +138,11 @@ int WebGPUContext::initialize(WGPURequestAdapterOptions adapter_opts, WGPURequir
     device_desc.defaultQueue.label = "The default queue";
     device_desc.deviceLostCallback = DeviceLostCallback;
 
+#if !defined(__EMSCRIPTEN__)
     std::vector<const char*> enabled_toggles;
     enabled_toggles.push_back("use_dxc");
 
-#if !defined(__EMSCRIPTEN__) && !defined(NDEBUG)
-    enabled_toggles.push_back("disable_symbol_renaming");
-#endif
+    //enabled_toggles.push_back("disable_symbol_renaming");
 
     WGPUDawnTogglesDescriptor device_toggles_desc = {};
     device_toggles_desc.enabledToggles = enabled_toggles.data();
@@ -152,6 +151,7 @@ int WebGPUContext::initialize(WGPURequestAdapterOptions adapter_opts, WGPURequir
     WGPUChainedStruct* chain_desc = reinterpret_cast<WGPUChainedStruct*>(&device_toggles_desc);
     chain_desc->sType = WGPUSType_DawnTogglesDescriptor;
     device_desc.nextInChain = chain_desc;
+#endif
     
     device = requestDevice(adapter, &device_desc);
 
