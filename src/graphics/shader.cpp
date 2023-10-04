@@ -9,8 +9,7 @@
 
 #include "tint/tint.h"
 
-std::map<std::string, Shader*> Shader::shaders;
-std::map<std::string, std::vector<std::string>> Shader::library_references;
+#include "renderer_storage.h"
 
 WebGPUContext* Shader::webgpu_context = nullptr;
 
@@ -51,6 +50,8 @@ bool Shader::load(const std::string& shader_path)
 				std::cerr << "Could not load shader include: " << include_path << std::endl;
 				return false;
 			}
+
+            auto& library_references = RendererStorage::instance->shader_library_references;
 
 			auto& references = library_references[include_path];
 
@@ -334,45 +335,6 @@ void Shader::reload()
 	if (pipeline_ref) {
 		pipeline_ref->reload(this);
 	}
-}
-
-Shader* Shader::get(const std::string& shader_path)
-{
-	std::string name = shader_path;
-
-	// check if already loaded
-	std::map<std::string, Shader*>::iterator it = shaders.find(shader_path);
-	if (it != shaders.end())
-		return it->second;
-
-	Shader* sh = new Shader();
-
-	if (!sh->load(shader_path)) {
-		return nullptr;
-	}
-
-	// register in map
-	shaders[name] = sh;
-	
-	return sh;
-}
-
-std::vector<std::string> Shader::get_for_reload(const std::string& shader_path)
-{
-	std::string name = shader_path;
-
-	// Check if already loaded
-	auto it0 = shaders.find(shader_path);
-	if (it0 != shaders.end())
-		return { shader_path };
-
-	// If it is not a shader, check if it is a library
-	auto it1 = library_references.find(shader_path);
-	if (it1 != library_references.end())
-		return library_references[shader_path];
-
-	// The shader is not being used
-	return {};
 }
 
 WGPUShaderModule Shader::get_module() const

@@ -6,7 +6,6 @@
 #include <iostream>
 #include <bit>
 
-std::map<std::string, Texture*> Texture::textures;
 WebGPUContext* Texture::webgpu_context = nullptr;
 
 Texture::~Texture() {
@@ -64,24 +63,6 @@ void Texture::load_from_data(const std::string& name, int width, int height, voi
     texture = webgpu_context->create_texture(dimension, format, size, usage, mipmaps);
 
     webgpu_context->create_texture_mipmaps(texture, size, mipmaps, data);
-}
-
-Texture* Texture::get(const std::string& texture_path)
-{
-    std::string name = texture_path;
-
-    // check if already loaded
-    std::map<std::string, Texture*>::iterator it = textures.find(texture_path);
-    if (it != textures.end())
-        return it->second;
-
-    Texture* tx = new Texture();
-    tx->load(texture_path);
-
-    // register in map
-    textures[name] = tx;
-
-    return tx;
 }
 
 WGPUTextureView Texture::get_view()

@@ -16,10 +16,8 @@ public:
 
 	static WebGPUContext* webgpu_context;
 
+    bool load(const std::string& shader_path);
 	void reload();
-
-	static Shader* get(const std::string& shader_path);
-	static std::vector<std::string> get_for_reload(const std::string& shader_path);
 
 	WGPUShaderModule get_module() const;
 
@@ -34,10 +32,7 @@ public:
 	bool is_loaded() { return loaded; }
 
 private:
-	static std::map<std::string, Shader*> shaders;
-	static std::map<std::string, std::vector<std::string>> library_references;
 
-	bool load(const std::string& shader_path);
 	void get_reflection_data(const std::string& shader_path, const std::string& shader_content);
 
 	std::string path;

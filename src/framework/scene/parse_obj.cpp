@@ -6,6 +6,7 @@
 #include "graphics/mesh.h"
 #include "graphics/texture.h"
 #include "graphics/shader.h"
+#include "graphics/renderer_storage.h"
 
 #include <iostream>
 
@@ -30,7 +31,7 @@ EntityMesh* parse_obj(const std::string& obj_path)
     auto& materials = reader.GetMaterials();
 
     EntityMesh* new_entity = new EntityMesh();
-    Mesh* new_mesh = Mesh::get(obj_path);
+    Mesh* new_mesh = RendererStorage::get_mesh(obj_path);
 
     new_entity->set_mesh(new_mesh);
 
@@ -39,11 +40,11 @@ EntityMesh* parse_obj(const std::string& obj_path)
     if (!materials.empty()) {
         if (materials[0].diffuse_texname.empty()) {
             material.color = glm::vec4(materials[0].diffuse[0], materials[0].diffuse[1], materials[0].diffuse[2], 1.0f);
-            material.shader = Shader::get("data/shaders/mesh_color.wgsl");
+            material.shader = RendererStorage::get_shader("data/shaders/mesh_color.wgsl");
         }
         else {
-            material.diffuse = Texture::get("data/textures/" + materials[0].diffuse_texname);
-            material.shader = Shader::get("data/shaders/mesh_texture.wgsl");
+            material.diffuse = RendererStorage::get_texture("data/textures/" + materials[0].diffuse_texname);
+            material.shader = RendererStorage::get_shader("data/shaders/mesh_texture.wgsl");
         }
     }
 

@@ -8,8 +8,6 @@
 
 WebGPUContext* Mesh::webgpu_context = nullptr;
 
-std::map<std::string, Mesh*> Mesh::meshes;
-
 Mesh::~Mesh()
 {
     if (vertices.empty()) return;
@@ -22,23 +20,6 @@ Mesh::~Mesh()
         wgpuBindGroupRelease(bind_group);
         mesh_data_uniform.destroy();
     }
-}
-
-Mesh* Mesh::get(const std::string& mesh_path)
-{
-    std::string name = mesh_path;
-
-    // check if already loaded
-    std::map<std::string, Mesh*>::iterator it = meshes.find(mesh_path);
-    if (it != meshes.end())
-        return it->second;
-
-    Mesh* new_mesh = new Mesh();
-
-    // register in map
-    meshes[name] = new_mesh;
-
-    return new_mesh;
 }
 
 void Mesh::create_vertex_buffer()

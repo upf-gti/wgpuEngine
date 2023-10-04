@@ -1,5 +1,7 @@
 #include "font.h"
 
+#include "renderer_storage.h"
+
 using namespace std::string_literals;
 
 std::map<std::string, Font*> Font::s_fonts;
@@ -31,7 +33,7 @@ void Font::load(const std::string& font_name)
             page_path.replace_extension("png");
             std::string filename = "data/fonts/" + font_name + "/" + page_path.string();
 
-            Texture* tex = Texture::get(filename);
+            Texture* tex = RendererStorage::get_texture(filename);
             textures.push_back(tex);
         }
     }

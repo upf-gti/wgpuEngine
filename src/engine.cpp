@@ -32,10 +32,10 @@ int Engine::initialize(Renderer* renderer, GLFWwindow* window, bool use_glfw, bo
         case eFileStatus::Modified: {
             std::cout << "Shader modified: " << path_to_watch << '\n';
 
-            const std::vector<std::string> shader_paths = Shader::get_for_reload(path_to_watch);
+            const std::vector<std::string> shader_paths = RendererStorage::get_shader_for_reload(path_to_watch);
 
             for (const auto& shader_path : shader_paths) {
-                Shader* shader = Shader::get(shader_path);
+                Shader* shader = RendererStorage::get_shader(shader_path);
                 if (shader) {
                     shader->reload();
                 }

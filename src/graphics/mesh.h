@@ -39,15 +39,11 @@ class Mesh {
 
 	std::vector<sUniformMeshData> instance_data;
 
-	static std::map<std::string, Mesh*> meshes;
-
 public:
 
 	~Mesh();
 
 	static WebGPUContext* webgpu_context;
-
-	static Mesh* get(const std::string& mesh_path);
 
 	WGPUBuffer& get_vertex_buffer();
 	WGPUBindGroup& get_bind_group();

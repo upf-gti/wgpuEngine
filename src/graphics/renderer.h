@@ -6,6 +6,7 @@
 #include "graphics/shader.h"
 #include "graphics/pipeline.h"
 #include "graphics/webgpu_context.h"
+#include "graphics/renderer_storage.h"
 
 #ifdef XR_SUPPORT
 #include "xr/openxr_context.h"
@@ -17,10 +18,12 @@ class Renderer {
 
 protected:
 #ifdef XR_SUPPORT
-    OpenXRContext           xr_context;
+    OpenXRContext   xr_context;
 #endif
 
-    WebGPUContext           webgpu_context;
+    WebGPUContext   webgpu_context;
+
+    RendererStorage renderer_storage;
 
     bool is_openxr_available    = false;
     bool use_mirror_screen      = false;

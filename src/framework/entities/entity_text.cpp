@@ -9,7 +9,7 @@ TextEntity::TextEntity(const std::string& _text, glm::vec2 _box_size, bool _wrap
     box_size = _box_size;
     wrap = _wrap;
 
-    material.shader = Shader::get("data/shaders/sdf_fonts.wgsl");
+    material.shader = RendererStorage::get_shader("data/shaders/sdf_fonts.wgsl");
 
     if (font) {
         material.diffuse = font->textures[0];
