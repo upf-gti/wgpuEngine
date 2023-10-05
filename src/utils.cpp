@@ -48,15 +48,28 @@ bool read_file(const std::string& filename, std::string& content)
 	return true;
 }
 
+glm::vec3 load_vec3(const std::string& str) {
+    glm::vec3 v;
+    int n = sscanf_s(str.c_str(), "%f %f %f", &v.x, &v.y, &v.z);
+    if (n == 3) {
+        return v;
+    }
+    printf("Invalid str reading VEC3 %s. Only %d values read. Expected 3", str.c_str(), n);
+    return glm::vec3();
+}
+
 glm::vec4 load_vec4(const std::string& str) {
     glm::vec4 v;
-    int n = sscanf(str.c_str(), "%f %f %f %f", &v.x, &v.y, &v.z, &v.w);
+    int n = sscanf_s(str.c_str(), "%f %f %f %f", &v.x, &v.y, &v.z, &v.w);
     if (n == 4) {
         return v;
     }
     printf("Invalid str reading VEC4 %s. Only %d values read. Expected 4", str.c_str(), n);
-
     return glm::vec4();
+}
+
+glm::quat load_quat(const std::string& str) {
+    return glm::quat(load_vec4(str));
 }
 
 glm::vec3 rotate_point_by_quat(const glm::vec3& v, const glm::vec4& q) {

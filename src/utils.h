@@ -1,6 +1,7 @@
 #pragma once
 
 #include <glm/glm.hpp>
+#include <glm/gtc/quaternion.hpp>
 #include <vector>
 #include <string>
 
@@ -23,7 +24,9 @@ void print_error(const char* p_function, const char* p_file, int p_line, const c
 
 bool read_file(const std::string & filename, std::string & content);
 
-glm::vec4 load_vec4(const std::string & str);
+glm::vec3 load_vec3(const std::string& str);
+glm::vec4 load_vec4(const std::string& str);
+glm::quat load_quat(const std::string& str);
 
 float random_f(float range = 1.0f, int offset = 0);
 glm::vec3 get_front(const glm::mat4 & pose);
