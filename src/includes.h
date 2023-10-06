@@ -13,6 +13,13 @@
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+#ifdef __EMSCRIPTEN__
+#include <emscripten/emscripten.h>
+#include <emscripten/html5_webgpu.h>
+#else
+#include <webgpu/webgpu.h>
+#endif
+
 enum eEYE {
     EYE_LEFT,
     EYE_RIGHT,

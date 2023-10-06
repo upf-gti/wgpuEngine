@@ -1,17 +1,11 @@
 #pragma once
 
 #include "entity.h"
+#include "graphics/material.h"
 
 class Mesh;
 class Shader;
 class Texture;
-
-struct Material
-{
-    Shader* shader = nullptr;
-    glm::vec4 color = { 1.0f, 1.0f, 1.0f, 1.0f };
-    Texture* diffuse = nullptr;
-};
 
 class EntityMesh : public Entity {
 

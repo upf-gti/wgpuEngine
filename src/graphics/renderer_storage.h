@@ -1,12 +1,19 @@
 #pragma once
 
+#include "includes.h"
+
 #include <map>
+#include <unordered_map>
 #include <string>
 #include <vector>
+
+#include "webgpu_context.h"
+#include "material.h"
 
 class Mesh;
 class Texture;
 class Shader;
+struct Uniform;
 
 class RendererStorage {
 
@@ -21,6 +28,16 @@ public:
     static std::map<std::string, std::vector<std::string>> shader_library_references;
     static std::map<std::string, Texture*> textures;
     static std::map<std::string, Mesh*> meshes;
+
+    struct sMaterialData {
+        std::vector<Uniform*> uniforms;
+        WGPUBindGroup bind_group;
+    };
+
+    static std::unordered_map<Material, sMaterialData> material_bind_groups;
+
+    static void register_material(WebGPUContext* webgpu_context, const Material& material);
+    static WGPUBindGroup get_material_bind_group(const Material& material);
 
     static Shader* get_shader(const std::string& shader_path);
     static std::vector<std::string> get_shader_for_reload(const std::string& shader_path);

@@ -13,6 +13,7 @@
 #include "graphics/mesh.h"
 #include "graphics/texture.h"
 
+#include <algorithm>
 #include <iostream>
 
 Renderer* Renderer::instance = nullptr;
@@ -104,6 +105,174 @@ void Renderer::clean()
     Pipeline::clean_registered_pipelines();
 
     webgpu_context.destroy();
+}
+
+void Renderer::render(WGPURenderPassEncoder render_pass, const WGPUBindGroup& render_bind_group_camera)
+{
+    instance_data->clear();
+
+    for (int i = 0; i < RENDER_LIST_SIZE; ++i) {
+
+        // Sort render_list
+        std::sort(render_list[i].begin(), render_list[i].end(), [](auto& lhs, auto& rhs) {
+            auto& lhs_mat = lhs.entity_mesh->get_material();
+            auto& rhs_mat = rhs.entity_mesh->get_material();
+
+            auto* lhs_mesh = lhs.entity_mesh->get_mesh();
+            auto* rhs_mesh = rhs.entity_mesh->get_mesh();
+
+            if (lhs_mat.shader > rhs_mat.shader) return true;
+            if (lhs_mat.shader == rhs_mat.shader && lhs_mesh > rhs_mesh) return true;
+            if (lhs_mat.shader == rhs_mat.shader && lhs_mesh == rhs_mesh && lhs_mat.diffuse > rhs_mat.diffuse) return true;
+
+            return false;
+        });
+
+        // Check instances
+        {
+            Mesh* prev_mesh = nullptr;
+            Shader* prev_shader = nullptr;
+
+            uint32_t repeats = 0;
+            for (uint32_t j = 0; j < render_list[i].size(); ++j) {
+
+                // Repeated EntityMesh, must be instanced
+                if (prev_mesh == render_list[i][j].entity_mesh->get_mesh() && prev_shader == render_list[i][j].entity_mesh->get_material().shader) {
+                    repeats++;
+                }
+                else {
+                    if (repeats > 0) {
+                        for (uint32_t k = 1; k <= repeats; k++) {
+                            render_list[i][j - k].repeat = k;
+                        }
+                    }
+                    repeats = 1;
+                }
+
+                prev_mesh = render_list[i][j].entity_mesh->get_mesh();
+                prev_shader = render_list[i][j].entity_mesh->get_material().shader;
+
+                // Fill instance_data
+                instance_data[i].push_back({ render_list[i][j].entity_mesh->get_model(), render_list[i][j].entity_mesh->get_material().color });
+            }
+
+            if (repeats > 0) {
+                for (uint32_t k = 1; k <= repeats; k++) {
+                    render_list[i][render_list[i].size() - k].repeat = k;
+                }
+            }
+        }
+
+        // Fill instance buffers
+        uint32_t instances = static_cast<uint32_t>(instance_data[i].size());
+
+        if (instances > instance_data_uniform[i].buffer_size / sizeof(sUniformData)) {
+
+            //std::vector<sUniformData> default_data = { instances, { glm::mat4x4(1.0f), glm::vec4(1.0f) } };
+
+            instance_data_uniform[i].data = webgpu_context.create_buffer(sizeof(sUniformData) * instances, WGPUBufferUsage_CopyDst | WGPUBufferUsage_Storage, instance_data[i].data());
+            instance_data_uniform[i].binding = 0;
+            instance_data_uniform[i].buffer_size = sizeof(sUniformData) * instances;
+
+            // Recreate bind groups
+            std::vector<Uniform*> uniforms = { &instance_data_uniform[i] };
+            Shader* prev_shader = nullptr;
+            for (uint32_t j = 0; j < render_list[i].size(); ++j) {
+
+                sRenderData& render_data = render_list[i][j];
+                Shader* shader = render_data.entity_mesh->get_material().shader;
+
+                if (prev_shader != shader) {
+                    if (bind_groups[i].contains(shader)) {
+                        wgpuBindGroupRelease(bind_groups[i][shader]);
+                    }
+
+                    bind_groups[i][shader] = webgpu_context.create_bind_group(uniforms, shader, 0);
+                }
+                
+                j += render_data.repeat - 1;
+            }
+
+        } else
+        if (instances > 0) {
+            webgpu_context.update_buffer(std::get<WGPUBuffer>(instance_data_uniform[i].data), 0, instance_data[i].data(), sizeof(sUniformData) * instances);
+        }
+    }
+
+    Pipeline* prev_pipeline = nullptr;
+    WGPUBindGroup prev_bind_group = nullptr;
+
+    for (int i = 0; i < RENDER_LIST_SIZE; ++i) {
+
+        for (int j = 0; j < render_list[i].size(); ++j) {
+
+            sRenderData& render_data = render_list[i][j];
+            EntityMesh* entity_mesh = render_data.entity_mesh;
+            Material& material = entity_mesh->get_material();
+            Mesh* mesh = render_data.entity_mesh->get_mesh();
+            WGPUBindGroup bind_group = bind_groups[i][material.shader];
+
+            Pipeline* pipeline = material.shader->get_pipeline();
+            if (pipeline != prev_pipeline) {
+                pipeline->set(render_pass);
+            }
+
+            // Not initialized
+            if (mesh->get_vertex_count() == 0) {
+                std::cerr << "Skipping not initialized mesh" << std::endl;
+                continue;
+            }
+
+            // Set bind group
+            if (bind_group != prev_bind_group) {
+                wgpuRenderPassEncoderSetBindGroup(render_pass, 0, bind_group, 0, nullptr);
+            }
+
+            wgpuRenderPassEncoderSetBindGroup(render_pass, 1, render_bind_group_camera, 0, nullptr);
+
+            if (material.diffuse) {
+                wgpuRenderPassEncoderSetBindGroup(render_pass, 2, renderer_storage.get_material_bind_group(material), 0, nullptr);
+            }
+
+            //ui::Widget* widget = ui::Controller::get(mesh->get_alias());
+            //if (widget)
+            //{
+            //    wgpuQueueWriteBuffer(webgpu_context->device_queue, std::get<WGPUBuffer>(widget->uniforms.data), 0, &widget->ui_data, sizeof(ui::sUIData));
+            //    wgpuRenderPassEncoderSetBindGroup(render_pass, 2, widget->bind_group, 0, nullptr);
+            //}
+
+            // Set vertex buffer while encoding the render pass
+            wgpuRenderPassEncoderSetVertexBuffer(render_pass, 0, mesh->get_vertex_buffer(), 0, mesh->get_byte_size());
+
+            // Submit drawcall
+            wgpuRenderPassEncoderDraw(render_pass, mesh->get_vertex_count(), render_data.repeat, 0, j);
+
+            prev_pipeline = pipeline;
+            prev_bind_group = bind_group;
+
+            j += render_data.repeat - 1;
+        }
+    }
+}
+
+void Renderer::add_renderable(EntityMesh* entity_mesh)
+{
+    const Material& material = entity_mesh->get_material();
+
+    if (material.transparent) {
+        render_list[RENDER_LIST_ALPHA].push_back({ entity_mesh, 1 });
+
+    }
+    else {
+        render_list[RENDER_LIST_OPAQUE].push_back({ entity_mesh, 1 });
+    }
+}
+
+void Renderer::clear_renderables()
+{
+    for (int i = 0; i < RENDER_LIST_SIZE; ++i) {
+        render_list[i].clear();
+    }
 }
 
 void Renderer::resize_window(int width, int height)

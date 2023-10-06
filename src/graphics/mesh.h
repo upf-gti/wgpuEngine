@@ -17,10 +17,6 @@ struct InterleavedData {
 	glm::vec3 color = glm::vec3(1.0f);
 };
 
-struct sUniformMeshData {
-	glm::mat4x4 model;
-	glm::vec4   color;
-};
 
 class Mesh {
 
@@ -29,15 +25,6 @@ class Mesh {
 	std::vector<InterleavedData>	 vertices;
 
 	WGPUBuffer		vertex_buffer   = nullptr;
-	WGPUBindGroup   bind_group      = nullptr;
-
-	Uniform			mesh_data_uniform;
-	Uniform			albedo_uniform;
-	Uniform			sampler_uniform;
-
-	uint32_t		instances_gpu_size = 0;
-
-	std::vector<sUniformMeshData> instance_data;
 
 public:
 
@@ -46,35 +33,16 @@ public:
 	static WebGPUContext* webgpu_context;
 
 	WGPUBuffer& get_vertex_buffer();
-	WGPUBindGroup& get_bind_group();
 
     std::vector<InterleavedData>& get_vertices() { return vertices; }
 
     void set_alias(const std::string& a) { this->alias = a; }
-	/*void set_texture(Texture* texture) { this->diffuse = texture; }
-    void set_color(const glm::vec4& color) { this->color = color; }*/
 
 	void create_quad(float w = 1.f, float h = 1.f, const glm::vec3& color = {1.f, 1.f, 1.f});
 	void create_from_vertices(const std::vector<InterleavedData>& _vertices);
 
-	void create_bind_group(Shader* shader, uint16_t bind_group_id, Texture* texture);
-	void create_bind_group_color(Shader* shader, uint16_t bind_group_id);
-	void create_bind_group_texture(Shader* shader, uint16_t bind_group_id, Texture* texture);
-
-	void update_model_matrix(const glm::mat4x4& model, uint32_t instance_id = 0);
-	void update_material_color(const glm::vec3& color, uint32_t instance_id = 0);
-
-	void update_instance_model_matrices();
-
-	void add_instance_data(sUniformMeshData model);
-
     void create_vertex_buffer();
 
-	uint32_t get_instances_size()	  { return static_cast<uint32_t>(instance_data.size()); }
-	uint32_t get_instances_gpu_size() { return instances_gpu_size; }
-	void	 clear_instances() { instance_data.clear(); }
-
-	//glm::vec4 get_color() { return color; }
     const std::string& get_alias() { return alias; };
 
 	void* data();

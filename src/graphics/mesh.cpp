@@ -15,11 +15,6 @@ Mesh::~Mesh()
     vertices.clear();
 
     wgpuBufferDestroy(vertex_buffer);
-
-    if (bind_group) {
-        wgpuBindGroupRelease(bind_group);
-        mesh_data_uniform.destroy();
-    }
 }
 
 void Mesh::create_vertex_buffer()
@@ -27,73 +22,9 @@ void Mesh::create_vertex_buffer()
     vertex_buffer = webgpu_context->create_buffer(get_byte_size(), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Vertex, vertices.data());
 }
 
-void Mesh::create_bind_group(Shader* shader, uint16_t bind_group_id, Texture* texture)
-{
-    if (bind_group) {
-        wgpuBindGroupRelease(bind_group);
-    }
-
-    if (texture) {
-        create_bind_group_texture(shader, bind_group_id, texture);
-    }
-    else {
-        create_bind_group_color(shader, bind_group_id);
-    }
-}
-
-void Mesh::create_bind_group_color(Shader* shader, uint16_t bind_group_id)
-{
-    uint32_t instances = static_cast<uint32_t>(instance_data.size());
-
-    std::vector<sUniformMeshData> default_data = { instances, { glm::mat4x4(1.0f), glm::vec4(1.0f) } };
-
-    mesh_data_uniform.data = webgpu_context->create_buffer(sizeof(sUniformMeshData) * instances, WGPUBufferUsage_CopyDst | WGPUBufferUsage_Storage, default_data.data());
-    mesh_data_uniform.binding = 0;
-    mesh_data_uniform.buffer_size = sizeof(sUniformMeshData) * instances;
-
-    std::vector<Uniform*> uniforms = { &mesh_data_uniform };
-
-    bind_group = webgpu_context->create_bind_group(uniforms, shader, bind_group_id);
-
-    //for (uint32_t i = 0; i < instances; ++i)
-    //{
-    //    update_material_color(color, i);
-    //}
-
-    instances_gpu_size = instances;
-}
-
-void Mesh::create_bind_group_texture(Shader* shader, uint16_t bind_group_id, Texture* texture)
-{
-    uint32_t instances = static_cast<uint32_t>(instance_data.size());
-
-    std::vector<sUniformMeshData> default_data = { instances, {glm::mat4x4(1.0f), glm::vec4(1.0f)}};
-
-    mesh_data_uniform.data = webgpu_context->create_buffer(sizeof(sUniformMeshData) * instances, WGPUBufferUsage_CopyDst | WGPUBufferUsage_Storage, default_data.data());
-    mesh_data_uniform.binding = 0;
-    mesh_data_uniform.buffer_size = sizeof(sUniformMeshData) * instances;
-
-    albedo_uniform.data = texture->get_view();
-    albedo_uniform.binding = 1;
-
-    sampler_uniform.data = webgpu_context->create_sampler(); // Using all default params
-    sampler_uniform.binding = 2;
-
-    std::vector<Uniform*> uniforms = { &mesh_data_uniform, &albedo_uniform, &sampler_uniform };
-
-    bind_group = webgpu_context->create_bind_group(uniforms, shader, bind_group_id);
-
-    instances_gpu_size = instances;
-}
-
 WGPUBuffer& Mesh::get_vertex_buffer()
 {
     return vertex_buffer;
-}
-
-WGPUBindGroup& Mesh::get_bind_group()
-{
-    return bind_group;
 }
 
 void Mesh::create_quad(float w, float h, const glm::vec3& color)
@@ -103,7 +34,6 @@ void Mesh::create_quad(float w, float h, const glm::vec3& color)
     {
         vertices.clear();
         wgpuBufferDestroy(vertex_buffer);
-        wgpuBindGroupRelease(bind_group);
     }
 
     vertices.resize(6);
@@ -147,26 +77,6 @@ void Mesh::create_from_vertices(const std::vector<InterleavedData>& _vertices)
 {
     vertices = _vertices;
     create_vertex_buffer();
-}
-
-void Mesh::update_model_matrix(const glm::mat4x4& model, uint32_t instance_id)
-{
-    wgpuQueueWriteBuffer(webgpu_context->device_queue, std::get<WGPUBuffer>(mesh_data_uniform.data), instance_id * sizeof(sUniformMeshData), &model, sizeof(glm::mat4x4));
-}
-
-void Mesh::update_material_color(const glm::vec3& color, uint32_t instance_id)
-{
-    wgpuQueueWriteBuffer(webgpu_context->device_queue, std::get<WGPUBuffer>(mesh_data_uniform.data), instance_id * sizeof(sUniformMeshData) + sizeof(glm::mat4x4), &color, sizeof(glm::vec3));
-}
-
-void Mesh::update_instance_model_matrices()
-{
-    wgpuQueueWriteBuffer(webgpu_context->device_queue, std::get<WGPUBuffer>(mesh_data_uniform.data), 0, instance_data.data(), instance_data.size() * sizeof(sUniformMeshData));
-}
-
-void Mesh::add_instance_data(sUniformMeshData model)
-{
-    instance_data.push_back(model);
 }
 
 void* Mesh::data()

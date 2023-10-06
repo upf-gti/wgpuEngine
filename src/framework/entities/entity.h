@@ -9,7 +9,7 @@ class Entity {
 
 protected:
 	std::string name;
-	glm::mat4x4 model;
+	glm::mat4x4 model = glm::mat4x4(1.0f);
 
 	Entity* parent = nullptr;
 	std::vector<Entity*> children;
@@ -38,4 +38,6 @@ public:
 	glm::vec3 get_translation();
 	glm::mat4x4 get_global_matrix();
 	void set_model(const glm::mat4x4& _model) { model = _model; model_dirty = true; }
+    glm::mat4x4 get_model() { return model; }
+
 };

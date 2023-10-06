@@ -550,6 +550,11 @@ WGPUVertexBufferLayout WebGPUContext::create_vertex_buffer_layout(const std::vec
     return vertexBufferLayout;
 }
 
+void WebGPUContext::update_buffer(WGPUBuffer buffer, uint64_t buffer_offset, void* data, uint64_t size)
+{
+    wgpuQueueWriteBuffer(device_queue, buffer, buffer_offset, data, size);
+}
+
 WGPUInstance WebGPUContext::get_instance()
 {
 #if defined(XR_SUPPORT) && !defined(__EMSCRIPTEN__)

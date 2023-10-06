@@ -3,6 +3,7 @@
 #include "mesh.h"
 #include "texture.h"
 #include "shader.h"
+#include "uniform.h"
 
 RendererStorage* RendererStorage::instance = nullptr;
 
@@ -10,10 +11,41 @@ std::map<std::string, Mesh*> RendererStorage::meshes;
 std::map<std::string, Texture*> RendererStorage::textures;
 std::map<std::string, Shader*> RendererStorage::shaders;
 std::map<std::string, std::vector<std::string>> RendererStorage::shader_library_references;
+std::unordered_map<Material, RendererStorage::sMaterialData> RendererStorage::material_bind_groups;
 
 RendererStorage::RendererStorage()
 {
     instance = this;
+}
+
+void RendererStorage::register_material(WebGPUContext* webgpu_context, const Material& material)
+{
+    if (material.diffuse && !material_bind_groups.contains(material)) {
+
+        Uniform* albedo_uniform = new Uniform();
+        albedo_uniform->data = material.diffuse->get_view();
+        albedo_uniform->binding = 0;
+
+        Uniform* sampler_uniform = new Uniform();
+        sampler_uniform->data = webgpu_context->create_sampler(); // Using all default params
+        sampler_uniform->binding = 1;
+
+        std::vector<Uniform*>& uniforms = material_bind_groups[material].uniforms;
+
+        uniforms.push_back(albedo_uniform);
+        uniforms.push_back(sampler_uniform);
+
+        material_bind_groups[material].bind_group = webgpu_context->create_bind_group(uniforms, material.shader, 2);
+    }
+}
+
+WGPUBindGroup RendererStorage::get_material_bind_group(const Material& material)
+{
+    if (!material_bind_groups.contains(material)) {
+        assert(false);
+    }
+
+    return material_bind_groups[material].bind_group;
 }
 
 Shader* RendererStorage::get_shader(const std::string& shader_path)

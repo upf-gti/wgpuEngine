@@ -160,7 +160,7 @@ glm::quat Input::get_controller_rotation(uint8_t controller, uint8_t type)
 glm::mat4x4 Input::get_controller_pose(uint8_t controller, uint8_t type)
 {
 #ifdef XR_SUPPORT
-	if (!openxr_context) return {};
+    if (!openxr_context) return glm::mat4x4(1.0f);
 	if (type == POSE_AIM) return xr_data.controllerAimPoseMatrices[controller];
 	else return xr_data.controllerGripPoseMatrices[controller];
 #else

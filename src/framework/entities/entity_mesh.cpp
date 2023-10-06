@@ -7,13 +7,9 @@ void EntityMesh::render()
 {
 	if (!mesh || !material.shader) return;
 
-	mesh->add_instance_data({ model, material.color });
+    RendererStorage::instance->register_material(Renderer::instance->get_webgpu_context(), material);
 
-	if (mesh->get_instances_size() > mesh->get_instances_gpu_size()) {
-		mesh->create_bind_group(material.shader, 0, material.diffuse);
-	}
-
-	material.shader->get_pipeline()->add_renderable(mesh);
+    Renderer::instance->add_renderable(this);
 }
 
 void EntityMesh::update(float delta_time)
