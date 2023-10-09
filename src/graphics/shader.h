@@ -24,7 +24,7 @@ public:
 	void set_pipeline(Pipeline* pipeline);
 	Pipeline* get_pipeline() { return pipeline_ref; }
 
-	std::map<int, WGPUBindGroupLayout>&  get_bind_group_layouts()    { return bind_group_layouts; }
+	std::vector<WGPUBindGroupLayout>&    get_bind_group_layouts()    { return bind_group_layouts; }
 	std::vector<WGPUVertexBufferLayout>& get_vertex_buffer_layouts() { return vertex_buffer_layouts; }
 
 	std::string get_path() { return path; }
@@ -39,7 +39,7 @@ private:
 
 	WGPUShaderModule shader_module;
 
-	std::map<int, WGPUBindGroupLayout> bind_group_layouts;
+	std::vector<WGPUBindGroupLayout> bind_group_layouts;
 
 	std::vector<WGPUVertexAttribute>	vertex_attributes;
 	std::vector<WGPUVertexBufferLayout> vertex_buffer_layouts;

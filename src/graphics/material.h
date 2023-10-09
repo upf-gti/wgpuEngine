@@ -6,12 +6,19 @@
 class Shader;
 class Texture;
 
+enum eMaterialFlags {
+    MATERIAL_COLOR       = 1 << 0,
+    MATERIAL_DIFUSSE     = 1 << 1,
+    MATERIAL_TRANSPARENT = 1 << 2,
+    MATERIAL_UI          = 1 << 3
+};
+
 struct Material
 {
     Shader* shader = nullptr;
     glm::vec4 color = { 1.0f, 1.0f, 1.0f, 1.0f };
     Texture* diffuse = nullptr;
-    bool transparent = false;
+    uint8_t type = 0;
 
     // Don't take transparency into account for now
     bool operator==(const Material& other) const

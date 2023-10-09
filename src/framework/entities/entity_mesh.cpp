@@ -3,6 +3,11 @@
 #include "graphics/renderer.h"
 #include "graphics/mesh.h"
 
+EntityMesh::EntityMesh() : Entity()
+{
+    material.type |= MATERIAL_COLOR;
+}
+
 void EntityMesh::render()
 {
 	if (!mesh || !material.shader) return;

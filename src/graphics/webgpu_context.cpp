@@ -144,7 +144,9 @@ int WebGPUContext::initialize(WGPURequestAdapterOptions adapter_opts, WGPURequir
     std::vector<const char*> enabled_toggles;
     enabled_toggles.push_back("use_dxc");
 
-    //enabled_toggles.push_back("disable_symbol_renaming");
+#ifdef _DEBUG
+    enabled_toggles.push_back("disable_symbol_renaming");
+#endif
 
     WGPUDawnTogglesDescriptor device_toggles_desc = {};
     device_toggles_desc.enabledToggles = enabled_toggles.data();
@@ -432,9 +434,9 @@ WGPUBindGroup WebGPUContext::create_bind_group(const std::vector<Uniform*>& unif
         entries[i] = uniforms[i]->get_bind_group_entry();
     }
 
-    std::map<int, WGPUBindGroupLayout>& layouts_by_id = shader->get_bind_group_layouts();
+    std::vector<WGPUBindGroupLayout>& layouts_by_id = shader->get_bind_group_layouts();
 
-    if (!layouts_by_id.contains(bind_group)) {
+    if (layouts_by_id.size() < bind_group) {
         std::cout << "Can't find bind group " << bind_group << " in shader: " << shader->get_path() << std::endl;
         assert(0);
     }
@@ -550,7 +552,7 @@ WGPUVertexBufferLayout WebGPUContext::create_vertex_buffer_layout(const std::vec
     return vertexBufferLayout;
 }
 
-void WebGPUContext::update_buffer(WGPUBuffer buffer, uint64_t buffer_offset, void* data, uint64_t size)
+void WebGPUContext::update_buffer(WGPUBuffer buffer, uint64_t buffer_offset, void const* data, uint64_t size)
 {
     wgpuQueueWriteBuffer(device_queue, buffer, buffer_offset, data, size);
 }

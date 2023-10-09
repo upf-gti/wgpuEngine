@@ -109,9 +109,11 @@ void Renderer::clean()
 
 void Renderer::render(WGPURenderPassEncoder render_pass, const WGPUBindGroup& render_bind_group_camera)
 {
-    instance_data->clear();
 
     for (int i = 0; i < RENDER_LIST_SIZE; ++i) {
+
+        instance_data[i].clear();
+        instance_data[i].resize(render_list[i].size());
 
         // Sort render_list
         std::sort(render_list[i].begin(), render_list[i].end(), [](auto& lhs, auto& rhs) {
@@ -153,7 +155,7 @@ void Renderer::render(WGPURenderPassEncoder render_pass, const WGPUBindGroup& re
                 prev_shader = render_list[i][j].entity_mesh->get_material().shader;
 
                 // Fill instance_data
-                instance_data[i].push_back({ render_list[i][j].entity_mesh->get_model(), render_list[i][j].entity_mesh->get_material().color });
+                instance_data[i][j] = { render_list[i][j].entity_mesh->get_model(), render_list[i][j].entity_mesh->get_material().color };
             }
 
             if (repeats > 0) {
@@ -200,7 +202,6 @@ void Renderer::render(WGPURenderPassEncoder render_pass, const WGPUBindGroup& re
     }
 
     Pipeline* prev_pipeline = nullptr;
-    WGPUBindGroup prev_bind_group = nullptr;
 
     for (int i = 0; i < RENDER_LIST_SIZE; ++i) {
 
@@ -208,8 +209,8 @@ void Renderer::render(WGPURenderPassEncoder render_pass, const WGPUBindGroup& re
 
             sRenderData& render_data = render_list[i][j];
             EntityMesh* entity_mesh = render_data.entity_mesh;
+            Mesh* mesh = entity_mesh->get_mesh();
             Material& material = entity_mesh->get_material();
-            Mesh* mesh = render_data.entity_mesh->get_mesh();
             WGPUBindGroup bind_group = bind_groups[i][material.shader];
 
             Pipeline* pipeline = material.shader->get_pipeline();
@@ -223,23 +224,20 @@ void Renderer::render(WGPURenderPassEncoder render_pass, const WGPUBindGroup& re
                 continue;
             }
 
-            // Set bind group
-            if (bind_group != prev_bind_group) {
-                wgpuRenderPassEncoderSetBindGroup(render_pass, 0, bind_group, 0, nullptr);
+            uint8_t bind_group_index = 0;
+
+            // Set bind groups
+            wgpuRenderPassEncoderSetBindGroup(render_pass, bind_group_index++, bind_group, 0, nullptr);
+            wgpuRenderPassEncoderSetBindGroup(render_pass, bind_group_index++, render_bind_group_camera, 0, nullptr);
+
+
+            if (material.type & MATERIAL_DIFUSSE) {
+                wgpuRenderPassEncoderSetBindGroup(render_pass, bind_group_index++, renderer_storage.get_material_bind_group(material), 0, nullptr);
             }
 
-            wgpuRenderPassEncoderSetBindGroup(render_pass, 1, render_bind_group_camera, 0, nullptr);
-
-            if (material.diffuse) {
-                wgpuRenderPassEncoderSetBindGroup(render_pass, 2, renderer_storage.get_material_bind_group(material), 0, nullptr);
+            if (material.type & MATERIAL_UI) {
+                wgpuRenderPassEncoderSetBindGroup(render_pass, bind_group_index++, renderer_storage.get_ui_widget_bind_group(entity_mesh), 0, nullptr);
             }
-
-            //ui::Widget* widget = ui::Controller::get(mesh->get_alias());
-            //if (widget)
-            //{
-            //    wgpuQueueWriteBuffer(webgpu_context->device_queue, std::get<WGPUBuffer>(widget->uniforms.data), 0, &widget->ui_data, sizeof(ui::sUIData));
-            //    wgpuRenderPassEncoderSetBindGroup(render_pass, 2, widget->bind_group, 0, nullptr);
-            //}
 
             // Set vertex buffer while encoding the render pass
             wgpuRenderPassEncoderSetVertexBuffer(render_pass, 0, mesh->get_vertex_buffer(), 0, mesh->get_byte_size());
@@ -248,7 +246,6 @@ void Renderer::render(WGPURenderPassEncoder render_pass, const WGPUBindGroup& re
             wgpuRenderPassEncoderDraw(render_pass, mesh->get_vertex_count(), render_data.repeat, 0, j);
 
             prev_pipeline = pipeline;
-            prev_bind_group = bind_group;
 
             j += render_data.repeat - 1;
         }
@@ -259,7 +256,7 @@ void Renderer::add_renderable(EntityMesh* entity_mesh)
 {
     const Material& material = entity_mesh->get_material();
 
-    if (material.transparent) {
+    if (material.type & MATERIAL_TRANSPARENT) {
         render_list[RENDER_LIST_ALPHA].push_back({ entity_mesh, 1 });
 
     }

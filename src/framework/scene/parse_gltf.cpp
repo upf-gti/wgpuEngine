@@ -177,6 +177,7 @@ EntityMesh* parse_gltf(const std::string& gltf_path)
                 material.diffuse = new Texture();
                 material.diffuse->load_from_data(image.name, image.width, image.height, image.image.data());
                 material.shader = RendererStorage::get_shader("data/shaders/mesh_texture.wgsl");
+                material.type |= MATERIAL_DIFUSSE;
             }
         }
     };

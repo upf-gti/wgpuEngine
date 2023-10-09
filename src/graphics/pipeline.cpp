@@ -15,11 +15,11 @@ Pipeline::~Pipeline()
 
 void Pipeline::create_render(Shader* shader, WGPUColorTargetState color_target, bool uses_depth_buffer)
 {
-	const std::map<int, WGPUBindGroupLayout> layouts_by_id = shader->get_bind_group_layouts();
+	const std::vector<WGPUBindGroupLayout> layouts_by_id = shader->get_bind_group_layouts();
 	std::vector<WGPUBindGroupLayout> bind_group_layouts;
 
 	for (const auto& bind_group_layout : layouts_by_id) {
-		bind_group_layouts.push_back(bind_group_layout.second);
+		bind_group_layouts.push_back(bind_group_layout);
 	}
 
 	this->color_target = color_target;
@@ -43,11 +43,11 @@ void Pipeline::create_compute(Shader* shader, WGPUPipelineLayout pipeline_layout
 
 void Pipeline::create_compute(Shader* shader)
 {
-	const std::map<int, WGPUBindGroupLayout> layouts_by_id = shader->get_bind_group_layouts();
-	std::vector<WGPUBindGroupLayout> bind_group_layouts;
+    const std::vector<WGPUBindGroupLayout> layouts_by_id = shader->get_bind_group_layouts();
+    std::vector<WGPUBindGroupLayout> bind_group_layouts;
 
 	for (const auto& bind_group_layout : layouts_by_id) {
-		bind_group_layouts.push_back(bind_group_layout.second);
+		bind_group_layouts.push_back(bind_group_layout);
 	}
 
 	pipeline_layout = webgpu_context->create_pipeline_layout(bind_group_layouts);

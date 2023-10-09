@@ -71,7 +71,7 @@ struct WebGPUContext {
 
     WGPUVertexBufferLayout create_vertex_buffer_layout(const std::vector<WGPUVertexAttribute>& vertex_attributes, uint64_t stride, WGPUVertexStepMode step_mode);
 
-    void                   update_buffer(WGPUBuffer buffer, uint64_t buffer_offset, void* data, uint64_t size);
+    void                   update_buffer(WGPUBuffer buffer, uint64_t buffer_offset, void const* data, uint64_t size);
 
     void print_errors();
 

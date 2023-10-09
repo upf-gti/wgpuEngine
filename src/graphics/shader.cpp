@@ -111,6 +111,8 @@ void Shader::get_reflection_data(const std::string& shader_path, const std::stri
 
 	using ResourceBinding = tint::inspector::ResourceBinding;
 
+    uint8_t max_bind_group_index = 0;
+
 	auto get_vertex_format_offset = [](WGPUVertexFormat format, uint16_t offset) -> WGPUVertexFormat {
 		return static_cast<WGPUVertexFormat>(static_cast<int>(format + offset));
 	};
@@ -180,6 +182,10 @@ void Shader::get_reflection_data(const std::string& shader_path, const std::stri
 		bool has_sampler = false;
 
 		for (const auto& resource_binding : inspector.GetResourceBindings(entry_point.name)) {
+
+            if (max_bind_group_index < resource_binding.bind_group) {
+                max_bind_group_index = resource_binding.bind_group;
+            }
 
 			// Creates new if didn't exist, otherwise return entry from previous entry_point
 			WGPUBindGroupLayoutEntry& entry = entries_by_bind_group[resource_binding.bind_group][resource_binding.binding];
@@ -309,14 +315,21 @@ void Shader::get_reflection_data(const std::string& shader_path, const std::stri
 		}
 	}
 
-	for (const auto& bind_group_entries : entries_by_bind_group) {
+	for (int bind_group_index = 0; bind_group_index < max_bind_group_index + 1; ++bind_group_index) {
+
+        auto& bind_group_entries = entries_by_bind_group[bind_group_index];
+
+        if ((bind_group_index + 1) > bind_group_layouts.size()) {
+            bind_group_layouts.resize(bind_group_index + 1);
+        }
+
 		std::vector<WGPUBindGroupLayoutEntry> entries;
 
-		for (const auto& entry : bind_group_entries.second) {
+		for (const auto& entry : bind_group_entries) {
 			entries.push_back(entry.second);
 		}
 
-		bind_group_layouts[bind_group_entries.first] = webgpu_context->create_bind_group_layout(entries);
+		bind_group_layouts[bind_group_index] = webgpu_context->create_bind_group_layout(entries);
 
 		entries.clear();
 	}

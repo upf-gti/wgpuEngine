@@ -41,10 +41,12 @@ EntityMesh* parse_obj(const std::string& obj_path)
         if (materials[0].diffuse_texname.empty()) {
             material.color = glm::vec4(materials[0].diffuse[0], materials[0].diffuse[1], materials[0].diffuse[2], 1.0f);
             material.shader = RendererStorage::get_shader("data/shaders/mesh_color.wgsl");
+            material.type |= MATERIAL_COLOR;
         }
         else {
             material.diffuse = RendererStorage::get_texture("data/textures/" + materials[0].diffuse_texname);
             material.shader = RendererStorage::get_shader("data/shaders/mesh_texture.wgsl");
+            material.type |= MATERIAL_DIFUSSE;
         }
     }
 

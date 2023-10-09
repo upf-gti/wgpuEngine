@@ -12,7 +12,7 @@ TextEntity::TextEntity(const std::string& _text, glm::vec2 _box_size, bool _wrap
     material.shader = RendererStorage::get_shader("data/shaders/sdf_fonts.wgsl");
 
     if (font) {
-        material.diffuse = font->textures[0];
+        set_material_diffuse(font->textures[0]);
     }
 }
 
