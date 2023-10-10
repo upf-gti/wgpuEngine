@@ -6,6 +6,7 @@ set(WGPU_DIR_LIBS    "${WGPU_DIR_ROOT}/libraries")
 
 project(webgpuEngine LANGUAGES C CXX)
 
+add_definitions(-D_CRT_SECURE_NO_WARNINGS)
 add_definitions(-DWEBGPU_BACKEND=DAWN)
 
 # enable FetchContent

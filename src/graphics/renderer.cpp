@@ -258,7 +258,6 @@ void Renderer::add_renderable(EntityMesh* entity_mesh)
 
     if (material.type & MATERIAL_TRANSPARENT) {
         render_list[RENDER_LIST_ALPHA].push_back({ entity_mesh, 1 });
-
     }
     else {
         render_list[RENDER_LIST_OPAQUE].push_back({ entity_mesh, 1 });

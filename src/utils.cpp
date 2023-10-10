@@ -50,7 +50,7 @@ bool read_file(const std::string& filename, std::string& content)
 
 glm::vec3 load_vec3(const std::string& str) {
     glm::vec3 v;
-    int n = sscanf_s(str.c_str(), "%f %f %f", &v.x, &v.y, &v.z);
+    int n = sscanf(str.c_str(), "%f %f %f", &v.x, &v.y, &v.z);
     if (n == 3) {
         return v;
     }
@@ -60,7 +60,7 @@ glm::vec3 load_vec3(const std::string& str) {
 
 glm::vec4 load_vec4(const std::string& str) {
     glm::vec4 v;
-    int n = sscanf_s(str.c_str(), "%f %f %f %f", &v.x, &v.y, &v.z, &v.w);
+    int n = sscanf(str.c_str(), "%f %f %f %f", &v.x, &v.y, &v.z, &v.w);
     if (n == 4) {
         return v;
     }
