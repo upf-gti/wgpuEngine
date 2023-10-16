@@ -47,12 +47,16 @@ protected:
 
     enum eRenderListType {
         RENDER_LIST_OPAQUE,
+        RENDER_LIST_UI,
         RENDER_LIST_ALPHA,
         RENDER_LIST_SIZE
     };
 
     std::vector<sUniformData> instance_data[RENDER_LIST_SIZE];
     Uniform	instance_data_uniform[RENDER_LIST_SIZE];
+
+    std::vector<RendererStorage::sUIData> instance_ui_data;
+    Uniform	instance_ui_data_uniform;
 
     // Entities to be rendered this frame
     std::vector<sRenderData> render_list[RENDER_LIST_SIZE];

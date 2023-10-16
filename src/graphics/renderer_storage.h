@@ -58,4 +58,5 @@ public:
 
     static Mesh* get_mesh(const std::string& mesh_path);
 
+    static void register_basic_meshes();
 };
