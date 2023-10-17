@@ -73,7 +73,12 @@ void Entity::set_translation(const glm::vec3& translation)
 	model_dirty = true;
 }
 
-glm::vec3 Entity::get_translation()
+const glm::vec3& Entity::get_local_translation()
+{
+    return model[3];
+}
+
+const glm::vec3& Entity::get_translation()
 {
 	return get_global_matrix()[3];
 }

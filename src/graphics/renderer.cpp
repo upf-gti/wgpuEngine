@@ -93,6 +93,8 @@ int Renderer::initialize(GLFWwindow* window, bool use_mirror_screen)
         webgpu_context.render_height = webgpu_context.screen_height;
     }
 
+    RendererStorage::register_basic_meshes();
+
     return 0;
 }
 
@@ -134,12 +136,16 @@ void Renderer::render(WGPURenderPassEncoder render_pass, const WGPUBindGroup& re
         {
             Mesh* prev_mesh = nullptr;
             Shader* prev_shader = nullptr;
+            Texture* prev_texture = nullptr;
 
             uint32_t repeats = 0;
             for (uint32_t j = 0; j < render_list[i].size(); ++j) {
 
+                EntityMesh* entity_mesh = render_list[i][j].entity_mesh;
+                Material& material = entity_mesh->get_material();
+
                 // Repeated EntityMesh, must be instanced
-                if (prev_mesh == render_list[i][j].entity_mesh->get_mesh() && prev_shader == render_list[i][j].entity_mesh->get_material().shader) {
+                if (prev_mesh == entity_mesh->get_mesh() && prev_shader == material.shader && prev_texture == material.diffuse && !(material.type & MATERIAL_UI)) {
                     repeats++;
                 }
                 else {
@@ -151,11 +157,12 @@ void Renderer::render(WGPURenderPassEncoder render_pass, const WGPUBindGroup& re
                     repeats = 1;
                 }
 
-                prev_mesh = render_list[i][j].entity_mesh->get_mesh();
-                prev_shader = render_list[i][j].entity_mesh->get_material().shader;
+                prev_mesh = entity_mesh->get_mesh();
+                prev_shader = material.shader;
+                prev_texture = material.diffuse;
 
                 // Fill instance_data
-                instance_data[i][j] = { render_list[i][j].entity_mesh->get_model(), render_list[i][j].entity_mesh->get_material().color };
+                instance_data[i][j] = { entity_mesh->get_model(), material.color };
             }
 
             if (repeats > 0) {
@@ -257,6 +264,9 @@ void Renderer::add_renderable(EntityMesh* entity_mesh)
 
     if (material.type & MATERIAL_TRANSPARENT) {
         render_list[RENDER_LIST_ALPHA].push_back({ entity_mesh, 1 });
+    } else
+    if (material.type & MATERIAL_UI) {
+        render_list[RENDER_LIST_UI].push_back({ entity_mesh, 1 });
     }
     else {
         render_list[RENDER_LIST_OPAQUE].push_back({ entity_mesh, 1 });

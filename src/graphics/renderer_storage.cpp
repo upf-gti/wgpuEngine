@@ -166,3 +166,11 @@ Mesh* RendererStorage::get_mesh(const std::string& mesh_path)
 
     return new_mesh;
 }
+
+void RendererStorage::register_basic_meshes()
+{
+    // Quad
+    Mesh* quad_mesh = new Mesh();
+    quad_mesh->create_quad();
+    meshes["quad"] = quad_mesh;
+}
