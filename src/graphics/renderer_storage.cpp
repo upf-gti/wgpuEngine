@@ -54,9 +54,9 @@ WGPUBindGroup RendererStorage::get_material_bind_group(const Material& material)
     return material_bind_groups[material].bind_group;
 }
 
-void RendererStorage::register_ui_widget(WebGPUContext* webgpu_context, Shader* shader, void* widget, const sUIData& ui_data, uint8_t bind_group_id)
+void RendererStorage::register_ui_widget(WebGPUContext* webgpu_context, Shader* shader, void* entity_mesh, const sUIData& ui_data, uint8_t bind_group_id)
 {
-    if (ui_widget_bind_groups.contains(widget)) {
+    if (ui_widget_bind_groups.contains(entity_mesh)) {
         assert(false);
         return;
     }
@@ -66,11 +66,11 @@ void RendererStorage::register_ui_widget(WebGPUContext* webgpu_context, Shader* 
     data_uniform->binding = 0;
     data_uniform->buffer_size = sizeof(sUIData);
 
-    std::vector<Uniform*>& uniforms = ui_widget_bind_groups[widget].uniforms;
+    std::vector<Uniform*>& uniforms = ui_widget_bind_groups[entity_mesh].uniforms;
 
     uniforms.push_back(data_uniform);
 
-    ui_widget_bind_groups[widget].bind_group = webgpu_context->create_bind_group(uniforms, shader, bind_group_id);
+    ui_widget_bind_groups[entity_mesh].bind_group = webgpu_context->create_bind_group(uniforms, shader, bind_group_id);
 }
 
 WGPUBindGroup RendererStorage::get_ui_widget_bind_group(void* widget)

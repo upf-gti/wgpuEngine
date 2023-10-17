@@ -49,7 +49,7 @@ public:
 
     static void register_ui_widget(WebGPUContext* webgpu_context, Shader* shader, void* widget, const sUIData& ui_data, uint8_t bind_group_id);
     static WGPUBindGroup get_ui_widget_bind_group(void* widget);
-    static void update_ui_widget(WebGPUContext* webgpu_context, void* widget, const sUIData& ui_data);
+    static void update_ui_widget(WebGPUContext* webgpu_context, void* entity_mesh, const sUIData& ui_data);
 
     static Shader* get_shader(const std::string& shader_path);
     static std::vector<std::string> get_shader_for_reload(const std::string& shader_path);

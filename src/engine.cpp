@@ -9,6 +9,11 @@ void resize_callback(GLFWwindow* window, int width, int height)
 {
     Engine* engine = reinterpret_cast<Engine*>(glfwGetWindowUserPointer(window));
 
+    // Minimized window
+    if (width == 0 && height == 0) {
+        return;
+    }
+
     if (!engine->get_openxr_available()) {
         engine->resize_window(width, height);
     }

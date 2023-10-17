@@ -230,7 +230,6 @@ void Renderer::render(WGPURenderPassEncoder render_pass, const WGPUBindGroup& re
             wgpuRenderPassEncoderSetBindGroup(render_pass, bind_group_index++, bind_group, 0, nullptr);
             wgpuRenderPassEncoderSetBindGroup(render_pass, bind_group_index++, render_bind_group_camera, 0, nullptr);
 
-
             if (material.type & MATERIAL_DIFUSSE) {
                 wgpuRenderPassEncoderSetBindGroup(render_pass, bind_group_index++, renderer_storage.get_material_bind_group(material), 0, nullptr);
             }
