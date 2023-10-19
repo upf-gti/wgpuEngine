@@ -30,9 +30,6 @@ int Engine::initialize(Renderer* renderer, GLFWwindow* window, bool use_glfw, bo
             return;
         }
 
-        // Remove "./" from path
-        path_to_watch.erase(0, 2);
-
         switch (status) {
         case eFileStatus::Modified: {
             std::cout << "Shader modified: " << path_to_watch << '\n';

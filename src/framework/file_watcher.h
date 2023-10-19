@@ -7,6 +7,7 @@
 #include <string>
 #include <functional>
 #include <iostream>
+#include <regex>
 
 // Based on: https://solarianprogrammer.com/2019/01/13/cpp-17-filesystem-write-file-watcher-monitor/
 
@@ -37,7 +38,9 @@ public:
         }
 
         for(auto &file : std::filesystem::recursive_directory_iterator(filepath)) {
-            paths[file.path().string()] = std::filesystem::last_write_time(file);
+            if (std::filesystem::is_regular_file(file)) {
+                paths[std::filesystem::relative(file.path()).string()] = std::filesystem::last_write_time(file);
+            }
         }
     }
 
@@ -66,15 +69,17 @@ public:
         for(auto &file : std::filesystem::recursive_directory_iterator(path_to_watch)) {
             auto current_file_last_write_time = std::filesystem::last_write_time(file);
 
+            std::string path_string = std::filesystem::relative(file.path()).string();
+
             // File creation
-            if(!contains(file.path().string())) {
-                paths[file.path().string()] = current_file_last_write_time;
-                callback(file.path().string(), eFileStatus::Created);
+            if(!contains(path_string)) {
+                paths[path_string] = current_file_last_write_time;
+                callback(path_string, eFileStatus::Created);
             // File modification
             } else {
-                if(paths[file.path().string()] != current_file_last_write_time) {
-                    paths[file.path().string()] = current_file_last_write_time;
-                    callback(file.path().string(), eFileStatus::Modified);
+                if(paths[path_string] != current_file_last_write_time) {
+                    paths[path_string] = current_file_last_write_time;
+                    callback(path_string, eFileStatus::Modified);
                 }
             }
         }

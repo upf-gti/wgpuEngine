@@ -4,6 +4,7 @@
 
 #include <iostream>
 #include <sstream>
+#include <filesystem>
 
 #include "pipeline.h"
 
@@ -34,8 +35,7 @@ bool Shader::load(const std::string& shader_path)
 	std::string include_content;
 	std::string line;
 
-	size_t ix = path.find_last_of('/');
-	std::string _directory = path.substr(0, ix + 1);
+	std::string _directory = std::filesystem::path(path).parent_path().string();
 
 	while (std::getline(f, line)) {
 
@@ -44,7 +44,7 @@ bool Shader::load(const std::string& shader_path)
 		if (tag == "#include")
 		{
 			const std::string& include_name = tokens[1];
-			const std::string& include_path = _directory + include_name;
+			const std::string& include_path = std::filesystem::relative(std::filesystem::path(_directory + "/" + include_name)).string();
 			std::string new_content;
 			if (!read_file(include_path, new_content)) {
 				std::cerr << "Could not load shader include: " << include_path << std::endl;

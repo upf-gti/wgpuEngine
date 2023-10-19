@@ -5,6 +5,8 @@
 #include "shader.h"
 #include "uniform.h"
 
+#include <filesystem>
+
 RendererStorage* RendererStorage::instance = nullptr;
 
 std::map<std::string, Mesh*> RendererStorage::meshes;
@@ -95,16 +97,16 @@ void RendererStorage::update_ui_widget(WebGPUContext* webgpu_context, void* widg
 
 Shader* RendererStorage::get_shader(const std::string& shader_path)
 {
-    std::string name = shader_path;
+    std::string name = std::filesystem::relative(std::filesystem::path(shader_path)).string();
 
     // check if already loaded
-    std::map<std::string, Shader*>::iterator it = shaders.find(shader_path);
+    std::map<std::string, Shader*>::iterator it = shaders.find(name);
     if (it != shaders.end())
         return it->second;
 
     Shader* sh = new Shader();
 
-    if (!sh->load(shader_path)) {
+    if (!sh->load(name)) {
         return nullptr;
     }
 
