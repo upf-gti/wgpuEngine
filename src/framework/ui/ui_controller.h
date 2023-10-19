@@ -97,8 +97,8 @@ namespace ui {
 		UIEntity* make_text(const std::string& text, const std::string& alias, glm::vec2 pos, const Color& color, float scale = 1.f, glm::vec2 size = {1, 1});
         UIEntity* make_label(const json& j);
 		UIEntity* make_button(const json& j);
-		/*UIEntity* make_slider(const std::string& signal, float default_value, glm::vec2 pos, glm::vec2 size, const Color& color, const char* texture = nullptr);
-		UIEntity* make_color_picker(const std::string& signal, const Color& default_color, glm::vec2 pos, glm::vec2 size);*/
+		UIEntity* make_slider(const json& j);
+		// UIEntity* make_color_picker(const std::string& signal, const Color& default_color, glm::vec2 pos, glm::vec2 size);
         void make_submenu(UIEntity* parent, const std::string& name);
         void close_submenu();
 

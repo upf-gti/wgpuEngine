@@ -30,10 +30,15 @@ public:
     static std::map<std::string, Mesh*> meshes;
 
     struct sUIData {
-        float num_group_items = 2;
-        float is_selected = 0.f;
+        // Common
         float is_hovered = 0.f;
+        // Groups
+        float num_group_items = 2;
+        // Buttons
+        float is_selected = 0.f;
         float is_color_button = 0.f;
+        // Sliders
+        glm::vec4 slider_info = glm::vec4(1.f);  // current_value, dummies...
     };
 
     struct sBindingData {

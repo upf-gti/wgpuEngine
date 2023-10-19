@@ -41,8 +41,7 @@ namespace ui {
 
 	bool Controller::is_active()
 	{
-        return workspace.hand == HAND_RIGHT ||
-            Input::get_grab_value(workspace.hand) > 0.5f;
+        return true; // workspace.hand == HAND_RIGHT || Input::get_grab_value(workspace.hand) > 0.5f;
 	}
 
 	void Controller::render()
@@ -263,7 +262,7 @@ namespace ui {
 		*/
 
         std::string texture = j["texture"];
-        std::string shader = "data/shaders/mesh_texture_ui.wgsl";
+        std::string shader = "data/shaders/ui/ui_button.wgsl";
 
         if (j.count("shader"))
             shader = j["shader"];
@@ -307,29 +306,44 @@ namespace ui {
 		return e_button;
 	}
 
-	//Widget* Controller::make_slider(const std::string& signal, float default_value, glm::vec2 pos, glm::vec2 size, const Color& color, const char* texture)
-	//{
-	//	process_params(pos, size, true);
+    UIEntity* Controller::make_slider(const json& j)
+        // const std::string& signal, float default_value, glm::vec2 pos, glm::vec2 size, const Color& color, const char* texture)
+	{
+        std::string signal = j["name"];
 
-	//	/*
-	//	*	Create button entity and set transform
-	//	*/
+        // World attributes
+        // glm::vec2 pos = compute_position();
+        glm::vec2 size = glm::vec2(BUTTON_SIZE * 2.f, BUTTON_SIZE); // Slider space is 2*BUTTONSIZE at X
 
-	//	// Render quad in local workspace position
-	//	EntityMesh* e_track = new EntityMesh();
-	//	e_track->set_material_shader(RendererStorage::get_shader("data/shaders/mesh_color.wgsl"));
-	//	e_track->set_mesh(RendererStorage::get_mesh("quad"));
- //       e_track->set_material_color(colors::GRAY);
-	//	
-	//	EntityMesh* e_thumb = new EntityMesh();
-	//	e_thumb->set_material_shader(RendererStorage::get_shader("data/shaders/mesh_color.wgsl"));
-	//	e_thumb->set_mesh(RendererStorage::get_mesh("quad"));
- //       e_thumb->set_material_color(color);
+        // TODO: Support sliders in "compute_position"
+        // ...
 
-	//	SliderWidget* widget = new SliderWidget(signal,e_track, e_thumb, default_value, pos, color, size);
-	//	append_widget(widget, signal);
-	//	return widget;
-	//}
+        float x = layout_iterator.x;
+        float y = layout_iterator.y * BUTTON_SIZE + (layout_iterator.y + 1.f) * Y_MARGIN;
+        layout_iterator.x += size.x + X_MARGIN * 2.f;
+        glm::vec2 pos = { x, y };
+        last_layout_pos = pos;
+
+        glm::vec2 _pos = pos;
+        glm::vec2 _size = size;
+
+        process_params(pos, size);
+
+		/*
+		*	Create slider entity
+		*/
+		
+        float default_value = j.value("default", 1.f);
+        Color color = load_vec4( j.value("color", ""));
+
+		SliderWidget* slider = new SliderWidget(signal, default_value, pos, color, size);
+        slider->set_mesh(RendererStorage::get_mesh("quad"));
+        slider->set_material_shader(RendererStorage::get_shader("data/shaders/ui/ui_slider.wgsl"));
+        slider->set_material_diffuse(RendererStorage::get_texture("data/textures/slider.png"));
+        slider->set_material_color(color);
+		append_widget(slider, signal);
+		return slider;
+	}
 
 	//Widget* Controller::make_color_picker(const std::string& signal, const Color& default_color, glm::vec2 pos, glm::vec2 size)
 	//{
@@ -419,7 +433,7 @@ namespace ui {
         process_params(pos, size);
 
         WidgetGroup* group = new WidgetGroup(pos, size, number_of_widgets);
-        group->set_material_shader(RendererStorage::get_shader("data/shaders/mesh_ui.wgsl"));
+        group->set_material_shader(RendererStorage::get_shader("data/shaders/ui/ui_group.wgsl"));
         group->set_mesh(RendererStorage::get_mesh("quad"));
         group->set_material_color(color);
         append_widget(group, group_name);
@@ -503,6 +517,13 @@ namespace ui {
             else if (type == "label")
             {
                 make_label(j);
+            }
+            else if (type == "slider")
+            {
+                make_slider(j);
+
+                // TODO: Allow inserting them in groups
+                // ...
             }
             else if (type == "submenu")
             {

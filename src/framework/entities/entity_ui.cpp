@@ -5,6 +5,7 @@
 #include "framework/input.h"
 #include "framework/entities/entity_text.h"
 #include "graphics/renderer.h"
+#include <iostream>
 
 namespace ui {
 
@@ -83,7 +84,7 @@ namespace ui {
 
         ui_data.num_group_items = n;
         auto webgpu_context = Renderer::instance->get_webgpu_context();
-        RendererStorage::register_ui_widget(webgpu_context, RendererStorage::get_shader("data/shaders/mesh_ui.wgsl"), this, ui_data, 2);
+        RendererStorage::register_ui_widget(webgpu_context, RendererStorage::get_shader("data/shaders/ui/ui_group.wgsl"), this, ui_data, 2);
     }
 
     /*
@@ -142,7 +143,7 @@ namespace ui {
         label->m_priority = 2;
 
         auto webgpu_context = Renderer::instance->get_webgpu_context();
-        RendererStorage::register_ui_widget(webgpu_context, RendererStorage::get_shader("data/shaders/mesh_texture_ui.wgsl"), this, ui_data, 3);
+        RendererStorage::register_ui_widget(webgpu_context, RendererStorage::get_shader("data/shaders/ui/ui_button.wgsl"), this, ui_data, 3);
     }
 
     void ButtonWidget::render_ui()
@@ -225,98 +226,88 @@ namespace ui {
 	*	Slider
 	*/
 
-	//void SliderWidget::render()
-	//{
-	//	Widget::render();
-	//	thumb_entity->render();
-	//}
+    SliderWidget::SliderWidget(const std::string& sg, float v, const glm::vec2& p, const Color& c, const glm::vec2& s)
+        : UIEntity(p, s), signal(sg), current_value(v), color(c) {
 
-	//void SliderWidget::update(Controller* controller)
-	//{
-	//	const WorkSpaceData& workspace = controller->get_workspace();
+        type = eWidgetType::SLIDER;
+        set_material_flag(MATERIAL_UI);
 
-	//	// We need to store this position before converting to local size
-	//	glm::vec2 pos = position;
-	//	glm::vec2 thumb_size = { scale.y, scale.y };
+        float magic = 0.002125f;
+        label = new TextWidget(sg, { p.x - sg.length() * magic, p.y + s.y * 0.5f }, 0.01f, colors::BLACK);
+        label->m_priority = 2;
 
-	//	// No value assigned
-	//	if (current_slider_pos == -1)
-	//	{
-	//		max_slider_pos = (scale.x * 2.f - thumb_size.x * 2.f) / controller->global_scale;
-	//		current_slider_pos = current_value * max_slider_pos;
-	//	}
+        auto webgpu_context = Renderer::instance->get_webgpu_context();
+        RendererStorage::register_ui_widget(webgpu_context, RendererStorage::get_shader("data/shaders/ui/ui_slider.wgsl"), this, ui_data, 3);
+    }
 
-	//	float thumb_pos = current_slider_pos * controller->global_scale - workspace.size.x + thumb_size.x + pos.x * 2.f;
+    void SliderWidget::render_ui()
+	{
+        UIEntity::render_ui();
+        static_cast<UIEntity*>(label)->render_ui();
+	}
 
-	//	// To workspace local size
-	//	pos -= (workspace.size - scale - pos);
+	void SliderWidget::update_ui(Controller* controller)
+	{
+		const WorkSpaceData& workspace = controller->get_workspace();
 
-	//	/*
-	//	*	Update elements
-	//	*/
+		/*
+		*	Update elements
+		*/
 
-	//	entity->set_model(controller->get_matrix());
-	//	entity->translate(glm::vec3(pos.x, pos.y, -1e-3f));
- //       entity->translate(glm::vec3(scale.x, scale.y, 0.f));
+        UIEntity::update_ui(controller);
 
-	//	thumb_entity->set_model(controller->get_matrix());
-	//	thumb_entity->translate(glm::vec3(thumb_pos, pos.y, -2e-3f));
- //       thumb_entity->translate(glm::vec3(scale.y, scale.y, 0.f));
+		/*
+		*	Manage intersection
+		*/
 
-	//	/*
-	//	*	Manage intersection
-	//	*/
+		uint8_t hand = workspace.hand;
+		uint8_t select_hand = workspace.select_hand;
+		uint8_t pose = workspace.root_pose;
 
-	//	uint8_t hand = workspace.hand;
-	//	uint8_t select_hand = workspace.select_hand;
-	//	uint8_t pose = workspace.root_pose;
+		// Ray
+		glm::vec3 ray_origin = Input::get_controller_position(select_hand, pose);
+		glm::mat4x4 select_hand_pose = Input::get_controller_pose(select_hand, pose);
+		glm::vec3 ray_direction = get_front(select_hand_pose);
 
-	//	// Ray
-	//	glm::vec3 ray_origin = Input::get_controller_position(select_hand, pose);
-	//	glm::mat4x4 select_hand_pose = Input::get_controller_pose(select_hand, pose);
-	//	glm::vec3 ray_direction = get_front(select_hand_pose);
+		// Quad
+		// glm::vec3 quad_position = thumb_entity->get_translation();
+		glm::vec3 slider_quad_position = get_translation();
+		glm::quat quad_rotation = glm::quat_cast(controller->get_matrix());
 
-	//	// Quad
-	//	glm::vec3 quad_position = thumb_entity->get_translation();
-	//	glm::vec3 slider_quad_position = entity->get_translation();
-	//	glm::quat quad_rotation = glm::quat_cast(controller->get_matrix());
+		glm::vec3 intersection;
+		float collision_dist;
 
-	//	// Check hover with thumb
-	//	glm::vec3 intersection;
-	//	float collision_dist;
-	//	bool thumb_hovered = intersection::ray_quad(
-	//		ray_origin,
-	//		ray_direction,
-	//		quad_position,
-	//		thumb_size,
-	//		quad_rotation,
-	//		intersection,
-	//		collision_dist
-	//	);
+		// Check hover with slider background to move thumb
+		bool slider_hovered = intersection::ray_quad(
+			ray_origin,
+			ray_direction,
+			slider_quad_position,
+            m_scale,
+			quad_rotation,
+			intersection,
+			collision_dist
+		);
 
-	//	// Check hover with slider background to move thumb
-	//	bool slider_hovered = intersection::ray_quad(
-	//		ray_origin,
-	//		ray_direction,
-	//		slider_quad_position,
- //           scale,
-	//		quad_rotation,
-	//		intersection,
-	//		collision_dist
-	//	);
+		bool is_pressed = slider_hovered && Input::is_button_pressed(workspace.select_button);
+		bool was_pressed = slider_hovered && Input::was_button_pressed(workspace.select_button);
 
-	//	/*
-	//	*	Create mesh and render thumb
-	//	*/
+		if (is_pressed)
+		{
+            float bounds = m_scale.x * 0.95f;
+            // -scale..scale -> 0..1
+            intersection.x = glm::max(glm::min(intersection.x, bounds), -bounds);
+			current_value = glm::clamp((intersection.x / bounds) * 0.5f + 0.5f, 0.f, 1.f);
+			controller->emit_signal(signal, current_value);
+		}
 
-	//	bool is_pressed = thumb_hovered && Input::is_button_pressed(workspace.select_button);
-	//	bool was_pressed = thumb_hovered && Input::was_button_pressed(workspace.select_button);
+        // Update uniforms
+        ui_data.is_hovered = slider_hovered ? 1.f : 0.f;
+        ui_data.slider_info.x = current_value;
 
-	//	if (is_pressed)
-	//	{
-	//		current_slider_pos = glm::clamp((intersection.x + scale.x - thumb_size.x) / controller->global_scale, 0.f, max_slider_pos);
-	//		current_value = glm::clamp(current_slider_pos / max_slider_pos, 0.f, 1.f);
-	//		controller->emit_signal(signal, current_value);
-	//	}
-	//}
+        auto webgpu_context = Renderer::instance->get_webgpu_context();
+
+        RendererStorage::update_ui_widget(webgpu_context, this, ui_data);
+
+        label->update_ui(controller);
+	}
 }

@@ -54,7 +54,7 @@ glm::vec3 load_vec3(const std::string& str) {
     if (n == 3) {
         return v;
     }
-    printf("Invalid str reading VEC3 %s. Only %d values read. Expected 3", str.c_str(), n);
+    printf("Invalid str reading VEC3 %s. Only %d values read. Expected 3\n", str.c_str(), n);
     return glm::vec3();
 }
 
@@ -64,7 +64,7 @@ glm::vec4 load_vec4(const std::string& str) {
     if (n == 4) {
         return v;
     }
-    printf("Invalid str reading VEC4 %s. Only %d values read. Expected 4", str.c_str(), n);
+    printf("Invalid str reading VEC4 %s. Only %d values read. Expected 4\n", str.c_str(), n);
     return glm::vec4();
 }
 

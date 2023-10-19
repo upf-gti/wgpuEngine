@@ -99,25 +99,22 @@ namespace ui {
 		virtual void update_ui(Controller* controller) override;
 	};
 
-	/*class SliderWidget : public ButtonWidget {
+	class SliderWidget : public UIEntity {
 	public:
 
-		EntityMesh* thumb_entity = nullptr;
+        TextWidget* label = nullptr;
+        Color color;
+        std::string signal;
 
 		float current_value = 0.f;
-		float current_slider_pos = -1.f;
-		float max_slider_pos = -1.f;
 
-		SliderWidget(const std::string& sg, EntityMesh* tr, EntityMesh* th, float v, const glm::vec2& p, const Color& c, const glm::vec2& s)
-			: ButtonWidget(sg, tr, p, s, c), thumb_entity(th), current_value(v) {
-			type = eWidgetType::SLIDER;
-		}
+		SliderWidget(const std::string& sg, float v, const glm::vec2& p, const Color& c, const glm::vec2& s);
 
-		virtual void render_ui() override;
+        virtual void render_ui() override;
 		virtual void update_ui(Controller* controller) override;
 	};
 
-	class ColorPickerWidget : public Widget {
+    /*class ColorPickerWidget : public Widget {
 	public:
 
 		Color rect_color;
