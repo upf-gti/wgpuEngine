@@ -72,6 +72,25 @@ glm::quat load_quat(const std::string& str) {
     return glm::quat(load_vec4(str));
 }
 
+glm::vec3 mod_vec3(glm::vec3 v, float m)
+{
+    return glm::vec3(
+        fmodf(v.x, m),
+        fmodf(v.y, m),
+        fmodf(v.z, m)
+    );
+}
+
+glm::vec3 hsv2rgb(glm::vec3 c)
+{
+    glm::vec3 m = mod_vec3(c.x * 6.f + glm::vec3(0.f, 4.f, 2.f), 6.f);
+    glm::vec3 rgb = glm::clamp(abs(m - 3.f) - 1.f, glm::vec3(0.f), glm::vec3(1.f));
+
+    rgb = rgb * rgb * (3.f - 2.f * rgb); // cubic smoothing	
+
+    return mix(glm::vec3(1.f), mix(glm::vec3(1.f), rgb, c.y), c.z);
+}
+
 glm::vec3 rotate_point_by_quat(const glm::vec3& v, const glm::vec4& q) {
 	const glm::vec3 q_vect = glm::vec3(q.x, q.y, q.z);
 	return v + 2.0f * glm::cross(q_vect, glm::cross(q_vect, v) + q.w * v);

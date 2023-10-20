@@ -21,6 +21,7 @@ namespace ui {
 		BUTTON,
 		SLIDER,
         LABEL,
+        COLOR_PICKER,
         GROUP
 	};
 
@@ -49,6 +50,8 @@ namespace ui {
 
         void set_render_children(bool value, bool force = false);
         void set_selected(bool value);
+
+        bool is_hovered(Controller* controller, glm::vec3& intersection);
 
 		virtual void render_ui();
 		virtual void update_ui(Controller* controller);
@@ -118,16 +121,14 @@ namespace ui {
 		virtual void update_ui(Controller* controller) override;
 	};
 
-    /*class ColorPickerWidget : public Widget {
+    class ColorPickerWidget : public UIEntity {
 	public:
 
-		Color rect_color;
+		Color current_color;
+        std::string signal;
 
-		ColorPickerWidget(EntityMesh* rect, const Color& color) : rect_color(color) {
-			entity = rect;
-		}
+		ColorPickerWidget(const std::string& sg, const glm::vec2& p, const glm::vec2& s, const Color& c);
 
-		virtual void render_ui() override {};
-		virtual void update_ui(Controller* controller) override {};
-	};*/
+        virtual void update_ui(Controller* controller);
+	};
 }

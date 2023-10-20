@@ -133,20 +133,11 @@ namespace ui {
     // Gets next button position (applies margin)
     glm::vec2 Controller::compute_position(float xOffset)
     {
-        // TODO: Support sliders in "compute_position"
-        // ...
-
-        /*float x = layout_iterator.x;
-        float y = layout_iterator.y * BUTTON_SIZE + (layout_iterator.y + 1.f) * Y_MARGIN;
-        layout_iterator.x += size.x + X_MARGIN * 2.f;
-        glm::vec2 pos = { x, y };
-        last_layout_pos = pos;*/
-
         float x, y;
 
         if (group_opened)
         {
-            x = last_layout_pos.x + (g_iterator * BUTTON_SIZE + g_iterator * X_GROUP_MARGIN) * xOffset;
+            x = last_layout_pos.x + (g_iterator * BUTTON_SIZE * xOffset + g_iterator * X_GROUP_MARGIN);
             y = last_layout_pos.y;
             g_iterator += xOffset;
         }
@@ -154,7 +145,7 @@ namespace ui {
         {
             x = layout_iterator.x;
             y = layout_iterator.y * BUTTON_SIZE + (layout_iterator.y + 1.f) * Y_MARGIN;
-            layout_iterator.x += (BUTTON_SIZE + X_MARGIN) * xOffset;
+            layout_iterator.x += (BUTTON_SIZE * xOffset + X_MARGIN);
             last_layout_pos = { x, y };
         }
 
@@ -317,7 +308,6 @@ namespace ui {
 	}
 
     UIEntity* Controller::make_slider(const json& j)
-        // const std::string& signal, float default_value, glm::vec2 pos, glm::vec2 size, const Color& color, const char* texture)
 	{
         std::string signal = j["name"];
 
@@ -372,41 +362,33 @@ namespace ui {
 		return slider;
 	}
 
-	//Widget* Controller::make_color_picker(const std::string& signal, const Color& default_color, glm::vec2 pos, glm::vec2 size)
-	//{
-	//	glm::vec2 offset = {0.f, size.y + 1.f};
-	//	make_slider(signal + "_r", default_color.r, pos, size, colors::RED);
-	//	make_slider(signal + "_g", default_color.g, pos + offset, size, colors::GREEN);
-	//	make_slider(signal + "_b", default_color.b, pos + offset * 2.f, size, colors::BLUE);
-	//	
-	//	// Get color rect entity
-	//	Widget* widget_rect = make_rect(glm::vec2(pos.x + size.x + 1.f, pos.y), glm::vec2(size.y, size.y + offset.y * 2.f), colors::WHITE);
-	//	EntityMesh* rect = widget_rect->entity;
-	//	rect->set_material_color( default_color );
+    UIEntity* Controller::make_color_picker(const json& j)
+    {
+        std::string signal = j["name"];
 
-	//	ColorPickerWidget* widget = new ColorPickerWidget(rect, default_color);
-	//	append_widget(widget, signal);
+        // World attributes
+        glm::vec2 pos = compute_position();
+        glm::vec2 size = glm::vec2(BUTTON_SIZE);
 
-	//	bind(signal + "_r", [this, signal, w = widget, r = rect](const std::string& s, float value) {
-	//		w->rect_color.x = value;
-	//		r->set_material_color(w->rect_color);
-	//		emit_signal(signal, w->rect_color);
-	//	});
+        glm::vec2 _pos = pos;
+        glm::vec2 _size = size;
 
-	//	bind(signal + "_g", [this, signal, w = widget, r = rect](const std::string& s, float value) {
-	//		w->rect_color.y = value;
-	//		r->set_material_color(w->rect_color);
-	//		emit_signal(signal, w->rect_color);
-	//	});
+        process_params(pos, size);
 
-	//	bind(signal + "_b", [this, signal, w = widget, r = rect](const std::string& s, float value) {
-	//		w->rect_color.z = value;
-	//		r->set_material_color(w->rect_color);
-	//		emit_signal(signal, w->rect_color);
-	//	});
+        Color default_color = load_vec4(j.value("default", ""));
 
-	//	return widget;
-	//}
+        ColorPickerWidget* picker = new ColorPickerWidget(signal, pos, size, default_color);
+        picker->set_mesh(RendererStorage::get_mesh("quad"));
+        picker->set_material_shader(RendererStorage::get_shader("data/shaders/ui/ui_color_picker.wgsl"));
+        picker->set_material_diffuse(RendererStorage::get_texture("data/textures/circle_white.png"));
+
+        if (group_opened)
+            picker->m_priority = 1;
+
+        picker->m_layer = static_cast<uint8_t>(layout_iterator.y);
+        append_widget(picker, signal);
+        return picker;
+    }
 
 	void Controller::make_submenu(ui::UIEntity* widget, const std::string& name)
 	{
@@ -533,6 +515,17 @@ namespace ui {
             else if (type == "button")
             {
                 make_button(j);
+
+                group_elements_pending--;
+
+                if (group_elements_pending == 0.f) {
+                    close_group();
+                    group_elements_pending = -1;
+                }
+            }
+            else if (type == "picker")
+            {
+                make_color_picker(j);
 
                 group_elements_pending--;
 

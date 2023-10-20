@@ -37,8 +37,10 @@ public:
         // Buttons
         float is_selected = 0.f;
         float is_color_button = 0.f;
-        // Sliders
-        glm::vec4 slider_info = glm::vec4(1.f);  // current_value, dummies...
+        // Color Picker
+        glm::vec3 picker_color = glm::vec3(1.f);
+        // Slider
+        float slider_value = 0.f;
     };
 
     struct sBindingData {

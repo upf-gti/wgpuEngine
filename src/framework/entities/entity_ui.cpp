@@ -45,6 +45,42 @@ namespace ui {
         }
     }
 
+    bool UIEntity::is_hovered(Controller* controller, glm::vec3& intersection)
+    {
+
+        const WorkSpaceData& workspace = controller->get_workspace();
+
+        /*
+        *	Manage intersection
+        */
+
+        uint8_t hand = workspace.hand;
+        uint8_t select_hand = workspace.select_hand;
+        uint8_t pose = workspace.root_pose;
+
+        // Ray
+        glm::vec3 ray_origin = Input::get_controller_position(select_hand, pose);
+        glm::mat4x4 select_hand_pose = Input::get_controller_pose(select_hand, pose);
+        glm::vec3 ray_direction = get_front(select_hand_pose);
+
+        // Quad
+        glm::vec3 slider_quad_position = get_local_translation();
+        glm::quat quad_rotation = glm::quat_cast(controller->get_matrix());
+
+        float collision_dist;
+
+        // Check hover with slider background to move thumb
+        return intersection::ray_quad(
+            ray_origin,
+            ray_direction,
+            slider_quad_position,
+            m_scale,
+            quad_rotation,
+            intersection,
+            collision_dist
+        );
+    }
+
 	void UIEntity::render_ui()
 	{
         if (!active) return;
@@ -165,37 +201,11 @@ namespace ui {
 	{
         UIEntity::update_ui(controller);
 
-		/*
-		*	Manage intersection
-		*/
-
 		const WorkSpaceData& workspace = controller->get_workspace();
 
-		uint8_t hand = workspace.hand;
-		uint8_t select_hand = workspace.select_hand;
-		uint8_t pose = workspace.root_pose;
-
-		// Ray
-		glm::vec3 ray_origin = Input::get_controller_position(select_hand, pose);
-		glm::mat4x4 select_hand_pose = Input::get_controller_pose(select_hand, pose);
-		glm::vec3 ray_direction = get_front(select_hand_pose);
-
-		// Quad
-		glm::vec3 quad_position = get_local_translation();
-		glm::quat quad_rotation = glm::quat_cast(controller->get_matrix());
-
 		// Check hover (intersects)
-		glm::vec3 intersection;
-		float collision_dist;
-		bool hovered = intersection::ray_quad(
-			ray_origin,
-			ray_direction,
-			quad_position,
-			m_scale,
-			quad_rotation,
-			intersection,
-			collision_dist
-		);
+        glm::vec3 intersection;
+        bool hovered = is_hovered(controller, intersection);
 
         // Used to disable presses and hovers
         hovered &= allow_events;
@@ -272,37 +282,8 @@ namespace ui {
             label->m_priority = 2;
         }
 
-		/*
-		*	Manage intersection
-		*/
-
-		uint8_t hand = workspace.hand;
-		uint8_t select_hand = workspace.select_hand;
-		uint8_t pose = workspace.root_pose;
-
-		// Ray
-		glm::vec3 ray_origin = Input::get_controller_position(select_hand, pose);
-		glm::mat4x4 select_hand_pose = Input::get_controller_pose(select_hand, pose);
-		glm::vec3 ray_direction = get_front(select_hand_pose);
-
-		// Quad
-		glm::vec3 slider_quad_position = get_local_translation();
-		glm::quat quad_rotation = glm::quat_cast(controller->get_matrix());
-
-		glm::vec3 intersection;
-		float collision_dist;
-
-		// Check hover with slider background to move thumb
-		bool hovered = intersection::ray_quad(
-			ray_origin,
-			ray_direction,
-			slider_quad_position,
-            m_scale,
-			quad_rotation,
-			intersection,
-			collision_dist
-		);
-
+        glm::vec3 intersection;
+        bool hovered = is_hovered(controller, intersection);
         label->active = hovered;
 
 		bool is_pressed = hovered && Input::is_button_pressed(workspace.select_button);
@@ -318,7 +299,7 @@ namespace ui {
 
         // Update uniforms
         ui_data.is_hovered = hovered ? 1.f : 0.f;
-        ui_data.slider_info.x = current_value;
+        ui_data.slider_value = current_value;
 
         auto webgpu_context = Renderer::instance->get_webgpu_context();
 
@@ -326,4 +307,65 @@ namespace ui {
 
         label->update_ui(controller);
 	}
+
+    /*
+    *	ColorPicker
+    */
+
+    ColorPickerWidget::ColorPickerWidget(const std::string& sg, const glm::vec2& p, const glm::vec2& s, const Color& c)
+        : UIEntity(p, s), signal(sg), current_color(c)
+    {
+        type = eWidgetType::COLOR_PICKER;
+        set_material_flag(MATERIAL_UI);
+
+        auto webgpu_context = Renderer::instance->get_webgpu_context();
+        RendererStorage::register_ui_widget(webgpu_context, RendererStorage::get_shader("data/shaders/ui/ui_color_picker.wgsl"), this, ui_data, 3);
+    }
+
+    void ColorPickerWidget::update_ui(Controller* controller)
+    {
+        const WorkSpaceData& workspace = controller->get_workspace();
+
+        /*
+        *	Update elements
+        */
+
+        UIEntity::update_ui(controller);
+
+        glm::vec3 intersection;
+        bool hovered = is_hovered(controller, intersection);
+        bool is_pressed = hovered && Input::is_button_pressed(workspace.select_button);
+        bool was_released = hovered && Input::was_button_released(workspace.select_button);
+
+        glm::vec2 local_point = glm::vec2(intersection);
+
+        if (is_pressed)
+        {
+            glm::vec2 bounds = m_scale * 0.975f;
+            local_point = glm::max(glm::min(local_point, bounds), -bounds) / bounds; // -1..1
+
+            const float pi = 3.1415927f;
+            float r = pi / 2.f;
+            local_point = glm::mat2x2(cos(r), -sin(r), sin(r), cos(r)) * local_point;
+            glm::vec2 polar = glm::vec2(atan2(local_point.y, local_point.x), glm::length(local_point));
+            float percent = (polar.x + pi) / (2.0 * pi);
+            glm::vec3 hsv = glm::vec3(percent, 1., polar.y);
+
+            current_color = glm::vec4(hsv2rgb(hsv), 1.0);
+            controller->emit_signal(signal, current_color);
+        }
+
+        if (was_released)
+        {
+            controller->emit_signal(signal + "@released", current_color);
+        }
+
+        // Update uniforms
+        ui_data.is_hovered = hovered ? 1.f : 0.f;
+        ui_data.picker_color = current_color;
+
+        auto webgpu_context = Renderer::instance->get_webgpu_context();
+
+        RendererStorage::update_ui_widget(webgpu_context, this, ui_data);
+    }
 }
