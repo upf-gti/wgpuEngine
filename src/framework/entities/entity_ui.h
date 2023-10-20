@@ -110,12 +110,21 @@ namespace ui {
 	public:
 
         TextWidget* label = nullptr;
+        TextWidget* text_value = nullptr;
+
         Color color;
         std::string signal;
+
+        enum {
+            HORIZONTAL,
+            VERTICAL
+        } mode = HORIZONTAL;
 
 		float current_value = 0.f;
 
 		SliderWidget(const std::string& sg, float v, const glm::vec2& p, const Color& c, const glm::vec2& s);
+
+        void set_mode(const std::string& m) { mode = (m == "horizontal" ? HORIZONTAL : VERTICAL); }
 
         virtual void render_ui() override;
 		virtual void update_ui(Controller* controller) override;

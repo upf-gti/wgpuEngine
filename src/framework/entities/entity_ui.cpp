@@ -263,6 +263,7 @@ namespace ui {
 	{
         UIEntity::render_ui();
         if(label) static_cast<UIEntity*>(label)->render_ui();
+        if(text_value) static_cast<UIEntity*>(text_value)->render_ui();
 	}
 
 	void SliderWidget::update_ui(Controller* controller)
@@ -275,11 +276,20 @@ namespace ui {
 
         UIEntity::update_ui(controller);
 
+        float magic_t = 0.002125f;
+        float magic_c = 0.005f;
+
         if (!label)
         {
-            float magic = 0.0045f;
-            label = new TextWidget(signal, { m_position.x - BUTTON_SIZE * 0.25f * controller->global_scale, m_position.y - magic }, 0.01f, colors::WHITE);
+            label = new TextWidget(signal, { m_position.x - signal.length() * magic_t, m_position.y + m_scale.y * 0.5f }, 0.01f, colors::WHITE);
             label->m_priority = 2;
+        }
+
+        if (!text_value)
+        {
+            std::string value_as_string = std::to_string(std::ceil(current_value * 100.f) / 100.f);
+            text_value = new TextWidget(value_as_string.substr(0, 4), {m_position.x - 4 * magic_t, m_position.y - magic_c }, 0.01f, colors::WHITE);
+            text_value->m_priority = 2;
         }
 
         glm::vec3 intersection;
@@ -290,11 +300,15 @@ namespace ui {
 
 		if (is_pressed)
 		{
-            float bounds = m_scale.x * 0.975f;
+            float range = (mode == HORIZONTAL ? m_scale.x : m_scale.y);
+            float bounds = range * 0.975f;
             // -scale..scale -> 0..1
-            intersection.x = glm::max(glm::min(intersection.x, bounds), -bounds);
-			current_value = glm::clamp((intersection.x / bounds) * 0.5f + 0.5f, 0.f, 1.f);
+            float local_point = (mode == HORIZONTAL ? intersection.x : -intersection.y);
+            local_point = glm::max(glm::min(local_point, bounds), -bounds);
+			current_value = glm::clamp((local_point / bounds) * 0.5f + 0.5f, 0.f, 1.f);
 			controller->emit_signal(signal, current_value);
+            std::string value_as_string = std::to_string(std::ceil(current_value * 100.f) / 100.f);
+            text_value->text_entity->set_text(value_as_string.substr(0, 4));
 		}
 
         // Update uniforms
@@ -306,6 +320,7 @@ namespace ui {
         RendererStorage::update_ui_widget(webgpu_context, this, ui_data);
 
         label->update_ui(controller);
+        text_value->update_ui(controller);
 	}
 
     /*
@@ -351,7 +366,7 @@ namespace ui {
             float percent = (polar.x + pi) / (2.0 * pi);
             glm::vec3 hsv = glm::vec3(percent, 1., polar.y);
 
-            current_color = glm::vec4(hsv2rgb(hsv), 1.0);
+            current_color = glm::vec4(hsv2rgb(hsv), current_color.a);
             controller->emit_signal(signal, current_color);
         }
 

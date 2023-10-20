@@ -137,7 +137,7 @@ namespace ui {
 
         if (group_opened)
         {
-            x = last_layout_pos.x + (g_iterator * BUTTON_SIZE * xOffset + g_iterator * X_GROUP_MARGIN);
+            x = last_layout_pos.x + (g_iterator * BUTTON_SIZE + g_iterator * X_GROUP_MARGIN);
             y = last_layout_pos.y;
             g_iterator += xOffset;
         }
@@ -310,10 +310,12 @@ namespace ui {
     UIEntity* Controller::make_slider(const json& j)
 	{
         std::string signal = j["name"];
+        std::string mode = j.value("mode", "horizontal");
 
         // World attributes
-        glm::vec2 pos = compute_position( 2.f );
-        glm::vec2 size = glm::vec2(BUTTON_SIZE * 2.f, BUTTON_SIZE); // Slider space is 2*BUTTONSIZE at X
+        float offset = (mode == "horizontal" ? 2.f : 1.f);
+        glm::vec2 pos = compute_position( offset );
+        glm::vec2 size = glm::vec2(BUTTON_SIZE * offset, BUTTON_SIZE); // Slider space is 2*BUTTONSIZE at X
 
         glm::vec2 _pos = pos;
         glm::vec2 _size = size;
@@ -332,32 +334,17 @@ namespace ui {
         slider->update_children = true;
         slider->set_mesh(RendererStorage::get_mesh("quad"));
         slider->set_material_shader(RendererStorage::get_shader("data/shaders/ui/ui_slider.wgsl"));
-        slider->set_material_diffuse(RendererStorage::get_texture("data/textures/slider.png"));
+        slider->set_material_diffuse(RendererStorage::get_texture(
+            (mode == "horizontal" ? "data/textures/slider.png" : "data/textures/circle_white.png")));
         slider->set_material_color(color);
 		append_widget(slider, signal);
 
+        slider->set_mode(mode);
+        slider->ui_data.num_group_items = offset;
         slider->m_layer = static_cast<uint8_t>(layout_iterator.y);
 
         if (group_opened)
             slider->m_priority = 1;
-
-        // Icon
-
-        if( j.count("icon") )
-        {
-            size = glm::vec2(BUTTON_SIZE) * 0.5f;
-            pos = _pos + size * 0.5f;
-            process_params(pos, size);
-
-            ButtonWidget* icon = new ButtonWidget(signal, pos, size, color);
-            icon->set_mesh(RendererStorage::get_mesh("quad"));
-            icon->set_material_shader(RendererStorage::get_shader("data/shaders/ui/ui_button.wgsl"));
-            icon->set_material_diffuse(RendererStorage::get_texture(j["icon"]));
-            icon->m_priority = 3;
-            icon->selected = true; // make it appear as selected always..
-            icon->allow_events = false;
-            append_widget(icon, signal + "_icon", slider);
-        }
 
 		return slider;
 	}
@@ -365,6 +352,7 @@ namespace ui {
     UIEntity* Controller::make_color_picker(const json& j)
     {
         std::string signal = j["name"];
+        bool has_slider = j.count("slider") > 0.f;
 
         // World attributes
         glm::vec2 pos = compute_position();
@@ -387,6 +375,20 @@ namespace ui {
 
         picker->m_layer = static_cast<uint8_t>(layout_iterator.y);
         append_widget(picker, signal);
+
+        if (has_slider)
+        {
+            // Vertical slider
+            SliderWidget* slider = (SliderWidget*)make_slider( j["slider"] );
+            bind(j["slider"].value("name", ""), [this, p = picker](const std::string& signal, float value) {
+                p->current_color.a = value;
+                emit_signal(p->signal, p->current_color * value);
+            });
+
+            // Set initial value
+            picker->current_color.a = j["slider"].value("default", 1.f);
+        }
+
         return picker;
     }
 
@@ -527,7 +529,7 @@ namespace ui {
             {
                 make_color_picker(j);
 
-                group_elements_pending--;
+                group_elements_pending -= 2;
 
                 if (group_elements_pending == 0.f) {
                     close_group();
