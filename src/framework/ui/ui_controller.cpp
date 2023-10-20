@@ -131,21 +131,30 @@ namespace ui {
 	}
 
     // Gets next button position (applies margin)
-    glm::vec2 Controller::compute_position()
+    glm::vec2 Controller::compute_position(float xOffset)
     {
+        // TODO: Support sliders in "compute_position"
+        // ...
+
+        /*float x = layout_iterator.x;
+        float y = layout_iterator.y * BUTTON_SIZE + (layout_iterator.y + 1.f) * Y_MARGIN;
+        layout_iterator.x += size.x + X_MARGIN * 2.f;
+        glm::vec2 pos = { x, y };
+        last_layout_pos = pos;*/
+
         float x, y;
 
         if (group_opened)
         {
-            x = last_layout_pos.x + g_iterator * BUTTON_SIZE + g_iterator * X_GROUP_MARGIN;
+            x = last_layout_pos.x + (g_iterator * BUTTON_SIZE + g_iterator * X_GROUP_MARGIN) * xOffset;
             y = last_layout_pos.y;
-            g_iterator++;
+            g_iterator += xOffset;
         }
         else
         {
             x = layout_iterator.x;
             y = layout_iterator.y * BUTTON_SIZE + (layout_iterator.y + 1.f) * Y_MARGIN;
-            layout_iterator.x += BUTTON_SIZE + X_MARGIN;
+            layout_iterator.x += (BUTTON_SIZE + X_MARGIN) * xOffset;
             last_layout_pos = { x, y };
         }
 
@@ -212,7 +221,8 @@ namespace ui {
 
         UIEntity* text_widget = make_text(text, "text@" + alias, pos, colors::WHITE, 12.f);
         text_widget->m_priority = -1;
-        text_widget->show_children = true;
+        text_widget->render_children = true;
+        text_widget->update_children = true;
 
         // Icon goes to the left of the workspace
         pos = { 
@@ -312,17 +322,8 @@ namespace ui {
         std::string signal = j["name"];
 
         // World attributes
-        // glm::vec2 pos = compute_position();
+        glm::vec2 pos = compute_position( 2.f );
         glm::vec2 size = glm::vec2(BUTTON_SIZE * 2.f, BUTTON_SIZE); // Slider space is 2*BUTTONSIZE at X
-
-        // TODO: Support sliders in "compute_position"
-        // ...
-
-        float x = layout_iterator.x;
-        float y = layout_iterator.y * BUTTON_SIZE + (layout_iterator.y + 1.f) * Y_MARGIN;
-        layout_iterator.x += size.x + X_MARGIN * 2.f;
-        glm::vec2 pos = { x, y };
-        last_layout_pos = pos;
 
         glm::vec2 _pos = pos;
         glm::vec2 _size = size;
@@ -332,16 +333,42 @@ namespace ui {
 		/*
 		*	Create slider entity
 		*/
-		
+
         float default_value = j.value("default", 1.f);
         Color color = load_vec4( j.value("color", ""));
 
 		SliderWidget* slider = new SliderWidget(signal, default_value, pos, color, size);
+        slider->render_children = true;
+        slider->update_children = true;
         slider->set_mesh(RendererStorage::get_mesh("quad"));
         slider->set_material_shader(RendererStorage::get_shader("data/shaders/ui/ui_slider.wgsl"));
         slider->set_material_diffuse(RendererStorage::get_texture("data/textures/slider.png"));
         slider->set_material_color(color);
 		append_widget(slider, signal);
+
+        slider->m_layer = static_cast<uint8_t>(layout_iterator.y);
+
+        if (group_opened)
+            slider->m_priority = 1;
+
+        // Icon
+
+        if( j.count("icon") )
+        {
+            size = glm::vec2(BUTTON_SIZE) * 0.5f;
+            pos = _pos + size * 0.5f;
+            process_params(pos, size);
+
+            ButtonWidget* icon = new ButtonWidget(signal, pos, size, color);
+            icon->set_mesh(RendererStorage::get_mesh("quad"));
+            icon->set_material_shader(RendererStorage::get_shader("data/shaders/ui/ui_button.wgsl"));
+            icon->set_material_diffuse(RendererStorage::get_texture(j["icon"]));
+            icon->m_priority = 3;
+            icon->selected = true; // make it appear as selected always..
+            icon->allow_events = false;
+            append_widget(icon, signal + "_icon", slider);
+        }
+
 		return slider;
 	}
 
@@ -392,12 +419,12 @@ namespace ui {
             if (parent->type == GROUP)
                 parent = static_cast<ui::UIEntity*>(parent->get_parent());
 
-            const bool last_value = widget->show_children;
+            const bool last_value = widget->render_children;
 
             for (auto c : parent->get_children())
-                static_cast<ui::UIEntity*>(c)->set_show_children(false);
+                static_cast<ui::UIEntity*>(c)->set_render_children(false);
 
-            widget->set_show_children(!last_value);
+            widget->set_render_children(!last_value);
 		});
 
         layout_iterator.x = 0.f;
@@ -522,8 +549,12 @@ namespace ui {
             {
                 make_slider(j);
 
-                // TODO: Allow inserting them in groups
-                // ...
+                group_elements_pending -= 2;
+
+                if (group_elements_pending == 0.f) {
+                    close_group();
+                    group_elements_pending = -1;
+                }
             }
             else if (type == "submenu")
             {
@@ -531,7 +562,7 @@ namespace ui {
 
                 if (!parent) {
                     assert(0);
-                    std::cerr << "Can not find parent button with name " << name << std::endl;
+                    std::cerr << "Cannot find parent button with name " << name << std::endl;
                     return;
                 }
 

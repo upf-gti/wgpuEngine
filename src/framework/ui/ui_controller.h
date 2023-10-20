@@ -67,7 +67,7 @@ namespace ui {
 
 		void append_widget(UIEntity* widget, const std::string& name, UIEntity* force_parent = nullptr);
 		void process_params(glm::vec2& position, glm::vec2& size, bool skip_to_local = false);
-        glm::vec2 compute_position();
+        glm::vec2 compute_position(float xOffset = 1.f);
 
 	public:
 

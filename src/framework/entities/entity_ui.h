@@ -34,7 +34,8 @@ namespace ui {
 
         static UIEntity* current_selected;
 
-		bool show_children  = false;
+		bool render_children  = false;
+        bool update_children = false;
         bool active         = true;
         bool selected       = false;
 
@@ -46,7 +47,7 @@ namespace ui {
 
         RendererStorage::sUIData ui_data;
 
-        void set_show_children(bool value);
+        void set_render_children(bool value, bool force = false);
         void set_selected(bool value);
 
 		virtual void render_ui();
@@ -57,6 +58,8 @@ namespace ui {
     public:
 
         WidgetGroup(const glm::vec2& p, const glm::vec2& s, float number_of_widgets);
+
+        virtual void render_ui() override;
     };
 
 	class TextWidget : public UIEntity {
@@ -92,6 +95,7 @@ namespace ui {
         bool is_submenu             = false;
         bool is_unique_selection    = false;
         bool allow_toggle           = false;
+        bool allow_events           = true;
 
         ButtonWidget(const std::string& sg, const glm::vec2& p, const glm::vec2& s, const Color& c);
 

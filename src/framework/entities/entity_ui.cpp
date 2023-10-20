@@ -16,19 +16,20 @@ namespace ui {
         
     }
 
-    void UIEntity::set_show_children(bool value)
+    void UIEntity::set_render_children(bool value, bool force)
     {
         ButtonWidget* bw = dynamic_cast<ButtonWidget*>(this);
         if (bw && bw->is_submenu) {
-            show_children = value;
+            render_children = value;
+            update_children = value;
             selected = value;
         }
 
         // Only hiding is recursive...
-        if (!value)
+        if (!value || force)
         {
             for (auto c : children)
-                static_cast<UIEntity*>(c)->set_show_children(value);
+                static_cast<UIEntity*>(c)->set_render_children(value, force);
         }
     }
 
@@ -50,7 +51,7 @@ namespace ui {
 
 		EntityMesh::render();
 
-		if (!show_children)
+		if (!render_children)
 			return;
 
 		for (auto c : children)
@@ -65,7 +66,7 @@ namespace ui {
 		translate(glm::vec3(m_position.x, m_position.y, -1e-3f - m_priority * 1e-3f));
         scale(glm::vec3(m_scale.x, m_scale.y, 1.f));
 
-		if (!show_children)
+		if (!update_children)
 			return;
 
         for (auto c : children)
@@ -78,7 +79,8 @@ namespace ui {
 
     WidgetGroup::WidgetGroup(const glm::vec2& p, const glm::vec2& s, float n) : UIEntity(p, s) {
 
-        show_children = true;
+        render_children = true;
+        update_children = true;
         type = eWidgetType::GROUP;
         set_material_flag(MATERIAL_UI);
 
@@ -86,6 +88,12 @@ namespace ui {
         auto webgpu_context = Renderer::instance->get_webgpu_context();
         RendererStorage::register_ui_widget(webgpu_context, RendererStorage::get_shader("data/shaders/ui/ui_group.wgsl"), this, ui_data, 2);
     }
+
+    void WidgetGroup::render_ui()
+    {
+        UIEntity::render_ui();
+    }
+
 
     /*
     *   Text
@@ -137,6 +145,7 @@ namespace ui {
 
         type = eWidgetType::BUTTON;
         set_material_flag(MATERIAL_UI);
+        set_material_color(color);
 
         float magic = 0.002125f;
         label = new TextWidget(sg, { p.x - sg.length() * magic, p.y + s.y * 0.5f }, 0.01f, colors::GRAY);
@@ -188,6 +197,9 @@ namespace ui {
 			collision_dist
 		);
 
+        // Used to disable presses and hovers
+        hovered &= allow_events;
+
         label->active = hovered;
 
 		/*
@@ -197,16 +209,17 @@ namespace ui {
 		bool is_pressed = hovered && Input::is_button_pressed(workspace.select_button);
 		bool was_pressed = hovered && Input::was_button_pressed(workspace.select_button);
 
-        set_material_color(/*is_pressed ? colors::GRAY : */color);
-		
         if (was_pressed)
         {
 			controller->emit_signal(signal, (void*)this);
 
-            if (selected && is_color_button)
+            if (selected)
             {
-                if(current_selected) current_selected->selected = false;
-                current_selected = this;
+                if (is_color_button)
+                {
+                    if(current_selected) current_selected->selected = false;
+                    current_selected = this;
+                }
             }
         }
 
@@ -232,10 +245,6 @@ namespace ui {
         type = eWidgetType::SLIDER;
         set_material_flag(MATERIAL_UI);
 
-        float magic = 0.002125f;
-        label = new TextWidget(sg, { p.x - sg.length() * magic, p.y + s.y * 0.5f }, 0.01f, colors::BLACK);
-        label->m_priority = 2;
-
         auto webgpu_context = Renderer::instance->get_webgpu_context();
         RendererStorage::register_ui_widget(webgpu_context, RendererStorage::get_shader("data/shaders/ui/ui_slider.wgsl"), this, ui_data, 3);
     }
@@ -243,7 +252,7 @@ namespace ui {
     void SliderWidget::render_ui()
 	{
         UIEntity::render_ui();
-        static_cast<UIEntity*>(label)->render_ui();
+        if(label) static_cast<UIEntity*>(label)->render_ui();
 	}
 
 	void SliderWidget::update_ui(Controller* controller)
@@ -255,6 +264,13 @@ namespace ui {
 		*/
 
         UIEntity::update_ui(controller);
+
+        if (!label)
+        {
+            float magic = 0.0045f;
+            label = new TextWidget(signal, { m_position.x - BUTTON_SIZE * 0.25f * controller->global_scale, m_position.y - magic }, 0.01f, colors::WHITE);
+            label->m_priority = 2;
+        }
 
 		/*
 		*	Manage intersection
@@ -270,15 +286,14 @@ namespace ui {
 		glm::vec3 ray_direction = get_front(select_hand_pose);
 
 		// Quad
-		// glm::vec3 quad_position = thumb_entity->get_translation();
-		glm::vec3 slider_quad_position = get_translation();
+		glm::vec3 slider_quad_position = get_local_translation();
 		glm::quat quad_rotation = glm::quat_cast(controller->get_matrix());
 
 		glm::vec3 intersection;
 		float collision_dist;
 
 		// Check hover with slider background to move thumb
-		bool slider_hovered = intersection::ray_quad(
+		bool hovered = intersection::ray_quad(
 			ray_origin,
 			ray_direction,
 			slider_quad_position,
@@ -288,12 +303,13 @@ namespace ui {
 			collision_dist
 		);
 
-		bool is_pressed = slider_hovered && Input::is_button_pressed(workspace.select_button);
-		bool was_pressed = slider_hovered && Input::was_button_pressed(workspace.select_button);
+        label->active = hovered;
+
+		bool is_pressed = hovered && Input::is_button_pressed(workspace.select_button);
 
 		if (is_pressed)
 		{
-            float bounds = m_scale.x * 0.95f;
+            float bounds = m_scale.x * 0.975f;
             // -scale..scale -> 0..1
             intersection.x = glm::max(glm::min(intersection.x, bounds), -bounds);
 			current_value = glm::clamp((intersection.x / bounds) * 0.5f + 0.5f, 0.f, 1.f);
@@ -301,7 +317,7 @@ namespace ui {
 		}
 
         // Update uniforms
-        ui_data.is_hovered = slider_hovered ? 1.f : 0.f;
+        ui_data.is_hovered = hovered ? 1.f : 0.f;
         ui_data.slider_info.x = current_value;
 
         auto webgpu_context = Renderer::instance->get_webgpu_context();
