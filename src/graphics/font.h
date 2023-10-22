@@ -39,7 +39,7 @@ public:
 
     nlohmann::json font_description;
     std::vector<Texture*> textures;
-    std::map<unsigned char, Character> characters;
+    std::map<uint32_t, Character> characters;
     std::multimap<int, CKerning> kernings;
 
     static std::map<std::string, Font*> s_fonts;
