@@ -39,6 +39,9 @@ namespace ui {
             background->set_material_shader(RendererStorage::get_shader("data/shaders/mesh_color.wgsl"));
             background->set_mesh(RendererStorage::get_mesh("quad"));
         }
+
+        for (int i = 0; i < MAX_LAYERS; ++i)
+            layers_width[i] = 0.f;
 	}
 
 	bool Controller::is_active()
@@ -414,7 +417,8 @@ namespace ui {
 		});
 
         // Store layer width to center widgets
-        layers_width.push_back( layout_iterator.x );
+        int last_layer = layout_iterator.y;
+        layers_width[last_layer] = glm::max(layout_iterator.x, layers_width[last_layer]);
 
         // Set new interators
         layout_iterator.x = 0.f;
@@ -493,10 +497,8 @@ namespace ui {
         return nullptr;
     }
 
-    float Controller::get_real_width(int layer)
+    float Controller::get_layer_width(int layer)
     {
-        if (!layers_width.size())
-            return 0.f;
         return layers_width[layer] * global_scale;
     }
 

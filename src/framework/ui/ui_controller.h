@@ -27,6 +27,8 @@ namespace ui {
     const float X_GROUP_MARGIN      = X_MARGIN * 0.5f;
     const float Y_MARGIN            = 10.f;
 
+    const int   MAX_LAYERS          = 12;
+
 	struct WorkSpaceData {
 		glm::vec2 size;
 		uint8_t select_button;
@@ -64,7 +66,8 @@ namespace ui {
         glm::vec2 layout_iterator = { 0.f, 0.f };
         glm::vec2 last_layout_pos;
 
-        std::vector<float> layers_width;
+        float layers_width[MAX_LAYERS]; // 12 submenu levels is enough...
+
 		std::vector<UIEntity*> parent_queue;
 
 		void append_widget(UIEntity* widget, const std::string& name, UIEntity* force_parent = nullptr);
@@ -110,7 +113,7 @@ namespace ui {
         const std::map<std::string, UIEntity*>& get_widgets() { return widgets; };
         static UIEntity* get(const std::string& alias);
         UIEntity* get_widget_from_name(const std::string& alias);
-        float get_real_width(int layer);
+        float get_layer_width(int layer);
 
         void load_layout(const std::string& filename);
         void change_list_layout(const std::string& list_name);
