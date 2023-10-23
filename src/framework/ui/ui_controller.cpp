@@ -39,14 +39,11 @@ namespace ui {
             background->set_material_shader(RendererStorage::get_shader("data/shaders/mesh_color.wgsl"));
             background->set_mesh(RendererStorage::get_mesh("quad"));
         }
-
-        for (int i = 0; i < MAX_LAYERS; ++i)
-            layers_width[i] = 0.f;
 	}
 
 	bool Controller::is_active()
 	{
-        return workspace.hand == HAND_RIGHT || Input::get_grab_value(workspace.hand) > 0.5f;
+        return true;// workspace.hand == HAND_RIGHT || Input::get_grab_value(workspace.hand) > 0.5f;
 	}
 
 	void Controller::render()
@@ -173,6 +170,7 @@ namespace ui {
 			root->add_child(widget);
 		}
 
+        widget->name = name;
         widgets[name] = widget;
         all_widgets[name] = widget;
 	}
@@ -219,6 +217,7 @@ namespace ui {
         text_widget->m_priority = -1;
         text_widget->render_children = true;
         text_widget->update_children = true;
+        text_widget->center_pos = false;
 
         // Icon goes to the left of the workspace
         pos = { 
@@ -374,11 +373,11 @@ namespace ui {
         picker->set_mesh(RendererStorage::get_mesh("quad"));
         picker->set_material_shader(RendererStorage::get_shader("data/shaders/ui/ui_color_picker.wgsl"));
         picker->set_material_diffuse(RendererStorage::get_texture("data/textures/circle_white.png"));
+        picker->m_layer = static_cast<uint8_t>(layout_iterator.y);
 
         if (group_opened)
             picker->m_priority = 1;
 
-        picker->m_layer = static_cast<uint8_t>(layout_iterator.y);
         append_widget(picker, signal);
 
         if (has_slider)
@@ -416,9 +415,9 @@ namespace ui {
             widget->set_render_children(!last_value);
 		});
 
-        // Store layer width to center widgets
-        int last_layer = layout_iterator.y;
-        layers_width[last_layer] = glm::max(layout_iterator.x, layers_width[last_layer]);
+        // root layer width
+        if (layers_width[0] == 0.f)
+            layers_width[0] = layout_iterator.x;
 
         // Set new interators
         layout_iterator.x = 0.f;
@@ -435,6 +434,12 @@ namespace ui {
 
     void Controller::close_submenu()
     {
+        UIEntity* active_submenu = parent_queue.back();
+
+        // Store layer width to center widgets
+        layers_width[active_submenu->uid] = layout_iterator.x;
+
+        // Remove parent...
         parent_queue.pop_back();
     }
 
@@ -459,6 +464,8 @@ namespace ui {
         group->set_material_shader(RendererStorage::get_shader("data/shaders/ui/ui_group.wgsl"));
         group->set_mesh(RendererStorage::get_mesh("quad"));
         group->set_material_color(color);
+        group->set_layer( static_cast<uint8_t>(layout_iterator.y) );
+
         append_widget(group, group_name);
 
         parent_queue.push_back(group);
@@ -497,9 +504,30 @@ namespace ui {
         return nullptr;
     }
 
-    float Controller::get_layer_width(int layer)
+    float Controller::get_layer_width(unsigned int uid)
     {
-        return layers_width[layer] * global_scale;
+        UIEntity* widget = nullptr;
+
+        for (auto& it : all_widgets) {
+
+            if (it.second->uid == uid)
+            {
+                widget = it.second;
+                break;
+            }
+        }
+
+        if (!widget)
+            return 0.f;
+
+        UIEntity* parent = static_cast<ui::UIEntity*>(widget->get_parent());
+        if (!parent) return 0.f;
+
+        // Go up to get root or submenu
+        while (parent->uid != 0 && !parent->is_submenu)
+            parent = static_cast<ui::UIEntity*>(parent->get_parent());
+
+        return layers_width[parent->uid] * global_scale;
     }
 
     void Controller::load_layout(const std::string& filename)

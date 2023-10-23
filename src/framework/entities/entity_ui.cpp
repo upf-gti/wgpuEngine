@@ -10,10 +10,16 @@
 namespace ui {
 
     UIEntity* UIEntity::current_selected = nullptr;
+    unsigned int UIEntity::last_uid = 0;
+
+    UIEntity::UIEntity()
+    {
+        uid = last_uid++;
+    }
 
     UIEntity::UIEntity(const glm::vec2& p, const glm::vec2& s) : m_position(p), m_scale(s)
     {
-        
+        uid = last_uid++;
     }
 
     void UIEntity::set_render_children(bool value, bool force)
@@ -98,10 +104,17 @@ namespace ui {
 	{
         if (!active) return;
 
-        float centered_x = controller->get_workspace().size.x * 0.5f + m_position.x + controller->get_layer_width(m_layer) * 0.5f;
+        if (m_layer == 1)
+        {
+            int a = 1;
+        }
+
+        float pos_x = center_pos ?
+            m_position.x + controller->get_workspace().size.x - controller->get_layer_width( this->uid )
+            : m_position.x;
 
 		set_model(controller->get_matrix());
-		translate(glm::vec3(center_pos ? -centered_x : m_position.x, m_position.y, -1e-3f - m_priority * 1e-3f));
+		translate(glm::vec3(pos_x, m_position.y, -1e-3f - m_priority * 1e-3f));
         scale(glm::vec3(m_scale.x, m_scale.y, 1.f));
 
 		if (!update_children)
@@ -126,12 +139,6 @@ namespace ui {
         auto webgpu_context = Renderer::instance->get_webgpu_context();
         RendererStorage::register_ui_widget(webgpu_context, RendererStorage::get_shader("data/shaders/ui/ui_group.wgsl"), this, ui_data, 2);
     }
-
-    void WidgetGroup::render_ui()
-    {
-        UIEntity::render_ui();
-    }
-
 
     /*
     *   Text
@@ -162,8 +169,12 @@ namespace ui {
 
         UIEntity::update_ui(controller);
 
+        float pos_x = center_pos ?
+            m_position.x + controller->get_workspace().size.x - controller->get_layer_width(this->uid)
+            : m_position.x;
+
         text_entity->set_model(controller->get_matrix());
-        text_entity->translate(glm::vec3(m_position.x, m_position.y, -1e-3f - m_priority * 1e-3f));
+        text_entity->translate(glm::vec3(pos_x, m_position.y, -1e-3f - m_priority * 1e-3f));
         text_entity->scale(glm::vec3(m_scale.x, m_scale.y, 1.f));
     }
 
@@ -189,6 +200,7 @@ namespace ui {
         float magic = 0.002125f;
         label = new TextWidget(sg, { p.x - sg.length() * magic, p.y + s.y * 0.5f }, 0.01f, colors::GRAY);
         label->m_priority = 2;
+        label->uid = uid;
 
         auto webgpu_context = Renderer::instance->get_webgpu_context();
         RendererStorage::register_ui_widget(webgpu_context, RendererStorage::get_shader("data/shaders/ui/ui_button.wgsl"), this, ui_data, 3);
@@ -286,6 +298,7 @@ namespace ui {
         {
             label = new TextWidget(signal, { m_position.x - signal.length() * magic_t, m_position.y + m_scale.y * 0.5f }, 0.01f, colors::WHITE);
             label->m_priority = 2;
+            label->uid = uid;
         }
 
         if (!text_value)
@@ -293,6 +306,7 @@ namespace ui {
             std::string value_as_string = std::to_string(std::ceil(current_value * 100.f) / 100.f);
             text_value = new TextWidget(value_as_string.substr(0, 4), {m_position.x - 4 * magic_t, m_position.y - magic_c }, 0.01f, colors::WHITE);
             text_value->m_priority = 2;
+            text_value->uid = uid;
         }
 
         glm::vec3 intersection;

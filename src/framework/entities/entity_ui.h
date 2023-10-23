@@ -28,13 +28,18 @@ namespace ui {
 	class UIEntity : public EntityMesh {
 	public:
 
-        UIEntity() {}
+        UIEntity();
         UIEntity(const glm::vec2& p, const glm::vec2& s = {1.f, 1.f});
 
+        static unsigned int last_uid;
+
+        unsigned int uid;
+        std::string name;
         uint8_t type = eWidgetType::NONE;
 
         static UIEntity* current_selected;
 
+        bool is_submenu         = false;
 		bool render_children    = false;
         bool update_children    = false;
         bool active             = true;
@@ -51,6 +56,7 @@ namespace ui {
 
         void set_render_children(bool value, bool force = false);
         void set_selected(bool value);
+        void set_layer(uint8_t l) { m_layer = l; };
 
         bool is_hovered(Controller* controller, glm::vec3& intersection);
 
@@ -62,8 +68,6 @@ namespace ui {
     public:
 
         WidgetGroup(const glm::vec2& p, const glm::vec2& s, float number_of_widgets);
-
-        virtual void render_ui() override;
     };
 
 	class TextWidget : public UIEntity {
@@ -96,7 +100,6 @@ namespace ui {
 		std::string signal;
 
         bool is_color_button        = false;
-        bool is_submenu             = false;
         bool is_unique_selection    = false;
         bool allow_toggle           = false;
         bool allow_events           = true;
