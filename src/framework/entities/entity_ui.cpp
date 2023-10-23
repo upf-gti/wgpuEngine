@@ -98,8 +98,11 @@ namespace ui {
 	{
         if (!active) return;
 
+        // float centered_x = controller->get_workspace().size.x * 0.5f + m_position.x + controller->get_real_width( m_layer ) * 0.5f;
+        float centered_x = controller->get_workspace().size.x * 0.5f + m_position.x + controller->get_real_width(0) * 0.5f;
+
 		set_model(controller->get_matrix());
-		translate(glm::vec3(m_position.x, m_position.y, -1e-3f - m_priority * 1e-3f));
+		translate(glm::vec3(center_pos ? -centered_x : m_position.x, m_position.y, -1e-3f - m_priority * 1e-3f));
         scale(glm::vec3(m_scale.x, m_scale.y, 1.f));
 
 		if (!update_children)
@@ -171,6 +174,7 @@ namespace ui {
 
     LabelWidget::LabelWidget(const std::string& p_text, const glm::vec2& p, const glm::vec2& s) : UIEntity(p, s), text(p_text) {
         type = eWidgetType::LABEL;
+        center_pos = false;
     }
 
 	/*

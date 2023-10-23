@@ -30,6 +30,8 @@ namespace ui {
 
         raycast_pointer = parse_scene("data/meshes/raycast.obj");
 
+        // render_background = true;
+
         // Debug
         if (render_background)
         {
@@ -411,6 +413,10 @@ namespace ui {
             widget->set_render_children(!last_value);
 		});
 
+        // Store layer width to center widgets
+        layers_width.push_back( layout_iterator.x );
+
+        // Set new interators
         layout_iterator.x = 0.f;
         layout_iterator.y = widget->m_layer + 1.f;
 
@@ -432,11 +438,13 @@ namespace ui {
     {
         current_number_of_group_widgets = number_of_widgets;
 
+        layout_iterator.x += X_MARGIN;
+
         // World attributes
-        glm::vec2 pos = compute_position() - 4.f;
+        glm::vec2 pos = compute_position() - X_MARGIN;
         glm::vec2 size = glm::vec2(
-            BUTTON_SIZE * number_of_widgets + (number_of_widgets - 1.f) * X_GROUP_MARGIN + 8.f,
-            BUTTON_SIZE + 8.f
+            BUTTON_SIZE * number_of_widgets + (number_of_widgets - 1.f) * X_GROUP_MARGIN + X_MARGIN * 2.f,
+            BUTTON_SIZE + X_MARGIN * 2.f
         );
 
         glm::vec2 _size = size;
@@ -460,6 +468,8 @@ namespace ui {
     {
         assert(g_iterator == current_number_of_group_widgets && "Num Widgets in group does not correspond");
 
+        layout_iterator.x -= X_GROUP_MARGIN;
+
         // Clear group info
         parent_queue.pop_back();
         group_opened = false; 
@@ -481,6 +491,13 @@ namespace ui {
     {
         if(widgets.count(alias)) return widgets[alias];
         return nullptr;
+    }
+
+    float Controller::get_real_width(int layer)
+    {
+        if (!layers_width.size())
+            return 0.f;
+        return layers_width[layer] * global_scale;
     }
 
     void Controller::load_layout(const std::string& filename)

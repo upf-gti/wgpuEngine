@@ -35,10 +35,11 @@ namespace ui {
 
         static UIEntity* current_selected;
 
-		bool render_children  = false;
-        bool update_children = false;
-        bool active         = true;
-        bool selected       = false;
+		bool render_children    = false;
+        bool update_children    = false;
+        bool active             = true;
+        bool selected           = false;
+        bool center_pos         = true;
 
         glm::vec2   m_position = { 0.f, 0.f };
         glm::vec2   m_scale = { 1.f, 1.f };
