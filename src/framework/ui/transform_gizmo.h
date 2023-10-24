@@ -3,6 +3,13 @@
 #include <glm/glm.hpp>
 #include <glm/gtx/quaternion.hpp>
 
+enum eGizmoAxis : uint8_t {
+    GIZMO_AXIS_X = 1 << 0,
+    GIZMO_AXIS_Y = 1 << 1,
+    GIZMO_AXIS_Z = 1 << 2,
+    GIZMO_ALL_AXIS = GIZMO_AXIS_X | GIZMO_AXIS_Y | GIZMO_AXIS_Z
+};
+
 enum eGizmoType : uint8_t {
 	POSITION_GIZMO = 0b001,
 	ROTATION_GIZMO = 0b010,
@@ -58,7 +65,7 @@ public:
 	void			clean();
 
 	glm::vec3		update(const glm::vec3& new_position, const float delta);
-	void			render();
+    void			render(int axis = GIZMO_ALL_AXIS);
 
 
 

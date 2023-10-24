@@ -30,6 +30,8 @@ namespace ui {
 
         raycast_pointer = parse_scene("data/meshes/raycast.obj");
 
+        // render_background = true;
+
         // Debug
         if (render_background)
         {
@@ -41,7 +43,7 @@ namespace ui {
 
 	bool Controller::is_active()
 	{
-        return workspace.hand == HAND_RIGHT || Input::get_grab_value(workspace.hand) > 0.5f;
+        return true;// workspace.hand == HAND_RIGHT || Input::get_grab_value(workspace.hand) > 0.5f;
 	}
 
 	void Controller::render()
@@ -168,6 +170,7 @@ namespace ui {
 			root->add_child(widget);
 		}
 
+        widget->name = name;
         widgets[name] = widget;
         all_widgets[name] = widget;
 	}
@@ -214,6 +217,7 @@ namespace ui {
         text_widget->m_priority = -1;
         text_widget->render_children = true;
         text_widget->update_children = true;
+        text_widget->center_pos = false;
 
         // Icon goes to the left of the workspace
         pos = { 
@@ -327,16 +331,20 @@ namespace ui {
 		*/
 
         float default_value = j.value("default", 1.f);
-        Color color = load_vec4( j.value("color", ""));
+        Color color = Color(0.47f, 0.37f, 0.94f, 1.f);
+        if (j.count("color"))
+            color = load_vec4(j["color"]);
 
 		SliderWidget* slider = new SliderWidget(signal, default_value, pos, color, size);
-        slider->render_children = true;
-        slider->update_children = true;
         slider->set_mesh(RendererStorage::get_mesh("quad"));
         slider->set_material_shader(RendererStorage::get_shader("data/shaders/ui/ui_slider.wgsl"));
         slider->set_material_diffuse(RendererStorage::get_texture(
             (mode == "horizontal" ? "data/textures/slider.png" : "data/textures/circle_white.png")));
         slider->set_material_color(color);
+        slider->min_value = j.value("min", slider->min_value);
+        slider->max_value = j.value("max", slider->max_value);
+        slider->render_children = true;
+        slider->update_children = true;
 		append_widget(slider, signal);
 
         slider->set_mode(mode);
@@ -369,11 +377,11 @@ namespace ui {
         picker->set_mesh(RendererStorage::get_mesh("quad"));
         picker->set_material_shader(RendererStorage::get_shader("data/shaders/ui/ui_color_picker.wgsl"));
         picker->set_material_diffuse(RendererStorage::get_texture("data/textures/circle_white.png"));
+        picker->m_layer = static_cast<uint8_t>(layout_iterator.y);
 
         if (group_opened)
             picker->m_priority = 1;
 
-        picker->m_layer = static_cast<uint8_t>(layout_iterator.y);
         append_widget(picker, signal);
 
         if (has_slider)
@@ -411,6 +419,11 @@ namespace ui {
             widget->set_render_children(!last_value);
 		});
 
+        // root layer width
+        if (layers_width[0] == 0.f)
+            layers_width[0] = layout_iterator.x;
+
+        // Set new interators
         layout_iterator.x = 0.f;
         layout_iterator.y = widget->m_layer + 1.f;
 
@@ -425,6 +438,12 @@ namespace ui {
 
     void Controller::close_submenu()
     {
+        UIEntity* active_submenu = parent_queue.back();
+
+        // Store layer width to center widgets
+        layers_width[active_submenu->uid] = layout_iterator.x;
+
+        // Remove parent...
         parent_queue.pop_back();
     }
 
@@ -432,11 +451,13 @@ namespace ui {
     {
         current_number_of_group_widgets = number_of_widgets;
 
+        layout_iterator.x += X_MARGIN;
+
         // World attributes
-        glm::vec2 pos = compute_position() - 4.f;
+        glm::vec2 pos = compute_position() - X_MARGIN;
         glm::vec2 size = glm::vec2(
-            BUTTON_SIZE * number_of_widgets + (number_of_widgets - 1.f) * X_GROUP_MARGIN + 8.f,
-            BUTTON_SIZE + 8.f
+            BUTTON_SIZE * number_of_widgets + (number_of_widgets - 1.f) * X_GROUP_MARGIN + X_MARGIN * 2.f,
+            BUTTON_SIZE + X_MARGIN * 2.f
         );
 
         glm::vec2 _size = size;
@@ -447,6 +468,8 @@ namespace ui {
         group->set_material_shader(RendererStorage::get_shader("data/shaders/ui/ui_group.wgsl"));
         group->set_mesh(RendererStorage::get_mesh("quad"));
         group->set_material_color(color);
+        group->set_layer( static_cast<uint8_t>(layout_iterator.y) );
+
         append_widget(group, group_name);
 
         parent_queue.push_back(group);
@@ -459,6 +482,8 @@ namespace ui {
     void Controller::close_group()
     {
         assert(g_iterator == current_number_of_group_widgets && "Num Widgets in group does not correspond");
+
+        layout_iterator.x -= X_GROUP_MARGIN;
 
         // Clear group info
         parent_queue.pop_back();
@@ -483,6 +508,32 @@ namespace ui {
         return nullptr;
     }
 
+    float Controller::get_layer_width(unsigned int uid)
+    {
+        UIEntity* widget = nullptr;
+
+        for (auto& it : all_widgets) {
+
+            if (it.second->uid == uid)
+            {
+                widget = it.second;
+                break;
+            }
+        }
+
+        if (!widget)
+            return 0.f;
+
+        UIEntity* parent = static_cast<ui::UIEntity*>(widget->get_parent());
+        if (!parent) return 0.f;
+
+        // Go up to get root or submenu
+        while (parent->uid != 0 && !parent->is_submenu)
+            parent = static_cast<ui::UIEntity*>(parent->get_parent());
+
+        return layers_width[parent->uid] * global_scale;
+    }
+
     void Controller::load_layout(const std::string& filename)
     {
         const json& j = load_json(filename);
@@ -504,12 +555,9 @@ namespace ui {
                 float nitems = j["nitems"];
                 group_elements_pending = nitems;
 
-                glm::vec4 color;
+                Color color = colors::GRAY;
                 if (j.count("color")) {
                     color = load_vec4(j["color"]);
-                }
-                else {
-                    color = colors::GRAY;
                 }
 
                 UIEntity* group = make_group(name, nitems, color);
@@ -544,7 +592,8 @@ namespace ui {
             {
                 make_slider(j);
 
-                group_elements_pending -= 2;
+                int slots = j.value("mode", "horizontal") == "horizontal" ? 2 : 1;
+                group_elements_pending -= slots;
 
                 if (group_elements_pending == 0.f) {
                     close_group();

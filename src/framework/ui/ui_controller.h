@@ -27,6 +27,8 @@ namespace ui {
     const float X_GROUP_MARGIN      = X_MARGIN * 0.5f;
     const float Y_MARGIN            = 10.f;
 
+    const int   MAX_LAYERS          = 255;
+
 	struct WorkSpaceData {
 		glm::vec2 size;
 		uint8_t select_button;
@@ -63,6 +65,9 @@ namespace ui {
 
         glm::vec2 layout_iterator = { 0.f, 0.f };
         glm::vec2 last_layout_pos;
+
+        std::map<unsigned int, float> layers_width;
+
 		std::vector<UIEntity*> parent_queue;
 
 		void append_widget(UIEntity* widget, const std::string& name, UIEntity* force_parent = nullptr);
@@ -108,6 +113,7 @@ namespace ui {
         const std::map<std::string, UIEntity*>& get_widgets() { return widgets; };
         static UIEntity* get(const std::string& alias);
         UIEntity* get_widget_from_name(const std::string& alias);
+        float get_layer_width(unsigned int uid);
 
         void load_layout(const std::string& filename);
         void change_list_layout(const std::string& list_name);

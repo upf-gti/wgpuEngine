@@ -147,43 +147,53 @@ glm::vec3 TransformGizmo::update(const glm::vec3 &new_position, const float delt
 	return gizmo_position;
 }
 
-void TransformGizmo::render() {
+void TransformGizmo::render(int axis) {
 	if (!enabled) {
 		return;
 	}
 
 	if (type & POSITION_GIZMO) {
-		arrow_mesh_x->set_translation(gizmo_position);
-		arrow_mesh_x->scale(position_gizmo_scale);
-		arrow_mesh_x->set_material_color(glm::vec4(0.0f, 0.0f, 1.0f, 1.0f) + ((position_axis_y_selected) ? glm::vec4(0.5f, 0.5f, 0.5f, 0.0f) : glm::vec4(0.0f)));
-        arrow_mesh_x->render();
 
-        arrow_mesh_y->set_translation(gizmo_position);
-        arrow_mesh_y->scale(position_gizmo_scale);
-		arrow_mesh_y->rotate(0.0174533f * 90.0f, glm::vec3(0.0f, 0.0f, 1.0f));
-		arrow_mesh_y->set_material_color(glm::vec4(0.0f, 1.0f, 0.0f, 1.0f) + ((position_axis_x_selected) ? glm::vec4(0.5f, 0.5f, 0.5f, 0.0f) : glm::vec4(0.0f)));
-		arrow_mesh_y->render();
+        if (axis & GIZMO_AXIS_X)
+        {
+            arrow_mesh_x->set_translation(gizmo_position);
+            arrow_mesh_x->scale(position_gizmo_scale);
+		    arrow_mesh_x->rotate(glm::radians(-90.f), glm::vec3(0.f, 0.f, 1.f));
+		    arrow_mesh_x->set_material_color(Color(1.f, 0.0f, 0.f, 1.f) + ((position_axis_x_selected) ? Color(0.5f, 0.5f, 0.5f, 0.f) : Color(0.f)));
+		    arrow_mesh_x->render();
+        }
 
-        arrow_mesh_z->set_translation(gizmo_position);
-        arrow_mesh_z->scale(position_gizmo_scale);
-        arrow_mesh_z->rotate(0.0174533f * 90.0f, glm::vec3(0.0f, 0.0f, 1.0f));
-		arrow_mesh_z->rotate(0.0174533f * 90.0f, glm::vec3(1.0f, 0.0f, 0.0f));
-		arrow_mesh_z->set_material_color(glm::vec4(1.0f, 0.0f, 0.0f, 1.0f) + ((position_axis_z_selected) ? glm::vec4(0.5f, 0.5f, 0.5f, 0.0f) : glm::vec4(0.0f)));
-		arrow_mesh_z->render();
+        if (axis & GIZMO_AXIS_Y)
+        {
+		    arrow_mesh_y->set_translation(gizmo_position);
+		    arrow_mesh_y->scale(position_gizmo_scale);
+		    arrow_mesh_y->set_material_color(Color(0.f, 1.f, 0.0f, 1.f) + ((position_axis_y_selected) ? Color(0.5f, 0.5f, 0.5f, 0.f) : Color(0.f)));
+            arrow_mesh_y->render();
+        }
+
+        if (axis & GIZMO_AXIS_Z)
+        {
+            arrow_mesh_z->set_translation(gizmo_position);
+            arrow_mesh_z->scale(position_gizmo_scale);
+            arrow_mesh_z->rotate(glm::radians(90.f), glm::vec3(0.f, 0.f, 1.f));
+		    arrow_mesh_z->rotate(glm::radians(90.f), glm::vec3(1.f, 0.f, 0.f));
+		    arrow_mesh_z->set_material_color(Color(0.0f, 0.f, 1.f, 1.f) + ((position_axis_z_selected) ? Color(0.5f, 0.5f, 0.5f, 0.f) : Color(0.f)));
+		    arrow_mesh_z->render();
+        }
 	}
 
     if (type & ROTATION_GIZMO) {
         wire_circle_mesh->set_translation(gizmo_position);
-        wire_circle_mesh->set_material_color(glm::vec4(0.0f, 1.0f, 0.0f, 1.0f) + ((rotation_axis_x_selected) ? glm::vec4(0.5f, 0.5f, 0.5f, 0.0f) : glm::vec4(0.0f)));
+        wire_circle_mesh->set_material_color(Color(0.f, 1.f, 0.f, 1.f) + ((rotation_axis_x_selected) ? Color(0.5f, 0.5f, 0.5f, 0.f) : Color(0.f)));
         wire_circle_mesh->scale(rotation_gizmo_scale * 0.5f);
         wire_circle_mesh->render();
 
-        wire_circle_mesh->rotate(0.0174533f * 90.0f, glm::vec3(1.0f, 0.0f, 0.0f));
-        wire_circle_mesh->set_material_color(glm::vec4(1.0f, 0.0f, 0.0f, 1.0f) + ((rotation_axis_z_selected) ? glm::vec4(0.5f, 0.5f, 0.5f, 0.0f) : glm::vec4(0.0f)));
+        wire_circle_mesh->rotate(glm::radians(90.f), glm::vec3(1.f, 0.f, 0.f));
+        wire_circle_mesh->set_material_color(Color(1.f, 0.f, 0.f, 1.f) + ((rotation_axis_z_selected) ? Color(0.5f, 0.5f, 0.5f, 0.f) : Color(0.f)));
         wire_circle_mesh->render();
 
-        wire_circle_mesh->rotate(0.0174533f * 90.0f, glm::vec3(0.0f, 1.0f, 0.0f));
-        wire_circle_mesh->set_material_color(glm::vec4(0.0f, 0.0f, 1.0f, 1.0f) + ((rotation_axis_y_selected) ? glm::vec4(0.5f, 0.5f, 0.5f, 0.0f) : glm::vec4(0.0f)));
+        wire_circle_mesh->rotate(glm::radians(90.f), glm::vec3(0.f, 1.f, 0.f));
+        wire_circle_mesh->set_material_color(Color(0.f, 0.f, 1.f, 1.f) + ((rotation_axis_y_selected) ? Color(0.5f, 0.5f, 0.5f, 0.f) : Color(0.f)));
         wire_circle_mesh->render();
     }
 }
