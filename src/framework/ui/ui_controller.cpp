@@ -331,16 +331,20 @@ namespace ui {
 		*/
 
         float default_value = j.value("default", 1.f);
-        Color color = load_vec4( j.value("color", ""));
+        Color color = Color(0.47f, 0.37f, 0.94f, 1.f);
+        if (j.count("color"))
+            color = load_vec4(j["color"]);
 
 		SliderWidget* slider = new SliderWidget(signal, default_value, pos, color, size);
-        slider->render_children = true;
-        slider->update_children = true;
         slider->set_mesh(RendererStorage::get_mesh("quad"));
         slider->set_material_shader(RendererStorage::get_shader("data/shaders/ui/ui_slider.wgsl"));
         slider->set_material_diffuse(RendererStorage::get_texture(
             (mode == "horizontal" ? "data/textures/slider.png" : "data/textures/circle_white.png")));
         slider->set_material_color(color);
+        slider->min_value = j.value("min", slider->min_value);
+        slider->max_value = j.value("max", slider->max_value);
+        slider->render_children = true;
+        slider->update_children = true;
 		append_widget(slider, signal);
 
         slider->set_mode(mode);
@@ -551,12 +555,9 @@ namespace ui {
                 float nitems = j["nitems"];
                 group_elements_pending = nitems;
 
-                glm::vec4 color;
+                Color color = colors::GRAY;
                 if (j.count("color")) {
                     color = load_vec4(j["color"]);
-                }
-                else {
-                    color = colors::GRAY;
                 }
 
                 UIEntity* group = make_group(name, nitems, color);
@@ -591,7 +592,8 @@ namespace ui {
             {
                 make_slider(j);
 
-                group_elements_pending -= 2;
+                int slots = j.value("mode", "horizontal") == "horizontal" ? 2 : 1;
+                group_elements_pending -= slots;
 
                 if (group_elements_pending == 0.f) {
                     close_group();
