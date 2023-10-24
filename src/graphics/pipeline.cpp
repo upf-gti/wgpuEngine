@@ -22,8 +22,12 @@ void Pipeline::create_render(Shader* shader, WGPUColorTargetState color_target, 
 		bind_group_layouts.push_back(bind_group_layout);
 	}
 
+    blending_enabled = color_target.blend != nullptr;
+
 	this->color_target = color_target;
-	this->blend_state = *color_target.blend;
+    if (blending_enabled) {
+        this->blend_state = *color_target.blend;
+    }
 	this->uses_depth_buffer = uses_depth_buffer;
 
 	pipeline_layout = webgpu_context->create_pipeline_layout(bind_group_layouts);
@@ -88,7 +92,9 @@ void Pipeline::reload(Shader* shader)
 {
 	if (std::holds_alternative<WGPURenderPipeline>(pipeline)) {
 		wgpuRenderPipelineRelease(std::get<WGPURenderPipeline>(pipeline));
-		color_target.blend = &blend_state;
+        if (blending_enabled) {
+            color_target.blend = &blend_state;
+        }
 		pipeline = webgpu_context->create_render_pipeline(shader->get_module(), pipeline_layout, shader->get_vertex_buffer_layouts(), color_target, uses_depth_buffer);
 	}
 	else {

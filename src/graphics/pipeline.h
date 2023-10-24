@@ -44,6 +44,7 @@ private:
 	WGPUBlendState		 blend_state;
 
 	bool uses_depth_buffer = false;
+    bool blending_enabled = false;
 
 	bool loaded = false;
 };
