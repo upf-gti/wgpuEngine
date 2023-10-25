@@ -452,7 +452,7 @@ WGPUPipelineLayout WebGPUContext::create_pipeline_layout(const std::vector<WGPUB
     return wgpuDeviceCreatePipelineLayout(device, &layout_descr);
 }
 
-WGPURenderPipeline WebGPUContext::create_render_pipeline(WGPUShaderModule render_shader_module, WGPUPipelineLayout pipeline_layout, const std::vector<WGPUVertexBufferLayout>& vertex_attributes, WGPUColorTargetState color_target, bool uses_depth_buffer)
+WGPURenderPipeline WebGPUContext::create_render_pipeline(WGPUShaderModule render_shader_module, WGPUPipelineLayout pipeline_layout, const std::vector<WGPUVertexBufferLayout>& vertex_attributes, WGPUColorTargetState color_target, bool uses_depth_buffer, WGPUCullMode cull_mode)
 {    
     WGPUVertexState vertex_state = {};
     vertex_state.module = render_shader_module;
@@ -498,7 +498,7 @@ WGPURenderPipeline WebGPUContext::create_render_pipeline(WGPUShaderModule render
         .topology = WGPUPrimitiveTopology_TriangleList,
         .stripIndexFormat = WGPUIndexFormat_Undefined, // order of the connected vertices
         .frontFace = WGPUFrontFace_CCW,
-        .cullMode = WGPUCullMode_Back
+        .cullMode = cull_mode
     },
 
     pipeline_descr.depthStencil = (uses_depth_buffer) ? &depth_state : nullptr;

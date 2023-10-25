@@ -18,7 +18,7 @@ public:
 
 	static WebGPUContext* webgpu_context;
 
-	void create_render(Shader* shader, WGPUColorTargetState color_target, bool uses_depth_buffer = false);
+	void create_render(Shader* shader, WGPUColorTargetState color_target, bool uses_depth_buffer = false, WGPUCullMode cull_mode = WGPUCullMode_None);
 
 	void create_compute(Shader* shader, WGPUPipelineLayout pipeline_layout);
 	void create_compute(Shader* shader);
