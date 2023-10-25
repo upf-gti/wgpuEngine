@@ -514,7 +514,7 @@ WGPURenderPipeline WebGPUContext::create_render_pipeline(WGPUShaderModule render
         .topology = WGPUPrimitiveTopology_TriangleList,
         .stripIndexFormat = WGPUIndexFormat_Undefined, // order of the connected vertices
         .frontFace = WGPUFrontFace_CCW,
-        .cullMode = WGPUCullMode_None
+        .cullMode = WGPUCullMode_Back
     },
 
     pipeline_descr.depthStencil = (uses_depth_buffer) ? &depth_state : nullptr;
