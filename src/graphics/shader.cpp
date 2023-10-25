@@ -19,6 +19,10 @@ Shader::~Shader()
 	if (loaded) {
 		wgpuShaderModuleRelease(shader_module);
 	}
+
+    for (auto& bind_group_layout : bind_group_layouts) {
+        wgpuBindGroupLayoutRelease(bind_group_layout);
+    }
 }
 
 bool Shader::load(const std::string& shader_path)

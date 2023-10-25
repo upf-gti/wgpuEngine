@@ -382,22 +382,6 @@ void WebGPUContext::create_texture_mipmaps(WGPUTexture texture, WGPUExtent3D tex
     wgpuQueueRelease(mipmap_queue);
 }
 
-WGPUBindGroupLayout WebGPUContext::create_bind_group_layout(const std::vector<Uniform*>& uniforms)
-{
-    std::vector<WGPUBindGroupLayoutEntry> entries(uniforms.size());
-
-    for (int i = 0; i < uniforms.size(); ++i) {
-        entries[i] = uniforms[i]->get_bind_group_layout_entry();
-    }
-
-    // Create a bind group layout
-    WGPUBindGroupLayoutDescriptor bindGroupLayoutDesc = {};
-    bindGroupLayoutDesc.entryCount = static_cast<uint32_t>(entries.size());
-    bindGroupLayoutDesc.entries = entries.data();
-
-    return wgpuDeviceCreateBindGroupLayout(device, &bindGroupLayoutDesc);
-}
-
 WGPUBindGroupLayout WebGPUContext::create_bind_group_layout(const std::vector<WGPUBindGroupLayoutEntry> &entries)
 {
     // Create a bind group layout

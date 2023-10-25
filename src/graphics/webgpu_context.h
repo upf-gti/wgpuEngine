@@ -60,7 +60,6 @@ struct WebGPUContext {
     WGPUSampler            create_sampler(WGPUAddressMode wrap = WGPUAddressMode_ClampToEdge, WGPUFilterMode mag_filter = WGPUFilterMode_Linear, WGPUFilterMode min_filter = WGPUFilterMode_Linear, WGPUMipmapFilterMode mipmap_filter = WGPUMipmapFilterMode_Linear);
     void                   create_texture_mipmaps(WGPUTexture texture, WGPUExtent3D texture_size, uint32_t mip_level_count, const void* data);
 
-    WGPUBindGroupLayout    create_bind_group_layout(const std::vector<Uniform*>& uniforms);
     WGPUBindGroupLayout    create_bind_group_layout(const std::vector<WGPUBindGroupLayoutEntry>& entries);
     WGPUBindGroup          create_bind_group(const std::vector<Uniform*>& uniforms, WGPUBindGroupLayout bind_group_layout);
     WGPUBindGroup          create_bind_group(const std::vector<Uniform*>& uniforms, Shader* shader, uint16_t bind_group);

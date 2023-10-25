@@ -2,13 +2,11 @@
 
 Uniform::Uniform()
 {
-    texture_binding_layout.sampleType = WGPUTextureSampleType_Float;
-    texture_binding_layout.viewDimension = WGPUTextureViewDimension_2D;
-    texture_binding_layout.multisampled = false;
+}
 
-    storage_texture_binding_layout.access = WGPUStorageTextureAccess_WriteOnly;
-    storage_texture_binding_layout.format = WGPUTextureFormat_RGBA8Unorm;
-    storage_texture_binding_layout.viewDimension = WGPUTextureViewDimension_2D;
+Uniform::~Uniform()
+{
+    destroy();
 }
 
 void Uniform::destroy()
@@ -22,31 +20,8 @@ void Uniform::destroy()
     else if (std::holds_alternative<WGPUSampler>(data)) {
         wgpuSamplerRelease(std::get<WGPUSampler>(data));
     }
-}
 
-WGPUBindGroupLayoutEntry Uniform::get_bind_group_layout_entry() const
-{
-    WGPUBindGroupLayoutEntry bindingLayout = {};
-
-    // The binding index as used in the @binding attribute in the shader
-    bindingLayout.binding = binding;
-    // The stage that needs to access this resource
-    bindingLayout.visibility = visibility;
-
-    if (std::holds_alternative<WGPUBuffer>(data)) {
-        bindingLayout.buffer.type = buffer_binding_type;
-    }
-    else
-        if (std::holds_alternative<WGPUTextureView>(data)) {
-            if (is_storage_texture) {
-                bindingLayout.storageTexture = storage_texture_binding_layout;
-            }
-            else {
-                bindingLayout.texture = texture_binding_layout;
-            }
-        }
-
-    return bindingLayout;
+    data = {};
 }
 
 WGPUBindGroupEntry Uniform::get_bind_group_entry() const

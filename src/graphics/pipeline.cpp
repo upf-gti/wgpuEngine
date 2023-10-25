@@ -11,6 +11,16 @@ std::vector<Pipeline*> Pipeline::registered_compute_pipelines = {};
 
 Pipeline::~Pipeline()
 {
+    if (pipeline_layout) {
+        wgpuPipelineLayoutRelease(pipeline_layout);
+    }
+
+    if (std::holds_alternative<WGPURenderPipeline>(pipeline)) {
+        wgpuRenderPipelineRelease(std::get<WGPURenderPipeline>(pipeline));
+    }
+    else if (std::holds_alternative<WGPUComputePipeline>(pipeline)) {
+        wgpuComputePipelineRelease(std::get<WGPUComputePipeline>(pipeline));
+    }
 }
 
 void Pipeline::create_render(Shader* shader, WGPUColorTargetState color_target, bool uses_depth_buffer)

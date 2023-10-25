@@ -34,8 +34,8 @@ public:
 
 private:
 
-	WGPUPipelineLayout pipeline_layout;
-	std::variant< WGPURenderPipeline, WGPUComputePipeline> pipeline;
+	WGPUPipelineLayout pipeline_layout = nullptr;
+	std::variant<std::monostate, WGPURenderPipeline, WGPUComputePipeline> pipeline;
 
     static std::vector<Pipeline*> registered_render_pipelines;
     static std::vector<Pipeline*> registered_compute_pipelines;
