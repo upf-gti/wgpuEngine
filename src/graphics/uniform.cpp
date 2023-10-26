@@ -6,7 +6,7 @@ Uniform::Uniform()
 
 Uniform::~Uniform()
 {
-    destroy();
+    //destroy();
 }
 
 void Uniform::destroy()
