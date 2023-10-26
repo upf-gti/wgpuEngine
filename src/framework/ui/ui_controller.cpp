@@ -215,8 +215,7 @@ namespace ui {
 
         UIEntity* text_widget = make_text(text, "text@" + alias, pos, colors::WHITE, 12.f);
         text_widget->m_priority = -1;
-        text_widget->render_children = true;
-        text_widget->update_children = true;
+        text_widget->process_children = true;
         text_widget->center_pos = false;
 
         // Icon goes to the left of the workspace
@@ -335,24 +334,23 @@ namespace ui {
         if (j.count("color"))
             color = load_vec4(j["color"]);
 
-		SliderWidget* slider = new SliderWidget(signal, default_value, pos, color, size);
+		SliderWidget* slider = new SliderWidget(signal, default_value, pos, size, color);
         slider->set_mesh(RendererStorage::get_mesh("quad"));
         slider->set_material_shader(RendererStorage::get_shader("data/shaders/ui/ui_slider.wgsl"));
         slider->set_material_diffuse(RendererStorage::get_texture(
             (mode == "horizontal" ? "data/textures/slider.png" : "data/textures/circle_white.png")));
         slider->set_material_color(color);
+        slider->set_mode(mode);
         slider->min_value = j.value("min", slider->min_value);
         slider->max_value = j.value("max", slider->max_value);
-        slider->render_children = true;
-        slider->update_children = true;
-		append_widget(slider, signal);
-
-        slider->set_mode(mode);
+        slider->process_children = true;
         slider->ui_data.num_group_items = offset;
         slider->m_layer = static_cast<uint8_t>(layout_iterator.y);
 
         if (group_opened)
             slider->m_priority = 1;
+
+		append_widget(slider, signal);
 
 		return slider;
 	}
@@ -377,7 +375,9 @@ namespace ui {
         picker->set_mesh(RendererStorage::get_mesh("quad"));
         picker->set_material_shader(RendererStorage::get_shader("data/shaders/ui/ui_color_picker.wgsl"));
         picker->set_material_diffuse(RendererStorage::get_texture("data/textures/circle_white.png"));
+        picker->set_material_color(Color(0.175f));
         picker->m_layer = static_cast<uint8_t>(layout_iterator.y);
+        picker->process_children = true;
 
         if (group_opened)
             picker->m_priority = 1;
@@ -407,16 +407,19 @@ namespace ui {
         // Visibility callback...
 		bind(name, [widget = widget](const std::string& signal, void* button) {
 
-            UIEntity* parent = static_cast<ui::UIEntity*>(widget->get_parent());
-            if (parent->type == GROUP)
-                parent = static_cast<ui::UIEntity*>(parent->get_parent());
+            const bool last_value = widget->process_children;
 
-            const bool last_value = widget->render_children;
+            for (auto& w : all_widgets)
+            {
+                ButtonWidget* b = dynamic_cast<ButtonWidget*>(w.second);
 
-            for (auto c : parent->get_children())
-                static_cast<ui::UIEntity*>(c)->set_render_children(false);
+                if (!b || !b->is_submenu || b->m_layer < widget->m_layer)
+                    continue;
 
-            widget->set_render_children(!last_value);
+                b->set_process_children(false);
+            }
+
+            widget->set_process_children(!last_value);
 		});
 
         // root layer width
@@ -577,7 +580,8 @@ namespace ui {
             {
                 make_color_picker(j);
 
-                group_elements_pending -= 2;
+                int slots = j.count("slider") > 0 ? 2 : 1;
+                group_elements_pending -= slots;
 
                 if (group_elements_pending == 0.f) {
                     close_group();

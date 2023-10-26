@@ -22,12 +22,11 @@ namespace ui {
         uid = last_uid++;
     }
 
-    void UIEntity::set_render_children(bool value, bool force)
+    void UIEntity::set_process_children(bool value, bool force)
     {
         ButtonWidget* bw = dynamic_cast<ButtonWidget*>(this);
         if (bw && bw->is_submenu) {
-            render_children = value;
-            update_children = value;
+            process_children = value;
             selected = value;
         }
 
@@ -35,7 +34,7 @@ namespace ui {
         if (!value || force)
         {
             for (auto c : children)
-                static_cast<UIEntity*>(c)->set_render_children(value, force);
+                static_cast<UIEntity*>(c)->set_process_children(value, force);
         }
     }
 
@@ -93,7 +92,7 @@ namespace ui {
 
 		EntityMesh::render();
 
-		if (!render_children)
+		if (!process_children)
 			return;
 
 		for (auto c : children)
@@ -104,11 +103,6 @@ namespace ui {
 	{
         if (!active) return;
 
-        if (m_layer == 1)
-        {
-            int a = 1;
-        }
-
         float pos_x = center_pos ?
             m_position.x + controller->get_workspace().size.x - controller->get_layer_width( this->uid )
             : m_position.x;
@@ -117,7 +111,7 @@ namespace ui {
 		translate(glm::vec3(pos_x, m_position.y, -1e-3f - m_priority * 1e-3f));
         scale(glm::vec3(m_scale.x, m_scale.y, 1.f));
 
-		if (!update_children)
+		if (!process_children)
 			return;
 
         for (auto c : children)
@@ -130,8 +124,7 @@ namespace ui {
 
     WidgetGroup::WidgetGroup(const glm::vec2& p, const glm::vec2& s, float n) : UIEntity(p, s) {
 
-        render_children = true;
-        update_children = true;
+        process_children = true;
         type = eWidgetType::GROUP;
         set_material_flag(MATERIAL_UI);
 
@@ -264,7 +257,7 @@ namespace ui {
 	*	Slider
 	*/
 
-    SliderWidget::SliderWidget(const std::string& sg, float v, const glm::vec2& p, const Color& c, const glm::vec2& s)
+    SliderWidget::SliderWidget(const std::string& sg, float v, const glm::vec2& p, const glm::vec2& s, const Color& c)
         : UIEntity(p, s), signal(sg), current_value(v), color(c) {
 
         type = eWidgetType::SLIDER;
