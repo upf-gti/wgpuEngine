@@ -62,7 +62,7 @@ protected:
     std::vector<sRenderData> render_list[RENDER_LIST_SIZE];
 
     // Bind group per shader
-    std::unordered_map<Shader*, WGPUBindGroup> bind_groups[RENDER_LIST_SIZE];
+    WGPUBindGroup bind_groups[RENDER_LIST_SIZE] = {};
 
 public:
 

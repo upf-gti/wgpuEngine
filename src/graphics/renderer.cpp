@@ -145,7 +145,7 @@ void Renderer::render(WGPURenderPassEncoder render_pass, const WGPUBindGroup& re
                 Material& material = entity_mesh->get_material();
 
                 // Repeated EntityMesh, must be instanced
-                if (prev_mesh == entity_mesh->get_mesh() && prev_shader == material.shader && prev_texture == material.diffuse && !(material.type & MATERIAL_UI)) {
+                if (prev_mesh == entity_mesh->get_mesh() && prev_shader == material.shader && prev_texture == material.diffuse && !(material.flags & MATERIAL_UI)) {
                     repeats++;
                 }
                 else {
@@ -186,20 +186,18 @@ void Renderer::render(WGPURenderPassEncoder render_pass, const WGPUBindGroup& re
             // Recreate bind groups
             std::vector<Uniform*> uniforms = { &instance_data_uniform[i] };
             Shader* prev_shader = nullptr;
-            for (uint32_t j = 0; j < render_list[i].size(); ++j) {
+            for (uint32_t j = 0; j < render_list[i].size(); ) {
 
                 sRenderData& render_data = render_list[i][j];
                 Shader* shader = render_data.entity_mesh->get_material().shader;
 
-                if (prev_shader != shader) {
-                    if (bind_groups[i].contains(shader)) {
-                        wgpuBindGroupRelease(bind_groups[i][shader]);
-                    }
-
-                    bind_groups[i][shader] = webgpu_context.create_bind_group(uniforms, shader, 0);
+                if (bind_groups[i]) {
+                    wgpuBindGroupRelease(bind_groups[i]);
                 }
+
+                bind_groups[i] = webgpu_context.create_bind_group(uniforms, shader, 0);
                 
-                j += render_data.repeat - 1;
+                j += render_data.repeat;
             }
 
         } else
@@ -212,13 +210,12 @@ void Renderer::render(WGPURenderPassEncoder render_pass, const WGPUBindGroup& re
 
     for (int i = 0; i < RENDER_LIST_SIZE; ++i) {
 
-        for (int j = 0; j < render_list[i].size(); ++j) {
+        for (int j = 0; j < render_list[i].size(); ) {
 
             sRenderData& render_data = render_list[i][j];
             EntityMesh* entity_mesh = render_data.entity_mesh;
             Mesh* mesh = entity_mesh->get_mesh();
             Material& material = entity_mesh->get_material();
-            WGPUBindGroup bind_group = bind_groups[i][material.shader];
 
             Pipeline* pipeline = material.shader->get_pipeline();
             if (pipeline != prev_pipeline) {
@@ -234,14 +231,14 @@ void Renderer::render(WGPURenderPassEncoder render_pass, const WGPUBindGroup& re
             uint8_t bind_group_index = 0;
 
             // Set bind groups
-            wgpuRenderPassEncoderSetBindGroup(render_pass, bind_group_index++, bind_group, 0, nullptr);
+            wgpuRenderPassEncoderSetBindGroup(render_pass, bind_group_index++, bind_groups[i], 0, nullptr);
             wgpuRenderPassEncoderSetBindGroup(render_pass, bind_group_index++, render_bind_group_camera, 0, nullptr);
 
-            if (material.type & MATERIAL_DIFUSSE) {
+            if (material.flags & MATERIAL_DIFFUSE) {
                 wgpuRenderPassEncoderSetBindGroup(render_pass, bind_group_index++, renderer_storage.get_material_bind_group(material), 0, nullptr);
             }
 
-            if (material.type & MATERIAL_UI) {
+            if (material.flags & MATERIAL_UI) {
                 wgpuRenderPassEncoderSetBindGroup(render_pass, bind_group_index++, renderer_storage.get_ui_widget_bind_group(entity_mesh), 0, nullptr);
             }
 
@@ -253,7 +250,7 @@ void Renderer::render(WGPURenderPassEncoder render_pass, const WGPUBindGroup& re
 
             prev_pipeline = pipeline;
 
-            j += render_data.repeat - 1;
+            j += render_data.repeat;
         }
     }
 }
@@ -262,10 +259,10 @@ void Renderer::add_renderable(EntityMesh* entity_mesh)
 {
     const Material& material = entity_mesh->get_material();
 
-    if (material.type & MATERIAL_TRANSPARENT) {
+    if (material.flags & MATERIAL_TRANSPARENT) {
         render_list[RENDER_LIST_ALPHA].push_back({ entity_mesh, 1 });
     } else
-    if (material.type & MATERIAL_UI) {
+    if (material.flags & MATERIAL_UI) {
         render_list[RENDER_LIST_UI].push_back({ entity_mesh, 1 });
     }
     else {
