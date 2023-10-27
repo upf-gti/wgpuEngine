@@ -40,8 +40,7 @@ namespace ui {
         static UIEntity* current_selected;
 
         bool is_submenu         = false;
-		bool render_children    = false;
-        bool update_children    = false;
+		bool process_children   = false;
         bool active             = true;
         bool selected           = false;
         bool center_pos         = true;
@@ -54,7 +53,7 @@ namespace ui {
 
         RendererStorage::sUIData ui_data;
 
-        void set_render_children(bool value, bool force = false);
+        void set_process_children(bool value, bool force = false);
         void set_selected(bool value);
         void set_layer(uint8_t l) { m_layer = l; };
 
@@ -128,7 +127,7 @@ namespace ui {
         float min_value = 0.f;
         float max_value = 1.f;
 
-		SliderWidget(const std::string& sg, float v, const glm::vec2& p, const Color& c, const glm::vec2& s);
+		SliderWidget(const std::string& sg, float v, const glm::vec2& p, const glm::vec2& s, const Color& c);
 
         void set_mode(const std::string& m) { mode = (m == "horizontal" ? HORIZONTAL : VERTICAL); }
 

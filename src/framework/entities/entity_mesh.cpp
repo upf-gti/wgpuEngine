@@ -5,7 +5,7 @@
 
 EntityMesh::EntityMesh() : Entity()
 {
-    material.type |= MATERIAL_COLOR;
+    material.flags |= MATERIAL_COLOR;
 }
 
 void EntityMesh::render()
