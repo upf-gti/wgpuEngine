@@ -5,6 +5,9 @@
 #define USE_MIRROR_WINDOW
 #endif
 
+#define BACKEND_VULKAN
+//#define BACKEND_DX12
+
 //#define GLM_FORCE_RADIANS
 //#define GLM_FORCE_DEPTH_ZERO_TO_ONE
 //#define GLM_FORCE_RIGHT_HANDED
