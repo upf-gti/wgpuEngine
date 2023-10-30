@@ -79,29 +79,28 @@ bool Input::init_xr(OpenXRContext* context)
 
 void Input::update(float delta_time)
 {
-	if (use_mirror_screen)
+
+	// Mouse  state
 	{
-		// Mouse  state
-		{
-			double x, y;
-			glfwGetCursorPos(window, &x, &y);
-			Input::mouse_delta.x = Input::mouse_position.x - static_cast<float>(x);
-			Input::mouse_delta.y = Input::mouse_position.y - static_cast<float>(y);
-			Input::mouse_position.x = static_cast<float>(x);
-			Input::mouse_position.y = static_cast<float>(y);
+		double x, y;
+		glfwGetCursorPos(window, &x, &y);
+		Input::mouse_delta.x = Input::mouse_position.x - static_cast<float>(x);
+		Input::mouse_delta.y = Input::mouse_position.y - static_cast<float>(y);
+		Input::mouse_position.x = static_cast<float>(x);
+		Input::mouse_position.y = static_cast<float>(y);
 
-			memcpy((void*)&Input::prev_buttons, Input::buttons, GLFW_MOUSE_BUTTON_LAST);
-			for (int i = 0; i < GLFW_MOUSE_BUTTON_LAST; ++i)
-				buttons[i] = glfwGetMouseButton(window, i);
-		}
-
-		// Keystate
-		{
-			memcpy((void*)&Input::prev_keystate, Input::keystate, GLFW_KEY_LAST);
-			for (int i = 0; i < GLFW_KEY_LAST; ++i)
-				keystate[i] = glfwGetKey(window, i);
-		}
+		memcpy((void*)&Input::prev_buttons, Input::buttons, GLFW_MOUSE_BUTTON_LAST);
+		for (int i = 0; i < GLFW_MOUSE_BUTTON_LAST; ++i)
+			buttons[i] = glfwGetMouseButton(window, i);
 	}
+
+	// Keystate
+	{
+		memcpy((void*)&Input::prev_keystate, Input::keystate, GLFW_KEY_LAST);
+		for (int i = 0; i < GLFW_KEY_LAST; ++i)
+			keystate[i] = glfwGetKey(window, i);
+	}
+	
 
 #ifdef XR_SUPPORT
 

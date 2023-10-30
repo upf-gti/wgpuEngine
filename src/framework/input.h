@@ -123,12 +123,13 @@ public:
 	static void center_mouse();
 
 	// https://www.glfw.org/docs/3.3/group__keys.html
-	static bool is_key_pressed(uint8_t key) { return keystate[key] == GLFW_PRESS; }
-	static bool was_key_pressed(uint8_t key) { return prev_keystate[key] == GLFW_RELEASE && keystate[key] == GLFW_PRESS; }
+	static bool is_key_pressed(int key) { return keystate[key] == GLFW_PRESS; }
+	static bool was_key_pressed(int key) { return prev_keystate[key] == GLFW_RELEASE && keystate[key] == GLFW_PRESS; }
 
 	// https://www.glfw.org/docs/3.3/group__buttons.html
 	static bool is_mouse_pressed(uint8_t button) { return buttons[button] == GLFW_PRESS; }
 	static bool was_mouse_pressed(uint8_t button) { return prev_buttons[button] == GLFW_RELEASE && buttons[button] == GLFW_PRESS; }
+    static glm::vec2 get_mouse_delta() { return mouse_delta; }
 
 #ifdef XR_SUPPORT
 	static bool init_xr(OpenXRContext* context);

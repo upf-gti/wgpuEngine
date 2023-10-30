@@ -47,6 +47,8 @@ int Renderer::initialize(GLFWwindow* window, bool use_mirror_screen)
 
 #ifdef XR_SUPPORT
 
+    xr_context.z_far = z_near;
+    xr_context.z_far = z_far;
 
 #if defined(BACKEND_DX12)
     adapter_opts.backendType = WGPUBackendType_D3D12;
