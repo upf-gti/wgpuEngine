@@ -5,5 +5,8 @@
 class FlyoverCamera : public Camera {
 
 public:
+
+    FlyoverCamera();
+
     void update(float delta_time) override;
 };

@@ -10,7 +10,10 @@ class Camera {
     };
 
 public:
-    virtual void update(float delta_time) = 0;
+
+    Camera() = default;
+
+    virtual void update(float delta_time) {};
 
     void set_perspective(float fov, float aspect, float z_near, float z_far);
     void set_orthographic(float left, float right, float bottom, float top, float z_near, float z_far);
@@ -23,6 +26,9 @@ public:
 
     const glm::vec3& get_eye() const { return eye; }
     const glm::mat4x4& get_view_projection() const { return view_projection; }
+
+    void set_speed(float speed) { this->speed = speed; }
+    void set_mouse_sensitivity(float mouse_sensitivity) { this->mouse_sensitivity = mouse_sensitivity; }
 
 protected:
 
@@ -46,4 +52,6 @@ protected:
     float z_near;
     float z_far;
 
+    float speed = 1.0f;
+    float mouse_sensitivity = 1.0f;
 };
