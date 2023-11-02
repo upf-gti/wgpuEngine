@@ -36,7 +36,6 @@ bool Shader::load(const std::string& shader_path)
 		return false;
 
 	std::istringstream f(shader_content);
-	std::string include_content;
 	std::string line;
 
 	std::string _directory = std::filesystem::path(path).parent_path().string();
@@ -65,14 +64,11 @@ bool Shader::load(const std::string& shader_path)
 			}
 
 			std::cout << " [" << include_name << "]";
-			shader_content.replace(shader_content.find(tag), line.length() + 1, "");
-			include_content += new_content;
+			shader_content.replace(shader_content.find(tag), line.length() + 1, new_content);
 		}
 		// add other pres
 		// else if (tag == "#...") { }
 	}
-
-	shader_content = include_content + shader_content;
 
 	shader_module = webgpu_context->create_shader_module(shader_content.c_str());
 
