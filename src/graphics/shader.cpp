@@ -233,6 +233,9 @@ void Shader::get_reflection_data(const std::string& shader_path, const std::stri
 			case ResourceBinding::ResourceType::kWriteOnlyStorageTexture:
 				entry.storageTexture.access = WGPUStorageTextureAccess_WriteOnly;
 				break;
+            case ResourceBinding::ResourceType::kReadWriteStorageTexture:
+                entry.storageTexture.access = WGPUStorageTextureAccess_ReadWrite;
+                break;
 			default:
 				std::cerr << "Shader reflection failed: Resource type not implemented" << std::endl;
 				assert(0);
@@ -277,7 +280,8 @@ void Shader::get_reflection_data(const std::string& shader_path, const std::stri
 				}
 			}
 
-			if (resource_binding.resource_type == ResourceBinding::ResourceType::kWriteOnlyStorageTexture) {
+			if ((resource_binding.resource_type == ResourceBinding::ResourceType::kWriteOnlyStorageTexture) ||
+                (resource_binding.resource_type == ResourceBinding::ResourceType::kReadWriteStorageTexture)) {
 
 				switch (resource_binding.image_format)
 				{
