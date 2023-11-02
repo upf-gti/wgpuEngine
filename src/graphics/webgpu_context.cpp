@@ -142,6 +142,10 @@ int WebGPUContext::initialize(WGPURequestAdapterOptions adapter_opts, WGPURequir
 
 #if !defined(__EMSCRIPTEN__)
     std::vector<const char*> enabled_toggles;
+    std::vector<const char*> disabled_toggles;
+
+    disabled_toggles.push_back("lazy_clear_resource_on_first_use");
+
     enabled_toggles.push_back("use_dxc");
 
 #ifdef _DEBUG
@@ -151,6 +155,9 @@ int WebGPUContext::initialize(WGPURequestAdapterOptions adapter_opts, WGPURequir
     WGPUDawnTogglesDescriptor device_toggles_desc = {};
     device_toggles_desc.enabledToggles = enabled_toggles.data();
     device_toggles_desc.enabledToggleCount = enabled_toggles.size();
+
+    device_toggles_desc.disabledToggles = disabled_toggles.data();
+    device_toggles_desc.disabledToggleCount = disabled_toggles.size();
 
     WGPUChainedStruct* chain_desc = reinterpret_cast<WGPUChainedStruct*>(&device_toggles_desc);
     chain_desc->sType = WGPUSType_DawnTogglesDescriptor;
