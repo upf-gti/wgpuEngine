@@ -39,6 +39,7 @@ std::vector<InterleavedData> Mesh::generate_quad(float w, float h, const glm::ve
     uint32_t counter = 0;
 
     for (unsigned short i1 = 0; i1 <= 1; i1++)
+    {
         for (unsigned short i2 = 0; i2 <= 1; i2++)
         {
             auto vtx = &points[counter++];
@@ -46,6 +47,7 @@ std::vector<InterleavedData> Mesh::generate_quad(float w, float h, const glm::ve
             vtx->normal = normal;
             vtx->uv = glm::vec2(i2, i1);
         }
+    }
 
     std::vector<InterleavedData> vertices;
     vertices.resize(6);
@@ -74,6 +76,8 @@ void Mesh::create_quad(float w, float h, const glm::vec3& color)
 
     vertices = generate_quad(w, h, glm::vec3(0.f), normals::pZ, color);
 
+    spdlog::trace("Quad mesh created ({} vertices)", vertices.size());
+
     create_vertex_buffer();
 }
 
@@ -100,6 +104,87 @@ void Mesh::create_box(float w, float h, float d, const glm::vec3& color)
     vertices.insert(vertices.end(), pos_z.begin(), pos_z.end());
     auto neg_z = generate_quad(w, h, d * normals::nZ, normals::nZ, color);
     vertices.insert(vertices.end(), neg_z.begin(), neg_z.end());
+
+    spdlog::trace("Box mesh created ({} vertices)", vertices.size());
+
+    create_vertex_buffer();
+}
+
+void Mesh::create_cylinder(float radius, float h, uint32_t segments, bool capped, const glm::vec3& color)
+{
+    // Mesh has vertex data...
+    if (vertex_buffer)
+    {
+        vertices.clear();
+        wgpuBufferDestroy(vertex_buffer);
+    }
+
+    vertices.resize(segments * 6);
+
+    constexpr float pi2 = glm::pi<float>() * 2.f;
+    float deltaAngle = pi2 / float(segments);
+    uint32_t vtx_counter = 0;
+
+    auto add_vertex = [&](const glm::vec3& p, const glm::vec3& n, const glm::vec2& uv) {
+        auto vtx = &vertices[vtx_counter++];
+        vtx->position = p;
+        vtx->normal = n;
+        vtx->uv = uv;
+    };
+
+    for (uint32_t i = 0; i < segments; i++)
+    {
+        float angle = i * deltaAngle;
+
+        float x0 = radius * sinf(angle);
+        float z0 = radius * cosf(angle);
+        glm::vec3 n0 = glm::normalize(glm::vec3(x0, 0.f, z0));
+
+        float x1 = radius * sinf(angle + deltaAngle);
+        float z1 = radius * cosf(angle + deltaAngle);
+        glm::vec3 n1 = glm::normalize(glm::vec3(x1, 0.f, z1));
+
+        // First triangle
+        add_vertex(glm::vec3(x0, h * 0.5f, z0), n0, glm::vec2(i / float(segments), 1.f));
+        add_vertex(glm::vec3(x0, h * -0.5f, z0), n0, glm::vec2(i / float(segments), 0.f));
+        add_vertex(glm::vec3(x1, h * -0.5f, z1), n1, glm::vec2((i + 1) / float(segments), 0.f));
+
+        // Second triangle
+        add_vertex(glm::vec3(x1, h * 0.5f, z1), n1, glm::vec2((i + 1) / float(segments), 1.f));
+        add_vertex(glm::vec3(x0, h * 0.5f, z0), n0, glm::vec2(i / float(segments), 1.f));
+        add_vertex(glm::vec3(x1, h * -0.5f, z1), n1, glm::vec2((i + 1) / float(segments), 0.f));
+    }
+
+    //caps
+    if (capped)
+    {
+        vertices.resize(segments * 6 * 2);
+
+        glm::vec3 top_center = glm::vec3(0.f, h * 0.5f, 0.f);
+        glm::vec3 bottom_center = glm::vec3(0.f, h * -0.5f, 0.f);
+        glm::vec3 up = glm::vec3(0.f, 1.f, 0.f);
+        glm::vec3 down = glm::vec3(0.f, -1.f, 0.f);
+
+        for (uint32_t i = 0; i < segments; ++i)
+        {
+            float angle = i * deltaAngle;
+
+            glm::vec3 uv = glm::vec3(sinf(angle), 0.f, cosf(angle));
+            glm::vec3 uv2 = glm::vec3(sinf(angle + deltaAngle), 0.f, cosf(angle + deltaAngle));
+
+            // Top
+            add_vertex(glm::vec3(uv[0] * radius, h * 0.5f, uv[2] * radius), up, glm::vec2(-uv[0] * 0.5f + 0.5f, uv[2] * 0.5f + 0.5f));
+            add_vertex(glm::vec3(uv2[0] * radius, h * 0.5f, uv2[2] * radius), up, glm::vec2(-uv2[0] * 0.5f + 0.5f, uv2[2] * 0.5f + 0.5f));
+            add_vertex(top_center, up, glm::vec2(0.5f));
+
+            // Bottom
+            add_vertex(glm::vec3(uv2[0] * radius, h * -0.5, uv2[2] * radius), down, glm::vec2(uv2[0] * 0.5 + 0.5, uv2[2] * 0.5 + 0.5));
+            add_vertex(glm::vec3(uv[0] * radius, h * -0.5, uv[2] * radius), down, glm::vec2(uv[0] * 0.5 + 0.5, uv[2] * 0.5 + 0.5));
+            add_vertex(bottom_center, down, glm::vec2(0.5f));
+        }
+    }
+
+    spdlog::trace("Cylinder mesh created ({} vertices)", vtx_counter);
 
     create_vertex_buffer();
 }

@@ -180,4 +180,9 @@ void RendererStorage::register_basic_meshes()
     Mesh* box_mesh = new Mesh();
     box_mesh->create_box();
     meshes["box"] = box_mesh;
+
+    // Cylinder
+    Mesh* cylinder_mesh = new Mesh();
+    cylinder_mesh->create_cylinder();
+    meshes["cylinder"] = cylinder_mesh;
 }

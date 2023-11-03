@@ -46,7 +46,9 @@ public:
 
 	void create_quad(float w = 1.f, float h = 1.f, const glm::vec3& color = {1.f, 1.f, 1.f});
     void create_box(float w = 1.f, float h = 1.f, float d = 1.f, const glm::vec3& color = { 1.f, 1.f, 1.f });
-	void create_from_vertices(const std::vector<InterleavedData>& _vertices);
+    void create_cylinder(float radius = 1.f, float h = 1.f, uint32_t segments = 32, bool capped = true, const glm::vec3& color = { 1.f, 1.f, 1.f });
+
+    void create_from_vertices(const std::vector<InterleavedData>& _vertices);
 
     void create_vertex_buffer();
 
