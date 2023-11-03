@@ -104,6 +104,24 @@ glm::vec3 get_front(const glm::mat4& pose) {
 	return -glm::normalize(pose[2]);
 }
 
+glm::vec3 get_perpendicular(const glm::vec3& v)
+{
+    static float fZero = 1e-06f;
+
+    glm::vec3 perp = glm::cross(v, glm::vec3(1.f, 0.f, 0.f));
+
+    // Check length
+    if (glm::length(perp) < fZero)
+    {
+        /* This vector is the Y axis multiplied by a scalar, so we have
+        to use another axis.
+            */
+        perp = glm::cross(v, glm::vec3(0.f, 1.f, 0.f));
+    }
+
+    return perp;
+}
+
 float bytes_to_float(unsigned char b0, unsigned char b1, unsigned char b2, unsigned char b3)
 {
     float output;

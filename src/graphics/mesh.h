@@ -10,6 +10,15 @@
 
 class Texture;
 
+namespace normals {
+    const glm::vec3 pX = glm::vec3( 1.f,  0.f,  0.0);
+    const glm::vec3 nX = glm::vec3(-1.f,  0.f,  0.0);
+    const glm::vec3 pY = glm::vec3( 0.f,  1.f,  0.0);
+    const glm::vec3 nY = glm::vec3( 0.f, -1.f,  0.0);
+    const glm::vec3 pZ = glm::vec3( 0.f,  0.f,  1.0);
+    const glm::vec3 nZ = glm::vec3( 0.f,  0.f, -1.0);
+}
+
 struct InterleavedData {
 	glm::vec3 position;
 	glm::vec2 uv;
@@ -19,9 +28,10 @@ struct InterleavedData {
 
 class Mesh {
 
-	std::vector<InterleavedData>	 vertices;
+	std::vector<InterleavedData> vertices;
+	WGPUBuffer vertex_buffer = nullptr;
 
-	WGPUBuffer		vertex_buffer   = nullptr;
+    std::vector<InterleavedData> generate_quad(float w = 1.f, float h = 1.f, const glm::vec3& position = { 0.f, 0.f, 0.f }, const glm::vec3& normal = { 0.f, 1.f, 0.f }, const glm::vec3& color = { 1.f, 1.f, 1.f });
 
 public:
 
@@ -35,6 +45,7 @@ public:
     std::vector<InterleavedData>& get_vertices() { return vertices; }
 
 	void create_quad(float w = 1.f, float h = 1.f, const glm::vec3& color = {1.f, 1.f, 1.f});
+    void create_box(float w = 1.f, float h = 1.f, float d = 1.f, const glm::vec3& color = { 1.f, 1.f, 1.f });
 	void create_from_vertices(const std::vector<InterleavedData>& _vertices);
 
     void create_vertex_buffer();

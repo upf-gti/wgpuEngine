@@ -30,10 +30,12 @@ glm::quat load_quat(const std::string& str);
 
 glm::vec3 mod_vec3(glm::vec3 v, float m);
 
+
 glm::vec3 hsv2rgb(glm::vec3 c);
 
 float random_f(float range = 1.0f, int offset = 0);
 glm::vec3 get_front(const glm::mat4 & pose);
+glm::vec3 get_perpendicular(const glm::vec3& v);
 
 #define ERR_FAIL_COND_V_MSG(m_cond, m_retval, m_msg)                                                                                     \
 	if (m_cond) {																														 \

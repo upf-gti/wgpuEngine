@@ -175,4 +175,9 @@ void RendererStorage::register_basic_meshes()
     Mesh* quad_mesh = new Mesh();
     quad_mesh->create_quad();
     meshes["quad"] = quad_mesh;
+
+    // Box
+    Mesh* box_mesh = new Mesh();
+    box_mesh->create_box();
+    meshes["box"] = box_mesh;
 }
