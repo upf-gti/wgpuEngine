@@ -21,9 +21,24 @@ XrInputData Input::xr_data;
 OpenXRContext* openxr_context = nullptr;
 #endif
 
+void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
+{
+    if (key < 0) return;
+
+    Input::set_key_state(key, action != GLFW_RELEASE);
+}
+
+void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
+{
+    Input::set_mouse_button(button, action != GLFW_RELEASE);
+}
+
 void Input::init(GLFWwindow* _window, Renderer* renderer)
 {	
 	use_mirror_screen = renderer->get_use_mirror_screen();
+
+    glfwSetKeyCallback(_window, key_callback);
+    glfwSetMouseButtonCallback(_window, mouse_button_callback);
 
 	if (use_mirror_screen)
 	{
@@ -90,15 +105,20 @@ void Input::update(float delta_time)
 		Input::mouse_position.y = static_cast<float>(y);
 
 		memcpy((void*)&Input::prev_buttons, Input::buttons, GLFW_MOUSE_BUTTON_LAST);
+#ifndef __EMSCRIPTEN__
 		for (int i = 0; i < GLFW_MOUSE_BUTTON_LAST; ++i)
 			buttons[i] = glfwGetMouseButton(window, i);
+#endif
 	}
 
 	// Keystate
 	{
 		memcpy((void*)&Input::prev_keystate, Input::keystate, GLFW_KEY_LAST);
+
+#ifndef __EMSCRIPTEN__
 		for (int i = 0; i < GLFW_KEY_LAST; ++i)
 			keystate[i] = glfwGetKey(window, i);
+#endif
 	}
 	
 
@@ -133,6 +153,17 @@ void Input::center_mouse()
 	Input::mouse_position.x = (float)center_x;
 	Input::mouse_position.y = (float)center_y;
 }
+
+void Input::set_key_state(int key, uint8_t value)
+{
+    keystate[key] = value;
+}
+
+void Input::set_mouse_button(int button, uint8_t value)
+{
+    buttons[button] = value;
+}
+
 
 glm::vec3 Input::get_controller_position(uint8_t controller, uint8_t type)
 {

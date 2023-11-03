@@ -181,7 +181,7 @@ void Renderer::render(WGPURenderPassEncoder render_pass, const WGPUBindGroup& re
 
             //std::vector<sUniformData> default_data = { instances, { glm::mat4x4(1.0f), glm::vec4(1.0f) } };
 
-            instance_data_uniform[i].data = webgpu_context.create_buffer(sizeof(sUniformData) * instances, WGPUBufferUsage_CopyDst | WGPUBufferUsage_Storage, instance_data[i].data());
+            instance_data_uniform[i].data = webgpu_context.create_buffer(sizeof(sUniformData) * instances, WGPUBufferUsage_CopyDst | WGPUBufferUsage_Storage, instance_data[i].data(), "instance_mesh_buffer");
             instance_data_uniform[i].binding = 0;
             instance_data_uniform[i].buffer_size = sizeof(sUniformData) * instances;
 

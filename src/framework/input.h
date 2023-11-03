@@ -131,6 +131,9 @@ public:
 	static bool was_mouse_pressed(uint8_t button) { return prev_buttons[button] == GLFW_RELEASE && buttons[button] == GLFW_PRESS; }
     static glm::vec2 get_mouse_delta() { return mouse_delta; }
 
+    static void set_key_state(int key, uint8_t value);
+    static void set_mouse_button(int button, uint8_t value);
+
 #ifdef XR_SUPPORT
 	static bool init_xr(OpenXRContext* context);
 #endif

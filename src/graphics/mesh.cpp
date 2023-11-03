@@ -20,7 +20,7 @@ Mesh::~Mesh()
 
 void Mesh::create_vertex_buffer()
 {
-    vertex_buffer = webgpu_context->create_buffer(get_byte_size(), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Vertex, vertices.data());
+    vertex_buffer = webgpu_context->create_buffer(get_byte_size(), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Vertex, vertices.data(), "mesh_buffer");
 }
 
 WGPUBuffer& Mesh::get_vertex_buffer()
