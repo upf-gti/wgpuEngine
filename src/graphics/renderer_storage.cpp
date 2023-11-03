@@ -185,4 +185,9 @@ void RendererStorage::register_basic_meshes()
     Mesh* cylinder_mesh = new Mesh();
     cylinder_mesh->create_cylinder();
     meshes["cylinder"] = cylinder_mesh;
+
+    // Cone
+    Mesh* cone_mesh = new Mesh();
+    cone_mesh->create_cone();
+    meshes["cone"] = cone_mesh;
 }
