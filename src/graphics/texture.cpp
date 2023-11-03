@@ -35,7 +35,7 @@ void Texture::create(WGPUTextureDimension dimension, WGPUTextureFormat format, W
 
 void Texture::load(const std::string& texture_path)
 {
-    std::cout << "Loading texture: " << texture_path;
+    spdlog::info("Loading shader: {}", texture_path);
 
     int width, height, channels;
     unsigned char* data = stbi_load(texture_path.c_str(), &width, &height, &channels, 4);
@@ -49,7 +49,7 @@ void Texture::load(const std::string& texture_path)
 
     stbi_image_free(data);
 
-    std::cout << " [OK]" << std::endl;
+    //std::cout << " [OK]" << std::endl;
 }
 
 void Texture::load_from_data(const std::string& name, int width, int height, void* data)
@@ -80,7 +80,7 @@ WGPUTextureView Texture::get_view()
         view_dimension = WGPUTextureViewDimension_3D;
         break;
     default:
-        std::cout << "Texture View dimension not implemented" << std::endl;
+        spdlog::error("Texture View dimension not implemented");
         assert(0);
         break;
     }

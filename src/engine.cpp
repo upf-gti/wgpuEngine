@@ -32,7 +32,7 @@ int Engine::initialize(Renderer* renderer, GLFWwindow* window, bool use_glfw, bo
 
         switch (status) {
         case eFileStatus::Modified: {
-            std::cout << "Shader modified: " << path_to_watch << '\n';
+            spdlog::info("Shader modified: {}", path_to_watch);
 
             const std::vector<std::string> shader_paths = RendererStorage::get_shader_for_reload(path_to_watch);
 
@@ -46,7 +46,7 @@ int Engine::initialize(Renderer* renderer, GLFWwindow* window, bool use_glfw, bo
             break;
         }
         default:
-            std::cout << "Error! Unknown file status.\n";
+            spdlog::error("Shader reload: Unknown file status");
         }
     });
 

@@ -137,4 +137,8 @@ target_include_directories(${PROJECT_NAME} PUBLIC ${WGPU_DIR_LIBS}/nlohmann_json
 # tiny_gltf
 target_include_directories(${PROJECT_NAME} PUBLIC ${WGPU_DIR_LIBS}/tiny_gltf)
 
+# spdlog
+add_subdirectory(libraries/spdlog)
+target_link_libraries(${PROJECT_NAME} PUBLIC spdlog::spdlog_header_only)
+
 target_copy_webgpu_binaries(${PROJECT_NAME})

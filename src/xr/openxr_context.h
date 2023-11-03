@@ -20,8 +20,8 @@ struct sViewData {
 };
 
 struct sSwapchainData {
-    XrSwapchain swapchain;
-    uint32_t    image_index;
+    XrSwapchain swapchain = {};
+    uint32_t    image_index = {};
     std::vector<dawnxr::SwapchainImageDawn> images;
 };
 
