@@ -26,16 +26,16 @@ EntityMesh* parse_gltf(const std::string& gltf_path)
     std::string warn;
 
     if (!loader.LoadASCIIFromFile(&model, &err, &warn, gltf_path)) {
-        std::cerr << "Could not load: " << gltf_path << std::endl;
+        spdlog::error("Could not load: {}", gltf_path);
         return nullptr;
     }
 
     if (!warn.empty()) {
-        std::cout << "GLTF Load Warning: " << warn << std::endl;
+        spdlog::warn(warn);
     }
 
     if (!err.empty()) {
-        std::cout << "GLTF Load Error: " << err << std::endl;
+        spdlog::error(err);
     }
 
     EntityMesh* new_entity = new EntityMesh();

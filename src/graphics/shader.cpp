@@ -29,8 +29,6 @@ bool Shader::load(const std::string& shader_path)
 {
 	path = shader_path;
 
-	std::cout << "Loading shader: " << path;
-
 	std::string shader_content;
 	if (!read_file(path, shader_content))
 		return false;
@@ -50,7 +48,7 @@ bool Shader::load(const std::string& shader_path)
 			const std::string& include_path = std::filesystem::relative(std::filesystem::path(_directory + "/" + include_name)).string();
 			std::string new_content;
 			if (!read_file(include_path, new_content)) {
-				std::cerr << "Could not load shader include: " << include_path << std::endl;
+                spdlog::error("Could not load shader include: {}", include_path);
 				return false;
 			}
 
@@ -63,12 +61,14 @@ bool Shader::load(const std::string& shader_path)
 				library_references[include_path].push_back(path);
 			}
 
-			std::cout << " [" << include_name << "]";
+			//std::cout << " [" << include_name << "]";
 			shader_content.replace(shader_content.find(tag), line.length() + 1, new_content);
 		}
 		// add other pres
 		// else if (tag == "#...") { }
 	}
+
+    spdlog::info("Loading shader: {}", path);
 
 	shader_module = webgpu_context->create_shader_module(shader_content.c_str());
 
@@ -96,7 +96,7 @@ bool Shader::load(const std::string& shader_path)
 
 	webgpu_context->print_errors();
 
-	std::cout << " [OK]" << std::endl;
+	//std::cout << " [OK]" << std::endl;
 
 	return loaded;
 }
@@ -278,7 +278,6 @@ void Shader::get_reflection_data(const std::string& shader_path, const std::stri
 
 			if ((resource_binding.resource_type == ResourceBinding::ResourceType::kWriteOnlyStorageTexture) ||
                 (resource_binding.resource_type == ResourceBinding::ResourceType::kReadWriteStorageTexture)) {
-
 				switch (resource_binding.image_format)
 				{
 				case ResourceBinding::TexelFormat::kRgba8Unorm:
@@ -286,7 +285,10 @@ void Shader::get_reflection_data(const std::string& shader_path, const std::stri
 					break;
 				case ResourceBinding::TexelFormat::kRgba16Float:
 					entry.storageTexture.format = WGPUTextureFormat_RGBA16Float;
-					break;
+                    break;
+                case ResourceBinding::TexelFormat::kR32Float:
+                    entry.storageTexture.format = WGPUTextureFormat_R32Float;
+                    break;
 				case ResourceBinding::TexelFormat::kRgba32Float:
 					entry.storageTexture.format = WGPUTextureFormat_RGBA32Float;
 					break;

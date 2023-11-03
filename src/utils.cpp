@@ -5,6 +5,8 @@
 #include <iostream>
 #include <fstream>
 
+#include "spdlog/spdlog.h"
+
 std::vector<std::string> tokenize(const std::string& str) {
 	
 	std::regex reg("\\s+");
@@ -16,16 +18,8 @@ std::vector<std::string> tokenize(const std::string& str) {
 	return vec;
 }
 
-void print_line(const char* line) {
-	std::cout << line << std::endl;
-}
-
-void print_line(const std::string & line) {
-	std::cout << line << std::endl;
-}
-
 void print_error(const char* p_function, const char* p_file, int p_line, const char* p_error, const char* p_message) {
-	std::cout << p_function << "(line " << p_line << ") at " << p_file << std::endl << p_error << " - " << p_message << std::endl;
+    spdlog::error("{}(line {}) at {}\n{} - {}", p_function, p_line, p_file, p_error, p_message);
 }
 
 bool read_file(const std::string& filename, std::string& content)
@@ -34,7 +28,7 @@ bool read_file(const std::string& filename, std::string& content)
 
 	std::ifstream file(filename);
 	if (!file.is_open()) {
-		std::cerr << "\nFile not found " << filename << std::endl;
+        spdlog::error("File not found: {}", filename);
 		return false;
 	}
 

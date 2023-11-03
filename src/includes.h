@@ -5,8 +5,8 @@
 #define USE_MIRROR_WINDOW
 #endif
 
-#define BACKEND_VULKAN
-//#define BACKEND_DX12
+//#define BACKEND_VULKAN
+#define BACKEND_DX12
 
 //#define GLM_FORCE_RADIANS
 //#define GLM_FORCE_DEPTH_ZERO_TO_ONE
@@ -22,6 +22,8 @@
 #else
 #include <webgpu/webgpu.h>
 #endif
+
+#include "spdlog/spdlog.h"
 
 enum eEYE {
     EYE_LEFT,

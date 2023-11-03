@@ -136,7 +136,7 @@ int OpenXRContext::init(WebGPUContext* webgpu_context)
     };
 
     if (Input::init_xr(this)) {
-        std::cout << "Can't initialize xr input" << std::endl;
+        spdlog::error("Can't initialize xr input");
         return 1;
     }
 
@@ -189,9 +189,9 @@ bool OpenXRContext::create_instance()
     bool vulkan_ext = false;
     bool dx12_ext = false;
 
-    std::cout << "OpenXR extensions:" << std::endl;
+    std::string extensions = "OpenXR extensions:\n";
     for (const auto &ext : extensionProperties) {
-        std::cout << "\t" << ext.extensionName << " " << ext.extensionVersion << std::endl;
+        extensions += "\t " + std::string(ext.extensionName) + " " + std::to_string(ext.extensionVersion) + "\n";
 
         if (strcmp("XR_KHR_vulkan_enable2", ext.extensionName) == 0) {
             vulkan_ext = true;
@@ -214,13 +214,15 @@ bool OpenXRContext::create_instance()
         //}
     }
 
+    spdlog::info(extensions);
+
     // A graphics extension is required to draw anything in VR
 
     uint32_t enabled_ext_count = 1;
 
 #if defined(BACKEND_VULKAN)
     if (!vulkan_ext) {
-        std::cout << "Runtime does not support Vulkan extension!" << std::endl;
+        spdlog::error("Runtime does not support Vulkan extension!");
         return false;
     }
 
@@ -228,7 +230,7 @@ bool OpenXRContext::create_instance()
 
 #elif defined(BACKEND_DX12)
     if (!dx12_ext) {
-        std::cout << "Runtime does not support DX12 extension!" << std::endl;
+        spdlog::error("Runtime does not support DX12 extension!");
         return false;
     }
 
@@ -271,9 +273,10 @@ bool OpenXRContext::create_instance()
     if (!xr_result(NULL, result, "Failed to get instance info"))
         return false;
 
-    std::cout
-        << "Runtime Name: " << instance_props.runtimeName << "\n"
-        << "Runtime Version: " << XR_VERSION_MAJOR(instance_props.runtimeVersion) << "." << XR_VERSION_MINOR(instance_props.runtimeVersion) << "." << XR_VERSION_PATCH(instance_props.runtimeVersion) << std::endl;
+    spdlog::info("Runtime Name: {}", instance_props.runtimeName);
+    spdlog::info("Runtime Version: {}.{}.{}", XR_VERSION_MAJOR(instance_props.runtimeVersion),
+                                              XR_VERSION_MINOR(instance_props.runtimeVersion),
+                                              XR_VERSION_PATCH(instance_props.runtimeVersion));
 
     XrSystemGetInfo system_get_info = { .type = XR_TYPE_SYSTEM_GET_INFO, .next = NULL, .formFactor = XR_FORM_FACTOR_HEAD_MOUNTED_DISPLAY };
     result = xrGetSystem(instance, &system_get_info, &system_id);
@@ -283,7 +286,6 @@ bool OpenXRContext::create_instance()
 
     return true;
 }
-
 
 bool OpenXRContext::begin_session()
 {
@@ -315,9 +317,10 @@ bool OpenXRContext::xr_result(XrInstance xrInstance, XrResult result, const char
     if (XR_SUCCEEDED(result))
         return true;
 
-    if (!xrInstance)
+    if (!xrInstance) {
         std::cout << format << std::endl;
         return false;
+    }
 
     char resultString[XR_MAX_RESULT_STRING_SIZE];
     xrResultToString(xrInstance, result, resultString);
@@ -414,9 +417,8 @@ bool OpenXRContext::check_vulkan_version(XrGraphicsRequirementsVulkanKHR* vulkan
 #if defined(BACKEND_DX12)
 bool OpenXRContext::check_dx12_version(XrGraphicsRequirementsD3D12KHR* dx12_reqs)
 {
-    std::cout << "### D3D12 graphics requirements minFeatureLevel: " << dx12_reqs->minFeatureLevel << std::endl;
-    std::cout << "### D3D12 graphics requirements adapterLuid: " << dx12_reqs->adapterLuid.HighPart << " "
-        << dx12_reqs->adapterLuid.LowPart << std::endl;
+    spdlog::info("### D3D12 graphics requirements minFeatureLevel: {}", dx12_reqs->minFeatureLevel);
+    spdlog::info("### D3D12 graphics requirements adapterLuid: {} {}", dx12_reqs->adapterLuid.HighPart, dx12_reqs->adapterLuid.LowPart);
 
     return true;
 }
@@ -536,7 +538,7 @@ void OpenXRContext::init_actions(XrInputData& data)
 
         if (!is_ok)
         {
-            std::cout << "ERROR creating XR actions!" << std::endl;
+            spdlog::error("ERROR creating XR actions!");
             return;
         }
     }

@@ -9,7 +9,7 @@ EntityMesh* parse_scene(const std::string& scene_path)
 {
     std::string extension = scene_path.substr(scene_path.find_last_of(".") + 1);
 
-    std::cout << "Parsing scene: " << scene_path << std::endl;
+    spdlog::info("Parsing scene: {}", scene_path);
 
     if (extension == "obj") {
         return parse_obj(scene_path);
@@ -18,7 +18,7 @@ EntityMesh* parse_scene(const std::string& scene_path)
         return parse_gltf(scene_path);
     }
     else {
-        std::cerr << "Scene extension ." << extension << " not supported" << std::endl;
+        spdlog::error("Scene extension .{} not supported", extension);
         assert(0);
     }
 
