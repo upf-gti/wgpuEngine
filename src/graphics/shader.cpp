@@ -278,7 +278,6 @@ void Shader::get_reflection_data(const std::string& shader_path, const std::stri
 
 			if ((resource_binding.resource_type == ResourceBinding::ResourceType::kWriteOnlyStorageTexture) ||
                 (resource_binding.resource_type == ResourceBinding::ResourceType::kReadWriteStorageTexture)) {
-
 				switch (resource_binding.image_format)
 				{
 				case ResourceBinding::TexelFormat::kRgba8Unorm:
@@ -286,7 +285,10 @@ void Shader::get_reflection_data(const std::string& shader_path, const std::stri
 					break;
 				case ResourceBinding::TexelFormat::kRgba16Float:
 					entry.storageTexture.format = WGPUTextureFormat_RGBA16Float;
-					break;
+                    break;
+                case ResourceBinding::TexelFormat::kR32Float:
+                    entry.storageTexture.format = WGPUTextureFormat_R32Float;
+                    break;
 				case ResourceBinding::TexelFormat::kRgba32Float:
 					entry.storageTexture.format = WGPUTextureFormat_RGBA32Float;
 					break;
