@@ -369,7 +369,7 @@ namespace ui {
             glm::vec2 bounds = m_scale * 0.975f;
             local_point = glm::max(glm::min(local_point, bounds), -bounds) / bounds; // -1..1
 
-            const float pi = 3.1415927f;
+            constexpr float pi = glm::pi<float>();
             float r = pi / 2.f;
             local_point = glm::mat2x2(cos(r), -sin(r), sin(r), cos(r)) * local_point;
             glm::vec2 polar = glm::vec2(atan2(local_point.y, local_point.x), glm::length(local_point));

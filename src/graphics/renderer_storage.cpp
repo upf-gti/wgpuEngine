@@ -181,6 +181,11 @@ void RendererStorage::register_basic_meshes()
     box_mesh->create_box();
     meshes["box"] = box_mesh;
 
+    // Rounded Box
+    Mesh* rounded_box_mesh = new Mesh();
+    rounded_box_mesh->create_rounded_box();
+    meshes["rounded_box"] = rounded_box_mesh;
+
     // Cylinder
     Mesh* cylinder_mesh = new Mesh();
     cylinder_mesh->create_cylinder();

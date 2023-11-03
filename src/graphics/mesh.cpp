@@ -110,6 +110,196 @@ void Mesh::create_box(float w, float h, float d, const glm::vec3& color)
     create_vertex_buffer();
 }
 
+void Mesh::create_rounded_box(float w, float h, float d, float c, const glm::vec3& color)
+{
+    // Mesh has vertex data...
+    if (vertex_buffer)
+    {
+        vertices.clear();
+        wgpuBufferDestroy(vertex_buffer);
+    }
+
+    w -= c;
+    h -= c;
+
+    // Add side vertices adding the chamfer translation
+    auto pos_x = generate_quad(w, h, d * normals::pX, normals::pX, color);
+    vertices.insert(vertices.end(), pos_x.begin(), pos_x.end());
+    auto neg_x = generate_quad(w, h, d * normals::nX, normals::nX, color);
+    vertices.insert(vertices.end(), neg_x.begin(), neg_x.end());
+
+    auto pos_y = generate_quad(w, h, d * normals::pY, normals::pY, color);
+    vertices.insert(vertices.end(), pos_y.begin(), pos_y.end());
+    auto neg_y = generate_quad(w, h, d * normals::nY, normals::nY, color);
+    vertices.insert(vertices.end(), neg_y.begin(), neg_y.end());
+
+    auto pos_z = generate_quad(w, h, d * normals::pZ, normals::pZ, color);
+    vertices.insert(vertices.end(), pos_z.begin(), pos_z.end());
+    auto neg_z = generate_quad(w, h, d * normals::nZ, normals::nZ, color);
+    vertices.insert(vertices.end(), neg_z.begin(), neg_z.end());
+
+    constexpr float     pi = glm::pi<float>();
+    constexpr float     half_pi = glm::pi<float>() * 0.5f;
+    constexpr uint32_t  chamfer_seg = 8;
+
+    // Substract now so it's only applied to corners and edges...
+    d -= c;
+
+    auto add_corner = [&](bool isXPositive, bool isYPositive, bool isZPositive)
+        {
+            std::vector<InterleavedData> vtxs;
+            vtxs.resize(chamfer_seg * chamfer_seg * 6);
+            uint32_t vtx_counter = 0;
+
+            std::vector<uint32_t> indices;
+            indices.resize(chamfer_seg * chamfer_seg * 6);
+            uint32_t idx_counter = 0;
+
+            int offset = 0;
+
+            glm::vec3 offsetPosition = glm::vec3((isXPositive ? 1.f : -1.f) * w, (isYPositive ? 1.f : -1.f) * h, (isZPositive ? 1.f : -1.f) * d);
+            float deltaRingAngle = (half_pi / chamfer_seg);
+            float deltaSegAngle = (half_pi / chamfer_seg);
+            float offsetRingAngle = isYPositive ? 0.f : half_pi;
+            float offsetSegAngle;
+
+            if (isXPositive && isZPositive) offsetSegAngle = 0;
+            if ((!isXPositive) && isZPositive) offsetSegAngle = 1.5f * pi;
+            if (isXPositive && (!isZPositive)) offsetSegAngle = half_pi;
+            if ((!isXPositive) && (!isZPositive)) offsetSegAngle = pi;
+
+            // Generate the group of rings for the sphere
+            for (unsigned short ring = 0; ring <= chamfer_seg; ring++)
+            {
+                float r0 = c * sinf(ring * deltaRingAngle + offsetRingAngle);
+                float y0 = c * cosf(ring * deltaRingAngle + offsetRingAngle);
+
+                // Generate the group of segments for the current ring
+                for (unsigned short seg = 0; seg <= chamfer_seg; seg++)
+                {
+                    float x0 = r0 * sinf(seg * deltaSegAngle + offsetSegAngle);
+                    float z0 = r0 * cosf(seg * deltaSegAngle + offsetSegAngle);
+
+                    // Store locally the different vertices
+                    vtxs[vtx_counter++] = {
+                        glm::vec3(x0 + offsetPosition.x, y0 + offsetPosition.y, z0 + offsetPosition.z),
+                        glm::vec2((float)seg / (float)chamfer_seg, (float)ring / (float)chamfer_seg),
+                        glm::normalize(glm::vec3(x0, y0, z0)),
+                        color
+                    };
+
+                    if ((ring != chamfer_seg) && (seg != chamfer_seg))
+                    {
+                        // Each vertex (except the last) has six indices pointing to it
+                        indices[idx_counter++] = (offset + chamfer_seg + 2);
+                        indices[idx_counter++] = (offset);
+                        indices[idx_counter++] = (offset + chamfer_seg + 1);
+                        indices[idx_counter++] = (offset + chamfer_seg + 2);
+                        indices[idx_counter++] = (offset + 1);
+                        indices[idx_counter++] = (offset);
+                    }
+
+                    offset++;
+                }
+            }
+
+            // Add vertices...
+            for (uint32_t i = 0; i < indices.size(); i++)
+                vertices.push_back( vtxs[ indices[i] ]);
+        };
+
+    // Add corners
+    add_corner(true, true, true);       //  x,  y,  z
+    add_corner(true, true, false);      //  x,  y, -z
+    add_corner(true, false, true);      //  x, -y,  z
+    add_corner(true, false, false);     //  x, -y, -z
+    add_corner(false, true, true);      // -x,  y,  z
+    add_corner(false, true, false);     // -x,  y, -z
+    add_corner(false, false, true);     // -x, -y,  z
+    add_corner(false, false, false);    // -x, -y, -z
+
+    auto add_edge = [&](short xPos, short yPos, short zPos)
+        {
+            std::vector<InterleavedData> vtxs;
+            vtxs.resize(chamfer_seg* chamfer_seg * 6);
+            uint32_t vtx_counter = 0;
+
+            std::vector<uint32_t> indices;
+            indices.resize(chamfer_seg* chamfer_seg * 6);
+            uint32_t idx_counter = 0;
+
+            int offset = 0;
+
+            glm::vec3 centerPosition = xPos * w * normals::pX + yPos * h * normals::pY + zPos * d * normals::pZ;
+            glm::vec3 vy0 = (1.f - fabsf(xPos)) * normals::pX + (1.f - fabsf(yPos)) * normals::pY + (1.f - fabsf(zPos)) * normals::pZ;//extrusion direction
+
+            glm::vec3 vx0 = glm::vec3(vy0.y, vy0.z, vy0.x) ;    // anti permute
+            glm::vec3 vz0 = glm::vec3(vy0.z, vy0.x, vy0.y);     // permute
+
+            if (glm::dot(vx0, centerPosition) < 0.f) vx0 = -vx0;
+            if (glm::dot(vz0, centerPosition) < 0.f) vz0 = -vz0;
+            if (glm::dot(glm::cross(vx0, vy0), vz0) < 0.f) vy0 = -vy0;
+
+            float height = (1.f - fabsf(xPos)) * w + (1.f - fabsf(yPos)) * h + (1.f - fabsf(zPos)) * d;
+            height *= 2.f;
+            glm::vec3 offsetPosition = centerPosition - 0.5f * height * vy0;
+            int numSegHeight = 1;
+
+            float deltaAngle = (half_pi / chamfer_seg);
+            float deltaHeight = height / (float)numSegHeight;
+
+            for (unsigned short i = 0; i <= numSegHeight; i++)
+            {
+                for (unsigned short j = 0; j <= chamfer_seg; j++)
+                {
+                    float x0 = c * cosf(j * deltaAngle);
+                    float z0 = c * sinf(j * deltaAngle);
+
+                    // Store locally the different vertices
+                    vtxs[vtx_counter++] = { glm::vec3(x0 * vx0 + i * deltaHeight * vy0 + z0 * vz0 + offsetPosition),
+                        glm::vec2(j / (float)chamfer_seg, i / (float)numSegHeight),
+                        glm::normalize(glm::vec3(x0 * vx0 + z0 * vz0)),
+                        color
+                    };
+
+                    if (i != numSegHeight && j != chamfer_seg)
+                    {
+                        indices[idx_counter++] = (offset + chamfer_seg + 2);
+                        indices[idx_counter++] = (offset);
+                        indices[idx_counter++] = (offset + chamfer_seg + 1);
+                        indices[idx_counter++] = (offset + chamfer_seg + 2);
+                        indices[idx_counter++] = (offset + 1);
+                        indices[idx_counter++] = (offset);
+                    }
+
+                    offset++;
+                }
+            }
+
+            // Add vertices...
+            for (uint32_t i = 0; i < indices.size(); i++)
+                vertices.push_back(vtxs[indices[i]]);
+        };
+
+    // Generate the edges
+    add_edge(-1, -1,  0);
+    add_edge(-1,  1,  0);
+    add_edge( 1, -1,  0);
+    add_edge( 1,  1,  0);
+    add_edge(-1,  0, -1);
+    add_edge(-1,  0,  1);
+    add_edge( 1,  0, -1);
+    add_edge( 1,  0,  1);
+    add_edge( 0, -1, -1);
+    add_edge( 0, -1,  1);
+    add_edge( 0,  1, -1);
+    add_edge( 0,  1,  1);
+
+    spdlog::trace("Rounded Box mesh created ({} vertices)", vertices.size());
+
+    create_vertex_buffer();
+}
+
 void Mesh::create_cylinder(float r, float h, uint32_t segments, bool capped, const glm::vec3& color)
 {
     // Mesh has vertex data...
