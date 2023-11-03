@@ -204,8 +204,10 @@ void Mesh::create_rounded_box(float w, float h, float d, float c, const glm::vec
             }
 
             // Add vertices...
+            uint32_t vertex_offset = vertices.size();
+            vertices.resize(vertex_offset + indices.size());
             for (uint32_t i = 0; i < indices.size(); i++)
-                vertices.push_back( vtxs[ indices[i] ]);
+                vertices[vertex_offset + i] = vtxs[ indices[i] ];
         };
 
     // Add corners
@@ -277,8 +279,10 @@ void Mesh::create_rounded_box(float w, float h, float d, float c, const glm::vec
             }
 
             // Add vertices...
+            uint32_t vertex_offset = vertices.size();
+            vertices.resize(vertex_offset + indices.size());
             for (uint32_t i = 0; i < indices.size(); i++)
-                vertices.push_back(vtxs[indices[i]]);
+                vertices[vertex_offset + i] = vtxs[indices[i]];
         };
 
     // Generate the edges
@@ -296,6 +300,69 @@ void Mesh::create_rounded_box(float w, float h, float d, float c, const glm::vec
     add_edge( 0,  1,  1);
 
     spdlog::trace("Rounded Box mesh created ({} vertices)", vertices.size());
+
+    create_vertex_buffer();
+}
+
+void Mesh::create_cone(float r, float h, uint32_t segments, const glm::vec3& color)
+{
+    // Mesh has vertex data...
+    if (vertex_buffer)
+    {
+        vertices.clear();
+        wgpuBufferDestroy(vertex_buffer);
+    }
+
+    vertices.resize(segments * 6 * 2);
+
+    constexpr float pi2 = glm::pi<float>() * 2.f;
+    float deltaAngle = pi2 / float(segments);
+    float normal_y = r / h;
+    uint32_t vtx_counter = 0;
+
+    auto add_vertex = [&](const glm::vec3& p, const glm::vec3& n, const glm::vec2& uv) {
+        auto vtx = &vertices[vtx_counter++];
+        vtx->position = p;
+        vtx->normal = n;
+        vtx->uv = uv;
+        };
+
+    for (uint32_t i = 0; i < segments; i++)
+    {
+        float angle = i * deltaAngle;
+
+        glm::vec3 n = glm::normalize(glm::vec3(sinf(angle + deltaAngle * 0.5f), normal_y, cosf(angle + deltaAngle * 0.5f)));
+        add_vertex(glm::vec3(0.f, h, 0.f), n, glm::vec2(i / float(segments), 1.f));
+
+        float nx = sinf(angle);
+        float nz = cosf(angle);
+        n = glm::normalize(glm::vec3(nx, normal_y, nz));
+        add_vertex(glm::vec3(nx * r, 0.f, nz * r), n, glm::vec2(i / float(segments), 0.f));
+
+        nx = sinf(angle + deltaAngle);
+        nz = cosf(angle + deltaAngle);
+        n = glm::normalize(glm::vec3(nx, normal_y, nz));
+        add_vertex(glm::vec3(nx * r, 0.f, nz * r), n, glm::vec2((i + 1) / float(segments), 0.f));
+    }
+
+    // Caps
+
+    glm::vec3 bottom_center = glm::vec3(0.f, 0.f, 0.f);
+    glm::vec3 down = glm::vec3(0.f, -1.f, 0.f);
+
+    for (uint32_t i = 0; i < segments; ++i)
+    {
+        float angle = i * deltaAngle;
+
+        glm::vec3 uv = glm::vec3(sinf(angle), 0.f, cosf(angle));
+        glm::vec3 uv2 = glm::vec3(sinf(angle + deltaAngle), 0.f, cosf(angle + deltaAngle));
+
+        add_vertex(glm::vec3(uv2[0] * r, 0.f, uv2[2] * r), down, glm::vec2(uv2[0] * 0.5f + 0.5f, uv2[2] * 0.5f + 0.5f));
+        add_vertex(glm::vec3(uv[0] * r, 0.f, uv[2] * r), down, glm::vec2(uv[0] * 0.5f + 0.5f, uv[2] * 0.5f + 0.5f));
+        add_vertex(bottom_center, down, glm::vec2(0.5f));
+    }
+
+    spdlog::trace("Cone mesh created ({} vertices)", vtx_counter);
 
     create_vertex_buffer();
 }
@@ -379,7 +446,7 @@ void Mesh::create_cylinder(float r, float h, uint32_t segments, bool capped, con
     create_vertex_buffer();
 }
 
-void Mesh::create_cone(float radius, float h, uint32_t segments, const glm::vec3& color)
+void Mesh::create_capsule(float r, float h, uint32_t segments, uint32_t rings, const glm::vec3& color)
 {
     // Mesh has vertex data...
     if (vertex_buffer)
@@ -388,56 +455,128 @@ void Mesh::create_cone(float radius, float h, uint32_t segments, const glm::vec3
         wgpuBufferDestroy(vertex_buffer);
     }
 
-    vertices.resize(segments * 6 * 2);
-
+    constexpr float pi = glm::pi<float>() * 2.f;
+    constexpr float half_pi = glm::pi<float>() * 0.5f;
     constexpr float pi2 = glm::pi<float>() * 2.f;
-    float deltaAngle = pi2 / float(segments);
-    float normal_y = radius / h;
+
+    float delta_ring_angle = (half_pi / rings);
+    float delta_seg_angle = (pi2 / segments);
+
+    float sphere_ratio = r / (2 * r + h);
+    float cylinder_ratio = h / (2 * r + h);
+
+    uint32_t num_height_seg = 2;
+
+    std::vector<InterleavedData> vtxs;
+    const int num_vertices = (2 * rings + 2) * (segments + 1) + (num_height_seg - 1) * (segments + 1);
+    vtxs.resize(num_vertices);
     uint32_t vtx_counter = 0;
 
-    auto add_vertex = [&](const glm::vec3& p, const glm::vec3& n, const glm::vec2& uv) {
-        auto vtx = &vertices[vtx_counter++];
-        vtx->position = p;
-        vtx->normal = n;
-        vtx->uv = uv;
-        };
+    std::vector<uint32_t> indices;
+    const int num_indices = (2 * rings + 1) * (segments + 1) * 6 + (num_height_seg - 1) * (segments + 1) * 6;
+    indices.resize(num_indices);
+    vertices.resize(num_indices);
 
-    for (uint32_t i = 0; i < segments; i++)
+    uint32_t idx_counter = 0;
+    int offset = 0;
+
+    // Top half sphere
+    // Generate the group of rings for the sphere
+
+    for (unsigned int ring = 0; ring <= rings; ring++)
     {
-        float angle = i * deltaAngle;
+        float r0 = r * sinf(ring * delta_ring_angle);
+        float y0 = r * cosf(ring * delta_ring_angle);
 
-        glm::vec3 n = glm::normalize(glm::vec3(sinf(angle + deltaAngle * 0.5f), normal_y, cosf(angle + deltaAngle * 0.5f)));
-        add_vertex(glm::vec3(0.f, h, 0.f), n, glm::vec2(i / float(segments), 1.f));
+        // Generate the group of segments for the current ring
+        for (unsigned int seg = 0; seg <= segments; seg++)
+        {
+            float x0 = r0 * cosf(seg * delta_seg_angle);
+            float z0 = r0 * sinf(seg * delta_seg_angle);
 
-        float nx = sinf(angle);
-        float nz = cosf(angle);
-        n = glm::normalize(glm::vec3(nx, normal_y, nz));
-        add_vertex(glm::vec3(nx * radius, 0.f, nz * radius), n, glm::vec2(i / float(segments), 0.f));
+            // Add one vertex to the strip which makes up the sphere
+            vtxs[vtx_counter++] = { glm::vec3(x0, 0.5f * h + y0, z0),
+                glm::vec2((float)seg / (float)segments, (float)ring / (float)rings * sphere_ratio),
+                glm::normalize(glm::vec3(x0, y0, z0))
+            };
 
-        nx = sinf(angle + deltaAngle);
-        nz = cosf(angle + deltaAngle);
-        n = glm::normalize(glm::vec3(nx, normal_y, nz));
-        add_vertex(glm::vec3(nx * radius, 0.f, nz * radius), n, glm::vec2((i + 1) / float(segments), 0.f));
+            // each vertex (except the last) has six indices pointing to it
+            indices[idx_counter++] = (offset + segments + 1);
+            indices[idx_counter++] = (offset + segments);
+            indices[idx_counter++] = (offset);
+            indices[idx_counter++] = (offset + segments + 1);
+            indices[idx_counter++] = (offset);
+            indices[idx_counter++] = (offset + 1);
+
+            offset++;
+        }
     }
 
-    // Caps
+    // Cylinder part
 
-    glm::vec3 bottom_center = glm::vec3(0.f, 0.f, 0.f);
-    glm::vec3 down = glm::vec3(0.f, -1.f, 0.f);
+    float deltaAngle = (pi2 / segments);
+    float deltah = h / float(num_height_seg);
 
-    for (uint32_t i = 0; i < segments; ++i)
+    for (unsigned short i = 1; i < num_height_seg; i++)
+        for (unsigned short j = 0; j <= segments; j++)
+        {
+            float x0 = r * cosf(j * deltaAngle);
+            float z0 = r * sinf(j * deltaAngle);
+
+            vtxs[vtx_counter++] = { glm::vec3(x0, 0.5f * h - i * deltah, z0),
+                glm::vec2(j / (float)segments, (i / float(num_height_seg)) * cylinder_ratio + sphere_ratio),
+                glm::normalize(glm::vec3(x0, 0, z0))
+            };
+
+            indices[idx_counter++] = (offset + segments + 1);
+            indices[idx_counter++] = (offset + segments);
+            indices[idx_counter++] = (offset);
+            indices[idx_counter++] = (offset + segments + 1);
+            indices[idx_counter++] = (offset);
+            indices[idx_counter++] = (offset + 1);
+
+            offset++;
+        }
+
+    // Bottom half sphere
+    // Generate the group of rings for the sphere
+
+    for (unsigned int ring = 0; ring <= rings; ring++)
     {
-        float angle = i * deltaAngle;
+        float r0 = r * sinf(half_pi + ring * delta_ring_angle);
+        float y0 = r * cosf(half_pi + ring * delta_ring_angle);
 
-        glm::vec3 uv = glm::vec3(sinf(angle), 0.f, cosf(angle));
-        glm::vec3 uv2 = glm::vec3(sinf(angle + deltaAngle), 0.f, cosf(angle + deltaAngle));
+        // Generate the group of segments for the current ring
+        for (unsigned int seg = 0; seg <= segments; seg++)
+        {
+            float x0 = r0 * cosf(seg * delta_seg_angle);
+            float z0 = r0 * sinf(seg * delta_seg_angle);
 
-        add_vertex(glm::vec3(uv2[0] * radius, 0.f, uv2[2] * radius), down, glm::vec2(uv2[0] * 0.5f + 0.5f, uv2[2] * 0.5f + 0.5f));
-        add_vertex(glm::vec3(uv[0] * radius, 0.f, uv[2] * radius), down, glm::vec2(uv[0] * 0.5f + 0.5f, uv[2] * 0.5f + 0.5f));
-        add_vertex(bottom_center, down, glm::vec2(0.5f));
+            // Add one vertex to the strip which makes up the sphere
+            vtxs[vtx_counter++] = { glm::vec3(x0, -0.5f * h + y0, z0),
+                glm::vec2((float)seg / (float)segments, (float)ring / (float)rings * sphere_ratio + cylinder_ratio + sphere_ratio),
+                glm::normalize(glm::vec3(x0, y0, z0))
+            };
+
+            if (ring != rings)
+            {
+                // each vertex (except the last) has six indices pointing to it
+                indices[idx_counter++] = (offset + segments + 1);
+                indices[idx_counter++] = (offset + segments);
+                indices[idx_counter++] = (offset);
+                indices[idx_counter++] = (offset + segments + 1);
+                indices[idx_counter++] = (offset);
+                indices[idx_counter++] = (offset + 1);
+            }
+            offset++;
+        }
     }
 
-    spdlog::trace("Cone mesh created ({} vertices)", vtx_counter);
+    // Add vertices...
+    for (uint32_t i = 0; i < indices.size(); i++)
+        vertices[i] = vtxs[indices[i]];
+
+    spdlog::trace("Capsule mesh created ({} vertices)", vertices.size());
 
     create_vertex_buffer();
 }

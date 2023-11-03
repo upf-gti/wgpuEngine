@@ -186,13 +186,18 @@ void RendererStorage::register_basic_meshes()
     rounded_box_mesh->create_rounded_box();
     meshes["rounded_box"] = rounded_box_mesh;
 
+    // Cone
+    Mesh* cone_mesh = new Mesh();
+    cone_mesh->create_cone();
+    meshes["cone"] = cone_mesh;
+
     // Cylinder
     Mesh* cylinder_mesh = new Mesh();
     cylinder_mesh->create_cylinder();
     meshes["cylinder"] = cylinder_mesh;
 
-    // Cone
-    Mesh* cone_mesh = new Mesh();
-    cone_mesh->create_cone();
-    meshes["cone"] = cone_mesh;
+    // Capsule
+    Mesh* capsule_mesh = new Mesh();
+    capsule_mesh->create_capsule();
+    meshes["capsule"] = capsule_mesh;
 }
