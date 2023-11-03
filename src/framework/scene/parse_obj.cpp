@@ -17,13 +17,13 @@ EntityMesh* parse_obj(const std::string& obj_path)
 
     if (!reader.ParseFromFile(obj_path, reader_config)) {
         if (!reader.Error().empty()) {
-            std::cerr << "TinyObjReader: " << reader.Error();
+            spdlog::error("TinyObjReader: {}", reader.Error());
         }
         return nullptr;
     }
 
     if (!reader.Warning().empty()) {
-        std::cout << "TinyObjReader: " << reader.Warning();
+        spdlog::warn("TinyObjReader: {}", reader.Warning());
     }
 
     auto& attrib = reader.GetAttrib();

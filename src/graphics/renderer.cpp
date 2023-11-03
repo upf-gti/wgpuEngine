@@ -74,13 +74,13 @@ int Renderer::initialize(GLFWwindow* window, bool use_mirror_screen)
 #endif
 
     if (webgpu_context.initialize(adapter_opts, required_limits, window, create_screen_swapchain)) {
-        std::cout << "Could not initialize WebGPU context" << std::endl;
+        spdlog::error("Could not initialize WebGPU context");
         return 1;
     }
 
 #ifdef XR_SUPPORT
     if (is_openxr_available && xr_context.init(&webgpu_context)) {
-        std::cout << "Could not initialize OpenXR context" << std::endl;
+        spdlog::error("Could not initialize OpenXR context");
         is_openxr_available = false;
     }
 

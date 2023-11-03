@@ -33,15 +33,16 @@ void PrintDeviceError(WGPUErrorType errorType, const char* message, void* userda
     default:
         return;
     }
-    std::cout << errorTypeName << " error: " << message << std::endl;
+
+    spdlog::error("{} error: {}", errorTypeName, message);
 }
 
 void DeviceLostCallback(WGPUDeviceLostReason reason, const char* message, void*) {
-    std::cout << "Device lost: " << message << std::endl;
+    spdlog::error("Device lost: {}");
 }
 
 void PrintGLFWError(int code, const char* message) {
-    std::cout << "GLFW error: " << code << " - " << message << std::endl;
+    spdlog::error("GLFW error: {} - {}", code, message);
 }
 
 WGPUAdapter requestAdapter(WGPUInstance instance, WGPURequestAdapterOptions const* options) {
@@ -58,7 +59,7 @@ WGPUAdapter requestAdapter(WGPUInstance instance, WGPURequestAdapterOptions cons
             userData.adapter = adapter;
         }
         else {
-            std::cout << "Could not get WebGPU adapter: " << message << std::endl;
+            spdlog::error("Could not get WebGPU adapter: {}", message);
         }
         userData.requestEnded = true;
     };
@@ -95,7 +96,7 @@ WGPUDevice requestDevice(WGPUAdapter adapter, WGPUDeviceDescriptor const* descri
             userData.device = device;
         }
         else {
-            std::cout << "Could not get WebGPU adapter: " << message << std::endl;
+            spdlog::error("Could not get WebGPU adapter: {}");
         }
         userData.requestEnded = true;
     };
@@ -419,7 +420,7 @@ WGPUBindGroup WebGPUContext::create_bind_group(const std::vector<Uniform*>& unif
 
 WGPUBindGroup WebGPUContext::create_bind_group(const std::vector<Uniform*>& uniforms, Shader* shader, uint16_t bind_group)
 {
-    std::cout << "Creating bind group \"" << bind_group << "\" for shader " << shader->get_path() << std::endl;
+    spdlog::trace("Creating bind group {} for shader ", bind_group);
 
     std::vector<WGPUBindGroupEntry> entries(uniforms.size());
 
@@ -430,7 +431,7 @@ WGPUBindGroup WebGPUContext::create_bind_group(const std::vector<Uniform*>& unif
     std::vector<WGPUBindGroupLayout>& layouts_by_id = shader->get_bind_group_layouts();
 
     if (layouts_by_id.size() < bind_group) {
-        std::cout << "Can't find bind group " << bind_group << " in shader: " << shader->get_path() << std::endl;
+        spdlog::error("Can't find bind group {} in shader: {}", bind_group, shader->get_path());
         assert(0);
     }
 

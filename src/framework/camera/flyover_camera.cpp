@@ -5,20 +5,22 @@
 #include "glm/gtx/rotate_vector.hpp"
 #include "glm/gtx/norm.hpp"
 
+#include <iostream>
+
 FlyoverCamera::FlyoverCamera() : Camera()
 {
 }
 
 void FlyoverCamera::update(float delta_time)
 {
-    if (Input::is_mouse_pressed(GLFW_MOUSE_BUTTON_LEFT)) //is left button pressed?
+    if (Input::is_mouse_pressed(GLFW_MOUSE_BUTTON_LEFT))
     {
         glm::vec2 mouse_delta = Input::get_mouse_delta();
 
         glm::vec3 front = normalize(center - eye);
 
-        front = rotate(front, mouse_delta.x * mouse_sensitivity * delta_time, glm::vec3(0.0f, 1.0f, 0.0f));
-        front = rotate(front, mouse_delta.y * mouse_sensitivity * delta_time, get_local_vector(glm::vec3(1.0f, 0.0f, 0.0f)));
+        front = rotate(front, mouse_delta.x * mouse_sensitivity, glm::vec3(0.0f, 1.0f, 0.0f));
+        front = rotate(front, mouse_delta.y * mouse_sensitivity, get_local_vector(glm::vec3(1.0f, 0.0f, 0.0f)));
 
         center = eye + front;
         update_view_matrix();

@@ -3,6 +3,8 @@
 #include <fstream>
 #include <iostream>
 
+#include "spdlog/spdlog.h"
+
 json load_json(const std::string& filename) {
 
 	json j;
@@ -11,7 +13,7 @@ json load_json(const std::string& filename) {
 
         std::ifstream ifs(filename.c_str());
         if (!ifs.is_open()) {
-            std::cout << "Failed to open json file" << filename << std::endl;
+            spdlog::error("Failed to open json file {}", filename);
             continue;
         }
 
@@ -19,7 +21,7 @@ json load_json(const std::string& filename) {
         j = json::parse(ifs, nullptr, false);
         if (j.is_discarded()) {
             ifs.close();
-			std::cout << "Failed to parse json file" << filename << std::endl;
+            spdlog::error("Failed to parse json file {}", filename);
             continue;
         }
 #else
@@ -31,8 +33,7 @@ json load_json(const std::string& filename) {
         {
             ifs.close();
             // Output exception information
-			printf("Failed to parse json file %s\n%s\nAt offset: %zd"
-                , filename.c_str(), e.what(), e.byte);
+            spdlog::error("Failed to parse json file {}\n{}\nAt offset: {}", filename.c_str(), e.what(), e.byte);
             continue;
         }
 #endif
