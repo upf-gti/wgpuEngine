@@ -186,6 +186,11 @@ void RendererStorage::register_basic_meshes()
     rounded_box_mesh->create_rounded_box();
     meshes["rounded_box"] = rounded_box_mesh;
 
+    // Sphere
+    Mesh* sphere_mesh = new Mesh();
+    sphere_mesh->create_sphere();
+    meshes["sphere"] = sphere_mesh;
+
     // Cone
     Mesh* cone_mesh = new Mesh();
     cone_mesh->create_cone();
@@ -200,4 +205,9 @@ void RendererStorage::register_basic_meshes()
     Mesh* capsule_mesh = new Mesh();
     capsule_mesh->create_capsule();
     meshes["capsule"] = capsule_mesh;
+
+    // Torus
+    Mesh* torus_mesh = new Mesh();
+    torus_mesh->create_torus();
+    meshes["torus"] = torus_mesh;
 }

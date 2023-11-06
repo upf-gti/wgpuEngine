@@ -304,6 +304,81 @@ void Mesh::create_rounded_box(float w, float h, float d, float c, const glm::vec
     create_vertex_buffer();
 }
 
+void Mesh::create_sphere(float r, uint32_t segments, uint32_t rings, const glm::vec3& color)
+{
+    // Mesh has vertex data...
+    if (vertex_buffer)
+    {
+        vertices.clear();
+        wgpuBufferDestroy(vertex_buffer);
+    }
+
+    std::vector<InterleavedData> vtxs;
+    vtxs.resize((rings + 1) * (segments + 1));
+    uint32_t vtx_counter = 0;
+
+    std::vector<uint32_t> indices;
+    indices.resize(rings * (segments + 1) * 6);
+    uint32_t idx_counter = 0;
+
+    constexpr float pi = glm::pi<float>();
+    constexpr float pi2 = pi * 2.f;
+
+    float fDeltaRingAngle = (pi / rings);
+    float fDeltaSegAngle = (pi2 / segments);
+    int offset = 0;
+
+    // Generate the group of rings for the sphere
+    for (unsigned int ring = 0; ring <= rings; ring++)
+    {
+        float r0 = r * sinf(ring * fDeltaRingAngle);
+        float y0 = r * cosf(ring * fDeltaRingAngle);
+
+        // Generate the group of segments for the current ring
+        for (unsigned int seg = 0; seg <= segments; seg++)
+        {
+            float x0 = r0 * sinf(seg * fDeltaSegAngle);
+            float z0 = r0 * cosf(seg * fDeltaSegAngle);
+
+            // Add one vertex to the strip which makes up the sphere
+            vtxs[vtx_counter++] = { glm::vec3(x0, y0, z0),
+                glm::vec2((float)seg / (float)segments, (float)ring / (float)rings),
+                glm::normalize(glm::vec3(x0, y0, z0))
+            };
+
+            if (ring != rings)
+            {
+                if (seg != segments)
+                {
+                    // each vertex (except the last) has six indices pointing to it
+                    if (ring != rings - 1)
+                    {
+                        indices[idx_counter++] = offset + segments + 2;
+                        indices[idx_counter++] = offset;
+                        indices[idx_counter++] = offset + segments + 1;
+                    }
+                    if (ring != 0)
+                    {
+                        indices[idx_counter++] = offset + segments + 2;
+                        indices[idx_counter++] = offset + 1;
+                        indices[idx_counter++] = offset;
+                    }
+                }
+                offset++;
+            }
+        }
+    }
+
+    // Add vertices...
+    vertices.resize(indices.size());
+    for (uint32_t i = 0; i < indices.size(); i++)
+        vertices[i] = vtxs[indices[i]];
+
+    spdlog::trace("Sphere mesh created ({} vertices)", vertices.size());
+
+    create_vertex_buffer();
+}
+
 void Mesh::create_cone(float r, float h, uint32_t segments, const glm::vec3& color)
 {
     // Mesh has vertex data...
@@ -577,6 +652,66 @@ void Mesh::create_capsule(float r, float h, uint32_t segments, uint32_t rings, c
         vertices[i] = vtxs[indices[i]];
 
     spdlog::trace("Capsule mesh created ({} vertices)", vertices.size());
+
+    create_vertex_buffer();
+}
+
+void Mesh::create_torus(float r, float ir, uint32_t segments_section, uint32_t segments_circle, const glm::vec3& color)
+{
+    // Mesh has vertex data...
+    if (vertex_buffer)
+    {
+        vertices.clear();
+        wgpuBufferDestroy(vertex_buffer);
+    }
+
+    std::vector<InterleavedData> vtxs;
+    vtxs.resize((segments_circle + 1) * (segments_section + 1));
+    uint32_t vtx_counter = 0;
+
+    std::vector<uint32_t> indices;
+    indices.resize((segments_circle) * (segments_section + 1) * 6);
+    uint32_t idx_counter = 0;
+
+    constexpr float pi2 = glm::pi<float>() * 2.f;
+
+    float deltaSection = (pi2 / segments_section);
+    float deltaCircle = (pi2 / segments_circle);
+    int offset = 0;
+
+    for (unsigned int i = 0; i <= segments_circle; i++)
+    {
+        for (unsigned int j = 0; j <= segments_section; j++)
+        {
+            glm::vec3 c0(r, 0.0, 0.0);
+            glm::vec3 v0(r + ir * cosf(j * deltaSection), ir * sinf(j * deltaSection), 0.0);
+            glm::quat q = glm::angleAxis(i * deltaCircle, normals::pY);
+            glm::vec3 v = q * v0;
+            glm::vec3 c = q * c0;
+
+            vtxs[ vtx_counter++ ] = { v,
+                glm::vec2(i / (float)segments_circle, j / (float)segments_section),
+                glm::normalize(v - c) };
+
+            if (i != segments_circle)
+            {
+                indices[idx_counter++] = offset + segments_section + 1;
+                indices[idx_counter++] = offset;
+                indices[idx_counter++] = offset + segments_section;
+                indices[idx_counter++] = offset + segments_section + 1;
+                indices[idx_counter++] = offset + 1;
+                indices[idx_counter++] = offset;
+            }
+            offset++;
+        }
+    }
+
+    // Add vertices...
+    vertices.resize(indices.size());
+    for (uint32_t i = 0; i < indices.size(); i++)
+        vertices[i] = vtxs[indices[i]];
+
+    spdlog::trace("Torus mesh created ({} vertices)", vertices.size());
 
     create_vertex_buffer();
 }
