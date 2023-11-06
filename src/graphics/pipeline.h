@@ -40,8 +40,9 @@ private:
     static std::vector<Pipeline*> registered_render_pipelines;
     static std::vector<Pipeline*> registered_compute_pipelines;
 
-	WGPUColorTargetState color_target;
-	WGPUBlendState		 blend_state;
+	WGPUColorTargetState    color_target;
+	WGPUBlendState		    blend_state;
+    WGPUPrimitiveTopology   topology;
 
 	bool uses_depth_buffer = false;
     bool blending_enabled = false;

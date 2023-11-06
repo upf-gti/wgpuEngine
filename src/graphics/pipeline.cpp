@@ -34,7 +34,9 @@ void Pipeline::create_render(Shader* shader, WGPUColorTargetState color_target, 
 
     blending_enabled = color_target.blend != nullptr;
 
+    this->topology = topology;
 	this->color_target = color_target;
+
     if (blending_enabled) {
         this->blend_state = *color_target.blend;
     }
@@ -105,7 +107,8 @@ void Pipeline::reload(Shader* shader)
         if (blending_enabled) {
             color_target.blend = &blend_state;
         }
-		pipeline = webgpu_context->create_render_pipeline(shader->get_module(), pipeline_layout, shader->get_vertex_buffer_layouts(), color_target, uses_depth_buffer);
+		pipeline = webgpu_context->create_render_pipeline(shader->get_module(), pipeline_layout, shader->get_vertex_buffer_layouts(),
+            color_target, uses_depth_buffer, WGPUCullMode_None, topology);
 	}
 	else {
 		wgpuComputePipelineRelease(std::get<WGPUComputePipeline>(pipeline));
