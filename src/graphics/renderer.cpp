@@ -111,9 +111,8 @@ void Renderer::clean()
     webgpu_context.destroy();
 }
 
-void Renderer::render(WGPURenderPassEncoder render_pass, const WGPUBindGroup& render_bind_group_camera)
+void Renderer::prepare_instancing()
 {
-
     for (int i = 0; i < RENDER_LIST_SIZE; ++i) {
 
         instance_data[i].clear();
@@ -132,7 +131,7 @@ void Renderer::render(WGPURenderPassEncoder render_pass, const WGPUBindGroup& re
             if (lhs_mat.shader == rhs_mat.shader && lhs_mesh == rhs_mesh && lhs_mat.diffuse > rhs_mat.diffuse) return true;
 
             return false;
-        });
+            });
 
         // Check instances
         {
@@ -198,7 +197,7 @@ void Renderer::render(WGPURenderPassEncoder render_pass, const WGPUBindGroup& re
                 }
 
                 bind_groups[i] = webgpu_context.create_bind_group(uniforms, shader, 0);
-                
+
                 j += render_data.repeat;
             }
 
@@ -207,6 +206,10 @@ void Renderer::render(WGPURenderPassEncoder render_pass, const WGPUBindGroup& re
             webgpu_context.update_buffer(std::get<WGPUBuffer>(instance_data_uniform[i].data), 0, instance_data[i].data(), sizeof(sUniformData) * instances);
         }
     }
+}
+
+void Renderer::render(WGPURenderPassEncoder render_pass, const WGPUBindGroup& render_bind_group_camera)
+{
 
     Pipeline* prev_pipeline = nullptr;
 

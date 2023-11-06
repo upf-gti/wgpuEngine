@@ -80,6 +80,7 @@ public:
     virtual void update(float delta_time) = 0;
     virtual void render() = 0;
 
+    void prepare_instancing();
     void render(WGPURenderPassEncoder render_pass, const WGPUBindGroup& render_bind_group_camera);
 
     bool get_openxr_available() { return is_openxr_available; }

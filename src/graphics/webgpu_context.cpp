@@ -35,6 +35,7 @@ void PrintDeviceError(WGPUErrorType errorType, const char* message, void* userda
     }
 
     spdlog::error("{} error: {}", errorTypeName, message);
+    assert(0);
 }
 
 void DeviceLostCallback(WGPUDeviceLostReason reason, const char* message, void*) {
