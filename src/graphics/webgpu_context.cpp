@@ -462,7 +462,7 @@ WGPUPipelineLayout WebGPUContext::create_pipeline_layout(const std::vector<WGPUB
     return wgpuDeviceCreatePipelineLayout(device, &layout_descr);
 }
 
-WGPURenderPipeline WebGPUContext::create_render_pipeline(WGPUShaderModule render_shader_module, WGPUPipelineLayout pipeline_layout, const std::vector<WGPUVertexBufferLayout>& vertex_attributes, WGPUColorTargetState color_target, bool uses_depth_buffer, WGPUCullMode cull_mode)
+WGPURenderPipeline WebGPUContext::create_render_pipeline(WGPUShaderModule render_shader_module, WGPUPipelineLayout pipeline_layout, const std::vector<WGPUVertexBufferLayout>& vertex_attributes, WGPUColorTargetState color_target, bool uses_depth_buffer, WGPUCullMode cull_mode, WGPUPrimitiveTopology topology)
 {    
     WGPUVertexState vertex_state = {};
     vertex_state.module = render_shader_module;
@@ -505,7 +505,7 @@ WGPURenderPipeline WebGPUContext::create_render_pipeline(WGPUShaderModule render
     pipeline_descr.vertex = vertex_state;
 
     pipeline_descr.primitive = {
-        .topology = WGPUPrimitiveTopology_TriangleList,
+        .topology = topology,
         .stripIndexFormat = WGPUIndexFormat_Undefined, // order of the connected vertices
         .frontFace = WGPUFrontFace_CCW,
         .cullMode = cull_mode
