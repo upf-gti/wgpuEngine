@@ -75,6 +75,20 @@ glm::vec3 mod_vec3(glm::vec3 v, float m)
     );
 }
 
+// https://stackoverflow.com/questions/466204/rounding-up-to-next-power-of-2
+uint32_t next_power_of_two(uint32_t value)
+{
+    value--;
+    value |= value >> 1;
+    value |= value >> 2;
+    value |= value >> 4;
+    value |= value >> 8;
+    value |= value >> 16;
+    value++;
+
+    return value;
+}
+
 glm::vec3 hsv2rgb(glm::vec3 c)
 {
     glm::vec3 m = mod_vec3(c.x * 6.f + glm::vec3(0.f, 4.f, 2.f), 6.f);

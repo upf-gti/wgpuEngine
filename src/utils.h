@@ -29,7 +29,7 @@ glm::vec4 load_vec4(const std::string& str);
 glm::quat load_quat(const std::string& str);
 
 glm::vec3 mod_vec3(glm::vec3 v, float m);
-
+uint32_t next_power_of_two(uint32_t value);
 
 glm::vec3 hsv2rgb(glm::vec3 c);
 
