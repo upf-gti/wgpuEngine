@@ -198,6 +198,8 @@ int WebGPUContext::initialize(WGPURequestAdapterOptions adapter_opts, WGPURequir
         create_swapchain(width, height);
     }
 
+    this->window = window;
+
     device_queue = wgpuDeviceGetQueue(device);
 
     is_initialized = true;

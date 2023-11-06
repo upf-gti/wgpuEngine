@@ -99,4 +99,7 @@ public:
     void clear_renderables();
 
     virtual void resize_window(int width, int height);
+
+    GLFWwindow* get_glfw_window() { return webgpu_context.window; };
+
 };
