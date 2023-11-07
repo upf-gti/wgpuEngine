@@ -18,7 +18,9 @@ struct Material
     Shader* shader = nullptr;
     glm::vec4 color = { 1.0f, 1.0f, 1.0f, 1.0f };
     Texture* diffuse = nullptr;
+
     uint8_t flags = 0;
+    uint8_t priority = 0;
 
     // Don't take transparency into account for now
     bool operator==(const Material& other) const

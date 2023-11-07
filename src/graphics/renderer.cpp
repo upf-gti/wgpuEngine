@@ -126,9 +126,10 @@ void Renderer::prepare_instancing()
             auto* lhs_mesh = lhs.entity_mesh->get_mesh();
             auto* rhs_mesh = rhs.entity_mesh->get_mesh();
 
-            if (lhs_mat.shader > rhs_mat.shader) return true;
-            if (lhs_mat.shader == rhs_mat.shader && lhs_mesh > rhs_mesh) return true;
-            if (lhs_mat.shader == rhs_mat.shader && lhs_mesh == rhs_mesh && lhs_mat.diffuse > rhs_mat.diffuse) return true;
+            if (lhs_mat.priority > rhs_mat.priority) return true;
+            if (lhs_mat.priority == rhs_mat.priority && lhs_mat.shader > rhs_mat.shader) return true;
+            if (lhs_mat.priority == rhs_mat.priority && lhs_mat.shader == rhs_mat.shader && lhs_mesh > rhs_mesh) return true;
+            if (lhs_mat.priority == rhs_mat.priority && lhs_mat.shader == rhs_mat.shader && lhs_mesh == rhs_mesh && lhs_mat.diffuse > rhs_mat.diffuse) return true;
 
             return false;
             });
