@@ -23,7 +23,7 @@ public:
 	void create_compute(Shader* shader, WGPUPipelineLayout pipeline_layout);
 	void create_compute(Shader* shader);
 
-    static void register_render_pipeline(Shader* shader, WGPUColorTargetState color_target, bool uses_depth_buffer = false, WGPUPrimitiveTopology topology = WGPUPrimitiveTopology_TriangleList);
+    static void register_render_pipeline(Shader* shader, WGPUColorTargetState color_target, bool uses_depth_buffer = false, WGPUCullMode cull_mode = WGPUCullMode_None, WGPUPrimitiveTopology topology = WGPUPrimitiveTopology_TriangleList);
     static void register_compute_pipeline(Shader* shader, WGPUPipelineLayout pipeline_layout);
     static void clean_registered_pipelines();
 
@@ -43,6 +43,7 @@ private:
 	WGPUColorTargetState    color_target;
 	WGPUBlendState		    blend_state;
     WGPUPrimitiveTopology   topology;
+    WGPUCullMode            cull_mode;
 
 	bool uses_depth_buffer = false;
     bool blending_enabled = false;
