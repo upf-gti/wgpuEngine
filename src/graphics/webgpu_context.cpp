@@ -128,12 +128,12 @@ int WebGPUContext::initialize(WGPURequestAdapterOptions adapter_opts, WGPURequir
     WGPUDeviceDescriptor device_desc = {};
     device_desc.label = "My Device";
 
-    WGPUFeatureName required_features[2] = { WGPUFeatureName_Float32Filterable };
+    WGPUFeatureName required_features[1] = { WGPUFeatureName_Float32Filterable };
 
 #ifdef __EMSCRIPTEN__
     device_desc.requiredFeaturesCount = 1;
 #else
-    device_desc.requiredFeatureCount = 2;
+    device_desc.requiredFeatureCount = 1;
 #endif
 
     device_desc.requiredFeatures = required_features;
