@@ -17,19 +17,27 @@ inline XrInputPose parse_OpenXR_pose_to_sPose(const XrPosef& xrPosef);
 glm::quat slerp(const glm::quat& start, const glm::quat& end, float percent);
 glm::vec3 slerp(const glm::vec3& start, const glm::vec3& end, float percent);
 
-int OpenXRContext::init(WebGPUContext* webgpu_context)
+bool OpenXRContext::init(WebGPUContext* webgpu_context)
 {
     XrResult result;
 
     uint32_t blend_modes_count = 0;
     result = xrEnumerateEnvironmentBlendModes(instance, system_id, XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO, 0, &blend_modes_count, NULL);
-    if (!xr_result(NULL, result, "Failed to enumerate number of blend modes"))
-        return 1;
+
+    if (!XR_SUCCEEDED(result))
+    {
+        spdlog::error("Failed to enumerate number of blend modes");
+        return false;
+    }
 
     std::vector<XrEnvironmentBlendMode> blendModes(blend_modes_count);
     result = xrEnumerateEnvironmentBlendModes(instance, system_id, XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO, blend_modes_count, &blend_modes_count, blendModes.data());
-    if (!xr_result(NULL, result, "Failed to enumerate blend modes"))
-        return 1;
+
+    if (!XR_SUCCEEDED(result))
+    {
+        spdlog::error("Failed to enumerate blend modes");
+        return false;
+    }
 
     if (check_backend_requirements()) {
         return 1;
@@ -37,8 +45,12 @@ int OpenXRContext::init(WebGPUContext* webgpu_context)
 
     view_count = 0;
     result = xrEnumerateViewConfigurationViews(instance, system_id, XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO, 0, &view_count, NULL);
-    if (!xr_result(instance, result, "Failed to get view configuration count"))
-        return 1;
+
+    if (!XR_SUCCEEDED(result))
+    {
+        spdlog::error("Failed to get view configuration count");
+        return false;
+    }
 
     views.resize(view_count, { XR_TYPE_VIEW });
     viewconfig_views.resize(view_count, { XR_TYPE_VIEW_CONFIGURATION_VIEW, nullptr });
@@ -46,8 +58,12 @@ int OpenXRContext::init(WebGPUContext* webgpu_context)
     per_view_data.resize(view_count);
 
     result = xrEnumerateViewConfigurationViews(instance, system_id, XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO, view_count, &view_count, viewconfig_views.data());
-    if (!xr_result(instance, result, "Failed to enumerate view configuration views!"))
-        return 1;
+
+    if (!XR_SUCCEEDED(result))
+    {
+        spdlog::error("Failed to enumerate view configuration views!");
+        return false;
+    }
 
     print_viewconfig_view_info();
 
@@ -62,14 +78,22 @@ int OpenXRContext::init(WebGPUContext* webgpu_context)
 
     uint32_t swapchain_format_count;
     result = dawnxr::enumerateSwapchainFormats(session, 0, &swapchain_format_count, NULL);
-    if (!xr_result(instance, result, "Failed to get number of supported swapchain formats"))
-        return 1;
+
+    if (!XR_SUCCEEDED(result))
+    {
+        spdlog::error("Failed to get number of supported swapchain formats");
+        return false;
+    }
 
     printf("Runtime supports %d swapchain formats\n", swapchain_format_count);
     swapchain_formats.resize(swapchain_format_count);
     result = dawnxr::enumerateSwapchainFormats(session, swapchain_format_count, &swapchain_format_count, swapchain_formats.data());
-    if (!xr_result(instance, result, "Failed to enumerate swapchain formats"))
-        return 1;
+
+    if (!XR_SUCCEEDED(result))
+    {
+        spdlog::error("Failed to enumerate swapchain formats");
+        return false;
+    }
 
     //webgpu_context->swapchain_format = static_cast<WGPUTextureFormat>(swapchain_formats[0]);
 
@@ -95,16 +119,23 @@ int OpenXRContext::init(WebGPUContext* webgpu_context)
         dawnxr::createSwapchain(session, &swapchain_create_info, &swapchains[i].swapchain);
 
         result = dawnxr::enumerateSwapchainImages(swapchains[i].swapchain, 0, &swapchain_length, nullptr);
-        if (!xr_result(instance, result, "Failed to enumerate swapchains"))
-            return 1;
+
+        if (!XR_SUCCEEDED(result))
+        {
+            spdlog::error("Failed to enumerate swapchains");
+            return false;
+        }
 
         // these are wrappers for the actual OpenGL texture id
         swapchains[i].images.resize(swapchain_length);
         result = dawnxr::enumerateSwapchainImages(swapchains[i].swapchain, swapchain_length, &swapchain_length, (XrSwapchainImageBaseHeader*)swapchains[i].images.data());
-        if (!xr_result(instance, result, "Failed to enumerate swapchain images"))
-            return 1;
-    }
 
+        if (!XR_SUCCEEDED(result))
+        {
+            spdlog::error("Failed to enumerate swapchain images");
+            return false;
+        }
+    }
 
     XrReferenceSpaceType play_space_type = XR_REFERENCE_SPACE_TYPE_STAGE;
     // We could check if our ref space type is supported, but next call will error anyway if not
@@ -117,8 +148,12 @@ int OpenXRContext::init(WebGPUContext* webgpu_context)
     };
 
     result = xrCreateReferenceSpace(session, &play_space_create_info, &play_space);
-    if (!xr_result(instance, result, "Failed to create play space!"))
-        return 1;
+
+    if (!XR_SUCCEEDED(result))
+    {
+        spdlog::error("Failed to create play space!");
+        return false;
+    }
 
     projection_views.resize(view_count);
     for (uint32_t i = 0; i < view_count; i++) {
@@ -142,7 +177,7 @@ int OpenXRContext::init(WebGPUContext* webgpu_context)
 
     initialized = true;
 
-    return 0;
+    return true;
 }
 
 void OpenXRContext::clean()
@@ -167,24 +202,38 @@ bool OpenXRContext::create_instance()
     uint32_t extension_count = 0;
     result = xrEnumerateInstanceExtensionProperties(NULL, 0, &extension_count, NULL);
 
-    if (!xr_result(NULL, result, "Could not initilize OpenXR: Failed to enumerate number of extension properties"))
+    if (!XR_SUCCEEDED(result))
+    {
+        spdlog::error("Could not initilize OpenXR: Failed to enumerate number of extension properties");
         return false;
+    }
 
     std::vector<XrExtensionProperties> extensionProperties(extension_count, { XR_TYPE_EXTENSION_PROPERTIES, nullptr });
     result = xrEnumerateInstanceExtensionProperties(NULL, extension_count, &extension_count, extensionProperties.data());
-    if (!xr_result(NULL, result, "Failed to enumerate extension properties"))
+
+    if (!XR_SUCCEEDED(result))
+    {
+        spdlog::error("Failed to enumerate extension properties");
         return false;
+    }
 
     uint32_t layer_count = 0;
     result = xrEnumerateApiLayerProperties(0, &layer_count, NULL);
 
-    if (!xr_result(NULL, result, "Failed to enumerate layer properties"))
+    if (!XR_SUCCEEDED(result))
+    {
+        spdlog::error("Failed to enumerate layer properties");
         return false;
+    }
 
     std::vector<XrApiLayerProperties> layerProperties(layer_count, { XR_TYPE_API_LAYER_PROPERTIES, nullptr });
     result = xrEnumerateApiLayerProperties(layer_count, &layer_count, layerProperties.data());
-    if (!xr_result(NULL, result, "Failed to enumerate extension properties"))
+
+    if (!XR_SUCCEEDED(result))
+    {
+        spdlog::error("Failed to enumerate extension properties");
         return false;
+    }
 
     bool vulkan_ext = false;
     bool dx12_ext = false;
@@ -261,8 +310,12 @@ bool OpenXRContext::create_instance()
     };
 
     result = xrCreateInstance(&instance_create_info, &instance);
-    if (!xr_result(NULL, result, "Failed to create XR instance."))
+
+    if (!XR_SUCCEEDED(result))
+    {
+        spdlog::error("Failed to create XR instance");
         return false;
+    }
 
     XrInstanceProperties instance_props = {
         .type = XR_TYPE_INSTANCE_PROPERTIES,
@@ -270,8 +323,12 @@ bool OpenXRContext::create_instance()
     };
 
     result = xrGetInstanceProperties(instance, &instance_props);
-    if (!xr_result(NULL, result, "Failed to get instance info"))
+
+    if (!XR_SUCCEEDED(result))
+    {
+        spdlog::error("Failed to get instance info");
         return false;
+    }
 
     spdlog::info("Runtime Name: {}", instance_props.runtimeName);
     spdlog::info("Runtime Version: {}.{}.{}", XR_VERSION_MAJOR(instance_props.runtimeVersion),
@@ -281,8 +338,11 @@ bool OpenXRContext::create_instance()
     XrSystemGetInfo system_get_info = { .type = XR_TYPE_SYSTEM_GET_INFO, .next = NULL, .formFactor = XR_FORM_FACTOR_HEAD_MOUNTED_DISPLAY };
     result = xrGetSystem(instance, &system_get_info, &system_id);
 
-    if (!xr_result(instance, result, "Failed to get system for HMD form factor."))
+    if (!XR_SUCCEEDED(result))
+    {
+        spdlog::error("Failed to get system for HMD form factor");
         return false;
+    }
 
     return true;
 }
@@ -296,8 +356,11 @@ bool OpenXRContext::begin_session()
         .primaryViewConfigurationType = XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO
     };
     const XrResult result = xrBeginSession(session, &session_begin_info);
-    if (!xr_result(instance, result, "Failed to begin session!"))
+    if (!XR_SUCCEEDED(result))
+    {
+        spdlog::error("Failed to begin session!");
         return false;
+    }
 
     return true;
 }
@@ -306,39 +369,13 @@ bool OpenXRContext::end_session()
 {
     // End the session
     const XrResult result = xrEndSession(session);
-    if (!xr_result(instance, result, "Failed to end session!"))
-        return false;
-
-    return true;
-}
-
-bool OpenXRContext::xr_result(XrInstance xrInstance, XrResult result, const char* format, ...)
-{
-    if (XR_SUCCEEDED(result))
-        return true;
-
-    if (!xrInstance) {
-        std::cout << format << std::endl;
+    if (!XR_SUCCEEDED(result))
+    {
+        spdlog::error("Failed to end session!");
         return false;
     }
 
-    char resultString[XR_MAX_RESULT_STRING_SIZE];
-    xrResultToString(xrInstance, result, resultString);
-
-    size_t len1 = strlen(format);
-    size_t len2 = strlen(resultString) + 1;
-    char* formatRes = new  char[len1 + len2 + 4]; // + " []\n"
-    sprintf(formatRes, "%s [%s]\n", format, resultString);
-
-    va_list args;
-    va_start(args, format);
-    vprintf(formatRes, args);
-    va_end(args);
-
-    std::cout << std::string(formatRes) << std::endl;
-
-    delete[] formatRes;
-    return false;
+    return true;
 }
 
 void OpenXRContext::print_viewconfig_view_info()
@@ -366,8 +403,11 @@ int OpenXRContext::check_backend_requirements()
     PFN_xrGetVulkanGraphicsRequirements2KHR pfnGetVulkanGraphicsRequirements2KHR = NULL;
     {
         result = xrGetInstanceProcAddr(instance, "xrGetVulkanGraphicsRequirements2KHR", (PFN_xrVoidFunction*)&pfnGetVulkanGraphicsRequirements2KHR);
-        if (!xr_result(instance, result, "Failed to get Vulkan graphics requirements function!"))
-            return 1;
+        if (!XR_SUCCEEDED(result))
+        {
+            spdlog::error("Failed to get Vulkan graphics requirements function!");
+            return false;
+        }
     }
 
     pfnGetVulkanGraphicsRequirements2KHR(instance, system_id, &vulkan_reqs);
@@ -430,27 +470,35 @@ void OpenXRContext::print_reference_spaces()
 
     uint32_t ref_space_count;
     result = xrEnumerateReferenceSpaces(session, 0, &ref_space_count, NULL);
-    if (!xr_result(instance, result, "Getting number of reference spaces failed!"))
+
+    if (!XR_SUCCEEDED(result))
+    {
+        spdlog::error("Getting number of reference spaces failed!");
         return;
+    }
 
     std::vector<XrReferenceSpaceType> ref_spaces(ref_space_count);
     result = xrEnumerateReferenceSpaces(session, ref_space_count, &ref_space_count, ref_spaces.data());
-    if (!xr_result(instance, result, "Enumerating reference spaces failed!"))
-        return;
 
-    printf("Runtime supports %d reference spaces:\n", ref_space_count);
+    if (!XR_SUCCEEDED(result))
+    {
+        spdlog::error("Enumerating reference spaces failed!");
+        return;
+    }
+
+    spdlog::info("Runtime supports {} reference spaces:", ref_space_count);
     for (uint32_t i = 0; i < ref_space_count; i++) {
         if (ref_spaces[i] == XR_REFERENCE_SPACE_TYPE_LOCAL) {
-            printf("\tXR_REFERENCE_SPACE_TYPE_LOCAL\n");
+            spdlog::info("\tXR_REFERENCE_SPACE_TYPE_LOCAL");
         }
         else if (ref_spaces[i] == XR_REFERENCE_SPACE_TYPE_STAGE) {
-            printf("\tXR_REFERENCE_SPACE_TYPE_STAGE\n");
+            spdlog::info("\tXR_REFERENCE_SPACE_TYPE_STAGE");
         }
         else if (ref_spaces[i] == XR_REFERENCE_SPACE_TYPE_VIEW) {
-            printf("\tXR_REFERENCE_SPACE_TYPE_VIEW\n");
+            spdlog::info("\tXR_REFERENCE_SPACE_TYPE_VIEW");
         }
         else {
-            printf("\tOther (extension?) refspace %u\\n", ref_spaces[i]);
+            spdlog::info("\tOther (extension?) refspace %{}", ref_spaces[i]);
         }
     }
 }
@@ -468,8 +516,12 @@ void OpenXRContext::init_actions(XrInputData& data)
             .priority = 0
         };
         result = xrCreateActionSet(instance, &actionSetInfo, &input_state.actionSet);
-        if (!xr_result(instance, result, "Cannot create Action Set"))
+
+        if (!XR_SUCCEEDED(result))
+        {
+            spdlog::error("Cannot create Action Set");
             return;
+        }
     }
 
     // Get the XrPath for the left and right hands - we will use them as subaction paths.
@@ -717,13 +769,21 @@ void OpenXRContext::init_actions(XrInputData& data)
         actionSpaceInfo.poseInActionSpace.position = { .x = 0, .y = 0, .z = 0 };
 
         XrResult result = xrCreateActionSpace(session, &actionSpaceInfo, &input_state.aimHandSpace[ci]);
-        if (!xr_result(instance, result, "Can't create aim action space for controller %d", ci))
+
+        if (!XR_SUCCEEDED(result))
+        {
+            spdlog::error("Can't create aim action space for controller {}", ci);
             return;
+        }
 
         actionSpaceInfo.action = input_state.gripPoseAction;
         result = xrCreateActionSpace(session, &actionSpaceInfo, &input_state.gripHandSpace[ci]);
-        if (!xr_result(instance, result, "Can't create grip action space for controller %d", ci))
+
+        if (!XR_SUCCEEDED(result))
+        {
+            spdlog::error("Can't create grip action space for controller {}", ci);
             return;
+        }
     }
 
     // Attach the controller action set
@@ -733,8 +793,12 @@ void OpenXRContext::init_actions(XrInputData& data)
         .actionSets = &input_state.actionSet
     };
     result = xrAttachSessionActionSets(session, &xrSessionAttachInfo);
-    if (!xr_result(instance, result, "Cannot attach Action Sets to session"))
+
+    if (!XR_SUCCEEDED(result))
+    {
+        spdlog::error("Cannot attach Action Sets to session");
         return;
+    }
 }
 
 void OpenXRContext::poll_actions(XrInputData& data)
@@ -749,8 +813,11 @@ void OpenXRContext::poll_actions(XrInputData& data)
                                         .activeActionSets = activeActionSets.data() };
 
     XrResult result = xrSyncActions(session, &actionsSyncInfo);
-    if (!xr_result(instance, result, "Cannot sync actions"))
+    if (!XR_SUCCEEDED(result))
+    {
+        spdlog::error("Cannot sync actions");
         return;
+    }
 
     // [tdbe] Head action poses
     data.eyePoseMatrixes[EYE_LEFT] = parse_OpenXR_pose_to_glm(projection_views[EYE_LEFT].pose);
@@ -895,16 +962,24 @@ void OpenXRContext::init_frame()
     };
 
     result = xrWaitFrame(session, &frameWaitInfo, &frame_state);
-    if (!xr_result(instance, result, "xrWaitFrame() was not successful, exiting..."))
+
+    if (!XR_SUCCEEDED(result))
+    {
+        spdlog::trace("xrWaitFrame() was not successful");
         return;
+    }
 
     XrFrameBeginInfo frameBeginInfo = {
       .type = XR_TYPE_FRAME_BEGIN_INFO,
     };
 
     result = xrBeginFrame(session, &frameBeginInfo);
-    if (!xr_result(instance, result, "failed to begin frame!"))
+
+    if (!XR_SUCCEEDED(result))
+    {
+        spdlog::trace("Failed to begin frame!");
         return;
+    }
 
     XrViewState viewState{ XR_TYPE_VIEW_STATE };
     uint32_t viewCapacityInput = (uint32_t)views.size();
@@ -942,8 +1017,12 @@ void OpenXRContext::acquire_swapchain(int swapchain_index)
     };
 
     result = xrAcquireSwapchainImage(swapchains[swapchain_index].swapchain, &acquire_info, &swapchains[swapchain_index].image_index);
-    if (!xr_result(instance, result, "failed to acquire swapchain image!"))
+
+    if (!XR_SUCCEEDED(result))
+    {
+        spdlog::error("Failed to acquire swapchain image!");
         return;
+    }
 
     XrSwapchainImageWaitInfo wait_info = {
       .type = XR_TYPE_SWAPCHAIN_IMAGE_WAIT_INFO,
@@ -951,8 +1030,12 @@ void OpenXRContext::acquire_swapchain(int swapchain_index)
     };
 
     result = xrWaitSwapchainImage(swapchains[swapchain_index].swapchain, &wait_info);
-    if (!xr_result(instance, result, "failed to wait for swapchain image!"))
+
+    if (!XR_SUCCEEDED(result))
+    {
+        spdlog::error("Failed to wait for swapchain image!");
         return;
+    }
 }
 
 void OpenXRContext::release_swapchain(int swapchain_index)
@@ -964,8 +1047,12 @@ void OpenXRContext::release_swapchain(int swapchain_index)
     };
 
     result = xrReleaseSwapchainImage(swapchains[swapchain_index].swapchain, &info);
-    if (!xr_result(instance, result, "failed to release swapchain image!"))
+
+    if (!XR_SUCCEEDED(result))
+    {
+        spdlog::error("Failed to release swapchain image!");
         return;
+    }
 }
 
 void OpenXRContext::end_frame()
@@ -993,8 +1080,12 @@ void OpenXRContext::end_frame()
     };
 
     result = xrEndFrame(session, &frameEndInfo);
-    if (!xr_result(instance, result, "failed to end frame!"))
+
+    if (!XR_SUCCEEDED(result))
+    {
+        spdlog::trace("Failed to end frame!");
         return;
+    }
 }
 
 bool OpenXRContext::create_action(XrActionSet actionSet,
@@ -1018,8 +1109,12 @@ bool OpenXRContext::create_action(XrActionSet actionSet,
     memcpy(actionCreateInfo.localizedActionName, localizedActionName.data(), localizedActionName.length() + 1u);
 
     XrResult result = xrCreateAction(actionSet, &actionCreateInfo, &action);
-    if (!xr_result(instance, result, "Can't create XrAction"))
+
+    if (!XR_SUCCEEDED(result))
+    {
+        spdlog::error("Can't create XrAction");
         return false;
+    }
 
     return true;
 }
@@ -1036,7 +1131,12 @@ XrActionStatePose OpenXRContext::get_action_pose_state(XrAction targetAction, in
 
     XrActionStatePose poseState{ .type = XR_TYPE_ACTION_STATE_POSE };
     XrResult result = xrGetActionStatePose(session, &getInfo, &poseState);
-    if (!xr_result(instance, result, "Cannot get action pose state" )) { }
+
+    if (!XR_SUCCEEDED(result))
+    {
+        spdlog::error("Cannot get action pose state");
+    }
+
     return poseState;
 }
 
@@ -1053,7 +1153,11 @@ XrActionStateBoolean OpenXRContext::get_action_boolean_state(XrAction targetActi
     XrActionStateBoolean poseState{ .type = XR_TYPE_ACTION_STATE_BOOLEAN };
     XrResult result = xrGetActionStateBoolean(session, &getInfo, &poseState);
 
-    if (!xr_result(instance, result, "Cannot get action boolean state")) { }
+    if (!XR_SUCCEEDED(result))
+    {
+        spdlog::error("Cannot get action boolean state");
+    }
+
     return poseState;
 }
 
@@ -1070,7 +1174,11 @@ XrActionStateFloat OpenXRContext::get_action_float_state(XrAction targetAction, 
     XrActionStateFloat poseState{ .type = XR_TYPE_ACTION_STATE_FLOAT };
     XrResult result = xrGetActionStateFloat(session, &getInfo, &poseState);
 
-    xr_result(instance, result, "Cannot get action float state");
+    if (!XR_SUCCEEDED(result))
+    {
+        spdlog::error("Cannot get action float state");
+    }
+
     return poseState;
 }
 
@@ -1087,7 +1195,11 @@ XrActionStateVector2f OpenXRContext::get_action_vector2f_State(XrAction targetAc
     XrActionStateVector2f poseState{ .type = XR_TYPE_ACTION_STATE_VECTOR2F };
     XrResult result = xrGetActionStateVector2f(session, &getInfo, &poseState);
 
-    if (!xr_result(instance, result, "Cannot get action vector2f state")) {}
+    if (!XR_SUCCEEDED(result))
+    {
+        spdlog::error("Cannot get action vector2f state");
+    }
+
     return poseState;
 }
 

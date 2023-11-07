@@ -71,7 +71,7 @@ struct OpenXRContext {
     XrSpace play_space;
     bool initialized = false;
 
-    int init(WebGPUContext* webgpu_context);
+    bool init(WebGPUContext* webgpu_context);
     void clean();
     bool create_instance();
     XrInstance* get_instance() { return &instance; }
@@ -133,7 +133,6 @@ struct OpenXRContext {
 #endif
 
     void print_reference_spaces();
-    bool xr_result(XrInstance xrInstance, XrResult result, const char* format, ...);
 
 private:
     
