@@ -152,6 +152,7 @@ int WebGPUContext::initialize(WGPURequestAdapterOptions adapter_opts, WGPURequir
 
 #ifdef _DEBUG
     enabled_toggles.push_back("disable_symbol_renaming");
+    enabled_toggles.push_back("emit_hlsl_debug_symbols");
 #endif
 
     WGPUDawnTogglesDescriptor device_toggles_desc = {};

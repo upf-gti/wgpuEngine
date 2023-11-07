@@ -92,13 +92,13 @@ void Engine::on_frame()
         glfwPollEvents();
     }
 
-    update(delta_time);
-    render();
-
     double last_time = current_time;
     current_time = glfwGetTime();
 
     delta_time = static_cast<float>((current_time - last_time));
+
+    update(delta_time);
+    render();
 }
 
 void Engine::update(float delta_time)
