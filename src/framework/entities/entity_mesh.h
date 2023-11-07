@@ -11,7 +11,7 @@ class EntityMesh : public Entity {
 
 protected:
 
-	Mesh*    mesh = nullptr;
+	Mesh* mesh = nullptr;
 
     Material material;
 
@@ -27,6 +27,7 @@ public:
     void set_material_diffuse(Texture* diffuse) { material.diffuse = diffuse; material.flags |= MATERIAL_DIFFUSE; }
     void set_material_shader(Shader* shader) { material.shader = shader; }
     void set_material_flag(eMaterialFlags flag) { material.flags |= flag; }
+    void set_material_priority(uint8_t priority) { material.priority = priority; }
 
     Shader* get_material_shader() { return material.shader; }
 
