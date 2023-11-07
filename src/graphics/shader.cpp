@@ -104,7 +104,9 @@ bool Shader::load(const std::string& shader_path)
 void Shader::get_reflection_data(const std::string& shader_path, const std::string& shader_content)
 {
 	tint::Source::File file(shader_path, shader_content);
-	tint::Program tint_program = tint::wgsl::reader::Parse(&file);
+    tint::wgsl::reader::Options parser_options;
+    parser_options.allowed_features = tint::wgsl::AllowedFeatures::Everything();
+	tint::Program tint_program = tint::wgsl::reader::Parse(&file, parser_options);
 	tint::inspector::Inspector inspector(tint_program);
 
 	std::map<int, std::map<int, WGPUBindGroupLayoutEntry>> entries_by_bind_group;

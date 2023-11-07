@@ -128,7 +128,7 @@ int WebGPUContext::initialize(WGPURequestAdapterOptions adapter_opts, WGPURequir
     WGPUDeviceDescriptor device_desc = {};
     device_desc.label = "My Device";
 
-    WGPUFeatureName required_features[2] = {WGPUFeatureName_Float32Filterable, WGPUFeatureName_ChromiumExperimentalReadWriteStorageTexture};
+    WGPUFeatureName required_features[2] = { WGPUFeatureName_Float32Filterable };
 
 #ifdef __EMSCRIPTEN__
     device_desc.requiredFeaturesCount = 1;
@@ -233,11 +233,11 @@ void WebGPUContext::create_instance()
 
 #if !defined(NDEBUG)
     // allow_unsafe_apis is currently required to prevent forced breakpoint hit when DAWN_DEBUG_BREAK_ON_ERROR=1
-    const char* const enabled_toggles[] = { "allow_unsafe_apis", "chromium_experimental_read_write_storage_texture" };
+    const char* const enabled_toggles[] = { "allow_unsafe_apis" };
 
     WGPUDawnTogglesDescriptor device_toggles_desc = {};
     device_toggles_desc.enabledToggles = enabled_toggles;
-    device_toggles_desc.enabledToggleCount = 2;
+    device_toggles_desc.enabledToggleCount = 1;
 
     WGPUChainedStruct* chain_desc = reinterpret_cast<WGPUChainedStruct*>(&device_toggles_desc);
     chain_desc->sType = WGPUSType_DawnTogglesDescriptor;
