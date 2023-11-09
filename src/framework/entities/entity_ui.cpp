@@ -86,28 +86,17 @@ namespace ui {
         );
     }
 
-    void UIEntity::render_ui()
-	{
-        if (!active) return;
-
-		EntityMesh::render();
-
-		if (!process_children)
-			return;
-
-		for (auto c : children)
-            static_cast<UIEntity*>(c)->render_ui();
-    }
-
 	void UIEntity::update_ui(Controller* controller)
 	{
         if (!active) return;
 
+        float row_width = center_pos ? controller->get_layer_width(this->uid) : 0.f;
         float pos_x = center_pos ?
-            m_position.x + controller->get_workspace().size.x - controller->get_layer_width( this->uid )
+            position_to_world(controller->get_workspace().size).x - row_width + m_scale.x
             : m_position.x;
 
-		set_model(controller->get_matrix());
+
+        set_model(controller->get_matrix());
 		translate(glm::vec3(pos_x, m_position.y, -1e-3f - m_priority * 1e-3f));
         scale(glm::vec3(m_scale.x, m_scale.y, 1.f));
 
@@ -117,6 +106,11 @@ namespace ui {
         for (auto c : children)
 			static_cast<UIEntity*>(c)->update_ui(controller);
 	}
+
+    glm::mat4x4 UIEntity::get_global_model()
+    {
+        return model;
+    }
 
     /*
     *   Widget Group
@@ -148,12 +142,12 @@ namespace ui {
         text_entity->generate_mesh();
     }
 
-    void TextWidget::render_ui()
+    void TextWidget::render()
     {
-        if (!active) return;
+        UIEntity::render();
 
-        UIEntity::render_ui();
-        text_entity->render();
+        if (active)
+            text_entity->render();
     }
 
     void TextWidget::update_ui(Controller* controller)
@@ -199,10 +193,10 @@ namespace ui {
         RendererStorage::register_ui_widget(webgpu_context, RendererStorage::get_shader("data/shaders/ui/ui_button.wgsl"), this, ui_data, 3);
     }
 
-    void ButtonWidget::render_ui()
+    void ButtonWidget::render()
     {
-        UIEntity::render_ui();
-        static_cast<UIEntity*>(label)->render_ui();
+        EntityMesh::render();
+        label->render();
     }
 
 	void ButtonWidget::update_ui(Controller* controller)
@@ -218,7 +212,7 @@ namespace ui {
         // Used to disable presses and hovers
         hovered &= allow_events;
 
-        label->active = hovered;
+        label->set_active(hovered);
 
 		/*
 		*	Create mesh and render button
@@ -267,11 +261,11 @@ namespace ui {
         RendererStorage::register_ui_widget(webgpu_context, RendererStorage::get_shader("data/shaders/ui/ui_slider.wgsl"), this, ui_data, 3);
     }
 
-    void SliderWidget::render_ui()
+    void SliderWidget::render()
 	{
-        UIEntity::render_ui();
-        if(label) static_cast<UIEntity*>(label)->render_ui();
-        if(text_value) static_cast<UIEntity*>(text_value)->render_ui();
+        UIEntity::render();
+        if(label) label->render();
+        if(text_value) text_value->render();
 	}
 
 	void SliderWidget::update_ui(Controller* controller)
@@ -304,7 +298,7 @@ namespace ui {
 
         glm::vec3 intersection;
         bool hovered = is_hovered(controller, intersection);
-        label->active = hovered;
+        label->set_active(hovered);
 
 		bool is_pressed = hovered && Input::is_button_pressed(workspace.select_button);
 

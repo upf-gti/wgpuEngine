@@ -40,8 +40,6 @@ namespace ui {
         static UIEntity* current_selected;
 
         bool is_submenu         = false;
-		bool process_children   = false;
-        bool active             = true;
         bool selected           = false;
         bool center_pos         = true;
 
@@ -57,9 +55,11 @@ namespace ui {
         void set_selected(bool value);
         void set_layer(uint8_t l) { m_layer = l; };
 
+        const glm::vec2& position_to_world(const glm::vec2& workspace_size) { return m_position + workspace_size - m_scale;  };
         bool is_hovered(Controller* controller, glm::vec3& intersection);
 
-		virtual void render_ui();
+        virtual glm::mat4x4 get_global_model();
+
 		virtual void update_ui(Controller* controller);
 	};
 
@@ -76,8 +76,8 @@ namespace ui {
 
 		TextWidget(const std::string& _text, const glm::vec2& pos, float scale = 1.f, const Color& color = colors::WHITE);
 
-        virtual void render_ui() override;
-        virtual void update_ui(Controller* controller) override;
+        void render() override;
+        void update_ui(Controller* controller) override;
 	};
 
     class LabelWidget : public UIEntity {
@@ -105,8 +105,8 @@ namespace ui {
 
         ButtonWidget(const std::string& sg, const glm::vec2& p, const glm::vec2& s, const Color& c);
 
-        virtual void render_ui() override;
-		virtual void update_ui(Controller* controller) override;
+        void render() override;
+	    void update_ui(Controller* controller) override;
 	};
 
 	class SliderWidget : public UIEntity {
@@ -131,8 +131,8 @@ namespace ui {
 
         void set_mode(const std::string& m) { mode = (m == "horizontal" ? HORIZONTAL : VERTICAL); }
 
-        virtual void render_ui() override;
-		virtual void update_ui(Controller* controller) override;
+        void render() override;
+		void update_ui(Controller* controller) override;
 	};
 
     class ColorPickerWidget : public UIEntity {
@@ -143,6 +143,6 @@ namespace ui {
 
 		ColorPickerWidget(const std::string& sg, const glm::vec2& p, const glm::vec2& s, const Color& c);
 
-        virtual void update_ui(Controller* controller);
+        void update_ui(Controller* controller) override;
 	};
 }

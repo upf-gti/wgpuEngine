@@ -55,6 +55,9 @@ void Entity::scale(glm::vec3 scale)
 
 void Entity::render()
 {
+    if (!active || !process_children)
+        return;
+
     for (Entity* child : children) {
         child->render();
     }
@@ -62,6 +65,9 @@ void Entity::render()
 
 void Entity::update(float delta_time)
 {
+    if (!active || !process_children)
+        return;
+
     for (Entity* child : children) {
         child->update(delta_time);
     }

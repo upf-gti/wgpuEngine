@@ -38,6 +38,7 @@ namespace ui {
             background = new EntityMesh();
             background->set_material_shader(RendererStorage::get_shader("data/shaders/mesh_color.wgsl"));
             background->set_mesh(RendererStorage::get_mesh("quad"));
+            background->set_material_color(colors::RED);
         }
 	}
 
@@ -54,7 +55,7 @@ namespace ui {
 
         auto children = root->get_children();
 		for (auto widget : children) {
-            static_cast<UIEntity*>(widget)->render_ui();
+            widget->render();
 		}
 
         if(workspace.hand == HAND_LEFT)
@@ -107,7 +108,7 @@ namespace ui {
         {
             ui::LabelWidget* widget = static_cast<ui::LabelWidget*>(it.second);
 
-            if (!widget->active || widget->type != ui::LABEL)
+            if (!widget->is_active() || widget->type != ui::LABEL)
                 continue;
 
             if (widget->button != -1 && Input::was_button_pressed(widget->button))
@@ -215,7 +216,7 @@ namespace ui {
 
         UIEntity* text_widget = make_text(text, "text@" + alias, pos, colors::WHITE, 12.f);
         text_widget->m_priority = -1;
-        text_widget->process_children = true;
+        ((Entity*)text_widget)->set_process_children(true);
         text_widget->center_pos = false;
 
         // Icon goes to the left of the workspace
@@ -343,7 +344,7 @@ namespace ui {
         slider->set_mode(mode);
         slider->min_value = j.value("min", slider->min_value);
         slider->max_value = j.value("max", slider->max_value);
-        slider->process_children = true;
+        ((Entity*)slider)->set_process_children(true);
         slider->ui_data.num_group_items = offset;
         slider->m_layer = static_cast<uint8_t>(layout_iterator.y);
 
@@ -377,7 +378,7 @@ namespace ui {
         picker->set_material_diffuse(RendererStorage::get_texture("data/textures/circle_white.png"));
         picker->set_material_color(Color(0.175f));
         picker->m_layer = static_cast<uint8_t>(layout_iterator.y);
-        picker->process_children = true;
+        ((Entity*)picker)->set_process_children(true);
 
         if (group_opened)
             picker->m_priority = 1;
@@ -407,7 +408,7 @@ namespace ui {
         // Visibility callback...
 		bind(name, [widget = widget](const std::string& signal, void* button) {
 
-            const bool last_value = widget->process_children;
+            const bool last_value = widget->get_process_children();
 
             for (auto& w : all_widgets)
             {
@@ -534,7 +535,7 @@ namespace ui {
         while (parent->uid != 0 && !parent->is_submenu)
             parent = static_cast<ui::UIEntity*>(parent->get_parent());
 
-        return layers_width[parent->uid] * global_scale;
+        return (layers_width[parent->uid] - X_MARGIN) * global_scale;
     }
 
     void Controller::load_layout(const std::string& filename)
@@ -630,6 +631,10 @@ namespace ui {
         for (auto& el : _elements) {
             read_element(el);
         }
+
+        // root layer width
+        if (layers_width.size() == 0)
+            layers_width[0] = layout_iterator.x;
     }
 
     void Controller::change_list_layout(const std::string& list_name)
@@ -641,7 +646,7 @@ namespace ui {
 
         // Disable all widgets
         for (auto& w : widgets) {
-            w.second->active = false;
+            w.second->set_active(false);
         }
 
         // Enable only widgets in list...
@@ -654,13 +659,13 @@ namespace ui {
         for (auto& it : lists[list_name]) {
             const std::string& name = it;
             auto widget = get_widget_from_name(name);
-            widget->active = true;
+            widget->set_active(true);
 
             // Display also its text...
             if (widget->type == LABEL)
             {
                 widget = get_widget_from_name("text@" + name);
-                widget->active = true;
+                widget->set_active(true);
             }
         }
     }

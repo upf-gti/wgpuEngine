@@ -14,6 +14,10 @@ protected:
 	Entity* parent = nullptr;
 	std::vector<Entity*> children;
 
+    // Use to discard either self of its children
+    bool process_children = false;
+    bool active = true;
+
 public:
 
 	Entity() : model(1.0f) {};
@@ -32,12 +36,17 @@ public:
 
 	// Some useful methods
 
-	void set_translation(const glm::vec3& translation);
 	const glm::vec3& get_local_translation();
     const glm::vec3 get_translation();
-	glm::mat4x4 get_global_model();
-	void set_model(const glm::mat4x4& _model) { model = _model; }
+    virtual glm::mat4x4 get_global_model();
     glm::mat4x4 get_model() { return model; }
     const std::vector<Entity*>& get_children() const { return children; }
     Entity* get_parent() { return parent; }
+    bool get_process_children() { return process_children; }
+    bool is_active() { return active; }
+
+	void set_translation(const glm::vec3& translation);
+	void set_model(const glm::mat4x4& _model) { model = _model; }
+    void set_process_children(bool value) { process_children = value; }
+    void set_active(bool value) { active = value; }
 };

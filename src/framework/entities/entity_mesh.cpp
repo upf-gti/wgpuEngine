@@ -10,6 +10,8 @@ EntityMesh::EntityMesh() : Entity()
 
 void EntityMesh::render()
 {
+    if (!active) return;
+
     if (mesh && material.shader)
     {
         RendererStorage::instance->register_material(Renderer::instance->get_webgpu_context(), material);
@@ -21,6 +23,8 @@ void EntityMesh::render()
 
 void EntityMesh::update(float delta_time)
 {
+    if (!active) return;
+
     Entity::update(delta_time);
 }
 
