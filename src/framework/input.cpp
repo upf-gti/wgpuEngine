@@ -103,25 +103,8 @@ void Input::update(float delta_time)
 		Input::mouse_delta.y = Input::mouse_position.y - static_cast<float>(y);
 		Input::mouse_position.x = static_cast<float>(x);
 		Input::mouse_position.y = static_cast<float>(y);
-
-		memcpy((void*)&Input::prev_buttons, Input::buttons, GLFW_MOUSE_BUTTON_LAST);
-#ifndef __EMSCRIPTEN__
-		for (int i = 0; i < GLFW_MOUSE_BUTTON_LAST; ++i)
-			buttons[i] = glfwGetMouseButton(window, i);
-#endif
-	}
-
-	// Keystate
-	{
-		memcpy((void*)&Input::prev_keystate, Input::keystate, GLFW_KEY_LAST);
-
-#ifndef __EMSCRIPTEN__
-		for (int i = 0; i < GLFW_KEY_LAST; ++i)
-			keystate[i] = glfwGetKey(window, i);
-#endif
 	}
 	
-
 #ifdef XR_SUPPORT
 
 	// Sync XR Controllers
@@ -156,11 +139,13 @@ void Input::center_mouse()
 
 void Input::set_key_state(int key, uint8_t value)
 {
+    prev_keystate[key] = keystate[key];
     keystate[key] = value;
 }
 
 void Input::set_mouse_button(int button, uint8_t value)
 {
+    prev_buttons[button] = buttons[button];
     buttons[button] = value;
 }
 
