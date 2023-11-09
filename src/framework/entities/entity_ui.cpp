@@ -50,7 +50,7 @@ namespace ui {
         }
     }
 
-    bool UIEntity::is_hovered(Controller* controller, glm::vec3& intersection)
+    bool UIEntity::is_hovered(glm::vec3& intersection)
     {
 
         const WorkSpaceData& workspace = controller->get_workspace();
@@ -86,7 +86,7 @@ namespace ui {
         );
     }
 
-	void UIEntity::update_ui(Controller* controller)
+	void UIEntity::update(float delta_time)
 	{
         if (!active) return;
 
@@ -95,7 +95,6 @@ namespace ui {
             position_to_world(controller->get_workspace().size).x - row_width + m_scale.x
             : m_position.x;
 
-
         set_model(controller->get_matrix());
 		translate(glm::vec3(pos_x, m_position.y, -1e-3f - m_priority * 1e-3f));
         scale(glm::vec3(m_scale.x, m_scale.y, 1.f));
@@ -103,8 +102,7 @@ namespace ui {
 		if (!process_children)
 			return;
 
-        for (auto c : children)
-			static_cast<UIEntity*>(c)->update_ui(controller);
+        EntityMesh::update(delta_time);
 	}
 
     glm::mat4x4 UIEntity::get_global_model()
@@ -150,11 +148,11 @@ namespace ui {
             text_entity->render();
     }
 
-    void TextWidget::update_ui(Controller* controller)
+    void TextWidget::update(float delta_time)
     {
         if (!active) return;
 
-        UIEntity::update_ui(controller);
+        UIEntity::update(delta_time);
 
         float pos_x = center_pos ?
             m_position.x + controller->get_workspace().size.x - controller->get_layer_width(this->uid)
@@ -184,11 +182,6 @@ namespace ui {
         set_material_flag(MATERIAL_UI);
         set_material_color(color);
 
-        float magic = 0.002125f;
-        label = new TextWidget(sg, { p.x - sg.length() * magic, p.y + s.y * 0.5f }, 0.01f, colors::GRAY);
-        label->m_priority = 2;
-        label->uid = uid;
-
         auto webgpu_context = Renderer::instance->get_webgpu_context();
         RendererStorage::register_ui_widget(webgpu_context, RendererStorage::get_shader("data/shaders/ui/ui_button.wgsl"), this, ui_data, 3);
     }
@@ -196,21 +189,30 @@ namespace ui {
     void ButtonWidget::render()
     {
         EntityMesh::render();
-        label->render();
+        if(label) label->render();
     }
 
-	void ButtonWidget::update_ui(Controller* controller)
+	void ButtonWidget::update(float delta_time)
 	{
-        UIEntity::update_ui(controller);
+        UIEntity::update(delta_time);
 
 		const WorkSpaceData& workspace = controller->get_workspace();
 
 		// Check hover (intersects)
         glm::vec3 intersection;
-        bool hovered = is_hovered(controller, intersection);
+        bool hovered = is_hovered(intersection);
 
         // Used to disable presses and hovers
         hovered &= allow_events;
+
+        if (!label)
+        {
+            float magic = 0.002125f;
+            label = new TextWidget(signal, { m_position.x - signal.length() * magic, m_position.y + m_scale.y * 0.5f }, 0.01f, colors::GRAY);
+            label->m_priority = 2;
+            label->uid = uid;
+            label->controller = controller;
+        }
 
         label->set_active(hovered);
 
@@ -244,7 +246,7 @@ namespace ui {
 
         RendererStorage::update_ui_widget(webgpu_context, this, ui_data);
 
-        label->update_ui(controller);
+        label->update(delta_time);
 	}
 
 	/*
@@ -268,7 +270,7 @@ namespace ui {
         if(text_value) text_value->render();
 	}
 
-	void SliderWidget::update_ui(Controller* controller)
+	void SliderWidget::update(float delta_time)
 	{
 		const WorkSpaceData& workspace = controller->get_workspace();
 
@@ -276,7 +278,7 @@ namespace ui {
 		*	Update elements
 		*/
 
-        UIEntity::update_ui(controller);
+        UIEntity::update(delta_time);
 
         float magic_t = 0.002125f;
         float magic_c = 0.005f;
@@ -286,6 +288,7 @@ namespace ui {
             label = new TextWidget(signal, { m_position.x - signal.length() * magic_t, m_position.y + m_scale.y * 0.5f }, 0.01f, colors::WHITE);
             label->m_priority = 2;
             label->uid = uid;
+            label->controller = controller;
         }
 
         if (!text_value)
@@ -294,10 +297,11 @@ namespace ui {
             text_value = new TextWidget(value_as_string.substr(0, 4), {m_position.x - 4 * magic_t, m_position.y - magic_c }, 0.01f, colors::WHITE);
             text_value->m_priority = 2;
             text_value->uid = uid;
+            text_value->controller = controller;
         }
 
         glm::vec3 intersection;
-        bool hovered = is_hovered(controller, intersection);
+        bool hovered = is_hovered(intersection);
         label->set_active(hovered);
 
 		bool is_pressed = hovered && Input::is_button_pressed(workspace.select_button);
@@ -323,8 +327,8 @@ namespace ui {
 
         RendererStorage::update_ui_widget(webgpu_context, this, ui_data);
 
-        label->update_ui(controller);
-        text_value->update_ui(controller);
+        label->update(delta_time);
+        text_value->update(delta_time);
 	}
 
     /*
@@ -341,7 +345,7 @@ namespace ui {
         RendererStorage::register_ui_widget(webgpu_context, RendererStorage::get_shader("data/shaders/ui/ui_color_picker.wgsl"), this, ui_data, 3);
     }
 
-    void ColorPickerWidget::update_ui(Controller* controller)
+    void ColorPickerWidget::update(float delta_time)
     {
         const WorkSpaceData& workspace = controller->get_workspace();
 
@@ -349,10 +353,10 @@ namespace ui {
         *	Update elements
         */
 
-        UIEntity::update_ui(controller);
+        UIEntity::update(delta_time);
 
         glm::vec3 intersection;
-        bool hovered = is_hovered(controller, intersection);
+        bool hovered = is_hovered(intersection);
         bool is_pressed = hovered && Input::is_button_pressed(workspace.select_button);
         bool was_released = hovered && Input::was_button_released(workspace.select_button);
 
