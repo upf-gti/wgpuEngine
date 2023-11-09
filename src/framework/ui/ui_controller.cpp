@@ -28,7 +28,7 @@ namespace ui {
 
         root = new UIEntity();
 
-        raycast_pointer = parse_scene("data/meshes/raycast.obj");
+        raycast_pointer = parse_mesh("data/meshes/raycast.obj");
 
         // render_background = true;
 

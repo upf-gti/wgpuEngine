@@ -37,40 +37,39 @@ void Entity::remove_child(Entity* child)
 void Entity::translate(const glm::vec3& translation)
 {
 	model = glm::translate(model, translation);
-	model_dirty = true;
 }
 
 void Entity::rotate(float angle, const glm::vec3& axis)
 {
 	model = glm::rotate(model, angle, axis);
-	model_dirty = true;
 }
 
 void Entity::rotate(const glm::quat& q) {
     model = model * glm::toMat4(q);
-    model_dirty = true;
 }
 
 void Entity::scale(glm::vec3 scale)
 {
 	model = glm::scale(model, scale);
-	model_dirty = true;
 }
 
 void Entity::render()
 {
-	model_dirty = false;
+    for (Entity* child : children) {
+        child->render();
+    }
 }
 
 void Entity::update(float delta_time)
 {
-
+    for (Entity* child : children) {
+        child->update(delta_time);
+    }
 }
 
 void Entity::set_translation(const glm::vec3& translation)
 {
 	model = glm::translate(glm::mat4x4(1.f), translation);
-	model_dirty = true;
 }
 
 const glm::vec3& Entity::get_local_translation()
@@ -78,14 +77,14 @@ const glm::vec3& Entity::get_local_translation()
     return model[3];
 }
 
-const glm::vec3& Entity::get_translation()
+const glm::vec3 Entity::get_translation()
 {
-	return get_global_matrix()[3];
+	return get_global_model()[3];
 }
 
-glm::mat4x4 Entity::get_global_matrix()
+glm::mat4x4 Entity::get_global_model()
 {
 	if (parent)
-		return model * parent->get_global_matrix();
+		return model * parent->get_global_model();
 	return model;
 }

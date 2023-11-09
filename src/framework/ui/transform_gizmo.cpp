@@ -15,17 +15,17 @@ void TransformGizmo::initialize(const eGizmoType gizmo_use, const glm::vec3 &pos
 	type = gizmo_use;
 
     if (gizmo_use & POSITION_GIZMO) {
-        arrow_mesh_x = parse_scene("data/meshes/arrow.obj");
+        arrow_mesh_x = parse_mesh("data/meshes/arrow.obj");
         arrow_mesh_x->set_material_flag(MATERIAL_COLOR);
 
-        arrow_mesh_y = parse_scene("data/meshes/arrow.obj");
+        arrow_mesh_y = parse_mesh("data/meshes/arrow.obj");
         arrow_mesh_y->set_material_flag(MATERIAL_COLOR);
 
-        arrow_mesh_z = parse_scene("data/meshes/arrow.obj");
+        arrow_mesh_z = parse_mesh("data/meshes/arrow.obj");
         arrow_mesh_z->set_material_flag(MATERIAL_COLOR);
     }
     if (gizmo_use & ROTATION_GIZMO) {
-        wire_circle_mesh = parse_scene("data/meshes/wired_circle.obj");
+        wire_circle_mesh = parse_mesh("data/meshes/wired_circle.obj");
         wire_circle_mesh->set_material_flag(MATERIAL_COLOR);
     }
 

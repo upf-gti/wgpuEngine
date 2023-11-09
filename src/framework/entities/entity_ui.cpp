@@ -86,7 +86,7 @@ namespace ui {
         );
     }
 
-	void UIEntity::render_ui()
+    void UIEntity::render_ui()
 	{
         if (!active) return;
 

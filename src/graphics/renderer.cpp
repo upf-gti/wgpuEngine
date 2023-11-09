@@ -164,7 +164,7 @@ void Renderer::prepare_instancing()
                 prev_texture = material.diffuse;
 
                 // Fill instance_data
-                instance_data[i][j] = { entity_mesh->get_model(), material.color };
+                instance_data[i][j] = { entity_mesh->get_global_model(), material.color };
             }
 
             if (repeats > 0) {

@@ -231,9 +231,14 @@ void Shader::get_reflection_data(const std::string& shader_path, const std::stri
 			case ResourceBinding::ResourceType::kWriteOnlyStorageTexture:
 				entry.storageTexture.access = WGPUStorageTextureAccess_WriteOnly;
 				break;
+#ifndef __EMSCRIPTEN__
+            case ResourceBinding::ResourceType::kReadOnlyStorageTexture:
+                entry.storageTexture.access = WGPUStorageTextureAccess_ReadOnly;
+                break;
             case ResourceBinding::ResourceType::kReadWriteStorageTexture:
                 entry.storageTexture.access = WGPUStorageTextureAccess_ReadWrite;
                 break;
+#endif
 			default:
 				std::cerr << "Shader reflection failed: Resource type not implemented" << std::endl;
 				assert(0);

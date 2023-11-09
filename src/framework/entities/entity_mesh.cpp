@@ -10,16 +10,18 @@ EntityMesh::EntityMesh() : Entity()
 
 void EntityMesh::render()
 {
-	if (!mesh || !material.shader) return;
+    if (mesh && material.shader)
+    {
+        RendererStorage::instance->register_material(Renderer::instance->get_webgpu_context(), material);
+        Renderer::instance->add_renderable(this);
+    }
 
-    RendererStorage::instance->register_material(Renderer::instance->get_webgpu_context(), material);
-
-    Renderer::instance->add_renderable(this);
+    Entity::render();
 }
 
 void EntityMesh::update(float delta_time)
 {
-
+    Entity::update(delta_time);
 }
 
 void EntityMesh::set_mesh(Mesh* mesh)
