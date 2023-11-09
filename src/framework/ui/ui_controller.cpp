@@ -27,6 +27,7 @@ namespace ui {
 		};
 
         root = new UIEntity();
+        ((Entity*)root)->set_process_children(true);
 
         raycast_pointer = parse_mesh("data/meshes/raycast.obj");
 
@@ -53,10 +54,7 @@ namespace ui {
 
         if (render_background) background->render();
 
-        auto children = root->get_children();
-		for (auto widget : children) {
-            widget->render();
-		}
+        root->render();
 
         if(workspace.hand == HAND_LEFT)
 		    raycast_pointer->render();
@@ -96,11 +94,11 @@ namespace ui {
             
         }
 
-		// Update widgets using this controller
+		// Update widgets using this controller (not the root!)
 
-		for (auto element : root->get_children()) {
-            static_cast<UIEntity*>(element)->update_ui( this );
-		}
+        for (auto child : root->get_children()) {
+            child->update(delta_time);
+        }
 
         // Update labels
 
@@ -157,6 +155,8 @@ namespace ui {
 
 	void Controller::append_widget(UIEntity* widget, const std::string& name, UIEntity* force_parent)
 	{
+        widget->controller = this;
+
         if(force_parent)
         {
             force_parent->add_child(widget);
@@ -529,7 +529,7 @@ namespace ui {
             return 0.f;
 
         UIEntity* parent = static_cast<ui::UIEntity*>(widget->get_parent());
-        if (!parent) return 0.f;
+        if (parent == nullptr) return 0.f;
 
         // Go up to get root or submenu
         while (parent->uid != 0 && !parent->is_submenu)
