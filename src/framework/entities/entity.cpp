@@ -78,7 +78,7 @@ void Entity::set_translation(const glm::vec3& translation)
 	model = glm::translate(glm::mat4x4(1.f), translation);
 }
 
-const glm::vec3& Entity::get_local_translation()
+const glm::vec3 Entity::get_local_translation()
 {
     return model[3];
 }

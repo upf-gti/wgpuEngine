@@ -30,7 +30,7 @@ EntityMesh* parse_mesh(const std::string& mesh_path)
     spdlog::info("Parsing mesh: {}", mesh_path);
 
     if (extension == "obj") {
-        return { parse_obj(mesh_path) };
+        return parse_obj(mesh_path);
     }
     else {
         spdlog::error("Mesh extension .{} not supported", extension);

@@ -36,7 +36,7 @@ public:
 
 	// Some useful methods
 
-	const glm::vec3& get_local_translation();
+	const glm::vec3 get_local_translation();
     const glm::vec3 get_translation();
     virtual glm::mat4x4 get_global_model();
     glm::mat4x4 get_model() { return model; }

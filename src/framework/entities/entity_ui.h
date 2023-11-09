@@ -55,7 +55,7 @@ namespace ui {
         void set_selected(bool value);
         void set_layer(uint8_t l) { m_layer = l; };
 
-        const glm::vec2& position_to_world(const glm::vec2& workspace_size) { return m_position + workspace_size - m_scale;  };
+        const glm::vec2 position_to_world(const glm::vec2& workspace_size) { return m_position + workspace_size - m_scale;  };
         bool is_hovered(Controller* controller, glm::vec3& intersection);
 
         virtual glm::mat4x4 get_global_model();
