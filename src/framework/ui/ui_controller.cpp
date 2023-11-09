@@ -286,6 +286,7 @@ namespace ui {
         e_button->is_color_button = is_color_button;
         e_button->is_unique_selection = j.value("unique_selection", false);
         e_button->selected = j.value("selected", false);
+        e_button->ui_data.keep_rgb = j.value("keep_rgb", false) ? 1.f : 0.f;
 
         if( group_opened )
             e_button->m_priority = 1;

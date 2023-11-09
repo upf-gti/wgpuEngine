@@ -41,7 +41,8 @@ public:
         glm::vec4 picker_color = glm::vec4(1.f);
         // Slider
         float slider_value = 0.f;
-        float dummy0 = 0.f;
+        // To keep rgb if icon has colors...
+        float keep_rgb = 0.f;
         float dummy1 = 0.f;
         float dummy2 = 0.f;
     };

@@ -208,7 +208,7 @@ namespace ui {
         if (!label)
         {
             float magic = 0.002125f;
-            label = new TextWidget(signal, { m_position.x - signal.length() * magic, m_position.y + m_scale.y * 0.5f }, 0.01f, colors::GRAY);
+            label = new TextWidget(signal, { m_position.x - signal.length() * magic, m_position.y + m_scale.y * 0.5f }, 0.01f, colors::WHITE);
             label->m_priority = 2;
             label->uid = uid;
             label->controller = controller;
