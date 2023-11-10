@@ -11,6 +11,8 @@ uint8_t Input::prev_buttons[GLFW_MOUSE_BUTTON_LAST];
 uint8_t Input::keystate[GLFW_KEY_LAST];
 uint8_t Input::prev_keystate[GLFW_KEY_LAST];
 
+bool Input::use_glfw = false;
+
 bool Input::trigger_released[HAND_COUNT] = {true, true};
 
 GLFWwindow* Input::window = nullptr;
@@ -33,12 +35,15 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
     Input::set_mouse_button(button, action != GLFW_RELEASE);
 }
 
-void Input::init(GLFWwindow* _window, Renderer* renderer)
-{	
+void Input::init(GLFWwindow* _window, Renderer* renderer, bool use_glfw)
+{
+    use_glfw = use_glfw;
 	use_mirror_screen = renderer->get_use_mirror_screen();
 
-    glfwSetKeyCallback(_window, key_callback);
-    glfwSetMouseButtonCallback(_window, mouse_button_callback);
+    if (use_glfw) {
+        glfwSetKeyCallback(_window, key_callback);
+        glfwSetMouseButtonCallback(_window, mouse_button_callback);
+    }
 
 	if (use_mirror_screen)
 	{
@@ -94,9 +99,13 @@ bool Input::init_xr(OpenXRContext* context)
 
 void Input::update(float delta_time)
 {
+    memcpy((void*)&Input::prev_keystate, Input::keystate, GLFW_KEY_LAST);
+    memcpy((void*)&Input::prev_buttons, Input::buttons, GLFW_MOUSE_BUTTON_LAST);
+
+    glfwPollEvents();
 
 	// Mouse  state
-	{
+	if (use_glfw) {
 		double x, y;
 		glfwGetCursorPos(window, &x, &y);
 		Input::mouse_delta.x = Input::mouse_position.x - static_cast<float>(x);
@@ -139,16 +148,13 @@ void Input::center_mouse()
 
 void Input::set_key_state(int key, uint8_t value)
 {
-    prev_keystate[key] = keystate[key];
     keystate[key] = value;
 }
 
 void Input::set_mouse_button(int button, uint8_t value)
 {
-    prev_buttons[button] = buttons[button];
     buttons[button] = value;
 }
-
 
 glm::vec3 Input::get_controller_position(uint8_t controller, uint8_t type)
 {

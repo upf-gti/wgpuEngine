@@ -95,6 +95,8 @@ class Input {
 	static uint8_t buttons[GLFW_MOUSE_BUTTON_LAST];
 	static uint8_t prev_buttons[GLFW_MOUSE_BUTTON_LAST];
 
+    static bool use_glfw;
+
 	// Keyboard
 	static uint8_t keystate[GLFW_KEY_LAST];
 	static uint8_t prev_keystate[GLFW_KEY_LAST];
@@ -118,7 +120,7 @@ class Input {
 
 public:
 
-	static void init(GLFWwindow* window, Renderer* renderer);
+	static void init(GLFWwindow* window, Renderer* renderer, bool use_glfw);
 	static void update(float delta_time);
 	static void center_mouse();
 

@@ -56,7 +56,7 @@ int Engine::initialize(Renderer* renderer, GLFWwindow* window, bool use_glfw, bo
         return 1;
     }
 
-    Input::init(window, renderer);
+    Input::init(window, renderer, use_glfw);
 
     glfwSetWindowUserPointer(window, this);
 
@@ -88,9 +88,7 @@ bool Engine::get_use_mirror_window()
 
 void Engine::on_frame()
 {
-    if (use_glfw) {
-        glfwPollEvents();
-    }
+    Input::update(delta_time);
 
     double last_time = current_time;
     current_time = glfwGetTime();
@@ -103,8 +101,6 @@ void Engine::on_frame()
 
 void Engine::update(float delta_time)
 {
-    Input::update(delta_time);
-
     shader_reload_watcher->update(delta_time);
 
     renderer->update(delta_time);
