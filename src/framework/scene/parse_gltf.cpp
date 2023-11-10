@@ -29,15 +29,6 @@ void read_mesh(tinygltf::Model& model, tinygltf::Mesh& mesh, Entity* entity) {
         return;
     }
 
-    static int count = 0;
-
-    //if (count != 0) {
-    //    count++;
-    //    return;
-    //}
-
-    //count++;
-
     Mesh* new_mesh = new Mesh();
     std::vector<InterleavedData>& vertices = new_mesh->get_vertices();
     entity_mesh->set_mesh(new_mesh);
@@ -126,9 +117,12 @@ void read_mesh(tinygltf::Model& model, tinygltf::Mesh& mesh, Entity* entity) {
                 final_stride = final_buffer_view->byteStride;
             }
 
-            vertices.resize(final_buffer_view->byteLength - (final_accessor->byteOffset + final_buffer_view->byteOffset) / final_stride);
+            size_t buffer_start = final_accessor->byteOffset + final_buffer_view->byteOffset;
+            size_t buffer_end = final_data_size * final_accessor->count + buffer_start;
 
-            for (size_t j = final_accessor->byteOffset + final_buffer_view->byteOffset; j < final_buffer_view->byteLength; j += final_stride) {
+            vertices.resize((buffer_end - buffer_start) / final_stride);
+
+            for (size_t j = buffer_start; j < buffer_end; j += final_stride) {
 
                 size_t buffer_idx = 0;
 
@@ -270,7 +264,7 @@ Entity* create_node_entity(tinygltf::Node& node) {
     return new_entity;
 };
 
-void parse_model_nodes(tinygltf::Model& model, tinygltf::Node& node, Entity* entity, std::vector<int>& parsed_nodes) {
+void parse_model_nodes(tinygltf::Model& model, tinygltf::Node& node, Entity* entity) {
 
     entity->set_name(node.name);
 
@@ -324,12 +318,10 @@ void parse_model_nodes(tinygltf::Model& model, tinygltf::Node& node, Entity* ent
     for (size_t i = 0; i < node.children.size(); i++) {
         assert((node.children[i] >= 0) && (node.children[i] < model.nodes.size()));
 
-        if (std::find(parsed_nodes.begin(), parsed_nodes.end(), node.children[i]) == parsed_nodes.end()) {
-            Entity* child_entity = create_node_entity(model.nodes[node.children[i]]);
-            entity->add_child(child_entity);
-            parsed_nodes.push_back(node.children[i]);
-            parse_model_nodes(model, model.nodes[node.children[i]], child_entity, parsed_nodes);
-        }
+        Entity* child_entity = create_node_entity(model.nodes[node.children[i]]);
+        entity->add_child(child_entity);
+
+        parse_model_nodes(model, model.nodes[node.children[i]], child_entity);
     }
 };
 
@@ -353,8 +345,6 @@ void parse_gltf(const std::string& gltf_path, std::vector<Entity*>& entities)
         spdlog::error(err);
     }
 
-    std::vector<int> parsed_nodes;
-
     const tinygltf::Scene& scene = model.scenes[model.defaultScene];
     for (size_t i = 0; i < scene.nodes.size(); ++i) {
         assert((scene.nodes[i] >= 0) && (scene.nodes[i] < model.nodes.size()));
@@ -363,10 +353,7 @@ void parse_gltf(const std::string& gltf_path, std::vector<Entity*>& entities)
 
         Entity* entity = create_node_entity(node);
 
-        if (std::find(parsed_nodes.begin(), parsed_nodes.end(), scene.nodes[i]) == parsed_nodes.end()) {
-            parse_model_nodes(model, node, entity, parsed_nodes);
-            parsed_nodes.push_back(scene.nodes[i]);
-        }
+        parse_model_nodes(model, node, entity);
 
         entities.push_back(entity);
     }
