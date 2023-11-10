@@ -120,6 +120,9 @@ if (NOT EMSCRIPTEN)
     set_property(TARGET glfw PROPERTY FOLDER "External/GLFW3")
     set_property(TARGET glfw3webgpu PROPERTY FOLDER "External/GLFW3")
 
+    # renderdoc
+    target_include_directories(${PROJECT_NAME} PUBLIC ${WGPU_DIR_LIBS}/renderdoc)
+
 endif()
 
 # glm
@@ -141,8 +144,5 @@ target_include_directories(${PROJECT_NAME} PUBLIC ${WGPU_DIR_LIBS}/tiny_gltf)
 # spdlog
 add_subdirectory(libraries/spdlog)
 target_link_libraries(${PROJECT_NAME} PUBLIC spdlog::spdlog_header_only)
-
-# renderdoc
-target_include_directories(${PROJECT_NAME} PUBLIC ${WGPU_DIR_LIBS}/renderdoc)
 
 target_copy_webgpu_binaries(${PROJECT_NAME})

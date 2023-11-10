@@ -29,7 +29,9 @@ protected:
 
     RendererStorage renderer_storage;
 
+#ifndef __EMSCRIPTEN__
     RenderdocCapture renderdoc_capture;
+#endif
 
     bool is_openxr_available    = false;
     bool use_mirror_screen      = false;

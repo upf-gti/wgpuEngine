@@ -1,3 +1,4 @@
+#ifndef __EMSCRIPTEN__
 #include "renderdoc_app.h"
 
 class RenderdocCapture {
@@ -11,3 +12,5 @@ public:
     static void end_capture_frame();
 
 };
+
+#endif

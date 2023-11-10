@@ -1,5 +1,7 @@
 #include "renderdoc_capture.h"
 
+#ifndef __EMSCRIPTEN__
+
 #if defined(_WIN32)
 
 #include "windows.h"
@@ -70,3 +72,5 @@ void RenderdocCapture::end_capture_frame()
         rdoc_api->EndFrameCapture(NULL, NULL);
     }
 }
+
+#endif
