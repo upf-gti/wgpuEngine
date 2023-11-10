@@ -263,7 +263,7 @@ bool OpenXRContext::create_instance()
         //}
     }
 
-    spdlog::info(extensions);
+    spdlog::trace(extensions);
 
     // A graphics extension is required to draw anything in VR
 
@@ -340,7 +340,7 @@ bool OpenXRContext::create_instance()
 
     if (!XR_SUCCEEDED(result))
     {
-        spdlog::error("Failed to get system for HMD form factor");
+        spdlog::warn("Failed to get system for HMD form factor. Make sure the headset is properly connected");
         return false;
     }
 

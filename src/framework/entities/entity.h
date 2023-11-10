@@ -34,6 +34,8 @@ public:
     void rotate(const glm::quat& q);
 	void scale(glm::vec3 scale);
 
+    void set_name(std::string name) { this->name = name; }
+
 	// Some useful methods
 
 	const glm::vec3 get_local_translation();

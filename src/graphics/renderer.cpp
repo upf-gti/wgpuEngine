@@ -71,6 +71,9 @@ int Renderer::initialize(GLFWwindow* window, bool use_mirror_screen)
 
         create_screen_swapchain = use_mirror_screen;
     }
+    else {
+        spdlog::warn("XR not available, fallback to desktop mode");
+    }
 
 #else
     // Create internal vulkan instance

@@ -37,7 +37,7 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 
 void Input::init(GLFWwindow* _window, Renderer* renderer, bool use_glfw)
 {
-    use_glfw = use_glfw;
+    Input::use_glfw = use_glfw;
 	use_mirror_screen = renderer->get_use_mirror_screen();
 
     if (use_glfw) {
