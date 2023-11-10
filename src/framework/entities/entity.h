@@ -15,7 +15,7 @@ protected:
 	std::vector<Entity*> children;
 
     // Use to discard either self of its children
-    bool process_children = false;
+    bool process_children = true;
     bool active = true;
 
 public:

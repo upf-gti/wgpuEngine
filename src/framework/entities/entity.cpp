@@ -91,6 +91,6 @@ const glm::vec3 Entity::get_translation()
 glm::mat4x4 Entity::get_global_model()
 {
 	if (parent)
-		return model * parent->get_global_model();
+		return parent->get_global_model() * model;
 	return model;
 }
