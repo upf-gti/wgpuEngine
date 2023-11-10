@@ -80,6 +80,7 @@ WGPU_SOURCES_APPEND(${WGPU_DIR_SOURCES}/framework/entities)
 WGPU_SOURCES_APPEND(${WGPU_DIR_SOURCES}/framework/scene)
 WGPU_SOURCES_APPEND(${WGPU_DIR_SOURCES}/framework/ui)
 WGPU_SOURCES_APPEND(${WGPU_DIR_SOURCES}/graphics)
+WGPU_SOURCES_APPEND(${WGPU_DIR_SOURCES}/graphics/debug)
 
 if (NOT EMSCRIPTEN)
     WGPU_SOURCES_APPEND(${WGPU_DIR_SOURCES}/xr)
@@ -140,5 +141,8 @@ target_include_directories(${PROJECT_NAME} PUBLIC ${WGPU_DIR_LIBS}/tiny_gltf)
 # spdlog
 add_subdirectory(libraries/spdlog)
 target_link_libraries(${PROJECT_NAME} PUBLIC spdlog::spdlog_header_only)
+
+# renderdoc
+target_include_directories(${PROJECT_NAME} PUBLIC ${WGPU_DIR_LIBS}/renderdoc)
 
 target_copy_webgpu_binaries(${PROJECT_NAME})

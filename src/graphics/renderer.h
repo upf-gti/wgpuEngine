@@ -14,6 +14,8 @@
 
 #include "framework/entities/entity_mesh.h"
 
+#include "graphics/debug/renderdoc_capture.h"
+
 class EntityMesh;
 
 class Renderer {
@@ -26,6 +28,8 @@ protected:
     WebGPUContext   webgpu_context;
 
     RendererStorage renderer_storage;
+
+    RenderdocCapture renderdoc_capture;
 
     bool is_openxr_available    = false;
     bool use_mirror_screen      = false;

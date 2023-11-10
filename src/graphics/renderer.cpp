@@ -22,6 +22,10 @@ Renderer::Renderer()
 {
     instance = this;
 
+#ifdef _DEBUG
+    RenderdocCapture::init();
+#endif
+
     Shader::webgpu_context = &webgpu_context;
     Pipeline::webgpu_context = &webgpu_context;
     Mesh::webgpu_context = &webgpu_context;
