@@ -191,12 +191,20 @@ namespace ui {
     void ButtonWidget::render()
     {
         EntityMesh::render();
+        if (mark) mark->render();
         if(label) label->render();
     }
 
 	void ButtonWidget::update(float delta_time)
 	{
         UIEntity::update(delta_time);
+
+        if (mark)
+        {
+            mark->set_model(get_model());
+            mark->translate(glm::vec3(0.7f, 0.7f, -1e-3f));
+            mark->scale(glm::vec3(0.25f, 0.25f, 1.0f));
+        }
 
 		const WorkSpaceData& workspace = controller->get_workspace();
 
@@ -210,7 +218,7 @@ namespace ui {
         if (!label)
         {
             float magic = 0.002125f;
-            label = new TextWidget(signal, { m_position.x - signal.length() * magic, m_position.y + m_scale.y * 0.5f }, 0.01f, colors::WHITE);
+            label = new TextWidget(signal, { m_position.x - signal.length() * magic, m_position.y - m_scale.y * 0.75f }, 0.01f, colors::WHITE);
             label->m_priority = 2;
             label->uid = uid;
             label->controller = controller;

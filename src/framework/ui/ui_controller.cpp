@@ -406,6 +406,16 @@ namespace ui {
 	{
         static_cast<ButtonWidget*>(widget)->is_submenu = true;
 
+        // Add mark
+
+        {
+            ButtonWidget* mark = new ButtonWidget(widget->name + "@mark", {0.f, 0.f}, { 0.f, 0.f }, colors::WHITE);
+            mark->set_mesh(RendererStorage::get_mesh("quad"));
+            mark->set_material_shader(RendererStorage::get_shader("data/shaders/ui/ui_button.wgsl"));
+            mark->set_material_diffuse(RendererStorage::get_texture("data/textures/submenu_mark.png"));
+            ((ButtonWidget*)widget)->mark = mark;
+        }
+
         // Visibility callback...
 		bind(name, [widget = widget](const std::string& signal, void* button) {
 
