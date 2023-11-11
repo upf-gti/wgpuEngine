@@ -15,11 +15,13 @@ namespace ui {
     UIEntity::UIEntity()
     {
         uid = last_uid++;
+        process_children = false;
     }
 
     UIEntity::UIEntity(const glm::vec2& p, const glm::vec2& s) : m_position(p), m_scale(s)
     {
         uid = last_uid++;
+        process_children = false;
     }
 
     void UIEntity::set_process_children(bool value, bool force)
