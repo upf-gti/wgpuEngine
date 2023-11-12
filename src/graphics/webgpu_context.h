@@ -11,6 +11,7 @@
 #include "GLFW/glfw3.h"
 
 class Shader;
+class Pipeline;
 
 struct WebGPUContext {
 
@@ -34,6 +35,9 @@ struct WebGPUContext {
     uint32_t                render_width = 0;
     uint32_t                render_height = 0;
 
+    Pipeline*               mipmaps_pipeline;
+    Shader*                 mipmaps_shader;
+
     bool                    is_initialized = false;
 
     GLFWwindow*             window = nullptr;
@@ -54,10 +58,10 @@ struct WebGPUContext {
 
     WGPUBuffer             create_buffer(uint64_t size, int usage, const void* data, const char* label = nullptr);
     WGPUTexture            create_texture(WGPUTextureDimension dimension, WGPUTextureFormat format, WGPUExtent3D size, WGPUTextureUsage usage, uint32_t mipmaps);
-    WGPUTextureView        create_texture_view(WGPUTexture texture, WGPUTextureViewDimension dimension, WGPUTextureFormat format, WGPUTextureAspect aspect = WGPUTextureAspect_All);
+    WGPUTextureView        create_texture_view(WGPUTexture texture, WGPUTextureViewDimension dimension, WGPUTextureFormat format, WGPUTextureAspect aspect = WGPUTextureAspect_All, uint32_t mip_level_count = 1, uint32_t base_mip_level = 0, const char* label = "");
     
                            // By now wrapU = wrapV = wrapW
-    WGPUSampler            create_sampler(WGPUAddressMode wrap = WGPUAddressMode_ClampToEdge, WGPUFilterMode mag_filter = WGPUFilterMode_Linear, WGPUFilterMode min_filter = WGPUFilterMode_Linear, WGPUMipmapFilterMode mipmap_filter = WGPUMipmapFilterMode_Linear);
+    WGPUSampler            create_sampler(WGPUAddressMode wrap = WGPUAddressMode_ClampToEdge, WGPUFilterMode mag_filter = WGPUFilterMode_Linear, WGPUFilterMode min_filter = WGPUFilterMode_Linear, WGPUMipmapFilterMode mipmap_filter = WGPUMipmapFilterMode_Linear, float lod_max_clamp = 1.0f, uint16_t max_anisotropy = 1);
     void                   create_texture_mipmaps(WGPUTexture texture, WGPUExtent3D texture_size, uint32_t mip_level_count, const void* data);
 
     WGPUBindGroupLayout    create_bind_group_layout(const std::vector<WGPUBindGroupLayoutEntry>& entries);

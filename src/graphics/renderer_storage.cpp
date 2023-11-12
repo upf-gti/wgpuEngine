@@ -36,7 +36,14 @@ void RendererStorage::register_material(WebGPUContext* webgpu_context, const Mat
     albedo_uniform->binding = 0;
 
     Uniform* sampler_uniform = new Uniform();
-    sampler_uniform->data = webgpu_context->create_sampler(); // Using all default params
+    sampler_uniform->data = webgpu_context->create_sampler(
+        WGPUAddressMode_ClampToEdge,
+        WGPUFilterMode_Linear,
+        WGPUFilterMode_Linear,
+        WGPUMipmapFilterMode_Linear,
+        static_cast<float>(material.diffuse->get_mipmap_count()),
+        4
+    );
     sampler_uniform->binding = 1;
 
     std::vector<Uniform*>& uniforms = material_bind_groups[material].uniforms;

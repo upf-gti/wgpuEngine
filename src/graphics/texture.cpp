@@ -57,8 +57,8 @@ void Texture::load_from_data(const std::string& name, int width, int height, voi
     dimension = WGPUTextureDimension_2D;
     format = WGPUTextureFormat_RGBA8Unorm;
     size = { (unsigned int)width, (unsigned int)height, 1 };
-    usage = static_cast<WGPUTextureUsage>(WGPUTextureUsage_TextureBinding | WGPUTextureUsage_CopyDst);
-    mipmaps = 1;// std::bit_width(std::max(size.width, size.height));
+    usage = static_cast<WGPUTextureUsage>(WGPUTextureUsage_TextureBinding | WGPUTextureUsage_StorageBinding | WGPUTextureUsage_CopyDst);
+    mipmaps = std::bit_width(std::max(size.width, size.height));
 
     texture = webgpu_context->create_texture(dimension, format, size, usage, mipmaps);
 
@@ -85,5 +85,5 @@ WGPUTextureView Texture::get_view()
         break;
     }
 
-    return webgpu_context->create_texture_view(texture, view_dimension, format);
+    return webgpu_context->create_texture_view(texture, view_dimension, format, WGPUTextureAspect_All, mipmaps);
 }

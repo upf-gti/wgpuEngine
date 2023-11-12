@@ -9,6 +9,9 @@
 #endif
 
 #include "shader.h"
+#include "pipeline.h"
+
+#include "renderer.h"
 
 #include <iostream>
 
@@ -203,6 +206,11 @@ int WebGPUContext::initialize(WGPURequestAdapterOptions adapter_opts, WGPURequir
 
     device_queue = wgpuDeviceGetQueue(device);
 
+    mipmaps_shader = RendererStorage::get_shader("data/shaders/mipmaps.wgsl");
+
+    mipmaps_pipeline = new Pipeline();
+    mipmaps_pipeline->create_compute(mipmaps_shader);
+
     is_initialized = true;
 
     return 0;
@@ -223,6 +231,8 @@ void WebGPUContext::destroy()
     wgpuDeviceDestroy(device);
     wgpuQueueRelease(device_queue);
     wgpuSwapChainRelease(screen_swapchain);
+
+    delete mipmaps_pipeline;
 }
 
 void WebGPUContext::create_instance()
@@ -302,22 +312,22 @@ WGPUTexture WebGPUContext::create_texture(WGPUTextureDimension dimension, WGPUTe
     return wgpuDeviceCreateTexture(device, &textureDesc);
 }
 
-WGPUTextureView WebGPUContext::create_texture_view(WGPUTexture texture, WGPUTextureViewDimension dimension, WGPUTextureFormat format, WGPUTextureAspect aspect)
+WGPUTextureView WebGPUContext::create_texture_view(WGPUTexture texture, WGPUTextureViewDimension dimension, WGPUTextureFormat format, WGPUTextureAspect aspect, uint32_t mip_level_count, uint32_t base_mip_level, const char* label)
 {
     WGPUTextureViewDescriptor textureViewDesc = {};
-    textureViewDesc.aspect = WGPUTextureAspect_All;
+    textureViewDesc.aspect = aspect;
     textureViewDesc.baseArrayLayer = 0;
     textureViewDesc.arrayLayerCount = 1;
     textureViewDesc.dimension = dimension;
     textureViewDesc.format = format;
-    textureViewDesc.mipLevelCount = 1;
-    textureViewDesc.baseMipLevel = 0;
-    textureViewDesc.label = "Input View";
+    textureViewDesc.mipLevelCount = mip_level_count;
+    textureViewDesc.baseMipLevel = base_mip_level;
+    textureViewDesc.label = label;
 
     return wgpuTextureCreateView(texture, &textureViewDesc);
 }
 
-WGPUSampler WebGPUContext::create_sampler(WGPUAddressMode wrap, WGPUFilterMode mag_filter, WGPUFilterMode min_filter, WGPUMipmapFilterMode mipmap_filter)
+WGPUSampler WebGPUContext::create_sampler(WGPUAddressMode wrap, WGPUFilterMode mag_filter, WGPUFilterMode min_filter, WGPUMipmapFilterMode mipmap_filter, float lod_max_clamp, uint16_t max_anisotropy)
 {
     WGPUSamplerDescriptor samplerDesc = {};
     samplerDesc.addressModeU = wrap;
@@ -327,9 +337,9 @@ WGPUSampler WebGPUContext::create_sampler(WGPUAddressMode wrap, WGPUFilterMode m
     samplerDesc.minFilter = min_filter;
     samplerDesc.mipmapFilter = mipmap_filter;
     samplerDesc.lodMinClamp = 0.0f;
-    samplerDesc.lodMaxClamp = 1.0f;
+    samplerDesc.lodMaxClamp = lod_max_clamp;
     samplerDesc.compare = WGPUCompareFunction_Undefined;
-    samplerDesc.maxAnisotropy = 1;
+    samplerDesc.maxAnisotropy = max_anisotropy;
 
     return wgpuDeviceCreateSampler(device, &samplerDesc);
 }
@@ -343,52 +353,91 @@ void WebGPUContext::create_texture_mipmaps(WGPUTexture texture, WGPUExtent3D tex
     destination.mipLevel = 0;
     destination.origin = { 0, 0, 0 };
     destination.aspect = WGPUTextureAspect_All;
+    destination.mipLevel = 0;
 
     WGPUTextureDataLayout source = {};
     source.offset = 0;
+    source.bytesPerRow = 4 * texture_size.width;
+    source.rowsPerImage = texture_size.height;
 
-    // Create image data
-    WGPUExtent3D mip_level_size = texture_size;
-    std::vector<unsigned char> previous_level_pixels;
-    WGPUExtent3D previous_mip_level_size;
-    for (uint32_t level = 0; level < mip_level_count; ++level) {
-        // Pixel data for the current level
-        std::vector<unsigned char> pixels(4 * mip_level_size.width * mip_level_size.height);
-        if (level == 0) {
-            // We cannot really avoid this copy since we need this
-            // in previous_level_pixels at the next iteration
-            memcpy(pixels.data(), data, pixels.size());
-        }
-        else {
-            // Create mip level data
-            for (uint32_t i = 0; i < mip_level_size.width; ++i) {
-                for (uint32_t j = 0; j < mip_level_size.height; ++j) {
-                    unsigned char* p = &pixels[4 * (j * mip_level_size.width + i)];
-                    // Get the corresponding 4 pixels from the previous level
-                    unsigned char* p00 = &previous_level_pixels[4 * ((2 * j + 0) * previous_mip_level_size.width + (2 * i + 0))];
-                    unsigned char* p01 = &previous_level_pixels[4 * ((2 * j + 0) * previous_mip_level_size.width + (2 * i + 1))];
-                    unsigned char* p10 = &previous_level_pixels[4 * ((2 * j + 1) * previous_mip_level_size.width + (2 * i + 0))];
-                    unsigned char* p11 = &previous_level_pixels[4 * ((2 * j + 1) * previous_mip_level_size.width + (2 * i + 1))];
-                    // Average
-                    p[0] = (p00[0] + p01[0] + p10[0] + p11[0]) / 4;
-                    p[1] = (p00[1] + p01[1] + p10[1] + p11[1]) / 4;
-                    p[2] = (p00[2] + p01[2] + p10[2] + p11[2]) / 4;
-                    p[3] = (p00[3] + p01[3] + p10[3] + p11[3]) / 4;
-                }
+    // For level 0
+    wgpuQueueWriteTexture(mipmap_queue, &destination, data, (4 * texture_size.width * texture_size.height), &source, &texture_size);
+
+    // For next levels
+    {
+        std::vector<WGPUExtent3D> texture_mip_sizes;
+        texture_mip_sizes.resize(mip_level_count);
+        texture_mip_sizes[0] = texture_size;
+
+        std::vector<WGPUTextureView> texture_mip_views;
+
+        texture_mip_views.reserve(texture_mip_sizes.size());
+        for (uint32_t level = 0; level < texture_mip_sizes.size(); ++level) {
+            std::string label = "MIP level #" + std::to_string(level);
+            texture_mip_views.push_back(
+                create_texture_view(texture, WGPUTextureViewDimension_2D, WGPUTextureFormat_RGBA8Unorm, WGPUTextureAspect_All, 1, level, label.c_str())
+            );
+
+            if (level > 0) {
+                WGPUExtent3D previous_size = texture_mip_sizes[level - 1];
+                texture_mip_sizes[level] = {
+                    previous_size.width / 2,
+                    previous_size.height / 2,
+                    previous_size.depthOrArrayLayers / 2
+                };
             }
         }
 
-        // Upload data to the GPU texture
-        destination.mipLevel = level;
-        source.bytesPerRow = 4 * mip_level_size.width;
-        source.rowsPerImage = mip_level_size.height;
+        // Initialize a command encoder
+        WGPUCommandEncoderDescriptor encoder_desc = {};
+        WGPUCommandEncoder command_encoder = wgpuDeviceCreateCommandEncoder(device, &encoder_desc);
 
-        wgpuQueueWriteTexture(mipmap_queue, &destination, pixels.data(), pixels.size(), &source, &mip_level_size);
+        WGPUComputePassDescriptor compute_pass_desc = {};
+        compute_pass_desc.timestampWrites = nullptr;
+        WGPUComputePassEncoder compute_pass = wgpuCommandEncoderBeginComputePass(command_encoder, &compute_pass_desc);
 
-        previous_level_pixels = std::move(pixels);
-        previous_mip_level_size = mip_level_size;
-        mip_level_size.width /= 2;
-        mip_level_size.height /= 2;
+        mipmaps_pipeline->set(compute_pass);
+
+        for (uint32_t nextLevel = 1; nextLevel < texture_mip_sizes.size(); ++nextLevel) {
+
+            Uniform source_view;
+            source_view.data = texture_mip_views[nextLevel - 1];
+            source_view.binding = 0;
+
+            Uniform output_view;
+            output_view.data = texture_mip_views[nextLevel];
+            output_view.binding = 1;
+
+            std::vector<Uniform*> uniforms = { &source_view, &output_view };
+            WGPUBindGroup mipmaps_bind_group = create_bind_group(uniforms, mipmaps_shader, 0);
+
+            wgpuComputePassEncoderSetBindGroup(compute_pass, 0, mipmaps_bind_group, 0, nullptr);
+
+            uint32_t invocationCountX = texture_mip_sizes[nextLevel].width;
+            uint32_t invocationCountY = texture_mip_sizes[nextLevel].height;
+            uint32_t workgroupSizePerDim = 8;
+            // This ceils invocationCountX / workgroupSizePerDim
+            uint32_t workgroupCountX = (invocationCountX + workgroupSizePerDim - 1) / workgroupSizePerDim;
+            uint32_t workgroupCountY = (invocationCountY + workgroupSizePerDim - 1) / workgroupSizePerDim;
+            wgpuComputePassEncoderDispatchWorkgroups(compute_pass, workgroupCountX, workgroupCountY, 1);
+
+            wgpuBindGroupRelease(mipmaps_bind_group);
+        }
+
+        // Finalize compute_raymarching pass
+        wgpuComputePassEncoderEnd(compute_pass);
+
+        WGPUCommandBufferDescriptor cmd_buff_descriptor = {};
+        cmd_buff_descriptor.nextInChain = NULL;
+        cmd_buff_descriptor.label = "Compute Octree Command Buffer";
+
+        // Encode and submit the GPU commands
+        WGPUCommandBuffer commands = wgpuCommandEncoderFinish(command_encoder, &cmd_buff_descriptor);
+        wgpuQueueSubmit(mipmap_queue, 1, &commands);
+
+        wgpuCommandBufferRelease(commands);
+        wgpuComputePassEncoderRelease(compute_pass);
+        wgpuCommandEncoderRelease(command_encoder);
     }
 
     wgpuQueueRelease(mipmap_queue);

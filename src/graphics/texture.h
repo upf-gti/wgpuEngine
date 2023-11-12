@@ -19,6 +19,7 @@ public:
 
     WGPUTexture     get_texture() { return texture; }
 	WGPUTextureView get_view();
+    uint32_t        get_mipmap_count() { return mipmaps; }
 
     void load_from_data(const std::string& name, int width, int height, void* data);
 
