@@ -100,6 +100,8 @@ namespace ui {
         Color color;
 		std::string signal;
 
+        ButtonWidget* mark = nullptr;
+
         bool is_color_button        = false;
         bool is_unique_selection    = false;
         bool allow_toggle           = false;
