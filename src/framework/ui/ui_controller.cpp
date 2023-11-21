@@ -100,21 +100,15 @@ namespace ui {
             child->update(delta_time);
         }
 
-        // Update labels
+        // Update controller buttons
 
-        for (auto& it : get_widgets())
+        for (auto& it : controller_signals)
         {
-            ui::LabelWidget* widget = static_cast<ui::LabelWidget*>(it.second);
-
-            if (!widget->is_active() || widget->type != ui::LABEL)
+            if (!Input::was_button_pressed(it.first))
                 continue;
 
-            if (widget->button != -1 && Input::was_button_pressed(widget->button))
-            {
-                widget->selected = !widget->selected;
-                ui::TextWidget* text_label = static_cast<ui::TextWidget*>(get_widget_from_name("text@" + it.first));
-                text_label->text_entity->set_text(widget->selected ? widget->subtext : widget->text);
-            }
+            for (auto& callback : it.second)
+                callback();
         }
 	}
 
@@ -241,6 +235,14 @@ namespace ui {
 
         m_icon->button = j.value("button", -1);
         m_icon->subtext = j.value("subtext", "");
+
+        if (m_icon->button != -1)
+        {
+            bind(m_icon->button, [widget = m_icon, text_widget = text_widget]() {
+                widget->selected = !widget->selected;
+                static_cast<ui::TextWidget*>(text_widget)->set_text(widget->selected ? widget->subtext : widget->text);
+            });
+        }
 
         append_widget(m_icon, alias, text_widget);
 
@@ -508,8 +510,13 @@ namespace ui {
 
 	void Controller::bind(const std::string& name, SignalType callback)
 	{
-		signals[name].push_back(callback);
+        mapping_signals[name].push_back(callback);
 	}
+
+    void Controller::bind(uint8_t button, FuncEmpty callback)
+    {
+        controller_signals[button].push_back(callback);
+    }
 
     UIEntity* Controller::get(const std::string& alias)
     {

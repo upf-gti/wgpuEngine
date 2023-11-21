@@ -78,6 +78,8 @@ namespace ui {
 
 		TextWidget(const std::string& _text, const glm::vec2& pos, float scale = 1.f, const Color& color = colors::WHITE);
 
+        void set_text(const std::string& text) { text_entity->set_text(text); };
+
         void render() override;
         void update(float delta_time) override;
 	};

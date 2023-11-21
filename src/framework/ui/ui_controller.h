@@ -10,6 +10,8 @@
 
 class EntityMesh;
 
+using FuncEmpty = std::function<void()>;
+
 using FuncVoid = std::function<void(const std::string&, void*)>;
 using FuncFloat = std::function<void(const std::string&, float)>;
 using FuncString = std::function<void(const std::string&, std::string)>;
@@ -50,7 +52,8 @@ namespace ui {
 		EntityMesh* raycast_pointer = nullptr;
 
 		ui::UIEntity* root = nullptr;
-		std::map<std::string, std::vector<SignalType>> signals;
+		std::map<std::string, std::vector<SignalType>> mapping_signals;
+        std::map<uint8_t, std::vector<FuncEmpty>> controller_signals;
 
         json mjson;
         std::map<std::string, UIEntity*> widgets;
@@ -123,17 +126,18 @@ namespace ui {
 		*/
 
 		void bind(const std::string& name, SignalType callback);
+        void bind(uint8_t button, FuncEmpty callback);
 
 		template<typename T>
 		bool emit_signal(const std::string& name, T value) {
 
-			auto it = signals.find(name);
-			if (it == signals.end())
+			auto it = mapping_signals.find(name);
+			if (it == mapping_signals.end())
 				return false;
 
 			using FuncT = std::function<void(const std::string&, T)>;
 
-			for (auto& f : signals[name])
+			for (auto& f : mapping_signals[name])
 			{
 				if (std::holds_alternative<FuncT>(f))
 					std::get<FuncT>(f)(name, value);
