@@ -256,6 +256,9 @@ void Shader::get_reflection_data(const std::string& shader_path, const std::stri
 						entry.texture.sampleType = WGPUTextureSampleType_UnfilterableFloat;
 					}
 					break;
+                case ResourceBinding::SampledKind::kUInt:
+                    entry.texture.sampleType = WGPUTextureSampleType_Uint;
+                    break;
 				default:
 					std::cerr << "Shader reflection failed: sample kind not implemented" << std::endl;
 					assert(0);
@@ -299,6 +302,9 @@ void Shader::get_reflection_data(const std::string& shader_path, const std::stri
 				case ResourceBinding::TexelFormat::kRgba32Float:
 					entry.storageTexture.format = WGPUTextureFormat_RGBA32Float;
 					break;
+                case ResourceBinding::TexelFormat::kR32Uint:
+                    entry.storageTexture.format = WGPUTextureFormat_R32Uint;
+                    break;
 				default:
 					std::cerr << "Shader reflection failed: image format not implemented" << std::endl;
 					assert(0);
