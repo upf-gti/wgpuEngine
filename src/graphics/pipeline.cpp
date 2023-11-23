@@ -23,7 +23,7 @@ Pipeline::~Pipeline()
     }
 }
 
-void Pipeline::create_render(Shader* shader, WGPUColorTargetState color_target, bool uses_depth_buffer, WGPUCullMode cull_mode, WGPUPrimitiveTopology topology)
+void Pipeline::create_render(Shader* shader, WGPUColorTargetState p_color_target, PipelineDescription desc)
 {
 	const std::vector<WGPUBindGroupLayout> layouts_by_id = shader->get_bind_group_layouts();
 	std::vector<WGPUBindGroupLayout> bind_group_layouts;
@@ -32,18 +32,20 @@ void Pipeline::create_render(Shader* shader, WGPUColorTargetState color_target, 
 		bind_group_layouts.push_back(bind_group_layout);
 	}
 
-    blending_enabled = color_target.blend != nullptr;
+    blending_enabled = p_color_target.blend != nullptr;
 
-    this->cull_mode = cull_mode;
-    this->topology = topology;
-	this->color_target = color_target;
-	this->uses_depth_buffer = uses_depth_buffer;
+	color_target = p_color_target;
+    cull_mode = desc.cull_mode;
+    topology = desc.topology;
+	uses_depth_buffer = desc.uses_depth_buffer;
+    uses_depth_test = desc.uses_depth_test;
 
-    if (blending_enabled) this->blend_state = *color_target.blend;
+    if (blending_enabled)
+        blend_state = *p_color_target.blend;
 
 	pipeline_layout = webgpu_context->create_pipeline_layout(bind_group_layouts);
 
-	pipeline = webgpu_context->create_render_pipeline(shader->get_module(), pipeline_layout, shader->get_vertex_buffer_layouts(), color_target, uses_depth_buffer, cull_mode, topology);
+	pipeline = webgpu_context->create_render_pipeline(shader->get_module(), pipeline_layout, shader->get_vertex_buffer_layouts(), p_color_target, uses_depth_buffer, uses_depth_test, cull_mode, topology);
 
 	shader->set_pipeline(this);
 }
@@ -71,10 +73,10 @@ void Pipeline::create_compute(Shader* shader)
 	shader->set_pipeline(this);
 }
 
-void Pipeline::register_render_pipeline(Shader* shader, WGPUColorTargetState color_target, bool uses_depth_buffer, WGPUCullMode cull_mode, WGPUPrimitiveTopology topology)
+void Pipeline::register_render_pipeline(Shader* shader, WGPUColorTargetState p_color_target, PipelineDescription desc)
 {
     Pipeline* render_pipeline = new Pipeline();
-    render_pipeline->create_render(shader, color_target, uses_depth_buffer, cull_mode, topology);
+    render_pipeline->create_render(shader, p_color_target, desc);
     registered_render_pipelines.push_back(render_pipeline);
 }
 
@@ -107,7 +109,7 @@ void Pipeline::reload(Shader* shader)
             color_target.blend = &blend_state;
         }
 		pipeline = webgpu_context->create_render_pipeline(shader->get_module(), pipeline_layout, shader->get_vertex_buffer_layouts(),
-            color_target, uses_depth_buffer, cull_mode, topology);
+            color_target, uses_depth_buffer, uses_depth_test, cull_mode, topology);
 	}
 	else {
 		wgpuComputePipelineRelease(std::get<WGPUComputePipeline>(pipeline));
