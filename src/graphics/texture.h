@@ -21,7 +21,7 @@ public:
 	WGPUTextureView get_view();
     uint32_t        get_mipmap_count() { return mipmaps; }
 
-    void load_from_data(const std::string& name, int width, int height, void* data);
+    void load_from_data(const std::string& name, int width, int height, void* data, WGPUTextureFormat p_format = WGPUTextureFormat_RGBA8Unorm, int faces = 1);
 
 private:
 

@@ -312,12 +312,12 @@ WGPUTexture WebGPUContext::create_texture(WGPUTextureDimension dimension, WGPUTe
     return wgpuDeviceCreateTexture(device, &textureDesc);
 }
 
-WGPUTextureView WebGPUContext::create_texture_view(WGPUTexture texture, WGPUTextureViewDimension dimension, WGPUTextureFormat format, WGPUTextureAspect aspect, uint32_t mip_level_count, uint32_t base_mip_level, const char* label)
+WGPUTextureView WebGPUContext::create_texture_view(WGPUTexture texture, WGPUTextureViewDimension dimension, WGPUTextureFormat format, WGPUTextureAspect aspect, uint32_t mip_level_count, uint32_t base_mip_level, uint32_t array_layer_count, const char* label)
 {
     WGPUTextureViewDescriptor textureViewDesc = {};
     textureViewDesc.aspect = aspect;
     textureViewDesc.baseArrayLayer = 0;
-    textureViewDesc.arrayLayerCount = 1;
+    textureViewDesc.arrayLayerCount = array_layer_count;
     textureViewDesc.dimension = dimension;
     textureViewDesc.format = format;
     textureViewDesc.mipLevelCount = mip_level_count;
@@ -375,7 +375,7 @@ void WebGPUContext::create_texture_mipmaps(WGPUTexture texture, WGPUExtent3D tex
         for (uint32_t level = 0; level < texture_mip_sizes.size(); ++level) {
             std::string label = "MIP level #" + std::to_string(level);
             texture_mip_views.push_back(
-                create_texture_view(texture, WGPUTextureViewDimension_2D, WGPUTextureFormat_RGBA8Unorm, WGPUTextureAspect_All, 1, level, label.c_str())
+                create_texture_view(texture, WGPUTextureViewDimension_2D, WGPUTextureFormat_RGBA8Unorm, WGPUTextureAspect_All, 1, level, 1, label.c_str())
             );
 
             if (level > 0) {

@@ -35,8 +35,6 @@ void Texture::create(WGPUTextureDimension dimension, WGPUTextureFormat format, W
 
 void Texture::load(const std::string& texture_path)
 {
-    spdlog::info("Loading shader: {}", texture_path);
-
     int width, height, channels;
     unsigned char* data = stbi_load(texture_path.c_str(), &width, &height, &channels, 4);
 
@@ -49,32 +47,40 @@ void Texture::load(const std::string& texture_path)
 
     stbi_image_free(data);
 
-    //std::cout << " [OK]" << std::endl;
+    spdlog::info("Texture loaded: {}", texture_path);
 }
 
-void Texture::load_from_data(const std::string& name, int width, int height, void* data)
+void Texture::load_from_data(const std::string& name, int width, int height, void* data, WGPUTextureFormat p_format, int faces)
 {
     dimension = WGPUTextureDimension_2D;
-    format = WGPUTextureFormat_RGBA8Unorm;
-    size = { (unsigned int)width, (unsigned int)height, 1 };
+    format = p_format;
+    size = { (unsigned int)width, (unsigned int)height, (unsigned int)faces };
     usage = static_cast<WGPUTextureUsage>(WGPUTextureUsage_TextureBinding | WGPUTextureUsage_StorageBinding | WGPUTextureUsage_CopyDst);
-    mipmaps = std::bit_width(std::max(size.width, size.height));
+
+    bool do_mipmaps = (p_format == WGPUTextureFormat_RGBA8Unorm);
+    mipmaps = do_mipmaps ? std::bit_width(std::max(size.width, size.height)) : 1;
 
     texture = webgpu_context->create_texture(dimension, format, size, usage, mipmaps);
 
-    webgpu_context->create_texture_mipmaps(texture, size, mipmaps, data);
+    if (do_mipmaps)
+    {
+        webgpu_context->create_texture_mipmaps(texture, size, mipmaps, data);
+    }
 }
 
 WGPUTextureView Texture::get_view()
 {
     WGPUTextureViewDimension view_dimension;
+    uint32_t array_layer_count = 1;
 
     switch (dimension) {
     case WGPUTextureDimension_1D:
         view_dimension = WGPUTextureViewDimension_1D;
         break;
     case WGPUTextureDimension_2D:
-        view_dimension = WGPUTextureViewDimension_2D;
+        view_dimension = size.depthOrArrayLayers > 1 ? WGPUTextureViewDimension_Cube : WGPUTextureViewDimension_2D;
+        if (view_dimension == WGPUTextureViewDimension_Cube)
+            array_layer_count = size.depthOrArrayLayers;
         break;
     case WGPUTextureDimension_3D:
         view_dimension = WGPUTextureViewDimension_3D;
@@ -85,5 +91,5 @@ WGPUTextureView Texture::get_view()
         break;
     }
 
-    return webgpu_context->create_texture_view(texture, view_dimension, format, WGPUTextureAspect_All, mipmaps);
+    return webgpu_context->create_texture_view(texture, view_dimension, format, WGPUTextureAspect_All, mipmaps, 0, array_layer_count);
 }
