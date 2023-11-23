@@ -56,13 +56,18 @@ void Texture::load_from_data(const std::string& name, int width, int height, voi
     format = p_format;
     size = { (unsigned int)width, (unsigned int)height, (unsigned int)faces };
     usage = static_cast<WGPUTextureUsage>(WGPUTextureUsage_TextureBinding | WGPUTextureUsage_StorageBinding | WGPUTextureUsage_CopyDst);
-
-    bool do_mipmaps = (p_format == WGPUTextureFormat_RGBA8Unorm);
-    mipmaps = do_mipmaps ? std::bit_width(std::max(size.width, size.height)) : 1;
+    mipmaps = (p_format == WGPUTextureFormat_RGBA8Unorm) ? std::bit_width(std::max(size.width, size.height)) : 1;
 
     texture = webgpu_context->create_texture(dimension, format, size, usage, mipmaps);
 
-    if (do_mipmaps)
+    float** pixel_data = (float**)data;
+
+    if (size.depthOrArrayLayers > 1) // If it's cubemap basically...
+    {
+        for( uint32_t i = 0; i < size.depthOrArrayLayers; ++i )
+            webgpu_context->create_texture_mipmaps(texture, size, mipmaps, (const void*)pixel_data[i], WGPUTextureViewDimension_Cube, format, {0, 0, i});
+    }
+    else
     {
         webgpu_context->create_texture_mipmaps(texture, size, mipmaps, data);
     }
