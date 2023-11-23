@@ -50,26 +50,39 @@ void Texture::load(const std::string& texture_path)
     spdlog::info("Texture loaded: {}", texture_path);
 }
 
-void Texture::load_from_data(const std::string& name, int width, int height, void* data, WGPUTextureFormat p_format, int faces)
+void Texture::load_from_data(const std::string& name, int width, int height, void* data, WGPUTextureFormat p_format)
 {
     dimension = WGPUTextureDimension_2D;
     format = p_format;
-    size = { (unsigned int)width, (unsigned int)height, (unsigned int)faces };
+    size = { (unsigned int)width, (unsigned int)height, 1 };
     usage = static_cast<WGPUTextureUsage>(WGPUTextureUsage_TextureBinding | WGPUTextureUsage_StorageBinding | WGPUTextureUsage_CopyDst);
-    mipmaps = (p_format == WGPUTextureFormat_RGBA8Unorm) ? std::bit_width(std::max(size.width, size.height)) : 1;
+    mipmaps = std::bit_width(std::max(size.width, size.height));
 
     texture = webgpu_context->create_texture(dimension, format, size, usage, mipmaps);
 
-    float** pixel_data = (float**)data;
+    webgpu_context->create_texture_mipmaps(texture, size, mipmaps, data);
+}
 
-    if (size.depthOrArrayLayers > 1) // If it's cubemap basically...
+void Texture::load_from_hdre(HDRE* hdre)
+{
+    dimension = WGPUTextureDimension_2D;
+    format = WGPUTextureFormat_RGBA32Float;
+    size = { (unsigned int)hdre->width, (unsigned int)hdre->height, 6 };
+    usage = static_cast<WGPUTextureUsage>(WGPUTextureUsage_TextureBinding | WGPUTextureUsage_StorageBinding | WGPUTextureUsage_CopyDst);
+    mipmaps = 6; // num generated levels
+
+    texture = webgpu_context->create_texture(dimension, format, size, usage, mipmaps);
+
+    for (uint32_t level = 0; level < 6; ++level)
     {
-        for( uint32_t i = 0; i < size.depthOrArrayLayers; ++i )
-            webgpu_context->create_texture_mipmaps(texture, size, mipmaps, (const void*)pixel_data[i], WGPUTextureViewDimension_Cube, format, {0, 0, i});
-    }
-    else
-    {
-        webgpu_context->create_texture_mipmaps(texture, size, mipmaps, data);
+        for (uint32_t face = 0; face < 6; ++face)
+        {
+            sHDRELevel hdre_level = hdre->getLevel(level);
+            void* data = hdre_level.faces[face];
+            WGPUOrigin3D origin = { 0, 0, face };
+            WGPUExtent3D tex_size = { (unsigned int)hdre_level.width, (unsigned int)hdre_level.height, 1 };
+            webgpu_context->upload_texture_mipmaps(texture, tex_size, level, data, origin);
+        }
     }
 }
 

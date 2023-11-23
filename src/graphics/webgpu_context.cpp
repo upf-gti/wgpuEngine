@@ -350,27 +350,17 @@ void WebGPUContext::create_texture_mipmaps(WGPUTexture texture, WGPUExtent3D tex
 
     WGPUImageCopyTexture destination = {};
     destination.texture = texture;
-    destination.mipLevel = 0;
     destination.origin = origin;
     destination.aspect = WGPUTextureAspect_All;
     destination.mipLevel = 0;
 
-    WGPUExtent3D cubemapLayerSize = texture_size;
-    uint32_t comp_size = sizeof(uint8_t);
-
-    if (view_dimension == WGPUTextureViewDimension_Cube)
-    {
-        cubemapLayerSize = { texture_size.width, texture_size.height, 1 };
-        comp_size = sizeof(float);
-    }
-
     WGPUTextureDataLayout source = {};
     source.offset = 0;
-    source.bytesPerRow = comp_size * 4 * texture_size.width;
+    source.bytesPerRow = 4 * texture_size.width;
     source.rowsPerImage = texture_size.height;
 
     // For level 0
-    wgpuQueueWriteTexture(mipmap_queue, &destination, data, (comp_size * 4 * texture_size.width * texture_size.height), &source, &cubemapLayerSize);
+    wgpuQueueWriteTexture(mipmap_queue, &destination, data, (4 * texture_size.width * texture_size.height), &source, &texture_size);
 
     // For ALL levels
     {
@@ -379,9 +369,10 @@ void WebGPUContext::create_texture_mipmaps(WGPUTexture texture, WGPUExtent3D tex
         texture_mip_sizes[0] = texture_size;
 
         std::vector<WGPUTextureView> texture_mip_views;
-
         texture_mip_views.reserve(texture_mip_sizes.size());
-        for (uint32_t level = 0; level < texture_mip_sizes.size(); ++level) {
+
+        for (uint32_t level = 0; level < texture_mip_sizes.size(); ++level)
+        {
             std::string label = "MIP level #" + std::to_string(level);
             texture_mip_views.push_back(
                 create_texture_view(texture, view_dimension, format, WGPUTextureAspect_All, 1, level, texture_size.depthOrArrayLayers, label.c_str())
@@ -438,7 +429,7 @@ void WebGPUContext::create_texture_mipmaps(WGPUTexture texture, WGPUExtent3D tex
 
         WGPUCommandBufferDescriptor cmd_buff_descriptor = {};
         cmd_buff_descriptor.nextInChain = NULL;
-        cmd_buff_descriptor.label = "Compute Octree Command Buffer";
+        cmd_buff_descriptor.label = "Create Mipmaps Command Buffer";
 
         // Encode and submit the GPU commands
         WGPUCommandBuffer commands = wgpuCommandEncoderFinish(command_encoder, &cmd_buff_descriptor);
@@ -448,6 +439,30 @@ void WebGPUContext::create_texture_mipmaps(WGPUTexture texture, WGPUExtent3D tex
         wgpuComputePassEncoderRelease(compute_pass);
         wgpuCommandEncoderRelease(command_encoder);
     }
+
+    wgpuQueueRelease(mipmap_queue);
+}
+
+void WebGPUContext::upload_texture_mipmaps(WGPUTexture texture, WGPUExtent3D texture_size, uint32_t mip_level, const void* data, WGPUOrigin3D origin)
+{
+    WGPUQueue mipmap_queue = wgpuDeviceGetQueue(device);
+
+    WGPUImageCopyTexture destination = {};
+    destination.texture = texture;
+    destination.origin = origin;
+    destination.mipLevel = mip_level;
+    destination.aspect = WGPUTextureAspect_All;
+
+    WGPUExtent3D layer_size = { texture_size.width, texture_size.height, 1 };
+    uint32_t channel_size = sizeof(float); // hardcoded by now...
+
+    WGPUTextureDataLayout source = {};
+    source.offset = 0;
+    source.bytesPerRow = channel_size * 4 * texture_size.width;
+    source.rowsPerImage = texture_size.height;
+
+    // Copy data to the selected mipmap
+    wgpuQueueWriteTexture(mipmap_queue, &destination, data, (channel_size * 4 * texture_size.width * texture_size.height), &source, &layer_size);
 
     wgpuQueueRelease(mipmap_queue);
 }
