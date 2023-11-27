@@ -27,31 +27,53 @@ void RendererStorage::register_material(WebGPUContext* webgpu_context, const Mat
         return;
     }
 
-    if (!material.diffuse) {
-        return;
-    }
-
-    Uniform* albedo_uniform = new Uniform();
-    albedo_uniform->data = material.diffuse->get_view();
-    albedo_uniform->binding = 0;
-
-    Uniform* sampler_uniform = new Uniform();
-    sampler_uniform->data = webgpu_context->create_sampler(
-        WGPUAddressMode_ClampToEdge,
-        WGPUFilterMode_Linear,
-        WGPUFilterMode_Linear,
-        WGPUMipmapFilterMode_Linear,
-        static_cast<float>(material.diffuse->get_mipmap_count()),
-        4
-    );
-    sampler_uniform->binding = 1;
+    bool create_bind_group = false;
 
     std::vector<Uniform*>& uniforms = material_bind_groups[material].uniforms;
 
-    uniforms.push_back(albedo_uniform);
-    uniforms.push_back(sampler_uniform);
+    if (material.diffuse) {
+        Uniform* albedo_uniform = new Uniform();
+        albedo_uniform->data = material.diffuse->get_view();
+        albedo_uniform->binding = 0;
 
-    material_bind_groups[material].bind_group = webgpu_context->create_bind_group(uniforms, material.shader, 2);
+        Uniform* sampler_uniform = new Uniform();
+        sampler_uniform->data = webgpu_context->create_sampler(
+            WGPUAddressMode_ClampToEdge,
+            WGPUFilterMode_Linear,
+            WGPUFilterMode_Linear,
+            WGPUMipmapFilterMode_Linear,
+            static_cast<float>(material.diffuse->get_mipmap_count()),
+            4
+        );
+        sampler_uniform->binding = 1;
+
+        uniforms.push_back(albedo_uniform);
+        uniforms.push_back(sampler_uniform);
+        create_bind_group |= true;
+    }
+
+    if (material.irradiance) {
+        Uniform* irradiance_uniform = new Uniform();
+        irradiance_uniform->data = material.irradiance->get_view();
+        irradiance_uniform->binding = 2;
+
+        Uniform* sampler_uniform = new Uniform();
+        sampler_uniform->data = webgpu_context->create_sampler(
+            WGPUAddressMode_ClampToEdge,
+            WGPUFilterMode_Linear,
+            WGPUFilterMode_Linear,
+            WGPUMipmapFilterMode_Linear,
+            static_cast<float>(material.irradiance->get_mipmap_count()),
+            4
+        );
+        sampler_uniform->binding = 3;
+
+        uniforms.push_back(irradiance_uniform);
+        uniforms.push_back(sampler_uniform);
+    }
+
+    if( create_bind_group )
+        material_bind_groups[material].bind_group = webgpu_context->create_bind_group(uniforms, material.shader, 2);
 }
 
 WGPUBindGroup RendererStorage::get_material_bind_group(const Material& material)

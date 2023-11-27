@@ -18,6 +18,7 @@ struct Material
     Shader* shader = nullptr;
     glm::vec4 color = { 1.0f, 1.0f, 1.0f, 1.0f };
     Texture* diffuse = nullptr;
+    Texture* irradiance = nullptr;
 
     uint8_t flags = 0;
     uint8_t priority = 0;
