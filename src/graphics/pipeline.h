@@ -16,7 +16,8 @@ struct PipelineDescription {
     WGPUPrimitiveTopology topology = WGPUPrimitiveTopology_TriangleList;
 
     bool uses_depth_buffer  = true;
-    bool uses_depth_test    = true;
+    bool uses_depth_write   = true;
+    bool blending_enabled   = false;
 };
 
 class Pipeline {
@@ -51,12 +52,7 @@ private:
 
 	WGPUColorTargetState    color_target;
 	WGPUBlendState		    blend_state;
-    WGPUPrimitiveTopology   topology;
-    WGPUCullMode            cull_mode;
-
-	bool uses_depth_buffer  = true;
-	bool uses_depth_test    = true;
-    bool blending_enabled   = false;
+    PipelineDescription     description;
 
 	bool loaded = false;
 };
