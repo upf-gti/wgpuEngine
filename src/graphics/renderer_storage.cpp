@@ -173,7 +173,18 @@ Texture* RendererStorage::get_texture(const std::string& texture_path)
         return it->second;
 
     Texture* tx = new Texture();
-    tx->load(texture_path);
+
+    std::string extension = texture_path.substr(texture_path.find_last_of(".") + 1);
+
+    if (extension != "hdre")
+    {
+        tx->load(texture_path);
+    }
+    else
+    {
+        HDRE* hdre = HDRE::Get(texture_path.c_str());
+        tx->load_from_hdre(hdre);
+    }
 
     // register in map
     textures[name] = tx;
