@@ -12,6 +12,7 @@ RendererStorage* RendererStorage::instance = nullptr;
 std::map<std::string, Mesh*> RendererStorage::meshes;
 std::map<std::string, Texture*> RendererStorage::textures;
 std::map<std::string, Shader*> RendererStorage::shaders;
+Texture* RendererStorage::default_skybox_texture = nullptr;
 std::map<std::string, std::vector<std::string>> RendererStorage::shader_library_references;
 std::unordered_map<Material, RendererStorage::sBindingData> RendererStorage::material_bind_groups;
 std::unordered_map<void*, RendererStorage::sBindingData> RendererStorage::ui_widget_bind_groups;
@@ -21,21 +22,48 @@ RendererStorage::RendererStorage()
     instance = this;
 }
 
-void RendererStorage::register_material(WebGPUContext* webgpu_context, const Material& material)
+void RendererStorage::register_material(WebGPUContext* webgpu_context, Material& material)
 {
     if (material_bind_groups.contains(material)) {
         return;
     }
 
     bool create_bind_group = false;
+    uint32_t binding = 0;
 
     std::vector<Uniform*>& uniforms = material_bind_groups[material].uniforms;
 
     if (material.diffuse) {
-        Uniform* albedo_uniform = new Uniform();
-        albedo_uniform->data = material.diffuse->get_view();
-        albedo_uniform->binding = 0;
+        Uniform* u = new Uniform();
+        u->data = material.diffuse->get_view();
+        u->binding = binding++;
+        uniforms.push_back(u);
+    }
 
+    if (material.metallic_roughness) {
+        Uniform* u = new Uniform();
+        u->data = material.metallic_roughness->get_view();
+        u->binding = binding++;
+        uniforms.push_back(u);
+    }
+
+    if (material.normal) {
+        Uniform* u = new Uniform();
+        u->data = material.normal->get_view();
+        u->binding = binding++;
+        uniforms.push_back(u);
+    }
+
+    if (material.emissive) {
+        Uniform* u = new Uniform();
+        u->data = material.emissive->get_view();
+        u->binding = binding++;
+        uniforms.push_back(u);
+    }
+
+    // Add a sampler for basic 2d textures if there's any texture as uniforms
+    if (uniforms.size())
+    {
         Uniform* sampler_uniform = new Uniform();
         sampler_uniform->data = webgpu_context->create_sampler(
             material.diffuse->get_wrap_u(),
@@ -47,18 +75,32 @@ void RendererStorage::register_material(WebGPUContext* webgpu_context, const Mat
             static_cast<float>(material.diffuse->get_mipmap_count()),
             4
         );
-        sampler_uniform->binding = 1;
-
-        uniforms.push_back(albedo_uniform);
+        sampler_uniform->binding = binding++;
         uniforms.push_back(sampler_uniform);
+
         create_bind_group |= true;
     }
 
+    // Set always the default environment...
+    if (material.shader == RendererStorage::get_shader("data/shaders/mesh_pbr.wgsl") && !material.irradiance)
+    {
+        material.irradiance = RendererStorage::default_skybox_texture;
+    }
+
     if (material.irradiance) {
+
+        // Add brdf lut texture
+        Uniform* u = new Uniform();
+        u->data = RendererStorage::get_texture("data/textures/ibl_brdf_lut.png")->get_view();
+        u->binding = binding++;
+        uniforms.push_back(u);
+
         Uniform* irradiance_uniform = new Uniform();
         irradiance_uniform->data = material.irradiance->get_view();
-        irradiance_uniform->binding = 2;
+        irradiance_uniform->binding = binding++;
+        uniforms.push_back(irradiance_uniform);
 
+        // Add a sampler for basic hdre cube texture
         Uniform* sampler_uniform = new Uniform();
         sampler_uniform->data = webgpu_context->create_sampler(
             WGPUAddressMode_ClampToEdge,
@@ -70,10 +112,10 @@ void RendererStorage::register_material(WebGPUContext* webgpu_context, const Mat
             static_cast<float>(material.irradiance->get_mipmap_count()),
             4
         );
-        sampler_uniform->binding = 3;
-
-        uniforms.push_back(irradiance_uniform);
+        sampler_uniform->binding = binding++;
         uniforms.push_back(sampler_uniform);
+
+        create_bind_group |= true;
     }
 
     if( create_bind_group )
@@ -188,6 +230,7 @@ Texture* RendererStorage::get_texture(const std::string& texture_path)
     {
         HDRE* hdre = HDRE::Get(texture_path.c_str());
         tx->load_from_hdre(hdre);
+        default_skybox_texture = tx;
     }
 
     // register in map

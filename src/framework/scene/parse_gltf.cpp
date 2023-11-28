@@ -256,16 +256,17 @@ void read_mesh(tinygltf::Model& model, tinygltf::Mesh& mesh, Entity* entity) {
             tinygltf::Material& gltf_material = model.materials[primitive.material];
 
             const tinygltf::PbrMetallicRoughness& pbrMetallicRoughness = gltf_material.pbrMetallicRoughness;
-
+            
             if (pbrMetallicRoughness.baseColorTexture.index >= 0) {
 
                 create_material_texture(model, pbrMetallicRoughness.baseColorTexture.index, &material.diffuse);
                 create_material_texture(model, pbrMetallicRoughness.metallicRoughnessTexture.index, &material.metallic_roughness);
+                create_material_texture(model, gltf_material.normalTexture.index, &material.normal);
+                create_material_texture(model, gltf_material.emissiveTexture.index, &material.emissive);
 
-                material.shader = RendererStorage::get_shader("data/shaders/mesh_texture.wgsl");
-                /*material.metallic_roughness ?
+                material.shader = material.metallic_roughness ?
                     RendererStorage::get_shader("data/shaders/mesh_pbr.wgsl") :
-                    RendererStorage::get_shader("data/shaders/mesh_texture.wgsl");*/
+                    RendererStorage::get_shader("data/shaders/mesh_texture.wgsl");
                 material.flags |= MATERIAL_DIFFUSE;
             }
             else {

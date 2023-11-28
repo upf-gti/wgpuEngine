@@ -29,6 +29,8 @@ public:
     static std::map<std::string, Texture*> textures;
     static std::map<std::string, Mesh*> meshes;
 
+    static Texture* default_skybox_texture;
+
     struct sUIData {
         // Common
         float is_hovered = 0.f;
@@ -55,7 +57,7 @@ public:
     static std::unordered_map<Material, sBindingData> material_bind_groups;
     static std::unordered_map<void*, sBindingData> ui_widget_bind_groups;
 
-    static void register_material(WebGPUContext* webgpu_context, const Material& material);
+    static void register_material(WebGPUContext* webgpu_context, Material& material);
     static WGPUBindGroup get_material_bind_group(const Material& material);
 
     static void register_ui_widget(WebGPUContext* webgpu_context, Shader* shader, void* widget, const sUIData& ui_data, uint8_t bind_group_id);

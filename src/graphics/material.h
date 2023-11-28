@@ -20,6 +20,8 @@ struct Material
 
     Texture* diffuse = nullptr;
     Texture* metallic_roughness = nullptr;
+    Texture* normal = nullptr;
+    Texture* emissive = nullptr;
 
     Texture* irradiance = nullptr;
 
