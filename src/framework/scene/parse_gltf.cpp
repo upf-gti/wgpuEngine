@@ -20,6 +20,40 @@
 
 #include <iostream>
 
+void create_material_texture(tinygltf::Model& model, int tex_index, Texture** texture) {
+
+    const tinygltf::Texture& tex = model.textures[tex_index];
+
+    if (tex.source < 0)
+        return;
+
+    tinygltf::Image& image = model.images[tex.source];
+
+    if (image.component == 1) {
+        // R
+    }
+    else if (image.component == 2) {
+        // RG
+    }
+    else if (image.component == 3) {
+        // RGB
+    }
+    else {
+
+    }
+
+    if (image.bits == 8) {
+    }
+    else if (image.bits == 16) {
+    }
+    else {
+        // ???
+    }
+
+    *texture = new Texture();
+    (*texture)->load_from_data(image.uri, image.width, image.height, image.image.data());
+}
+
 void read_mesh(tinygltf::Model& model, tinygltf::Mesh& mesh, Entity* entity) {
 
     EntityMesh* entity_mesh = dynamic_cast<EntityMesh*>(entity);
@@ -199,38 +233,14 @@ void read_mesh(tinygltf::Model& model, tinygltf::Mesh& mesh, Entity* entity) {
 
             if (pbrMetallicRoughness.baseColorTexture.index >= 0) {
 
-                tinygltf::Texture& tex = model.textures[pbrMetallicRoughness.baseColorTexture.index];
+                create_material_texture(model, pbrMetallicRoughness.baseColorTexture.index, &material.diffuse);
+                // create_material_texture(model, pbrMetallicRoughness.metallicRoughnessTexture.index, &material.metallic_roughness);
 
-                if (tex.source > -1) {
-
-                    tinygltf::Image& image = model.images[tex.source];
-
-                    if (image.component == 1) {
-                        // R
-                    }
-                    else if (image.component == 2) {
-                        // RG
-                    }
-                    else if (image.component == 3) {
-                        // RGB
-                    }
-                    else {
-
-                    }
-
-                    if (image.bits == 8) {
-                    }
-                    else if (image.bits == 16) {
-                    }
-                    else {
-                        // ???
-                    }
-
-                    material.diffuse = new Texture();
-                    material.diffuse->load_from_data(image.uri, image.width, image.height, image.image.data());
-                    material.shader = RendererStorage::get_shader("data/shaders/mesh_texture.wgsl");
-                    material.flags |= MATERIAL_DIFFUSE;
-                }
+                material.shader = RendererStorage::get_shader("data/shaders/mesh_texture.wgsl");
+                /*material.metallic_roughness ?
+                    RendererStorage::get_shader("data/shaders/mesh_pbr.wgsl") :
+                    RendererStorage::get_shader("data/shaders/mesh_texture.wgsl");*/
+                material.flags |= MATERIAL_DIFFUSE;
             }
             else {
                 material.color = glm::vec4(
@@ -248,7 +258,6 @@ void read_mesh(tinygltf::Model& model, tinygltf::Mesh& mesh, Entity* entity) {
 
     new_mesh->create_vertex_buffer();
 };
-
 
 Entity* create_node_entity(tinygltf::Node& node) {
 
@@ -332,9 +341,21 @@ void parse_gltf(const std::string& gltf_path, std::vector<Entity*>& entities)
     std::string err;
     std::string warn;
 
-    if (!loader.LoadASCIIFromFile(&model, &err, &warn, gltf_path)) {
-        spdlog::error("Could not load: {}", gltf_path);
-        return;
+    std::string extension = gltf_path.substr(gltf_path.find_last_of(".") + 1);
+
+    if (extension == "gltf")
+    {
+        if (!loader.LoadASCIIFromFile(&model, &err, &warn, gltf_path)) {
+            spdlog::error("Could not load: {}", gltf_path);
+            return;
+        }
+    }
+    else
+    {
+        if (!loader.LoadBinaryFromFile(&model, &err, &warn, gltf_path)) {
+            spdlog::error("Could not load binary: {}", gltf_path);
+            return;
+        }
     }
 
     if (!warn.empty()) {

@@ -14,7 +14,7 @@ void parse_scene(const std::string& scene_path, std::vector<Entity*>& entities)
     if (extension == "obj") {
         entities.push_back(parse_obj(scene_path));
     }
-    else if (extension == "gltf") {
+    else if (extension == "gltf" || extension == "glb") {
         parse_gltf(scene_path, entities);
     }
     else {
