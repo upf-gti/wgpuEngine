@@ -17,6 +17,9 @@ class Texture {
     WGPUTextureUsage	 usage;
     uint32_t			 mipmaps = 1;
 
+    WGPUAddressMode wrap_u = WGPUAddressMode_ClampToEdge;
+    WGPUAddressMode wrap_v = WGPUAddressMode_ClampToEdge;
+
     std::string path;
 
 public:
@@ -32,6 +35,12 @@ public:
     WGPUTexture     get_texture() { return texture; }
 	WGPUTextureView get_view();
     uint32_t        get_mipmap_count() { return mipmaps; }
+
+    void set_wrap_u(WGPUAddressMode wrap_u) { this->wrap_u = wrap_u; }
+    void set_wrap_v(WGPUAddressMode wrap_v) { this->wrap_v = wrap_v; }
+
+    WGPUAddressMode get_wrap_u() { return wrap_u; }
+    WGPUAddressMode get_wrap_v() { return wrap_v; }
 
     void load_from_data(const std::string& name, int width, int height, void* data, WGPUTextureFormat p_format = WGPUTextureFormat_RGBA8Unorm);
     void load_from_hdre( HDRE* hdre );

@@ -38,6 +38,8 @@ void RendererStorage::register_material(WebGPUContext* webgpu_context, const Mat
 
         Uniform* sampler_uniform = new Uniform();
         sampler_uniform->data = webgpu_context->create_sampler(
+            material.diffuse->get_wrap_u(),
+            material.diffuse->get_wrap_v(),
             WGPUAddressMode_ClampToEdge,
             WGPUFilterMode_Linear,
             WGPUFilterMode_Linear,
@@ -59,6 +61,8 @@ void RendererStorage::register_material(WebGPUContext* webgpu_context, const Mat
 
         Uniform* sampler_uniform = new Uniform();
         sampler_uniform->data = webgpu_context->create_sampler(
+            WGPUAddressMode_ClampToEdge,
+            WGPUAddressMode_ClampToEdge,
             WGPUAddressMode_ClampToEdge,
             WGPUFilterMode_Linear,
             WGPUFilterMode_Linear,

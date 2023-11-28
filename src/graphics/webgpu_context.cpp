@@ -327,12 +327,12 @@ WGPUTextureView WebGPUContext::create_texture_view(WGPUTexture texture, WGPUText
     return wgpuTextureCreateView(texture, &textureViewDesc);
 }
 
-WGPUSampler WebGPUContext::create_sampler(WGPUAddressMode wrap, WGPUFilterMode mag_filter, WGPUFilterMode min_filter, WGPUMipmapFilterMode mipmap_filter, float lod_max_clamp, uint16_t max_anisotropy)
+WGPUSampler WebGPUContext::create_sampler(WGPUAddressMode wrap_u, WGPUAddressMode wrap_v, WGPUAddressMode wrap_w, WGPUFilterMode mag_filter, WGPUFilterMode min_filter, WGPUMipmapFilterMode mipmap_filter, float lod_max_clamp, uint16_t max_anisotropy)
 {
     WGPUSamplerDescriptor samplerDesc = {};
-    samplerDesc.addressModeU = wrap;
-    samplerDesc.addressModeV = wrap;
-    samplerDesc.addressModeW = wrap;
+    samplerDesc.addressModeU = wrap_u;
+    samplerDesc.addressModeV = wrap_v;
+    samplerDesc.addressModeW = wrap_w;
     samplerDesc.magFilter = mag_filter;
     samplerDesc.minFilter = min_filter;
     samplerDesc.mipmapFilter = mipmap_filter;
