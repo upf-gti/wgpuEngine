@@ -68,7 +68,7 @@ void Texture::load_from_hdre(HDRE* hdre)
     dimension = WGPUTextureDimension_2D;
     format = WGPUTextureFormat_RGBA32Float;
     size = { (unsigned int)hdre->width, (unsigned int)hdre->height, 6 };
-    usage = static_cast<WGPUTextureUsage>(WGPUTextureUsage_TextureBinding | WGPUTextureUsage_StorageBinding | WGPUTextureUsage_CopyDst);
+    usage = static_cast<WGPUTextureUsage>(WGPUTextureUsage_TextureBinding | WGPUTextureUsage_CopyDst);
     mipmaps = 6; // num generated levels
 
     texture = webgpu_context->create_texture(dimension, format, size, usage, mipmaps);

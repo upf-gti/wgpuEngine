@@ -11,6 +11,7 @@
 #include "tint/tint.h"
 
 #include "renderer_storage.h"
+#include "renderer.h"
 
 WebGPUContext* Shader::webgpu_context = nullptr;
 
@@ -65,7 +66,19 @@ bool Shader::load(const std::string& shader_path)
 			shader_content.replace(shader_content.find(tag), line.length() + 1, new_content);
 		}
 		// add other pres
-		// else if (tag == "#...") { }
+		else if (tag == "#define") {
+            const std::string& define_name = tokens[1];
+
+            std::string final_value;
+
+            Renderer* renderer = Renderer::instance;
+
+            if (define_name == "GAMMA_CORRECTION") {
+                final_value = renderer->get_openxr_available() ? "0" : "1";
+            }
+
+            shader_content.replace(shader_content.find(tag), line.length() + 1, "const " + define_name + " = " + final_value + ";");
+        }
 	}
 
     spdlog::info("Loading shader: {}", path);
