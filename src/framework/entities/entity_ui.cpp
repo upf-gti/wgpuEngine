@@ -367,16 +367,20 @@ namespace ui {
 
         glm::vec3 intersection;
         bool hovered = is_hovered(intersection);
+
+        glm::vec2 local_point = glm::vec2(intersection);
+        glm::vec2 bounds = m_scale * 0.975f;
+        local_point = glm::max(glm::min(local_point, bounds), -bounds) / bounds; // -1..1
+        float dist = glm::distance(local_point, glm::vec2(0.f));
+
+        // Update hover
+        hovered &= (dist < 1.f);
+
         bool is_pressed = hovered && Input::is_button_pressed(workspace.select_button);
         bool was_released = hovered && Input::was_button_released(workspace.select_button);
 
-        glm::vec2 local_point = glm::vec2(intersection);
-
         if (is_pressed)
         {
-            glm::vec2 bounds = m_scale * 0.975f;
-            local_point = glm::max(glm::min(local_point, bounds), -bounds) / bounds; // -1..1
-
             constexpr float pi = glm::pi<float>();
             float r = pi / 2.f;
             local_point = glm::mat2x2(cos(r), -sin(r), sin(r), cos(r)) * local_point;
