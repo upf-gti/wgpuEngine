@@ -73,6 +73,12 @@ protected:
     // Bind group per shader
     WGPUBindGroup bind_groups[RENDER_LIST_SIZE] = {};
 
+    // Bind group for image based lighting
+    WGPUBindGroup ibl_bind_group;
+    Uniform irradiance_texture_uniform;
+    Uniform brdf_lut_uniform;
+    Uniform ibl_sampler_uniform;
+
 public:
 
     // Singleton
@@ -85,6 +91,9 @@ public:
     
     virtual void update(float delta_time) = 0;
     virtual void render() = 0;
+
+    void init_ibl_bind_group();
+    WGPUBindGroup get_ibl_bind_group() { return ibl_bind_group; }
 
     void prepare_instancing();
     void render(WGPURenderPassEncoder render_pass, const WGPUBindGroup& render_bind_group_camera);

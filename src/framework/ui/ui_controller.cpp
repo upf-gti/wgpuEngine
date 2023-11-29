@@ -165,7 +165,7 @@ namespace ui {
 			root->add_child(widget);
 		}
 
-        widget->name = name;
+        widget->set_name(name);
         widgets[name] = widget;
         all_widgets[name] = widget;
 	}
@@ -411,7 +411,7 @@ namespace ui {
         // Add mark
 
         {
-            ButtonWidget* mark = new ButtonWidget(widget->name + "@mark", {0.f, 0.f}, { 0.f, 0.f }, colors::WHITE);
+            ButtonWidget* mark = new ButtonWidget(widget->get_name() + "@mark", {0.f, 0.f}, {0.f, 0.f}, colors::WHITE);
             mark->set_mesh(RendererStorage::get_mesh("quad"));
             mark->set_material_shader(RendererStorage::get_shader("data/shaders/ui/ui_button.wgsl"));
             mark->set_material_diffuse(RendererStorage::get_texture("data/textures/submenu_mark.png"));

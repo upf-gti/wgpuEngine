@@ -34,7 +34,6 @@ namespace ui {
         static unsigned int last_uid;
 
         unsigned int uid;
-        std::string name;
         uint8_t type = eWidgetType::NONE;
 
         static UIEntity* current_selected;

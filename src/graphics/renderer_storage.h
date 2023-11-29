@@ -29,7 +29,7 @@ public:
     static std::map<std::string, Texture*> textures;
     static std::map<std::string, Mesh*> meshes;
 
-    static Texture* default_skybox_texture;
+    static Texture* current_skybox_texture;
 
     struct sUIData {
         // Common

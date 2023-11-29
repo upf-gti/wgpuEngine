@@ -35,6 +35,7 @@ public:
 	void scale(glm::vec3 scale);
 
     void set_name(std::string name) { this->name = name; }
+    std::string get_name() const { return name; }
 
 	// Some useful methods
 

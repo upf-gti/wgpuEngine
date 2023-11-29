@@ -104,6 +104,8 @@ int Renderer::initialize(GLFWwindow* window, bool use_mirror_screen)
 
     RendererStorage::register_basic_meshes();
 
+    init_ibl_bind_group();
+
     return 0;
 }
 
@@ -116,6 +118,32 @@ void Renderer::clean()
     Pipeline::clean_registered_pipelines();
 
     webgpu_context.destroy();
+}
+
+void Renderer::init_ibl_bind_group()
+{
+    Texture* irradiance_texture = RendererStorage::get_texture("data/textures/environments/grass.hdre");
+
+    irradiance_texture_uniform.data = irradiance_texture->get_view();
+    irradiance_texture_uniform.binding = 0;
+
+    brdf_lut_uniform.data = RendererStorage::get_texture("data/textures/ibl_brdf_lut.png")->get_view();
+    brdf_lut_uniform.binding = 1;
+
+    ibl_sampler_uniform.data = webgpu_context.create_sampler(
+        WGPUAddressMode_ClampToEdge,
+        WGPUAddressMode_ClampToEdge,
+        WGPUAddressMode_ClampToEdge,
+        WGPUFilterMode_Linear,
+        WGPUFilterMode_Linear,
+        WGPUMipmapFilterMode_Linear,
+        static_cast<float>(irradiance_texture->get_mipmap_count())
+    );
+
+    ibl_sampler_uniform.binding = 2;
+
+    std::vector<Uniform*> uniforms = { &irradiance_texture_uniform, &brdf_lut_uniform, &ibl_sampler_uniform };
+    ibl_bind_group = webgpu_context.create_bind_group(uniforms, RendererStorage::get_shader("data/shaders/mesh_pbr.wgsl"), 3);
 }
 
 void Renderer::prepare_instancing()
@@ -253,6 +281,10 @@ void Renderer::render(WGPURenderPassEncoder render_pass, const WGPUBindGroup& re
 
             if (material.flags & MATERIAL_UI) {
                 wgpuRenderPassEncoderSetBindGroup(render_pass, bind_group_index++, renderer_storage.get_ui_widget_bind_group(entity_mesh), 0, nullptr);
+            }
+
+            if (material.flags & MATERIAL_PBR) {
+                wgpuRenderPassEncoderSetBindGroup(render_pass, 3, ibl_bind_group, 0, nullptr);
             }
 
             // Set vertex buffer while encoding the render pass

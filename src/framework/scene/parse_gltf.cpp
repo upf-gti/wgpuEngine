@@ -267,7 +267,7 @@ void read_mesh(tinygltf::Model& model, tinygltf::Mesh& mesh, Entity* entity) {
                 material.shader = material.metallic_roughness ?
                     RendererStorage::get_shader("data/shaders/mesh_pbr.wgsl") :
                     RendererStorage::get_shader("data/shaders/mesh_texture.wgsl");
-                material.flags |= MATERIAL_DIFFUSE;
+                material.flags |= MATERIAL_DIFFUSE | MATERIAL_PBR;
             }
             else {
                 material.color = glm::vec4(

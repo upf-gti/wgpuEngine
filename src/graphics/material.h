@@ -10,7 +10,8 @@ enum eMaterialFlags {
     MATERIAL_COLOR       = 1 << 0,
     MATERIAL_DIFFUSE     = 1 << 1,
     MATERIAL_TRANSPARENT = 1 << 2,
-    MATERIAL_UI          = 1 << 3
+    MATERIAL_UI          = 1 << 3,
+    MATERIAL_PBR         = 1 << 4
 };
 
 struct Material
@@ -22,8 +23,6 @@ struct Material
     Texture* metallic_roughness = nullptr;
     Texture* normal = nullptr;
     Texture* emissive = nullptr;
-
-    Texture* irradiance = nullptr;
 
     uint8_t flags = 0;
     uint8_t priority = 0;
