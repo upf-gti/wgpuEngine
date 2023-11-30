@@ -1,10 +1,11 @@
-#include <iostream>
 #include <fstream>
 #include <cmath>
 #include <cassert>
 #include <algorithm>
 
 #include "hdre.h"
+
+#include "spdlog/spdlog.h"
 
 std::map<std::string, HDRE*> HDRE::sHDRELoaded;
 
@@ -139,7 +140,7 @@ bool HDRE::load(const char* filename)
 
 	if (HDREHeader.type != 3)
 	{
-		std::cout << "ArrayType not supported. Please export in Float32Array" << std::endl;
+		spdlog::error("ArrayType not supported. Please export in Float32Array");
 		return false; 
 	}
 
@@ -148,7 +149,7 @@ bool HDRE::load(const char* filename)
 
 	if (this->version < 2.0)
 	{
-		std::cout << "Versions below 2.0 are no longer supported. Please, reexport the environment" << std::endl;
+        spdlog::error("Versions below 2.0 are no longer supported. Please, reexport the environment");
 		return false;
 	}
 
@@ -240,7 +241,8 @@ bool HDRE::load(const char* filename)
 		w = (int)(width / pow(2.0, mip_level));
 	}
 
-	std::cout << std::endl << " + '" << filename << "' (v" << this->version << ") loaded successfully" << std::endl;
+    spdlog::info(" + \'{}\' (v{}) loaded successfully", filename, this->version);
+
 	return true;
 }
 
@@ -267,7 +269,7 @@ bool HDRE::clean()
 	}
 	catch (const std::exception&)
 	{
-		std::cout << std::endl << "Error cleaning" << std::endl;
+        spdlog::error("Error cleaning");
 		return false;
 	}
 

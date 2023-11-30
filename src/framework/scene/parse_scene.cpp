@@ -3,7 +3,7 @@
 #include "parse_obj.h"
 #include "parse_gltf.h"
 
-#include <iostream>
+#include "spdlog/spdlog.h"
 
 void parse_scene(const std::string& scene_path, std::vector<Entity*>& entities)
 {

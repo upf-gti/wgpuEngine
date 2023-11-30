@@ -2,7 +2,6 @@
 
 #include <regex>
 #include <cassert>
-#include <iostream>
 #include <fstream>
 
 #include "spdlog/spdlog.h"

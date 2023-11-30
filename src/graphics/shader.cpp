@@ -2,7 +2,6 @@
 
 #include "utils.h"
 
-#include <iostream>
 #include <sstream>
 #include <filesystem>
 
@@ -12,6 +11,8 @@
 
 #include "renderer_storage.h"
 #include "renderer.h"
+
+#include "spdlog/spdlog.h"
 
 WebGPUContext* Shader::webgpu_context = nullptr;
 
@@ -162,7 +163,7 @@ void Shader::get_reflection_data(const std::string& shader_path, const std::stri
 				//	byte_size = sizeof(uint16_t);
 				//	break;
 				default:
-					std::cerr << "Shader reflection failed: Vertex component type not implemented" << std::endl;
+					spdlog::error("Shader reflection failed: Vertex component type not implemented");
 					break;
 				}
 
@@ -182,7 +183,7 @@ void Shader::get_reflection_data(const std::string& shader_path, const std::stri
 					vertex_attribute.format = get_vertex_format_offset(vertex_attribute.format, 3);
 					break;
 				default:
-					std::cerr << "Shader reflection failed: Vertex composition type not implemented" << std::endl;
+                    spdlog::error("Shader reflection failed: Vertex composition type not implemented");
 					break;
 				}
 
@@ -253,7 +254,7 @@ void Shader::get_reflection_data(const std::string& shader_path, const std::stri
                 break;
 #endif
 			default:
-				std::cerr << "Shader reflection failed: Resource type not implemented" << std::endl;
+                spdlog::error("Shader reflection failed: Resource type not implemented");
 				assert(0);
 				break;
 			}
@@ -273,7 +274,7 @@ void Shader::get_reflection_data(const std::string& shader_path, const std::stri
                     entry.texture.sampleType = WGPUTextureSampleType_Uint;
                     break;
 				default:
-					std::cerr << "Shader reflection failed: sample kind not implemented" << std::endl;
+                    spdlog::error("Shader reflection failed: sample kind not implemented");
 					assert(0);
 					break;
 				}
@@ -293,7 +294,7 @@ void Shader::get_reflection_data(const std::string& shader_path, const std::stri
 					entry.texture.viewDimension = WGPUTextureViewDimension_Cube;
 					break;
 				default:
-					std::cerr << "Shader reflection failed: view dimension not implemented" << std::endl;
+                    spdlog::error("Shader reflection failed: view dimension not implemented");
 					assert(0);
 					break;
 				}
@@ -319,7 +320,7 @@ void Shader::get_reflection_data(const std::string& shader_path, const std::stri
                     entry.storageTexture.format = WGPUTextureFormat_R32Uint;
                     break;
 				default:
-					std::cerr << "Shader reflection failed: image format not implemented" << std::endl;
+                    spdlog::error("Shader reflection failed: image format not implemented");
 					assert(0);
 					break;
 				}
@@ -339,7 +340,7 @@ void Shader::get_reflection_data(const std::string& shader_path, const std::stri
 					entry.storageTexture.viewDimension = WGPUTextureViewDimension_Cube;
 					break;
 				default:
-					std::cerr << "Shader reflection failed: storage view dimension not implemented" << std::endl;
+                    spdlog::error("Shader reflection failed: storage view dimension not implemented");
 					assert(0);
 					break;
 				}

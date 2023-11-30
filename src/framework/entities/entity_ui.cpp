@@ -5,7 +5,6 @@
 #include "framework/input.h"
 #include "framework/entities/entity_text.h"
 #include "graphics/renderer.h"
-#include <iostream>
 
 namespace ui {
 

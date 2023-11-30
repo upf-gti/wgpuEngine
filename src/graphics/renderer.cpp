@@ -14,7 +14,8 @@
 #include "graphics/texture.h"
 
 #include <algorithm>
-#include <iostream>
+
+#include "spdlog/spdlog.h"
 
 Renderer* Renderer::instance = nullptr;
 
@@ -265,7 +266,7 @@ void Renderer::render(WGPURenderPassEncoder render_pass, const WGPUBindGroup& re
 
             // Not initialized
             if (mesh->get_vertex_count() == 0) {
-                std::cerr << "Skipping not initialized mesh" << std::endl;
+                spdlog::error("Skipping not initialized mesh");
                 continue;
             }
 

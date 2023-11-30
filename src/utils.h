@@ -13,7 +13,7 @@ enum Error {
     ERR_MAX,
 };
 
-#define assert_msg(condition, msg) if (!(condition)) {std::cout << msg << std::endl; assert(false);}
+#define assert_msg(condition, msg) if (!(condition)) { spdlog::error(msg); assert(false);}
 #define _STR(m_x) #m_x
 
 std::vector<std::string> tokenize(const std::string & str);

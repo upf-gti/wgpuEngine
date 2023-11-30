@@ -7,6 +7,7 @@ set(WGPU_DIR_LIBS    "${WGPU_DIR_ROOT}/libraries")
 project(webgpuEngine LANGUAGES C CXX)
 
 add_definitions(-D_CRT_SECURE_NO_WARNINGS)
+add_definitions(-D_SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING)
 add_definitions(-DWEBGPU_BACKEND=DAWN)
 
 # enable FetchContent
@@ -144,5 +145,6 @@ target_include_directories(${PROJECT_NAME} PUBLIC ${WGPU_DIR_LIBS}/tiny_gltf)
 # spdlog
 add_subdirectory(libraries/spdlog)
 target_link_libraries(${PROJECT_NAME} PUBLIC spdlog::spdlog_header_only)
+set_property(TARGET spdlog PROPERTY FOLDER "External/spdlog")
 
 target_copy_webgpu_binaries(${PROJECT_NAME})

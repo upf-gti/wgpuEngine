@@ -6,8 +6,9 @@
 #include <unordered_map>
 #include <string>
 #include <functional>
-#include <iostream>
 #include <regex>
+
+#include "spdlog/spdlog.h"
 
 // Based on: https://solarianprogrammer.com/2019/01/13/cpp-17-filesystem-write-file-watcher-monitor/
 
@@ -33,7 +34,7 @@ public:
 
         // Check if path exists
         if (!std::filesystem::is_directory(filepath.parent_path())) {
-            std::cerr << "File watcher error: Path \"" << path_to_watch << "\" does not exist. Wrong working directory?" << std::endl;
+            spdlog::error("File watcher error: Path \"{}\" does not exist. Wrong working directory?", path_to_watch);
             return;
         }
 

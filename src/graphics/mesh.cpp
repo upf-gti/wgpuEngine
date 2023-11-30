@@ -3,6 +3,8 @@
 #include "texture.h"
 #include "shader.h"
 
+#include "spdlog/spdlog.h"
+
 WebGPUContext* Mesh::webgpu_context = nullptr;
 Mesh* Mesh::quad_mesh = nullptr;
 

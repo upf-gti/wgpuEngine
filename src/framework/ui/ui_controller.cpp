@@ -1,5 +1,3 @@
-#include <iostream>
-
 #include "ui_controller.h"
 #include "utils.h"
 #include "framework/input.h"
@@ -7,6 +5,8 @@
 #include "framework/intersections.h"
 #include "framework/entities/entity_text.h"
 #include "framework/scene/parse_scene.h"
+
+#include "spdlog/spdlog.h"
 
 namespace ui {
 
@@ -629,7 +629,7 @@ namespace ui {
 
                 if (!parent) {
                     assert(0);
-                    std::cerr << "Cannot find parent button with name " << name << std::endl;
+                    spdlog::error("Cannot find parent button with name {}", name);
                     return;
                 }
 
@@ -658,7 +658,7 @@ namespace ui {
     void Controller::change_list_layout(const std::string& list_name)
     {
         if (mjson.count("lists") == 0) {
-            std::cerr << "Controller doesn't have layout lists..." << std::endl;
+            spdlog::error("Controller doesn't have layout lists...");
             return;
         }
 
@@ -670,7 +670,7 @@ namespace ui {
         // Enable only widgets in list...
         const json& lists = mjson["lists"];
         if (lists.count(list_name) == 0) {
-            std::cerr << "Controller doesn't have a layout list named '" << list_name << "'" << std::endl;
+            spdlog::error("Controller doesn't have a layout list named '{}'", list_name);
             return;
         }
 

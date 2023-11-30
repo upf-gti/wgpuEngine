@@ -3,7 +3,7 @@
 #include "framework/input.h"
 #include "framework/file_watcher.h"
 
-#include <iostream>
+#include "spdlog/spdlog.h"
 
 void resize_callback(GLFWwindow* window, int width, int height)
 {

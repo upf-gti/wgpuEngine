@@ -13,7 +13,7 @@
 
 #include "renderer.h"
 
-#include <iostream>
+#include "spdlog/spdlog.h"
 
 WGPUTextureFormat WebGPUContext::swapchain_format = WGPUTextureFormat_BGRA8Unorm;
 WGPUTextureFormat WebGPUContext::xr_swapchain_format = WGPUTextureFormat_BGRA8UnormSrgb;

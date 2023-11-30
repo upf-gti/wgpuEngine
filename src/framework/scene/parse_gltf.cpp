@@ -18,7 +18,7 @@
 
 #include "graphics/renderer_storage.h"
 
-#include <iostream>
+#include "spdlog/spdlog.h"
 
 void create_material_texture(tinygltf::Model& model, int tex_index, Texture** texture) {
 

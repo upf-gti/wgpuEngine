@@ -5,8 +5,6 @@
 #include "glm/gtx/rotate_vector.hpp"
 #include "glm/gtx/norm.hpp"
 
-#include <iostream>
-
 FlyoverCamera::FlyoverCamera() : Camera()
 {
 }

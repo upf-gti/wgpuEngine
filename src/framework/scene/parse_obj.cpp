@@ -8,7 +8,7 @@
 #include "graphics/shader.h"
 #include "graphics/renderer_storage.h"
 
-#include <iostream>
+#include "spdlog/spdlog.h"
 
 EntityMesh* parse_obj(const std::string& obj_path)
 {

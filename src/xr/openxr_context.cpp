@@ -2,8 +2,9 @@
 
 #ifdef XR_SUPPORT
 
-#include <iostream>
 #include <cstdarg>
+
+#include "spdlog/spdlog.h"
 
 // we need an identity pose for creating spaces without offsets
 static XrPosef identity_pose = { .orientation = {.x = 0, .y = 0, .z = 0, .w = 1.0},
@@ -498,7 +499,7 @@ void OpenXRContext::print_reference_spaces()
             spdlog::info("\tXR_REFERENCE_SPACE_TYPE_VIEW");
         }
         else {
-            spdlog::info("\tOther (extension?) refspace %{}", ref_spaces[i]);
+            spdlog::info("\tOther (extension?) refspace %{}", static_cast<uint32_t>(ref_spaces[i]));
         }
     }
 }

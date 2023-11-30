@@ -1,19 +1,20 @@
 #include "entity.h"
 
 #include <glm/gtx/quaternion.hpp>
-#include <iostream>
+
+#include "spdlog/spdlog.h"
 
 void Entity::add_child(Entity* child)
 {
 	if (child->parent) {
-		std::cerr << "Child has already a parent, remove it first!" << std::endl;
+		spdlog::error("Child has already a parent, remove it first!");
 		return;
 	}
 
 	// Checks if it's already a child
 	auto it = std::find(children.begin(), children.end(), child);
 	if (it != children.end()) {
-		std::cerr << "Entity is already one of the children!" << std::endl;
+        spdlog::error("Entity is already one of the children!");
 		return;
 	}
 
@@ -26,7 +27,7 @@ void Entity::remove_child(Entity* child)
 	// Checks if it's a child
 	auto it = std::find(children.begin(), children.end(), child);
 	if (it == children.end()) {
-		std::cerr << "Entity is not a child!!" << std::endl;
+        spdlog::error("Entity is not a child!!");
 		return;
 	}
 

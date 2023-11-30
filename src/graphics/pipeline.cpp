@@ -3,8 +3,6 @@
 #include "shader.h"
 #include "mesh.h"
 
-#include <iostream>
-
 WebGPUContext* Pipeline::webgpu_context = nullptr;
 std::vector<Pipeline*> Pipeline::registered_render_pipelines = {};
 std::vector<Pipeline*> Pipeline::registered_compute_pipelines = {};

@@ -23,8 +23,6 @@
 #include <webgpu/webgpu.h>
 #endif
 
-#include "spdlog/spdlog.h"
-
 enum eEYE {
     EYE_LEFT,
     EYE_RIGHT,
