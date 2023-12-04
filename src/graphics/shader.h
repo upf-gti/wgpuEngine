@@ -8,6 +8,8 @@
 
 class Pipeline;
 
+typedef std::variant<bool, int32_t, uint32_t, float> custom_define_type;
+
 class Shader {
 
 public:
@@ -31,9 +33,13 @@ public:
 
 	bool is_loaded() { return loaded; }
 
+    static void set_custom_define(const std::string &define_name, custom_define_type value);
+
 private:
 
 	void get_reflection_data(const std::string& shader_path, const std::string& shader_content);
+
+    bool parse_preprocessor(std::string& shader_content, const std::string& shader_path);
 
 	std::string path;
 
@@ -46,6 +52,8 @@ private:
 
 	// Pipeline that uses this shader
 	Pipeline* pipeline_ref = nullptr;
+
+    static std::map<std::string, custom_define_type> custom_defines;
 
 	bool loaded = false;
 };
