@@ -15,6 +15,7 @@
 #include "spdlog/spdlog.h"
 
 WebGPUContext* Shader::webgpu_context = nullptr;
+std::map<std::string, custom_define_type> Shader::custom_defines;
 
 Shader::~Shader()
 {
@@ -35,52 +36,9 @@ bool Shader::load(const std::string& shader_path)
 	if (!read_file(path, shader_content))
 		return false;
 
-	std::istringstream f(shader_content);
-	std::string line;
-
-	std::string _directory = std::filesystem::path(path).parent_path().string();
-
-	while (std::getline(f, line)) {
-
-		auto tokens = tokenize(line);
-		const std::string& tag = tokens[0];
-		if (tag == "#include")
-		{
-			const std::string& include_name = tokens[1];
-			const std::string& include_path = std::filesystem::relative(std::filesystem::path(_directory + "/" + include_name)).string();
-			std::string new_content;
-			if (!read_file(include_path, new_content)) {
-                spdlog::error("Could not load shader include: {}", include_path);
-				return false;
-			}
-
-            auto& library_references = RendererStorage::instance->shader_library_references;
-
-			auto& references = library_references[include_path];
-
-			if (!std::count(references.begin(), references.end(), path))
-			{
-				library_references[include_path].push_back(path);
-			}
-
-			//std::cout << " [" << include_name << "]";
-			shader_content.replace(shader_content.find(tag), line.length() + 1, new_content);
-		}
-		// add other pres
-		else if (tag == "#define") {
-            const std::string& define_name = tokens[1];
-
-            std::string final_value;
-
-            Renderer* renderer = Renderer::instance;
-
-            if (define_name == "GAMMA_CORRECTION") {
-                final_value = renderer->get_openxr_available() ? "0" : "1";
-            }
-
-            shader_content.replace(shader_content.find(tag), line.length() + 1, "const " + define_name + " = " + final_value + ";");
-        }
-	}
+    if (!parse_preprocessor(shader_content, path)) {
+        return false;
+    }
 
     spdlog::info("Loading shader: {}", path);
 
@@ -113,6 +71,84 @@ bool Shader::load(const std::string& shader_path)
 	//std::cout << " [OK]" << std::endl;
 
 	return loaded;
+}
+
+bool Shader::parse_preprocessor(std::string &shader_content, const std::string &shader_path)
+{
+    std::istringstream string_stream(shader_content);
+    std::string line;
+
+    std::string _directory = std::filesystem::path(shader_path).parent_path().string();
+
+    while (std::getline(string_stream, line)) {
+
+        auto tokens = tokenize(line);
+        const std::string& tag = tokens[0];
+        if (tag == "#include")
+        {
+            const std::string& include_name = tokens[1];
+            const std::string& include_path = std::filesystem::relative(std::filesystem::path(_directory + "/" + include_name)).string();
+            std::string new_content;
+            if (!read_file(include_path, new_content)) {
+                spdlog::error("Could not load shader include: {}", include_path);
+                return false;
+            }
+
+            if (!parse_preprocessor(new_content, include_path)) {
+                return false;
+            }
+
+            auto& library_references = RendererStorage::instance->shader_library_references;
+
+            auto& references = library_references[include_path];
+
+            if (!std::count(references.begin(), references.end(), shader_path))
+            {
+                library_references[include_path].push_back(shader_path);
+            }
+
+            //std::cout << " [" << include_name << "]";
+            shader_content.replace(shader_content.find(tag), line.length() + 1, new_content);
+        }
+        // add other pres
+        else if (tag == "#define") {
+            const std::string& define_name = tokens[1];
+
+            std::string final_value;
+
+            Renderer* renderer = Renderer::instance;
+
+            if (define_name == "GAMMA_CORRECTION") {
+                final_value = renderer->get_openxr_available() ? "0" : "1";
+            }
+
+            for (const auto define : custom_defines) {
+                if (define_name == define.first) {
+                    if (std::holds_alternative<bool>(define.second)) {
+                        final_value = std::get<bool>(define.second) ? "1" : "0";
+                    } else
+                    if (std::holds_alternative<int32_t>(define.second)) {
+                        final_value = std::to_string(std::get<int32_t>(define.second));
+                    } else
+                    if (std::holds_alternative<uint32_t>(define.second)) {
+                        final_value = std::to_string(std::get<uint32_t>(define.second));
+                    } else
+                    if (std::holds_alternative<float>(define.second)) {
+                        final_value = std::to_string(std::get<float>(define.second));
+                    }
+                }
+            }
+
+            shader_content.replace(shader_content.find(tag), line.length() + 1, "const " + define_name + " = " + final_value + ";");
+        }
+    }
+
+    return true;
+}
+
+void Shader::set_custom_define(const std::string& define_name, custom_define_type value)
+{
+    custom_defines[define_name] = value;
 }
 
 void Shader::get_reflection_data(const std::string& shader_path, const std::string& shader_content)
