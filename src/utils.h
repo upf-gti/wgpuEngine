@@ -37,6 +37,8 @@ float random_f(float range = 1.0f, int offset = 0);
 glm::vec3 get_front(const glm::mat4 & pose);
 glm::vec3 get_perpendicular(const glm::vec3& v);
 
+uint32_t ceil_to_next_multiple(uint32_t value, uint32_t step);
+
 #define ERR_FAIL_COND_V_MSG(m_cond, m_retval, m_msg)                                                                                     \
 	if (m_cond) {																														 \
 		print_error(__FUNCTION__, __FILE__, __LINE__, "Condition \"" _STR(m_cond) "\" is true. Returning: " _STR(m_retval), m_msg);		 \

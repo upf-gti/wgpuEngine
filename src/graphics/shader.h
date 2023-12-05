@@ -54,6 +54,7 @@ private:
 	Pipeline* pipeline_ref = nullptr;
 
     static std::map<std::string, custom_define_type> custom_defines;
+    std::map<uint8_t, uint8_t> dynamic_bindings;
 
 	bool loaded = false;
 };

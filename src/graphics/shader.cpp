@@ -14,6 +14,8 @@
 
 #include "spdlog/spdlog.h"
 
+#include <string>
+
 WebGPUContext* Shader::webgpu_context = nullptr;
 std::map<std::string, custom_define_type> Shader::custom_defines;
 
@@ -141,6 +143,15 @@ bool Shader::parse_preprocessor(std::string &shader_content, const std::string &
 
             shader_content.replace(shader_content.find(tag), line.length() + 1, "const " + define_name + " = " + final_value + ";");
         }
+        else if (tag == "#dynamic") {
+
+            uint8_t group = tokens[1].at(7) - '0'; // convert to int, sorry :(
+            uint8_t binding = tokens[2].at(9) - '0';
+
+            dynamic_bindings[group] = binding;
+
+            shader_content.replace(shader_content.find(tag), tag.length() + 1, "");
+        }
     }
 
     return true;
@@ -244,6 +255,12 @@ void Shader::get_reflection_data(const std::string& shader_path, const std::stri
 
 			// The binding index as used in the @binding attribute in the shader
 			entry.binding = resource_binding.binding;
+
+            if (dynamic_bindings.contains(resource_binding.bind_group)) {
+                if (entry.binding == dynamic_bindings[resource_binding.bind_group]) {
+                    entry.buffer.hasDynamicOffset = true;
+                }
+            }
 
 			// The stages that needs to access this resource
 			switch (entry_point.stage)
