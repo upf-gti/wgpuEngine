@@ -241,7 +241,6 @@ void WebGPUContext::create_instance()
 
 #if !defined(__EMSCRIPTEN__)
 
-#if !defined(NDEBUG)
     // allow_unsafe_apis is currently required to prevent forced breakpoint hit when DAWN_DEBUG_BREAK_ON_ERROR=1
     const char* const enabled_toggles[] = { "allow_unsafe_apis" };
 
@@ -252,7 +251,6 @@ void WebGPUContext::create_instance()
     WGPUChainedStruct* chain_desc = reinterpret_cast<WGPUChainedStruct*>(&device_toggles_desc);
     chain_desc->sType = WGPUSType_DawnTogglesDescriptor;
     instance_dscr.nextInChain = chain_desc;
-#endif // !NDEBUG
 
 #ifdef XR_SUPPORT
     instance = new dawn::native::Instance(&instance_dscr);
