@@ -4,8 +4,8 @@
 #include "mesh.h"
 
 WebGPUContext* Pipeline::webgpu_context = nullptr;
-std::vector<Pipeline*> Pipeline::registered_render_pipelines = {};
-std::vector<Pipeline*> Pipeline::registered_compute_pipelines = {};
+std::unordered_map<RenderPipelineKey, Pipeline*> Pipeline::registered_render_pipelines = {};
+std::unordered_map<Shader*, Pipeline*> Pipeline::registered_compute_pipelines = {};
 
 Pipeline::~Pipeline()
 {
@@ -35,8 +35,9 @@ void Pipeline::create_render(Shader* shader, WGPUColorTargetState p_color_target
     description.blending_enabled = (p_color_target.blend != nullptr);
 	color_target = p_color_target;
 
-    if (description.blending_enabled)
-        blend_state = *p_color_target.blend;
+    if (description.blending_enabled) {
+        blend_state = p_color_target.blend;
+    }
 
 	pipeline_layout = webgpu_context->create_pipeline_layout(bind_group_layouts);
 
@@ -70,25 +71,31 @@ void Pipeline::create_compute(Shader* shader)
 
 void Pipeline::register_render_pipeline(Shader* shader, WGPUColorTargetState p_color_target, PipelineDescription desc)
 {
+    RenderPipelineKey key = { shader, p_color_target, desc };
+
+    if (registered_render_pipelines.contains(key)) {
+        return;
+    }
+
     Pipeline* render_pipeline = new Pipeline();
     render_pipeline->create_render(shader, p_color_target, desc);
-    registered_render_pipelines.push_back(render_pipeline);
+    registered_render_pipelines[key] = render_pipeline;
 }
 
 void Pipeline::register_compute_pipeline(Shader* shader, WGPUPipelineLayout pipeline_layout)
 {
     Pipeline* compute_pipeline = new Pipeline();
     compute_pipeline->create_compute(shader, pipeline_layout);
-    registered_compute_pipelines.push_back(compute_pipeline);
+    registered_compute_pipelines[shader] = compute_pipeline;
 }
 
 void Pipeline::clean_registered_pipelines()
 {
-    for (auto* pipeline : registered_render_pipelines) {
+    for (auto [key, pipeline] : registered_render_pipelines) {
         delete pipeline;
     }
 
-    for (auto* pipeline : registered_compute_pipelines) {
+    for (auto [shader, pipeline] : registered_compute_pipelines) {
         delete pipeline;
     }
 
@@ -101,7 +108,7 @@ void Pipeline::reload(Shader* shader)
 	if (std::holds_alternative<WGPURenderPipeline>(pipeline)) {
 		wgpuRenderPipelineRelease(std::get<WGPURenderPipeline>(pipeline));
         if (description.blending_enabled) {
-            color_target.blend = &blend_state;
+            color_target.blend = blend_state;
         }
 		pipeline = webgpu_context->create_render_pipeline(shader->get_module(), pipeline_layout, shader->get_vertex_buffer_layouts(),
             color_target, description.uses_depth_buffer, description.uses_depth_write, description.cull_mode, description.topology);

@@ -17,8 +17,10 @@
 #include "graphics/shader.h"
 
 #include "graphics/renderer_storage.h"
+#include "graphics/renderer.h"
 
 #include "spdlog/spdlog.h"
+
 
 void create_material_texture(tinygltf::Model& model, int tex_index, Texture** texture) {
 
@@ -253,21 +255,18 @@ void read_mesh(tinygltf::Model& model, tinygltf::Mesh& mesh, Entity* entity) {
 
         if (primitive.material >= 0) {
 
+            material.flags |= MATERIAL_PBR;
+
             tinygltf::Material& gltf_material = model.materials[primitive.material];
 
             const tinygltf::PbrMetallicRoughness& pbrMetallicRoughness = gltf_material.pbrMetallicRoughness;
+
+            std::vector<std::string> define_specializations;
             
             if (pbrMetallicRoughness.baseColorTexture.index >= 0) {
-
-                create_material_texture(model, pbrMetallicRoughness.baseColorTexture.index, &material.diffuse);
-                create_material_texture(model, pbrMetallicRoughness.metallicRoughnessTexture.index, &material.metallic_roughness);
-                create_material_texture(model, gltf_material.normalTexture.index, &material.normal);
-                create_material_texture(model, gltf_material.emissiveTexture.index, &material.emissive);
-
-                material.shader = material.metallic_roughness ?
-                    RendererStorage::get_shader("data/shaders/mesh_pbr.wgsl") :
-                    RendererStorage::get_shader("data/shaders/mesh_texture.wgsl");
-                material.flags |= MATERIAL_DIFFUSE | MATERIAL_PBR;
+                create_material_texture(model, pbrMetallicRoughness.baseColorTexture.index, &material.diffuse_texture);
+                material.flags |= MATERIAL_DIFFUSE;
+                define_specializations.push_back("ALBEDO_TEXTURE");
             }
             else {
                 material.color = glm::vec4(
@@ -276,10 +275,65 @@ void read_mesh(tinygltf::Model& model, tinygltf::Mesh& mesh, Entity* entity) {
                     pbrMetallicRoughness.baseColorFactor[2],
                     pbrMetallicRoughness.baseColorFactor[3]
                 );
-
-                material.shader = RendererStorage::get_shader("data/shaders/mesh_color.wgsl");
-                material.flags |= MATERIAL_COLOR;
             }
+
+            if (pbrMetallicRoughness.metallicRoughnessTexture.index >= 0) {
+                create_material_texture(model, pbrMetallicRoughness.metallicRoughnessTexture.index, &material.metallic_roughness_texture);
+                define_specializations.push_back("METALLIC_ROUGHNESS_TEXTURE");
+            }
+            else {
+                material.roughness = static_cast<float>(pbrMetallicRoughness.roughnessFactor);
+                material.metalness = static_cast<float>(pbrMetallicRoughness.metallicFactor);
+            }
+
+            if (gltf_material.normalTexture.index >= 0) {
+                define_specializations.push_back("NORMAL_TEXTURE");
+                create_material_texture(model, gltf_material.normalTexture.index, &material.normal_texture);
+            }
+
+            if (gltf_material.emissiveTexture.index >= 0) {
+                define_specializations.push_back("EMISSIVE_TEXTURE");
+                create_material_texture(model, gltf_material.emissiveTexture.index, &material.emissive_texture);
+            }
+            else {
+                material.emissive = { gltf_material.emissiveFactor[0], gltf_material.emissiveFactor[1], gltf_material.emissiveFactor[2] };
+            }
+
+            if (!define_specializations.empty()) {
+                define_specializations.push_back("USE_SAMPLER");
+            }
+
+            WebGPUContext* webgpu_context = Renderer::instance->get_webgpu_context();
+            bool is_openxr_available = Renderer::instance->get_openxr_available();
+            WGPUTextureFormat swapchain_format = is_openxr_available ? webgpu_context->xr_swapchain_format : webgpu_context->swapchain_format;
+
+            WGPUColorTargetState color_target = {};
+            color_target.format = swapchain_format;
+            color_target.writeMask = WGPUColorWriteMask_All;
+
+            if (gltf_material.alphaMode == "OPAQUE") {
+
+            } else
+            if (gltf_material.alphaMode == "BLEND") {
+
+                WGPUBlendState* blend_state = new WGPUBlendState;
+                blend_state->color = {
+                        .operation = WGPUBlendOperation_Add,
+                        .srcFactor = WGPUBlendFactor_SrcAlpha,
+                        .dstFactor = WGPUBlendFactor_OneMinusSrcAlpha,
+                };
+                blend_state->alpha = {
+                        .operation = WGPUBlendOperation_Add,
+                        .srcFactor = WGPUBlendFactor_Zero,
+                        .dstFactor = WGPUBlendFactor_One,
+                };
+
+                color_target.blend = blend_state;
+            }
+
+            material.shader = RendererStorage::get_shader("data/shaders/mesh_pbr.wgsl", define_specializations);
+
+            Pipeline::register_render_pipeline(material.shader, color_target, {});
         }
     }
 

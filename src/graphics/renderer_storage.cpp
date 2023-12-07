@@ -28,62 +28,84 @@ void RendererStorage::register_material(WebGPUContext* webgpu_context, Material&
         return;
     }
 
-    bool create_bind_group = false;
+    bool uses_textures = false;
     uint32_t binding = 0;
 
     std::vector<Uniform*>& uniforms = material_bind_groups[material].uniforms;
 
-    if (material.diffuse) {
+    if (material.diffuse_texture) {
         Uniform* u = new Uniform();
-        u->data = material.diffuse->get_view();
-        u->binding = binding++;
+        u->data = material.diffuse_texture->get_view();
+        u->binding = 0;
+        uniforms.push_back(u);
+        uses_textures |= true;
+    } else
+    if (material.flags & MATERIAL_PBR) {
+        Uniform* u = new Uniform();
+        u->data = webgpu_context->create_buffer(sizeof(glm::vec4), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform, &material.color, "mat_albedo");
+        u->binding = 0;
+        u->buffer_size = sizeof(glm::vec4);
         uniforms.push_back(u);
     }
 
-    if (material.metallic_roughness) {
+    if (material.metallic_roughness_texture) {
         Uniform* u = new Uniform();
-        u->data = material.metallic_roughness->get_view();
-        u->binding = binding++;
+        u->data = material.metallic_roughness_texture->get_view();
+        u->binding = 1;
+        uniforms.push_back(u);
+        uses_textures |= true;
+    } else
+    if (material.flags & MATERIAL_PBR) {
+        Uniform* u = new Uniform();
+        glm::vec2 metallic_roughness = { material.metalness, material.roughness };
+        u->data = webgpu_context->create_buffer(sizeof(glm::vec2), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform, &metallic_roughness, "mat_metallic_roughness");
+        u->binding = 1;
+        u->buffer_size = sizeof(glm::vec2);
         uniforms.push_back(u);
     }
 
-    if (material.normal) {
+    if (material.normal_texture) {
         Uniform* u = new Uniform();
-        u->data = material.normal->get_view();
-        u->binding = binding++;
+        u->data = material.normal_texture->get_view();
+        u->binding = 2;
         uniforms.push_back(u);
+        uses_textures |= true;
     }
 
-    if (material.emissive) {
+    if (material.emissive_texture) {
         Uniform* u = new Uniform();
-        u->data = material.emissive->get_view();
-        u->binding = binding++;
+        u->data = material.emissive_texture->get_view();
+        u->binding = 3;
+        uniforms.push_back(u);
+        uses_textures |= true;
+    } else
+    if (material.flags & MATERIAL_PBR) {
+        Uniform* u = new Uniform();
+        u->data = webgpu_context->create_buffer(sizeof(glm::vec4), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform, &material.emissive, "mat_emissive");
+        u->binding = 3;
+        u->buffer_size = sizeof(glm::vec4);
         uniforms.push_back(u);
     }
 
     // Add a sampler for basic 2d textures if there's any texture as uniforms
-    if (uniforms.size())
+    if (uses_textures)
     {
         Uniform* sampler_uniform = new Uniform();
         sampler_uniform->data = webgpu_context->create_sampler(
-            material.diffuse->get_wrap_u(),
-            material.diffuse->get_wrap_v(),
+            material.diffuse_texture->get_wrap_u(),
+            material.diffuse_texture->get_wrap_v(),
             WGPUAddressMode_ClampToEdge,
             WGPUFilterMode_Linear,
             WGPUFilterMode_Linear,
             WGPUMipmapFilterMode_Linear,
-            static_cast<float>(material.diffuse->get_mipmap_count()),
+            static_cast<float>(material.diffuse_texture->get_mipmap_count()),
             4
         );
-        sampler_uniform->binding = binding++;
+        sampler_uniform->binding = 4;
         uniforms.push_back(sampler_uniform);
-
-        create_bind_group |= true;
     }
 
-    if (create_bind_group) {
-        material_bind_groups[material].bind_group = webgpu_context->create_bind_group(uniforms, material.shader, 2);
-    }
+    material_bind_groups[material].bind_group = webgpu_context->create_bind_group(uniforms, material.shader, 2);
 }
 
 WGPUBindGroup RendererStorage::get_material_bind_group(const Material& material)
@@ -134,23 +156,28 @@ void RendererStorage::update_ui_widget(WebGPUContext* webgpu_context, void* widg
     webgpu_context->update_buffer(std::get<WGPUBuffer>(data_uniform->data), 0, &ui_data, sizeof(sUIData));
 }
 
-Shader* RendererStorage::get_shader(const std::string& shader_path)
+Shader* RendererStorage::get_shader(const std::string& shader_path, std::vector<std::string> define_specializations)
 {
     std::string name = std::filesystem::relative(std::filesystem::path(shader_path)).string();
 
+    std::string specialized_name = name;
+    for (const std::string& specialization : define_specializations) {
+        specialized_name += "_" + specialization;
+    }
+
     // check if already loaded
-    std::map<std::string, Shader*>::iterator it = shaders.find(name);
+    std::map<std::string, Shader*>::iterator it = shaders.find(specialized_name);
     if (it != shaders.end())
         return it->second;
 
     Shader* sh = new Shader();
 
-    if (!sh->load(name)) {
+    if (!sh->load(name, define_specializations)) {
         return nullptr;
     }
 
     // register in map
-    shaders[name] = sh;
+    shaders[specialized_name] = sh;
 
     return sh;
 }

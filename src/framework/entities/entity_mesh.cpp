@@ -14,7 +14,10 @@ void EntityMesh::render()
 
     if (mesh && material.shader)
     {
-        RendererStorage::instance->register_material(Renderer::instance->get_webgpu_context(), material);
+        if (material.flags & MATERIAL_DIFFUSE) {
+            RendererStorage::instance->register_material(Renderer::instance->get_webgpu_context(), material);
+        }
+
         Renderer::instance->add_renderable(this);
     }
 

@@ -48,3 +48,14 @@ uint32_t ceil_to_next_multiple(uint32_t value, uint32_t step);
 float bytes_to_float(unsigned char b0, unsigned char b1, unsigned char b2, unsigned char b3);
 unsigned int bytes_to_uint(unsigned char b0, unsigned char b1, unsigned char b2, unsigned char b3);
 unsigned short bytes_to_ushort(unsigned char b0, unsigned char b1);
+
+// based on: https://stackoverflow.com/a/38140932
+template <typename... Rest>
+inline void hash_combine(std::size_t& seed, std::size_t v, const Rest... rest)
+{
+    seed ^= v + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+    (hash_combine(seed, rest), ...);
+}
+
+std::string delete_until_tags(std::istringstream& stream, std::string& text, std::streampos& current_pos, std::string& current_line, const std::vector<std::string>& tags);
+std::string continue_until_tags(std::istringstream& stream, std::streampos& current_pos, std::string& current_line, const std::vector<std::string>& tags);

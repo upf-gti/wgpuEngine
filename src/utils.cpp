@@ -3,8 +3,11 @@
 #include <regex>
 #include <cassert>
 #include <fstream>
+#include <sstream>
 
 #include "spdlog/spdlog.h"
+
+#include "glm/gtx/hash.hpp"
 
 std::vector<std::string> tokenize(const std::string& str) {
 	
@@ -161,10 +164,103 @@ unsigned short bytes_to_ushort(unsigned char b0, unsigned char b1)
     *((unsigned char*)(&output) + 0) = b0;
 
     return output;
-};
+}
 
 uint32_t ceil_to_next_multiple(uint32_t value, uint32_t step)
 {
     uint32_t divide_and_ceil = value / step + (value % step == 0 ? 0 : 1);
     return step * divide_and_ceil;
 }
+
+std::string delete_until_tags(std::istringstream& stream, std::string& text, std::streampos& current_pos, std::string& current_line, const std::vector<std::string>& tags)
+{
+    std::string current_tag;
+
+    while (true) {
+        std::getline(stream, current_line);
+        auto tokens = tokenize(current_line);
+        current_tag = tokens[0];
+
+        auto it = std::find(tags.begin(), tags.end(), current_tag);
+
+        if (it != tags.end()) {
+            return *it;
+        }
+        else {
+            text.replace(current_pos, current_line.length() + 1, "");
+        }
+    }
+}
+
+std::string continue_until_tags(std::istringstream& stream, std::streampos& current_pos, std::string& current_line, const std::vector<std::string>& tags)
+{
+    std::string current_tag;
+
+    while (true) {
+        std::getline(stream, current_line);
+        auto tokens = tokenize(current_line);
+        current_tag = tokens[0];
+
+        auto it = std::find(tags.begin(), tags.end(), current_tag);
+
+        if (it != tags.end()) {
+            return *it;
+        }
+        else {
+            current_pos += current_line.length() + 1;
+        }
+    }
+
+    return "";
+}
+
+
+//std::string ifdef_tag;
+//while (true) {
+//    std::getline(string_stream, line);
+//    auto tokens = tokenize(line);
+//    ifdef_tag = tokens[0];
+//
+//    if (ifdef_tag == "#endif") {
+//        break;
+//    }
+//    else {
+//        line_pos += line.length() + 1;
+//    }
+//}
+//
+//// Delete all lines in between
+//std::string ifdef_tag;
+//while (true) {
+//    std::getline(string_stream, line);
+//    auto tokens = tokenize(line);
+//    ifdef_tag = tokens[0];
+//
+//    if (ifdef_tag == "#endif") {
+//        break;
+//    }
+//    else {
+//        shader_content.replace(line_pos, line.length() + 1, "");
+//    }
+//}
+
+//if (std::find(define_specializations.begin(), define_specializations.end(), tokens[1]) != define_specializations.end()) {
+//
+//    // Just advance, do nothing
+//    std::string tag_found = continue_until_tags(string_stream, line_pos, { "#endif", "else" });
+//
+//    // delete else condition
+//    if (tag_found == "else") {
+//        delete_until_tags(string_stream, shader_content, line_pos, { "#endif" });
+//    }
+//}
+//else {
+//
+//    // Delete all lines in between
+//    std::string tag_found = delete_until_tags(string_stream, shader_content, line_pos, { "#endif", "else" });
+//
+//    // mantain else condition
+//    if (tag_found == "else") {
+//        continue_until_tags(string_stream, line_pos, { "#endif" });
+//    }
+//}

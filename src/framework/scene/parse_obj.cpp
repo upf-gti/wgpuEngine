@@ -44,7 +44,7 @@ EntityMesh* parse_obj(const std::string& obj_path)
             material.flags |= MATERIAL_COLOR;
         }
         else {
-            material.diffuse = RendererStorage::get_texture("data/textures/" + materials[0].diffuse_texname);
+            material.diffuse_texture = RendererStorage::get_texture("data/textures/" + materials[0].diffuse_texname);
             material.shader = RendererStorage::get_shader("data/shaders/mesh_texture.wgsl");
             material.flags |= MATERIAL_DIFFUSE;
         }

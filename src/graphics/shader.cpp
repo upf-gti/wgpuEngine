@@ -30,7 +30,7 @@ Shader::~Shader()
     }
 }
 
-bool Shader::load(const std::string& shader_path)
+bool Shader::load(const std::string& shader_path, std::vector<std::string> define_specializations)
 {
 	path = shader_path;
 
@@ -38,7 +38,7 @@ bool Shader::load(const std::string& shader_path)
 	if (!read_file(path, shader_content))
 		return false;
 
-    if (!parse_preprocessor(shader_content, path)) {
+    if (!parse_preprocessor(shader_content, path, define_specializations)) {
         return false;
     }
 
@@ -48,8 +48,7 @@ bool Shader::load(const std::string& shader_path)
 
 	struct UserData {
 		bool any_error = false;
-	};
-	UserData user_data;
+	} user_data;
 
 	auto callback = [](WGPUCompilationInfoRequestStatus status, struct WGPUCompilationInfo const* compilation_info, void* p_user_data) {
 		UserData& user_data = *reinterpret_cast<UserData*>(p_user_data);
@@ -75,13 +74,14 @@ bool Shader::load(const std::string& shader_path)
 	return loaded;
 }
 
-bool Shader::parse_preprocessor(std::string &shader_content, const std::string &shader_path)
+bool Shader::parse_preprocessor(std::string &shader_content, const std::string &shader_path, std::vector<std::string> define_specializations)
 {
     std::istringstream string_stream(shader_content);
     std::string line;
 
     std::string _directory = std::filesystem::path(shader_path).parent_path().string();
 
+    std::streampos line_pos;
     while (std::getline(string_stream, line)) {
 
         auto tokens = tokenize(line);
@@ -96,7 +96,7 @@ bool Shader::parse_preprocessor(std::string &shader_content, const std::string &
                 return false;
             }
 
-            if (!parse_preprocessor(new_content, include_path)) {
+            if (!parse_preprocessor(new_content, include_path, define_specializations)) {
                 return false;
             }
 
@@ -110,7 +110,10 @@ bool Shader::parse_preprocessor(std::string &shader_content, const std::string &
             }
 
             //std::cout << " [" << include_name << "]";
-            shader_content.replace(shader_content.find(tag), line.length() + 1, new_content);
+            shader_content.replace(line_pos, line.length(), new_content);
+            //spdlog::info(shader_content);
+
+            line_pos += new_content.length();
         }
         // add other pres
         else if (tag == "#define") {
@@ -141,17 +144,64 @@ bool Shader::parse_preprocessor(std::string &shader_content, const std::string &
                 }
             }
 
-            shader_content.replace(shader_content.find(tag), line.length() + 1, "const " + define_name + " = " + final_value + ";");
+            std::string new_value = "const " + define_name + " = " + final_value + ";";
+            shader_content.replace(line_pos, line.length(), new_value);
+
+            line_pos += new_value.length();
         }
         else if (tag == "#dynamic") {
 
-            uint8_t group = tokens[1].at(7) - '0'; // convert to int, sorry :(
+            // convert to int, sorry :(
+            uint8_t group = tokens[1].at(7) - '0';
             uint8_t binding = tokens[2].at(9) - '0';
 
             dynamic_bindings[group] = binding;
 
-            shader_content.replace(shader_content.find(tag), tag.length() + 1, "");
+            shader_content.replace(line_pos, tag.length(), "");
+
+            line_pos += line.length();
         }
+        else if (tag == "#ifdef") {
+
+            // remove #ifdef line
+            shader_content.replace(line_pos, line.length() + 1, "");
+
+            // if specialization is defined
+            if (std::find(define_specializations.begin(), define_specializations.end(), tokens[1]) != define_specializations.end()) {
+
+                // Just advance, do nothing
+                std::string tag_found = continue_until_tags(string_stream, line_pos, line, { "#endif", "#else" });
+
+                // delete #else condition
+                if (tag_found == "#else") {
+                    // remove #else line
+                    shader_content.replace(line_pos, line.length() + 1, "");
+
+                    delete_until_tags(string_stream, shader_content, line_pos, line, { "#endif" });
+                }
+            }
+            else {
+
+                // Delete all lines in between
+                std::string tag_found = delete_until_tags(string_stream, shader_content, line_pos, line, { "#endif", "#else" });
+
+                // mantain #else condition
+                if (tag_found == "#else") {
+                    // remove #else line
+                    shader_content.replace(line_pos, line.length() + 1, "");
+
+                    continue_until_tags(string_stream, line_pos, line, { "#endif" });
+                }
+            }
+
+            // remove #endif line
+            shader_content.replace(line_pos, line.length(), "");
+        }
+        else {
+            line_pos += line.length();
+        }
+
+        line_pos += 1;
     }
 
     return true;

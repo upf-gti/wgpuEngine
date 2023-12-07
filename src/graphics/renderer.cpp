@@ -162,19 +162,32 @@ void Renderer::prepare_instancing()
             auto* lhs_mesh = lhs.entity_mesh->get_mesh();
             auto* rhs_mesh = rhs.entity_mesh->get_mesh();
 
+            bool equal_priority = lhs_mat.priority == rhs_mat.priority;
+            bool equal_shader = lhs_mat.shader == rhs_mat.shader;
+            bool equal_mesh = lhs_mesh == rhs_mesh;
+            bool equal_diffuse = lhs_mat.diffuse_texture == rhs_mat.diffuse_texture;
+            bool equal_normal = lhs_mat.normal_texture == rhs_mat.normal_texture;
+            bool equal_metallic_rougness = lhs_mat.metallic_roughness_texture == rhs_mat.metallic_roughness_texture;
+
             if (lhs_mat.priority > rhs_mat.priority) return true;
-            if (lhs_mat.priority == rhs_mat.priority && lhs_mat.shader > rhs_mat.shader) return true;
-            if (lhs_mat.priority == rhs_mat.priority && lhs_mat.shader == rhs_mat.shader && lhs_mesh > rhs_mesh) return true;
-            if (lhs_mat.priority == rhs_mat.priority && lhs_mat.shader == rhs_mat.shader && lhs_mesh == rhs_mesh && lhs_mat.diffuse > rhs_mat.diffuse) return true;
+            if (equal_priority && lhs_mat.shader > rhs_mat.shader) return true;
+            if (equal_priority && equal_shader && lhs_mesh > rhs_mesh) return true;
+            if (equal_priority && equal_shader && equal_mesh && lhs_mat.diffuse_texture > rhs_mat.diffuse_texture) return true;
+            if (equal_priority && equal_shader && equal_mesh && equal_diffuse && lhs_mat.normal_texture > rhs_mat.normal_texture) return true;
+            if (equal_priority && equal_shader && equal_mesh && equal_diffuse && equal_normal && lhs_mat.metallic_roughness_texture > rhs_mat.metallic_roughness_texture) return true;
+            if (equal_priority && equal_shader && equal_mesh && equal_diffuse && equal_normal && equal_metallic_rougness && lhs_mat.emissive_texture > rhs_mat.emissive_texture) return true;
 
             return false;
-            });
+        });
 
         // Check instances
         {
             Mesh* prev_mesh = nullptr;
             Shader* prev_shader = nullptr;
-            Texture* prev_texture = nullptr;
+            Texture* prev_diffuse = nullptr;
+            Texture* prev_normal = nullptr;
+            Texture* prev_metallic_roughness = nullptr;
+            Texture* prev_emissive = nullptr;
 
             uint32_t repeats = 0;
             for (uint32_t j = 0; j < render_list[i].size(); ++j) {
@@ -183,7 +196,12 @@ void Renderer::prepare_instancing()
                 Material& material = entity_mesh->get_material();
 
                 // Repeated EntityMesh, must be instanced
-                if (prev_mesh == entity_mesh->get_mesh() && prev_shader == material.shader && prev_texture == material.diffuse && !(material.flags & MATERIAL_UI)) {
+                if (prev_mesh == entity_mesh->get_mesh() && prev_shader == material.shader &&
+                    prev_diffuse == material.diffuse_texture &&
+                    prev_normal == material.normal_texture &&
+                    prev_metallic_roughness == material.metallic_roughness_texture &&
+                    prev_emissive == material.emissive_texture &&
+                    !(material.flags & MATERIAL_UI)) {
                     repeats++;
                 }
                 else {
@@ -197,7 +215,10 @@ void Renderer::prepare_instancing()
 
                 prev_mesh = entity_mesh->get_mesh();
                 prev_shader = material.shader;
-                prev_texture = material.diffuse;
+                prev_diffuse = material.diffuse_texture;
+                prev_normal = material.normal_texture;
+                prev_metallic_roughness = material.metallic_roughness_texture;
+                prev_emissive = material.emissive_texture;
 
                 // Fill instance_data
                 instance_data[i][j] = { entity_mesh->get_global_model(), material.color };

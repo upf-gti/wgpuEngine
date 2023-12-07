@@ -3,6 +3,8 @@
 #include "glm/glm.hpp"
 #include "glm/gtx/hash.hpp"
 
+#include "utils.h"
+
 class Shader;
 class Texture;
 
@@ -19,10 +21,14 @@ struct Material
     Shader* shader = nullptr;
     glm::vec4 color = { 1.0f, 1.0f, 1.0f, 1.0f };
 
-    Texture* diffuse = nullptr;
-    Texture* metallic_roughness = nullptr;
-    Texture* normal = nullptr;
-    Texture* emissive = nullptr;
+    Texture* diffuse_texture = nullptr;
+    Texture* metallic_roughness_texture = nullptr;
+    Texture* normal_texture = nullptr;
+    Texture* emissive_texture = nullptr;
+
+    float roughness = 1.0f;
+    float metalness = 0.0f;
+    glm::vec3 emissive = {};
 
     uint8_t flags = 0;
     uint8_t priority = 0;
@@ -32,7 +38,10 @@ struct Material
     {
         return (shader == other.shader
             && color == other.color
-            && diffuse == other.diffuse);
+            && diffuse_texture == other.diffuse_texture
+            && metallic_roughness_texture == other.metallic_roughness_texture
+            && normal_texture == other.normal_texture
+            && emissive_texture == other.emissive_texture);
     }
 };
 
@@ -45,10 +54,15 @@ struct std::hash<Material>
         using std::hash;
         using std::string;
 
-        // Use bit shifting for hash
-        // TODO: improve hash function
-        return ((hash<void*>()(k.shader)
-            ^ (hash<glm::vec4>()(k.color) << 1)) >> 1)
-            ^ (hash<void*>()(k.diffuse) << 1);
+        std::size_t h1 = hash<void*>()(k.shader);
+        std::size_t h2 = hash<glm::vec4>()(k.color);
+        std::size_t h3 = hash<void*>()(k.diffuse_texture);
+        std::size_t h4 = hash<void*>()(k.normal_texture);
+        std::size_t h5 = hash<void*>()(k.metallic_roughness_texture);
+        std::size_t h6 = hash<void*>()(k.emissive_texture);
+
+        std::size_t seed = 0;
+        hash_combine(seed, h1, h2, h3, h4, h5, h6);
+        return seed;
     }
 };
