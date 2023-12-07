@@ -12,8 +12,9 @@ enum eMaterialFlags {
     MATERIAL_COLOR       = 1 << 0,
     MATERIAL_DIFFUSE     = 1 << 1,
     MATERIAL_TRANSPARENT = 1 << 2,
-    MATERIAL_UI          = 1 << 3,
-    MATERIAL_PBR         = 1 << 4
+    MATERIAL_ALPHA_MASK  = 1 << 3,
+    MATERIAL_UI          = 1 << 4,
+    MATERIAL_PBR         = 1 << 5
 };
 
 struct Material
@@ -29,6 +30,7 @@ struct Material
     float roughness = 1.0f;
     float metalness = 0.0f;
     glm::vec3 emissive = {};
+    float alpha_mask = 0.5f;
 
     uint8_t flags = 0;
     uint8_t priority = 0;

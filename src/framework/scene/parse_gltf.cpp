@@ -312,7 +312,7 @@ void read_mesh(tinygltf::Model& model, tinygltf::Mesh& mesh, Entity* entity) {
             color_target.writeMask = WGPUColorWriteMask_All;
 
             if (gltf_material.alphaMode == "OPAQUE") {
-
+                define_specializations.push_back("ALPHA_OPAQUE");
             } else
             if (gltf_material.alphaMode == "BLEND") {
 
@@ -329,6 +329,15 @@ void read_mesh(tinygltf::Model& model, tinygltf::Mesh& mesh, Entity* entity) {
                 };
 
                 color_target.blend = blend_state;
+
+                define_specializations.push_back("ALPHA_BLEND");
+
+                material.flags |= MATERIAL_TRANSPARENT;
+            } else
+            if (gltf_material.alphaMode == "MASK") {
+                material.alpha_mask = gltf_material.alphaCutoff;
+                material.flags |= MATERIAL_ALPHA_MASK;
+                define_specializations.push_back("ALPHA_MASK");
             }
 
             material.shader = RendererStorage::get_shader("data/shaders/mesh_pbr.wgsl", define_specializations);

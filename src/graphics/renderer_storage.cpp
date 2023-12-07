@@ -87,6 +87,14 @@ void RendererStorage::register_material(WebGPUContext* webgpu_context, Material&
         uniforms.push_back(u);
     }
 
+    if (material.flags & MATERIAL_ALPHA_MASK) {
+        Uniform* u = new Uniform();
+        u->data = webgpu_context->create_buffer(sizeof(float), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform, &material.alpha_mask, "mat_alpha_cutoff");
+        u->binding = 5;
+        u->buffer_size = sizeof(float);
+        uniforms.push_back(u);
+    }
+
     // Add a sampler for basic 2d textures if there's any texture as uniforms
     if (uses_textures)
     {
@@ -186,10 +194,17 @@ std::vector<std::string> RendererStorage::get_shader_for_reload(const std::strin
 {
     std::string name = shader_path;
 
+    std::vector<std::string> shaders_to_reload;
     // Check if already loaded
-    auto it0 = shaders.find(shader_path);
-    if (it0 != shaders.end())
-        return { shader_path };
+    for (auto& [shader_name, shader] : shaders) {
+        if (shader_name.find(shader_path) != std::string::npos) {
+            shaders_to_reload.push_back(shader_name);
+        }
+    }
+
+    if (!shaders_to_reload.empty()) {
+        return shaders_to_reload;
+    }
 
     // If it is not a shader, check if it is a library
     auto it1 = shader_library_references.find(shader_path);

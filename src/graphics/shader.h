@@ -39,7 +39,7 @@ private:
 
 	void get_reflection_data(const std::string& shader_path, const std::string& shader_content);
 
-    bool parse_preprocessor(std::string& shader_content, const std::string& shader_path, std::vector<std::string> define_specializations = {});
+    bool parse_preprocessor(std::string& shader_content, const std::string& shader_path);
 
 	std::string path;
 
@@ -55,6 +55,7 @@ private:
 
     static std::map<std::string, custom_define_type> custom_defines;
     std::map<uint8_t, uint8_t> dynamic_bindings;
+    std::vector<std::string> define_specializations;
 
 	bool loaded = false;
 };

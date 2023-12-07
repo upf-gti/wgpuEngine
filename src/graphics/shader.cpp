@@ -34,15 +34,23 @@ bool Shader::load(const std::string& shader_path, std::vector<std::string> defin
 {
 	path = shader_path;
 
+    if (!define_specializations.empty()) {
+        this->define_specializations = define_specializations;
+    }
+
 	std::string shader_content;
 	if (!read_file(path, shader_content))
 		return false;
 
-    if (!parse_preprocessor(shader_content, path, define_specializations)) {
+    if (!parse_preprocessor(shader_content, path)) {
         return false;
     }
 
     spdlog::info("Loading shader: {}", path);
+
+    for (const std::string& specialization : define_specializations) {
+        spdlog::info("\t{}", specialization);
+    }
 
 	shader_module = webgpu_context->create_shader_module(shader_content.c_str());
 
@@ -74,7 +82,7 @@ bool Shader::load(const std::string& shader_path, std::vector<std::string> defin
 	return loaded;
 }
 
-bool Shader::parse_preprocessor(std::string &shader_content, const std::string &shader_path, std::vector<std::string> define_specializations)
+bool Shader::parse_preprocessor(std::string &shader_content, const std::string &shader_path)
 {
     std::istringstream string_stream(shader_content);
     std::string line;
@@ -96,7 +104,7 @@ bool Shader::parse_preprocessor(std::string &shader_content, const std::string &
                 return false;
             }
 
-            if (!parse_preprocessor(new_content, include_path, define_specializations)) {
+            if (!parse_preprocessor(new_content, include_path)) {
                 return false;
             }
 
@@ -479,7 +487,7 @@ void Shader::reload()
 	vertex_attributes.clear();
 	vertex_buffer_layouts.clear();
 
-	load(path);
+	load(path, define_specializations);
 
 	if (pipeline_ref) {
 		pipeline_ref->reload(this);
