@@ -30,9 +30,16 @@ Shader::~Shader()
     }
 }
 
-bool Shader::load(const std::string& shader_path, std::vector<std::string> define_specializations)
+bool Shader::load(const std::string& shader_path, const std::string& specialized_path, std::vector<std::string> define_specializations)
 {
 	path = shader_path;
+
+    if (!specialized_path.empty()) {
+        this->specialized_path = specialized_path;
+    }
+    else {
+        this->specialized_path = path;
+    }
 
     if (!define_specializations.empty()) {
         this->define_specializations = define_specializations;
@@ -112,9 +119,9 @@ bool Shader::parse_preprocessor(std::string &shader_content, const std::string &
 
             auto& references = library_references[include_path];
 
-            if (!std::count(references.begin(), references.end(), shader_path))
+            if (!std::count(references.begin(), references.end(), specialized_path))
             {
-                library_references[include_path].push_back(shader_path);
+                library_references[include_path].push_back(specialized_path);
             }
 
             //std::cout << " [" << include_name << "]";
@@ -487,7 +494,7 @@ void Shader::reload()
 	vertex_attributes.clear();
 	vertex_buffer_layouts.clear();
 
-	load(path, define_specializations);
+	load(path, specialized_path, define_specializations);
 
 	if (pipeline_ref) {
 		pipeline_ref->reload(this);

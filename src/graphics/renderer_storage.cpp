@@ -180,7 +180,7 @@ Shader* RendererStorage::get_shader(const std::string& shader_path, std::vector<
 
     Shader* sh = new Shader();
 
-    if (!sh->load(name, define_specializations)) {
+    if (!sh->load(name, specialized_name, define_specializations)) {
         return nullptr;
     }
 
