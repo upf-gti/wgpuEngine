@@ -106,8 +106,6 @@ void Input::update(float delta_time)
     memcpy((void*)&Input::prev_keystate, Input::keystate, GLFW_KEY_LAST);
     memcpy((void*)&Input::prev_buttons, Input::buttons, GLFW_MOUSE_BUTTON_LAST);
 
-    mouse_wheel_delta = 0.0f;
-
     glfwPollEvents();
 
 	// Mouse  state
