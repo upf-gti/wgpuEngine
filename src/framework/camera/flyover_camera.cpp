@@ -1,6 +1,7 @@
 #include "flyover_camera.h"
 
 #include "framework/input.h"
+#include "utils.h"
 
 #include "glm/gtx/rotate_vector.hpp"
 #include "glm/gtx/norm.hpp"
@@ -11,18 +12,7 @@ FlyoverCamera::FlyoverCamera() : Camera()
 
 void FlyoverCamera::update(float delta_time)
 {
-    if (Input::is_mouse_pressed(GLFW_MOUSE_BUTTON_LEFT))
-    {
-        glm::vec2 mouse_delta = Input::get_mouse_delta();
-
-        glm::vec3 front = normalize(center - eye);
-
-        front = rotate(front, mouse_delta.y * mouse_sensitivity, get_local_vector(glm::vec3(1.0f, 0.0f, 0.0f)));
-        front = rotate(front, mouse_delta.x * mouse_sensitivity, glm::vec3(0.0f, 1.0f, 0.0f));
-
-        center = eye + front;
-        update_view_matrix();
-    }
+    Camera::update(delta_time);
 
     float final_speed = speed;
     glm::vec3 move_dir = glm::vec3(0.0f, 0.0f, 0.0f);
@@ -33,16 +23,17 @@ void FlyoverCamera::update(float delta_time)
     if (Input::is_key_pressed(GLFW_KEY_A) || Input::is_key_pressed(GLFW_KEY_LEFT))  move_dir += (glm::vec3(-1.0f, 0.0f, 0.0f));
     if (Input::is_key_pressed(GLFW_KEY_D) || Input::is_key_pressed(GLFW_KEY_RIGHT)) move_dir += (glm::vec3(1.0f, 0.0f, 0.0f));
 
-    if (!glm::length2(move_dir)) {
-        return;
+    if (glm::length2(move_dir)) {
+        move_dir = get_local_vector(move_dir);
+        move_dir = normalize(move_dir) * final_speed * delta_time;
     }
 
-    move_dir = get_local_vector(move_dir);
+    inertial_speed += move_dir;
 
-    move_dir = normalize(move_dir) * final_speed * delta_time;
+    glm::vec3 new_forward = yaw_pitch_to_vector(delta_yaw, delta_pitch);
+    glm::vec3 new_pos = eye + inertial_speed;
 
-    center += move_dir;
-    eye += move_dir;
+    look_at(new_pos, new_pos + new_forward, glm::vec3(0.0f, 1.0f, 0.0f));
 
-    update_view_matrix();
+    inertial_speed *= 0.9f;
 }

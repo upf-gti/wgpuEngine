@@ -13,7 +13,7 @@ public:
 
     Camera() = default;
 
-    virtual void update(float delta_time) {};
+    virtual void update(float delta_time);
 
     void set_perspective(float fov, float aspect, float z_near, float z_far);
     void set_orthographic(float left, float right, float bottom, float top, float z_near, float z_far);
@@ -40,6 +40,9 @@ protected:
     float right;
     float top;
     float bottom;
+
+    float delta_yaw = 0.0f;
+    float delta_pitch = 0.0f;
 
     eCameraType type;
 

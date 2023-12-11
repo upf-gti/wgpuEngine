@@ -213,3 +213,24 @@ std::string continue_until_tags(std::istringstream& stream, std::streampos& curr
 
     return "";
 }
+
+float clamp_rotation(float angle)
+{
+    constexpr float pi2 = 2.0f * glm::pi<float>();
+    int turns = static_cast<int>(floor(angle / (pi2)));
+    return angle - pi2 * turns;
+}
+
+glm::vec3 yaw_pitch_to_vector(float yaw, float pitch) {
+    return glm::vec3(
+        sinf(yaw) * cosf(-pitch),
+        sinf(-pitch),
+        cosf(yaw) * cosf(-pitch)
+    );
+}
+
+void vector_to_yaw_pitch(const glm::vec3& front, float* yaw, float* pitch) {
+    *yaw = atan2f(front.x, front.z);
+    float mdo = sqrtf(front.x * front.x + front.z * front.z);
+    *pitch = atan2f(-front.y, mdo);
+}

@@ -1,6 +1,46 @@
 #include "camera.h"
 
+#include "framework/input.h"
+
+#include "utils.h"
+
 #include "glm/gtc/matrix_transform.hpp"
+
+#include <algorithm>
+
+#include "spdlog/spdlog.h"
+
+void Camera::update(float delta_time)
+{
+    if (!Input::is_mouse_pressed(GLFW_MOUSE_BUTTON_LEFT)) {
+        return;
+    }
+
+    {
+        glm::vec2 mouse_delta = Input::get_mouse_delta();
+
+        mouse_delta.x = std::clamp(mouse_delta.x, -150.0f, 150.0f);
+
+        delta_yaw += mouse_delta.x * mouse_sensitivity;
+        delta_pitch -= mouse_delta.y * mouse_sensitivity;
+    }
+
+    delta_yaw = clamp_rotation(delta_yaw);
+    delta_pitch = clamp_rotation(delta_pitch);
+
+    float max_offset = 0.5f;
+
+    constexpr float pi = glm::pi<float>();
+    constexpr float pi_2 = 0.5f * pi;
+
+    if (delta_pitch >= pi_2 - max_offset && delta_pitch < pi) {
+        delta_pitch = pi_2 - 0.001f - max_offset;
+    }
+
+    if (delta_pitch > pi && delta_pitch <= 3.0f * pi_2 + max_offset) {
+        delta_pitch = 3.0f * pi_2 + 0.001f + max_offset;
+    }
+}
 
 void Camera::set_perspective(float fov, float aspect, float z_near, float z_far)
 {
@@ -35,6 +75,8 @@ void Camera::look_at(const glm::vec3& eye, const glm::vec3& center, const glm::v
     this->up = up;
 
     update_view_matrix();
+
+    vector_to_yaw_pitch(glm::normalize(glm::vec3(center - eye)), &delta_yaw, &delta_pitch);
 }
 
 void Camera::update_view_matrix()

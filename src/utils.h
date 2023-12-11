@@ -59,3 +59,8 @@ inline void hash_combine(std::size_t& seed, std::size_t v, const Rest... rest)
 
 std::string delete_until_tags(std::istringstream& stream, std::string& text, std::streampos& current_pos, std::string& current_line, const std::vector<std::string>& tags);
 std::string continue_until_tags(std::istringstream& stream, std::streampos& current_pos, std::string& current_line, const std::vector<std::string>& tags);
+
+float clamp_rotation(float angle);
+
+glm::vec3 yaw_pitch_to_vector(float yaw, float pitch);
+void vector_to_yaw_pitch(const glm::vec3& front, float* yaw, float* pitch);
