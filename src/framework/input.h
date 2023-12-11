@@ -90,7 +90,6 @@ class Input {
 	// Mouse state
 	static glm::vec2 mouse_position; //last mouse position
 	static glm::vec2 mouse_delta; //mouse movement in the last frame
-	static float mouse_wheel;
 	static float mouse_wheel_delta;
 	static uint8_t buttons[GLFW_MOUSE_BUTTON_LAST];
 	static uint8_t prev_buttons[GLFW_MOUSE_BUTTON_LAST];
@@ -132,9 +131,11 @@ public:
 	static bool is_mouse_pressed(uint8_t button) { return buttons[button] == GLFW_PRESS; }
 	static bool was_mouse_pressed(uint8_t button) { return prev_buttons[button] == GLFW_RELEASE && buttons[button] == GLFW_PRESS; }
     static glm::vec2 get_mouse_delta() { return mouse_delta; }
+    static float get_mouse_wheel_delta() { return mouse_wheel_delta; }
 
     static void set_key_state(int key, uint8_t value);
     static void set_mouse_button(int button, uint8_t value);
+    static void set_mouse_wheel(float offset_x, float offset_y);
 
 #ifdef XR_SUPPORT
 	static bool init_xr(OpenXRContext* context);

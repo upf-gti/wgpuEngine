@@ -3,8 +3,7 @@
 
 glm::vec2 Input::mouse_position; //last mouse position
 glm::vec2 Input::mouse_delta; //mouse movement in the last frame
-float Input::mouse_wheel;
-float Input::mouse_wheel_delta;
+float Input::mouse_wheel_delta = 0.0f;
 uint8_t Input::buttons[GLFW_MOUSE_BUTTON_LAST];
 uint8_t Input::prev_buttons[GLFW_MOUSE_BUTTON_LAST];
 
@@ -35,6 +34,11 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
     Input::set_mouse_button(button, action != GLFW_RELEASE);
 }
 
+void mouse_scroll_callback(GLFWwindow* window, double offset_x, double offset_y)
+{
+    Input::set_mouse_wheel(offset_x, offset_y);
+}
+
 void Input::init(GLFWwindow* _window, Renderer* renderer, bool use_glfw)
 {
     Input::use_glfw = use_glfw;
@@ -43,6 +47,7 @@ void Input::init(GLFWwindow* _window, Renderer* renderer, bool use_glfw)
     if (use_glfw) {
         glfwSetKeyCallback(_window, key_callback);
         glfwSetMouseButtonCallback(_window, mouse_button_callback);
+        glfwSetScrollCallback(_window, mouse_scroll_callback);
     }
 
 	if (use_mirror_screen)
@@ -52,7 +57,6 @@ void Input::init(GLFWwindow* _window, Renderer* renderer, bool use_glfw)
 		glfwGetCursorPos(window, &x, &y);
 		Input::mouse_position.x = static_cast<float>(x);
 		Input::mouse_position.y = static_cast<float>(y);
-		mouse_wheel = 0.0;
 	}
 }
 
@@ -101,6 +105,8 @@ void Input::update(float delta_time)
 {
     memcpy((void*)&Input::prev_keystate, Input::keystate, GLFW_KEY_LAST);
     memcpy((void*)&Input::prev_buttons, Input::buttons, GLFW_MOUSE_BUTTON_LAST);
+
+    mouse_wheel_delta = 0.0f;
 
     glfwPollEvents();
 
@@ -154,6 +160,11 @@ void Input::set_key_state(int key, uint8_t value)
 void Input::set_mouse_button(int button, uint8_t value)
 {
     buttons[button] = value;
+}
+
+void Input::set_mouse_wheel(float offset_x, float offset_y)
+{
+    mouse_wheel_delta = offset_y;
 }
 
 glm::vec3 Input::get_controller_position(uint8_t controller, uint8_t type)
