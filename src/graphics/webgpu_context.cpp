@@ -101,7 +101,7 @@ WGPUDevice requestDevice(WGPUAdapter adapter, WGPUDeviceDescriptor const* descri
             userData.device = device;
         }
         else {
-            spdlog::error("Could not get WebGPU adapter: {}");
+            spdlog::error("Could not get WebGPU device: {}", message);
         }
         userData.requestEnded = true;
     };

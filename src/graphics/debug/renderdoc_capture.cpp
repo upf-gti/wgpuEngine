@@ -1,7 +1,5 @@
 #include "renderdoc_capture.h"
 
-#ifndef __EMSCRIPTEN__
-
 #if defined(_WIN32)
 
 #include "windows.h"
@@ -14,7 +12,9 @@
 
 #include "spdlog/spdlog.h"
 
+#ifndef __EMSCRIPTEN__
 RENDERDOC_API_1_6_0* RenderdocCapture::rdoc_api = nullptr;
+#endif
 
 void RenderdocCapture::init()
 {
@@ -58,19 +58,21 @@ void RenderdocCapture::init()
 
 void RenderdocCapture::start_capture_frame()
 {
+#ifndef __EMSCRIPTEN__
     if (rdoc_api) {
         rdoc_api->StartFrameCapture(NULL, NULL);
     }
     else {
         //spdlog::error("Can not start frame capture, Renderdoc Capture not initialized");
     }
+#endif
 }
 
 void RenderdocCapture::end_capture_frame()
 {
+#ifndef __EMSCRIPTEN__
     if (rdoc_api) {
         rdoc_api->EndFrameCapture(NULL, NULL);
     }
-}
-
 #endif
+}

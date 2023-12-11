@@ -127,16 +127,15 @@ void flipY(float** data, unsigned int size, short num_channels, bool flip_sides)
 
 bool HDRE::load(const char* filename)
 {
-	FILE *f;
 	assert(filename);
 
-	fopen_s(&f, filename, "rb");
-	if (f == NULL)
+    std::ifstream f(filename, std::ios::binary);
+	if (!f.good())
 		return false;
 
 	sHDREHeader HDREHeader;
 
-	fread(&HDREHeader, sizeof(sHDREHeader), 1, f);
+	f.read((char*)&HDREHeader, sizeof(sHDREHeader));
 
 	if (HDREHeader.type != 3)
 	{
@@ -182,10 +181,10 @@ bool HDRE::load(const char* filename)
 
 	this->data = new float[dataSize];
 
-	fseek(f, HDREHeader.headerSize, SEEK_SET);
+    f.seekg(sizeof(sHDREHeader), std::ios_base::beg);
+	f.read((char*)this->data, sizeof(float) * dataSize);
 
-	fread(this->data, sizeof(float) * dataSize, 1, f);
-	fclose(f);
+    f.close();
 
 	// get separated levels
 
