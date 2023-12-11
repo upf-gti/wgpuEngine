@@ -123,12 +123,12 @@ void Renderer::clean()
 
 void Renderer::init_ibl_bind_group()
 {
-    Texture* irradiance_texture = RendererStorage::get_texture("data/textures/environments/grass.hdre");
+    Texture* irradiance_texture = RendererStorage::get_texture("data/textures/environments/sky.hdre");
 
     irradiance_texture_uniform.data = irradiance_texture->get_view();
     irradiance_texture_uniform.binding = 0;
 
-    brdf_lut_uniform.data = RendererStorage::get_texture("data/textures/ibl_brdf_lut.png")->get_view();
+    brdf_lut_uniform.data = webgpu_context.brdf_lut_texture->get_view();
     brdf_lut_uniform.binding = 1;
 
     ibl_sampler_uniform.data = webgpu_context.create_sampler(

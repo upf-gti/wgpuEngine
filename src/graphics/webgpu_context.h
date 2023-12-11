@@ -12,6 +12,7 @@
 
 class Shader;
 class Pipeline;
+class Texture;
 
 struct WebGPUContext {
 
@@ -37,6 +38,10 @@ struct WebGPUContext {
 
     Pipeline*               mipmaps_pipeline;
     Shader*                 mipmaps_shader;
+
+    Pipeline*               brdf_lut_pipeline;
+    Shader*                 brdf_lut_shader;
+    Texture*                brdf_lut_texture = nullptr;
 
     bool                    is_initialized = false;
 
@@ -75,6 +80,8 @@ struct WebGPUContext {
     WGPUComputePipeline    create_compute_pipeline(WGPUShaderModule compute_shader_module, WGPUPipelineLayout pipeline_layout);
 
     WGPUVertexBufferLayout create_vertex_buffer_layout(const std::vector<WGPUVertexAttribute>& vertex_attributes, uint64_t stride, WGPUVertexStepMode step_mode);
+
+    void                   generate_brdf_lut_texture();
 
     void                   update_buffer(WGPUBuffer buffer, uint64_t buffer_offset, void const* data, uint64_t size);
 

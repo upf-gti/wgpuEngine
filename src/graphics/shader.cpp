@@ -216,6 +216,7 @@ bool Shader::parse_preprocessor(std::string &shader_content, const std::string &
             line_pos += line.length();
         }
 
+        // Account for \n
         line_pos += 1;
     }
 
@@ -428,14 +429,17 @@ void Shader::get_reflection_data(const std::string& shader_path, const std::stri
 				case ResourceBinding::TexelFormat::kRgba16Float:
 					entry.storageTexture.format = WGPUTextureFormat_RGBA16Float;
                     break;
+                case ResourceBinding::TexelFormat::kRgba32Float:
+                    entry.storageTexture.format = WGPUTextureFormat_RGBA32Float;
+                    break;
                 case ResourceBinding::TexelFormat::kR32Float:
                     entry.storageTexture.format = WGPUTextureFormat_R32Float;
                     break;
-				case ResourceBinding::TexelFormat::kRgba32Float:
-					entry.storageTexture.format = WGPUTextureFormat_RGBA32Float;
-					break;
                 case ResourceBinding::TexelFormat::kR32Uint:
                     entry.storageTexture.format = WGPUTextureFormat_R32Uint;
+                    break;
+                case ResourceBinding::TexelFormat::kRg32Float:
+                    entry.storageTexture.format = WGPUTextureFormat_RG32Float;
                     break;
 				default:
                     spdlog::error("Shader reflection failed: image format not implemented");

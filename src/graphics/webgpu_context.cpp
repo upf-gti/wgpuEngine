@@ -10,6 +10,7 @@
 
 #include "shader.h"
 #include "pipeline.h"
+#include "texture.h"
 
 #include "renderer.h"
 
@@ -206,10 +207,26 @@ int WebGPUContext::initialize(WGPURequestAdapterOptions adapter_opts, WGPURequir
 
     device_queue = wgpuDeviceGetQueue(device);
 
-    mipmaps_shader = RendererStorage::get_shader("data/shaders/mipmaps.wgsl");
+    {
+        mipmaps_shader = RendererStorage::get_shader("data/shaders/mipmaps.wgsl");
 
-    mipmaps_pipeline = new Pipeline();
-    mipmaps_pipeline->create_compute(mipmaps_shader);
+        mipmaps_pipeline = new Pipeline();
+        mipmaps_pipeline->create_compute(mipmaps_shader);
+    }
+
+    {
+        brdf_lut_shader = RendererStorage::get_shader("data/shaders/brdf_lut_gen.wgsl");
+
+        brdf_lut_pipeline = new Pipeline();
+        brdf_lut_pipeline->create_compute(brdf_lut_shader);
+
+        brdf_lut_texture = new Texture();
+        brdf_lut_texture->create(WGPUTextureDimension_2D, WGPUTextureFormat_RG32Float, { 512, 512, 1 },
+            static_cast<WGPUTextureUsage>(WGPUTextureUsage_StorageBinding | WGPUTextureUsage_TextureBinding), 1, nullptr);
+
+        generate_brdf_lut_texture();
+    }
+
 
     is_initialized = true;
 
@@ -233,6 +250,8 @@ void WebGPUContext::destroy()
     wgpuSwapChainRelease(screen_swapchain);
 
     delete mipmaps_pipeline;
+    delete brdf_lut_pipeline;
+    delete brdf_lut_texture;
 }
 
 void WebGPUContext::create_instance()
@@ -618,6 +637,52 @@ WGPUVertexBufferLayout WebGPUContext::create_vertex_buffer_layout(const std::vec
     vertexBufferLayout.stepMode = step_mode;
 
     return vertexBufferLayout;
+}
+
+void WebGPUContext::generate_brdf_lut_texture()
+{
+    Uniform brdf_lut_uniform;
+    brdf_lut_uniform.data = brdf_lut_texture->get_view();
+    brdf_lut_uniform.binding = 0;
+
+    std::vector<Uniform*> uniforms = { &brdf_lut_uniform };
+    WGPUBindGroup bind_group = create_bind_group(uniforms, brdf_lut_shader, 0);
+
+    WGPUQueue brdf_queue = wgpuDeviceGetQueue(device);
+
+    // Initialize a command encoder
+    WGPUCommandEncoderDescriptor encoder_desc = {};
+    WGPUCommandEncoder command_encoder = wgpuDeviceCreateCommandEncoder(device, &encoder_desc);
+
+    WGPUComputePassDescriptor compute_pass_desc = {};
+    compute_pass_desc.timestampWrites = nullptr;
+    WGPUComputePassEncoder compute_pass = wgpuCommandEncoderBeginComputePass(command_encoder, &compute_pass_desc);
+
+    brdf_lut_pipeline->set(compute_pass);
+
+    wgpuComputePassEncoderSetBindGroup(compute_pass, 0, bind_group, 0, nullptr);
+
+    wgpuComputePassEncoderDispatchWorkgroups(compute_pass, 16, 16, 1);
+
+    wgpuBindGroupRelease(bind_group);
+
+    // Finalize compute_raymarching pass
+    wgpuComputePassEncoderEnd(compute_pass);
+
+    WGPUCommandBufferDescriptor cmd_buff_descriptor = {};
+    cmd_buff_descriptor.nextInChain = NULL;
+    cmd_buff_descriptor.label = "Create BRDF Command Buffer";
+
+    // Encode and submit the GPU commands
+    WGPUCommandBuffer commands = wgpuCommandEncoderFinish(command_encoder, &cmd_buff_descriptor);
+    wgpuQueueSubmit(brdf_queue, 1, &commands);
+
+    wgpuCommandBufferRelease(commands);
+    wgpuComputePassEncoderRelease(compute_pass);
+    wgpuCommandEncoderRelease(command_encoder);
+    
+
+    wgpuQueueRelease(brdf_queue);
 }
 
 void WebGPUContext::update_buffer(WGPUBuffer buffer, uint64_t buffer_offset, void const* data, uint64_t size)
