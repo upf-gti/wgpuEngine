@@ -9,11 +9,6 @@
 
 std::map<std::string, HDRE*> HDRE::sHDRELoaded;
 
-HDRE::HDRE()
-{
-	
-}
-
 HDRE::~HDRE()
 {
 	clean();
@@ -66,7 +61,7 @@ HDRE* HDRE::Get(const char* filename)
 	if (!hdre->load(filename))
 	{
 		delete hdre;
-		return NULL;
+		return nullptr;
 	}
 
     hdre->setName(filename);
@@ -133,56 +128,53 @@ bool HDRE::load(const char* filename)
 	if (!f.good())
 		return false;
 
-	sHDREHeader HDREHeader;
+	f.read((char*)&header, sizeof(sHDREHeader));
 
-	f.read((char*)&HDREHeader, sizeof(sHDREHeader));
-
-	if (HDREHeader.type != 3)
+	if (header.type != 3)
 	{
 		spdlog::error("ArrayType not supported. Please export in Float32Array");
 		return false; 
 	}
 
-	this->header = HDREHeader;
-	this->version = HDREHeader.version;
+	version = header.version;
 
-	if (this->version < 2.0)
+	if (version < 2.0)
 	{
         spdlog::error("Versions below 2.0 are no longer supported. Please, reexport the environment");
 		return false;
 	}
 
-	this->numChannels = HDREHeader.numChannels;
-	this->bitsPerChannel = HDREHeader.bitsPerChannel;
-	this->maxLuminance = HDREHeader.maxLuminance;
-	this->type = HDREHeader.type;
+	numChannels = header.numChannels;
+	bitsPerChannel = header.bitsPerChannel;
+	maxLuminance = header.maxLuminance;
+	type = header.type;
 
-	if (HDREHeader.includesSH)
-	{
-		this->numCoeffs = HDREHeader.numCoeffs;
-		this->coeffs = HDREHeader.coeffs;
-	}
+	if (header.includesSH)
+    {
+        numCoeffs = header.numCoeffs;
+        coeffs = header.coeffs;
+    }
 
-	int width = this->width = HDREHeader.width;
-	int height = this->height = HDREHeader.height;
+    int width = this->width = header.width;
+    int height = this->height = header.height;
 
-	int dataSize = 0;
-	int w = width;
-	int h = height;
+    int dataSize = 0;
+    int w = width;
+    int h = height;
 
-	// Get number of floats inside the HDRE
-	// Per channel & Per face
-	for (int i = 0; i < N_LEVELS; i++)
-	{
-		int mip_level = i + 1;
-		dataSize += w * w * N_FACES * HDREHeader.numChannels;
-		w = (int)(width / pow(2.0, mip_level));
-	}
+    // Get number of floats inside the HDRE
+    // Per channel & Per face
+    for (int i = 0; i < N_LEVELS; i++)
+    {
+        int mip_level = i + 1;
+        dataSize += w * w * N_FACES * header.numChannels;
+        w = (int)(width / pow(2.0, mip_level));
+    }
 
-	this->data = new float[dataSize];
+    data = new float[dataSize];
 
-    f.seekg(sizeof(sHDREHeader), std::ios_base::beg);
-	f.read((char*)this->data, sizeof(float) * dataSize);
+    f.seekg(header.headerSize, std::ios::beg);
+	f.read((char*)data, sizeof(float) * dataSize);
 
     f.close();
 
@@ -194,26 +186,26 @@ bool HDRE::load(const char* filename)
 	for (int i = 0; i < N_LEVELS; i++)
 	{
 		int mip_level = i + 1;
-		int faceSize = w * w * HDREHeader.numChannels;
+		int faceSize = w * w * header.numChannels;
 		int mapSize = faceSize * N_FACES;
 		
 		int faceOffset = 0;
 		int facePixel = 0;
 
-		this->faces_array[i] = new float[mapSize];
+		faces_array[i] = new float[mapSize];
 
 		for (int j = 0; j < N_FACES; j++)
 		{
 			// allocate memory
-			this->pixels[i][j] = new float[faceSize];
+			pixels[i][j] = new float[faceSize];
 
 			// set data
 			for (int k = 0; k < faceSize; k++) {
 
-				float value = this->data[mapOffset + faceOffset + k];
+				float value = data[mapOffset + faceOffset + k];
 
-				this->pixels[i][j][k] = value;
-				this->faces_array[i][facePixel] = value;
+				pixels[i][j][k] = value;
+				faces_array[i][facePixel] = value;
 				facePixel++;
 			}
 
@@ -226,21 +218,21 @@ bool HDRE::load(const char* filename)
 
 		// refactored code for writing HDRE 
 		// removing Y flipping for webGl at Firefox
-		if (this->version < 3.0)
+		if (version < 3.0)
 		{
-			flipY(this->pixels[i], w, this->numChannels, true);
+			flipY(pixels[i], w, numChannels, true);
 		}
 		else
 		{
 			if (i != 0) // original is already flipped
-				flipY(this->pixels[i], w, this->numChannels, false);
+				flipY(pixels[i], w, numChannels, false);
 		}
 
 		// reassign width for next level
 		w = (int)(width / pow(2.0, mip_level));
 	}
 
-    spdlog::info(" + \'{}\' (v{}) loaded successfully", filename, this->version);
+    spdlog::info("HDRE loaded: {} (v{})", filename, version);
 
 	return true;
 }
@@ -250,8 +242,7 @@ bool HDRE::clean()
 	if (!data)
 		return false;
 
-	try
-	{
+	try {
 		delete data;
 
 		for (int i = 0; i < N_LEVELS; i++)
@@ -259,15 +250,12 @@ bool HDRE::clean()
 			delete faces_array[i];
 
 			for (int j = 0; j < N_FACES; j++)
-			{
 				delete pixels[i][j];
-			}
 		}
 
 		return true;
 	}
-	catch (const std::exception&)
-	{
+	catch (const std::exception&) {
         spdlog::error("Error cleaning");
 		return false;
 	}

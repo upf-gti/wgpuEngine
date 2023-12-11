@@ -6,7 +6,7 @@
 #define N_LEVELS 6
 #define N_FACES 6
 
-typedef struct {
+struct sHDREHeader {
 
 	char signature[4];
 	float version;
@@ -27,18 +27,14 @@ typedef struct {
 	short includesSH;
 	float numCoeffs;
 	float coeffs[27];
+};
 
-} sHDREHeader;
-
-typedef struct {
-
+struct sHDRELevel {
 	int width;
 	int height;
-
 	float* data;
 	float** faces;
-
-} sHDRELevel;
+};
 
 class HDRE {
 
@@ -66,7 +62,7 @@ public:
 	float numCoeffs;
 	float* coeffs;
 
-	HDRE();
+    HDRE() {};
 	~HDRE();
 
 	// class manager
