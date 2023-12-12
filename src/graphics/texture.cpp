@@ -34,6 +34,37 @@ void Texture::create(WGPUTextureDimension dimension, WGPUTextureFormat format, W
     }
 }
 
+bool Texture::convert_to_rgba8unorm(uint32_t width, uint32_t height, WGPUTextureFormat src_format, void* src, uint8_t* dst)
+{
+    if (src_format == WGPUTextureFormat_RGBA8Unorm) {
+        return false;
+    }
+
+    for (int i = 0; i < height; ++i) {
+        for (int j = 0; j < width; ++j) {
+
+            switch (src_format) {
+            case WGPUTextureFormat_RGBA16Uint:
+            {
+                uint16_t* src_converted = reinterpret_cast<uint16_t*>(src);
+                size_t pixel_pos = (j * 4) + (i * 4 * width);
+                dst[pixel_pos + 0] = (src_converted[pixel_pos + 0] / 65535.0f) * 255.0f;
+                dst[pixel_pos + 1] = (src_converted[pixel_pos + 1] / 65535.0f) * 255.0f;
+                dst[pixel_pos + 2] = (src_converted[pixel_pos + 2] / 65535.0f) * 255.0f;
+                dst[pixel_pos + 3] = (src_converted[pixel_pos + 3] / 65535.0f) * 255.0f;
+                break;
+            }
+            default:
+                assert(false);
+                return false;
+            }
+
+        }
+    }
+
+    return true;
+}
+
 void Texture::load(const std::string& texture_path)
 {
     int width, height, channels;
@@ -61,7 +92,7 @@ void Texture::load_from_data(const std::string& name, int width, int height, voi
 
     texture = webgpu_context->create_texture(dimension, format, size, usage, mipmaps);
 
-    webgpu_context->create_texture_mipmaps(texture, size, mipmaps, data);
+    webgpu_context->create_texture_mipmaps(texture, size, mipmaps, data, WGPUTextureViewDimension_2D, format);
 }
 
 void Texture::load_from_hdre(HDRE* hdre)

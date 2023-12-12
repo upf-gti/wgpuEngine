@@ -32,6 +32,8 @@ public:
 
 	void create(WGPUTextureDimension dimension, WGPUTextureFormat format, WGPUExtent3D size, WGPUTextureUsage usage, uint32_t mipmaps, const void* data);
 
+    static bool convert_to_rgba8unorm(uint32_t width, uint32_t height, WGPUTextureFormat src_format, void* src, uint8_t* dst);
+
     WGPUTexture     get_texture() { return texture; }
 	WGPUTextureView get_view();
     uint32_t        get_mipmap_count() { return mipmaps; }

@@ -373,11 +373,28 @@ void WebGPUContext::create_texture_mipmaps(WGPUTexture texture, WGPUExtent3D tex
 
     WGPUTextureDataLayout source = {};
     source.offset = 0;
-    source.bytesPerRow = 4 * texture_size.width;
+
+    size_t byte_size = 0;
+    size_t pixel_size = 0;
+
+    switch (format) {
+    case WGPUTextureFormat_RGBA8Unorm:
+        pixel_size = 4 * sizeof(uint8_t);
+        break;
+    case WGPUTextureFormat_RGBA16Uint:
+        pixel_size = 4 * sizeof(uint16_t);
+        break;
+    default:
+        assert(false);
+    }
+
+    source.bytesPerRow = pixel_size * texture_size.width;
+    byte_size = source.bytesPerRow * texture_size.height;
+
     source.rowsPerImage = texture_size.height;
 
     // For level 0
-    wgpuQueueWriteTexture(mipmap_queue, &destination, data, (4 * texture_size.width * texture_size.height), &source, &texture_size);
+    wgpuQueueWriteTexture(mipmap_queue, &destination, data, byte_size, &source, &texture_size);
 
     // For ALL levels
     {
@@ -392,7 +409,7 @@ void WebGPUContext::create_texture_mipmaps(WGPUTexture texture, WGPUExtent3D tex
         {
             std::string label = "MIP level #" + std::to_string(level);
             texture_mip_views.push_back(
-                create_texture_view(texture, view_dimension, format, WGPUTextureAspect_All, 1, level, texture_size.depthOrArrayLayers, label.c_str())
+                create_texture_view(texture, view_dimension, WGPUTextureFormat_RGBA8Unorm, WGPUTextureAspect_All, 1, level, texture_size.depthOrArrayLayers, label.c_str())
             );
 
             if (level > 0) {

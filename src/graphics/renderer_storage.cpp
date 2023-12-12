@@ -39,11 +39,12 @@ void RendererStorage::register_material(WebGPUContext* webgpu_context, Material&
         u->binding = 0;
         uniforms.push_back(u);
         uses_textures |= true;
-    } else
+    }
+
     if (material.flags & MATERIAL_PBR) {
         Uniform* u = new Uniform();
         u->data = webgpu_context->create_buffer(sizeof(glm::vec4), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform, &material.color, "mat_albedo");
-        u->binding = 0;
+        u->binding = 1;
         u->buffer_size = sizeof(glm::vec4);
         uniforms.push_back(u);
     }
@@ -51,15 +52,16 @@ void RendererStorage::register_material(WebGPUContext* webgpu_context, Material&
     if (material.metallic_roughness_texture) {
         Uniform* u = new Uniform();
         u->data = material.metallic_roughness_texture->get_view();
-        u->binding = 1;
+        u->binding = 2;
         uniforms.push_back(u);
         uses_textures |= true;
-    } else
+    }
+
     if (material.flags & MATERIAL_PBR) {
         Uniform* u = new Uniform();
         glm::vec2 metallic_roughness = { material.metalness, material.roughness };
         u->data = webgpu_context->create_buffer(sizeof(glm::vec2), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform, &metallic_roughness, "mat_metallic_roughness");
-        u->binding = 1;
+        u->binding = 3;
         u->buffer_size = sizeof(glm::vec2);
         uniforms.push_back(u);
     }
@@ -67,7 +69,7 @@ void RendererStorage::register_material(WebGPUContext* webgpu_context, Material&
     if (material.normal_texture) {
         Uniform* u = new Uniform();
         u->data = material.normal_texture->get_view();
-        u->binding = 2;
+        u->binding = 4;
         uniforms.push_back(u);
         uses_textures |= true;
     }
@@ -75,23 +77,16 @@ void RendererStorage::register_material(WebGPUContext* webgpu_context, Material&
     if (material.emissive_texture) {
         Uniform* u = new Uniform();
         u->data = material.emissive_texture->get_view();
-        u->binding = 3;
+        u->binding = 5;
         uniforms.push_back(u);
         uses_textures |= true;
-    } else
+    }
+
     if (material.flags & MATERIAL_PBR) {
         Uniform* u = new Uniform();
         u->data = webgpu_context->create_buffer(sizeof(glm::vec4), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform, &material.emissive, "mat_emissive");
-        u->binding = 3;
+        u->binding = 6;
         u->buffer_size = sizeof(glm::vec4);
-        uniforms.push_back(u);
-    }
-
-    if (material.flags & MATERIAL_ALPHA_MASK) {
-        Uniform* u = new Uniform();
-        u->data = webgpu_context->create_buffer(sizeof(float), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform, &material.alpha_mask, "mat_alpha_cutoff");
-        u->binding = 5;
-        u->buffer_size = sizeof(float);
         uniforms.push_back(u);
     }
 
@@ -109,8 +104,16 @@ void RendererStorage::register_material(WebGPUContext* webgpu_context, Material&
             static_cast<float>(material.diffuse_texture->get_mipmap_count()),
             4
         );
-        sampler_uniform->binding = 4;
+        sampler_uniform->binding = 7;
         uniforms.push_back(sampler_uniform);
+    }
+
+    if (material.flags & MATERIAL_ALPHA_MASK) {
+        Uniform* u = new Uniform();
+        u->data = webgpu_context->create_buffer(sizeof(float), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform, &material.alpha_mask, "mat_alpha_cutoff");
+        u->binding = 8;
+        u->buffer_size = sizeof(float);
+        uniforms.push_back(u);
     }
 
     material_bind_groups[material].bind_group = webgpu_context->create_bind_group(uniforms, material.shader, 2);

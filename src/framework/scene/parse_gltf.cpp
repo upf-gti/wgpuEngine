@@ -31,29 +31,37 @@ void create_material_texture(tinygltf::Model& model, int tex_index, Texture** te
 
     tinygltf::Image& image = model.images[tex.source];
 
-    if (image.component == 1) {
-        // R
+    assert(image.component == 4);
+
+    WGPUTextureFormat texture_format = WGPUTextureFormat_RGBA8Unorm;
+
+    switch (image.pixel_type) {
+    case TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE:
+        texture_format = WGPUTextureFormat_RGBA8Unorm;
+        break;
+    case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT:
+        texture_format = WGPUTextureFormat_RGBA16Uint;
+        break;
+    default:
+        assert(false);
     }
-    else if (image.component == 2) {
-        // RG
-    }
-    else if (image.component == 3) {
-        // RGB
+
+    bool convert_image = texture_format != WGPUTextureFormat_RGBA8Unorm;
+
+    if (convert_image) {
+        uint8_t* converted_texture = new uint8_t[image.width * image.height * 4];
+
+        if (Texture::convert_to_rgba8unorm(image.width, image.height, texture_format, image.image.data(), converted_texture)) {
+            *texture = new Texture();
+            (*texture)->load_from_data(image.uri, image.width, image.height, converted_texture, WGPUTextureFormat_RGBA8Unorm);
+            delete[] converted_texture;
+        }
     }
     else {
-
+        *texture = new Texture();
+        (*texture)->load_from_data(image.uri, image.width, image.height, image.image.data(), WGPUTextureFormat_RGBA8Unorm);
     }
 
-    if (image.bits == 8) {
-    }
-    else if (image.bits == 16) {
-    }
-    else {
-        // ???
-    }
-
-    *texture = new Texture();
-    (*texture)->load_from_data(image.uri, image.width, image.height, image.image.data());
 
     tinygltf::Sampler& sampler = model.samplers[tex.sampler];
 
@@ -149,8 +157,6 @@ void read_mesh(tinygltf::Model& model, tinygltf::Mesh& mesh, Entity* entity) {
 
         for (auto& attrib : primitive.attributes) {
             tinygltf::Accessor accessor = model.accessors[attrib.second];
-
-            assert(accessor.componentType == TINYGLTF_COMPONENT_TYPE_FLOAT);
 
             const tinygltf::BufferView& buffer_view = model.bufferViews[accessor.bufferView];
             const tinygltf::Buffer& buffer = model.buffers[buffer_view.buffer];
@@ -268,23 +274,21 @@ void read_mesh(tinygltf::Model& model, tinygltf::Mesh& mesh, Entity* entity) {
                 material.flags |= MATERIAL_DIFFUSE;
                 define_specializations.push_back("ALBEDO_TEXTURE");
             }
-            else {
-                material.color = glm::vec4(
-                    pbrMetallicRoughness.baseColorFactor[0],
-                    pbrMetallicRoughness.baseColorFactor[1],
-                    pbrMetallicRoughness.baseColorFactor[2],
-                    pbrMetallicRoughness.baseColorFactor[3]
-                );
-            }
+
+            material.color = glm::vec4(
+                pbrMetallicRoughness.baseColorFactor[0],
+                pbrMetallicRoughness.baseColorFactor[1],
+                pbrMetallicRoughness.baseColorFactor[2],
+                pbrMetallicRoughness.baseColorFactor[3]
+            );
 
             if (pbrMetallicRoughness.metallicRoughnessTexture.index >= 0) {
                 create_material_texture(model, pbrMetallicRoughness.metallicRoughnessTexture.index, &material.metallic_roughness_texture);
                 define_specializations.push_back("METALLIC_ROUGHNESS_TEXTURE");
             }
-            else {
-                material.roughness = static_cast<float>(pbrMetallicRoughness.roughnessFactor);
-                material.metalness = static_cast<float>(pbrMetallicRoughness.metallicFactor);
-            }
+           
+            material.roughness = static_cast<float>(pbrMetallicRoughness.roughnessFactor);
+            material.metalness = static_cast<float>(pbrMetallicRoughness.metallicFactor);
 
             if (gltf_material.normalTexture.index >= 0) {
                 define_specializations.push_back("NORMAL_TEXTURE");
@@ -295,9 +299,8 @@ void read_mesh(tinygltf::Model& model, tinygltf::Mesh& mesh, Entity* entity) {
                 define_specializations.push_back("EMISSIVE_TEXTURE");
                 create_material_texture(model, gltf_material.emissiveTexture.index, &material.emissive_texture);
             }
-            else {
-                material.emissive = { gltf_material.emissiveFactor[0], gltf_material.emissiveFactor[1], gltf_material.emissiveFactor[2] };
-            }
+
+            material.emissive = { gltf_material.emissiveFactor[0], gltf_material.emissiveFactor[1], gltf_material.emissiveFactor[2] };
 
             if (!define_specializations.empty()) {
                 define_specializations.push_back("USE_SAMPLER");
