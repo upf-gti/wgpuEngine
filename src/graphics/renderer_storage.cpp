@@ -32,6 +32,7 @@ void RendererStorage::register_material(WebGPUContext* webgpu_context, Material&
     uint32_t binding = 0;
 
     std::vector<Uniform*>& uniforms = material_bind_groups[material].uniforms;
+    Texture* texture_ref = nullptr;
 
     if (material.diffuse_texture) {
         Uniform* u = new Uniform();
@@ -39,6 +40,7 @@ void RendererStorage::register_material(WebGPUContext* webgpu_context, Material&
         u->binding = 0;
         uniforms.push_back(u);
         uses_textures |= true;
+        texture_ref = material.diffuse_texture;
     }
 
     if (material.flags & MATERIAL_PBR) {
@@ -55,6 +57,7 @@ void RendererStorage::register_material(WebGPUContext* webgpu_context, Material&
         u->binding = 2;
         uniforms.push_back(u);
         uses_textures |= true;
+        texture_ref = material.metallic_roughness_texture;
     }
 
     if (material.flags & MATERIAL_PBR) {
@@ -72,6 +75,7 @@ void RendererStorage::register_material(WebGPUContext* webgpu_context, Material&
         u->binding = 4;
         uniforms.push_back(u);
         uses_textures |= true;
+        texture_ref = material.normal_texture;
     }
 
     if (material.emissive_texture) {
@@ -80,6 +84,7 @@ void RendererStorage::register_material(WebGPUContext* webgpu_context, Material&
         u->binding = 5;
         uniforms.push_back(u);
         uses_textures |= true;
+        texture_ref = material.emissive_texture;
     }
 
     if (material.flags & MATERIAL_PBR) {
@@ -95,13 +100,13 @@ void RendererStorage::register_material(WebGPUContext* webgpu_context, Material&
     {
         Uniform* sampler_uniform = new Uniform();
         sampler_uniform->data = webgpu_context->create_sampler(
-            material.diffuse_texture->get_wrap_u(),
-            material.diffuse_texture->get_wrap_v(),
+            texture_ref->get_wrap_u(),
+            texture_ref->get_wrap_v(),
             WGPUAddressMode_ClampToEdge,
             WGPUFilterMode_Linear,
             WGPUFilterMode_Linear,
             WGPUMipmapFilterMode_Linear,
-            static_cast<float>(material.diffuse_texture->get_mipmap_count()),
+            static_cast<float>(texture_ref->get_mipmap_count()),
             4
         );
         sampler_uniform->binding = 7;

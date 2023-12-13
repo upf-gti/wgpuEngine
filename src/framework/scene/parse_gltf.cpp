@@ -310,6 +310,10 @@ void read_mesh(tinygltf::Model& model, tinygltf::Mesh& mesh, Entity* entity) {
             bool is_openxr_available = Renderer::instance->get_openxr_available();
             WGPUTextureFormat swapchain_format = is_openxr_available ? webgpu_context->xr_swapchain_format : webgpu_context->swapchain_format;
 
+            PipelineDescription description = {};
+
+            description.cull_mode = gltf_material.doubleSided ? WGPUCullMode_None : WGPUCullMode_Back;
+
             WGPUColorTargetState color_target = {};
             color_target.format = swapchain_format;
             color_target.writeMask = WGPUColorWriteMask_All;
@@ -336,6 +340,8 @@ void read_mesh(tinygltf::Model& model, tinygltf::Mesh& mesh, Entity* entity) {
                 define_specializations.push_back("ALPHA_BLEND");
 
                 material.flags |= MATERIAL_TRANSPARENT;
+                //description.uses_depth_write = false;
+                description.blending_enabled = true;
             } else
             if (gltf_material.alphaMode == "MASK") {
                 material.alpha_mask = gltf_material.alphaCutoff;
@@ -345,7 +351,7 @@ void read_mesh(tinygltf::Model& model, tinygltf::Mesh& mesh, Entity* entity) {
 
             material.shader = RendererStorage::get_shader("data/shaders/mesh_pbr.wgsl", define_specializations);
 
-            Pipeline::register_render_pipeline(material.shader, color_target, {});
+            Pipeline::register_render_pipeline(material.shader, color_target, description);
         }
     }
 

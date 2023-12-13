@@ -211,7 +211,7 @@ bool HDRE::load(const char* filename)
 
 			// update face offset
 			faceOffset += faceSize;
-		}	
+		}
 
 		// update level offset
 		mapOffset += mapSize;

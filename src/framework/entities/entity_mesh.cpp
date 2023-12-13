@@ -14,7 +14,7 @@ void EntityMesh::render()
 
     if (mesh && material.shader)
     {
-        if (material.flags & MATERIAL_DIFFUSE) {
+        if (material.flags & MATERIAL_DIFFUSE || material.flags & MATERIAL_PBR) {
             RendererStorage::instance->register_material(Renderer::instance->get_webgpu_context(), material);
         }
 
