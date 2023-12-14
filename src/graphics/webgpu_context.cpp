@@ -679,7 +679,7 @@ void WebGPUContext::generate_brdf_lut_texture()
 
     wgpuComputePassEncoderSetBindGroup(compute_pass, 0, bind_group, 0, nullptr);
 
-    wgpuComputePassEncoderDispatchWorkgroups(compute_pass, 16, 16, 1);
+    wgpuComputePassEncoderDispatchWorkgroups(compute_pass, 32, 32, 1);
 
     wgpuBindGroupRelease(bind_group);
 
