@@ -96,6 +96,11 @@ set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 20)
 
 # INSTALL(FILES ${WGPU_HEADERS} DESTINATION ${CMAKE_BINARY_DIR})
 
+# needed to compile tint on web
+if (EMSCRIPTEN)
+    add_compile_options(-w)
+endif()
+
 # dawn
 set_target_properties(${PROJECT_NAME} PROPERTIES VS_DEBUGGER_ENVIRONMENT "DAWN_DEBUG_BREAK_ON_ERROR=1")
 add_subdirectory(libraries/webgpu)
