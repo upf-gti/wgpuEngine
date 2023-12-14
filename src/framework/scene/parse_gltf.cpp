@@ -373,7 +373,7 @@ void read_mesh(tinygltf::Model& model, tinygltf::Mesh& mesh, Entity* entity) {
                 define_specializations.push_back("ALPHA_BLEND");
 
                 material.flags |= MATERIAL_TRANSPARENT;
-                //description.uses_depth_write = false;
+                description.uses_depth_write = false;
                 description.blending_enabled = true;
             } else
             if (gltf_material.alphaMode == "MASK") {
