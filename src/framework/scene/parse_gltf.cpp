@@ -105,6 +105,9 @@ void read_mesh(tinygltf::Model& model, tinygltf::Mesh& mesh, Entity* entity) {
 
     Material& material = entity_mesh->get_material();
 
+    glm::vec3 min_pos = { FLT_MAX, FLT_MAX, FLT_MAX };
+    glm::vec3 max_pos = { -FLT_MAX, -FLT_MAX, -FLT_MAX };
+
     for (size_t primitive_idx = 0; primitive_idx < mesh.primitives.size(); ++primitive_idx) {
         tinygltf::Primitive primitive = mesh.primitives[primitive_idx];
 
@@ -237,9 +240,34 @@ void read_mesh(tinygltf::Model& model, tinygltf::Mesh& mesh, Entity* entity) {
 
                 // position
                 if (attrib.first[0] == 'P') {
-                    vertices[vertex_idx].position.x = *(float*)&buffer.data[buffer_idx + 0];
-                    vertices[vertex_idx].position.y = *(float*)&buffer.data[buffer_idx + 4];
-                    vertices[vertex_idx].position.z = *(float*)&buffer.data[buffer_idx + 8];
+                    glm::vec3& position = vertices[vertex_idx].position;
+                    position.x = *(float*)&buffer.data[buffer_idx + 0];
+                    position.y = *(float*)&buffer.data[buffer_idx + 4];
+                    position.z = *(float*)&buffer.data[buffer_idx + 8];
+
+                    glm::bvec3 less_than = glm::lessThan(position, min_pos);
+
+                    if (less_than.x) {
+                        min_pos.x = position.x;
+                    }
+                    if (less_than.y) {
+                        min_pos.y = position.y;
+                    }
+                    if (less_than.z) {
+                        min_pos.z = position.z;
+                    }
+
+                    glm::bvec3 greater_than = glm::greaterThan(position, max_pos);
+
+                    if (greater_than.x) {
+                        max_pos.x = position.x;
+                    }
+                    if (greater_than.y) {
+                        max_pos.y = position.y;
+                    }
+                    if (greater_than.z) {
+                        max_pos.z = position.z;
+                    }
                 }
 
                 // normal
@@ -258,6 +286,11 @@ void read_mesh(tinygltf::Model& model, tinygltf::Mesh& mesh, Entity* entity) {
                 vertex_idx++;
             }
         }
+
+        glm::vec3 aabb_half_size = (max_pos - min_pos) * 0.5f;
+        glm::vec3 aabb_position = min_pos + aabb_half_size;
+
+        entity_mesh->set_aabb({ aabb_position, aabb_half_size });
 
         if (primitive.material >= 0) {
 

@@ -2,6 +2,8 @@
 
 #include "includes.h"
 
+#include "framework/aabb.h"
+
 #include <string>
 #include <vector>
 
@@ -13,6 +15,8 @@ protected:
 
 	Entity* parent = nullptr;
 	std::vector<Entity*> children;
+
+    AABB aabb = {};
 
     // Use to discard either self of its children
     bool process_children = true;
@@ -47,6 +51,9 @@ public:
     Entity* get_parent() { return parent; }
     bool get_process_children() { return process_children; }
     bool is_active() { return active; }
+
+    void set_aabb(const AABB& aabb) { this->aabb = aabb; }
+    AABB get_aabb();
 
 	void set_translation(const glm::vec3& translation);
 	void set_model(const glm::mat4x4& _model) { model = _model; }

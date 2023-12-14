@@ -17,6 +17,7 @@
 #include "graphics/debug/renderdoc_capture.h"
 
 class EntityMesh;
+class Camera;
 
 class Renderer {
 
@@ -26,6 +27,8 @@ protected:
 #endif
 
     WebGPUContext   webgpu_context;
+
+    Camera* camera = nullptr;
 
     RendererStorage renderer_storage;
 
@@ -116,5 +119,7 @@ public:
     virtual void resize_window(int width, int height);
 
     GLFWwindow* get_glfw_window() { return webgpu_context.window; };
+
+    Camera* get_camera() { return camera; }
 
 };

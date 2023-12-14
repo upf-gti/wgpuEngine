@@ -2,6 +2,8 @@
 
 #include "glm/glm.hpp"
 
+class Entity;
+
 class Camera {
 
     enum eCameraType {
@@ -18,6 +20,8 @@ public:
     void set_perspective(float fov, float aspect, float z_near, float z_far);
     void set_orthographic(float left, float right, float bottom, float top, float z_near, float z_far);
     void look_at(const glm::vec3& eye, const glm::vec3& center, const glm::vec3& up);
+
+    void look_at_entity(Entity* entity);
 
     void update_view_matrix();
     void update_projection_matrix();

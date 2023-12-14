@@ -95,3 +95,25 @@ glm::mat4x4 Entity::get_global_model()
 		return parent->get_global_model() * model;
 	return model;
 }
+
+AABB Entity::get_aabb()
+{
+    AABB new_aabb = aabb;
+
+    for (Entity* child : children) {
+
+        AABB child_aabb = child->get_aabb();
+
+        if (!new_aabb.initialized()) {
+            new_aabb = child_aabb;
+            continue;
+        }
+
+        if (child_aabb.initialized()) {
+            new_aabb = merge_aabbs(new_aabb, child_aabb);
+        }
+    }
+
+    return new_aabb;
+}
+

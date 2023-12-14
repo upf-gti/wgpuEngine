@@ -1,6 +1,7 @@
 #include "camera.h"
 
 #include "framework/input.h"
+#include "framework/entities/entity_mesh.h"
 
 #include "utils.h"
 
@@ -77,6 +78,25 @@ void Camera::look_at(const glm::vec3& eye, const glm::vec3& center, const glm::v
     update_view_matrix();
 
     vector_to_yaw_pitch(glm::normalize(glm::vec3(center - eye)), &delta_yaw, &delta_pitch);
+}
+
+void Camera::look_at_entity(Entity* entity)
+{
+    if (!entity) {
+        return;
+    }
+
+    glm::vec3 front = glm::vec3(0.0f, 0.0f, -1.0f);
+
+    AABB aabb = entity->get_aabb();
+
+    float distance = 0.5f;
+
+    if (aabb.initialized()) {
+        distance = 3.0 * std::max(std::max(abs(aabb.half_size.x), abs(aabb.half_size.y)), abs(aabb.half_size.z));
+    }
+
+    look_at(aabb.center - distance * front, aabb.center, glm::vec3(0.0, 1.0, 0.0));
 }
 
 void Camera::update_view_matrix()

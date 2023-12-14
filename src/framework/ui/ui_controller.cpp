@@ -45,7 +45,7 @@ namespace ui {
 
 	bool Controller::is_active()
 	{
-        return true;// workspace.hand == HAND_RIGHT || Input::get_grab_value(workspace.hand) > 0.5f;
+        return workspace.hand == HAND_RIGHT || Input::get_grab_value(workspace.hand) > 0.5f;
 	}
 
 	void Controller::render()
