@@ -981,32 +981,6 @@ void OpenXRContext::init_frame()
         spdlog::trace("Failed to begin frame!");
         return;
     }
-
-    XrViewState viewState{ XR_TYPE_VIEW_STATE };
-    uint32_t viewCapacityInput = (uint32_t)views.size();
-
-    XrViewLocateInfo viewLocateInfo{ XR_TYPE_VIEW_LOCATE_INFO };
-    viewLocateInfo.viewConfigurationType = XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO;
-    viewLocateInfo.displayTime = frame_state.predictedDisplayTime;
-    viewLocateInfo.space = play_space;
-    result = xrLocateViews(session, &viewLocateInfo, &viewState, viewCapacityInput, &viewCapacityInput, views.data());
-
-    //Set the projection view to the pose and FOV for each eye
-    for (uint16_t i = 0; i < views.size(); i++) {
-        projection_views[i].pose = views[i].pose;
-        projection_views[i].fov = views[i].fov;
-
-        per_view_data[i].position = glm::vec3(views[i].pose.position.x, views[i].pose.position.y, views[i].pose.position.z);
-        per_view_data[i].view_matrix = glm::inverse(parse_OpenXR_pose_to_glm(views[i].pose));
-        per_view_data[i].projection_matrix = parse_OpenXR_projection_to_glm(views[i].fov, z_near, z_far);
-
-        per_view_data[i].view_projection_matrix = per_view_data[i].projection_matrix * per_view_data[i].view_matrix;
-    }
-
-    if ((viewState.viewStateFlags & XR_VIEW_STATE_POSITION_VALID_BIT) == 0 ||
-        (viewState.viewStateFlags & XR_VIEW_STATE_ORIENTATION_VALID_BIT) == 0) {
-        return;  // There is no valid tracking poses for the views.
-    }
 }
 
 void OpenXRContext::acquire_swapchain(int swapchain_index)
@@ -1086,6 +1060,35 @@ void OpenXRContext::end_frame()
     {
         spdlog::trace("Failed to end frame!");
         return;
+    }
+}
+
+void OpenXRContext::update()
+{
+    XrViewState viewState{ XR_TYPE_VIEW_STATE };
+    uint32_t viewCapacityInput = (uint32_t)views.size();
+
+    XrViewLocateInfo viewLocateInfo{ XR_TYPE_VIEW_LOCATE_INFO };
+    viewLocateInfo.viewConfigurationType = XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO;
+    viewLocateInfo.displayTime = frame_state.predictedDisplayTime;
+    viewLocateInfo.space = play_space;
+    XrResult result = xrLocateViews(session, &viewLocateInfo, &viewState, viewCapacityInput, &viewCapacityInput, views.data());
+
+    //Set the projection view to the pose and FOV for each eye
+    for (uint16_t i = 0; i < views.size(); i++) {
+        projection_views[i].pose = views[i].pose;
+        projection_views[i].fov = views[i].fov;
+
+        per_view_data[i].position = glm::vec3(views[i].pose.position.x, views[i].pose.position.y, views[i].pose.position.z);
+        per_view_data[i].view_matrix = glm::inverse(parse_OpenXR_pose_to_glm(views[i].pose));
+        per_view_data[i].projection_matrix = parse_OpenXR_projection_to_glm(views[i].fov, z_near, z_far);
+
+        per_view_data[i].view_projection_matrix = per_view_data[i].projection_matrix * per_view_data[i].view_matrix;
+    }
+
+    if ((viewState.viewStateFlags & XR_VIEW_STATE_POSITION_VALID_BIT) == 0 ||
+        (viewState.viewStateFlags & XR_VIEW_STATE_ORIENTATION_VALID_BIT) == 0) {
+        return;  // There is no valid tracking poses for the views.
     }
 }
 

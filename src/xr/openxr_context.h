@@ -118,6 +118,8 @@ struct OpenXRContext {
     void release_swapchain(int swapchain_index);
     void end_frame();
 
+    void update();
+
     /*
     * Debug & Errors
     */
