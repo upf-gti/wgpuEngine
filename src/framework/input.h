@@ -105,6 +105,7 @@ class Input {
 	static bool use_mirror_screen;
 
     static bool trigger_released[HAND_COUNT];
+    static bool grab_released[HAND_COUNT];
 
 #ifdef XR_SUPPORT
 	static XrInputData xr_data;
@@ -164,6 +165,7 @@ public:
 	*/
 
 	static float get_grab_value(uint8_t controller);
+    static bool was_grab_pressed(uint8_t controller);
 
 	/*
 	*	Triggers

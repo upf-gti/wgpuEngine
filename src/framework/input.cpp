@@ -13,6 +13,7 @@ uint8_t Input::prev_keystate[GLFW_KEY_LAST];
 bool Input::use_glfw = false;
 
 bool Input::trigger_released[HAND_COUNT] = {true, true};
+bool Input::grab_released[HAND_COUNT] = {true, true};
 
 GLFWwindow* Input::window = nullptr;
 bool Input::use_mirror_screen;
@@ -128,8 +129,13 @@ void Input::update(float delta_time)
 
     for (int i = 0; i < HAND_COUNT; ++i)
     {
-        if (get_trigger_value(i) == 0.f)
+        if (get_trigger_value(i) == 0.f) {
             trigger_released[i] = true;
+        }
+
+        if (get_grab_value(i) == 0.f) {
+            grab_released[i] = true;
+        }
     }
 
 #endif
@@ -273,6 +279,19 @@ bool Input::was_trigger_pressed(uint8_t controller)
 
     bool value = openxr_context && trigger_released[controller] && (xr_data.triggerValueState[controller].currentState > 0.5f);
     if (value) trigger_released[controller] = false;
+    return value;
+
+#else
+    return false;
+#endif
+}
+
+bool Input::was_grab_pressed(uint8_t controller)
+{
+#ifdef XR_SUPPORT
+
+    bool value = openxr_context && grab_released[controller] && (xr_data.grabState[controller].currentState > 0.5f);
+    if (value) grab_released[controller] = false;
     return value;
 
 #else

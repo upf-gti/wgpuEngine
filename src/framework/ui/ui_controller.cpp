@@ -45,7 +45,7 @@ namespace ui {
 
 	bool Controller::is_active()
 	{
-        return workspace.hand == HAND_RIGHT || Input::get_grab_value(workspace.hand) > 0.5f;
+        return workspace.hand == HAND_RIGHT || Input::is_button_pressed(XR_BUTTON_X) > 0.5f;
 	}
 
 	void Controller::render()
@@ -79,7 +79,6 @@ namespace ui {
 
 		// Update workspace
 
-		glm::mat4x4 workspace_transform = 
         global_transform = Input::get_controller_pose(hand, pose);
         global_transform = glm::rotate(global_transform, glm::radians(120.f), glm::vec3(1.f, 0.f, 0.f));
 

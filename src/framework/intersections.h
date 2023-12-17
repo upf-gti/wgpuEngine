@@ -2,6 +2,8 @@
 
 #include "includes.h"
 
+#include "framework/aabb.h"
+
 #define EPSILON 0.0001f
 
 namespace intersection {
@@ -175,10 +177,13 @@ namespace intersection {
         return glm::abs(glm::length(point_in_plane - circle_origin)) < circle_radius;
     }
 
-    inline bool AABB_AABB_min_max(const glm::vec3& box1_min,
-                                  const glm::vec3& box1_max,
-                                  const glm::vec3& box2_min,
-                                  const glm::vec3& box2_max) {
+    inline bool AABB_AABB_min_max(const AABB& box1,  const AABB& box2)
+    {
+        glm::vec3 box1_min = box1.center - box1.half_size;
+        glm::vec3 box1_max = box1.center + box1.half_size;
+        glm::vec3 box2_min = box2.center - box2.half_size;
+        glm::vec3 box2_max = box2.center + box2.half_size;
+
         return glm::all(glm::lessThanEqual(box1_min, box2_max)) && glm::all(glm::greaterThanEqual(box1_max, box2_min));
     }
 }
