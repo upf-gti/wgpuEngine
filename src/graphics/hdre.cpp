@@ -237,6 +237,15 @@ bool HDRE::load(const char* filename)
 	return true;
 }
 
+bool HDRE::load_binary(const unsigned char* bytes)
+{
+    memcpy((char*)&header, bytes, sizeof(sHDREHeader));
+
+    spdlog::info("HDRE header loaded v{}", header.version);
+
+    return true;
+}
+
 bool HDRE::clean()
 {
 	if (!data)

@@ -69,6 +69,7 @@ public:
 	static std::map<std::string, HDRE*> sHDRELoaded;
 
 	bool load(const char* filename);
+    bool load_binary(const unsigned char* bytes);
 
 	static HDRE* Get(const char* filename);
     void setName(const char* name);
