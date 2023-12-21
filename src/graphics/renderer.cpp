@@ -12,6 +12,7 @@
 
 #include "graphics/mesh.h"
 #include "graphics/texture.h"
+#include "framework/camera/camera.h"
 
 #include <algorithm>
 
@@ -351,5 +352,9 @@ void Renderer::resize_window(int width, int height)
     if (!is_openxr_available) {
         webgpu_context.render_width = webgpu_context.screen_width;
         webgpu_context.render_height = webgpu_context.screen_height;
+
+        if (camera) {
+            camera->set_perspective(glm::radians(45.0f), webgpu_context.render_width / static_cast<float>(webgpu_context.render_height), z_near, z_far);
+        }
     }
 }
