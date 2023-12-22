@@ -43,16 +43,14 @@ float** HDRE::getFaces(int level)
 	return this->pixels[level];
 }
 
-void HDRE::setName(const char* name)
+void HDRE::setName(const std::string& name)
 {
     sHDRELoaded[name] = this;
     this->name = name;
 }
 
-HDRE* HDRE::Get(const char* filename)
+HDRE* HDRE::Get(const std::string& filename)
 {
-	assert(filename);
-
 	auto it = sHDRELoaded.find(filename);
 	if (it != sHDRELoaded.end())
 		return it->second;
@@ -120,40 +118,47 @@ void flipY(float** data, unsigned int size, short num_channels, bool flip_sides)
 		flipYsides(data, size, num_channels);
 }
 
-bool HDRE::load(const char* filename)
+bool HDRE::process_header()
 {
-	assert(filename);
+    if (header.type != 3)
+    {
+        spdlog::error("ArrayType not supported. Please export in Float32Array");
+        return false;
+    }
 
+
+    if (header.version < 2.0)
+    {
+        spdlog::error("Versions below 2.0 are no longer supported. Please, reexport the environment");
+        return false;
+    }
+
+    type = header.type;
+    version = header.version;
+    numChannels = header.numChannels;
+    bitsPerChannel = header.bitsPerChannel;
+    maxLuminance = header.maxLuminance;
+
+    if (header.includesSH)
+    {
+        numCoeffs = header.numCoeffs;
+        coeffs = header.coeffs;
+    }
+
+    return true;
+}
+
+bool HDRE::load(const std::string& filename)
+{
     std::ifstream f(filename, std::ios::binary);
 	if (!f.good())
 		return false;
 
 	f.read((char*)&header, sizeof(sHDREHeader));
 
-	if (header.type != 3)
-	{
-		spdlog::error("ArrayType not supported. Please export in Float32Array");
-		return false; 
-	}
+    bool ok = process_header();
 
-	version = header.version;
-
-	if (version < 2.0)
-	{
-        spdlog::error("Versions below 2.0 are no longer supported. Please, reexport the environment");
-		return false;
-	}
-
-	numChannels = header.numChannels;
-	bitsPerChannel = header.bitsPerChannel;
-	maxLuminance = header.maxLuminance;
-	type = header.type;
-
-	if (header.includesSH)
-    {
-        numCoeffs = header.numCoeffs;
-        coeffs = header.coeffs;
-    }
+    if (!ok) return false;
 
     int width = this->width = header.width;
     int height = this->height = header.height;
@@ -235,15 +240,6 @@ bool HDRE::load(const char* filename)
     spdlog::info("HDRE loaded: {} (v{})", filename, version);
 
 	return true;
-}
-
-bool HDRE::load_binary(const unsigned char* bytes)
-{
-    memcpy((char*)&header, bytes, sizeof(sHDREHeader));
-
-    spdlog::info("HDRE header loaded v{}", header.version);
-
-    return true;
 }
 
 bool HDRE::clean()

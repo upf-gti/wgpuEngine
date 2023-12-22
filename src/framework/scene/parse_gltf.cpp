@@ -62,32 +62,35 @@ void create_material_texture(tinygltf::Model& model, int tex_index, Texture** te
         (*texture)->load_from_data(image.uri, image.width, image.height, image.image.data(), WGPUTextureFormat_RGBA8Unorm);
     }
 
+    if (tex.sampler != -1)
+    {
+        tinygltf::Sampler& sampler = model.samplers[tex.sampler];
 
-    tinygltf::Sampler& sampler = model.samplers[tex.sampler];
+        switch (sampler.wrapS) {
+        case TINYGLTF_TEXTURE_WRAP_REPEAT:
+            (*texture)->set_wrap_u(WGPUAddressMode_Repeat);
+            break;
+        case TINYGLTF_TEXTURE_WRAP_MIRRORED_REPEAT:
+            (*texture)->set_wrap_u(WGPUAddressMode_MirrorRepeat);
+            break;
+        case TINYGLTF_TEXTURE_WRAP_CLAMP_TO_EDGE:
+            (*texture)->set_wrap_u(WGPUAddressMode_ClampToEdge);
+            break;
+        }
 
-    switch (sampler.wrapS) {
-    case TINYGLTF_TEXTURE_WRAP_REPEAT:
-        (*texture)->set_wrap_u(WGPUAddressMode_Repeat);
-        break;
-    case TINYGLTF_TEXTURE_WRAP_MIRRORED_REPEAT:
-        (*texture)->set_wrap_u(WGPUAddressMode_MirrorRepeat);
-        break;
-    case TINYGLTF_TEXTURE_WRAP_CLAMP_TO_EDGE:
-        (*texture)->set_wrap_u(WGPUAddressMode_ClampToEdge);
-        break;
+        switch (sampler.wrapT) {
+        case TINYGLTF_TEXTURE_WRAP_REPEAT:
+            (*texture)->set_wrap_v(WGPUAddressMode_Repeat);
+            break;
+        case TINYGLTF_TEXTURE_WRAP_MIRRORED_REPEAT:
+            (*texture)->set_wrap_v(WGPUAddressMode_MirrorRepeat);
+            break;
+        case TINYGLTF_TEXTURE_WRAP_CLAMP_TO_EDGE:
+            (*texture)->set_wrap_v(WGPUAddressMode_ClampToEdge);
+            break;
+        }
     }
 
-    switch (sampler.wrapT) {
-    case TINYGLTF_TEXTURE_WRAP_REPEAT:
-        (*texture)->set_wrap_v(WGPUAddressMode_Repeat);
-        break;
-    case TINYGLTF_TEXTURE_WRAP_MIRRORED_REPEAT:
-        (*texture)->set_wrap_v(WGPUAddressMode_MirrorRepeat);
-        break;
-    case TINYGLTF_TEXTURE_WRAP_CLAMP_TO_EDGE:
-        (*texture)->set_wrap_v(WGPUAddressMode_ClampToEdge);
-        break;
-    }
 }
 
 void read_mesh(tinygltf::Model& model, tinygltf::Mesh& mesh, Entity* entity) {

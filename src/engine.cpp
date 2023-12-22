@@ -5,6 +5,8 @@
 
 #include "spdlog/spdlog.h"
 
+Engine* Engine::instance = nullptr;
+
 void resize_callback(GLFWwindow* window, int width, int height)
 {
     Engine* engine = reinterpret_cast<Engine*>(glfwGetWindowUserPointer(window));
@@ -17,6 +19,11 @@ void resize_callback(GLFWwindow* window, int width, int height)
     if (!engine->get_openxr_available()) {
         engine->resize_window(width, height);
     }
+}
+
+Engine::Engine()
+{
+    instance = this;
 }
 
 int Engine::initialize(Renderer* renderer, GLFWwindow* window, bool use_glfw, bool use_mirror_screen)

@@ -20,6 +20,10 @@ class Engine {
 
 public:
 
+    static Engine* instance;
+
+    Engine();
+
     virtual int initialize(Renderer* renderer, GLFWwindow *window, bool use_glfw, bool use_mirror_screen);
     virtual void clean();
 

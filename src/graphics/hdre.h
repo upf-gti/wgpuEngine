@@ -45,6 +45,8 @@ private:
 	float* faces_array[N_LEVELS];
 
 	sHDREHeader header;
+
+    bool process_header();
 	bool clean();
 
 public:
@@ -68,11 +70,10 @@ public:
 	// class manager
 	static std::map<std::string, HDRE*> sHDRELoaded;
 
-	bool load(const char* filename);
-    bool load_binary(const unsigned char* bytes);
+	bool load(const std::string& filename);
 
-	static HDRE* Get(const char* filename);
-    void setName(const char* name);
+	static HDRE* Get(const std::string& filename);
+    void setName(const std::string& name);
 
 	// useful methods
 	float getMaxLuminance() { return this->header.maxLuminance; };

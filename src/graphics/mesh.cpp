@@ -235,7 +235,7 @@ void Mesh::create_rounded_box(float w, float h, float d, float c, const glm::vec
             int offset = 0;
 
             glm::vec3 centerPosition = xPos * w * normals::pX + yPos * h * normals::pY + zPos * d * normals::pZ;
-            glm::vec3 vy0 = (1.f - fabsf(xPos)) * normals::pX + (1.f - fabsf(yPos)) * normals::pY + (1.f - fabsf(zPos)) * normals::pZ;//extrusion direction
+            glm::vec3 vy0 = (1.f - std::abs(xPos)) * normals::pX + (1.f - std::abs(yPos)) * normals::pY + (1.f - std::abs(zPos)) * normals::pZ;//extrusion direction
 
             glm::vec3 vx0 = glm::vec3(vy0.y, vy0.z, vy0.x) ;    // anti permute
             glm::vec3 vz0 = glm::vec3(vy0.z, vy0.x, vy0.y);     // permute
@@ -244,7 +244,7 @@ void Mesh::create_rounded_box(float w, float h, float d, float c, const glm::vec
             if (glm::dot(vz0, centerPosition) < 0.f) vz0 = -vz0;
             if (glm::dot(glm::cross(vx0, vy0), vz0) < 0.f) vy0 = -vy0;
 
-            float height = (1.f - fabsf(xPos)) * w + (1.f - fabsf(yPos)) * h + (1.f - fabsf(zPos)) * d;
+            float height = (1.f - std::abs(xPos)) * w + (1.f - std::abs(yPos)) * h + (1.f - std::abs(zPos)) * d;
             height *= 2.f;
             glm::vec3 offsetPosition = centerPosition - 0.5f * height * vy0;
             int numSegHeight = 1;
