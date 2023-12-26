@@ -29,6 +29,7 @@ protected:
     WebGPUContext   webgpu_context;
 
     Camera* camera = nullptr;
+    Texture* irradiance_texture = nullptr;
 
     RendererStorage renderer_storage;
 
@@ -121,5 +122,8 @@ public:
     GLFWwindow* get_glfw_window() { return webgpu_context.window; };
 
     Camera* get_camera() { return camera; }
+
+    void set_irradiance_texture(Texture* texture);
+    Texture* get_irradiance_texture() { return irradiance_texture; }
 
 };

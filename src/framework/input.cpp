@@ -110,7 +110,7 @@ void Input::update(float delta_time)
     glfwPollEvents();
 
 	// Mouse  state
-	if (use_glfw) {
+	if (use_glfw && window) {
 		double x, y;
 		glfwGetCursorPos(window, &x, &y);
 		Input::mouse_delta.x = Input::mouse_position.x - static_cast<float>(x);

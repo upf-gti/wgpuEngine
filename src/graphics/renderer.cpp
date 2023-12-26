@@ -106,6 +106,10 @@ int Renderer::initialize(GLFWwindow* window, bool use_mirror_screen)
 
     RendererStorage::register_basic_meshes();
 
+    if (!irradiance_texture) {
+        irradiance_texture = RendererStorage::get_texture("data/textures/environments/sky.hdre");
+    }
+
     init_ibl_bind_group();
 
     return 0;
@@ -124,13 +128,20 @@ void Renderer::clean()
 
 void Renderer::init_ibl_bind_group()
 {
-    Texture* irradiance_texture = RendererStorage::get_texture("data/textures/environments/sky.hdre");
+    // delete if already created
+    if (std::holds_alternative<WGPUTextureView>(irradiance_texture_uniform.data)) {
+        wgpuTextureViewRelease(std::get<WGPUTextureView>(irradiance_texture_uniform.data));
+        wgpuSamplerRelease(std::get<WGPUSampler>(ibl_sampler_uniform.data));
+        wgpuBindGroupRelease(ibl_bind_group);
+    }
+    else {
+        // only created once
+        brdf_lut_uniform.data = webgpu_context.brdf_lut_texture->get_view();
+        brdf_lut_uniform.binding = 1;
+    }
 
     irradiance_texture_uniform.data = irradiance_texture->get_view();
     irradiance_texture_uniform.binding = 0;
-
-    brdf_lut_uniform.data = webgpu_context.brdf_lut_texture->get_view();
-    brdf_lut_uniform.binding = 1;
 
     ibl_sampler_uniform.data = webgpu_context.create_sampler(
         WGPUAddressMode_ClampToEdge,
@@ -357,4 +368,11 @@ void Renderer::resize_window(int width, int height)
             camera->set_perspective(glm::radians(45.0f), webgpu_context.render_width / static_cast<float>(webgpu_context.render_height), z_near, z_far);
         }
     }
+}
+
+void Renderer::set_irradiance_texture(Texture* texture)
+{
+    irradiance_texture = texture;
+
+    init_ibl_bind_group();
 }
