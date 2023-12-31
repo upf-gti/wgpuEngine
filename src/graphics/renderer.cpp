@@ -168,11 +168,11 @@ void Renderer::prepare_instancing()
 
         // Sort render_list
         std::sort(render_list[i].begin(), render_list[i].end(), [](auto& lhs, auto& rhs) {
-            auto& lhs_mat = lhs.entity_mesh->get_material();
-            auto& rhs_mat = rhs.entity_mesh->get_material();
+            auto& lhs_mat = lhs.surface.material;
+            auto& rhs_mat = rhs.surface.material;
 
-            auto* lhs_mesh = lhs.entity_mesh->get_mesh();
-            auto* rhs_mesh = rhs.entity_mesh->get_mesh();
+            auto* lhs_mesh = lhs.surface.mesh;
+            auto* rhs_mesh = rhs.surface.mesh;
 
             bool equal_priority = lhs_mat.priority == rhs_mat.priority;
             bool equal_shader = lhs_mat.shader == rhs_mat.shader;
@@ -204,11 +204,13 @@ void Renderer::prepare_instancing()
             uint32_t repeats = 0;
             for (uint32_t j = 0; j < render_list[i].size(); ++j) {
 
-                EntityMesh* entity_mesh = render_list[i][j].entity_mesh;
-                Material& material = entity_mesh->get_material();
+                sRenderData& render_data = render_list[i][j];
+
+                EntityMesh* entity_mesh = render_data.surface.entity_mesh_ref;
+                Material& material = render_data.surface.material;
 
                 // Repeated EntityMesh, must be instanced
-                if (prev_mesh == entity_mesh->get_mesh() && prev_shader == material.shader &&
+                if (prev_mesh == render_data.surface.mesh && prev_shader == material.shader &&
                     prev_diffuse == material.diffuse_texture &&
                     prev_normal == material.normal_texture &&
                     prev_metallic_roughness == material.metallic_roughness_texture &&
@@ -225,7 +227,7 @@ void Renderer::prepare_instancing()
                     repeats = 1;
                 }
 
-                prev_mesh = entity_mesh->get_mesh();
+                prev_mesh = render_data.surface.mesh;
                 prev_shader = material.shader;
                 prev_diffuse = material.diffuse_texture;
                 prev_normal = material.normal_texture;
@@ -260,7 +262,7 @@ void Renderer::prepare_instancing()
             for (uint32_t j = 0; j < render_list[i].size(); ) {
 
                 sRenderData& render_data = render_list[i][j];
-                Shader* shader = render_data.entity_mesh->get_material().shader;
+                Shader* shader = render_data.surface.material.shader;
 
                 if (bind_groups[i]) {
                     wgpuBindGroupRelease(bind_groups[i]);
@@ -288,9 +290,9 @@ void Renderer::render(WGPURenderPassEncoder render_pass, const WGPUBindGroup& re
         for (int j = 0; j < render_list[i].size(); ) {
 
             sRenderData& render_data = render_list[i][j];
-            EntityMesh* entity_mesh = render_data.entity_mesh;
-            Mesh* mesh = entity_mesh->get_mesh();
-            Material& material = entity_mesh->get_material();
+            EntityMesh* entity_mesh = render_data.surface.entity_mesh_ref;
+            Mesh* mesh = render_data.surface.mesh;
+            Material& material = render_data.surface.material;
 
             Pipeline* pipeline = material.shader->get_pipeline();
             if (pipeline != prev_pipeline) {
@@ -336,16 +338,25 @@ void Renderer::render(WGPURenderPassEncoder render_pass, const WGPUBindGroup& re
 
 void Renderer::add_renderable(EntityMesh* entity_mesh)
 {
-    const Material& material = entity_mesh->get_material();
+    const std::vector<Surface>& surfaces = entity_mesh->get_surfaces();
 
-    if (material.flags & MATERIAL_TRANSPARENT) {
-        render_list[RENDER_LIST_ALPHA].push_back({ entity_mesh, 1 });
-    } else
-    if (material.flags & MATERIAL_UI) {
-        render_list[RENDER_LIST_UI].push_back({ entity_mesh, 1 });
-    }
-    else {
-        render_list[RENDER_LIST_OPAQUE].push_back({ entity_mesh, 1 });
+    for (const Surface& surface : surfaces) {
+
+        const Material& material = surface.material;
+
+        if (material.flags & MATERIAL_DIFFUSE || material.flags & MATERIAL_PBR) {
+            RendererStorage::instance->register_material(&webgpu_context, material);
+        }
+
+        if (material.flags & MATERIAL_TRANSPARENT) {
+            render_list[RENDER_LIST_ALPHA].push_back({ surface, 1 });
+        } else
+        if (material.flags & MATERIAL_UI) {
+            render_list[RENDER_LIST_UI].push_back({ surface, 1 });
+        }
+        else {
+            render_list[RENDER_LIST_OPAQUE].push_back({ surface, 1 });
+        }
     }
 }
 

@@ -7,6 +7,7 @@
 #include "graphics/pipeline.h"
 #include "graphics/webgpu_context.h"
 #include "graphics/renderer_storage.h"
+#include "graphics/surface.h"
 
 #ifdef XR_SUPPORT
 #include "xr/openxr_context.h"
@@ -54,7 +55,7 @@ protected:
     };
 
     struct sRenderData {
-        EntityMesh* entity_mesh;
+        Surface surface;
         uint32_t repeat;
     };
 

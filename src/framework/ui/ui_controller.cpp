@@ -37,9 +37,9 @@ namespace ui {
         if (render_background)
         {
             background = new EntityMesh();
-            background->set_material_shader(RendererStorage::get_shader("data/shaders/mesh_color.wgsl"));
-            background->set_mesh(RendererStorage::get_mesh("quad"));
-            background->set_material_color(colors::RED);
+            background->add_surface({ RendererStorage::get_mesh("quad"), {}, background });
+            background->set_material_shader(0, RendererStorage::get_shader("data/shaders/mesh_color.wgsl"));
+            background->set_material_color(0, colors::RED);
         }
 	}
 
@@ -175,9 +175,9 @@ namespace ui {
 
 		// Render quad in local workspace position
         UIEntity* rect = new UIEntity(pos, size);
-		rect->set_material_shader(RendererStorage::get_shader("data/shaders/mesh_color.wgsl"));
-		rect->set_mesh(RendererStorage::get_mesh("quad"));
-        rect->set_material_color(color);
+        rect->add_surface({ RendererStorage::get_mesh("quad"), {}, rect });
+		rect->set_material_shader(0, RendererStorage::get_shader("data/shaders/mesh_color.wgsl"));
+        rect->set_material_color(0, color);
 		append_widget(rect, "ui_rect");
 		return rect;
 	}
@@ -222,15 +222,15 @@ namespace ui {
 
         // Icon 
         LabelWidget* m_icon = new LabelWidget(text, pos, glm::vec2(size.y, size.y));
+        m_icon->add_surface({ RendererStorage::get_mesh("quad"), {}, m_icon });
 
         if (j.count("texture") > 0)
         {
             std::string texture = j["texture"];
-            m_icon->set_material_diffuse(RendererStorage::get_texture(texture));
+            m_icon->set_material_diffuse(0, RendererStorage::get_texture(texture));
         }
 
-        m_icon->set_mesh(RendererStorage::get_mesh("quad"));
-        m_icon->set_material_shader(RendererStorage::get_shader("data/shaders/mesh_texture.wgsl"));
+        m_icon->set_material_shader(0, RendererStorage::get_shader("data/shaders/mesh_texture.wgsl"));
 
         m_icon->button = j.value("button", -1);
         m_icon->subtext = j.value("subtext", "");
@@ -279,9 +279,11 @@ namespace ui {
 
 		// Render quad in local workspace position
         ButtonWidget* e_button = new ButtonWidget(signal, pos, size, color);
-		e_button->set_mesh(RendererStorage::get_mesh("quad"));
-		e_button->set_material_shader(RendererStorage::get_shader(shader));
-		e_button->set_material_diffuse(RendererStorage::get_texture(texture));
+        e_button->add_surface({ RendererStorage::get_mesh("quad"), {}, e_button });
+		e_button->set_material_shader(0, RendererStorage::get_shader(shader));
+		e_button->set_material_diffuse(0, RendererStorage::get_texture(texture));
+        e_button->set_material_flag(0, MATERIAL_UI);
+        e_button->set_material_color(0, color);
 
         // Widget props
         e_button->is_color_button = is_color_button;
@@ -338,11 +340,12 @@ namespace ui {
             color = load_vec4(j["color"]);
 
 		SliderWidget* slider = new SliderWidget(signal, default_value, pos, size, color);
-        slider->set_mesh(RendererStorage::get_mesh("quad"));
-        slider->set_material_shader(RendererStorage::get_shader("data/shaders/ui/ui_slider.wgsl"));
-        slider->set_material_diffuse(RendererStorage::get_texture(
+        slider->add_surface({ RendererStorage::get_mesh("quad"), {}, slider });
+        slider->set_material_shader(0,RendererStorage::get_shader("data/shaders/ui/ui_slider.wgsl"));
+        slider->set_material_diffuse(0, RendererStorage::get_texture(
             (mode == "horizontal" ? "data/textures/slider.png" : "data/textures/circle_white.png")));
-        slider->set_material_color(color);
+        slider->set_material_color(0, color);
+        slider->set_material_flag(0, MATERIAL_UI);
         slider->set_mode(mode);
         slider->min_value = j.value("min", slider->min_value);
         slider->max_value = j.value("max", slider->max_value);
@@ -375,10 +378,11 @@ namespace ui {
         Color default_color = load_vec4(j.value("default", ""));
 
         ColorPickerWidget* picker = new ColorPickerWidget(signal, pos, size, default_color);
-        picker->set_mesh(RendererStorage::get_mesh("quad"));
-        picker->set_material_shader(RendererStorage::get_shader("data/shaders/ui/ui_color_picker.wgsl"));
-        picker->set_material_diffuse(RendererStorage::get_texture("data/textures/circle_white.png"));
-        picker->set_material_color(Color(0.175f));
+        picker->add_surface({ RendererStorage::get_mesh("quad"), {}, picker });
+        picker->set_material_shader(0,RendererStorage::get_shader("data/shaders/ui/ui_color_picker.wgsl"));
+        picker->set_material_diffuse(0, RendererStorage::get_texture("data/textures/circle_white.png"));
+        picker->set_material_color(0, Color(0.175f));
+        picker->set_material_flag(0, MATERIAL_UI);
         picker->m_layer = static_cast<uint8_t>(layout_iterator.y);
         ((Entity*)picker)->set_process_children(true);
 
@@ -411,9 +415,11 @@ namespace ui {
 
         {
             ButtonWidget* mark = new ButtonWidget(widget->get_name() + "@mark", {0.f, 0.f}, {0.f, 0.f}, colors::WHITE);
-            mark->set_mesh(RendererStorage::get_mesh("quad"));
-            mark->set_material_shader(RendererStorage::get_shader("data/shaders/ui/ui_button.wgsl"));
-            mark->set_material_diffuse(RendererStorage::get_texture("data/textures/submenu_mark.png"));
+            mark->add_surface({ RendererStorage::get_mesh("quad"), {}, mark });
+            mark->set_material_shader(0, RendererStorage::get_shader("data/shaders/ui/ui_button.wgsl"));
+            mark->set_material_diffuse(0, RendererStorage::get_texture("data/textures/submenu_mark.png"));
+            mark->set_material_flag(0, MATERIAL_UI);
+            mark->set_material_color(0, colors::WHITE);
             ((ButtonWidget*)widget)->mark = mark;
         }
 
@@ -481,9 +487,10 @@ namespace ui {
         process_params(pos, size);
 
         WidgetGroup* group = new WidgetGroup(pos, size, number_of_widgets);
-        group->set_material_shader(RendererStorage::get_shader("data/shaders/ui/ui_group.wgsl"));
-        group->set_mesh(RendererStorage::get_mesh("quad"));
-        group->set_material_color(color);
+        group->add_surface({ RendererStorage::get_mesh("quad"), {}, group });
+        group->set_material_shader(0, RendererStorage::get_shader("data/shaders/ui/ui_group.wgsl"));
+        group->set_material_color(0, color);
+        group->set_material_flag(0, MATERIAL_UI);
         group->set_layer( static_cast<uint8_t>(layout_iterator.y) );
 
         append_widget(group, group_name);

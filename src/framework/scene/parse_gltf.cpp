@@ -102,19 +102,21 @@ void read_mesh(tinygltf::Model& model, tinygltf::Mesh& mesh, Entity* entity) {
         return;
     }
 
-    Mesh* new_mesh = new Mesh();
-    std::vector<InterleavedData>& vertices = new_mesh->get_vertices();
-    entity_mesh->set_mesh(new_mesh);
-
-    Material& material = entity_mesh->get_material();
-
     glm::vec3 min_pos = { FLT_MAX, FLT_MAX, FLT_MAX };
     glm::vec3 max_pos = { -FLT_MAX, -FLT_MAX, -FLT_MAX };
 
     for (size_t primitive_idx = 0; primitive_idx < mesh.primitives.size(); ++primitive_idx) {
+
+        Mesh* new_mesh = new Mesh();
+        std::vector<InterleavedData>& vertices = new_mesh->get_vertices();
+
+        Surface surface = { new_mesh, {}, entity_mesh };
+
+        Material& material = surface.material;
+
         tinygltf::Primitive primitive = mesh.primitives[primitive_idx];
 
-        assert(mesh.primitives.size() == 1);
+        //assert(mesh.primitives.size() == 1);
         assert(primitive.mode == TINYGLTF_MODE_TRIANGLES);
 
         bool uses_indices = primitive.indices >= 0;
@@ -389,9 +391,11 @@ void read_mesh(tinygltf::Model& model, tinygltf::Mesh& mesh, Entity* entity) {
 
             Pipeline::register_render_pipeline(material.shader, color_target, description);
         }
-    }
 
-    new_mesh->create_vertex_buffer();
+        surface.mesh->create_vertex_buffer();
+
+        entity_mesh->add_surface(surface);
+    }
 };
 
 Entity* create_node_entity(tinygltf::Node& node) {

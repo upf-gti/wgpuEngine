@@ -8,12 +8,6 @@ TextEntity::TextEntity(const std::string& _text, glm::vec2 _box_size, bool _wrap
     text = _text;
     box_size = _box_size;
     wrap = _wrap;
-
-    material.shader = RendererStorage::get_shader("data/shaders/sdf_fonts.wgsl");
-
-    if (font) {
-        set_material_diffuse(font->textures[0]);
-    }
 }
 
 void TextEntity::update(float delta_time)
@@ -30,7 +24,7 @@ void TextEntity::append_char(glm::vec3 pos, Character& ch)
             .position = (pos + ch.vertices[k]) * size,
             .uv = ch.uvs[k] / glm::vec2(font->scaleW, font->scaleH),
             .normal = glm::vec3(0.f, 1.f, 0.f),
-            .color = material.color
+            .color = { 1.0f, 1.0f, 1.0f }
         });
 	}
 }
@@ -43,9 +37,9 @@ void TextEntity::generate_mesh()
         return;
 
     // Clear previous mesh
-    if (mesh) {
+    if (!surfaces.empty()) {
         vertices.clear();
-        delete mesh;
+        surfaces.clear();
     }
 
     float size = (float)font_scale / font->size;
@@ -104,8 +98,19 @@ void TextEntity::generate_mesh()
 
     }
 
-    mesh = new Mesh();
-    mesh->create_from_vertices(vertices);
+    Surface surface;
+    surface.mesh = new Mesh();
+    surface.mesh->create_from_vertices(vertices);
+
+    surface.material.shader = RendererStorage::get_shader("data/shaders/sdf_fonts.wgsl");
+
+    surface.entity_mesh_ref = this;
+
+    add_surface(surface);
+
+    if (font) {
+        set_material_diffuse(0, font->textures[0]);
+    }
 }
 
 int TextEntity::get_text_width(const std::string& text)

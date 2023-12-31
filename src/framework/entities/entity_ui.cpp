@@ -119,7 +119,6 @@ namespace ui {
 
         process_children = true;
         type = eWidgetType::GROUP;
-        set_material_flag(MATERIAL_UI);
 
         ui_data.num_group_items = n;
         auto webgpu_context = Renderer::instance->get_webgpu_context();
@@ -133,12 +132,11 @@ namespace ui {
     TextWidget::TextWidget(const std::string& _text, const glm::vec2& pos, float scale, const Color& color) : UIEntity(pos) {
 
         type = eWidgetType::TEXT;
-        set_material_flag(MATERIAL_UI);
 
         text_entity = new TextEntity(_text);
-        text_entity->set_material_color(color);
         text_entity->set_scale(scale);
         text_entity->generate_mesh();
+        text_entity->set_material_color(0, color);
     }
 
     void TextWidget::render()
@@ -180,8 +178,6 @@ namespace ui {
     ButtonWidget::ButtonWidget(const std::string& sg, const glm::vec2& p, const glm::vec2& s, const Color& c) : UIEntity(p, s), signal(sg), color(c) {
 
         type = eWidgetType::BUTTON;
-        set_material_flag(MATERIAL_UI);
-        set_material_color(color);
 
         auto webgpu_context = Renderer::instance->get_webgpu_context();
         RendererStorage::register_ui_widget(webgpu_context, RendererStorage::get_shader("data/shaders/ui/ui_button.wgsl"), this, ui_data, 3);
@@ -266,7 +262,6 @@ namespace ui {
         : UIEntity(p, s), signal(sg), current_value(v), color(c) {
 
         type = eWidgetType::SLIDER;
-        set_material_flag(MATERIAL_UI);
 
         auto webgpu_context = Renderer::instance->get_webgpu_context();
         RendererStorage::register_ui_widget(webgpu_context, RendererStorage::get_shader("data/shaders/ui/ui_slider.wgsl"), this, ui_data, 3);
@@ -348,7 +343,6 @@ namespace ui {
         : UIEntity(p, s), signal(sg), current_color(c)
     {
         type = eWidgetType::COLOR_PICKER;
-        set_material_flag(MATERIAL_UI);
 
         auto webgpu_context = Renderer::instance->get_webgpu_context();
         RendererStorage::register_ui_widget(webgpu_context, RendererStorage::get_shader("data/shaders/ui/ui_color_picker.wgsl"), this, ui_data, 3);

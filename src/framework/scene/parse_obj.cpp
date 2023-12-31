@@ -33,9 +33,9 @@ EntityMesh* parse_obj(const std::string& obj_path)
     EntityMesh* new_entity = new EntityMesh();
     Mesh* new_mesh = RendererStorage::get_mesh(obj_path);
 
-    new_entity->set_mesh(new_mesh);
+    Surface new_surface = { new_mesh, {}, new_entity };
 
-    Material& material = new_entity->get_material();
+    Material& material = new_surface.material;
 
     if (!materials.empty()) {
         if (materials[0].diffuse_texname.empty()) {
@@ -49,6 +49,8 @@ EntityMesh* parse_obj(const std::string& obj_path)
             material.flags |= MATERIAL_DIFFUSE;
         }
     }
+
+    new_entity->add_surface(new_surface);
 
     auto& vertices = new_mesh->get_vertices();
 

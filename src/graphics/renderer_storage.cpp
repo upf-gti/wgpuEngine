@@ -22,7 +22,7 @@ RendererStorage::RendererStorage()
     instance = this;
 }
 
-void RendererStorage::register_material(WebGPUContext* webgpu_context, Material& material)
+void RendererStorage::register_material(WebGPUContext* webgpu_context, const Material& material)
 {
     if (material_bind_groups.contains(material)) {
         return;
