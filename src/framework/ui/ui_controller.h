@@ -1,7 +1,10 @@
 #pragma once
+
 #include "framework/entities/entity_ui.h"
-#include "json_utils.h"
 #include "framework/colors.h"
+#include "framework/input.h"
+#include "json_utils.h"
+
 #include <variant>
 #include <functional>
 #include <map>
@@ -90,7 +93,7 @@ namespace ui {
 		*/
 
 		WorkSpaceData& get_workspace() { return workspace; };
-		void set_workspace(glm::vec2 _workspace_size, uint8_t _select_button = 0, uint8_t _root_pose = 1, uint8_t _hand = 0, uint8_t _select_hand = 1);
+		void set_workspace(glm::vec2 _workspace_size, uint8_t _select_button = 0, uint8_t _root_pose = POSE_AIM, uint8_t _hand = 0, uint8_t _select_hand = 1);
 		const glm::mat4x4& get_matrix() { return global_transform; };
 		bool is_active();
 
