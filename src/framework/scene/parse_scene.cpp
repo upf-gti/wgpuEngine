@@ -3,9 +3,11 @@
 #include "parse_obj.h"
 #include "parse_gltf.h"
 
+#include "framework/entities/entity_mesh.h"
+
 #include "spdlog/spdlog.h"
 
-void parse_scene(const std::string& scene_path, std::vector<Entity*>& entities)
+bool parse_scene(const std::string& scene_path, std::vector<Entity*>& entities)
 {
     std::string extension = scene_path.substr(scene_path.find_last_of(".") + 1);
 
@@ -13,14 +15,17 @@ void parse_scene(const std::string& scene_path, std::vector<Entity*>& entities)
 
     if (extension == "obj") {
         entities.push_back(parse_obj(scene_path));
+        return true;
     }
     else if (extension == "gltf" || extension == "glb") {
-        parse_gltf(scene_path, entities);
+        return parse_gltf(scene_path, entities);
     }
     else {
         spdlog::error("Scene extension .{} not supported", extension);
         assert(0);
     }
+
+    return false;
 }
 
 EntityMesh* parse_mesh(const std::string& mesh_path)

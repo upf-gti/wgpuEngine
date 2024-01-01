@@ -479,7 +479,7 @@ void parse_model_nodes(tinygltf::Model& model, tinygltf::Node& node, Entity* ent
     }
 };
 
-void parse_gltf(const std::string& gltf_path, std::vector<Entity*>& entities)
+bool parse_gltf(const std::string& gltf_path, std::vector<Entity*>& entities)
 {
     tinygltf::TinyGLTF loader;
     tinygltf::Model model;
@@ -492,14 +492,14 @@ void parse_gltf(const std::string& gltf_path, std::vector<Entity*>& entities)
     {
         if (!loader.LoadASCIIFromFile(&model, &err, &warn, gltf_path)) {
             spdlog::error("Could not load: {}", gltf_path);
-            return;
+            return false;
         }
     }
     else
     {
         if (!loader.LoadBinaryFromFile(&model, &err, &warn, gltf_path)) {
             spdlog::error("Could not load binary: {}", gltf_path);
-            return;
+            return false;
         }
     }
 
@@ -523,4 +523,6 @@ void parse_gltf(const std::string& gltf_path, std::vector<Entity*>& entities)
 
         entities.push_back(entity);
     }
+
+    return true;
 }

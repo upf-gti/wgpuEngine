@@ -5,6 +5,7 @@
 #include <framework/entities/entity_mesh.h>
 #include <framework/input.h>
 #include <framework/intersections.h>
+#include <framework/colors.h>
 #include <utils.h>
 
 #include <glm/gtx/euler_angles.hpp>
