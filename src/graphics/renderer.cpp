@@ -280,60 +280,68 @@ void Renderer::prepare_instancing()
     }
 }
 
-void Renderer::render(WGPURenderPassEncoder render_pass, const WGPUBindGroup& render_bind_group_camera)
+void Renderer::render_render_list(int list_index, WGPURenderPassEncoder render_pass, const WGPUBindGroup& render_bind_group_camera)
 {
-
     Pipeline* prev_pipeline = nullptr;
 
-    for (int i = 0; i < RENDER_LIST_SIZE; ++i) {
+    for (int i = 0; i < render_list[list_index].size(); ) {
 
-        for (int j = 0; j < render_list[i].size(); ) {
+        sRenderData& render_data = render_list[list_index][i];
+        EntityMesh* entity_mesh = render_data.surface.entity_mesh_ref;
+        Mesh* mesh = render_data.surface.mesh;
+        Material& material = render_data.surface.material;
 
-            sRenderData& render_data = render_list[i][j];
-            EntityMesh* entity_mesh = render_data.surface.entity_mesh_ref;
-            Mesh* mesh = render_data.surface.mesh;
-            Material& material = render_data.surface.material;
-
-            Pipeline* pipeline = material.shader->get_pipeline();
-            if (pipeline != prev_pipeline) {
-                pipeline->set(render_pass);
-            }
-
-            // Not initialized
-            if (mesh->get_vertex_count() == 0) {
-                spdlog::error("Skipping not initialized mesh");
-                continue;
-            }
-
-            uint8_t bind_group_index = 0;
-
-            // Set bind groups
-            wgpuRenderPassEncoderSetBindGroup(render_pass, bind_group_index++, bind_groups[i], 0, nullptr);
-            wgpuRenderPassEncoderSetBindGroup(render_pass, bind_group_index++, render_bind_group_camera, 0, nullptr);
-
-            if (material.flags & MATERIAL_DIFFUSE || material.flags & MATERIAL_PBR) {
-                wgpuRenderPassEncoderSetBindGroup(render_pass, bind_group_index++, renderer_storage.get_material_bind_group(material), 0, nullptr);
-            }
-
-            if (material.flags & MATERIAL_UI) {
-                wgpuRenderPassEncoderSetBindGroup(render_pass, bind_group_index++, renderer_storage.get_ui_widget_bind_group(entity_mesh), 0, nullptr);
-            }
-
-            if (material.flags & MATERIAL_PBR) {
-                wgpuRenderPassEncoderSetBindGroup(render_pass, 3, ibl_bind_group, 0, nullptr);
-            }
-
-            // Set vertex buffer while encoding the render pass
-            wgpuRenderPassEncoderSetVertexBuffer(render_pass, 0, mesh->get_vertex_buffer(), 0, mesh->get_byte_size());
-
-            // Submit drawcall
-            wgpuRenderPassEncoderDraw(render_pass, mesh->get_vertex_count(), render_data.repeat, 0, j);
-
-            prev_pipeline = pipeline;
-
-            j += render_data.repeat;
+        Pipeline* pipeline = material.shader->get_pipeline();
+        if (pipeline != prev_pipeline) {
+            pipeline->set(render_pass);
         }
+
+        // Not initialized
+        if (mesh->get_vertex_count() == 0) {
+            spdlog::error("Skipping not initialized mesh");
+            continue;
+        }
+
+        uint8_t bind_group_index = 0;
+
+        // Set bind groups
+        wgpuRenderPassEncoderSetBindGroup(render_pass, bind_group_index++, bind_groups[list_index], 0, nullptr);
+        wgpuRenderPassEncoderSetBindGroup(render_pass, bind_group_index++, render_bind_group_camera, 0, nullptr);
+
+        if (material.flags & MATERIAL_DIFFUSE || material.flags & MATERIAL_PBR) {
+            wgpuRenderPassEncoderSetBindGroup(render_pass, bind_group_index++, renderer_storage.get_material_bind_group(material), 0, nullptr);
+        }
+
+        if (material.flags & MATERIAL_UI) {
+            wgpuRenderPassEncoderSetBindGroup(render_pass, bind_group_index++, renderer_storage.get_ui_widget_bind_group(entity_mesh), 0, nullptr);
+        }
+
+        if (material.flags & MATERIAL_PBR) {
+            wgpuRenderPassEncoderSetBindGroup(render_pass, 3, ibl_bind_group, 0, nullptr);
+        }
+
+        // Set vertex buffer while encoding the render pass
+        wgpuRenderPassEncoderSetVertexBuffer(render_pass, 0, mesh->get_vertex_buffer(), 0, mesh->get_byte_size());
+
+        // Submit drawcall
+        wgpuRenderPassEncoderDraw(render_pass, mesh->get_vertex_count(), render_data.repeat, 0, i);
+
+        prev_pipeline = pipeline;
+
+        i += render_data.repeat;
     }
+}
+
+void Renderer::render_opaque(WGPURenderPassEncoder render_pass, const WGPUBindGroup& render_bind_group_camera)
+{
+    for (int i = 0; i < RENDER_LIST_SIZE - 1; ++i) {
+        render_render_list(i, render_pass, render_bind_group_camera);
+    }
+}
+
+void Renderer::render_transparent(WGPURenderPassEncoder render_pass, const WGPUBindGroup& render_bind_group_camera)
+{
+    render_render_list(RENDER_LIST_ALPHA, render_pass, render_bind_group_camera);
 }
 
 void Renderer::add_renderable(EntityMesh* entity_mesh)

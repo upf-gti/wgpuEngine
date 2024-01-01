@@ -66,6 +66,8 @@ protected:
         RENDER_LIST_SIZE
     };
 
+    void render_render_list(int list_index, WGPURenderPassEncoder render_pass, const WGPUBindGroup& render_bind_group_camera);
+
     std::vector<sUniformData> instance_data[RENDER_LIST_SIZE];
     Uniform	instance_data_uniform[RENDER_LIST_SIZE];
 
@@ -101,7 +103,8 @@ public:
     WGPUBindGroup get_ibl_bind_group() { return ibl_bind_group; }
 
     void prepare_instancing();
-    void render(WGPURenderPassEncoder render_pass, const WGPUBindGroup& render_bind_group_camera);
+    void render_opaque(WGPURenderPassEncoder render_pass, const WGPUBindGroup& render_bind_group_camera);
+    void render_transparent(WGPURenderPassEncoder render_pass, const WGPUBindGroup& render_bind_group_camera);
 
     bool get_openxr_available() { return is_openxr_available; }
     bool get_use_mirror_screen() { return use_mirror_screen; }
