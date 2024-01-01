@@ -14,7 +14,7 @@ class Mesh;
 
 struct PipelineDescription {
 
-    WGPUCullMode cull_mode = WGPUCullMode_None;
+    WGPUCullMode cull_mode = WGPUCullMode_Back;
     WGPUPrimitiveTopology topology = WGPUPrimitiveTopology_TriangleList;
 
     bool uses_depth_buffer  = true;

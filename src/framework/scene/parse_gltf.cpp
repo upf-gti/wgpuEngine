@@ -116,7 +116,6 @@ void read_mesh(tinygltf::Model& model, tinygltf::Mesh& mesh, Entity* entity) {
 
         tinygltf::Primitive primitive = mesh.primitives[primitive_idx];
 
-        //assert(mesh.primitives.size() == 1);
         assert(primitive.mode == TINYGLTF_MODE_TRIANGLES);
 
         bool uses_indices = primitive.indices >= 0;
@@ -297,15 +296,26 @@ void read_mesh(tinygltf::Model& model, tinygltf::Mesh& mesh, Entity* entity) {
 
         entity_mesh->set_aabb({ aabb_position, aabb_half_size });
 
-        if (primitive.material >= 0) {
+        material.flags |= MATERIAL_PBR;
 
-            material.flags |= MATERIAL_PBR;
+        WebGPUContext* webgpu_context = Renderer::instance->get_webgpu_context();
+        bool is_openxr_available = Renderer::instance->get_openxr_available();
+        WGPUTextureFormat swapchain_format = is_openxr_available ? webgpu_context->xr_swapchain_format : webgpu_context->swapchain_format;
+
+        PipelineDescription description = {};
+
+        WGPUColorTargetState color_target = {};
+        color_target.format = swapchain_format;
+        color_target.writeMask = WGPUColorWriteMask_All;
+
+        std::vector<std::string> define_specializations;
+
+        if (primitive.material >= 0) {
 
             tinygltf::Material& gltf_material = model.materials[primitive.material];
 
             const tinygltf::PbrMetallicRoughness& pbrMetallicRoughness = gltf_material.pbrMetallicRoughness;
 
-            std::vector<std::string> define_specializations;
             
             if (pbrMetallicRoughness.baseColorTexture.index >= 0) {
                 create_material_texture(model, pbrMetallicRoughness.baseColorTexture.index, &material.diffuse_texture);
@@ -344,17 +354,7 @@ void read_mesh(tinygltf::Model& model, tinygltf::Mesh& mesh, Entity* entity) {
                 define_specializations.push_back("USE_SAMPLER");
             }
 
-            WebGPUContext* webgpu_context = Renderer::instance->get_webgpu_context();
-            bool is_openxr_available = Renderer::instance->get_openxr_available();
-            WGPUTextureFormat swapchain_format = is_openxr_available ? webgpu_context->xr_swapchain_format : webgpu_context->swapchain_format;
-
-            PipelineDescription description = {};
-
             description.cull_mode = gltf_material.doubleSided ? WGPUCullMode_None : WGPUCullMode_Back;
-
-            WGPUColorTargetState color_target = {};
-            color_target.format = swapchain_format;
-            color_target.writeMask = WGPUColorWriteMask_All;
 
             if (gltf_material.alphaMode == "OPAQUE") {
                 define_specializations.push_back("ALPHA_OPAQUE");
@@ -386,11 +386,17 @@ void read_mesh(tinygltf::Model& model, tinygltf::Mesh& mesh, Entity* entity) {
                 material.flags |= MATERIAL_ALPHA_MASK;
                 define_specializations.push_back("ALPHA_MASK");
             }
-
-            material.shader = RendererStorage::get_shader("data/shaders/mesh_pbr.wgsl", define_specializations);
-
-            Pipeline::register_render_pipeline(material.shader, color_target, description);
         }
+        else {
+            // create default material
+            material.color = glm::vec4(1.0f);
+            material.roughness = 1.0f;
+            material.metalness = 0.0f;
+        }
+
+        material.shader = RendererStorage::get_shader("data/shaders/mesh_pbr.wgsl", define_specializations);
+
+        Pipeline::register_render_pipeline(material.shader, color_target, description);
 
         surface.mesh->create_vertex_buffer();
 

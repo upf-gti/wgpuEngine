@@ -45,7 +45,7 @@ namespace ui {
 
 	bool Controller::is_active()
 	{
-        return workspace.hand == HAND_RIGHT || Input::is_button_pressed(XR_BUTTON_X) > 0.5f;
+        return workspace.hand == HAND_RIGHT || Input::is_button_pressed(XR_BUTTON_X);
 	}
 
 	void Controller::render()

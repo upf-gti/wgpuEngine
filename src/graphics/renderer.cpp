@@ -344,6 +344,10 @@ void Renderer::add_renderable(EntityMesh* entity_mesh)
 
         const Material& material = surface.material;
 
+        if (!material.shader) {
+            continue;
+        }
+
         if (material.flags & MATERIAL_DIFFUSE || material.flags & MATERIAL_PBR) {
             RendererStorage::instance->register_material(&webgpu_context, material);
         }
