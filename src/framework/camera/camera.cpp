@@ -3,7 +3,7 @@
 #include "framework/input.h"
 #include "framework/entities/entity_mesh.h"
 
-#include "utils.h"
+#include "framework/utils/utils.h"
 
 #include "glm/gtc/matrix_transform.hpp"
 

@@ -80,6 +80,7 @@ WGPU_SOURCES_APPEND(${WGPU_DIR_SOURCES}/framework/camera)
 WGPU_SOURCES_APPEND(${WGPU_DIR_SOURCES}/framework/entities)
 WGPU_SOURCES_APPEND(${WGPU_DIR_SOURCES}/framework/scene)
 WGPU_SOURCES_APPEND(${WGPU_DIR_SOURCES}/framework/ui)
+WGPU_SOURCES_APPEND(${WGPU_DIR_SOURCES}/framework/utils)
 WGPU_SOURCES_APPEND(${WGPU_DIR_SOURCES}/graphics)
 WGPU_SOURCES_APPEND(${WGPU_DIR_SOURCES}/graphics/debug)
 
@@ -151,5 +152,26 @@ target_include_directories(${PROJECT_NAME} PUBLIC ${WGPU_DIR_LIBS}/tiny_gltf)
 add_subdirectory(libraries/spdlog)
 target_link_libraries(${PROJECT_NAME} PUBLIC spdlog::spdlog_header_only)
 set_property(TARGET spdlog PROPERTY FOLDER "External/spdlog")
+
+# imgui
+add_library(imgui STATIC
+    ${WGPU_DIR_LIBS}/imgui/imgui.cpp
+    ${WGPU_DIR_LIBS}/imgui/imgui_demo.cpp
+    ${WGPU_DIR_LIBS}/imgui/imgui_draw.cpp
+    ${WGPU_DIR_LIBS}/imgui/imgui_widgets.cpp
+    ${WGPU_DIR_LIBS}/imgui/imgui_tables.cpp
+    ${WGPU_DIR_LIBS}/imgui/backends/imgui_impl_glfw.cpp
+    ${WGPU_DIR_LIBS}/imgui/backends/imgui_impl_wgpu.cpp
+    ${WGPU_DIR_LIBS}/imgui/imconfig.h
+    ${WGPU_DIR_LIBS}/imgui/imgui.h
+    ${WGPU_DIR_LIBS}/imgui/imgui_internal.h
+    ${WGPU_DIR_LIBS}/imgui/imstb_rectpack.h
+    ${WGPU_DIR_LIBS}/imgui/imstb_textedit.h
+    ${WGPU_DIR_LIBS}/imgui/imstb_truetype.h
+)
+
+target_link_libraries(imgui PUBLIC glfw webgpu)
+target_include_directories(imgui PUBLIC ${WGPU_DIR_LIBS}/imgui)
+target_link_libraries(${PROJECT_NAME} PUBLIC imgui)
 
 target_copy_webgpu_binaries(${PROJECT_NAME})

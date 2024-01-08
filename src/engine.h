@@ -2,7 +2,7 @@
 
 #include <GLFW/glfw3.h>
 
-#include "utils.h"
+#include "framework/utils/utils.h"
 #include "graphics/renderer.h"
 
 class FileWatcher;

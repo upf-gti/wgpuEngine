@@ -1,7 +1,7 @@
 #include "flyover_camera.h"
 
 #include "framework/input.h"
-#include "utils.h"
+#include "framework/utils/utils.h"
 
 #include "glm/gtx/rotate_vector.hpp"
 #include "glm/gtx/norm.hpp"

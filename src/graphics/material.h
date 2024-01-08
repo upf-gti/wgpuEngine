@@ -3,7 +3,7 @@
 #include "glm/glm.hpp"
 #include "glm/gtx/hash.hpp"
 
-#include "utils.h"
+#include "framework/utils/utils.h"
 
 class Shader;
 class Texture;

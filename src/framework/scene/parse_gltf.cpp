@@ -11,7 +11,7 @@
 
 #include <glm/gtx/quaternion.hpp>
 
-#include "utils.h"
+#include "framework/utils/utils.h"
 #include "graphics/mesh.h"
 #include "graphics/texture.h"
 #include "graphics/shader.h"

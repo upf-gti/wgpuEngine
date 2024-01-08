@@ -4,9 +4,9 @@
 #include <graphics/shader.h>
 #include <framework/entities/entity_mesh.h>
 #include <framework/input.h>
-#include <framework/intersections.h>
+#include <framework/utils/intersections.h>
 #include <framework/colors.h>
-#include <utils.h>
+#include <framework/utils/utils.h>
 
 #include <glm/gtx/euler_angles.hpp>
 

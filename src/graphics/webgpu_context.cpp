@@ -1,5 +1,5 @@
 #include "webgpu_context.h"
-#include "utils.h"
+#include "framework/utils/utils.h"
 
 #ifdef __EMSCRIPTEN__
 #include <emscripten/emscripten.h>

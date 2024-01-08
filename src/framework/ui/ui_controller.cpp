@@ -1,8 +1,8 @@
 #include "ui_controller.h"
-#include "utils.h"
+#include "framework/utils/utils.h"
 #include "framework/input.h"
 #include "framework/entities/entity_ui.h"
-#include "framework/intersections.h"
+#include "framework/utils/intersections.h"
 #include "framework/entities/entity_text.h"
 #include "framework/scene/parse_scene.h"
 

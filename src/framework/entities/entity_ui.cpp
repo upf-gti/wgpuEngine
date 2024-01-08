@@ -1,7 +1,7 @@
 #include "entity_ui.h"
-#include "utils.h"
+#include "framework/utils/utils.h"
 #include "framework/ui/ui_controller.h"
-#include "framework/intersections.h"
+#include "framework/utils/intersections.h"
 #include "framework/input.h"
 #include "framework/entities/entity_text.h"
 #include "graphics/renderer.h"
@@ -378,7 +378,7 @@ namespace ui {
             float r = pi / 2.f;
             local_point = glm::mat2x2(cos(r), -sin(r), sin(r), cos(r)) * local_point;
             glm::vec2 polar = glm::vec2(atan2(local_point.y, local_point.x), glm::length(local_point));
-            float percent = (polar.x + pi) / (2.0 * pi);
+            float percent = (polar.x + pi) / (2.0f * pi);
             glm::vec3 hsv = glm::vec3(percent, 1., polar.y);
 
             current_color = glm::vec4(hsv2rgb(hsv), current_color.a);
