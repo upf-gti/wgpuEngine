@@ -4,7 +4,6 @@
 #include "entity_mesh.h"
 #include "graphics/font.h"
 #include "framework/colors.h"
-#include "graphics/mesh.h"
 
 class TextEntity : public EntityMesh {
 

@@ -59,7 +59,7 @@ namespace ui {
         const glm::vec2 position_to_world(const glm::vec2& workspace_size) { return m_position + workspace_size - m_scale;  };
         bool is_hovered(glm::vec3& intersection);
 
-        glm::mat4x4 get_global_model() override;
+        glm::mat4x4 get_global_model() const override;
 
 		void update(float delta_time) override;
 	};

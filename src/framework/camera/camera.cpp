@@ -93,7 +93,7 @@ void Camera::look_at_entity(Entity* entity)
     float distance = 0.5f;
 
     if (aabb.initialized()) {
-        distance = 3.0 * std::max(std::max(abs(aabb.half_size.x), abs(aabb.half_size.y)), abs(aabb.half_size.z));
+        distance = 3.0f * std::max(std::max(abs(aabb.half_size.x), abs(aabb.half_size.y)), abs(aabb.half_size.z));
     }
 
     look_at(aabb.center - distance * front, aabb.center, glm::vec3(0.0, 1.0, 0.0));

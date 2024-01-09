@@ -98,18 +98,15 @@ void TextEntity::generate_mesh()
 
     }
 
-    Surface surface;
-    surface.mesh = new Mesh();
-    surface.mesh->create_from_vertices(vertices);
+    Surface* surface = new Surface();
+    surface->create_from_vertices(vertices);
 
-    surface.material.shader = RendererStorage::get_shader("data/shaders/sdf_fonts.wgsl");
-
-    surface.entity_mesh_ref = this;
+    surface->set_material_shader(RendererStorage::get_shader("data/shaders/sdf_fonts.wgsl"));
 
     add_surface(surface);
 
     if (font) {
-        set_material_diffuse(0, font->textures[0]);
+        set_surface_material_diffuse(0, font->textures[0]);
     }
 }
 

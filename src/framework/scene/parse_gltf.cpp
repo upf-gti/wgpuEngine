@@ -12,7 +12,6 @@
 #include <glm/gtx/quaternion.hpp>
 
 #include "framework/utils/utils.h"
-#include "graphics/mesh.h"
 #include "graphics/texture.h"
 #include "graphics/shader.h"
 
@@ -107,12 +106,11 @@ void read_mesh(tinygltf::Model& model, tinygltf::Mesh& mesh, Entity* entity) {
 
     for (size_t primitive_idx = 0; primitive_idx < mesh.primitives.size(); ++primitive_idx) {
 
-        Mesh* new_mesh = new Mesh();
-        std::vector<InterleavedData>& vertices = new_mesh->get_vertices();
+        Surface* surface = new Surface();
 
-        Surface surface = { new_mesh, {}, entity_mesh };
+        Material& material = surface->get_material();
 
-        Material& material = surface.material;
+        std::vector<InterleavedData>& vertices = surface->get_vertices();
 
         tinygltf::Primitive primitive = mesh.primitives[primitive_idx];
 
@@ -382,7 +380,7 @@ void read_mesh(tinygltf::Model& model, tinygltf::Mesh& mesh, Entity* entity) {
                 description.blending_enabled = true;
             } else
             if (gltf_material.alphaMode == "MASK") {
-                material.alpha_mask = gltf_material.alphaCutoff;
+                material.alpha_mask = static_cast<float>(gltf_material.alphaCutoff);
                 material.flags |= MATERIAL_ALPHA_MASK;
                 define_specializations.push_back("ALPHA_MASK");
             }
@@ -398,7 +396,7 @@ void read_mesh(tinygltf::Model& model, tinygltf::Mesh& mesh, Entity* entity) {
 
         Pipeline::register_render_pipeline(material.shader, color_target, description);
 
-        surface.mesh->create_vertex_buffer();
+        surface->create_vertex_buffer();
 
         entity_mesh->add_surface(surface);
     }
@@ -486,9 +484,9 @@ bool parse_gltf(const std::string& gltf_path, std::vector<Entity*>& entities)
     std::string err;
     std::string warn;
 
-    std::string extension = gltf_path.substr(gltf_path.find_last_of(".") + 1);
+    std::filesystem::path path = std::filesystem::path(gltf_path);
 
-    if (extension == "gltf")
+    if (path.extension() == ".gltf")
     {
         if (!loader.LoadASCIIFromFile(&model, &err, &warn, gltf_path)) {
             spdlog::error("Could not load: {}", gltf_path);
@@ -512,6 +510,8 @@ bool parse_gltf(const std::string& gltf_path, std::vector<Entity*>& entities)
     }
 
     const tinygltf::Scene& scene = model.scenes[model.defaultScene];
+
+    int entity_name_idx = 0;
     for (size_t i = 0; i < scene.nodes.size(); ++i) {
         assert((scene.nodes[i] >= 0) && (scene.nodes[i] < model.nodes.size()));
 
@@ -520,6 +520,11 @@ bool parse_gltf(const std::string& gltf_path, std::vector<Entity*>& entities)
         Entity* entity = create_node_entity(node);
 
         parse_model_nodes(model, node, entity);
+
+        if (entity->get_name().empty()) {
+            entity->set_name(path.stem().string() + "_" + std::to_string(entity_name_idx));
+            entity_name_idx++;
+        }
 
         entities.push_back(entity);
     }

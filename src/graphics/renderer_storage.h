@@ -10,7 +10,7 @@
 #include "webgpu_context.h"
 #include "material.h"
 
-class Mesh;
+class Surface;
 class Texture;
 class Shader;
 struct Uniform;
@@ -27,7 +27,7 @@ public:
     static std::map<std::string, Shader*> shaders;
     static std::map<std::string, std::vector<std::string>> shader_library_references;
     static std::map<std::string, Texture*> textures;
-    static std::map<std::string, Mesh*> meshes;
+    static std::map<std::string, Surface*> surfaces;
 
     static Texture* current_skybox_texture;
 
@@ -55,13 +55,13 @@ public:
     };
 
     static std::unordered_map<Material, sBindingData> material_bind_groups;
-    static std::unordered_map<void*, sBindingData> ui_widget_bind_groups;
+    static std::unordered_map<const void*, sBindingData> ui_widget_bind_groups;
 
     static void register_material(WebGPUContext* webgpu_context, const Material& material);
     static WGPUBindGroup get_material_bind_group(const Material& material);
 
     static void register_ui_widget(WebGPUContext* webgpu_context, Shader* shader, void* widget, const sUIData& ui_data, uint8_t bind_group_id);
-    static WGPUBindGroup get_ui_widget_bind_group(void* widget);
+    static WGPUBindGroup get_ui_widget_bind_group(const void* widget);
     static void update_ui_widget(WebGPUContext* webgpu_context, void* entity_mesh, const sUIData& ui_data);
 
     static Shader* get_shader(const std::string& shader_path, std::vector<std::string> define_specializations = {});
@@ -69,7 +69,7 @@ public:
 
     static Texture* get_texture(const std::string& texture_path);
 
-    static Mesh* get_mesh(const std::string& mesh_path);
+    static Surface* get_surface(const std::string& mesh_path);
 
-    static void register_basic_meshes();
+    static void register_basic_surfaces();
 };

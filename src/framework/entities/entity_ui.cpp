@@ -106,7 +106,7 @@ namespace ui {
         EntityMesh::update(delta_time);
 	}
 
-    glm::mat4x4 UIEntity::get_global_model()
+    glm::mat4x4 UIEntity::get_global_model() const
     {
         return model;
     }
@@ -136,7 +136,7 @@ namespace ui {
         text_entity = new TextEntity(_text);
         text_entity->set_scale(scale);
         text_entity->generate_mesh();
-        text_entity->set_material_color(0, color);
+        text_entity->set_surface_material_color(0, color);
     }
 
     void TextWidget::render()

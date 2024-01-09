@@ -1,6 +1,6 @@
 #include "renderer_storage.h"
 
-#include "mesh.h"
+#include "surface.h"
 #include "texture.h"
 #include "shader.h"
 #include "uniform.h"
@@ -9,13 +9,13 @@
 
 RendererStorage* RendererStorage::instance = nullptr;
 
-std::map<std::string, Mesh*> RendererStorage::meshes;
+std::map<std::string, Surface*> RendererStorage::surfaces;
 std::map<std::string, Texture*> RendererStorage::textures;
 std::map<std::string, Shader*> RendererStorage::shaders;
 Texture* RendererStorage::current_skybox_texture = nullptr;
 std::map<std::string, std::vector<std::string>> RendererStorage::shader_library_references;
 std::unordered_map<Material, RendererStorage::sBindingData> RendererStorage::material_bind_groups;
-std::unordered_map<void*, RendererStorage::sBindingData> RendererStorage::ui_widget_bind_groups;
+std::unordered_map<const void*, RendererStorage::sBindingData> RendererStorage::ui_widget_bind_groups;
 
 RendererStorage::RendererStorage()
 {
@@ -152,7 +152,7 @@ void RendererStorage::register_ui_widget(WebGPUContext* webgpu_context, Shader* 
     ui_widget_bind_groups[entity_mesh].bind_group = webgpu_context->create_bind_group(uniforms, shader, bind_group_id);
 }
 
-WGPUBindGroup RendererStorage::get_ui_widget_bind_group(void* widget)
+WGPUBindGroup RendererStorage::get_ui_widget_bind_group(const void* widget)
 {
     if (!ui_widget_bind_groups.contains(widget)) {
         assert(false);
@@ -253,62 +253,62 @@ Texture* RendererStorage::get_texture(const std::string& texture_path)
     return tx;
 }
 
-Mesh* RendererStorage::get_mesh(const std::string& mesh_path)
+Surface* RendererStorage::get_surface(const std::string& mesh_path)
 {
     std::string name = mesh_path;
 
     // check if already loaded
-    std::map<std::string, Mesh*>::iterator it = meshes.find(mesh_path);
-    if (it != meshes.end())
+    std::map<std::string, Surface*>::iterator it = surfaces.find(mesh_path);
+    if (it != surfaces.end())
         return it->second;
 
-    Mesh* new_mesh = new Mesh();
+    Surface* new_surface= new Surface();
 
     // register in map
-    meshes[name] = new_mesh;
+    surfaces[name] = new_surface;
 
-    return new_mesh;
+    return new_surface;
 }
 
-void RendererStorage::register_basic_meshes()
+void RendererStorage::register_basic_surfaces()
 {
     // Quad
-    Mesh* quad_mesh = new Mesh();
+    Surface* quad_mesh = new Surface();
     quad_mesh->create_quad();
-    meshes["quad"] = quad_mesh;
+    surfaces["quad"] = quad_mesh;
 
     // Box
-    Mesh* box_mesh = new Mesh();
+    Surface* box_mesh = new Surface();
     box_mesh->create_box();
-    meshes["box"] = box_mesh;
+    surfaces["box"] = box_mesh;
 
     // Rounded Box
-    Mesh* rounded_box_mesh = new Mesh();
+    Surface* rounded_box_mesh = new Surface();
     rounded_box_mesh->create_rounded_box();
-    meshes["rounded_box"] = rounded_box_mesh;
+    surfaces["rounded_box"] = rounded_box_mesh;
 
     // Sphere
-    Mesh* sphere_mesh = new Mesh();
+    Surface* sphere_mesh = new Surface();
     sphere_mesh->create_sphere();
-    meshes["sphere"] = sphere_mesh;
+    surfaces["sphere"] = sphere_mesh;
 
     // Cone
-    Mesh* cone_mesh = new Mesh();
+    Surface* cone_mesh = new Surface();
     cone_mesh->create_cone();
-    meshes["cone"] = cone_mesh;
+    surfaces["cone"] = cone_mesh;
 
     // Cylinder
-    Mesh* cylinder_mesh = new Mesh();
+    Surface* cylinder_mesh = new Surface();
     cylinder_mesh->create_cylinder();
-    meshes["cylinder"] = cylinder_mesh;
+    surfaces["cylinder"] = cylinder_mesh;
 
     // Capsule
-    Mesh* capsule_mesh = new Mesh();
+    Surface* capsule_mesh = new Surface();
     capsule_mesh->create_capsule();
-    meshes["capsule"] = capsule_mesh;
+    surfaces["capsule"] = capsule_mesh;
 
     // Torus
-    Mesh* torus_mesh = new Mesh();
+    Surface* torus_mesh = new Surface();
     torus_mesh->create_torus();
-    meshes["torus"] = torus_mesh;
+    surfaces["torus"] = torus_mesh;
 }

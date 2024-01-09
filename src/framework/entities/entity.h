@@ -45,9 +45,9 @@ public:
 
 	const glm::vec3 get_local_translation();
     const glm::vec3 get_translation();
-    virtual glm::mat4x4 get_global_model();
+    virtual glm::mat4x4 get_global_model() const;
     glm::mat4x4 get_model() { return model; }
-    const std::vector<Entity*>& get_children() const { return children; }
+    std::vector<Entity*>& get_children() { return children; }
     Entity* get_parent() { return parent; }
     bool get_process_children() { return process_children; }
     bool is_active() { return active; }

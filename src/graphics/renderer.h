@@ -2,7 +2,6 @@
 
 #include "framework/utils/utils.h"
 
-#include "graphics/mesh.h"
 #include "graphics/shader.h"
 #include "graphics/pipeline.h"
 #include "graphics/webgpu_context.h"
@@ -55,8 +54,10 @@ protected:
     };
 
     struct sRenderData {
-        Surface surface;
+        Surface* surface;
         uint32_t repeat;
+        glm::mat4x4 global_matrix;
+        EntityMesh* entity_mesh_ref;
     };
 
     enum eRenderListType {
@@ -75,6 +76,8 @@ protected:
     Uniform	instance_ui_data_uniform;
 
     // Entities to be rendered this frame
+    std::vector<EntityMesh*> render_entity_list;
+
     std::vector<sRenderData> render_list[RENDER_LIST_SIZE];
 
     // Bind group per shader

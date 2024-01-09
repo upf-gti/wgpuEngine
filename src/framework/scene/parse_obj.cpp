@@ -3,7 +3,6 @@
 #define TINYOBJLOADER_IMPLEMENTATION
 #include "tiny_obj_loader.h"
 
-#include "graphics/mesh.h"
 #include "graphics/texture.h"
 #include "graphics/shader.h"
 #include "graphics/renderer_storage.h"
@@ -31,28 +30,25 @@ EntityMesh* parse_obj(const std::string& obj_path)
     auto& materials = reader.GetMaterials();
 
     EntityMesh* new_entity = new EntityMesh();
-    Mesh* new_mesh = RendererStorage::get_mesh(obj_path);
 
-    Surface new_surface = { new_mesh, {}, new_entity };
-
-    Material& material = new_surface.material;
+    Surface* new_surface = RendererStorage::get_surface(obj_path);
 
     if (!materials.empty()) {
         if (materials[0].diffuse_texname.empty()) {
-            material.color = glm::vec4(materials[0].diffuse[0], materials[0].diffuse[1], materials[0].diffuse[2], 1.0f);
-            material.shader = RendererStorage::get_shader("data/shaders/mesh_color.wgsl");
-            material.flags |= MATERIAL_COLOR;
+            new_surface->set_material_color(glm::vec4(materials[0].diffuse[0], materials[0].diffuse[1], materials[0].diffuse[2], 1.0f));
+            new_surface->set_material_shader(RendererStorage::get_shader("data/shaders/mesh_color.wgsl"));
+            new_surface->set_material_flag(MATERIAL_COLOR);
         }
         else {
-            material.diffuse_texture = RendererStorage::get_texture("data/textures/" + materials[0].diffuse_texname);
-            material.shader = RendererStorage::get_shader("data/shaders/mesh_texture.wgsl");
-            material.flags |= MATERIAL_DIFFUSE;
+            new_surface->set_material_diffuse(RendererStorage::get_texture("data/textures/" + materials[0].diffuse_texname));
+            new_surface->set_material_shader(RendererStorage::get_shader("data/shaders/mesh_texture.wgsl"));
+            new_surface->set_material_flag(MATERIAL_DIFFUSE);
         }
     }
 
     new_entity->add_surface(new_surface);
 
-    auto& vertices = new_mesh->get_vertices();
+    auto& vertices = new_surface->get_vertices();
 
     // Mesh already loaded
     if (!vertices.empty()) { return new_entity; }
@@ -96,7 +92,7 @@ EntityMesh* parse_obj(const std::string& obj_path)
         }
     }
 
-    new_mesh->create_vertex_buffer();
+    new_surface->create_vertex_buffer();
 
     return new_entity;
 }

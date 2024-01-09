@@ -37,7 +37,7 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 
 void mouse_scroll_callback(GLFWwindow* window, double offset_x, double offset_y)
 {
-    Input::set_mouse_wheel(offset_x, offset_y);
+    Input::set_mouse_wheel(static_cast<float>(offset_x), static_cast<float>(offset_y));
 }
 
 void Input::init(GLFWwindow* _window, Renderer* renderer, bool use_glfw)

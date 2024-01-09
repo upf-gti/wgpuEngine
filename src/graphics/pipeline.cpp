@@ -1,7 +1,6 @@
 #include "pipeline.h"
 
 #include "shader.h"
-#include "mesh.h"
 
 WebGPUContext* Pipeline::webgpu_context = nullptr;
 std::unordered_map<RenderPipelineKey, Pipeline*> Pipeline::registered_render_pipelines = {};

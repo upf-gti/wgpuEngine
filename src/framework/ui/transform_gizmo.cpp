@@ -1,6 +1,5 @@
 #include "transform_gizmo.h"
 
-#include <graphics/mesh.h>
 #include <graphics/shader.h>
 #include <framework/entities/entity_mesh.h>
 #include <framework/input.h>
@@ -17,17 +16,17 @@ void TransformGizmo::initialize(const eGizmoType gizmo_use, const glm::vec3 &pos
 
     if (gizmo_use & POSITION_GIZMO) {
         arrow_mesh_x = parse_mesh("data/meshes/arrow.obj");
-        arrow_mesh_x->set_material_flag(0, MATERIAL_COLOR);
+        arrow_mesh_x->set_surface_material_flag(0, MATERIAL_COLOR);
 
         arrow_mesh_y = parse_mesh("data/meshes/arrow.obj");
-        arrow_mesh_y->set_material_flag(0, MATERIAL_COLOR);
+        arrow_mesh_y->set_surface_material_flag(0, MATERIAL_COLOR);
 
         arrow_mesh_z = parse_mesh("data/meshes/arrow.obj");
-        arrow_mesh_z->set_material_flag(0, MATERIAL_COLOR);
+        arrow_mesh_z->set_surface_material_flag(0, MATERIAL_COLOR);
     }
     if (gizmo_use & ROTATION_GIZMO) {
         wire_circle_mesh = parse_mesh("data/meshes/wired_circle.obj");
-        wire_circle_mesh->set_material_flag(0, MATERIAL_COLOR);
+        wire_circle_mesh->set_surface_material_flag(0, MATERIAL_COLOR);
     }
 
 	position_gizmo_scale = glm::vec3(0.1f, 0.1f, 0.1f);
@@ -160,7 +159,7 @@ void TransformGizmo::render(int axis) {
             arrow_mesh_x->set_translation(gizmo_position);
             arrow_mesh_x->scale(position_gizmo_scale);
 		    arrow_mesh_x->rotate(glm::radians(-90.f), glm::vec3(0.f, 0.f, 1.f));
-		    arrow_mesh_x->set_material_color(0, Color(1.f, 0.0f, 0.f, 1.f) + ((position_axis_x_selected) ? Color(0.5f, 0.5f, 0.5f, 0.f) : Color(0.f)));
+		    arrow_mesh_x->set_surface_material_color(0, Color(1.f, 0.0f, 0.f, 1.f) + ((position_axis_x_selected) ? Color(0.5f, 0.5f, 0.5f, 0.f) : Color(0.f)));
 		    arrow_mesh_x->render();
         }
 
@@ -168,7 +167,7 @@ void TransformGizmo::render(int axis) {
         {
 		    arrow_mesh_y->set_translation(gizmo_position);
 		    arrow_mesh_y->scale(position_gizmo_scale);
-		    arrow_mesh_y->set_material_color(0, Color(0.f, 1.f, 0.0f, 1.f) + ((position_axis_y_selected) ? Color(0.5f, 0.5f, 0.5f, 0.f) : Color(0.f)));
+		    arrow_mesh_y->set_surface_material_color(0, Color(0.f, 1.f, 0.0f, 1.f) + ((position_axis_y_selected) ? Color(0.5f, 0.5f, 0.5f, 0.f) : Color(0.f)));
             arrow_mesh_y->render();
         }
 
@@ -178,23 +177,23 @@ void TransformGizmo::render(int axis) {
             arrow_mesh_z->scale(position_gizmo_scale);
             arrow_mesh_z->rotate(glm::radians(90.f), glm::vec3(0.f, 0.f, 1.f));
 		    arrow_mesh_z->rotate(glm::radians(90.f), glm::vec3(1.f, 0.f, 0.f));
-		    arrow_mesh_z->set_material_color(0, Color(0.0f, 0.f, 1.f, 1.f) + ((position_axis_z_selected) ? Color(0.5f, 0.5f, 0.5f, 0.f) : Color(0.f)));
+		    arrow_mesh_z->set_surface_material_color(0, Color(0.0f, 0.f, 1.f, 1.f) + ((position_axis_z_selected) ? Color(0.5f, 0.5f, 0.5f, 0.f) : Color(0.f)));
 		    arrow_mesh_z->render();
         }
 	}
 
     if (type & ROTATION_GIZMO) {
         wire_circle_mesh->set_translation(gizmo_position);
-        wire_circle_mesh->set_material_color(0, Color(0.f, 1.f, 0.f, 1.f) + ((rotation_axis_x_selected) ? Color(0.5f, 0.5f, 0.5f, 0.f) : Color(0.f)));
+        wire_circle_mesh->set_surface_material_color(0, Color(0.f, 1.f, 0.f, 1.f) + ((rotation_axis_x_selected) ? Color(0.5f, 0.5f, 0.5f, 0.f) : Color(0.f)));
         wire_circle_mesh->scale(rotation_gizmo_scale * 0.5f);
         wire_circle_mesh->render();
 
         wire_circle_mesh->rotate(glm::radians(90.f), glm::vec3(1.f, 0.f, 0.f));
-        wire_circle_mesh->set_material_color(0, Color(1.f, 0.f, 0.f, 1.f) + ((rotation_axis_z_selected) ? Color(0.5f, 0.5f, 0.5f, 0.f) : Color(0.f)));
+        wire_circle_mesh->set_surface_material_color(0, Color(1.f, 0.f, 0.f, 1.f) + ((rotation_axis_z_selected) ? Color(0.5f, 0.5f, 0.5f, 0.f) : Color(0.f)));
         wire_circle_mesh->render();
 
         wire_circle_mesh->rotate(glm::radians(90.f), glm::vec3(0.f, 1.f, 0.f));
-        wire_circle_mesh->set_material_color(0, Color(0.f, 0.f, 1.f, 1.f) + ((rotation_axis_y_selected) ? Color(0.5f, 0.5f, 0.5f, 0.f) : Color(0.f)));
+        wire_circle_mesh->set_surface_material_color(0, Color(0.f, 0.f, 1.f, 1.f) + ((rotation_axis_y_selected) ? Color(0.5f, 0.5f, 0.5f, 0.f) : Color(0.f)));
         wire_circle_mesh->render();
     }
 }
