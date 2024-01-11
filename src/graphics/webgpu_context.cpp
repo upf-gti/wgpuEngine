@@ -191,7 +191,7 @@ int WebGPUContext::initialize(WGPURequestAdapterOptions adapter_opts, WGPURequir
         surface = glfwGetWGPUSurface(get_instance(), window);
     }
 
-    print_errors();
+    process_events();
 
 #endif
 
@@ -556,7 +556,7 @@ WGPUBindGroup WebGPUContext::create_bind_group(const std::vector<Uniform*>& unif
     return wgpuDeviceCreateBindGroup(device, &bindGroupDesc);
 }
 
-void WebGPUContext::print_errors()
+void WebGPUContext::process_events()
 {
 #ifndef __EMSCRIPTEN__
     wgpuInstanceProcessEvents(get_instance());

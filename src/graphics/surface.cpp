@@ -213,9 +213,9 @@ void Surface::create_rounded_box(float w, float h, float d, float c, const glm::
         }
 
         // Add vertices...
-        uint32_t vertex_offset = vertices.size();
+        size_t vertex_offset = vertices.size();
         vertices.resize(vertex_offset + indices.size());
-        for (uint32_t i = 0; i < indices.size(); i++)
+        for (size_t i = 0; i < indices.size(); i++)
             vertices[vertex_offset + i] = vtxs[indices[i]];
     };
 
@@ -288,9 +288,9 @@ void Surface::create_rounded_box(float w, float h, float d, float c, const glm::
         }
 
         // Add vertices...
-        uint32_t vertex_offset = vertices.size();
+        size_t vertex_offset = vertices.size();
         vertices.resize(vertex_offset + indices.size());
-        for (uint32_t i = 0; i < indices.size(); i++)
+        for (size_t i = 0; i < indices.size(); i++)
             vertices[vertex_offset + i] = vtxs[indices[i]];
     };
 

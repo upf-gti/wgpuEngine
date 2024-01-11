@@ -82,7 +82,7 @@ bool Shader::load(const std::string& shader_path, const std::string& specialized
 		loaded = false;
 	}
 
-	webgpu_context->print_errors();
+	webgpu_context->process_events();
 
 	//std::cout << " [OK]" << std::endl;
 

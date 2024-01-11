@@ -85,6 +85,6 @@ struct WebGPUContext {
 
     void                   update_buffer(WGPUBuffer buffer, uint64_t buffer_offset, void const* data, uint64_t size);
 
-    void print_errors();
+    void process_events();
 
 };
