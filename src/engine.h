@@ -16,8 +16,6 @@ class Engine {
     float delta_time = 0.0f;
     double current_time = 0.0;
 
-    void window_resize_callback(GLFWwindow* window, int width, int height);
-
 public:
 
     static Engine* instance;

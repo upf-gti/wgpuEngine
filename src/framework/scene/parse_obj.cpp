@@ -7,6 +7,8 @@
 #include "graphics/shader.h"
 #include "graphics/renderer_storage.h"
 
+#include <filesystem>
+
 #include "spdlog/spdlog.h"
 
 EntityMesh* parse_obj(const std::string& obj_path)
@@ -31,6 +33,10 @@ EntityMesh* parse_obj(const std::string& obj_path)
 
     EntityMesh* new_entity = new EntityMesh();
 
+    std::filesystem::path obj_path_fs = std::filesystem::path(obj_path);
+
+    new_entity->set_name(obj_path_fs.stem().string());
+
     Surface* new_surface = RendererStorage::get_surface(obj_path);
 
     if (!materials.empty()) {
@@ -40,7 +46,7 @@ EntityMesh* parse_obj(const std::string& obj_path)
             new_surface->set_material_flag(MATERIAL_COLOR);
         }
         else {
-            new_surface->set_material_diffuse(RendererStorage::get_texture("data/textures/" + materials[0].diffuse_texname));
+            new_surface->set_material_diffuse(RendererStorage::get_texture(obj_path_fs.parent_path().string() + "/" + materials[0].diffuse_texname));
             new_surface->set_material_shader(RendererStorage::get_shader("data/shaders/mesh_texture.wgsl"));
             new_surface->set_material_flag(MATERIAL_DIFFUSE);
         }

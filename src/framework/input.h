@@ -131,6 +131,7 @@ public:
 	// https://www.glfw.org/docs/3.3/group__buttons.html
 	static bool is_mouse_pressed(uint8_t button) { return buttons[button] == GLFW_PRESS; }
 	static bool was_mouse_pressed(uint8_t button) { return prev_buttons[button] == GLFW_RELEASE && buttons[button] == GLFW_PRESS; }
+    static glm::vec2 get_mouse_position() { return mouse_position; }
     static glm::vec2 get_mouse_delta() { return mouse_delta; }
     static float get_mouse_wheel_delta() { return mouse_wheel_delta; }
 
