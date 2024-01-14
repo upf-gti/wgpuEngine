@@ -541,7 +541,7 @@ WGPUBindGroup WebGPUContext::create_bind_group(const std::vector<Uniform*>& unif
 
     std::vector<WGPUBindGroupLayout>& layouts_by_id = shader->get_bind_group_layouts();
 
-    if (layouts_by_id.size() < bind_group) {
+    if (layouts_by_id.size() <= bind_group) {
         spdlog::error("Can't find bind group {} in shader: {}", bind_group, shader->get_path());
         assert(0);
     }
