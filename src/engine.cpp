@@ -75,22 +75,24 @@ int Engine::initialize(Renderer* renderer, GLFWwindow* window, bool use_glfw, bo
 
     current_time = glfwGetTime();
 
-    // Init imgui
-    IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
-    ImGuiIO& io = ImGui::GetIO(); (void)io;
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
-
+    if (!renderer->get_openxr_available()) {
+        // Init imgui
+        IMGUI_CHECKVERSION();
+        ImGui::CreateContext();
+        ImGuiIO& io = ImGui::GetIO(); (void)io;
+        io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+    
     // Disable file-system access in web builds (don't load imgui.ini)
 #ifdef __EMSCRIPTEN__
-    io.IniFilename = nullptr;
-    ImGui_ImplGlfw_InstallEmscriptenCanvasResizeCallback("#canvas");
+        io.IniFilename = nullptr;
+        ImGui_ImplGlfw_InstallEmscriptenCanvasResizeCallback("#canvas");
 #endif
 
-    ImGui::StyleColorsDark();
+        ImGui::StyleColorsDark();
 
-    ImGui_ImplGlfw_InitForOther(window, true);
-    ImGui_ImplWGPU_Init(renderer->get_webgpu_context()->device, 3, WGPUTextureFormat_BGRA8Unorm, WGPUTextureFormat_Undefined);
+        ImGui_ImplGlfw_InitForOther(window, true);
+        ImGui_ImplWGPU_Init(renderer->get_webgpu_context()->device, 3, WGPUTextureFormat_BGRA8Unorm, WGPUTextureFormat_Undefined);
+    }
 
     return 0;
 }
@@ -125,10 +127,12 @@ void Engine::on_frame()
 
     update(delta_time);
 
-    // Start the Dear ImGui frame
-    ImGui_ImplWGPU_NewFrame();
-    ImGui_ImplGlfw_NewFrame();
-    ImGui::NewFrame();
+    if (!renderer->get_openxr_available()) {
+        // Start the Dear ImGui frame
+        ImGui_ImplWGPU_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
+    }
 
     render();
 
@@ -149,7 +153,11 @@ void Engine::render()
 
 void Engine::resize_window(int width, int height)
 {
-    ImGui_ImplWGPU_InvalidateDeviceObjects();
-    renderer->resize_window(width, height);
-    ImGui_ImplWGPU_CreateDeviceObjects();
+    if (!renderer->get_openxr_available()) {
+        ImGui_ImplWGPU_InvalidateDeviceObjects();
+        renderer->resize_window(width, height);
+        ImGui_ImplWGPU_CreateDeviceObjects();
+    } else {
+        renderer->resize_window(width, height);
+    }
 }
