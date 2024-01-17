@@ -289,6 +289,7 @@ namespace ui {
         const bool allow_toggle = j.value("allow_toggle", false);
         const bool is_color_button = j.count("color") > 0;
         Color color = is_color_button ? load_vec4(j["color"]) : colors::WHITE;
+        color = glm::pow(color, Color(2.2f));
 
 		// Render quad in local workspace position
         ButtonWidget* e_button = new ButtonWidget(signal, pos, size, color);
@@ -353,8 +354,8 @@ namespace ui {
 
         float default_value = j.value("default", 1.f);
         Color color = Color(0.47f, 0.37f, 0.94f, 1.f);
-        if (j.count("color"))
-            color = load_vec4(j["color"]);
+        if (j.count("color")) color = load_vec4(j["color"]);
+        color = glm::pow(color, Color(2.2f));
 
 		SliderWidget* slider = new SliderWidget(signal, default_value, pos, size, color);
         slider->add_surface(RendererStorage::get_surface("quad"));
@@ -621,10 +622,9 @@ namespace ui {
                 float nitems = j["nitems"];
                 group_elements_pending = nitems;
 
-                Color color = colors::GRAY;
-                if (j.count("color")) {
-                    color = load_vec4(j["color"]);
-                }
+                Color color = Color(0.41f, 0.38f, 0.44f, 1.0f);
+                if (j.count("color")) color = load_vec4(j["color"]);
+                color = glm::pow(color, Color(2.2f));
 
                 UIEntity* group = make_group(name, nitems, color);
             }
