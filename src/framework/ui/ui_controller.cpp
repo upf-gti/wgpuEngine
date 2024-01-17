@@ -447,7 +447,7 @@ namespace ui {
             mark->add_surface(RendererStorage::get_surface("quad"));
 
             Material material;
-            material.shader = RendererStorage::get_shader("data/shaders/ui/ui_button.wgsl");
+            material.shader = RendererStorage::get_shader("data/shaders/mesh_texture.wgsl");
             material.diffuse_texture = RendererStorage::get_texture("data/textures/submenu_mark.png");
             material.flags |= MATERIAL_DIFFUSE | MATERIAL_UI;
             material.color = colors::WHITE;
