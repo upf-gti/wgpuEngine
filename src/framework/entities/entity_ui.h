@@ -126,15 +126,15 @@ namespace ui {
         enum {
             HORIZONTAL,
             VERTICAL
-        } mode = HORIZONTAL;
+        };
+
+        int mode = HORIZONTAL;
 
 		float current_value = 0.f;
         float min_value = 0.f;
         float max_value = 1.f;
 
-		SliderWidget(const std::string& sg, float v, const glm::vec2& p, const glm::vec2& s, const Color& c);
-
-        void set_mode(const std::string& m) { mode = (m == "horizontal" ? HORIZONTAL : VERTICAL); }
+		SliderWidget(const std::string& sg, float v, const glm::vec2& p, const glm::vec2& s, const Color& c, int mode = VERTICAL);
 
         void render() override;
         void update(float delta_time) override;

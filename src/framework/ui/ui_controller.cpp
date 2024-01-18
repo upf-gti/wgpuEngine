@@ -336,10 +336,12 @@ namespace ui {
     UIEntity* Controller::make_slider(const json& j)
 	{
         std::string signal = j["name"];
-        std::string mode = j.value("mode", "horizontal");
+        std::string s_mode = j.value("mode", "horizontal");
+        int mode = (s_mode == "horizontal" ? SliderWidget::HORIZONTAL : SliderWidget::VERTICAL);
+        bool is_horizontal_slider = (mode == SliderWidget::HORIZONTAL);
 
         // World attributes
-        float offset = (mode == "horizontal" ? 2.f : 1.f);
+        float offset = is_horizontal_slider ? 2.f : 1.f;
         glm::vec2 pos = compute_position( offset );
         glm::vec2 size = glm::vec2(BUTTON_SIZE * offset, BUTTON_SIZE); // Slider space is 2*BUTTONSIZE at X
 
@@ -357,20 +359,17 @@ namespace ui {
         if (j.count("color")) color = load_vec4(j["color"]);
         color = glm::pow(color, Color(2.2f));
 
-		SliderWidget* slider = new SliderWidget(signal, default_value, pos, size, color);
+		SliderWidget* slider = new SliderWidget(signal, default_value, pos, size, color, mode);
         slider->add_surface(RendererStorage::get_surface("quad"));
 
         Material material;
 
-        material.shader = RendererStorage::get_shader("data/shaders/ui/ui_slider.wgsl");
-        material.diffuse_texture = RendererStorage::get_texture(
-            (mode == "horizontal" ? "data/textures/slider.png" : "data/textures/circle_white.png"));
+        material.shader = RendererStorage::get_shader(is_horizontal_slider ? "data/shaders/ui/ui_slider_h.wgsl" : "data/shaders/ui/ui_slider.wgsl");
         material.color = color;
-        material.flags |= MATERIAL_DIFFUSE | MATERIAL_UI;
+        material.flags |= MATERIAL_UI;
 
         slider->set_surface_material_override(slider->get_surface(0), material);
 
-        slider->set_mode(mode);
         slider->min_value = j.value("min", slider->min_value);
         slider->max_value = j.value("max", slider->max_value);
         ((Entity*)slider)->set_process_children(true);
@@ -406,9 +405,8 @@ namespace ui {
 
         Material material;
         material.shader = RendererStorage::get_shader("data/shaders/ui/ui_color_picker.wgsl");
-        material.diffuse_texture = RendererStorage::get_texture("data/textures/circle_white.png");
         material.color = Color(0.175f);
-        material.flags |= MATERIAL_DIFFUSE | MATERIAL_UI;
+        material.flags |= MATERIAL_UI;
 
         picker->set_surface_material_override(picker->get_surface(0), material);
 
