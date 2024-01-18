@@ -6,6 +6,12 @@ set(WGPU_DIR_LIBS    "${WGPU_DIR_ROOT}/libraries")
 
 project(webgpuEngine LANGUAGES C CXX)
 
+if (WIN32)
+    set(DAWN_BUILD "STATIC" CACHE STRING "Choose between SRC or STATIC to build from source (slower, better debugging) or download an static library (faster)")
+else()
+    set(DAWN_BUILD "SRC")
+endif()
+
 add_definitions(-D_CRT_SECURE_NO_WARNINGS)
 add_definitions(-D_SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING)
 add_definitions(-DWEBGPU_BACKEND=DAWN)
