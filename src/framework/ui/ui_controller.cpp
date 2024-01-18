@@ -289,6 +289,7 @@ namespace ui {
         const bool allow_toggle = j.value("allow_toggle", false);
         const bool is_color_button = j.count("color") > 0;
         Color color = is_color_button ? load_vec4(j["color"]) : colors::WHITE;
+        color = glm::pow(color, Color(2.2f));
 
 		// Render quad in local workspace position
         ButtonWidget* e_button = new ButtonWidget(signal, pos, size, color);
@@ -335,10 +336,12 @@ namespace ui {
     UIEntity* Controller::make_slider(const json& j)
 	{
         std::string signal = j["name"];
-        std::string mode = j.value("mode", "horizontal");
+        std::string s_mode = j.value("mode", "horizontal");
+        int mode = (s_mode == "horizontal" ? SliderWidget::HORIZONTAL : SliderWidget::VERTICAL);
+        bool is_horizontal_slider = (mode == SliderWidget::HORIZONTAL);
 
         // World attributes
-        float offset = (mode == "horizontal" ? 2.f : 1.f);
+        float offset = is_horizontal_slider ? 2.f : 1.f;
         glm::vec2 pos = compute_position( offset );
         glm::vec2 size = glm::vec2(BUTTON_SIZE * offset, BUTTON_SIZE); // Slider space is 2*BUTTONSIZE at X
 
@@ -351,25 +354,22 @@ namespace ui {
 		*	Create slider entity
 		*/
 
-        float default_value = j.value("default", 1.f);
+        float default_value = j.value("value", 1.f);
         Color color = Color(0.47f, 0.37f, 0.94f, 1.f);
-        if (j.count("color"))
-            color = load_vec4(j["color"]);
+        if (j.count("color")) color = load_vec4(j["color"]);
+        color = glm::pow(color, Color(2.2f));
 
-		SliderWidget* slider = new SliderWidget(signal, default_value, pos, size, color);
+		SliderWidget* slider = new SliderWidget(signal, default_value, pos, size, color, mode);
         slider->add_surface(RendererStorage::get_surface("quad"));
 
         Material material;
 
-        material.shader = RendererStorage::get_shader("data/shaders/ui/ui_slider.wgsl");
-        material.diffuse_texture = RendererStorage::get_texture(
-            (mode == "horizontal" ? "data/textures/slider.png" : "data/textures/circle_white.png"));
+        material.shader = RendererStorage::get_shader(is_horizontal_slider ? "data/shaders/ui/ui_slider_h.wgsl" : "data/shaders/ui/ui_slider.wgsl");
         material.color = color;
-        material.flags |= MATERIAL_DIFFUSE | MATERIAL_UI;
+        material.flags |= MATERIAL_UI;
 
         slider->set_surface_material_override(slider->get_surface(0), material);
 
-        slider->set_mode(mode);
         slider->min_value = j.value("min", slider->min_value);
         slider->max_value = j.value("max", slider->max_value);
         ((Entity*)slider)->set_process_children(true);
@@ -398,16 +398,15 @@ namespace ui {
 
         process_params(pos, size);
 
-        Color default_color = load_vec4(j.value("default", ""));
+        Color default_color = load_vec4(j.value("color", ""));
 
         ColorPickerWidget* picker = new ColorPickerWidget(signal, pos, size, default_color);
         picker->add_surface(RendererStorage::get_surface("quad"));
 
         Material material;
         material.shader = RendererStorage::get_shader("data/shaders/ui/ui_color_picker.wgsl");
-        material.diffuse_texture = RendererStorage::get_texture("data/textures/circle_white.png");
         material.color = Color(0.175f);
-        material.flags |= MATERIAL_DIFFUSE | MATERIAL_UI;
+        material.flags |= MATERIAL_UI;
 
         picker->set_surface_material_override(picker->get_surface(0), material);
 
@@ -425,11 +424,12 @@ namespace ui {
             SliderWidget* slider = (SliderWidget*)make_slider( j["slider"] );
             bind(j["slider"].value("name", ""), [this, p = picker](const std::string& signal, float value) {
                 p->current_color.a = value;
-                emit_signal(p->signal, p->current_color * value);
+                glm::vec3 new_color = glm::pow(glm::vec3(p->current_color) * value, glm::vec3(2.2f));
+                emit_signal(p->signal, Color(new_color, value));
             });
 
             // Set initial value
-            picker->current_color.a = j["slider"].value("default", 1.f);
+            picker->current_color.a = j["slider"].value("value", 1.f);
         }
 
         return picker;
@@ -446,7 +446,7 @@ namespace ui {
             mark->add_surface(RendererStorage::get_surface("quad"));
 
             Material material;
-            material.shader = RendererStorage::get_shader("data/shaders/ui/ui_button.wgsl");
+            material.shader = RendererStorage::get_shader("data/shaders/mesh_texture.wgsl");
             material.diffuse_texture = RendererStorage::get_texture("data/textures/submenu_mark.png");
             material.flags |= MATERIAL_DIFFUSE | MATERIAL_UI;
             material.color = colors::WHITE;
@@ -621,10 +621,9 @@ namespace ui {
                 float nitems = j["nitems"];
                 group_elements_pending = nitems;
 
-                Color color = colors::GRAY;
-                if (j.count("color")) {
-                    color = load_vec4(j["color"]);
-                }
+                Color color = Color(0.41f, 0.38f, 0.44f, 1.0f);
+                if (j.count("color")) color = load_vec4(j["color"]);
+                color = glm::pow(color, Color(2.2f));
 
                 UIEntity* group = make_group(name, nitems, color);
             }

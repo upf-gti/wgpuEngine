@@ -258,13 +258,15 @@ namespace ui {
 	*	Slider
 	*/
 
-    SliderWidget::SliderWidget(const std::string& sg, float v, const glm::vec2& p, const glm::vec2& s, const Color& c)
+    SliderWidget::SliderWidget(const std::string& sg, float v, const glm::vec2& p, const glm::vec2& s, const Color& c, int mode)
         : UIEntity(p, s), signal(sg), current_value(v), color(c) {
 
-        type = eWidgetType::SLIDER;
+        this->type = eWidgetType::SLIDER;
+        this->mode = mode;
 
         auto webgpu_context = Renderer::instance->get_webgpu_context();
-        RendererStorage::register_ui_widget(webgpu_context, RendererStorage::get_shader("data/shaders/ui/ui_slider.wgsl"), this, ui_data, 3);
+        RendererStorage::register_ui_widget(webgpu_context,
+            RendererStorage::get_shader(mode == HORIZONTAL ? "data/shaders/ui/ui_slider_h.wgsl" : "data/shaders/ui/ui_slider.wgsl"), this, ui_data, 2);
     }
 
     void SliderWidget::render()
@@ -345,7 +347,7 @@ namespace ui {
         type = eWidgetType::COLOR_PICKER;
 
         auto webgpu_context = Renderer::instance->get_webgpu_context();
-        RendererStorage::register_ui_widget(webgpu_context, RendererStorage::get_shader("data/shaders/ui/ui_color_picker.wgsl"), this, ui_data, 3);
+        RendererStorage::register_ui_widget(webgpu_context, RendererStorage::get_shader("data/shaders/ui/ui_color_picker.wgsl"), this, ui_data, 2);
     }
 
     void ColorPickerWidget::update(float delta_time)
@@ -381,8 +383,11 @@ namespace ui {
             float percent = (polar.x + pi) / (2.0f * pi);
             glm::vec3 hsv = glm::vec3(percent, 1., polar.y);
 
+            // Store it without conversion and intensity multiplier
             current_color = glm::vec4(hsv2rgb(hsv), current_color.a);
-            controller->emit_signal(signal, current_color);
+            // Send the signal using the final color
+            glm::vec3 new_color = glm::pow(glm::vec3(current_color) * current_color.a, glm::vec3(2.2f));
+            controller->emit_signal(signal, glm::vec4(new_color, current_color.a));
         }
 
         if (was_released)
