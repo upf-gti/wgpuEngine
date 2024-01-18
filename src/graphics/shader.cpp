@@ -7,6 +7,7 @@
 
 #include "pipeline.h"
 
+#define TINT_BUILD_WGSL_READER 1
 #include "tint/tint.h"
 
 #include "renderer_storage.h"
@@ -255,7 +256,7 @@ void Shader::get_reflection_data(const std::string& shader_path, const std::stri
 			for (const auto & input_variable : entry_point.input_variables) {
 				WGPUVertexAttribute vertex_attribute = {};
 
-				vertex_attribute.shaderLocation = input_variable.location_attribute;
+				vertex_attribute.shaderLocation = input_variable.attributes.location.value();
 				vertex_attribute.offset = offset;
 
 				size_t byte_size = 0;

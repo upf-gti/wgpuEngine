@@ -29,7 +29,7 @@ void Camera::update(float delta_time)
     delta_yaw = clamp_rotation(delta_yaw);
     delta_pitch = clamp_rotation(delta_pitch);
 
-    float max_offset = 0.5f;
+    float max_offset = 0.25f;
 
     constexpr float pi = glm::pi<float>();
     constexpr float pi_2 = 0.5f * pi;

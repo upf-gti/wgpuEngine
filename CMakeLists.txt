@@ -122,9 +122,11 @@ if (NOT EMSCRIPTEN)
     set_property(TARGET xr_global_generated_files PROPERTY FOLDER "External/OpenXR")
 
     # glfw
+    add_subdirectory(libraries/glfw)
     add_subdirectory(libraries/glfw3webgpu)
     target_link_libraries(${PROJECT_NAME} PUBLIC glfw glfw3webgpu)
     set_property(TARGET glfw PROPERTY FOLDER "External/GLFW3")
+    set_property(TARGET update_mappings PROPERTY FOLDER "External/GLFW3")
     set_property(TARGET glfw3webgpu PROPERTY FOLDER "External/GLFW3")
 
     # renderdoc
@@ -173,5 +175,6 @@ add_library(imgui STATIC
 target_link_libraries(imgui PUBLIC glfw webgpu)
 target_include_directories(imgui PUBLIC ${WGPU_DIR_LIBS}/imgui)
 target_link_libraries(${PROJECT_NAME} PUBLIC imgui)
+set_property(TARGET imgui PROPERTY FOLDER "External/imgui")
 
 target_copy_webgpu_binaries(${PROJECT_NAME})
