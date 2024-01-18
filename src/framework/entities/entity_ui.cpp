@@ -381,8 +381,11 @@ namespace ui {
             float percent = (polar.x + pi) / (2.0f * pi);
             glm::vec3 hsv = glm::vec3(percent, 1., polar.y);
 
+            // Store it without conversion and intensity multiplier
             current_color = glm::vec4(hsv2rgb(hsv), current_color.a);
-            controller->emit_signal(signal, current_color);
+            // Send the signal using the final color
+            glm::vec3 new_color = glm::pow(glm::vec3(current_color) * current_color.a, glm::vec3(2.2f));
+            controller->emit_signal(signal, glm::vec4(new_color, current_color.a));
         }
 
         if (was_released)

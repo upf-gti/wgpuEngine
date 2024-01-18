@@ -352,7 +352,7 @@ namespace ui {
 		*	Create slider entity
 		*/
 
-        float default_value = j.value("default", 1.f);
+        float default_value = j.value("value", 1.f);
         Color color = Color(0.47f, 0.37f, 0.94f, 1.f);
         if (j.count("color")) color = load_vec4(j["color"]);
         color = glm::pow(color, Color(2.2f));
@@ -399,7 +399,7 @@ namespace ui {
 
         process_params(pos, size);
 
-        Color default_color = load_vec4(j.value("default", ""));
+        Color default_color = load_vec4(j.value("color", ""));
 
         ColorPickerWidget* picker = new ColorPickerWidget(signal, pos, size, default_color);
         picker->add_surface(RendererStorage::get_surface("quad"));
@@ -426,11 +426,12 @@ namespace ui {
             SliderWidget* slider = (SliderWidget*)make_slider( j["slider"] );
             bind(j["slider"].value("name", ""), [this, p = picker](const std::string& signal, float value) {
                 p->current_color.a = value;
-                emit_signal(p->signal, p->current_color * value);
+                glm::vec3 new_color = glm::pow(glm::vec3(p->current_color) * value, glm::vec3(2.2f));
+                emit_signal(p->signal, Color(new_color, value));
             });
 
             // Set initial value
-            picker->current_color.a = j["slider"].value("default", 1.f);
+            picker->current_color.a = j["slider"].value("value", 1.f);
         }
 
         return picker;
