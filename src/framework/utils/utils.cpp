@@ -1,6 +1,5 @@
 #include "utils.h"
 
-#include <regex>
 #include <cassert>
 #include <fstream>
 #include <sstream>
@@ -9,15 +8,19 @@
 
 #include "glm/gtx/hash.hpp"
 
-std::vector<std::string> tokenize(const std::string& str) {
-	
-	std::regex reg("\\s+");
-
-	std::sregex_token_iterator iter(str.begin(), str.end(), reg, -1);
-	std::sregex_token_iterator end;
-
-	std::vector<std::string> vec(iter, end);
-	return vec;
+std::vector<std::string> tokenize(const std::string& str)
+{
+	std::vector<std::string> results;
+    std::string::const_iterator start = str.begin();
+    std::string::const_iterator end = str.end();
+    std::string::const_iterator next = std::find(start, end, ' ');
+    while (next != end) {
+        results.push_back(std::string(start, next));
+        start = next + 1;
+        next = std::find(start, end, ' ');
+    }
+    results.push_back(std::string(start, next));
+    return results;
 }
 
 void print_error(const char* p_function, const char* p_file, int p_line, const char* p_error, const char* p_message) {

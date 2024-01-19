@@ -2,6 +2,8 @@
 
 #include "shader.h"
 
+#include "spdlog/spdlog.h"
+
 WebGPUContext* Pipeline::webgpu_context = nullptr;
 std::unordered_map<RenderPipelineKey, Pipeline*> Pipeline::registered_render_pipelines = {};
 std::unordered_map<Shader*, Pipeline*> Pipeline::registered_compute_pipelines = {};
@@ -61,6 +63,8 @@ void Pipeline::create_compute(Shader* shader)
 	for (const auto& bind_group_layout : layouts_by_id) {
 		bind_group_layouts.push_back(bind_group_layout);
 	}
+
+    spdlog::info("Compiling pipeline for shader {}", shader->get_path());
 
 	pipeline_layout = webgpu_context->create_pipeline_layout(bind_group_layouts);
 	pipeline = webgpu_context->create_compute_pipeline(shader->get_module(), pipeline_layout);
