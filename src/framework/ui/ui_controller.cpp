@@ -384,6 +384,10 @@ namespace ui {
         slider->ui_data.num_group_items = offset;
         slider->m_layer = static_cast<uint8_t>(layout_iterator.y);
 
+        bind(signal + "@changed", [this, s = slider](const std::string& signal, float value) {
+            s->set_value(value);
+        });
+
         if (group_opened)
             slider->m_priority = 1;
 

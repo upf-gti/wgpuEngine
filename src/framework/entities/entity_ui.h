@@ -137,6 +137,8 @@ namespace ui {
 
         void render() override;
         void update(float delta_time) override;
+
+        void set_value(float new_value);
 	};
 
     class ColorPickerWidget : public UIEntity {

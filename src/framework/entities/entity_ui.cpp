@@ -338,6 +338,13 @@ namespace ui {
         text_value->update(delta_time);
 	}
 
+    void SliderWidget::set_value(float new_value)
+    {
+        current_value = glm::clamp(new_value, 0.f, 1.f);
+        std::string value_as_string = std::to_string(std::ceil(current_value * 100.f) / 100.f);
+        text_value->text_entity->set_text(value_as_string.substr(0, 4));
+    }
+
     /*
     *	ColorPicker
     */
