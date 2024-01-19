@@ -7,8 +7,6 @@
 
 #include "glm/gtc/matrix_transform.hpp"
 
-#include <algorithm>
-
 #include "spdlog/spdlog.h"
 
 void Camera::update(float delta_time)
@@ -20,7 +18,7 @@ void Camera::update(float delta_time)
     {
         glm::vec2 mouse_delta = Input::get_mouse_delta();
 
-        mouse_delta.x = std::clamp(mouse_delta.x, -150.0f, 150.0f);
+        mouse_delta.x = glm::clamp(mouse_delta.x, -150.0f, 150.0f);
 
         delta_yaw += mouse_delta.x * mouse_sensitivity;
         delta_pitch -= mouse_delta.y * mouse_sensitivity;
