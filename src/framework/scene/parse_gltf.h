@@ -1,7 +1,8 @@
 #pragma once
 
-#include "framework/entities/entity_mesh.h"
-
 #include <vector>
+#include <string>
 
-bool parse_gltf(const std::string& gltf_path, std::vector<Entity*>& entities);
+class Entity;
+
+bool parse_gltf(const char* gltf_path, std::vector<Entity*>& entities);

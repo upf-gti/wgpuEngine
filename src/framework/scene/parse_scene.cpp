@@ -7,9 +7,10 @@
 
 #include "spdlog/spdlog.h"
 
-bool parse_scene(const std::string& scene_path, std::vector<Entity*>& entities)
+bool parse_scene(const char* scene_path, std::vector<Entity*>& entities)
 {
-    std::string extension = scene_path.substr(scene_path.find_last_of(".") + 1);
+    std::string scene_path_str = std::string(scene_path);
+    std::string extension = scene_path_str.substr(scene_path_str.find_last_of(".") + 1);
 
     spdlog::info("Parsing scene: {}", scene_path);
 
@@ -28,9 +29,10 @@ bool parse_scene(const std::string& scene_path, std::vector<Entity*>& entities)
     return false;
 }
 
-EntityMesh* parse_mesh(const std::string& mesh_path)
+EntityMesh* parse_mesh(const char* mesh_path)
 {
-    std::string extension = mesh_path.substr(mesh_path.find_last_of(".") + 1);
+    std::string mesh_path_str = std::string(mesh_path);
+    std::string extension = mesh_path_str.substr(mesh_path_str.find_last_of(".") + 1);
 
     spdlog::info("Parsing mesh: {}", mesh_path);
 

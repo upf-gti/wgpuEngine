@@ -12,6 +12,8 @@
 #include <glm/gtx/quaternion.hpp>
 
 #include "framework/utils/utils.h"
+#include "framework/entities/entity_mesh.h"
+
 #include "graphics/texture.h"
 #include "graphics/shader.h"
 
@@ -477,7 +479,7 @@ void parse_model_nodes(tinygltf::Model& model, tinygltf::Node& node, Entity* ent
     }
 };
 
-bool parse_gltf(const std::string& gltf_path, std::vector<Entity*>& entities)
+bool parse_gltf(const char* gltf_path, std::vector<Entity*>& entities)
 {
     tinygltf::TinyGLTF loader;
     tinygltf::Model model;

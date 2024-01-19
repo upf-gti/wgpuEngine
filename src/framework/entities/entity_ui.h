@@ -1,7 +1,6 @@
 #pragma once
 
 #include "framework/colors.h"
-#include "graphics/webgpu_context.h"
 #include "graphics/renderer_storage.h"
 #include "entity_mesh.h"
 #include "entity_text.h"

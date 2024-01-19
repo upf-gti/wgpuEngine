@@ -18,10 +18,10 @@ sHDRELevel HDRE::getLevel(int n)
 {
 	sHDRELevel level;
 
-	float size = (int)(this->width / pow(2.0, n));
+	float size = (static_cast<float>(this->width) / pow(2.0, n));
 
-	level.width = size;
-	level.height = size; // cubemap sizes!
+	level.width = static_cast<int>(size);
+	level.height = static_cast<int>(size); // cubemap sizes!
 	level.data = this->faces_array[n];
 	level.faces = this->getFaces(n);
 	
@@ -86,7 +86,7 @@ void flipY(float** data, unsigned int size, short num_channels, bool flip_sides)
 	// std::cout << "Flipping Y" << std::endl;
 
 	// bytes
-	size_t l = floor(size*0.5);
+	size_t l = static_cast<size_t>(floor(size*0.5));
 
 	int pos = 0;
 	int lastpos = size * (size - 1) * num_channels;

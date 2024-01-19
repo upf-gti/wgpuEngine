@@ -2,25 +2,16 @@
 
 #include "includes.h"
 
-#ifdef XR_SUPPORT
-#include <dawnxr/dawnxr.h>
-#endif
-
 #include "uniform.h" 
-
-#include "GLFW/glfw3.h"
 
 class Shader;
 class Pipeline;
 class Texture;
+struct GLFWwindow;
 
 struct WebGPUContext {
 
-#ifdef XR_SUPPORT
-    dawn::native::Instance* instance;
-#else
     WGPUInstance            instance = nullptr;
-#endif
 
     WGPUSurface             surface = nullptr;
     WGPUDevice              device = nullptr;

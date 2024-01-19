@@ -43,6 +43,13 @@ FetchContent_Declare(
     DOWNLOAD_NO_EXTRACT TRUE
 )
 
+FetchContent_Declare(
+    nlohmann_json_fwd
+    URL https://raw.githubusercontent.com/nlohmann/json/develop/single_include/nlohmann/json_fwd.hpp
+    DOWNLOAD_DIR ${WGPU_DIR_LIBS}/nlohmann_json
+    DOWNLOAD_NO_EXTRACT TRUE
+)
+
 # download tiny_gltf
 FetchContent_Declare(
     tiny_gltf
@@ -51,7 +58,7 @@ FetchContent_Declare(
     DOWNLOAD_NO_EXTRACT TRUE
 )
 
-FetchContent_MakeAvailable(tinyobjloader stb_image nlohmann_json tiny_gltf)
+FetchContent_MakeAvailable(tinyobjloader stb_image nlohmann_json nlohmann_json_fwd tiny_gltf)
 
 # Macro to map filters to folder structure for MSVC projects
 macro(GroupSources curdir)
@@ -158,7 +165,7 @@ target_include_directories(${PROJECT_NAME} PUBLIC ${WGPU_DIR_LIBS}/tiny_gltf)
 
 # spdlog
 add_subdirectory(libraries/spdlog)
-target_link_libraries(${PROJECT_NAME} PUBLIC spdlog::spdlog_header_only)
+target_link_libraries(${PROJECT_NAME} PUBLIC spdlog::spdlog)
 set_property(TARGET spdlog PROPERTY FOLDER "External/spdlog")
 
 # imgui

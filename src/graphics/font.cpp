@@ -2,9 +2,19 @@
 
 #include "renderer_storage.h"
 
+#include <filesystem>
+namespace fs = std::filesystem;
+
+#include "json.hpp"
+
 using namespace std::string_literals;
 
 std::map<std::string, Font*> Font::s_fonts;
+
+Font::~Font()
+{
+    delete font_description;
+}
 
 Font* Font::get(const std::string& font_name)
 {
@@ -22,7 +32,9 @@ Font* Font::get(const std::string& font_name)
 
 void Font::load(const std::string& font_name)
 {
-    json j = font_description = load_json("data/fonts/" + font_name + "/" + font_name + ".json"); 
+    font_description = new json();
+
+    json j = *font_description = load_json("data/fonts/" + font_name + "/" + font_name + ".json"); 
 
     // Load all pages
     {   

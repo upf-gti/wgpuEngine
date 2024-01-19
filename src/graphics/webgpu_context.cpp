@@ -1,13 +1,6 @@
 #include "webgpu_context.h"
 #include "framework/utils/utils.h"
 
-#ifdef __EMSCRIPTEN__
-#include <emscripten/emscripten.h>
-#include <emscripten/html5_webgpu.h>
-#else
-#include "glfw3webgpu.h"
-#endif
-
 #include "shader.h"
 #include "pipeline.h"
 #include "texture.h"
@@ -15,6 +8,17 @@
 #include "renderer.h"
 
 #include "spdlog/spdlog.h"
+
+#ifdef XR_SUPPORT
+#include <dawnxr/dawnxr.h>
+#endif
+
+#ifdef __EMSCRIPTEN__
+#include <emscripten/emscripten.h>
+#include <emscripten/html5_webgpu.h>
+#else
+#include "glfw3webgpu.h"
+#endif
 
 WGPUTextureFormat WebGPUContext::swapchain_format = WGPUTextureFormat_BGRA8Unorm;
 WGPUTextureFormat WebGPUContext::xr_swapchain_format = WGPUTextureFormat_BGRA8UnormSrgb;
@@ -239,7 +243,7 @@ void WebGPUContext::destroy()
         return;
 
 #ifdef XR_SUPPORT
-    wgpuInstanceRelease(instance->Get());
+    wgpuInstanceRelease(instance);
 #else
     wgpuInstanceRelease(instance);
 #endif
@@ -271,16 +275,9 @@ void WebGPUContext::create_instance()
     chain_desc->sType = WGPUSType_DawnTogglesDescriptor;
     instance_dscr.nextInChain = chain_desc;
 
-#ifdef XR_SUPPORT
-    instance = new dawn::native::Instance(&instance_dscr);
-#endif
-
 #endif // !__EMSCRIPTEN__
 
-#if defined(__EMSCRIPTEN__) || !defined(XR_SUPPORT)
     instance = wgpuCreateInstance(&instance_dscr);
-#endif
-
 }
 
 WGPUShaderModule WebGPUContext::create_shader_module(char const* code)
@@ -375,7 +372,7 @@ void WebGPUContext::create_texture_mipmaps(WGPUTexture texture, WGPUExtent3D tex
     source.offset = 0;
 
     size_t byte_size = 0;
-    size_t pixel_size = 0;
+    uint32_t pixel_size = 0;
 
     switch (format) {
     case WGPUTextureFormat_RGBA8Unorm:
@@ -709,11 +706,7 @@ void WebGPUContext::update_buffer(WGPUBuffer buffer, uint64_t buffer_offset, voi
 
 WGPUInstance WebGPUContext::get_instance()
 {
-#if defined(XR_SUPPORT) && !defined(__EMSCRIPTEN__)
-    return instance->Get();
-#else
     return instance;
-#endif
 }
 
 void WebGPUContext::create_swapchain(int width, int height)

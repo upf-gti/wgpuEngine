@@ -3,61 +3,19 @@
 #include <vector>
 #include <array>
 #include "includes.h"
-#include "framework/input.h"
 
 #ifdef XR_SUPPORT
 
 #include <dawnxr/dawnxr.h>
-#include "openxr/openxr_platform.h"
+#include "framework/input_xr.h"
 
-#include "graphics/webgpu_context.h"
+#if defined(BACKEND_VULKAN)
+struct XrGraphicsRequirementsVulkanKHR;
+#elif defined(BACKEND_DX12)
+struct XrGraphicsRequirementsD3D12KHR;
+#endif
 
-struct sViewData {
-    glm::vec3   position;
-    glm::mat4x4 projection_matrix;
-    glm::mat4x4 view_matrix;
-    glm::mat4x4 view_projection_matrix;
-};
-
-struct sSwapchainData {
-    XrSwapchain swapchain = {};
-    uint32_t    image_index = {};
-    std::vector<dawnxr::SwapchainImageDawn> images;
-};
-
-struct
-{
-    bool supported = false;
-    // whether the current VR system in use has hand tracking
-    bool system_supported = false;
-    PFN_xrLocateHandJointsEXT pfnLocateHandJointsEXT = {};
-    std::array<XrHandTrackerEXT, HAND_COUNT> trackers = {};
-} hand_tracking;
-
-struct sInputState {
-
-    XrActionSet actionSet{ XR_NULL_HANDLE };
-    
-    // hand pose: point in the world using the input source, according to the platform's conventions for aiming with that kind of source.
-    XrAction aimPoseAction{ XR_NULL_HANDLE };
-    // hand pose: render a virtual object held in the user's hand, whether it is tracked directly or by a motion controller.
-    XrAction gripPoseAction{ XR_NULL_HANDLE };
-
-    XrAction grabAction{ XR_NULL_HANDLE };
-    XrAction thumbstickValueAction{ XR_NULL_HANDLE };
-    XrAction thumbstickClickAction{ XR_NULL_HANDLE };
-    XrAction thumbstickTouchAction{ XR_NULL_HANDLE };
-    XrAction triggerValueAction{ XR_NULL_HANDLE };
-    XrAction triggerTouchAction{ XR_NULL_HANDLE };
-    XrAction vibrateAction{ XR_NULL_HANDLE };
-
-    // Buttons.
-    // There are stored in data input...
-
-    XrPath handSubactionPath[HAND_COUNT];
-    XrSpace aimHandSpace[HAND_COUNT];
-    XrSpace gripHandSpace[HAND_COUNT];
-};
+struct WebGPUContext;
 
 struct OpenXRContext {
 

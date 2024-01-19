@@ -1,8 +1,7 @@
 #pragma once
 
-#include "framework/entities/entity_ui.h"
 #include "framework/colors.h"
-#include "framework/input.h"
+#include "framework/input_xr.h"
 #include "framework/utils/json_utils.h"
 
 #include <variant>
@@ -12,6 +11,10 @@
 #include <vector>
 
 class EntityMesh;
+
+namespace ui {
+    class UIEntity;
+}
 
 using FuncEmpty = std::function<void()>;
 
@@ -58,7 +61,7 @@ namespace ui {
 		std::map<std::string, std::vector<SignalType>> mapping_signals;
         std::map<uint8_t, std::vector<FuncEmpty>> controller_signals;
 
-        json mjson;
+        json* mjson = nullptr;
         std::map<std::string, UIEntity*> widgets;
         static std::map<std::string, UIEntity*> all_widgets;
 
@@ -81,6 +84,8 @@ namespace ui {
         glm::vec2 compute_position(float xOffset = 1.f);
 
 	public:
+
+        ~Controller();
 
 		float global_scale = 1.f;
 		bool enabled = true;
@@ -106,10 +111,10 @@ namespace ui {
 
         UIEntity* make_rect(glm::vec2 pos, glm::vec2 size, const Color& color);
 		UIEntity* make_text(const std::string& text, const std::string& alias, glm::vec2 pos, const Color& color, float scale = 1.f, glm::vec2 size = {1, 1});
-        UIEntity* make_label(const json& j);
-		UIEntity* make_button(const json& j);
-		UIEntity* make_slider(const json& j);
-		UIEntity* make_color_picker(const json& j);
+        UIEntity* make_label(const json* j);
+		UIEntity* make_button(const json* j);
+		UIEntity* make_slider(const json* j);
+		UIEntity* make_color_picker(const json* j);
         void make_submenu(UIEntity* parent, const std::string& name);
         void close_submenu();
 

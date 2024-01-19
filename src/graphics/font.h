@@ -6,38 +6,16 @@
 #include <string>
 #include <vector>
 
-#include <filesystem>
-namespace fs = std::filesystem;
-
+#include "font_common.h"
 #include "graphics/texture.h"
-
-struct CKerning {
-    int first;
-    int second;
-    int amount;
-};
-
-struct Character {
-    int id;
-    int index;
-    char character;
-    glm::vec2 size;
-    glm::vec2 offset;
-    int xadvance;
-    int chnl;
-    glm::vec2 pos;
-    int page;
-
-    // Mesh properties
-    glm::vec3 vertices[6];
-    glm::vec2 uvs[6];
-};
 
 class Font {
 
 public:
 
-    nlohmann::json font_description;
+    ~Font();
+
+    nlohmann::json* font_description = nullptr;
     std::vector<Texture*> textures;
     std::map<uint32_t, Character> characters;
     std::multimap<int, CKerning> kernings;

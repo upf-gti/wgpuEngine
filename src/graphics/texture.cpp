@@ -40,18 +40,18 @@ bool Texture::convert_to_rgba8unorm(uint32_t width, uint32_t height, WGPUTexture
         return false;
     }
 
-    for (int i = 0; i < height; ++i) {
-        for (int j = 0; j < width; ++j) {
+    for (uint32_t i = 0; i < height; ++i) {
+        for (uint32_t j = 0; j < width; ++j) {
 
             switch (src_format) {
             case WGPUTextureFormat_RGBA16Uint:
             {
                 uint16_t* src_converted = reinterpret_cast<uint16_t*>(src);
-                size_t pixel_pos = (j * 4) + (i * 4 * width);
-                dst[pixel_pos + 0] = (src_converted[pixel_pos + 0] / 65535.0f) * 255.0f;
-                dst[pixel_pos + 1] = (src_converted[pixel_pos + 1] / 65535.0f) * 255.0f;
-                dst[pixel_pos + 2] = (src_converted[pixel_pos + 2] / 65535.0f) * 255.0f;
-                dst[pixel_pos + 3] = (src_converted[pixel_pos + 3] / 65535.0f) * 255.0f;
+                uint32_t pixel_pos = (j * 4) + (i * 4 * width);
+                dst[pixel_pos + 0] = static_cast<uint8_t>((src_converted[pixel_pos + 0] / 65535.0f) * 255.0f);
+                dst[pixel_pos + 1] = static_cast<uint8_t>((src_converted[pixel_pos + 1] / 65535.0f) * 255.0f);
+                dst[pixel_pos + 2] = static_cast<uint8_t>((src_converted[pixel_pos + 2] / 65535.0f) * 255.0f);
+                dst[pixel_pos + 3] = static_cast<uint8_t>((src_converted[pixel_pos + 3] / 65535.0f) * 255.0f);
                 break;
             }
             default:

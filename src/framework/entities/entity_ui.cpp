@@ -5,6 +5,7 @@
 #include "framework/input.h"
 #include "framework/entities/entity_text.h"
 #include "graphics/renderer.h"
+#include "graphics/webgpu_context.h"
 
 namespace ui {
 

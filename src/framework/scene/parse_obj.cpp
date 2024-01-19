@@ -7,11 +7,13 @@
 #include "graphics/shader.h"
 #include "graphics/renderer_storage.h"
 
+#include "framework/entities/entity_mesh.h"
+
 #include <filesystem>
 
 #include "spdlog/spdlog.h"
 
-EntityMesh* parse_obj(const std::string& obj_path)
+EntityMesh* parse_obj(const char* obj_path)
 {
     tinyobj::ObjReaderConfig reader_config;
     tinyobj::ObjReader reader;

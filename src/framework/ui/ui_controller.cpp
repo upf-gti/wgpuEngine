@@ -1,10 +1,13 @@
 #include "ui_controller.h"
+
 #include "framework/utils/utils.h"
 #include "framework/input.h"
 #include "framework/entities/entity_ui.h"
 #include "framework/utils/intersections.h"
 #include "framework/entities/entity_text.h"
 #include "framework/scene/parse_scene.h"
+
+#include "json.hpp"
 
 #include "spdlog/spdlog.h"
 
@@ -150,7 +153,12 @@ namespace ui {
         return { x, y };
     }
 
-	void Controller::append_widget(UIEntity* widget, const std::string& name, UIEntity* force_parent)
+    Controller::~Controller()
+    {
+        delete mjson;
+    }
+
+    void Controller::append_widget(UIEntity* widget, const std::string& name, UIEntity* force_parent)
 	{
         widget->controller = this;
 
@@ -201,10 +209,10 @@ namespace ui {
 		return text_widget;
 	}
 
-    UIEntity* Controller::make_label(const json& j)
+    UIEntity* Controller::make_label(const json* j)
     {
-        std::string text = j["name"];
-        std::string alias = j.value("alias", text);
+        std::string text = (*j)["name"];
+        std::string alias = (*j).value("alias", text);
 
         static int num_labels = 0;
 
@@ -236,17 +244,17 @@ namespace ui {
         Material material;
         material.shader = RendererStorage::get_shader("data/shaders/mesh_texture.wgsl");
 
-        if (j.count("texture") > 0)
+        if (j->count("texture") > 0)
         {
-            std::string texture = j["texture"];
+            std::string texture = (*j)["texture"];
             material.diffuse_texture = RendererStorage::get_texture(texture);
             material.flags |= MATERIAL_DIFFUSE;
         }
 
         m_icon->set_surface_material_override(m_icon->get_surface(0), material);
 
-        m_icon->button = j.value("button", -1);
-        m_icon->subtext = j.value("subtext", "");
+        m_icon->button = j->value("button", -1);
+        m_icon->subtext = j->value("subtext", "");
 
         if (m_icon->button != -1)
         {
@@ -263,9 +271,9 @@ namespace ui {
         return m_icon;
     }
 
-    UIEntity* Controller::make_button(const json& j)
+    UIEntity* Controller::make_button(const json* j)
 	{
-        std::string signal = j["name"];
+        std::string signal = (*j)["name"];
 
         // World attributes
         glm::vec2 pos = compute_position();
@@ -280,15 +288,15 @@ namespace ui {
 		*	Create button entity and set transform
 		*/
 
-        std::string texture = j["texture"];
+        std::string texture = (*j)["texture"];
         std::string shader = "data/shaders/ui/ui_button.wgsl";
 
-        if (j.count("shader"))
-            shader = j["shader"];
+        if (j->count("shader"))
+            shader = (*j)["shader"];
 
-        const bool allow_toggle = j.value("allow_toggle", false);
-        const bool is_color_button = j.count("color") > 0;
-        Color color = is_color_button ? load_vec4(j["color"]) : colors::WHITE;
+        const bool allow_toggle = j->value("allow_toggle", false);
+        const bool is_color_button = j->count("color") > 0;
+        Color color = is_color_button ? load_vec4((*j)["color"]) : colors::WHITE;
         color = glm::pow(color, Color(2.2f));
 
 		// Render quad in local workspace position
@@ -305,9 +313,9 @@ namespace ui {
 
         // Widget props
         e_button->is_color_button = is_color_button;
-        e_button->is_unique_selection = j.value("unique_selection", false);
-        e_button->selected = j.value("selected", false);
-        e_button->ui_data.keep_rgb = j.value("keep_rgb", false) ? 1.f : 0.f;
+        e_button->is_unique_selection = j->value("unique_selection", false);
+        e_button->selected = j->value("selected", false);
+        e_button->ui_data.keep_rgb = j->value("keep_rgb", false) ? 1.f : 0.f;
 
         if( group_opened )
             e_button->m_priority = 1;
@@ -333,10 +341,10 @@ namespace ui {
 		return e_button;
 	}
 
-    UIEntity* Controller::make_slider(const json& j)
+    UIEntity* Controller::make_slider(const json* j)
 	{
-        std::string signal = j["name"];
-        std::string s_mode = j.value("mode", "horizontal");
+        std::string signal = (*j)["name"];
+        std::string s_mode = j->value("mode", "horizontal");
         int mode = (s_mode == "horizontal" ? SliderWidget::HORIZONTAL : SliderWidget::VERTICAL);
         bool is_horizontal_slider = (mode == SliderWidget::HORIZONTAL);
 
@@ -354,9 +362,9 @@ namespace ui {
 		*	Create slider entity
 		*/
 
-        float default_value = j.value("value", 1.f);
+        float default_value = j->value("value", 1.f);
         Color color = Color(0.47f, 0.37f, 0.94f, 1.f);
-        if (j.count("color")) color = load_vec4(j["color"]);
+        if (j->count("color")) color = load_vec4((*j)["color"]);
         color = glm::pow(color, Color(2.2f));
 
 		SliderWidget* slider = new SliderWidget(signal, default_value, pos, size, color, mode);
@@ -370,8 +378,8 @@ namespace ui {
 
         slider->set_surface_material_override(slider->get_surface(0), material);
 
-        slider->min_value = j.value("min", slider->min_value);
-        slider->max_value = j.value("max", slider->max_value);
+        slider->min_value = j->value("min", slider->min_value);
+        slider->max_value = j->value("max", slider->max_value);
         ((Entity*)slider)->set_process_children(true);
         slider->ui_data.num_group_items = offset;
         slider->m_layer = static_cast<uint8_t>(layout_iterator.y);
@@ -384,10 +392,10 @@ namespace ui {
 		return slider;
 	}
 
-    UIEntity* Controller::make_color_picker(const json& j)
+    UIEntity* Controller::make_color_picker(const json* j)
     {
-        std::string signal = j["name"];
-        bool has_slider = j.count("slider") > 0.f;
+        std::string signal = (*j)["name"];
+        bool has_slider = j->count("slider") > 0.f;
 
         // World attributes
         glm::vec2 pos = compute_position();
@@ -398,7 +406,7 @@ namespace ui {
 
         process_params(pos, size);
 
-        Color default_color = load_vec4(j.value("color", ""));
+        Color default_color = load_vec4(j->value("color", ""));
 
         ColorPickerWidget* picker = new ColorPickerWidget(signal, pos, size, default_color);
         picker->add_surface(RendererStorage::get_surface("quad"));
@@ -421,15 +429,15 @@ namespace ui {
         if (has_slider)
         {
             // Vertical slider
-            SliderWidget* slider = (SliderWidget*)make_slider( j["slider"] );
-            bind(j["slider"].value("name", ""), [this, p = picker](const std::string& signal, float value) {
+            SliderWidget* slider = (SliderWidget*)make_slider( &(*j)["slider"] );
+            bind((*j)["slider"].value("name", ""), [this, p = picker](const std::string& signal, float value) {
                 p->current_color.a = value;
                 glm::vec3 new_color = glm::pow(glm::vec3(p->current_color) * value, glm::vec3(2.2f));
                 emit_signal(p->signal, Color(new_color, value));
             });
 
             // Set initial value
-            picker->current_color.a = j["slider"].value("value", 1.f);
+            picker->current_color.a = (*j)["slider"].value("value", 1.f);
         }
 
         return picker;
@@ -602,8 +610,10 @@ namespace ui {
 
     void Controller::load_layout(const std::string& filename)
     {
+        mjson = new json();
+
         const json& j = load_json(filename);
-        mjson = j;
+        *mjson = j;
         float group_elements_pending = -1;
 
         float width = j["width"];
@@ -629,7 +639,7 @@ namespace ui {
             }
             else if (type == "button")
             {
-                make_button(j);
+                make_button(&j);
 
                 group_elements_pending--;
 
@@ -640,7 +650,7 @@ namespace ui {
             }
             else if (type == "picker")
             {
-                make_color_picker(j);
+                make_color_picker(&j);
 
                 int slots = j.count("slider") > 0 ? 2 : 1;
                 group_elements_pending -= slots;
@@ -652,11 +662,11 @@ namespace ui {
             }
             else if (type == "label")
             {
-                make_label(j);
+                make_label(&j);
             }
             else if (type == "slider")
             {
-                make_slider(j);
+                make_slider(&j);
 
                 int slots = j.value("mode", "horizontal") == "horizontal" ? 2 : 1;
                 group_elements_pending -= slots;
@@ -700,7 +710,7 @@ namespace ui {
 
     void Controller::change_list_layout(const std::string& list_name)
     {
-        if (mjson.count("lists") == 0) {
+        if (mjson->count("lists") == 0) {
             spdlog::error("Controller doesn't have layout lists...");
             return;
         }
@@ -711,7 +721,7 @@ namespace ui {
         }
 
         // Enable only widgets in list...
-        const json& lists = mjson["lists"];
+        const json& lists = (*mjson)["lists"];
         if (lists.count(list_name) == 0) {
             spdlog::error("Controller doesn't have a layout list named '{}'", list_name);
             return;

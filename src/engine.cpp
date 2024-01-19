@@ -1,13 +1,17 @@
 #include "engine.h"
-#include "framework/utils/utils.h"
+
 #include "framework/input.h"
 #include "framework/utils/file_watcher.h"
 
-#include "imgui.h"
-#include "backends/imgui_impl_glfw.h"
-#include "backends/imgui_impl_wgpu.h"
+#include "graphics/renderer.h"
 
 #include "spdlog/spdlog.h"
+
+#include "imgui.h"
+#include "backends/imgui_impl_wgpu.h"
+#include "backends/imgui_impl_glfw.h"
+
+#include <GLFW/glfw3.h>
 
 Engine* Engine::instance = nullptr;
 

@@ -1,11 +1,8 @@
 #pragma once
 
-#include <GLFW/glfw3.h>
-
-#include "framework/utils/utils.h"
-#include "graphics/renderer.h"
-
+struct GLFWwindow;
 class FileWatcher;
+class Renderer;
 
 class Engine {
 

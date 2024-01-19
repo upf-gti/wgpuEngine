@@ -4,6 +4,8 @@
 
 #include "spdlog/spdlog.h"
 
+#include "json.hpp"
+
 json load_json(const std::string& filename) {
 
 	json j;

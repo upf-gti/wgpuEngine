@@ -1,5 +1,5 @@
 #pragma once
 
-#include "framework/entities/entity_mesh.h"
+class EntityMesh;
 
-EntityMesh* parse_obj(const std::string& obj_path);
+EntityMesh* parse_obj(const char* obj_path);

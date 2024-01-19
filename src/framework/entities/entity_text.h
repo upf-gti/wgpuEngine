@@ -2,8 +2,10 @@
 
 #include <vector>
 #include "entity_mesh.h"
-#include "graphics/font.h"
 #include "framework/colors.h"
+#include "graphics/font_common.h"
+
+class Font;
 
 class TextEntity : public EntityMesh {
 
