@@ -206,7 +206,7 @@ namespace ui {
         {
             mark->set_model(get_model());
             mark->translate(glm::vec3(0.7f, 0.7f, -1e-3f));
-            mark->scale(glm::vec3(0.25f, 0.25f, 1.0f));
+            mark->scale(glm::vec3(0.35f, 0.35f, 1.0f));
         }
 
 		const WorkSpaceData& workspace = controller->get_workspace();
@@ -214,9 +214,6 @@ namespace ui {
 		// Check hover (intersects)
         glm::vec3 intersection;
         bool hovered = is_hovered(intersection);
-
-        // Used to disable presses and hovers
-        hovered &= allow_events;
 
         if (!label)
         {
@@ -228,6 +225,9 @@ namespace ui {
         }
 
         label->set_active(hovered);
+
+        // Used to disable presses and active hovers
+        hovered &= (!ui_data.is_button_disabled);
 
 		/*
 		*	Create mesh and render button
@@ -244,7 +244,9 @@ namespace ui {
             {
                 if (is_color_button)
                 {
-                    if(current_selected) current_selected->selected = false;
+                    if (current_selected) {
+                        current_selected->selected = false;
+                    }
                     current_selected = this;
                 }
             }
@@ -297,21 +299,8 @@ namespace ui {
         float magic_t = 0.002125f;
         float magic_c = 0.005f;
 
-        if (!label)
-        {
-            label = new TextWidget(signal, { m_position.x - signal.length() * magic_t, m_position.y + m_scale.y * 0.5f }, 0.01f, colors::WHITE);
-            label->m_priority = 2;
-            label->uid = uid;
-            label->controller = controller;
-        }
-
-        if (!text_value)
-        {
-            std::string value_as_string = std::to_string(std::ceil(current_value * 100.f) / 100.f);
-            text_value = new TextWidget(value_as_string.substr(0, 4), {m_position.x - 4 * magic_t, m_position.y - magic_c }, 0.01f, colors::WHITE);
-            text_value->m_priority = 2;
-            text_value->uid = uid;
-            text_value->controller = controller;
+        if (!label || !text_value) {
+            create_helpers();
         }
 
         glm::vec3 intersection;
@@ -327,7 +316,11 @@ namespace ui {
             // -scale..scale -> 0..1
             float local_point = (mode == HORIZONTAL ? intersection.x : -intersection.y);
             local_point = glm::max(glm::min(local_point, bounds), -bounds);
+            // this is at range 0..1
 			current_value = glm::clamp((local_point / bounds) * 0.5f + 0.5f, 0.f, 1.f);
+            // set in range min-max
+            current_value = current_value * (max_value - min_value) + min_value;
+            if (step == 1.0f) current_value = std::roundf(current_value);
 			controller->emit_signal(signal, current_value);
             std::string value_as_string = std::to_string(std::ceil(current_value * 100.f) / 100.f);
             text_value->text_entity->set_text(value_as_string.substr(0, 4));
@@ -336,6 +329,7 @@ namespace ui {
         // Update uniforms
         ui_data.is_hovered = hovered ? 1.f : 0.f;
         ui_data.slider_value = current_value;
+        ui_data.slider_max = max_value;
 
         auto webgpu_context = Renderer::instance->get_webgpu_context();
 
@@ -347,9 +341,37 @@ namespace ui {
 
     void SliderWidget::set_value(float new_value)
     {
-        current_value = glm::clamp(new_value, 0.f, 1.f);
+        if (!text_value) {
+            create_helpers();
+        }
+
+        current_value = glm::clamp(new_value, min_value, max_value);
+        if (step == 1.0f) current_value = std::roundf(current_value);
         std::string value_as_string = std::to_string(std::ceil(current_value * 100.f) / 100.f);
         text_value->text_entity->set_text(value_as_string.substr(0, 4));
+    }
+
+    void SliderWidget::create_helpers()
+    {
+        float magic_t = 0.002125f;
+        float magic_c = 0.005f;
+
+        if (!label)
+        {
+            label = new TextWidget(signal, { m_position.x - signal.length() * magic_t, m_position.y + m_scale.y * 0.5f }, 0.01f, colors::WHITE);
+            label->m_priority = 2;
+            label->uid = uid;
+            label->controller = controller;
+        }
+
+        if (!text_value)
+        {
+            std::string value_as_string = std::to_string(std::ceil(current_value * 100.f) / 100.f);
+            text_value = new TextWidget(value_as_string.substr(0, 4), { m_position.x - 4 * magic_t, m_position.y - magic_c }, 0.01f, colors::WHITE);
+            text_value->m_priority = 2;
+            text_value->uid = uid;
+            text_value->controller = controller;
+        }
     }
 
     /*

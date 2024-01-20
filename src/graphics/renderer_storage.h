@@ -39,14 +39,17 @@ public:
         // Buttons
         float is_selected = 0.f;
         float is_color_button = 0.f;
+
         // Color Picker
         glm::vec4 picker_color = glm::vec4(1.f);
-        // Slider
-        float slider_value = 0.f;
+
         // To keep rgb if icon has colors...
         float keep_rgb = 0.f;
-        float dummy1 = 0.f;
-        float dummy2 = 0.f;
+        // Slider
+        float slider_value = 0.f;
+        float slider_max = 1.0f;
+        // Disable buttons to use them as group icons
+        float is_button_disabled = 0.f;
     };
 
     struct sBindingData {

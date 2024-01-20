@@ -271,44 +271,31 @@ namespace ui {
         return m_icon;
     }
 
-    UIEntity* Controller::make_button(const json* j)
-	{
-        std::string signal = (*j)["name"];
-
+    UIEntity* Controller::make_button(const std::string& signal, const std::string& texture, const Color& color, bool selected, bool unique_selection,
+        bool allow_toggle, bool is_color_button, bool disabled, bool keep_rgb)
+    {
         // World attributes
         glm::vec2 pos = compute_position();
         glm::vec2 size = glm::vec2(BUTTON_SIZE);
 
-		glm::vec2 _pos = pos;
-		glm::vec2 _size = size;
+        glm::vec2 _pos = pos;
+        glm::vec2 _size = size;
 
-		process_params(pos, size);
+        process_params(pos, size);
 
-		/*
-		*	Create button entity and set transform
-		*/
-
-        std::string shader = "data/shaders/ui/ui_button.wgsl";
-        std::vector<std::string> define_specializations;
-
-        if (j->count("shader"))
-            shader = (*j)["shader"];
-
-        const bool allow_toggle = j->value("allow_toggle", false);
-        const bool is_color_button = j->count("color") > 0;
-        Color color = is_color_button ? load_vec4((*j)["color"]) : colors::WHITE;
-        color = glm::pow(color, Color(2.2f));
-
-		// Render quad in local workspace position
+        // Render quad in local workspace position
         ButtonWidget* e_button = new ButtonWidget(signal, pos, size, color, is_color_button);
         e_button->add_surface(RendererStorage::get_surface("quad"));
 
         Material material;
         material.flags |= MATERIAL_UI;
 
-        if ((*j).count("texture") > 0)
+        std::string shader = "data/shaders/ui/ui_button.wgsl";
+        std::vector<std::string> define_specializations;
+
+        if (texture.size() > 0)
         {
-            material.diffuse_texture = RendererStorage::get_texture((*j)["texture"]);
+            material.diffuse_texture = RendererStorage::get_texture(texture);
             material.flags |= MATERIAL_DIFFUSE;
             define_specializations.push_back("USES_TEXTURE");
         }
@@ -319,14 +306,15 @@ namespace ui {
         e_button->set_surface_material_override(e_button->get_surface(0), material);
 
         // Widget props
-        e_button->is_unique_selection = j->value("unique_selection", false);
-        e_button->selected = j->value("selected", false);
-        e_button->ui_data.keep_rgb = j->value("keep_rgb", false) ? 1.f : 0.f;
+        e_button->is_unique_selection = unique_selection;
+        e_button->selected = selected;
+        e_button->ui_data.keep_rgb = keep_rgb;
+        e_button->ui_data.is_button_disabled = disabled;
 
-        if(group_opened)
+        if (group_opened)
             e_button->m_priority = 1;
 
-        if (is_color_button || e_button->is_unique_selection || allow_toggle)
+        if (!disabled && (is_color_button || e_button->is_unique_selection || allow_toggle))
         {
             bind(signal, [widget = e_button, allow_toggle](const std::string& signal, void* button) {
                 // Unselect siblings
@@ -343,8 +331,26 @@ namespace ui {
 
         e_button->m_layer = static_cast<uint8_t>(layout_iterator.y);
 
-		append_widget(e_button, signal);
-		return e_button;
+        append_widget(e_button, signal);
+        return e_button;
+    }
+
+    UIEntity* Controller::make_button(const json* j)
+	{
+        std::string signal = (*j)["name"];
+        std::string texture = j->value("texture", "");
+
+        const bool unique_selection = j->value("unique_selection", false);
+        const bool disabled = j->value("disabled", false);
+        const bool allow_toggle = j->value("allow_toggle", false);
+        const bool selected = j->value("selected", false);
+        const bool keep_rgb = j->value("keep_rgb", false) ? 1.f : 0.f;
+        const bool is_color_button = j->count("color") > 0;
+
+        Color color = is_color_button ? load_vec4((*j)["color"]) : colors::WHITE;
+        color = glm::pow(color, Color(2.2f));
+
+        return make_button(signal, texture, color, selected, unique_selection, allow_toggle, is_color_button, disabled, keep_rgb);
 	}
 
     UIEntity* Controller::make_slider(const json* j)
@@ -375,6 +381,7 @@ namespace ui {
 
 		SliderWidget* slider = new SliderWidget(signal, default_value, pos, size, color, mode);
         slider->add_surface(RendererStorage::get_surface("quad"));
+        ((Entity*)slider)->set_process_children(true);
 
         Material material;
 
@@ -386,7 +393,7 @@ namespace ui {
 
         slider->min_value = j->value("min", slider->min_value);
         slider->max_value = j->value("max", slider->max_value);
-        ((Entity*)slider)->set_process_children(true);
+        slider->step = j->value("step", slider->step);
         slider->ui_data.num_group_items = offset;
         slider->m_layer = static_cast<uint8_t>(layout_iterator.y);
 
@@ -520,8 +527,18 @@ namespace ui {
         parent_queue.pop_back();
     }
 
-    UIEntity* Controller::make_group(const std::string& group_name, float number_of_widgets, const Color& color)
+    UIEntity* Controller::make_group(const json* j)
     {
+        const bool has_icon = (*j).count("icon_texture") > 0;
+
+        std::string group_name = (*j)["name"];
+        float number_of_widgets = (*j)["nitems"];
+        if (has_icon) number_of_widgets++;
+
+        Color color = Color(0.41f, 0.38f, 0.44f, 1.0f);
+        if ((*j).count("color")) color = load_vec4((*j)["color"]);
+        color = glm::pow(color, Color(2.2f));
+
         current_number_of_group_widgets = number_of_widgets;
 
         layout_iterator.x += X_MARGIN;
@@ -555,6 +572,11 @@ namespace ui {
         group_opened = true;
         layout_iterator.x += _size.x - (BUTTON_SIZE + X_GROUP_MARGIN);
 
+        if (has_icon)
+        {
+            make_button(&(*j)["icon_texture"]);
+        }
+
         return group;
     }
 
@@ -568,6 +590,11 @@ namespace ui {
         parent_queue.pop_back();
         group_opened = false; 
         g_iterator = 0.f;
+    }
+
+    void Controller::set_next_parent(UIEntity* parent)
+    {
+        parent_queue.push_back(parent);
     }
 
 	void Controller::bind(const std::string& name, SignalType callback)
@@ -639,13 +666,10 @@ namespace ui {
             {
                 assert(j.count("nitems") > 0);
                 float nitems = j["nitems"];
+
                 group_elements_pending = nitems;
 
-                Color color = Color(0.41f, 0.38f, 0.44f, 1.0f);
-                if (j.count("color")) color = load_vec4(j["color"]);
-                color = glm::pow(color, Color(2.2f));
-
-                UIEntity* group = make_group(name, nitems, color);
+                UIEntity* group = make_group(&j);
             }
             else if (type == "button")
             {

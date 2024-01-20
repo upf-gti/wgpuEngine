@@ -113,13 +113,17 @@ namespace ui {
 		UIEntity* make_text(const std::string& text, const std::string& alias, glm::vec2 pos, const Color& color, float scale = 1.f, glm::vec2 size = {1, 1});
         UIEntity* make_label(const json* j);
 		UIEntity* make_button(const json* j);
+        UIEntity* make_button(const std::string& signal, const std::string& texture, const Color& color = colors::WHITE, bool selected = false, bool unique_selection = true,
+                                    bool allow_toggle = false, bool is_color_button = false, bool disabled = false, bool keep_rgb = false);
 		UIEntity* make_slider(const json* j);
 		UIEntity* make_color_picker(const json* j);
         void make_submenu(UIEntity* parent, const std::string& name);
         void close_submenu();
 
-        UIEntity* make_group(const std::string& group_name, float number_of_widgets, const Color& color = colors::WHITE);
+
+        UIEntity* make_group(const json* j);
         void close_group();
+        void set_next_parent(UIEntity* parent);
 
         const std::map<std::string, UIEntity*>& get_widgets() { return widgets; };
         static UIEntity* get(const std::string& alias);

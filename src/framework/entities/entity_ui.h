@@ -105,7 +105,6 @@ namespace ui {
         bool is_color_button        = false;
         bool is_unique_selection    = false;
         bool allow_toggle           = false;
-        bool allow_events           = true;
 
         ButtonWidget(const std::string& sg, const glm::vec2& p, const glm::vec2& s, const Color& c, bool is_color_button = false);
 
@@ -129,9 +128,10 @@ namespace ui {
 
         int mode = HORIZONTAL;
 
-		float current_value = 0.f;
-        float min_value = 0.f;
-        float max_value = 1.f;
+        float current_value = 0.0f;
+        float min_value     = 0.0f;
+        float max_value     = 1.0f;
+        float step          = 0.0f;
 
 		SliderWidget(const std::string& sg, float v, const glm::vec2& p, const glm::vec2& s, const Color& c, int mode = VERTICAL);
 
@@ -139,6 +139,7 @@ namespace ui {
         void update(float delta_time) override;
 
         void set_value(float new_value);
+        void create_helpers();
 	};
 
     class ColorPickerWidget : public UIEntity {
