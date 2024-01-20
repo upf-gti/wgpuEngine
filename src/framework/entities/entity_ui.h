@@ -107,7 +107,7 @@ namespace ui {
         bool allow_toggle           = false;
         bool allow_events           = true;
 
-        ButtonWidget(const std::string& sg, const glm::vec2& p, const glm::vec2& s, const Color& c);
+        ButtonWidget(const std::string& sg, const glm::vec2& p, const glm::vec2& s, const Color& c, bool is_color_button = false);
 
         void render() override;
 	    void update(float delta_time) override;

@@ -176,12 +176,19 @@ namespace ui {
 	*	Button
 	*/
 
-    ButtonWidget::ButtonWidget(const std::string& sg, const glm::vec2& p, const glm::vec2& s, const Color& c) : UIEntity(p, s), signal(sg), color(c) {
+    ButtonWidget::ButtonWidget(const std::string& sg, const glm::vec2& p, const glm::vec2& s, const Color& c, bool is_color_button) : UIEntity(p, s), signal(sg), color(c), is_color_button(is_color_button) {
 
         type = eWidgetType::BUTTON;
 
+        std::vector<std::string> define_specializations;
+
+        if (!is_color_button) {
+            define_specializations.push_back("USES_TEXTURE");
+        }
+
         auto webgpu_context = Renderer::instance->get_webgpu_context();
-        RendererStorage::register_ui_widget(webgpu_context, RendererStorage::get_shader("data/shaders/ui/ui_button.wgsl"), this, ui_data, 3);
+        RendererStorage::register_ui_widget(webgpu_context,
+            RendererStorage::get_shader("data/shaders/ui/ui_button.wgsl", define_specializations), this, ui_data, is_color_button ? 2 : 3);
     }
 
     void ButtonWidget::render()

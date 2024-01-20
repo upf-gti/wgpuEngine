@@ -288,8 +288,8 @@ namespace ui {
 		*	Create button entity and set transform
 		*/
 
-        std::string texture = (*j)["texture"];
         std::string shader = "data/shaders/ui/ui_button.wgsl";
+        std::vector<std::string> define_specializations;
 
         if (j->count("shader"))
             shader = (*j)["shader"];
@@ -300,24 +300,30 @@ namespace ui {
         color = glm::pow(color, Color(2.2f));
 
 		// Render quad in local workspace position
-        ButtonWidget* e_button = new ButtonWidget(signal, pos, size, color);
+        ButtonWidget* e_button = new ButtonWidget(signal, pos, size, color, is_color_button);
         e_button->add_surface(RendererStorage::get_surface("quad"));
 
         Material material;
-        material.shader = RendererStorage::get_shader(shader);
-        material.diffuse_texture = RendererStorage::get_texture(texture);
-        material.flags |= MATERIAL_DIFFUSE | MATERIAL_UI;
+        material.flags |= MATERIAL_UI;
+
+        if ((*j).count("texture") > 0)
+        {
+            material.diffuse_texture = RendererStorage::get_texture((*j)["texture"]);
+            material.flags |= MATERIAL_DIFFUSE;
+            define_specializations.push_back("USES_TEXTURE");
+        }
+
         material.color = color;
+        material.shader = RendererStorage::get_shader(shader, define_specializations);
 
         e_button->set_surface_material_override(e_button->get_surface(0), material);
 
         // Widget props
-        e_button->is_color_button = is_color_button;
         e_button->is_unique_selection = j->value("unique_selection", false);
         e_button->selected = j->value("selected", false);
         e_button->ui_data.keep_rgb = j->value("keep_rgb", false) ? 1.f : 0.f;
 
-        if( group_opened )
+        if(group_opened)
             e_button->m_priority = 1;
 
         if (is_color_button || e_button->is_unique_selection || allow_toggle)
