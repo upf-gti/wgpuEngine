@@ -71,7 +71,7 @@ namespace ui {
         glm::vec3 ray_direction = get_front(select_hand_pose);
 
         // Quad
-        glm::vec3 slider_quad_position = get_local_translation();
+        glm::vec3 quad_position = get_local_translation();
         glm::quat quad_rotation = glm::quat_cast(controller->get_matrix());
 
         float collision_dist;
@@ -80,7 +80,7 @@ namespace ui {
         return intersection::ray_quad(
             ray_origin,
             ray_direction,
-            slider_quad_position,
+            quad_position,
             m_scale,
             quad_rotation,
             intersection,

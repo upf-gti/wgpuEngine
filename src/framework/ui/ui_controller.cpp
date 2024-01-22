@@ -353,9 +353,13 @@ namespace ui {
         return make_button(signal, texture, color, selected, unique_selection, allow_toggle, is_color_button, disabled, keep_rgb);
 	}
 
-    UIEntity* Controller::make_slider(const json* j)
+    UIEntity* Controller::make_slider(const json* j, const std::string& force_name)
 	{
-        std::string signal = (*j)["name"];
+        std::string signal = j->value("name", "");
+
+        if (force_name.size())
+            signal = force_name;
+
         std::string s_mode = j->value("mode", "horizontal");
         int mode = (s_mode == "horizontal" ? SliderWidget::HORIZONTAL : SliderWidget::VERTICAL);
         bool is_horizontal_slider = (mode == SliderWidget::HORIZONTAL);
@@ -445,9 +449,9 @@ namespace ui {
 
         if (has_slider)
         {
-            // Vertical slider
-            SliderWidget* slider = (SliderWidget*)make_slider( &(*j)["slider"] );
-            bind((*j)["slider"].value("name", ""), [this, p = picker](const std::string& signal, float value) {
+            std::string new_name = signal + "_intensity";
+            SliderWidget* slider = (SliderWidget*)make_slider( &(*j)["slider"], new_name);
+            bind(new_name, [this, p = picker](const std::string& signal, float value) {
                 p->current_color.a = value;
                 glm::vec3 new_color = glm::pow(glm::vec3(p->current_color) * value, glm::vec3(2.2f));
                 emit_signal(p->signal, Color(new_color, value));
