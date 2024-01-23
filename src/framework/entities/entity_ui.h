@@ -54,6 +54,7 @@ namespace ui {
         void set_process_children(bool value, bool force = false);
         void set_selected(bool value);
         void set_layer(uint8_t l) { m_layer = l; };
+        void set_ui_priority(int p) { m_priority = p; }
 
         const glm::vec2 position_to_world(const glm::vec2& workspace_size) { return m_position + workspace_size - m_scale;  };
         bool is_hovered(glm::vec3& intersection);
@@ -67,6 +68,11 @@ namespace ui {
     public:
 
         WidgetGroup(const glm::vec2& p, const glm::vec2& s, float number_of_widgets);
+
+        void update(float delta_time) override;
+
+        float get_number_of_widgets() { return ui_data.num_group_items; };
+        void set_number_of_widgets(float number);
     };
 
 	class TextWidget : public UIEntity {

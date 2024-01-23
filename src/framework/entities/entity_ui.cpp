@@ -126,6 +126,25 @@ namespace ui {
         RendererStorage::register_ui_widget(webgpu_context, RendererStorage::get_shader("data/shaders/ui/ui_group.wgsl"), this, ui_data, 2);
     }
 
+    void WidgetGroup::update(float delta_time)
+    {
+        UIEntity::update(delta_time);
+
+        auto webgpu_context = Renderer::instance->get_webgpu_context();
+        RendererStorage::update_ui_widget(webgpu_context, this, ui_data);
+    }
+
+    void WidgetGroup::set_number_of_widgets(float number)
+    {
+        // Set new size and pos
+        m_scale.x = (BUTTON_SIZE * number + (number - 1.f) * X_GROUP_MARGIN + X_MARGIN * 2.f) *
+            controller->global_scale;
+
+        m_position.x += (BUTTON_SIZE + X_GROUP_MARGIN) * controller->global_scale;
+
+        ui_data.num_group_items = number;
+    }
+
     /*
     *   Text
     */

@@ -136,7 +136,33 @@ namespace ui {
     {
         float x, y;
 
-        if (group_opened)
+        if (dirty && parent_queue.size())
+        {
+            UIEntity* active_submenu = parent_queue.back();
+
+            // Search for last X position
+            float layout_iterator_x = 0.0f;
+            if (layers_width.find(active_submenu->uid) == layers_width.end())
+            {
+                active_submenu = static_cast<UIEntity*>(active_submenu->get_parent());
+                layout_iterator_x = layers_width[active_submenu->uid];
+            }
+
+            spdlog::info("WIDTH {}", layout_iterator_x);
+
+            // Get row of the group/submenu
+            float layout_iterator_y = static_cast<float>(active_submenu->m_layer + 1u);
+
+            x = layout_iterator_x;
+            y = layout_iterator_y * BUTTON_SIZE + (layout_iterator_y + 1.f) * Y_MARGIN;
+
+            // Update new width
+            layers_width[active_submenu->uid] += (BUTTON_SIZE * xOffset + X_GROUP_MARGIN);
+
+            dirty = false;
+            //parent_queue.pop_back();
+        }
+        else if (group_opened)
         {
             x = last_layout_pos.x + (g_iterator * BUTTON_SIZE + g_iterator * X_GROUP_MARGIN);
             y = last_layout_pos.y;
@@ -525,7 +551,7 @@ namespace ui {
         UIEntity* active_submenu = parent_queue.back();
 
         // Store layer width to center widgets
-        layers_width[active_submenu->uid] = layout_iterator.x;
+        layers_width[active_submenu->uid] = layout_iterator.x - X_MARGIN - X_GROUP_MARGIN;
 
         // Remove parent...
         parent_queue.pop_back();
@@ -599,6 +625,7 @@ namespace ui {
     void Controller::set_next_parent(UIEntity* parent)
     {
         parent_queue.push_back(parent);
+        dirty = true;
     }
 
 	void Controller::bind(const std::string& name, SignalType callback)

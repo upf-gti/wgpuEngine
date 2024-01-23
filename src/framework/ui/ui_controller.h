@@ -69,7 +69,9 @@ namespace ui {
 		*	Widget Helpers
 		*/
 
+        bool dirty = false;
         bool group_opened = false;
+
         float g_iterator = 0.f;
 
         glm::vec2 layout_iterator = { 0.f, 0.f };
@@ -119,7 +121,6 @@ namespace ui {
 		UIEntity* make_color_picker(const json* j);
         void make_submenu(UIEntity* parent, const std::string& name);
         void close_submenu();
-
 
         UIEntity* make_group(const json* j);
         void close_group();
