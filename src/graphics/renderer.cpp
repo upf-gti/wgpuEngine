@@ -139,6 +139,10 @@ void Renderer::init_ibl_bind_group()
         brdf_lut_uniform.binding = 1;
     }
 
+    if (!irradiance_texture) {
+        return;
+    }
+
     irradiance_texture_uniform.data = irradiance_texture->get_view();
     irradiance_texture_uniform.binding = 0;
 

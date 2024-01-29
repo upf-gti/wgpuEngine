@@ -243,6 +243,9 @@ Texture* RendererStorage::get_texture(const std::string& texture_path)
     else
     {
         HDRE* hdre = HDRE::Get(texture_path.c_str());
+        if (!hdre) {
+            return nullptr;
+        }
         tx->load_from_hdre(hdre);
         current_skybox_texture = tx;
     }

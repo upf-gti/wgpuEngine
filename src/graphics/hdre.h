@@ -40,7 +40,7 @@ class HDRE {
 
 private:
 
-	float* data; // only f32 now
+	float* data = nullptr; // only f32 now
 	float* pixels[N_LEVELS][N_FACES]; // Xpos, Xneg, Ypos, Yneg, Zpos, Zneg
 	float* faces_array[N_LEVELS];
 
