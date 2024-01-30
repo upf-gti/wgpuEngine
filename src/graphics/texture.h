@@ -11,10 +11,10 @@ class Texture {
 
     WGPUTexture texture = nullptr;
 
-    WGPUTextureDimension dimension;
-    WGPUTextureFormat	 format;
-    WGPUExtent3D		 size;
-    WGPUTextureUsage	 usage;
+    WGPUTextureDimension dimension = WGPUTextureDimension_Undefined;
+    WGPUTextureFormat	 format = WGPUTextureFormat_Undefined;
+    WGPUExtent3D		 size = {};
+    WGPUTextureUsage	 usage = WGPUTextureUsage_None;
     uint32_t			 mipmaps = 1;
 
     WGPUAddressMode wrap_u = WGPUAddressMode_ClampToEdge;

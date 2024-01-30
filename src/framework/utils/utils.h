@@ -16,6 +16,9 @@ enum Error {
 #define assert_msg(condition, msg) if (!(condition)) { spdlog::error(msg); assert(false);}
 #define _STR(m_x) #m_x
 
+constexpr float pi = glm::pi<float>();
+constexpr float pi_2 = 0.5f * pi;
+
 std::vector<std::string> tokenize(const std::string & str);
 
 void print_line(const char* line);
@@ -64,3 +67,13 @@ float clamp_rotation(float angle);
 
 glm::vec3 yaw_pitch_to_vector(float yaw, float pitch);
 void vector_to_yaw_pitch(const glm::vec3& front, float* yaw, float* pitch);
+
+template<typename T>
+struct LerpedValue {
+    T value = {};
+    T velocity = {};
+};
+
+glm::vec3 smooth_damp(glm::vec3 current, glm::vec3 target, glm::vec3* current_velocity, float smooth_time, float max_speed, float delta_time);
+float smooth_damp(float current, float target, float* current_velocity, float smooth_time, float max_speed, float delta_time);
+float smooth_damp_angle(float current, float target, float* current_velocity, float smooth_time, float max_speed, float delta_time);

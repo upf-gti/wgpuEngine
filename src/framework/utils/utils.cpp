@@ -3,6 +3,7 @@
 #include <cassert>
 #include <fstream>
 #include <sstream>
+#include <algorithm>
 
 #include "spdlog/spdlog.h"
 
@@ -236,4 +237,98 @@ void vector_to_yaw_pitch(const glm::vec3& front, float* yaw, float* pitch) {
     *yaw = atan2f(front.x, front.z);
     float mdo = sqrtf(front.x * front.x + front.z * front.z);
     *pitch = atan2f(-front.y, mdo);
+}
+
+// https://graemepottsfolio.wordpress.com/tag/damped-spring/
+glm::vec3 smooth_damp(glm::vec3 current, glm::vec3 target, glm::vec3* current_velocity, float smooth_time, float max_speed, float delta_time)
+{
+    smooth_time = glm::max(0.0001f, smooth_time);
+    float omega = 2.0f / smooth_time;
+    float x = omega * delta_time;
+    float exp = 1.0f / (1.0f + x + 0.48f * x * x + 0.235f * x * x * x);
+    glm::vec3 deltaX = current - target;
+    float maxDelta = max_speed * smooth_time;
+
+    // ensure we do not exceed our max speed
+    float length = glm::length(deltaX);
+    if (length > maxDelta)
+    {
+        deltaX = glm::normalize(deltaX) * maxDelta;
+    }
+    else if (length < -maxDelta)
+    {
+        deltaX = glm::normalize(deltaX) * -maxDelta;
+    }
+
+    glm::vec3 temp = (static_cast<glm::vec3>(*current_velocity) + omega * deltaX) * delta_time;
+    glm::vec3 result = static_cast<glm::vec3>(current) - deltaX + (deltaX + temp) * exp;
+    *current_velocity = (static_cast<glm::vec3>(*current_velocity) - omega * temp) * exp;
+
+    // ensure that we do not overshoot our target
+    //if (glm::length(static_cast<glm::vec3>(target) - static_cast<glm::vec3>(current)) > 0.0f == glm::length(result) > glm::length(static_cast<glm::vec3>(target)))
+    //{
+    //    result = target;
+    //    *current_velocity = glm::vec3(0.0f, 0.0f, 0.0f);
+    //}
+
+    return result;
+}
+
+// https://graemepottsfolio.wordpress.com/tag/damped-spring/
+float smooth_damp(float current, float target, float* current_velocity, float smooth_time, float max_speed, float delta_time)
+{
+    smooth_time = std::max(0.0001f, smooth_time);
+    float omega = 2.0f / smooth_time;
+    float x = omega * delta_time;
+    float exp = 1.0f / (1.0f + x + 0.48f * x * x + 0.235f * x * x * x);
+    float deltaX = current - target;
+    float maxDelta = max_speed * smooth_time;
+
+    // ensure we do not exceed our max speed
+    deltaX = std::clamp(deltaX, -maxDelta, maxDelta);
+    float temp = (*current_velocity + omega * deltaX) * delta_time;
+    float result = current - deltaX + (deltaX + temp) * exp;
+    *current_velocity = (*current_velocity - omega * temp) * exp;
+
+    // ensure that we do not overshoot our target
+    if (target - current > 0.0f == result > target)
+    {
+        result = target;
+        *current_velocity = 0.0f;
+    }
+    return result;
+}
+
+float smooth_damp_angle(float current, float target, float* current_velocity, float smooth_time, float max_speed, float delta_time)
+{
+    float result;
+    float diff = target - current;
+    float pi2 = 2.0f * pi;
+    if (diff < -pi)
+    {
+        // lerp upwards past PI_TIMES_TWO
+        target += pi2;
+        result = smooth_damp(current, target, current_velocity, smooth_time, max_speed, delta_time);
+        if (result >= pi2)
+        {
+            result -= pi2;
+        }
+    }
+    else if (diff > pi)
+    {
+        // lerp downwards past 0
+        target -= pi2;
+        result = smooth_damp(current, target, current_velocity, smooth_time, max_speed, delta_time);
+        if (result < 0.f)
+        {
+            result += pi2;
+        }
+    }
+    else
+    {
+        // straight lerp
+        result = smooth_damp(current, target, current_velocity, smooth_time, max_speed, delta_time);
+    }
+
+    return result;
 }

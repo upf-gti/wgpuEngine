@@ -1,6 +1,7 @@
 #pragma once
 
 #include "glm/glm.hpp"
+#include "framework/utils/utils.h"
 
 class Entity;
 
@@ -19,7 +20,7 @@ public:
 
     void set_perspective(float fov, float aspect, float z_near, float z_far);
     void set_orthographic(float left, float right, float bottom, float top, float z_near, float z_far);
-    void look_at(const glm::vec3& eye, const glm::vec3& center, const glm::vec3& up);
+    virtual void look_at(const glm::vec3& eye, const glm::vec3& center, const glm::vec3& up, bool reset_internals = true);
 
     void look_at_entity(Entity* entity);
 
@@ -48,6 +49,10 @@ protected:
     float delta_yaw = 0.0f;
     float delta_pitch = 0.0f;
 
+    LerpedValue<float> delta_yaw_lerp;
+    LerpedValue<float> delta_pitch_lerp;
+    LerpedValue<glm::vec3> eye_lerp;
+
     eCameraType type;
 
     glm::vec3 eye;
@@ -60,5 +65,5 @@ protected:
     float z_far;
 
     float speed = 1.0f;
-    float mouse_sensitivity = 1.0f;
+    float mouse_sensitivity = 0.01f;
 };

@@ -6,6 +6,8 @@
 #include "glm/gtx/rotate_vector.hpp"
 #include "glm/gtx/norm.hpp"
 
+#include "spdlog/spdlog.h"
+
 FlyoverCamera::FlyoverCamera() : Camera()
 {
 }
@@ -25,15 +27,11 @@ void FlyoverCamera::update(float delta_time)
 
     if (glm::length2(move_dir)) {
         move_dir = get_local_vector(move_dir);
-        move_dir = normalize(move_dir) * final_speed * delta_time;
+        move_dir = normalize(move_dir) * final_speed;
     }
 
-    inertial_speed += move_dir;
+    glm::vec3 new_forward = yaw_pitch_to_vector(delta_yaw_lerp.value, delta_pitch_lerp.value);
+    eye_lerp.value = smooth_damp(eye_lerp.value, eye + move_dir, &eye_lerp.velocity, 0.4f, 500.0f, delta_time);
 
-    glm::vec3 new_forward = yaw_pitch_to_vector(delta_yaw, delta_pitch);
-    glm::vec3 new_pos = eye + inertial_speed;
-
-    look_at(new_pos, new_pos + new_forward, glm::vec3(0.0f, 1.0f, 0.0f));
-
-    inertial_speed *= 0.9f;
+    look_at(eye_lerp.value, eye_lerp.value + new_forward, glm::vec3(0.0f, 1.0f, 0.0f), false);
 }
