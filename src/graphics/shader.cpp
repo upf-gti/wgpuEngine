@@ -46,15 +46,18 @@ bool Shader::load(const std::string& shader_path, const std::string& specialized
         this->define_specializations = define_specializations;
     }
 
-	std::string shader_content;
-	if (!read_file(path, shader_content))
-		return false;
+    spdlog::info("Loading shader: {}", path);
 
-    if (!parse_preprocessor(shader_content, path)) {
-        return false;
+	std::string shader_content;
+    if (!read_file(path, shader_content)) {
+        spdlog::error("\tError reading file");
+		return false;
     }
 
-    spdlog::info("Loading shader: {}", path);
+    if (!parse_preprocessor(shader_content, path)) {
+        spdlog::error("\tPreprocessor parsing error");
+        return false;
+    }
 
     for (const std::string& specialization : define_specializations) {
         spdlog::info("\t{}", specialization);
@@ -85,8 +88,6 @@ bool Shader::load(const std::string& shader_path, const std::string& specialized
 
 	webgpu_context->process_events();
 
-	//std::cout << " [OK]" << std::endl;
-
 	return loaded;
 }
 
@@ -102,13 +103,15 @@ bool Shader::parse_preprocessor(std::string &shader_content, const std::string &
 
         auto tokens = tokenize(line);
         const std::string& tag = tokens[0];
+
         if (tag == "#include")
         {
             const std::string& include_name = tokens[1];
             const std::string& include_path = std::filesystem::relative(std::filesystem::path(_directory + "/" + include_name)).string();
             std::string new_content;
+
             if (!read_file(include_path, new_content)) {
-                spdlog::error("Could not load shader include: {}", include_path);
+                spdlog::error("\tCould not load shader include: {}", include_path);
                 return false;
             }
 
@@ -147,16 +150,19 @@ bool Shader::parse_preprocessor(std::string &shader_content, const std::string &
                 if (define_name == define.first) {
                     if (std::holds_alternative<bool>(define.second)) {
                         final_value = std::get<bool>(define.second) ? "1" : "0";
-                    } else
-                    if (std::holds_alternative<int32_t>(define.second)) {
-                        final_value = std::to_string(std::get<int32_t>(define.second));
-                    } else
-                    if (std::holds_alternative<uint32_t>(define.second)) {
-                        final_value = std::to_string(std::get<uint32_t>(define.second));
-                    } else
-                    if (std::holds_alternative<float>(define.second)) {
-                        final_value = std::to_string(std::get<float>(define.second));
                     }
+                    else
+                        if (std::holds_alternative<int32_t>(define.second)) {
+                            final_value = std::to_string(std::get<int32_t>(define.second));
+                        }
+                        else
+                            if (std::holds_alternative<uint32_t>(define.second)) {
+                                final_value = std::to_string(std::get<uint32_t>(define.second));
+                            }
+                            else
+                                if (std::holds_alternative<float>(define.second)) {
+                                    final_value = std::to_string(std::get<float>(define.second));
+                                }
                 }
             }
 

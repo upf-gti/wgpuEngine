@@ -86,7 +86,7 @@ int Engine::initialize(Renderer* renderer, GLFWwindow* window, bool use_glfw, bo
         ImGuiIO& io = ImGui::GetIO(); (void)io;
         io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
     
-    // Disable file-system access in web builds (don't load imgui.ini)
+        // Disable file-system access in web builds (don't load imgui.ini)
 #ifdef __EMSCRIPTEN__
         io.IniFilename = nullptr;
         ImGui_ImplGlfw_InstallEmscriptenCanvasResizeCallback("#canvas");

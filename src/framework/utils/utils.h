@@ -19,6 +19,7 @@ enum Error {
 constexpr float pi = glm::pi<float>();
 constexpr float pi_2 = 0.5f * pi;
 
+std::string remove_special_characters(const std::string& str);
 std::vector<std::string> tokenize(const std::string & str);
 
 void print_line(const char* line);

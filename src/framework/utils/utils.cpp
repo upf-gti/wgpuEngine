@@ -9,6 +9,16 @@
 
 #include "glm/gtx/hash.hpp"
 
+std::string remove_special_characters(const std::string& str)
+{
+    std::string final_str = str;
+    final_str.erase(std::remove_if(final_str.begin(), final_str.end(),
+        [](char c) { return c == '\r' || c == '\n'; }),
+        final_str.end());
+
+    return final_str;
+}
+
 std::vector<std::string> tokenize(const std::string& str)
 {
 	std::vector<std::string> results;
@@ -20,7 +30,9 @@ std::vector<std::string> tokenize(const std::string& str)
         start = next + 1;
         next = std::find(start, end, ' ');
     }
-    results.push_back(std::string(start, next));
+
+    results.push_back(remove_special_characters(std::string(start, next)));
+
     return results;
 }
 
@@ -34,7 +46,7 @@ bool read_file(const std::string& filename, std::string& content)
 
 	std::ifstream file(filename);
 	if (!file.is_open()) {
-        spdlog::error("File not found: {}", filename);
+        spdlog::error("Error reading file ({}): {}", filename, strerror(errno));
 		return false;
 	}
 
@@ -44,6 +56,8 @@ bool read_file(const std::string& filename, std::string& content)
 
 	file.seekg(0);
 	file.read(content.data(), size);
+
+    file.close();
 
 	return true;
 }

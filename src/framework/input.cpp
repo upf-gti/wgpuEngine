@@ -12,8 +12,12 @@ uint8_t Input::prev_keystate[GLFW_KEY_LAST];
 
 bool Input::use_glfw = false;
 
+#ifdef XR_SUPPORT
+
 bool Input::trigger_released[HAND_COUNT] = {true, true};
 bool Input::grab_released[HAND_COUNT] = {true, true};
+
+#endif
 
 GLFWwindow* Input::window = nullptr;
 bool Input::use_mirror_screen;

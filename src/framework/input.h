@@ -7,9 +7,10 @@
 #ifdef XR_SUPPORT
 
 #include "openxr/openxr_platform.h"
-#include "input_xr.h"
 
 #endif
+
+#include "input_xr.h"
 
 #include <GLFW/glfw3.h>
 
@@ -35,10 +36,11 @@ class Input {
 
 	static bool use_mirror_screen;
 
+#ifdef XR_SUPPORT
+
     static bool trigger_released[HAND_COUNT];
     static bool grab_released[HAND_COUNT];
 
-#ifdef XR_SUPPORT
 	static XrInputData xr_data;
 
 	/*

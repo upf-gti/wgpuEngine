@@ -28,6 +28,8 @@ enum {
     XR_BUTTON_MENU,
 };
 
+#ifdef XR_SUPPORT
+
 struct XrActionStorage {
     bool active = false;
     XrPath path;
@@ -123,3 +125,5 @@ struct XrInputData {
     // Headset State. Use to detect status / user proximity / user presence / user engagement https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html#session-lifecycle
     XrSessionState headsetActivityState = XR_SESSION_STATE_UNKNOWN;
 };
+
+#endif

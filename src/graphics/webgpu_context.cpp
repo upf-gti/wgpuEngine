@@ -16,6 +16,7 @@
 #ifdef __EMSCRIPTEN__
 #include <emscripten/emscripten.h>
 #include <emscripten/html5_webgpu.h>
+#include <GLFW/glfw3.h>
 #else
 #include "glfw3webgpu.h"
 #endif
@@ -138,12 +139,7 @@ int WebGPUContext::initialize(WGPURequestAdapterOptions adapter_opts, WGPURequir
 
     WGPUFeatureName required_features[1] = { WGPUFeatureName_Float32Filterable };
 
-#ifdef __EMSCRIPTEN__
-    device_desc.requiredFeaturesCount = 1;
-#else
     device_desc.requiredFeatureCount = 1;
-#endif
-
     device_desc.requiredFeatures = required_features;
 
     device_desc.requiredLimits = &required_limits;
@@ -274,10 +270,12 @@ void WebGPUContext::create_instance()
     WGPUChainedStruct* chain_desc = reinterpret_cast<WGPUChainedStruct*>(&device_toggles_desc);
     chain_desc->sType = WGPUSType_DawnTogglesDescriptor;
     instance_dscr.nextInChain = chain_desc;
-
-#endif // !__EMSCRIPTEN__
-
     instance = wgpuCreateInstance(&instance_dscr);
+
+#else
+    instance = wgpuCreateInstance(nullptr);
+#endif
+
 }
 
 WGPUShaderModule WebGPUContext::create_shader_module(char const* code)
@@ -633,6 +631,7 @@ WGPURenderPipeline WebGPUContext::create_render_pipeline(WGPUShaderModule render
 WGPUComputePipeline WebGPUContext::create_compute_pipeline(WGPUShaderModule compute_shader_module, WGPUPipelineLayout pipeline_layout)
 {
     WGPUComputePipelineDescriptor computePipelineDesc = {};
+    computePipelineDesc.compute.nextInChain = nullptr;
     computePipelineDesc.compute.constantCount = 0;
     computePipelineDesc.compute.constants = nullptr;
     computePipelineDesc.compute.entryPoint = "compute";
