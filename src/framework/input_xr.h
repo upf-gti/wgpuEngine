@@ -4,6 +4,9 @@
 #ifdef XR_SUPPORT
 #include <dawnxr/dawnxr.h>
 #endif
+
+#include "framework/math.h"
+
 #include <array>
 #include <string>
 

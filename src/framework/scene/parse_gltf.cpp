@@ -1,5 +1,7 @@
 #include "parse_gltf.h"
 
+#include "framework/math.h"
+
 #include "json.hpp"
 #include "stb_image.h"
 
@@ -8,8 +10,6 @@
 #define TINYGLTF_NO_INCLUDE_JSON
 #define TINYGLTF_NO_STB_IMAGE_WRITE
 #include "tiny_gltf.h"
-
-#include <glm/gtx/quaternion.hpp>
 
 #include "framework/utils/utils.h"
 #include "framework/entities/entity_mesh.h"
@@ -21,7 +21,6 @@
 #include "graphics/renderer.h"
 
 #include "spdlog/spdlog.h"
-
 
 void create_material_texture(tinygltf::Model& model, int tex_index, Texture** texture) {
 
@@ -450,12 +449,10 @@ void parse_model_nodes(tinygltf::Model& model, tinygltf::Node& node, Entity* ent
             });
         }
         if (!node.rotation.empty()) {
-            rotation_quat = glm::quat(
-                static_cast<float>(node.rotation[0]),
-                static_cast<float>(node.rotation[1]),
-                static_cast<float>(node.rotation[2]),
-                static_cast<float>(node.rotation[3])
-            );
+            rotation_quat.x = static_cast<float>(node.rotation[0]);
+            rotation_quat.y = static_cast<float>(node.rotation[1]);
+            rotation_quat.z = static_cast<float>(node.rotation[2]);
+            rotation_quat.w = static_cast<float>(node.rotation[3]);
         }
         if (!node.scale.empty()) {
             scale_matrix = glm::scale(glm::mat4x4(1.0f), {

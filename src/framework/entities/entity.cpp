@@ -1,6 +1,5 @@
 #include "entity.h"
 
-#include <glm/gtx/quaternion.hpp>
 
 #include "spdlog/spdlog.h"
 

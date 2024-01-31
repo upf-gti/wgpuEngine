@@ -4,6 +4,7 @@
 #include "framework/input_xr.h"
 
 #include "framework/utils/json_utils.h"
+#include "framework/math.h"
 
 #include <variant>
 #include <functional>

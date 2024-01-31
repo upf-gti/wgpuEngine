@@ -7,6 +7,7 @@
 
 #include "spdlog/spdlog.h"
 
+#define GLM_ENABLE_EXPERIMENTAL
 #include "glm/gtx/hash.hpp"
 
 std::string remove_special_characters(const std::string& str)

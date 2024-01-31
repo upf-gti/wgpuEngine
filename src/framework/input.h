@@ -4,6 +4,8 @@
 #include <vector>
 #include <string>
 
+#include "framework/math.h"
+
 #ifdef XR_SUPPORT
 
 #include "openxr/openxr_platform.h"

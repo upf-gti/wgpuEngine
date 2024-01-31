@@ -7,8 +7,6 @@
 #include <framework/colors.h>
 #include <framework/utils/utils.h>
 
-#include <glm/gtx/euler_angles.hpp>
-
 #include "framework/scene/parse_scene.h"
 
 void TransformGizmo::initialize(const eGizmoType gizmo_use, const glm::vec3 &position) {
