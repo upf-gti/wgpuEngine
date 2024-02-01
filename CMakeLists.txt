@@ -108,6 +108,10 @@ target_include_directories(${PROJECT_NAME} PUBLIC ${WGPU_DIR_SOURCES})
 
 set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 20)
 
+if (MSVC)
+    add_compile_options(/Zc:__cplusplus)
+endif()
+
 # INSTALL(FILES ${WGPU_HEADERS} DESTINATION ${CMAKE_BINARY_DIR})
 
 # needed to compile tint on web
@@ -149,6 +153,8 @@ endif()
 
 # glm
 add_subdirectory(libraries/glm)
+set_property(TARGET glm PROPERTY CXX_STANDARD 20)
+set_property(TARGET glm PROPERTY FOLDER "External/glm")
 target_link_libraries(${PROJECT_NAME} PUBLIC glm)
 
 # tinyobjloader
