@@ -48,6 +48,7 @@ void Input::init(GLFWwindow* _window, Renderer* renderer, bool use_glfw)
 {
     Input::use_glfw = use_glfw;
 	use_mirror_screen = renderer->get_use_mirror_screen();
+    window = _window;
 
     if (use_glfw) {
         glfwSetKeyCallback(_window, key_callback);
@@ -58,7 +59,6 @@ void Input::init(GLFWwindow* _window, Renderer* renderer, bool use_glfw)
 	if (use_mirror_screen)
 	{
 		double x, y;
-		window = _window;
 		glfwGetCursorPos(window, &x, &y);
 		Input::mouse_position.x = static_cast<float>(x);
 		Input::mouse_position.y = static_cast<float>(y);
@@ -115,10 +115,12 @@ void Input::update(float delta_time)
 
 	// Mouse  state
 	if (use_glfw && window) {
+
 		double x, y;
 		glfwGetCursorPos(window, &x, &y);
 		Input::mouse_delta.x = Input::mouse_position.x - static_cast<float>(x);
 		Input::mouse_delta.y = Input::mouse_position.y - static_cast<float>(y);
+
 		Input::mouse_position.x = static_cast<float>(x);
 		Input::mouse_position.y = static_cast<float>(y);
 	}
