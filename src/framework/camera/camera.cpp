@@ -5,12 +5,12 @@
 
 #include "framework/utils/utils.h"
 
-#include "glm/gtc/matrix_transform.hpp"
-
 void Camera::update(float delta_time)
 {
+
     if (Input::is_mouse_pressed(GLFW_MOUSE_BUTTON_LEFT))
     {
+
         {
             glm::vec2 mouse_delta = Input::get_mouse_delta();
 

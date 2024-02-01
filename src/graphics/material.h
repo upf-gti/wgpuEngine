@@ -1,8 +1,7 @@
 #pragma once
 
-#include "glm/glm.hpp"
+#include "framework/math.h"
 
-#define GLM_ENABLE_EXPERIMENTAL
 #include "glm/gtx/hash.hpp"
 
 #include "framework/utils/utils.h"

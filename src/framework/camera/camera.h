@@ -1,6 +1,6 @@
 #pragma once
 
-#include "glm/glm.hpp"
+#include "framework/math.h"
 #include "framework/utils/utils.h"
 
 class Entity;

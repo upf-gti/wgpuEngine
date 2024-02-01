@@ -449,17 +449,18 @@ void parse_model_nodes(tinygltf::Model& model, tinygltf::Node& node, Entity* ent
             });
         }
         if (!node.rotation.empty()) {
-            rotation_quat.x = static_cast<float>(node.rotation[0]);
-            rotation_quat.y = static_cast<float>(node.rotation[1]);
-            rotation_quat.z = static_cast<float>(node.rotation[2]);
-            rotation_quat.w = static_cast<float>(node.rotation[3]);
+            rotation_quat = glm::quat(static_cast<float>(node.rotation[0]),
+                static_cast<float>(node.rotation[1]),
+                static_cast<float>(node.rotation[2]),
+                static_cast<float>(node.rotation[3])
+            );
         }
         if (!node.scale.empty()) {
             scale_matrix = glm::scale(glm::mat4x4(1.0f), {
                 static_cast<float>(node.scale[0]),
                 static_cast<float>(node.scale[1]),
                 static_cast<float>(node.scale[2])
-                });
+            });
         }
 
         entity->set_model(translation_matrix * glm::toMat4(rotation_quat) * scale_matrix);

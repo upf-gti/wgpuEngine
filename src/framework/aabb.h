@@ -1,6 +1,6 @@
 #pragma once
 
-#include "glm/glm.hpp"
+#include "framework/math.h"
 
 struct AABB {
     glm::vec3 center = {};
