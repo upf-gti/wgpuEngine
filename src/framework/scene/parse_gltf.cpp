@@ -23,7 +23,7 @@
 
 #include "spdlog/spdlog.h"
 
-void create_material_texture(tinygltf::Model& model, int tex_index, Texture** texture) {
+void create_material_texture(tinygltf::Model& model, int tex_index, Texture** texture, bool is_srgb = false) {
 
     const tinygltf::Texture& tex = model.textures[tex_index];
 
@@ -54,13 +54,13 @@ void create_material_texture(tinygltf::Model& model, int tex_index, Texture** te
 
         if (Texture::convert_to_rgba8unorm(image.width, image.height, texture_format, image.image.data(), converted_texture)) {
             *texture = new Texture();
-            (*texture)->load_from_data(image.uri, image.width, image.height, converted_texture, WGPUTextureFormat_RGBA8Unorm);
+            (*texture)->load_from_data(image.uri, image.width, image.height, converted_texture, is_srgb ? WGPUTextureFormat_RGBA8UnormSrgb : WGPUTextureFormat_RGBA8Unorm);
             delete[] converted_texture;
         }
     }
     else {
         *texture = new Texture();
-        (*texture)->load_from_data(image.uri, image.width, image.height, image.image.data(), WGPUTextureFormat_RGBA8Unorm);
+        (*texture)->load_from_data(image.uri, image.width, image.height, image.image.data(), is_srgb ? WGPUTextureFormat_RGBA8UnormSrgb : WGPUTextureFormat_RGBA8Unorm);
     }
 
     if (tex.sampler != -1)
@@ -94,7 +94,7 @@ void create_material_texture(tinygltf::Model& model, int tex_index, Texture** te
 
 }
 
-void read_mesh(tinygltf::Model& model, tinygltf::Mesh& mesh, Entity* entity) {
+void read_mesh(tinygltf::Model& model, tinygltf::Mesh& mesh, Entity* entity, std::map<uint32_t, Texture*>& texture_cache) {
 
     EntityMesh* entity_mesh = dynamic_cast<EntityMesh*>(entity);
 
@@ -318,7 +318,15 @@ void read_mesh(tinygltf::Model& model, tinygltf::Mesh& mesh, Entity* entity) {
 
             
             if (pbrMetallicRoughness.baseColorTexture.index >= 0) {
-                create_material_texture(model, pbrMetallicRoughness.baseColorTexture.index, &material.diffuse_texture);
+
+                if (texture_cache.contains(pbrMetallicRoughness.baseColorTexture.index)) {
+                    material.diffuse_texture = texture_cache[pbrMetallicRoughness.baseColorTexture.index];
+                }
+                else {
+                    create_material_texture(model, pbrMetallicRoughness.baseColorTexture.index, &material.diffuse_texture, true);
+                    texture_cache[pbrMetallicRoughness.baseColorTexture.index] = material.diffuse_texture;
+                }
+
                 material.flags |= MATERIAL_DIFFUSE;
                 define_specializations.push_back("ALBEDO_TEXTURE");
             }
@@ -331,7 +339,13 @@ void read_mesh(tinygltf::Model& model, tinygltf::Mesh& mesh, Entity* entity) {
             );
 
             if (pbrMetallicRoughness.metallicRoughnessTexture.index >= 0) {
-                create_material_texture(model, pbrMetallicRoughness.metallicRoughnessTexture.index, &material.metallic_roughness_texture);
+                if (texture_cache.contains(pbrMetallicRoughness.metallicRoughnessTexture.index)) {
+                    material.metallic_roughness_texture = texture_cache[pbrMetallicRoughness.metallicRoughnessTexture.index];
+                }
+                else {
+                    create_material_texture(model, pbrMetallicRoughness.metallicRoughnessTexture.index, &material.metallic_roughness_texture);
+                    texture_cache[pbrMetallicRoughness.metallicRoughnessTexture.index] = material.metallic_roughness_texture;
+                }
                 define_specializations.push_back("METALLIC_ROUGHNESS_TEXTURE");
             }
            
@@ -339,13 +353,25 @@ void read_mesh(tinygltf::Model& model, tinygltf::Mesh& mesh, Entity* entity) {
             material.metalness = static_cast<float>(pbrMetallicRoughness.metallicFactor);
 
             if (gltf_material.normalTexture.index >= 0) {
+                if (texture_cache.contains(gltf_material.normalTexture.index)) {
+                    material.normal_texture = texture_cache[gltf_material.normalTexture.index];
+                }
+                else {
+                    create_material_texture(model, gltf_material.normalTexture.index, &material.normal_texture);
+                    texture_cache[gltf_material.normalTexture.index] = material.normal_texture;
+                }
                 define_specializations.push_back("NORMAL_TEXTURE");
-                create_material_texture(model, gltf_material.normalTexture.index, &material.normal_texture);
             }
 
             if (gltf_material.emissiveTexture.index >= 0) {
+                if (texture_cache.contains(gltf_material.emissiveTexture.index)) {
+                    material.emissive_texture = texture_cache[gltf_material.emissiveTexture.index];
+                }
+                else {
+                    create_material_texture(model, gltf_material.emissiveTexture.index, &material.emissive_texture, true);
+                    texture_cache[gltf_material.emissiveTexture.index] = material.emissive_texture;
+                }
                 define_specializations.push_back("EMISSIVE_TEXTURE");
-                create_material_texture(model, gltf_material.emissiveTexture.index, &material.emissive_texture);
             }
 
             material.emissive = { gltf_material.emissiveFactor[0], gltf_material.emissiveFactor[1], gltf_material.emissiveFactor[2] };
@@ -421,12 +447,12 @@ Entity* create_node_entity(tinygltf::Node& node) {
     return new_entity;
 };
 
-void parse_model_nodes(tinygltf::Model& model, tinygltf::Node& node, Entity* entity) {
+void parse_model_nodes(tinygltf::Model& model, tinygltf::Node& node, Entity* entity, std::map<uint32_t, Texture*> &texture_cache) {
 
     entity->set_name(node.name);
 
     if ((node.mesh >= 0) && (node.mesh < model.meshes.size())) {
-        read_mesh(model, model.meshes[node.mesh], entity);
+        read_mesh(model, model.meshes[node.mesh], entity, texture_cache);
     }
 
     // Set model matrix
@@ -477,7 +503,7 @@ void parse_model_nodes(tinygltf::Model& model, tinygltf::Node& node, Entity* ent
         Entity* child_entity = create_node_entity(model.nodes[node.children[i]]);
         entity->add_child(child_entity);
 
-        parse_model_nodes(model, model.nodes[node.children[i]], child_entity);
+        parse_model_nodes(model, model.nodes[node.children[i]], child_entity, texture_cache);
     }
 };
 
@@ -515,6 +541,8 @@ bool parse_gltf(const char* gltf_path, std::vector<Entity*>& entities)
 
     const tinygltf::Scene& scene = model.scenes[model.defaultScene];
 
+    std::map<uint32_t, Texture*> texture_cache;
+
     int entity_name_idx = 0;
     for (size_t i = 0; i < scene.nodes.size(); ++i) {
         assert((scene.nodes[i] >= 0) && (scene.nodes[i] < model.nodes.size()));
@@ -523,7 +551,7 @@ bool parse_gltf(const char* gltf_path, std::vector<Entity*>& entities)
 
         Entity* entity = create_node_entity(node);
 
-        parse_model_nodes(model, node, entity);
+        parse_model_nodes(model, node, entity, texture_cache);
 
         if (entity->get_name().empty()) {
             entity->set_name(path.stem().string() + "_" + std::to_string(entity_name_idx));
@@ -532,6 +560,8 @@ bool parse_gltf(const char* gltf_path, std::vector<Entity*>& entities)
 
         entities.push_back(entity);
     }
+
+    texture_cache.clear();
 
     return true;
 }

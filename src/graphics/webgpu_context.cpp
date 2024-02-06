@@ -404,7 +404,7 @@ void WebGPUContext::create_texture_mipmaps(WGPUTexture texture, WGPUExtent3D tex
         {
             std::string label = "MIP level #" + std::to_string(level);
             texture_mip_views.push_back(
-                create_texture_view(texture, view_dimension, WGPUTextureFormat_RGBA8Unorm, WGPUTextureAspect_All, 1, level, texture_size.depthOrArrayLayers, label.c_str())
+                create_texture_view(texture, view_dimension, format, WGPUTextureAspect_All, 1, level, texture_size.depthOrArrayLayers, label.c_str())
             );
 
             if (level > 0) {
@@ -467,9 +467,14 @@ void WebGPUContext::create_texture_mipmaps(WGPUTexture texture, WGPUExtent3D tex
         wgpuCommandBufferRelease(commands);
         wgpuComputePassEncoderRelease(compute_pass);
         wgpuCommandEncoderRelease(command_encoder);
+
+        for (WGPUTextureView texture_view : texture_mip_views) {
+            wgpuTextureViewRelease(texture_view);
+        }
     }
 
     wgpuQueueRelease(mipmap_queue);
+
 }
 
 void WebGPUContext::upload_texture_mipmaps(WGPUTexture texture, WGPUExtent3D texture_size, uint32_t mip_level, const void* data, WGPUOrigin3D origin)
@@ -566,6 +571,38 @@ WGPUPipelineLayout WebGPUContext::create_pipeline_layout(const std::vector<WGPUB
     layout_descr.bindGroupLayouts = (WGPUBindGroupLayout*)bind_group_layouts.data();
 
     return wgpuDeviceCreatePipelineLayout(device, &layout_descr);
+}
+
+void WebGPUContext::copy_texture_to_texture(WGPUTexture texture_src, WGPUTexture texture_dst, uint32_t src_mipmap_level, uint32_t dst_mipmap_level, const WGPUExtent3D& copy_size)
+{
+    WGPUImageCopyTexture src_copy = {};
+    src_copy.texture = texture_src;
+    src_copy.mipLevel = src_mipmap_level;
+    src_copy.aspect = WGPUTextureAspect_All;
+
+    WGPUImageCopyTexture dst_copy = {};
+    dst_copy.texture = texture_dst;
+    dst_copy.mipLevel = dst_mipmap_level;
+    dst_copy.aspect = WGPUTextureAspect_All;
+
+    WGPUQueue copy_queue = wgpuDeviceGetQueue(device);
+
+    // Initialize a command encoder
+    WGPUCommandEncoderDescriptor encoder_desc = {};
+    WGPUCommandEncoder command_encoder = wgpuDeviceCreateCommandEncoder(device, &encoder_desc);
+
+    wgpuCommandEncoderCopyTextureToTexture(command_encoder, &src_copy, &dst_copy, &copy_size);
+
+    WGPUCommandBufferDescriptor cmd_buff_descriptor = {};
+    cmd_buff_descriptor.nextInChain = NULL;
+    cmd_buff_descriptor.label = "Copy texture Command Buffer";
+
+    // Encode and submit the GPU commands
+    WGPUCommandBuffer commands = wgpuCommandEncoderFinish(command_encoder, &cmd_buff_descriptor);
+    wgpuQueueSubmit(copy_queue, 1, &commands);
+
+    wgpuCommandBufferRelease(commands);
+    wgpuCommandEncoderRelease(command_encoder);
 }
 
 WGPURenderPipeline WebGPUContext::create_render_pipeline(WGPUShaderModule render_shader_module, WGPUPipelineLayout pipeline_layout, const std::vector<WGPUVertexBufferLayout>& vertex_attributes, WGPUColorTargetState color_target, bool uses_depth_buffer, bool uses_depth_write, WGPUCullMode cull_mode, WGPUPrimitiveTopology topology)
