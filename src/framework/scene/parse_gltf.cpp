@@ -13,6 +13,7 @@
 
 #include "framework/utils/utils.h"
 #include "framework/entities/entity_mesh.h"
+#include "framework/entities/entity_camera.h"
 
 #include "graphics/texture.h"
 #include "graphics/shader.h"
@@ -409,6 +410,9 @@ Entity* create_node_entity(tinygltf::Node& node) {
 
     if (node.mesh >= 0) {
         new_entity = new EntityMesh();
+    }
+    else if (node.camera >= 0) {
+        new_entity = new EntityCamera();
     }
     else {
         new_entity = new Entity();
