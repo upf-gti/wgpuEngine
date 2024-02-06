@@ -3,14 +3,10 @@
 #include "framework/input.h"
 #include "framework/entities/entity_mesh.h"
 
-#include "framework/utils/utils.h"
-
 void Camera::update(float delta_time)
 {
-
     if (Input::is_mouse_pressed(GLFW_MOUSE_BUTTON_LEFT))
     {
-
         {
             glm::vec2 mouse_delta = Input::get_mouse_delta();
 
