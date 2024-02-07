@@ -13,8 +13,12 @@
 
 #include "spdlog/spdlog.h"
 
-EntityMesh* parse_obj(const char* obj_path)
+void parse_obj(const char* obj_path, EntityMesh* entity)
 {
+    if (!entity) {
+        return;
+    }
+        
     tinyobj::ObjReaderConfig reader_config;
     tinyobj::ObjReader reader;
 
@@ -22,7 +26,7 @@ EntityMesh* parse_obj(const char* obj_path)
         if (!reader.Error().empty()) {
             spdlog::error("TinyObjReader: {}", reader.Error());
         }
-        return nullptr;
+        return;
     }
 
     if (!reader.Warning().empty()) {
@@ -33,11 +37,9 @@ EntityMesh* parse_obj(const char* obj_path)
     auto& shapes = reader.GetShapes();
     auto& materials = reader.GetMaterials();
 
-    EntityMesh* new_entity = new EntityMesh();
-
     std::filesystem::path obj_path_fs = std::filesystem::path(obj_path);
 
-    new_entity->set_name(obj_path_fs.stem().string());
+    entity->set_name(obj_path_fs.stem().string());
 
     Surface* new_surface = RendererStorage::get_surface(obj_path);
 
@@ -54,12 +56,12 @@ EntityMesh* parse_obj(const char* obj_path)
         }
     }
 
-    new_entity->add_surface(new_surface);
+    entity->add_surface(new_surface);
 
     auto& vertices = new_surface->get_vertices();
 
     // Mesh already loaded
-    if (!vertices.empty()) { return new_entity; }
+    if (!vertices.empty()) { return; }
 
     InterleavedData vertex_data;
 
@@ -101,6 +103,13 @@ EntityMesh* parse_obj(const char* obj_path)
     }
 
     new_surface->create_vertex_buffer();
+}
+
+EntityMesh* parse_obj(const char* obj_path)
+{
+    EntityMesh* new_entity = new EntityMesh();
+
+    parse_obj(obj_path, new_entity);
 
     return new_entity;
 }

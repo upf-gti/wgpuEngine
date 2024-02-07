@@ -6,6 +6,8 @@ class Renderer;
 
 class Engine {
 
+protected:
+
     Renderer* renderer = nullptr;
     FileWatcher* shader_reload_watcher = nullptr;
 

@@ -418,3 +418,14 @@ void Renderer::set_irradiance_texture(Texture* texture)
 
     init_ibl_bind_group();
 }
+
+glm::vec3 Renderer::get_camera_eye()
+{
+#if defined(XR_SUPPORT)
+    if (is_openxr_available) {
+        return xr_context.per_view_data[0].position; // return left eye
+    }
+#endif
+
+    return camera->get_eye();
+}
