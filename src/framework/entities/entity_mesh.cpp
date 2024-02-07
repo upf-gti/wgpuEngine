@@ -6,6 +6,15 @@ EntityMesh::EntityMesh() : Entity()
 {
 }
 
+EntityMesh::~EntityMesh()
+{
+    //for (Surface* surface : surfaces) {
+    //    delete surface;
+    //}
+
+    //surfaces.clear();
+}
+
 void EntityMesh::render()
 {
     if (!active) return;

@@ -106,7 +106,7 @@ int Renderer::initialize(GLFWwindow* window, bool use_mirror_screen)
     RendererStorage::register_basic_surfaces();
 
     if (!irradiance_texture) {
-        irradiance_texture = RendererStorage::get_texture("data/textures/environments/sky.hdre");
+        irradiance_texture = RendererStorage::get_texture("data/textures/environments/trees.hdre");
     }
 
     init_ibl_bind_group();
@@ -170,6 +170,7 @@ void Renderer::prepare_instancing()
         const std::vector<Surface*>& surfaces = entity_mesh->get_surfaces();
 
         glm::mat4x4 global_matrix = entity_mesh->get_global_model();
+        glm::mat4x4 rotation_matrix = glm::toMat4(glm::quat_cast(global_matrix));
 
         for (Surface* surface : surfaces) {
 
@@ -186,13 +187,13 @@ void Renderer::prepare_instancing()
             }
 
             if (material.flags & MATERIAL_TRANSPARENT) {
-                render_list[RENDER_LIST_ALPHA].push_back({ surface, 1, global_matrix, entity_mesh });
+                render_list[RENDER_LIST_ALPHA].push_back({ surface, 1, global_matrix, rotation_matrix, entity_mesh });
             } else
             if (material.flags & MATERIAL_UI) {
-                render_list[RENDER_LIST_UI].push_back({ surface, 1, global_matrix, entity_mesh });
+                render_list[RENDER_LIST_UI].push_back({ surface, 1, global_matrix, rotation_matrix, entity_mesh });
             }
             else {
-                render_list[RENDER_LIST_OPAQUE].push_back({ surface, 1, global_matrix, entity_mesh });
+                render_list[RENDER_LIST_OPAQUE].push_back({ surface, 1, global_matrix, rotation_matrix, entity_mesh });
             }
         }
     }
@@ -271,7 +272,7 @@ void Renderer::prepare_instancing()
                 prev_emissive = material.emissive_texture;
 
                 // Fill instance_data
-                instance_data[i][j] = { render_data.global_matrix, material.color };
+                instance_data[i][j] = { render_data.global_matrix, render_data.rotation_matrix, material.color };
             }
 
             if (repeats > 0) {

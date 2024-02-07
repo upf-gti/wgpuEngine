@@ -282,9 +282,16 @@ void read_mesh(tinygltf::Model& model, tinygltf::Mesh& mesh, Entity* entity, std
                 }
 
                 // uv
-                if (attrib.first[0] == 'T' && attrib.first[1] == 'E') {
+                if (attrib.first == std::string("TEXCOORD_0")) {
                     vertices[vertex_idx].uv.x = *(float*)&buffer.data[buffer_idx + 0];
                     vertices[vertex_idx].uv.y = *(float*)&buffer.data[buffer_idx + 4];
+                }
+
+                // tangents
+                if (attrib.first[0] == 'T' && attrib.first[1] == 'A') {
+                    vertices[vertex_idx].tangent.x = *(float*)&buffer.data[buffer_idx + 0];
+                    vertices[vertex_idx].tangent.y = *(float*)&buffer.data[buffer_idx + 4];
+                    vertices[vertex_idx].tangent.z = *(float*)&buffer.data[buffer_idx + 8];
                 }
 
                 vertex_idx++;

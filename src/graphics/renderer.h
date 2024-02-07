@@ -50,6 +50,7 @@ protected:
 
     struct sUniformData {
         glm::mat4x4 model;
+        glm::mat4x4 rotation;
         glm::vec4   color;
     };
 
@@ -57,6 +58,7 @@ protected:
         Surface* surface;
         uint32_t repeat;
         glm::mat4x4 global_matrix;
+        glm::mat4x4 rotation_matrix;
         EntityMesh* entity_mesh_ref;
     };
 

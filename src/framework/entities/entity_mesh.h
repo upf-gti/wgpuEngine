@@ -19,7 +19,7 @@ protected:
 public:
 
 	EntityMesh();
-	virtual ~EntityMesh() {};
+	virtual ~EntityMesh();
 
 	virtual void render() override;
 	virtual void update(float delta_time) override;

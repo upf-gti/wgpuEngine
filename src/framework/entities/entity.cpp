@@ -95,6 +95,17 @@ glm::mat4x4 Entity::get_global_model() const
 	return model;
 }
 
+glm::mat4x4 Entity::get_rotation()
+{
+    glm::mat4x4 trans = model;
+    glm::transpose(trans);
+
+    glm::mat4x4 inv = model;
+    glm::inverse(model);
+
+    return trans * inv;
+}
+
 AABB Entity::get_aabb()
 {
     AABB new_aabb = aabb;
