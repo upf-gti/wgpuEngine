@@ -27,6 +27,8 @@ void print_error(const char* p_function, const char* p_file, int p_line, const c
 
 bool read_file(const std::string & filename, std::string & content);
 
+void quat_swing_twist_decomposition(const glm::vec3& dir, const glm::quat& rotation, glm::quat& swing, glm::quat& twist);
+
 glm::vec3 load_vec3(const std::string& str);
 glm::vec4 load_vec4(const std::string& str);
 glm::quat load_quat(const std::string& str);

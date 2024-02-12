@@ -9,6 +9,8 @@
 
 #include "glm/gtx/hash.hpp"
 
+#include <glm/gtx/projection.hpp>
+
 std::string remove_special_characters(const std::string& str)
 {
     std::string final_str = str;
@@ -93,6 +95,16 @@ glm::vec3 mod_vec3(glm::vec3 v, float m)
         fmodf(v.y, m),
         fmodf(v.z, m)
     );
+}
+
+// Swing Twist decomposition for quaternions
+// https://stackoverflow.com/questions/3684269/component-of-a-quaternion-rotation-around-an-axis
+void quat_swing_twist_decomposition(const glm::vec3& dir, const glm::quat& rotation, glm::quat& swing, glm::quat& twist) {
+    const glm::vec3 rotation_axis = glm::vec3(rotation.x, rotation.y, rotation.z);
+    const glm::vec3 p = glm::proj(rotation_axis, dir);
+
+    twist = glm::normalize(glm::quat(p.x, p.y, p.z, rotation.w));
+    swing = rotation * glm::conjugate(twist);
 }
 
 // https://stackoverflow.com/questions/466204/rounding-up-to-next-power-of-2
