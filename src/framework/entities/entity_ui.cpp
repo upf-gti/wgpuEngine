@@ -406,6 +406,13 @@ namespace ui {
         RendererStorage::register_ui_widget(webgpu_context, RendererStorage::get_shader("data/shaders/ui/ui_color_picker.wgsl"), this, ui_data, 2);
     }
 
+    void ColorPickerWidget::set_color(const Color& c)
+    {
+        current_color = c;
+
+        set_surface_material_override_color(0, c);
+    }
+
     void ColorPickerWidget::update(float delta_time)
     {
         const WorkSpaceData& workspace = controller->get_workspace();

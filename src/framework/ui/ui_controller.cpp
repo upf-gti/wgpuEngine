@@ -487,6 +487,10 @@ namespace ui {
             picker->current_color.a = (*j)["slider"].value("value", 1.f);
         }
 
+        bind(signal + "@changed", [this, p = picker](const std::string& signal, Color color) {
+            p->set_color(color);
+        });
+
         return picker;
     }
 

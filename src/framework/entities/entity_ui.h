@@ -156,6 +156,8 @@ namespace ui {
 
 		ColorPickerWidget(const std::string& sg, const glm::vec2& p, const glm::vec2& s, const Color& c);
 
+        void set_color(const Color& c);
+
         void update(float delta_time) override;
 	};
 }
