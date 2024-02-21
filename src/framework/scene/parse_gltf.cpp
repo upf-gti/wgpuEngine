@@ -294,6 +294,13 @@ void read_mesh(tinygltf::Model& model, tinygltf::Mesh& mesh, Entity* entity, std
                     vertices[vertex_idx].tangent.z = *(float*)&buffer.data[buffer_idx + 8];
                 }
 
+                // color
+                if (attrib.first == std::string("COLOR_0")) {
+                    vertices[vertex_idx].color.x = *(float*)&buffer.data[buffer_idx + 0];
+                    vertices[vertex_idx].color.y = *(float*)&buffer.data[buffer_idx + 4];
+                    vertices[vertex_idx].color.z = *(float*)&buffer.data[buffer_idx + 8];
+                }
+
                 vertex_idx++;
             }
         }
