@@ -168,16 +168,33 @@ void read_mesh(tinygltf::Model& model, tinygltf::Mesh& mesh, Entity* entity, std
             const tinygltf::BufferView& buffer_view = model.bufferViews[accessor.bufferView];
             const tinygltf::Buffer& buffer = model.buffers[buffer_view.buffer];
 
-            uint16_t coponent_size = 1;
+            uint16_t component_size = 1;
             if (accessor.type != TINYGLTF_TYPE_SCALAR) {
-                coponent_size = accessor.type;
+                component_size = accessor.type;
             }
 
-            uint32_t vertex_data_size = coponent_size * sizeof(float);
+            uint32_t vertex_attribute_size;
+
+            switch (accessor.componentType) {
+            case TINYGLTF_COMPONENT_TYPE_FLOAT:
+                vertex_attribute_size = component_size * sizeof(float);
+                break;
+            case TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE:
+                vertex_attribute_size = component_size * sizeof(uint8_t);
+                break;
+            case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT:
+                vertex_attribute_size = component_size * sizeof(uint16_t);
+                break;
+            case TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT:
+                vertex_attribute_size = component_size * sizeof(uint32_t);
+                break;
+            default:
+                assert(0);
+            }
 
             if (!uses_indices) {
-                size_t buffer_size = buffer_view.byteLength / vertex_data_size;
-                final_data_size = vertex_data_size;
+                size_t buffer_size = buffer_view.byteLength / vertex_attribute_size;
+                final_data_size = vertex_attribute_size;
                 final_buffer_view = &buffer_view;
                 final_accessor = &accessor;
             }
@@ -230,7 +247,7 @@ void read_mesh(tinygltf::Model& model, tinygltf::Mesh& mesh, Entity* entity, std
                     size_t stride;
 
                     if (buffer_view.byteStride == 0) {
-                        stride = vertex_data_size;
+                        stride = vertex_attribute_size;
                     }
                     else {
                         stride = buffer_view.byteStride;
@@ -296,9 +313,25 @@ void read_mesh(tinygltf::Model& model, tinygltf::Mesh& mesh, Entity* entity, std
 
                 // color
                 if (attrib.first == std::string("COLOR_0")) {
-                    vertices[vertex_idx].color.x = *(float*)&buffer.data[buffer_idx + 0];
-                    vertices[vertex_idx].color.y = *(float*)&buffer.data[buffer_idx + 4];
-                    vertices[vertex_idx].color.z = *(float*)&buffer.data[buffer_idx + 8];
+                    switch (accessor.componentType) {
+                    case TINYGLTF_COMPONENT_TYPE_FLOAT:
+                        vertices[vertex_idx].color.x = *(float*)&buffer.data[buffer_idx + 0];
+                        vertices[vertex_idx].color.y = *(float*)&buffer.data[buffer_idx + 4];
+                        vertices[vertex_idx].color.z = *(float*)&buffer.data[buffer_idx + 8];
+                        break;
+                    case TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE:
+                        vertices[vertex_idx].color.x = *(uint8_t*)&buffer.data[buffer_idx + 0] / 255.0f;
+                        vertices[vertex_idx].color.y = *(uint8_t*)&buffer.data[buffer_idx + 1] / 255.0f;
+                        vertices[vertex_idx].color.z = *(uint8_t*)&buffer.data[buffer_idx + 2] / 255.0f;
+                        break;
+                    case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT:
+                        vertices[vertex_idx].color.x = *(uint16_t*)&buffer.data[buffer_idx + 0] / 65535.0f;
+                        vertices[vertex_idx].color.y = *(uint16_t*)&buffer.data[buffer_idx + 2] / 65535.0f;
+                        vertices[vertex_idx].color.z = *(uint16_t*)&buffer.data[buffer_idx + 4] / 65535.0f;
+                        break;
+                    default:
+                        assert(0);
+                    }
                 }
 
                 vertex_idx++;
