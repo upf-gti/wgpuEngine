@@ -27,9 +27,11 @@ struct Material
     Texture* metallic_roughness_texture = nullptr;
     Texture* normal_texture = nullptr;
     Texture* emissive_texture = nullptr;
+    Texture* oclussion_texture = nullptr;
 
     float roughness = 1.0f;
     float metalness = 0.0f;
+    float occlusion = 1.0f;
     glm::vec3 emissive = {};
     float alpha_mask = 0.5f;
 
@@ -45,6 +47,7 @@ struct Material
             && metallic_roughness_texture == other.metallic_roughness_texture
             && normal_texture == other.normal_texture
             && emissive_texture == other.emissive_texture
+            && oclussion_texture == other.oclussion_texture
             && roughness == other.roughness
             && metalness == other.metalness
             && emissive == other.emissive
@@ -68,14 +71,15 @@ struct std::hash<Material>
         std::size_t h4 = hash<void*>()(k.normal_texture);
         std::size_t h5 = hash<void*>()(k.metallic_roughness_texture);
         std::size_t h6 = hash<void*>()(k.emissive_texture);
-        std::size_t h7 = hash<float>()(k.roughness);
-        std::size_t h8 = hash<float>()(k.metalness);
-        std::size_t h9 = hash<glm::vec3>()(k.emissive);
-        std::size_t h10 = hash<float>()(k.alpha_mask);
-        std::size_t h11 = hash<uint8_t>()(k.priority);
+        std::size_t h7 = hash<void*>()(k.oclussion_texture);
+        std::size_t h8 = hash<float>()(k.roughness);
+        std::size_t h9 = hash<float>()(k.metalness);
+        std::size_t h10 = hash<glm::vec3>()(k.emissive);
+        std::size_t h11 = hash<float>()(k.alpha_mask);
+        std::size_t h12 = hash<uint8_t>()(k.priority);
 
         std::size_t seed = 0;
-        hash_combine(seed, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11);
+        hash_combine(seed, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12);
         return seed;
     }
 };

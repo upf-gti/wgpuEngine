@@ -62,10 +62,10 @@ void RendererStorage::register_material(WebGPUContext* webgpu_context, const Mat
 
     if (material.flags & MATERIAL_PBR) {
         Uniform* u = new Uniform();
-        glm::vec2 metallic_roughness = { material.metalness, material.roughness };
-        u->data = webgpu_context->create_buffer(sizeof(glm::vec2), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform, &metallic_roughness, "mat_metallic_roughness");
+        glm::vec3 occlusion_roughness_metallic = { material.occlusion, material.roughness, material.metalness };
+        u->data = webgpu_context->create_buffer(sizeof(glm::vec3), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform, &occlusion_roughness_metallic, "mat_occlusion_roughness_metallic");
         u->binding = 3;
-        u->buffer_size = sizeof(glm::vec2);
+        u->buffer_size = sizeof(glm::vec3);
         uniforms.push_back(u);
     }
 
@@ -85,6 +85,15 @@ void RendererStorage::register_material(WebGPUContext* webgpu_context, const Mat
         uniforms.push_back(u);
         uses_textures |= true;
         texture_ref = material.emissive_texture;
+    }
+
+    if (material.oclussion_texture) {
+        Uniform* u = new Uniform();
+        u->data = material.oclussion_texture->get_view();
+        u->binding = 9;
+        uniforms.push_back(u);
+        uses_textures |= true;
+        texture_ref = material.oclussion_texture;
     }
 
     if (material.flags & MATERIAL_PBR) {
