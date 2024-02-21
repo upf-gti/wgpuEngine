@@ -34,6 +34,11 @@ namespace ui {
 
         raycast_pointer = parse_mesh("data/meshes/raycast.obj");
 
+        Material pointer_material;
+        pointer_material.shader = RendererStorage::get_shader("data/shaders/ui/ui_ray_pointer.wgsl");
+
+        raycast_pointer->set_surface_material_override(raycast_pointer->get_surface(0), pointer_material);
+
         // render_background = true;
 
         // Debug
@@ -80,8 +85,6 @@ namespace ui {
         {
 		    glm::mat4x4 raycast_transform = Input::get_controller_pose(workspace.select_hand, pose);
 		    raycast_pointer->set_model(raycast_transform);
-		    raycast_pointer->rotate(glm::radians(-90.f), glm::vec3(1.f, 0.f, 0.f));
-		    raycast_pointer->scale(glm::vec3(0.1f));
         }
 
 		// Update workspace
@@ -97,7 +100,6 @@ namespace ui {
             background->set_model(global_transform);
             background->translate(glm::vec3(0.f, 0.f, 1e-3f));
             background->scale(glm::vec3(workspace.size.x, workspace.size.y, 1.f));
-            
         }
 
 		// Update widgets using this controller (not the root!)
