@@ -8,19 +8,27 @@
 #include <framework/utils/utils.h>
 
 #include "framework/scene/parse_scene.h"
+#include "graphics/renderer_storage.h"
+
+#include "spdlog/spdlog.h"
 
 void TransformGizmo::initialize(const eGizmoType gizmo_use, const glm::vec3 &position) {
 	type = gizmo_use;
 
     if (gizmo_use & POSITION_GIZMO) {
+
+        Material m;
+        m.shader = RendererStorage::get_shader("data/shaders/mesh_color.wgsl");
+        m.flags = MATERIAL_COLOR;
+
         arrow_mesh_x = parse_mesh("data/meshes/arrow.obj");
-        arrow_mesh_x->set_surface_material_flag(0, MATERIAL_COLOR);
+        arrow_mesh_x->set_surface_material_override(arrow_mesh_x->get_surface(0), m);
 
         arrow_mesh_y = parse_mesh("data/meshes/arrow.obj");
-        arrow_mesh_y->set_surface_material_flag(0, MATERIAL_COLOR);
+        arrow_mesh_y->set_surface_material_override(arrow_mesh_y->get_surface(0), m);
 
         arrow_mesh_z = parse_mesh("data/meshes/arrow.obj");
-        arrow_mesh_z->set_surface_material_flag(0, MATERIAL_COLOR);
+        arrow_mesh_z->set_surface_material_override(arrow_mesh_z->get_surface(0), m);
     }
     if (gizmo_use & ROTATION_GIZMO) {
         wire_circle_mesh = parse_mesh("data/meshes/wired_circle.obj");
@@ -45,23 +53,23 @@ float get_angle(const glm::vec2& v1, const glm::vec2& v2) {
     return glm::acos(dot / (v1.length() * v2.length()));
 }
 
-glm::vec3 TransformGizmo::update(const glm::vec3 &new_position, const float delta) {
+bool TransformGizmo::update(glm::vec3 &new_position, const glm::vec3& controller_position, float delta)
+{
 	if (!enabled) {
-		return new_position;
+		return false;
 	}
 
 	gizmo_position = new_position;
 
-	glm::vec3 controller_position = Input::get_controller_position(HAND_RIGHT);
-
 	if (!has_graved) {
         // POSITION GIZMO TESTS
-		// Generate the AABB size of the bounding box of the arrwo mesh
-		// Center the pointa ccordingly, and add abit of margin (0.01f) for
+		// Generate the AABB size of the bounding box of the arrow mesh
+		// Center the pointa ccordingly, and add a bit of margin (0.01f) for
 		// Grabing all axis in the bottom
+
 		// X axis: 
 		glm::vec3 size = position_gizmo_scale * glm::vec3(mesh_size.y, mesh_size.x, mesh_size.z);
-		glm::vec3 box_center = gizmo_position + glm::vec3(-size.x / 2.0f + 0.01f, 0.0f, 0.0f);
+		glm::vec3 box_center = gizmo_position + glm::vec3(size.x / 2.0f - 0.01f, 0.0f, 0.0f);
         position_axis_x_selected = intersection::point_AABB(controller_position, box_center, size);
 
 		// Y axis: 
@@ -82,8 +90,10 @@ glm::vec3 TransformGizmo::update(const glm::vec3 &new_position, const float delt
         rotation_axis_z_selected = !rotation_axis_y_selected && intersection::point_circle(controller_position, gizmo_position, glm::vec3(0.0f, 1.0f, 0.0f), rotation_gizmo_scale.z * 0.25f);
 	}
 
+    const bool is_active = position_axis_x_selected || position_axis_y_selected || position_axis_z_selected;
+
 	// Calculate the movement vector for the gizmo
-	if (Input::get_grab_value(HAND_RIGHT) > 0.3f) {
+	if (Input::get_trigger_value(HAND_RIGHT) > 0.3f) {
         glm::vec3 controller_delta = controller_position - prev_controller_position;
 
 		if (has_graved) {
@@ -142,10 +152,13 @@ glm::vec3 TransformGizmo::update(const glm::vec3 &new_position, const float delt
 		has_graved = false;
 	}
 
-	return gizmo_position;
+	new_position = gizmo_position;
+
+    return is_active;
 }
 
-void TransformGizmo::render(int axis) {
+void TransformGizmo::render(int axis)
+{
 	if (!enabled) {
 		return;
 	}
@@ -157,7 +170,7 @@ void TransformGizmo::render(int axis) {
             arrow_mesh_x->set_translation(gizmo_position);
             arrow_mesh_x->scale(position_gizmo_scale);
 		    arrow_mesh_x->rotate(glm::radians(-90.f), glm::vec3(0.f, 0.f, 1.f));
-		    arrow_mesh_x->set_surface_material_color(0, Color(1.f, 0.0f, 0.f, 1.f) + ((position_axis_x_selected) ? Color(0.5f, 0.5f, 0.5f, 0.f) : Color(0.f)));
+		    arrow_mesh_x->set_surface_material_override_color(0, Color(1.f, 0.0f, 0.f, 1.f) + ((position_axis_x_selected) ? Color(0.5f, 0.5f, 0.5f, 0.f) : Color(0.f)));
 		    arrow_mesh_x->render();
         }
 
@@ -165,7 +178,7 @@ void TransformGizmo::render(int axis) {
         {
 		    arrow_mesh_y->set_translation(gizmo_position);
 		    arrow_mesh_y->scale(position_gizmo_scale);
-		    arrow_mesh_y->set_surface_material_color(0, Color(0.f, 1.f, 0.0f, 1.f) + ((position_axis_y_selected) ? Color(0.5f, 0.5f, 0.5f, 0.f) : Color(0.f)));
+		    arrow_mesh_y->set_surface_material_override_color(0, Color(0.f, 1.f, 0.0f, 1.f) + ((position_axis_y_selected) ? Color(0.5f, 0.5f, 0.5f, 0.f) : Color(0.f)));
             arrow_mesh_y->render();
         }
 
@@ -175,23 +188,23 @@ void TransformGizmo::render(int axis) {
             arrow_mesh_z->scale(position_gizmo_scale);
             arrow_mesh_z->rotate(glm::radians(90.f), glm::vec3(0.f, 0.f, 1.f));
 		    arrow_mesh_z->rotate(glm::radians(90.f), glm::vec3(1.f, 0.f, 0.f));
-		    arrow_mesh_z->set_surface_material_color(0, Color(0.0f, 0.f, 1.f, 1.f) + ((position_axis_z_selected) ? Color(0.5f, 0.5f, 0.5f, 0.f) : Color(0.f)));
+		    arrow_mesh_z->set_surface_material_override_color(0, Color(0.0f, 0.f, 1.f, 1.f) + ((position_axis_z_selected) ? Color(0.5f, 0.5f, 0.5f, 0.f) : Color(0.f)));
 		    arrow_mesh_z->render();
         }
 	}
 
     if (type & ROTATION_GIZMO) {
         wire_circle_mesh->set_translation(gizmo_position);
-        wire_circle_mesh->set_surface_material_color(0, Color(0.f, 1.f, 0.f, 1.f) + ((rotation_axis_x_selected) ? Color(0.5f, 0.5f, 0.5f, 0.f) : Color(0.f)));
+        wire_circle_mesh->set_surface_material_override_color(0, Color(0.f, 1.f, 0.f, 1.f) + ((rotation_axis_x_selected) ? Color(0.5f, 0.5f, 0.5f, 0.f) : Color(0.f)));
         wire_circle_mesh->scale(rotation_gizmo_scale * 0.5f);
         wire_circle_mesh->render();
 
         wire_circle_mesh->rotate(glm::radians(90.f), glm::vec3(1.f, 0.f, 0.f));
-        wire_circle_mesh->set_surface_material_color(0, Color(1.f, 0.f, 0.f, 1.f) + ((rotation_axis_z_selected) ? Color(0.5f, 0.5f, 0.5f, 0.f) : Color(0.f)));
+        wire_circle_mesh->set_surface_material_override_color(0, Color(1.f, 0.f, 0.f, 1.f) + ((rotation_axis_z_selected) ? Color(0.5f, 0.5f, 0.5f, 0.f) : Color(0.f)));
         wire_circle_mesh->render();
 
         wire_circle_mesh->rotate(glm::radians(90.f), glm::vec3(0.f, 1.f, 0.f));
-        wire_circle_mesh->set_surface_material_color(0, Color(0.f, 0.f, 1.f, 1.f) + ((rotation_axis_y_selected) ? Color(0.5f, 0.5f, 0.5f, 0.f) : Color(0.f)));
+        wire_circle_mesh->set_surface_material_override_color(0, Color(0.f, 0.f, 1.f, 1.f) + ((rotation_axis_y_selected) ? Color(0.5f, 0.5f, 0.5f, 0.f) : Color(0.f)));
         wire_circle_mesh->render();
     }
 }
