@@ -6,13 +6,14 @@ enum eGizmoAxis : uint8_t {
     GIZMO_AXIS_X = 1 << 0,
     GIZMO_AXIS_Y = 1 << 1,
     GIZMO_AXIS_Z = 1 << 2,
+    GIZMO_AXIS_XZ = GIZMO_AXIS_X | GIZMO_AXIS_Z,
     GIZMO_ALL_AXIS = GIZMO_AXIS_X | GIZMO_AXIS_Y | GIZMO_AXIS_Z
 };
 
 enum eGizmoType : uint8_t {
-	POSITION_GIZMO = 0b001,
-	ROTATION_GIZMO = 0b010,
-	POSITION_ROTATION_GIZMO = 0b011
+	POSITION_GIZMO = 1 << 0,
+	ROTATION_GIZMO = 1 << 1,
+	POSITION_ROTATION_GIZMO = POSITION_GIZMO | ROTATION_GIZMO
 };
 
 class EntityMesh;
@@ -26,7 +27,8 @@ class EntityMesh;
 
 class TransformGizmo {
 
-	eGizmoType  type;
+	eGizmoType type;
+    eGizmoAxis axis;
 
 	bool enabled = true;
 	bool has_graved = false;
@@ -35,7 +37,13 @@ class TransformGizmo {
 	EntityMesh* arrow_mesh_x = nullptr;
     EntityMesh* arrow_mesh_y = nullptr;
     EntityMesh* arrow_mesh_z = nullptr;
-    EntityMesh* wire_circle_mesh = nullptr;
+
+    EntityMesh* wire_circle_mesh_x = nullptr;
+    EntityMesh* wire_circle_mesh_y = nullptr;
+    EntityMesh* wire_circle_mesh_z = nullptr;
+
+    void init_arrow_meshes();
+    void init_circle_meshes();
 
 	glm::vec3 prev_controller_position;
 	glm::vec3 gizmo_position = {};
@@ -61,8 +69,10 @@ class TransformGizmo {
 
 public:
 
-	void initialize(const eGizmoType gizmo_use, const glm::vec3 &position);
+	void initialize(const eGizmoType& gizmo_type, const glm::vec3 &position, const eGizmoAxis& axis = GIZMO_ALL_AXIS);
 	void clean();
+
+    void set_mode(const eGizmoType& gizmo_use, const eGizmoAxis& axis = GIZMO_ALL_AXIS);
 
 	bool update(glm::vec3& new_position, const glm::vec3& controller_position, float delta);
     void render(int axis = GIZMO_ALL_AXIS);
