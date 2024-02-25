@@ -68,12 +68,12 @@ public:
 
 	static WebGPUContext* webgpu_context;
 
-    void create_render(Shader* shader, WGPUColorTargetState p_color_target, PipelineDescription desc = {});
+    void create_render(Shader* shader, const WGPUColorTargetState& p_color_target, const PipelineDescription& desc = {});
 
 	void create_compute(Shader* shader, WGPUPipelineLayout pipeline_layout);
 	void create_compute(Shader* shader);
 
-    static void register_render_pipeline(Shader* shader, WGPUColorTargetState p_color_target, PipelineDescription desc = {});
+    static void register_render_pipeline(Shader* shader, const WGPUColorTargetState &p_color_target, const PipelineDescription &desc = {});
     static void register_compute_pipeline(Shader* shader, WGPUPipelineLayout pipeline_layout);
     static void clean_registered_pipelines();
 

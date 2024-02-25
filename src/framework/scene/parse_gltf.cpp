@@ -116,8 +116,6 @@ void read_mesh(tinygltf::Model& model, tinygltf::Mesh& mesh, Entity* entity, std
 
         tinygltf::Primitive primitive = mesh.primitives[primitive_idx];
 
-        assert(primitive.mode == TINYGLTF_MODE_TRIANGLES);
-
         bool uses_indices = primitive.indices >= 0;
 
         tinygltf::BufferView const* final_buffer_view = nullptr;
@@ -349,20 +347,40 @@ void read_mesh(tinygltf::Model& model, tinygltf::Mesh& mesh, Entity* entity, std
         bool is_openxr_available = Renderer::instance->get_openxr_available();
         WGPUTextureFormat swapchain_format = is_openxr_available ? webgpu_context->xr_swapchain_format : webgpu_context->swapchain_format;
 
+        std::vector<std::string> define_specializations;
+
         PipelineDescription description = {};
+
+        switch (primitive.mode) {
+        case TINYGLTF_MODE_TRIANGLES:
+            description.topology = WGPUPrimitiveTopology_TriangleList;
+            define_specializations.push_back("TRIANGLE_LIST");
+            break;
+        case TINYGLTF_MODE_LINE:
+            description.topology = WGPUPrimitiveTopology_LineList;
+            define_specializations.push_back("LINE_LIST");
+            break;
+        case TINYGLTF_MODE_LINE_STRIP:
+            description.topology = WGPUPrimitiveTopology_LineStrip;
+            define_specializations.push_back("LINE_STRIP");
+            break;
+        case TINYGLTF_MODE_POINTS:
+            description.topology = WGPUPrimitiveTopology_PointList;
+            define_specializations.push_back("POINT_LIST");
+            break;
+        default:
+            assert(0);
+        }
 
         WGPUColorTargetState color_target = {};
         color_target.format = swapchain_format;
         color_target.writeMask = WGPUColorWriteMask_All;
-
-        std::vector<std::string> define_specializations;
 
         if (primitive.material >= 0) {
 
             tinygltf::Material& gltf_material = model.materials[primitive.material];
 
             const tinygltf::PbrMetallicRoughness& pbrMetallicRoughness = gltf_material.pbrMetallicRoughness;
-
             
             if (pbrMetallicRoughness.baseColorTexture.index >= 0) {
 
@@ -439,7 +457,13 @@ void read_mesh(tinygltf::Model& model, tinygltf::Mesh& mesh, Entity* entity, std
                 define_specializations.push_back("USE_SAMPLER");
             }
 
-            description.cull_mode = gltf_material.doubleSided ? WGPUCullMode_None : WGPUCullMode_Back;
+            if (gltf_material.doubleSided) {
+                description.cull_mode = WGPUCullMode_None;
+                define_specializations.push_back("CULL_NONE");
+            } else {
+                description.cull_mode = WGPUCullMode_Back;
+                define_specializations.push_back("CULL_BACK");
+            }
 
             if (gltf_material.alphaMode == "OPAQUE") {
                 define_specializations.push_back("ALPHA_OPAQUE");
@@ -598,15 +622,22 @@ bool parse_gltf(const char* gltf_path, std::vector<Entity*>& entities)
         spdlog::error(err);
     }
 
-    const tinygltf::Scene& scene = model.scenes[model.defaultScene];
+    const tinygltf::Scene* scene = nullptr;
+
+    if (model.defaultScene >= 0) {
+        scene = &model.scenes[model.defaultScene];
+    }
+    else {
+        scene = &model.scenes[0];
+    }
 
     std::map<uint32_t, Texture*> texture_cache;
 
     int entity_name_idx = 0;
-    for (size_t i = 0; i < scene.nodes.size(); ++i) {
-        assert((scene.nodes[i] >= 0) && (scene.nodes[i] < model.nodes.size()));
+    for (size_t i = 0; i < scene->nodes.size(); ++i) {
+        assert((scene->nodes[i] >= 0) && (scene->nodes[i] < model.nodes.size()));
 
-        tinygltf::Node node = model.nodes[scene.nodes[i]];
+        tinygltf::Node node = model.nodes[scene->nodes[i]];
 
         Entity* entity = create_node_entity(node);
 

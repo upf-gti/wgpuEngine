@@ -22,7 +22,7 @@ Pipeline::~Pipeline()
     }
 }
 
-void Pipeline::create_render(Shader* shader, WGPUColorTargetState p_color_target, PipelineDescription desc)
+void Pipeline::create_render(Shader* shader, const WGPUColorTargetState& p_color_target, const PipelineDescription& desc)
 {
 	const std::vector<WGPUBindGroupLayout> layouts_by_id = shader->get_bind_group_layouts();
 	std::vector<WGPUBindGroupLayout> bind_group_layouts;
@@ -72,7 +72,7 @@ void Pipeline::create_compute(Shader* shader)
 	shader->set_pipeline(this);
 }
 
-void Pipeline::register_render_pipeline(Shader* shader, WGPUColorTargetState p_color_target, PipelineDescription desc)
+void Pipeline::register_render_pipeline(Shader* shader, const WGPUColorTargetState &p_color_target, const PipelineDescription& desc)
 {
     RenderPipelineKey key = { shader, p_color_target, desc };
 
