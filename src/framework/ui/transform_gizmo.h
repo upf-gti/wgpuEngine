@@ -75,6 +75,13 @@ public:
     void set_mode(const eGizmoType& gizmo_use, const eGizmoAxis& axis = GIZMO_ALL_AXIS);
 
 	bool update(glm::vec3& new_position, const glm::vec3& controller_position, float delta);
+
+    bool update(glm::vec3& new_position, glm::quat& rotation, const glm::vec3& controller_position, float delta) {
+        bool result = update(new_position, controller_position, delta);
+        rotation = current_rotation;
+        return result;
+    }
+
     void render(int axis = GIZMO_ALL_AXIS);
 
     inline glm::quat  get_rotation() const {

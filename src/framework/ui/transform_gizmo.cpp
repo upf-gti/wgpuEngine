@@ -30,7 +30,7 @@ void TransformGizmo::initialize(const eGizmoType& gizmo_type, const glm::vec3 &p
     }
 
 	position_gizmo_scale = glm::vec3(0.1f, 0.1f, 0.1f);
-    rotation_gizmo_scale = glm::vec3(0.01f, 0.01f, 0.01f);
+    rotation_gizmo_scale = glm::vec3(0.1f, 0.1f, 0.1f);
     gizmo_position = position;
 }
 
@@ -100,9 +100,20 @@ void TransformGizmo::set_mode(const eGizmoType& gizmo_type, const eGizmoAxis& ax
 float get_angle(const glm::vec2& v1, const glm::vec2& v2)
 {
     const float dot = glm::dot(glm::normalize(v1), glm::normalize(v2));
-    return glm::acos(dot / (v1.length() * v2.length()));
+    return glm::acos(dot / (glm::length(v1) * glm::length(v2)));
 }
 
+glm::quat get_quat_between_vec3(const glm::vec3& p1, const glm::vec3& p2) {
+    const float facing = glm::dot(p1, p2);
+    if (facing > 0.9999f || facing < -0.9999f) {
+        return {0.0f, 0.0f, 0.0f, 1.0f};
+    }
+    const glm::vec3 closs_p = glm::cross(p1, p2);
+    const float a = sqrtf(powf(glm::length(p1), 2.0f) * powf(glm::length(p1), 2.0f)) + facing;
+    return glm::quat{ closs_p.x, closs_p .y, closs_p.z, a};
+}
+
+#include <iostream>
 bool TransformGizmo::update(glm::vec3 &new_position, const glm::vec3& controller_position, float delta)
 {
 	if (!enabled) {
@@ -145,12 +156,12 @@ bool TransformGizmo::update(glm::vec3 &new_position, const glm::vec3& controller
             rotation_axis_x_selected =  intersection::point_circle(controller_position, gizmo_position, glm::vec3(0.0f, 0.0f, 1.0f), rotation_gizmo_scale.x);
         }
 
-        if (axis & GIZMO_AXIS_Y) {
-            rotation_axis_y_selected = !rotation_axis_x_selected && intersection::point_circle(controller_position, gizmo_position, glm::vec3(1.0f, 0.0f, 0.0f), rotation_gizmo_scale.y);
+        if (axis & GIZMO_AXIS_Z) {
+            rotation_axis_z_selected = !rotation_axis_x_selected && intersection::point_circle(controller_position, gizmo_position, glm::vec3(1.0f, 0.0f, 0.0f), rotation_gizmo_scale.y);
         }
 
-        if (axis & GIZMO_AXIS_Z) {
-            rotation_axis_z_selected = !rotation_axis_y_selected && intersection::point_circle(controller_position, gizmo_position, glm::vec3(0.0f, 1.0f, 0.0f), rotation_gizmo_scale.z);
+        if (axis & GIZMO_AXIS_Y) {
+            rotation_axis_y_selected = !rotation_axis_y_selected && intersection::point_circle(controller_position, gizmo_position, glm::vec3(0.0f, 1.0f, 0.0f), rotation_gizmo_scale.z);
         }
 	}
 
@@ -159,61 +170,84 @@ bool TransformGizmo::update(glm::vec3 &new_position, const glm::vec3& controller
 	// Calculate the movement vector for the gizmo
 	if (Input::get_trigger_value(HAND_RIGHT) > 0.3f) {
 
+        if (!has_graved) {
+            reference_rotation_pose = controller_position;
+            prev_controller_position = controller_position;
+            has_graved = true;
+        }
+
         glm::vec3 controller_delta = controller_position - prev_controller_position;
 
-		if (has_graved) {
-
-            if (type & POSITION_GIZMO) {
-                glm::vec3 constraint = { 0.0f, 0.0f, 0.0f };
-                if (position_axis_x_selected) {
-                    constraint.x = 1.0f;
-                }
-                if (position_axis_y_selected) {
-                    constraint.y = 1.0f;
-                }
-                if (position_axis_z_selected) {
-                    constraint.z = 1.0f;
-                }
-
-                gizmo_position += controller_delta * constraint;
+        if (type & POSITION_GIZMO) {
+            glm::vec3 constraint = { 0.0f, 0.0f, 0.0f };
+            if (position_axis_x_selected) {
+                constraint.x = 1.0f;
+            }
+            if (position_axis_y_selected) {
+                constraint.y = 1.0f;
+            }
+            if (position_axis_z_selected) {
+                constraint.z = 1.0f;
             }
 
-            if (type & ROTATION_GIZMO) {
-                x_angle = 0.0f, y_angle = 0.0f, z_angle = 0.0f;
+            gizmo_position += controller_delta * constraint;
+        }
 
-                const glm::vec3 new_rotation_pose = controller_position;
-                glm::vec3 t = new_rotation_pose - reference_rotation_pose;
+        if (type & ROTATION_GIZMO) {
+            x_angle = 0.0f, y_angle = 0.0f, z_angle = 0.0f;
 
-                if (rotation_axis_x_selected) {
-                    // x_angle = acos(dot(v.yz, u.yx)
-                    x_angle = get_angle(glm::vec2(new_rotation_pose.y, new_rotation_pose.z),
-                                        glm::vec2(reference_rotation_pose.y, reference_rotation_pose.z));
-                }
+            const glm::vec3 new_rotation_pose = controller_position;
+            glm::vec3 t = new_rotation_pose - reference_rotation_pose;
 
-                if (rotation_axis_y_selected) {
-                    // y_angle = acos(dot(v.xz, u.xz)
-                    y_angle = get_angle(glm::vec2(new_rotation_pose.x, new_rotation_pose.z),
-                                        glm::vec2(reference_rotation_pose.x, reference_rotation_pose.z));
-                }
-                if (rotation_axis_z_selected) {
-                    // z_angle = acos(dot(v.xy, u.xy)
-                    z_angle = get_angle(glm::vec2(new_rotation_pose.x, new_rotation_pose.y),
-                                        glm::vec2(reference_rotation_pose.x, reference_rotation_pose.y));
-                }
-                if (rotation_axis_x_selected || rotation_axis_y_selected || rotation_axis_z_selected) {
-                    current_rotation =  glm::toQuat(glm::eulerAngleYXZ(y_angle, x_angle, z_angle));
-                    int i =0;
-                }
+            const glm::vec3 p1 = glm::inverse(current_rotation) * (reference_rotation_pose - gizmo_position);
+            const glm::vec3 p2 = glm::inverse(current_rotation) * (new_rotation_pose - gizmo_position);
+
+            glm::quat rot;
+            if (rotation_axis_x_selected) {
+                rot = glm::normalize(get_quat_between_vec3(glm::vec3(0.0f, p1.y, p1.z), glm::vec3(0.0f, p2.y, p2.z)));
+
+                current_rotation = current_rotation * glm::inverse(rot);
             }
-        } else {
-            // Stablish reference to rotation
-            if (type & ROTATION_GIZMO) {
-                reference_rotation_pose = controller_position;
+
+            if (rotation_axis_z_selected) {
+                rot = glm::normalize(get_quat_between_vec3(glm::vec3(p1.x, p1.y, 0.0f), glm::vec3(p2.x, p2.y, 0.0f)));
+
+                current_rotation = current_rotation * glm::inverse(rot);
             }
+
+            if (rotation_axis_y_selected) {
+                rot = glm::normalize(get_quat_between_vec3(glm::vec3(p1.x, 0.0f, p1.z), glm::vec3(p2.x, 0.0f, p2.z)));
+
+                current_rotation = current_rotation * glm::inverse(rot);
+            }
+            
+
+            //std::cout << glm::abs(glm::length(t)) << (glm::abs(glm::length(t)) > 0.001f) << std::endl;
+            //if (glm::abs(glm::length(t)) > 0.0001f) {
+            //    if (rotation_axis_y_selected) {
+            //        // x_angle = acos(dot(v.yz, u.yx)
+            //       /* x_angle = get_angle(glm::vec2(new_rotation_pose.y, new_rotation_pose.z),
+            //            glm::vec2(reference_rotation_pose.y, reference_rotation_pose.z));*/
+            //    }
+
+            //    if (rotation_axis_z_selected) {
+            //        // y_angle = acos(dot(v.xz, u.xz)
+            //        /*y_angle = get_angle(glm::vec2(new_rotation_pose.x, new_rotation_pose.z),
+            //            glm::vec2(reference_rotation_pose.x, reference_rotation_pose.z))*/;
+            //    }
+            //    if (rotation_axis_x_selected) {
+            //        // z_angle = acos(dot(v.xy, u.xy)
+            //        z_angle = get_angle(glm::vec2(new_rotation_pose.x, new_rotation_pose.y),
+            //            glm::vec2(reference_rotation_pose.x, reference_rotation_pose.y));
+            //    }
+            //    if (rotation_axis_x_selected || rotation_axis_y_selected || rotation_axis_z_selected) {
+            //        current_rotation = current_rotation * glm::inverse(glm::toQuat(glm::eulerAngleYXZ(y_angle, x_angle, z_angle)));
+            //    }
+            //}
+            reference_rotation_pose = controller_position;
         }
 
 		prev_controller_position = controller_position;
-		has_graved = true;
 	} else {
 		has_graved = false;
 	}
@@ -261,7 +295,7 @@ void TransformGizmo::render(int axis)
 
     if (type & ROTATION_GIZMO) {
 
-        if (axis & GIZMO_AXIS_X)
+        if (axis & GIZMO_AXIS_Z)
         {
             wire_circle_mesh_x->set_translation(gizmo_position);
             wire_circle_mesh_x->scale(rotation_gizmo_scale * 0.5f);
@@ -270,7 +304,7 @@ void TransformGizmo::render(int axis)
             wire_circle_mesh_x->render();
         }
 
-        if (axis & GIZMO_AXIS_Y)
+        if (axis & GIZMO_AXIS_X)
         {
             wire_circle_mesh_y->set_translation(gizmo_position);
             wire_circle_mesh_y->scale(rotation_gizmo_scale * 0.5f);
@@ -279,7 +313,7 @@ void TransformGizmo::render(int axis)
             wire_circle_mesh_y->render();
         }
 
-        if (axis & GIZMO_AXIS_Z)
+        if (axis & GIZMO_AXIS_Y)
         {
             wire_circle_mesh_z->set_translation(gizmo_position);
             wire_circle_mesh_z->scale(rotation_gizmo_scale * 0.5f);
