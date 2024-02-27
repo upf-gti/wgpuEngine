@@ -30,7 +30,7 @@ void TransformGizmo::initialize(const eGizmoType& gizmo_type, const glm::vec3 &p
     }
 
 	position_gizmo_scale = glm::vec3(0.1f, 0.1f, 0.1f);
-    rotation_gizmo_scale = glm::vec3(0.3f, 0.3f, 0.3f);
+    rotation_gizmo_scale = glm::vec3(0.01f, 0.01f, 0.01f);
     gizmo_position = position;
 }
 
@@ -141,19 +141,20 @@ bool TransformGizmo::update(glm::vec3 &new_position, const glm::vec3& controller
         // ROTATION GIZMO
 
         if (axis & GIZMO_AXIS_X) {
-            rotation_axis_x_selected = !any_translation_grabed && intersection::point_circle(controller_position, gizmo_position, glm::vec3(0.0f, 0.0f, 1.0f), rotation_gizmo_scale.x * 0.25f);
+            // gneralize for all grabbing gestires
+            rotation_axis_x_selected =  intersection::point_circle(controller_position, gizmo_position, glm::vec3(0.0f, 0.0f, 1.0f), rotation_gizmo_scale.x);
         }
 
         if (axis & GIZMO_AXIS_Y) {
-            rotation_axis_y_selected = !rotation_axis_x_selected && intersection::point_circle(controller_position, gizmo_position, glm::vec3(1.0f, 0.0f, 0.0f), rotation_gizmo_scale.y * 0.25f);
+            rotation_axis_y_selected = !rotation_axis_x_selected && intersection::point_circle(controller_position, gizmo_position, glm::vec3(1.0f, 0.0f, 0.0f), rotation_gizmo_scale.y);
         }
 
         if (axis & GIZMO_AXIS_Z) {
-            rotation_axis_z_selected = !rotation_axis_y_selected && intersection::point_circle(controller_position, gizmo_position, glm::vec3(0.0f, 1.0f, 0.0f), rotation_gizmo_scale.z * 0.25f);
+            rotation_axis_z_selected = !rotation_axis_y_selected && intersection::point_circle(controller_position, gizmo_position, glm::vec3(0.0f, 1.0f, 0.0f), rotation_gizmo_scale.z);
         }
 	}
 
-    const bool is_active = position_axis_x_selected || position_axis_y_selected || position_axis_z_selected;
+    const bool is_active = position_axis_x_selected || position_axis_y_selected || position_axis_z_selected || rotation_axis_x_selected || rotation_axis_y_selected || rotation_axis_z_selected;
 
 	// Calculate the movement vector for the gizmo
 	if (Input::get_trigger_value(HAND_RIGHT) > 0.3f) {
