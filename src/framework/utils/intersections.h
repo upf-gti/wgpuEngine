@@ -177,6 +177,29 @@ namespace intersection {
         return glm::abs(glm::length(point_in_plane - circle_origin)) < circle_radius;
     }
 
+    inline bool point_circle_ring(const glm::vec3& point,
+                                  const glm::vec3& circle_origin,
+                                  const glm::vec3& circle_normal,
+                                  const float      circle_radius,
+                                  const float      ring_size) {
+         float distance;
+
+        if (!point_plane(point, circle_origin, circle_normal, &distance, 0.02f)) {
+            return false;
+        }
+        const glm::vec3 point_in_plane = point - circle_normal * distance;
+
+        const float dist = glm::abs(glm::length(point_in_plane - circle_origin));
+
+        return dist <= circle_radius && dist >= (circle_radius - ring_size);
+    }
+
+    inline bool point_sphere(const glm::vec3& point,
+                             const glm::vec3& sphere_center,
+                             const float      radius) {
+        return glm::length(point - sphere_center) <= radius;
+    }
+
     inline bool AABB_AABB_min_max(const AABB& box1,  const AABB& box2)
     {
         glm::vec3 box1_min = box1.center - box1.half_size;

@@ -42,6 +42,8 @@ class TransformGizmo {
     EntityMesh* wire_circle_mesh_y = nullptr;
     EntityMesh* wire_circle_mesh_z = nullptr;
 
+    EntityMesh* free_hand_point_mesh = nullptr;
+
     void init_arrow_meshes();
     void init_circle_meshes();
 
@@ -54,6 +56,9 @@ class TransformGizmo {
 	glm::vec3 mesh_size = { 0.300f, 1.7f, 0.300f };
 
     glm::quat current_rotation = {0.0f, 0.0f, 0.0f, 1.0f};
+    glm::quat rotation_diff = { 0.0f, 0.0f, 0.0f, 1.0f };
+
+    bool free_hand_selected = false;
 
 	bool position_axis_x_selected = false;
 	bool position_axis_y_selected = false;
