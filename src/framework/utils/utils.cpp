@@ -96,6 +96,16 @@ glm::vec3 mod_vec3(glm::vec3 v, float m)
         fmodf(v.z, m)
     );
 }
+glm::quat get_quat_between_vec3(const glm::vec3& p1, const glm::vec3& p2) {
+    const float facing = glm::dot(p1, p2);
+    if (facing > 0.9999f || facing < -0.9999f) {
+        return { 0.0f, 0.0f, 0.0f, 1.0f };
+    }
+    const glm::vec3 closs_p = glm::cross(p1, p2);
+    const float a = sqrtf(powf(glm::length(p1), 2.0f) * powf(glm::length(p1), 2.0f)) + facing;
+    return glm::normalize(glm::quat{ closs_p.x, closs_p.y, closs_p.z, a });
+}
+
 
 // Swing Twist decomposition for quaternions
 // https://stackoverflow.com/questions/3684269/component-of-a-quaternion-rotation-around-an-axis
