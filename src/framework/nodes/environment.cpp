@@ -1,9 +1,9 @@
-#include "entity_environment.h"
+#include "environment.h"
 
 #include "framework/scene/parse_obj.h"
 #include "graphics/renderer.h"
 
-EntityEnvironment::EntityEnvironment() : EntityMesh()
+Environment3D::Environment3D() : MeshInstance3D()
 {
     parse_obj("data/meshes/cube.obj", this);
 
@@ -16,26 +16,22 @@ EntityEnvironment::EntityEnvironment() : EntityMesh()
     set_surface_material_priority(0, 2);
 }
 
-void EntityEnvironment::render()
+void Environment3D::render()
 {
-    if (!active) return;
-
     Renderer::instance->add_renderable(this);
 
-    Entity::render();
+    Node3D::render();
 }
 
-void EntityEnvironment::update(float delta_time)
+void Environment3D::update(float delta_time)
 {
-    if (!active) return;
-
-    Entity::update(delta_time);
+    Node3D::update(delta_time);
 
     Renderer* renderer = static_cast<Renderer*>(Renderer::instance);
     set_translation(renderer->get_camera_eye());
 }
 
-void EntityEnvironment::set_texture(const std::string& texture_path)
+void Environment3D::set_texture(const std::string& texture_path)
 {
     Renderer* renderer = static_cast<Renderer*>(Renderer::instance);
     set_translation(renderer->get_camera_eye());

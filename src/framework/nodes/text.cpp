@@ -1,11 +1,11 @@
-#include "entity_text.h"
+#include "text.h"
 
 #include "graphics/renderer.h"
 #include "graphics/font.h"
 
 #include <assert.h>
 
-TextEntity::TextEntity(const std::string& _text, glm::vec2 _box_size, bool _wrap) : EntityMesh()
+TextEntity::TextEntity(const std::string& _text, glm::vec2 _box_size, bool _wrap) : MeshInstance3D()
 {
     font = Font::get("Lato");
     text = _text;

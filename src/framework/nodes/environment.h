@@ -1,8 +1,8 @@
 #pragma once
 
-#include "entity_mesh.h"
+#include "mesh_instance_3d.h"
 
-class EntityEnvironment : public EntityMesh {
+class Environment3D : public MeshInstance3D {
 
 protected:
 
@@ -11,8 +11,8 @@ protected:
 
 public:
 
-    EntityEnvironment();
-	virtual ~EntityEnvironment() {};
+    Environment3D();
+	virtual ~Environment3D() {};
 
 	void render() override;
 	void update(float delta_time) override;

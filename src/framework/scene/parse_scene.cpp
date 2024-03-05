@@ -3,11 +3,11 @@
 #include "parse_obj.h"
 #include "parse_gltf.h"
 
-#include "framework/entities/entity_mesh.h"
+#include "framework/nodes/mesh_instance_3d.h"
 
 #include "spdlog/spdlog.h"
 
-bool parse_scene(const char* scene_path, std::vector<Entity*>& entities)
+bool parse_scene(const char* scene_path, std::vector<Node3D*>& entities)
 {
     std::string scene_path_str = std::string(scene_path);
     std::string extension = scene_path_str.substr(scene_path_str.find_last_of(".") + 1);
@@ -29,7 +29,7 @@ bool parse_scene(const char* scene_path, std::vector<Entity*>& entities)
     return false;
 }
 
-EntityMesh* parse_mesh(const char* mesh_path)
+MeshInstance3D* parse_mesh(const char* mesh_path)
 {
     std::string mesh_path_str = std::string(mesh_path);
     std::string extension = mesh_path_str.substr(mesh_path_str.find_last_of(".") + 1);

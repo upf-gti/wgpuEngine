@@ -1,13 +1,13 @@
 #pragma once
 
 #include <vector>
-#include "entity_mesh.h"
+#include "mesh_instance_3d.h"
 #include "framework/colors.h"
 #include "graphics/font_common.h"
 
 class Font;
 
-class TextEntity : public EntityMesh {
+class TextEntity : public MeshInstance3D {
 
 	std::vector<InterleavedData> vertices;
 

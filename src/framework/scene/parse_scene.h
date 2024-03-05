@@ -1,11 +1,9 @@
 #pragma once
 
-#include "framework/entities/entity.h"
-
 #include <vector>
 
-class Entity;
-class EntityMesh;
+class Node3D;
+class MeshInstance3D;
 
-bool parse_scene(const char* scene_path, std::vector<Entity*> &entities);
-EntityMesh* parse_mesh(const char* mesh_path);
+bool parse_scene(const char* scene_path, std::vector<Node3D*> &entities);
+MeshInstance3D* parse_mesh(const char* mesh_path);

@@ -3,7 +3,7 @@
 #include "framework/math.h"
 #include "framework/utils/utils.h"
 
-class Entity;
+class Node3D;
 
 class Camera {
 
@@ -22,7 +22,7 @@ public:
     void set_orthographic(float left, float right, float bottom, float top, float z_near, float z_far);
     virtual void look_at(const glm::vec3& eye, const glm::vec3& center, const glm::vec3& up, bool reset_internals = true);
 
-    void look_at_entity(Entity* entity);
+    void look_at_entity(Node3D* entity);
 
     void update_view_matrix();
     void update_projection_matrix();

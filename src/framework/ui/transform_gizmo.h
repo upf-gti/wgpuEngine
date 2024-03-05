@@ -16,7 +16,7 @@ enum eGizmoType : uint8_t {
 	POSITION_ROTATION_GIZMO = POSITION_GIZMO | ROTATION_GIZMO
 };
 
-class EntityMesh;
+class MeshInstance3D;
 
 /*
 	TRANSFORM GIZMO COMPONENT
@@ -34,15 +34,15 @@ class TransformGizmo {
 	bool has_graved = false;
     bool has_graved_position = false;
 	
-	EntityMesh* arrow_mesh_x = nullptr;
-    EntityMesh* arrow_mesh_y = nullptr;
-    EntityMesh* arrow_mesh_z = nullptr;
+	MeshInstance3D* arrow_mesh_x = nullptr;
+    MeshInstance3D* arrow_mesh_y = nullptr;
+    MeshInstance3D* arrow_mesh_z = nullptr;
 
-    EntityMesh* wire_circle_mesh_x = nullptr;
-    EntityMesh* wire_circle_mesh_y = nullptr;
-    EntityMesh* wire_circle_mesh_z = nullptr;
+    MeshInstance3D* wire_circle_mesh_x = nullptr;
+    MeshInstance3D* wire_circle_mesh_y = nullptr;
+    MeshInstance3D* wire_circle_mesh_z = nullptr;
 
-    EntityMesh* free_hand_point_mesh = nullptr;
+    MeshInstance3D* free_hand_point_mesh = nullptr;
 
     void init_arrow_meshes();
     void init_circle_meshes();

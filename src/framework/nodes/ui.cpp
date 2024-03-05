@@ -1,9 +1,9 @@
-#include "entity_ui.h"
+#include "ui.h"
 #include "framework/utils/utils.h"
 #include "framework/ui/ui_controller.h"
 #include "framework/utils/intersections.h"
 #include "framework/input.h"
-#include "framework/entities/entity_text.h"
+#include "framework/nodes/text.h"
 #include "graphics/renderer.h"
 #include "graphics/webgpu_context.h"
 
@@ -15,20 +15,20 @@ namespace ui {
     UIEntity::UIEntity()
     {
         uid = last_uid++;
-        process_children = false;
+        //process_children = false;
     }
 
     UIEntity::UIEntity(const glm::vec2& p, const glm::vec2& s) : m_position(p), m_scale(s)
     {
         uid = last_uid++;
-        process_children = false;
+        //process_children = false;
     }
 
     void UIEntity::set_process_children(bool value, bool force)
     {
         ButtonWidget* bw = dynamic_cast<ButtonWidget*>(this);
         if (bw && bw->is_submenu) {
-            process_children = value;
+            //process_children = value;
             selected = value;
         }
 
@@ -90,7 +90,7 @@ namespace ui {
 
 	void UIEntity::update(float delta_time)
 	{
-        if (!active) return;
+        //if (!active) return;
 
         float row_width = center_pos ? controller->get_layer_width(this->uid) : 0.f;
         float pos_x = center_pos ?
@@ -101,10 +101,10 @@ namespace ui {
 		translate(glm::vec3(pos_x, m_position.y, -1e-3f - m_priority * 1e-3f));
         scale(glm::vec3(m_scale.x, m_scale.y, 1.f));
 
-		if (!process_children)
-			return;
+		/*if (!process_children)
+			return;*/
 
-        EntityMesh::update(delta_time);
+        MeshInstance3D::update(delta_time);
 	}
 
     glm::mat4x4 UIEntity::get_global_model() const
@@ -118,7 +118,7 @@ namespace ui {
 
     WidgetGroup::WidgetGroup(const glm::vec2& p, const glm::vec2& s, float n) : UIEntity(p, s) {
 
-        process_children = true;
+        //process_children = true;
         type = eWidgetType::GROUP;
 
         ui_data.num_group_items = n;
@@ -163,13 +163,13 @@ namespace ui {
     {
         UIEntity::render();
 
-        if (active)
+        //if (active)
             text_entity->render();
     }
 
     void TextWidget::update(float delta_time)
     {
-        if (!active) return;
+        //if (!active) return;
 
         UIEntity::update(delta_time);
 
@@ -212,7 +212,7 @@ namespace ui {
 
     void ButtonWidget::render()
     {
-        EntityMesh::render();
+        MeshInstance3D::render();
         if (mark) mark->render();
         if(label) label->render();
     }
@@ -243,7 +243,7 @@ namespace ui {
             label->controller = controller;
         }
 
-        label->set_active(hovered);
+        // label->set_active(hovered);
 
         // Used to disable presses and active hovers
         hovered &= (!ui_data.is_button_disabled);
@@ -324,7 +324,7 @@ namespace ui {
 
         glm::vec3 intersection;
         bool hovered = is_hovered(intersection);
-        label->set_active(hovered);
+        // label->set_active(hovered);
 
 		bool is_pressed = hovered && Input::is_button_pressed(workspace.select_button);
 

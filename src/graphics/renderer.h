@@ -12,11 +12,10 @@
 #include "xr/openxr_context.h"
 #endif
 
-#include "framework/entities/entity_mesh.h"
+#include "framework/nodes/mesh_instance_3d.h"
 
 #include "graphics/debug/renderdoc_capture.h"
 
-class EntityMesh;
 class Camera;
 
 class Renderer {
@@ -59,7 +58,7 @@ protected:
         uint32_t repeat;
         glm::mat4x4 global_matrix;
         glm::mat4x4 rotation_matrix;
-        EntityMesh* entity_mesh_ref;
+        MeshInstance3D* entity_mesh_ref;
     };
 
     enum eRenderListType {
@@ -78,7 +77,7 @@ protected:
     Uniform	instance_ui_data_uniform;
 
     // Entities to be rendered this frame
-    std::vector<EntityMesh*> render_entity_list;
+    std::vector<MeshInstance3D*> render_entity_list;
 
     std::vector<sRenderData> render_list[RENDER_LIST_SIZE];
 
@@ -123,7 +122,7 @@ public:
 
     void set_required_limits(const WGPURequiredLimits& required_limits) { this->required_limits = required_limits; }
 
-    void add_renderable(EntityMesh* entity_mesh);
+    void add_renderable(MeshInstance3D* entity_mesh);
     void clear_renderables();
 
     virtual void resize_window(int width, int height);

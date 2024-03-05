@@ -1,7 +1,7 @@
 #include "transform_gizmo.h"
 
 #include <graphics/shader.h>
-#include <framework/entities/entity_mesh.h>
+#include <framework/nodes/mesh_instance_3d.h>
 #include <framework/input.h>
 #include <framework/utils/intersections.h>
 #include <framework/colors.h>

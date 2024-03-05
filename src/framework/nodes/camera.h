@@ -1,8 +1,8 @@
 #pragma once
 
-#include "framework/entities/entity.h"
+#include "framework/nodes/node_3d.h"
 
-class EntityCamera : public Entity {
+class EntityCamera : public Node3D {
 
 protected:
 
