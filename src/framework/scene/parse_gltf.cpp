@@ -343,38 +343,25 @@ void read_mesh(tinygltf::Model& model, tinygltf::Mesh& mesh, Node3D* entity, std
 
         material.flags |= MATERIAL_PBR;
 
-        WebGPUContext* webgpu_context = Renderer::instance->get_webgpu_context();
-        bool is_openxr_available = Renderer::instance->get_openxr_available();
-        WGPUTextureFormat swapchain_format = is_openxr_available ? webgpu_context->xr_swapchain_format : webgpu_context->swapchain_format;
-
-        std::vector<std::string> define_specializations;
-
-        PipelineDescription description = {};
-
         switch (primitive.mode) {
         case TINYGLTF_MODE_TRIANGLES:
-            description.topology = WGPUPrimitiveTopology_TriangleList;
-            define_specializations.push_back("TRIANGLE_LIST");
+            material.topology_type = TOPOLOGY_TRIANGLE_LIST;
+            break;
+        case TINYGLTF_MODE_TRIANGLE_STRIP:
+            material.topology_type = TOPOLOGY_TRIANGLE_STRIP;
             break;
         case TINYGLTF_MODE_LINE:
-            description.topology = WGPUPrimitiveTopology_LineList;
-            define_specializations.push_back("LINE_LIST");
+            material.topology_type = TOPOLOGY_LINE_LIST;
             break;
         case TINYGLTF_MODE_LINE_STRIP:
-            description.topology = WGPUPrimitiveTopology_LineStrip;
-            define_specializations.push_back("LINE_STRIP");
+            material.topology_type = TOPOLOGY_LINE_STRIP;
             break;
         case TINYGLTF_MODE_POINTS:
-            description.topology = WGPUPrimitiveTopology_PointList;
-            define_specializations.push_back("POINT_LIST");
+            material.topology_type = TOPOLOGY_POINT_LIST;
             break;
         default:
             assert(0);
         }
-
-        WGPUColorTargetState color_target = {};
-        color_target.format = swapchain_format;
-        color_target.writeMask = WGPUColorWriteMask_All;
 
         if (primitive.material >= 0) {
 
@@ -393,7 +380,6 @@ void read_mesh(tinygltf::Model& model, tinygltf::Mesh& mesh, Node3D* entity, std
                 }
 
                 material.flags |= MATERIAL_DIFFUSE;
-                define_specializations.push_back("ALBEDO_TEXTURE");
             }
 
             material.color = glm::vec4(
@@ -411,7 +397,6 @@ void read_mesh(tinygltf::Model& model, tinygltf::Mesh& mesh, Node3D* entity, std
                     create_material_texture(model, pbrMetallicRoughness.metallicRoughnessTexture.index, &material.metallic_roughness_texture);
                     texture_cache[pbrMetallicRoughness.metallicRoughnessTexture.index] = material.metallic_roughness_texture;
                 }
-                define_specializations.push_back("METALLIC_ROUGHNESS_TEXTURE");
             }
            
             material.roughness = static_cast<float>(pbrMetallicRoughness.roughnessFactor);
@@ -425,7 +410,6 @@ void read_mesh(tinygltf::Model& model, tinygltf::Mesh& mesh, Node3D* entity, std
                     create_material_texture(model, gltf_material.normalTexture.index, &material.normal_texture);
                     texture_cache[gltf_material.normalTexture.index] = material.normal_texture;
                 }
-                define_specializations.push_back("NORMAL_TEXTURE");
             }
 
             if (gltf_material.emissiveTexture.index >= 0) {
@@ -436,7 +420,6 @@ void read_mesh(tinygltf::Model& model, tinygltf::Mesh& mesh, Node3D* entity, std
                     create_material_texture(model, gltf_material.emissiveTexture.index, &material.emissive_texture, true);
                     texture_cache[gltf_material.emissiveTexture.index] = material.emissive_texture;
                 }
-                define_specializations.push_back("EMISSIVE_TEXTURE");
             }
 
             if (gltf_material.occlusionTexture.index >= 0) {
@@ -448,52 +431,25 @@ void read_mesh(tinygltf::Model& model, tinygltf::Mesh& mesh, Node3D* entity, std
                     create_material_texture(model, gltf_material.occlusionTexture.index, &material.oclussion_texture, true);
                     texture_cache[gltf_material.occlusionTexture.index] = material.oclussion_texture;
                 }
-                define_specializations.push_back("OCLUSSION_TEXTURE");
             }
 
             material.emissive = { gltf_material.emissiveFactor[0], gltf_material.emissiveFactor[1], gltf_material.emissiveFactor[2] };
 
-            if (!define_specializations.empty()) {
-                define_specializations.push_back("USE_SAMPLER");
-            }
-
             if (gltf_material.doubleSided) {
-                description.cull_mode = WGPUCullMode_None;
-                define_specializations.push_back("CULL_NONE");
+                material.cull_type = CULL_NONE;
             } else {
-                description.cull_mode = WGPUCullMode_Back;
-                define_specializations.push_back("CULL_BACK");
+                material.cull_type = CULL_BACK;
             }
 
             if (gltf_material.alphaMode == "OPAQUE") {
-                define_specializations.push_back("ALPHA_OPAQUE");
+                material.transparency_type = ALPHA_OPAQUE;
             } else
             if (gltf_material.alphaMode == "BLEND") {
-
-                WGPUBlendState* blend_state = new WGPUBlendState;
-                blend_state->color = {
-                        .operation = WGPUBlendOperation_Add,
-                        .srcFactor = WGPUBlendFactor_SrcAlpha,
-                        .dstFactor = WGPUBlendFactor_OneMinusSrcAlpha,
-                };
-                blend_state->alpha = {
-                        .operation = WGPUBlendOperation_Add,
-                        .srcFactor = WGPUBlendFactor_Zero,
-                        .dstFactor = WGPUBlendFactor_One,
-                };
-
-                color_target.blend = blend_state;
-
-                define_specializations.push_back("ALPHA_BLEND");
-
-                material.flags |= MATERIAL_TRANSPARENT;
-                description.uses_depth_write = false;
-                description.blending_enabled = true;
+                material.transparency_type = ALPHA_BLEND;
             } else
             if (gltf_material.alphaMode == "MASK") {
                 material.alpha_mask = static_cast<float>(gltf_material.alphaCutoff);
-                material.flags |= MATERIAL_ALPHA_MASK;
-                define_specializations.push_back("ALPHA_MASK");
+                material.transparency_type = ALPHA_MASK;
             }
         }
         else {
@@ -503,15 +459,13 @@ void read_mesh(tinygltf::Model& model, tinygltf::Mesh& mesh, Node3D* entity, std
             material.metalness = 0.0f;
         }
 
-        material.shader = RendererStorage::get_shader("data/shaders/mesh_pbr.wgsl", define_specializations);
-
-        Pipeline::register_render_pipeline(material.shader, color_target, description);
+        material.shader = RendererStorage::get_shader("data/shaders/mesh_pbr.wgsl", material);
 
         surface->create_vertex_buffer();
 
         entity_mesh->add_surface(surface);
     }
-};
+}
 
 Node3D* create_node_entity(tinygltf::Node& node) {
 

@@ -19,7 +19,6 @@ void TransformGizmo::initialize(const eGizmoType& gizmo_type, const glm::vec3 &p
 
     Material m;
     m.shader = RendererStorage::get_shader("data/shaders/mesh_color.wgsl");
-    m.flags = MATERIAL_COLOR;
 
     free_hand_point_mesh = parse_mesh("data/meshes/sphere.obj");
     free_hand_point_mesh->set_surface_material_override(free_hand_point_mesh->get_surface(0), m);
@@ -42,7 +41,6 @@ void TransformGizmo::init_arrow_meshes()
 {
     Material m;
     m.shader = RendererStorage::get_shader("data/shaders/mesh_color.wgsl");
-    m.flags = MATERIAL_COLOR;
 
     arrow_mesh_x = parse_mesh("data/meshes/arrow.obj");
     arrow_mesh_x->set_surface_material_override(arrow_mesh_x->get_surface(0), m);
@@ -58,7 +56,6 @@ void TransformGizmo::init_circle_meshes()
 {
     Material m;
     m.shader = RendererStorage::get_shader("data/shaders/mesh_color.wgsl");
-    m.flags = MATERIAL_COLOR;
 
     wire_circle_mesh_x = parse_mesh("data/meshes/wired_circle.obj");
     wire_circle_mesh_x->set_surface_material_override(wire_circle_mesh_x->get_surface(0), m);

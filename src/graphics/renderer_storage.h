@@ -67,7 +67,11 @@ public:
     static WGPUBindGroup get_ui_widget_bind_group(const void* widget);
     static void update_ui_widget(WebGPUContext* webgpu_context, void* entity_mesh, const sUIData& ui_data);
 
-    static Shader* get_shader(const std::string& shader_path, std::vector<std::string> define_specializations = {});
+    static Shader* get_shader(const std::string& shader_path, const Material& material = {},
+        const std::vector<std::string>& custom_define_specializations = {});
+
+    static Shader* get_shader(const std::string& shader_path, const std::vector<std::string>& custom_define_specializations);
+
     static std::vector<std::string> get_shader_for_reload(const std::string& shader_path);
 
     static Texture* get_texture(const std::string& texture_path);
@@ -75,4 +79,6 @@ public:
     static Surface* get_surface(const std::string& mesh_path);
 
     static void register_basic_surfaces();
+
+    static std::vector<std::string> get_common_define_specializations(const Material& material);
 };

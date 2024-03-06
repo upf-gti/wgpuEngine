@@ -14,6 +14,51 @@ Surface::~Surface()
     wgpuBufferDestroy(vertex_buffer);
 }
 
+void Surface::set_material_color(const glm::vec4& color)
+{
+    material.color = color;
+}
+
+void Surface::set_material_diffuse(Texture* diffuse)
+{
+    material.diffuse_texture = diffuse; material.flags |= MATERIAL_DIFFUSE;
+}
+
+void Surface::set_material_shader(Shader* shader)
+{
+    material.shader = shader;
+}
+
+void Surface::set_material_flag(eMaterialFlags flag)
+{
+    material.flags |= flag;
+}
+
+void Surface::set_material_priority(uint8_t priority)
+{
+    material.priority = priority;
+}
+
+void Surface::set_material_transparency_type(eTransparencyType transparency_type)
+{
+    material.transparency_type = transparency_type;
+}
+
+void Surface::set_material_cull_type(eCullType cull_type)
+{
+    material.cull_type = cull_type;
+}
+
+void Surface::set_material_topology_type(eTopologyType topology_type)
+{
+    material.topology_type = topology_type;
+}
+
+void Surface::set_material_depth_write(bool depth_write)
+{
+    material.depth_write = depth_write;
+}
+
 void Surface::create_vertex_buffer()
 {
     vertex_buffer = webgpu_context->create_buffer(get_byte_size(), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Vertex, vertices.data(), "mesh_buffer");

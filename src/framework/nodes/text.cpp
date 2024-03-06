@@ -104,13 +104,13 @@ void TextEntity::generate_mesh()
     Surface* surface = new Surface();
     surface->create_from_vertices(vertices);
 
-    surface->set_material_shader(RendererStorage::get_shader("data/shaders/sdf_fonts.wgsl"));
-
     add_surface(surface);
 
     if (font) {
         set_surface_material_diffuse(0, font->textures[0]);
     }
+
+    surface->set_material_shader((RendererStorage::get_shader("data/shaders/sdf_fonts.wgsl", surface->get_material())));
 }
 
 int TextEntity::get_text_width(const std::string& text)

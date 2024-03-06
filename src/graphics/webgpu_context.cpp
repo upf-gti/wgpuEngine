@@ -605,7 +605,7 @@ void WebGPUContext::copy_texture_to_texture(WGPUTexture texture_src, WGPUTexture
     wgpuCommandEncoderRelease(command_encoder);
 }
 
-WGPURenderPipeline WebGPUContext::create_render_pipeline(WGPUShaderModule render_shader_module, WGPUPipelineLayout pipeline_layout, const std::vector<WGPUVertexBufferLayout>& vertex_attributes, WGPUColorTargetState color_target, bool uses_depth_buffer, bool uses_depth_write, WGPUCullMode cull_mode, WGPUPrimitiveTopology topology)
+WGPURenderPipeline WebGPUContext::create_render_pipeline(WGPUShaderModule render_shader_module, WGPUPipelineLayout pipeline_layout, const std::vector<WGPUVertexBufferLayout>& vertex_attributes, WGPUColorTargetState color_target, bool depth_read, bool depth_write, WGPUCullMode cull_mode, WGPUPrimitiveTopology topology)
 {    
     WGPUVertexState vertex_state = {};
     vertex_state.module = render_shader_module;
@@ -624,9 +624,9 @@ WGPURenderPipeline WebGPUContext::create_render_pipeline(WGPUShaderModule render
     fragment_state.targets = &color_target;
 
     WGPUDepthStencilState depth_state = {};
-    if (uses_depth_buffer) {
+    if (depth_read) {
         depth_state.depthCompare = WGPUCompareFunction_Less;
-        depth_state.depthWriteEnabled = uses_depth_write;
+        depth_state.depthWriteEnabled = depth_write;
         depth_state.format = WGPUTextureFormat_Depth32Float;
         depth_state.stencilReadMask = 0;
         depth_state.stencilWriteMask = 0;
@@ -653,7 +653,7 @@ WGPURenderPipeline WebGPUContext::create_render_pipeline(WGPUShaderModule render
         .cullMode = cull_mode
     },
 
-    pipeline_descr.depthStencil = (uses_depth_buffer) ? &depth_state : nullptr;
+    pipeline_descr.depthStencil = (depth_read) ? &depth_state : nullptr;
     pipeline_descr.multisample = {
             .count = 1,
             .mask = ~0u,

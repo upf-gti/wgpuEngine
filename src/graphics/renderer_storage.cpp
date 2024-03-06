@@ -4,6 +4,9 @@
 #include "texture.h"
 #include "shader.h"
 #include "uniform.h"
+#include "pipeline.h"
+
+#include "renderer.h"
 
 #include <filesystem>
 
@@ -122,7 +125,7 @@ void RendererStorage::register_material(WebGPUContext* webgpu_context, const Mat
         uniforms.push_back(sampler_uniform);
     }
 
-    if (material.flags & MATERIAL_ALPHA_MASK) {
+    if (material.transparency_type == ALPHA_MASK) {
         Uniform* u = new Uniform();
         u->data = webgpu_context->create_buffer(sizeof(float), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform, &material.alpha_mask, "mat_alpha_cutoff");
         u->binding = 8;
@@ -181,9 +184,15 @@ void RendererStorage::update_ui_widget(WebGPUContext* webgpu_context, void* widg
     webgpu_context->update_buffer(std::get<WGPUBuffer>(data_uniform->data), 0, &ui_data, sizeof(sUIData));
 }
 
-Shader* RendererStorage::get_shader(const std::string& shader_path, std::vector<std::string> define_specializations)
+Shader* RendererStorage::get_shader(const std::string& shader_path, const Material& material,
+    const std::vector<std::string> &custom_define_specializations)
 {
     std::string name = std::filesystem::relative(std::filesystem::path(shader_path)).string();
+
+    std::vector<std::string> define_specializations = get_common_define_specializations(material);
+
+    // concatenate
+    define_specializations.insert(define_specializations.end(), custom_define_specializations.begin(), custom_define_specializations.end());
 
     std::string specialized_name = name;
     for (const std::string& specialization : define_specializations) {
@@ -198,6 +207,32 @@ Shader* RendererStorage::get_shader(const std::string& shader_path, std::vector<
     Shader* sh = new Shader();
 
     if (!sh->load(name, specialized_name, define_specializations)) {
+        return nullptr;
+    }
+
+    // register in map
+    shaders[specialized_name] = sh;
+
+    return sh;
+}
+
+Shader* RendererStorage::get_shader(const std::string& shader_path, const std::vector<std::string>& custom_define_specializations)
+{
+    std::string name = std::filesystem::relative(std::filesystem::path(shader_path)).string();
+
+    std::string specialized_name = name;
+    for (const std::string& specialization : custom_define_specializations) {
+        specialized_name += "_" + specialization;
+    }
+
+    // check if already loaded
+    std::map<std::string, Shader*>::iterator it = shaders.find(specialized_name);
+    if (it != shaders.end())
+        return it->second;
+
+    Shader* sh = new Shader();
+
+    if (!sh->load(name, specialized_name, custom_define_specializations)) {
         return nullptr;
     }
 
@@ -323,4 +358,89 @@ void RendererStorage::register_basic_surfaces()
     Surface* torus_mesh = new Surface();
     torus_mesh->create_torus();
     surfaces["torus"] = torus_mesh;
+}
+
+std::vector<std::string> RendererStorage::get_common_define_specializations(const Material& material)
+{
+    std::vector<std::string> define_specializations;
+
+    if (material.diffuse_texture) {
+        define_specializations.push_back("ALBEDO_TEXTURE");
+    }
+
+    if (material.metallic_roughness_texture) {
+        define_specializations.push_back("METALLIC_ROUGHNESS_TEXTURE");
+    }
+
+    if (material.normal_texture) {
+        define_specializations.push_back("NORMAL_TEXTURE");
+    }
+
+    if (material.emissive_texture) {
+        define_specializations.push_back("EMISSIVE_TEXTURE");
+    }
+
+    if (material.oclussion_texture) {
+        define_specializations.push_back("OCLUSSION_TEXTURE");
+    }
+
+
+    if (!define_specializations.empty()) {
+        define_specializations.push_back("USE_SAMPLER");
+    }
+
+    switch (material.topology_type) {
+    case TOPOLOGY_TRIANGLE_LIST:
+        define_specializations.push_back("TRIANGLE_LIST");
+        break;
+    case TOPOLOGY_TRIANGLE_STRIP:
+        define_specializations.push_back("TRIANGLE_STRIP");
+        break;
+    case TOPOLOGY_LINE_LIST:
+        define_specializations.push_back("LINE_LIST");
+        break;
+    case TOPOLOGY_LINE_STRIP:
+        define_specializations.push_back("LINE_STRIP");
+        break;
+    case TOPOLOGY_POINT_LIST:
+        define_specializations.push_back("POINT_LIST");
+        break;
+    default:
+        assert(0);
+    }
+
+    switch (material.cull_type) {
+    case CULL_NONE:
+        define_specializations.push_back("CULL_NONE");
+        break;
+    case CULL_BACK:
+        define_specializations.push_back("CULL_BACK");
+        break;
+    case CULL_FRONT:
+        define_specializations.push_back("CULL_FRONT");
+        break;
+    default:
+        assert(0);
+    }
+
+    switch (material.transparency_type) {
+    case ALPHA_OPAQUE:
+        define_specializations.push_back("ALPHA_OPAQUE");
+        break;
+    case ALPHA_BLEND:
+        define_specializations.push_back("ALPHA_BLEND");
+        break;
+    case ALPHA_MASK:
+        define_specializations.push_back("ALPHA_MASK");
+        break;
+    case ALPHA_HASH:
+        define_specializations.push_back("ALPHA_HASH");
+        break;
+    }
+
+    if (material.depth_write) {
+        define_specializations.push_back("DEPTH_WRITE");
+    }
+
+    return define_specializations;
 }

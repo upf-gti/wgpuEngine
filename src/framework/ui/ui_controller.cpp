@@ -35,7 +35,7 @@ namespace ui {
         raycast_pointer = parse_mesh("data/meshes/raycast.obj");
 
         Material pointer_material;
-        pointer_material.shader = RendererStorage::get_shader("data/shaders/ui/ui_ray_pointer.wgsl");
+        pointer_material.shader = RendererStorage::get_shader("data/shaders/ui/ui_ray_pointer.wgsl", pointer_material);
 
         raycast_pointer->set_surface_material_override(raycast_pointer->get_surface(0), pointer_material);
 
@@ -48,8 +48,8 @@ namespace ui {
             background->add_surface(RendererStorage::get_surface("quad"));
 
             Material material;
-            material.shader = RendererStorage::get_shader("data/shaders/mesh_color.wgsl");
             material.color = colors::RED;
+            material.shader = RendererStorage::get_shader("data/shaders/mesh_color.wgsl", material);
 
             background->set_surface_material_override(background->get_surface(0), material);
         }
@@ -218,8 +218,8 @@ namespace ui {
         rect->add_surface(RendererStorage::get_surface("quad"));
 
         Material material;
-        material.shader = RendererStorage::get_shader("data/shaders/mesh_color.wgsl");
         material.color = color;
+        material.shader = RendererStorage::get_shader("data/shaders/mesh_color.wgsl", material);
 
         rect->set_surface_material_override(rect->get_surface(0), material);
 
@@ -270,7 +270,6 @@ namespace ui {
         m_icon->add_surface(RendererStorage::get_surface("quad"));
 
         Material material;
-        material.shader = RendererStorage::get_shader("data/shaders/ui/ui_texture.wgsl");
 
         if (j->count("texture") > 0)
         {
@@ -278,6 +277,8 @@ namespace ui {
             material.diffuse_texture = RendererStorage::get_texture(texture);
             material.flags |= MATERIAL_DIFFUSE;
         }
+
+        material.shader = RendererStorage::get_shader("data/shaders/ui/ui_texture.wgsl", material);
 
         m_icon->set_surface_material_override(m_icon->get_surface(0), material);
 
@@ -316,7 +317,7 @@ namespace ui {
         e_button->add_surface(RendererStorage::get_surface("quad"));
 
         Material material;
-        material.flags |= MATERIAL_UI;
+        material.flags |= MATERIAL_2D;
 
         std::string shader = "data/shaders/ui/ui_button.wgsl";
         std::vector<std::string> define_specializations;
@@ -329,7 +330,7 @@ namespace ui {
         }
 
         material.color = color;
-        material.shader = RendererStorage::get_shader(shader, define_specializations);
+        material.shader = RendererStorage::get_shader(shader, material, define_specializations);
 
         e_button->set_surface_material_override(e_button->get_surface(0), material);
 
@@ -417,9 +418,9 @@ namespace ui {
 
         Material material;
 
-        material.shader = RendererStorage::get_shader(is_horizontal_slider ? "data/shaders/ui/ui_slider_h.wgsl" : "data/shaders/ui/ui_slider.wgsl");
         material.color = color;
-        material.flags |= MATERIAL_UI;
+        material.flags |= MATERIAL_2D;
+        material.shader = RendererStorage::get_shader(is_horizontal_slider ? "data/shaders/ui/ui_slider_h.wgsl" : "data/shaders/ui/ui_slider.wgsl", material);
 
         slider->set_surface_material_override(slider->get_surface(0), material);
 
@@ -461,9 +462,9 @@ namespace ui {
         picker->add_surface(RendererStorage::get_surface("quad"));
 
         Material material;
-        material.shader = RendererStorage::get_shader("data/shaders/ui/ui_color_picker.wgsl");
         material.color = Color(0.175f);
-        material.flags |= MATERIAL_UI;
+        material.flags |= MATERIAL_2D;
+        material.shader = RendererStorage::get_shader("data/shaders/ui/ui_color_picker.wgsl", material);
 
         picker->set_surface_material_override(picker->get_surface(0), material);
 
@@ -507,10 +508,10 @@ namespace ui {
             mark->add_surface(RendererStorage::get_surface("quad"));
 
             Material material;
-            material.shader = RendererStorage::get_shader("data/shaders/ui/ui_texture.wgsl");
             material.diffuse_texture = RendererStorage::get_texture("data/textures/submenu_mark.png");
-            material.flags |= MATERIAL_DIFFUSE | MATERIAL_UI;
+            material.flags |= MATERIAL_DIFFUSE | MATERIAL_2D;
             material.color = colors::WHITE;
+            material.shader = RendererStorage::get_shader("data/shaders/ui/ui_texture.wgsl", material);
 
             mark->set_surface_material_override(mark->get_surface(0), material);
 
@@ -594,9 +595,9 @@ namespace ui {
         group->add_surface(RendererStorage::get_surface("quad"));
 
         Material material;
-        material.shader = RendererStorage::get_shader("data/shaders/ui/ui_group.wgsl");
         material.color = color;
-        material.flags |= MATERIAL_UI;
+        material.flags |= MATERIAL_2D;
+        material.shader = RendererStorage::get_shader("data/shaders/ui/ui_group.wgsl");
 
         group->set_surface_material_override(group->get_surface(0), material);
 

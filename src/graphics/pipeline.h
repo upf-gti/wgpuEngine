@@ -7,6 +7,8 @@
 #include <variant>
 #include <unordered_map>
 
+#include "material.h"
+
 #include "framework/utils/utils.h"
 
 class Shader;
@@ -17,8 +19,8 @@ struct PipelineDescription {
     WGPUCullMode cull_mode = WGPUCullMode_None;
     WGPUPrimitiveTopology topology = WGPUPrimitiveTopology_TriangleList;
 
-    bool uses_depth_buffer  = true;
-    bool uses_depth_write   = true;
+    bool depth_read  = true;
+    bool depth_write   = true;
     bool blending_enabled   = false;
 };
 
@@ -73,7 +75,7 @@ public:
 	void create_compute(Shader* shader, WGPUPipelineLayout pipeline_layout);
 	void create_compute(Shader* shader);
 
-    static void register_render_pipeline(Shader* shader, const WGPUColorTargetState &p_color_target, const PipelineDescription &desc = {});
+    static void register_render_pipeline(Material& material);
     static void register_compute_pipeline(Shader* shader, WGPUPipelineLayout pipeline_layout);
     static void clean_registered_pipelines();
 

@@ -37,11 +37,15 @@ public:
 
     static WebGPUContext* webgpu_context;
 
-    void set_material_color(const glm::vec4& color) { material.color = color; }
-    void set_material_diffuse(Texture* diffuse) { material.diffuse_texture = diffuse; material.flags |= MATERIAL_DIFFUSE; }
-    void set_material_shader(Shader* shader) { material.shader = shader; }
-    void set_material_flag(eMaterialFlags flag) { material.flags |= flag; }
-    void set_material_priority(uint8_t priority) { material.priority = priority; }
+    void set_material_color(const glm::vec4& color);
+    void set_material_diffuse(Texture* diffuse);
+    void set_material_shader(Shader* shader);
+    void set_material_flag(eMaterialFlags flag);
+    void set_material_priority(uint8_t priority);
+    void set_material_transparency_type(eTransparencyType transparency_type);
+    void set_material_cull_type(eCullType cull_type);
+    void set_material_topology_type(eTopologyType topology_type);
+    void set_material_depth_write(bool depth_write);
 
     std::vector<InterleavedData>& get_vertices() { return vertices; }
 

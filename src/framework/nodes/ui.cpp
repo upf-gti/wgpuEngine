@@ -207,7 +207,7 @@ namespace ui {
 
         auto webgpu_context = Renderer::instance->get_webgpu_context();
         RendererStorage::register_ui_widget(webgpu_context,
-            RendererStorage::get_shader("data/shaders/ui/ui_button.wgsl", define_specializations), this, ui_data, is_color_button ? 2 : 3);
+            RendererStorage::get_shader("data/shaders/ui/ui_button.wgsl", {}, define_specializations), this, ui_data, is_color_button ? 2 : 3);
     }
 
     void ButtonWidget::render()
