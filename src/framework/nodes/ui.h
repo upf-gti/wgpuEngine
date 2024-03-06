@@ -1,7 +1,7 @@
 #pragma once
 
 #include "framework/colors.h"
-#include "graphics/renderer_storage.h"
+#include "node_2d.h"
 #include "mesh_instance_3d.h"
 #include "text.h"
 
@@ -14,33 +14,29 @@ namespace ui {
 
 	class Controller;
 
-	enum eWidgetType {
-		NONE,
-		TEXT,
-		BUTTON,
-		SLIDER,
-        LABEL,
-        COLOR_PICKER,
-        GROUP
-	};
+    class Panel2D : public Node2D {
+    public:
 
-	class UIEntity : public MeshInstance3D {
+        Color color;
+
+        MeshInstance3D* quad = nullptr;
+
+        Panel2D(const glm::vec2& p, const glm::vec2& s, const Color& c = colors::WHITE);
+
+        void render() override;
+    };
+
+	/*class UIEntity : public MeshInstance3D {
 	public:
 
         UIEntity();
         UIEntity(const glm::vec2& p, const glm::vec2& s = {1.f, 1.f});
-
-        static unsigned int last_uid;
-
-        unsigned int uid;
-        uint8_t type = eWidgetType::NONE;
 
         static UIEntity* current_selected;
 
         Controller* controller = nullptr;
 
         bool is_submenu         = false;
-        bool selected           = false;
         bool center_pos         = true;
 
         glm::vec2   m_position = { 0.f, 0.f };
@@ -48,9 +44,6 @@ namespace ui {
 
         uint8_t     m_layer = 0;
 		int         m_priority = 0;
-
-        RendererStorage::sUIData ui_data;
-
         void set_process_children(bool value, bool force = false);
         void set_selected(bool value);
         void set_layer(uint8_t l) { m_layer = l; };
@@ -59,23 +52,19 @@ namespace ui {
         const glm::vec2 position_to_world(const glm::vec2& workspace_size) { return m_position + workspace_size - m_scale;  };
         bool is_hovered(glm::vec3& intersection);
 
-        glm::mat4x4 get_global_model() const override;
-
 		void update(float delta_time) override;
-	};
+	};*/
 
-    class WidgetGroup : public UIEntity {
+    /*class ButtonGroup2D : public Node2D {
     public:
 
-        WidgetGroup(const glm::vec2& p, const glm::vec2& s, float number_of_widgets);
+        ButtonGroup2D(const glm::vec2& p, const glm::vec2& s, float number_of_widgets);
 
-        void update(float delta_time) override;
-
-        float get_number_of_widgets() { return ui_data.num_group_items; };
+        float get_number_of_widgets();
         void set_number_of_widgets(float number);
-    };
+    };*/
 
-	class TextWidget : public UIEntity {
+	/*class TextWidget : public UIEntity {
 	public:
 
         TextEntity* text_entity = nullptr;
@@ -97,28 +86,29 @@ namespace ui {
         std::string subtext;
 
         LabelWidget(const std::string& p_text, const glm::vec2& p, const glm::vec2& s = {0.f, 0.f});
-    };
+    };*/
 
-	class ButtonWidget : public UIEntity {
-	public:
+	//class Button2D : public Node2D {
+	//public:
 
-        TextWidget* label = nullptr;
-        Color color;
-		std::string signal;
+ //       // TextWidget* label = nullptr;
+ //       Color color;
+	//	std::string signal;
 
-        ButtonWidget* mark = nullptr;
+ //       // ButtonWidget* mark = nullptr;
 
-        bool is_color_button        = false;
-        bool is_unique_selection    = false;
-        bool allow_toggle           = false;
+ //       bool is_color_button        = false;
+ //       bool is_unique_selection    = false;
+ //       bool allow_toggle           = false;
+ //       bool selected               = false;
 
-        ButtonWidget(const std::string& sg, const glm::vec2& p, const glm::vec2& s, const Color& c, bool is_color_button = false);
+ //       Button2D(const std::string& sg, const glm::vec2& p, const glm::vec2& s, const Color& c, bool is_color_button = false);
 
-        void render() override;
-	    void update(float delta_time) override;
-	};
+ //       void render() override;
+	//    void update(float delta_time) override;
+	//};
 
-	class SliderWidget : public UIEntity {
+	/*class SliderWidget : public UIEntity {
 	public:
 
         TextWidget* label = nullptr;
@@ -159,5 +149,5 @@ namespace ui {
         void set_color(const Color& c);
 
         void update(float delta_time) override;
-	};
+	};*/
 }

@@ -2,7 +2,7 @@
 
 #include "framework/colors.h"
 #include "framework/input_xr.h"
-
+#include "framework/nodes/node_2d.h"
 #include "framework/utils/json_utils.h"
 #include "framework/math.h"
 
@@ -13,10 +13,6 @@
 #include <vector>
 
 class MeshInstance3D;
-
-namespace ui {
-    class UIEntity;
-}
 
 using FuncEmpty = std::function<void()>;
 
@@ -59,13 +55,13 @@ namespace ui {
 
         MeshInstance3D* raycast_pointer = nullptr;
 
-		ui::UIEntity* root = nullptr;
+		Node2D* root = nullptr;
 		std::map<std::string, std::vector<SignalType>> mapping_signals;
         std::map<uint8_t, std::vector<FuncEmpty>> controller_signals;
 
         json* mjson = nullptr;
-        std::map<std::string, UIEntity*> widgets;
-        static std::map<std::string, UIEntity*> all_widgets;
+        std::map<std::string, Node2D*> widgets;
+        static std::map<std::string, Node2D*> all_widgets;
 
 		/*
 		*	Widget Helpers
@@ -81,11 +77,11 @@ namespace ui {
 
         std::map<unsigned int, float> layers_width;
 
-		std::vector<UIEntity*> parent_queue;
+		std::vector<Node2D*> parent_queue;
 
-		void append_widget(UIEntity* widget, const std::string& name, UIEntity* force_parent = nullptr);
+		// void append_widget(Node2D* widget, const std::string& name, Node2D* force_parent = nullptr);
 		void process_params(glm::vec2& position, glm::vec2& size, bool skip_to_local = false);
-        glm::vec2 compute_position(float xOffset = 1.f);
+        // glm::vec2 compute_position(float xOffset = 1.f);
 
 	public:
 
@@ -113,25 +109,25 @@ namespace ui {
 		*	Widgets
 		*/
 
-        UIEntity* make_rect(glm::vec2 pos, glm::vec2 size, const Color& color);
-		UIEntity* make_text(const std::string& text, const std::string& alias, glm::vec2 pos, const Color& color, float scale = 1.f, glm::vec2 size = {1, 1});
-        UIEntity* make_label(const json* j);
-		UIEntity* make_button(const json* j);
-        UIEntity* make_button(const std::string& signal, const std::string& texture, const Color& color = colors::WHITE, bool selected = false, bool unique_selection = true,
+       /* Node2D* make_rect(glm::vec2 pos, glm::vec2 size, const Color& color);
+		Node2D* make_text(const std::string& text, const std::string& alias, glm::vec2 pos, const Color& color, float scale = 1.f, glm::vec2 size = {1, 1});
+        Node2D* make_label(const json* j);
+		Node2D* make_button(const json* j);
+        Node2D* make_button(const std::string& signal, const std::string& texture, const Color& color = colors::WHITE, bool selected = false, bool unique_selection = true,
                                     bool allow_toggle = false, bool is_color_button = false, bool disabled = false, bool keep_rgb = false);
-		UIEntity* make_slider(const json* j, const std::string& force_name = "");
-		UIEntity* make_color_picker(const json* j);
-        void make_submenu(UIEntity* parent, const std::string& name);
+		Node2D* make_slider(const json* j, const std::string& force_name = "");
+		Node2D* make_color_picker(const json* j);
+        void make_submenu(Node2D* parent, const std::string& name);
         void close_submenu();
 
-        UIEntity* make_group(const json* j);
+        Node2D* make_group(const json* j);*/
         void close_group();
-        void set_next_parent(UIEntity* parent);
+        void set_next_parent(Node2D* parent);
 
-        const std::map<std::string, UIEntity*>& get_widgets() { return widgets; };
-        static UIEntity* get(const std::string& alias);
-        UIEntity* get_widget_from_name(const std::string& alias);
-        float get_layer_width(unsigned int uid);
+        const std::map<std::string, Node2D*>& get_widgets() { return widgets; };
+        static Node2D* get(const std::string& alias);
+        Node2D* get_widget_from_name(const std::string& alias);
+        // float get_layer_width(unsigned int uid);
 
         void load_layout(const std::string& filename);
         void change_list_layout(const std::string& list_name);

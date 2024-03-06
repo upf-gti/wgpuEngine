@@ -13,7 +13,7 @@
 
 namespace ui {
 
-    std::map<std::string, UIEntity*> Controller::all_widgets;
+    std::map<std::string, Node2D*> Controller::all_widgets;
 
     float current_number_of_group_widgets; // store to make sure everything went well
 
@@ -29,7 +29,7 @@ namespace ui {
 			.select_hand = _select_hand
 		};
 
-        root = new UIEntity();
+        root = new Node2D();
         // ((Entity*)root)->set_process_children(true);
 
         raycast_pointer = parse_mesh("data/meshes/raycast.obj");
@@ -44,13 +44,12 @@ namespace ui {
         // Debug
         if (render_background)
         {
+            Material material;
+            material.color = colors::RED;
+            material.shader = RendererStorage::get_shader("data/shaders/mesh_color.wgsl");
+
             background = new MeshInstance3D();
             background->add_surface(RendererStorage::get_surface("quad"));
-
-            Material material;
-            material.shader = RendererStorage::get_shader("data/shaders/mesh_color.wgsl");
-            material.color = colors::RED;
-
             background->set_surface_material_override(background->get_surface(0), material);
         }
 	}
@@ -134,59 +133,59 @@ namespace ui {
 	}
 
     // Gets next button position (applies margin)
-    glm::vec2 Controller::compute_position(float xOffset)
-    {
-        float x, y;
+    //glm::vec2 Controller::compute_position(float xOffset)
+    //{
+    //    float x, y;
 
-        if (dirty && parent_queue.size())
-        {
-            UIEntity* active_submenu = parent_queue.back();
+    //    if (dirty && parent_queue.size())
+    //    {
+    //        UIEntity* active_submenu = parent_queue.back();
 
-            // Search for last X position
-            float layout_iterator_x = 0.0f;
-            if (layers_width.find(active_submenu->uid) == layers_width.end())
-            {
-                active_submenu = static_cast<UIEntity*>(active_submenu->get_parent());
-                layout_iterator_x = layers_width[active_submenu->uid];
-            }
+    //        // Search for last X position
+    //        float layout_iterator_x = 0.0f;
+    //        if (layers_width.find(active_submenu->uid) == layers_width.end())
+    //        {
+    //            active_submenu = static_cast<UIEntity*>(active_submenu->get_parent());
+    //            layout_iterator_x = layers_width[active_submenu->uid];
+    //        }
 
-            spdlog::info("WIDTH {}", layout_iterator_x);
+    //        spdlog::info("WIDTH {}", layout_iterator_x);
 
-            // Get row of the group/submenu
-            float layout_iterator_y = static_cast<float>(active_submenu->m_layer + 1u);
+    //        // Get row of the group/submenu
+    //        float layout_iterator_y = static_cast<float>(active_submenu->m_layer + 1u);
 
-            x = layout_iterator_x;
-            y = layout_iterator_y * BUTTON_SIZE + (layout_iterator_y + 1.f) * Y_MARGIN;
+    //        x = layout_iterator_x;
+    //        y = layout_iterator_y * BUTTON_SIZE + (layout_iterator_y + 1.f) * Y_MARGIN;
 
-            // Update new width
-            layers_width[active_submenu->uid] += (BUTTON_SIZE * xOffset + X_GROUP_MARGIN);
+    //        // Update new width
+    //        layers_width[active_submenu->uid] += (BUTTON_SIZE * xOffset + X_GROUP_MARGIN);
 
-            dirty = false;
-            //parent_queue.pop_back();
-        }
-        else if (group_opened)
-        {
-            x = last_layout_pos.x + (g_iterator * BUTTON_SIZE + g_iterator * X_GROUP_MARGIN);
-            y = last_layout_pos.y;
-            g_iterator += xOffset;
-        }
-        else
-        {
-            x = layout_iterator.x;
-            y = layout_iterator.y * BUTTON_SIZE + (layout_iterator.y + 1.f) * Y_MARGIN;
-            layout_iterator.x += (BUTTON_SIZE * xOffset + X_MARGIN);
-            last_layout_pos = { x, y };
-        }
+    //        dirty = false;
+    //        //parent_queue.pop_back();
+    //    }
+    //    else if (group_opened)
+    //    {
+    //        x = last_layout_pos.x + (g_iterator * BUTTON_SIZE + g_iterator * X_GROUP_MARGIN);
+    //        y = last_layout_pos.y;
+    //        g_iterator += xOffset;
+    //    }
+    //    else
+    //    {
+    //        x = layout_iterator.x;
+    //        y = layout_iterator.y * BUTTON_SIZE + (layout_iterator.y + 1.f) * Y_MARGIN;
+    //        layout_iterator.x += (BUTTON_SIZE * xOffset + X_MARGIN);
+    //        last_layout_pos = { x, y };
+    //    }
 
-        return { x, y };
-    }
+    //    return { x, y };
+    //}
 
     Controller::~Controller()
     {
         delete mjson;
     }
 
-    void Controller::append_widget(UIEntity* widget, const std::string& name, UIEntity* force_parent)
+    /*void Controller::append_widget(UIEntity* widget, const std::string& name, UIEntity* force_parent)
 	{
         widget->controller = this;
 
@@ -207,414 +206,414 @@ namespace ui {
         widget->set_name(name);
         widgets[name] = widget;
         all_widgets[name] = widget;
-	}
-
-    UIEntity* Controller::make_rect(glm::vec2 pos, glm::vec2 size, const Color& color)
-	{
-		process_params(pos, size);
+	}*/
+
+ //   UIEntity* Controller::make_rect(glm::vec2 pos, glm::vec2 size, const Color& color)
+	//{
+	//	process_params(pos, size);
 
-		// Render quad in local workspace position
-        UIEntity* rect = new UIEntity(pos, size);
-        rect->add_surface(RendererStorage::get_surface("quad"));
+	//	// Render quad in local workspace position
+ //       UIEntity* rect = new UIEntity(pos, size);
+ //       rect->add_surface(RendererStorage::get_surface("quad"));
 
-        Material material;
-        material.shader = RendererStorage::get_shader("data/shaders/mesh_color.wgsl");
-        material.color = color;
+ //       Material material;
+ //       material.shader = RendererStorage::get_shader("data/shaders/mesh_color.wgsl");
+ //       material.color = color;
 
-        rect->set_surface_material_override(rect->get_surface(0), material);
+ //       rect->set_surface_material_override(rect->get_surface(0), material);
 
-		append_widget(rect, "ui_rect");
-		return rect;
-	}
+	//	append_widget(rect, "ui_rect");
+	//	return rect;
+	//}
 
-    UIEntity* Controller::make_text(const std::string& text, const std::string& alias, glm::vec2 pos, const Color& color, float scale, glm::vec2 size)
-	{
-		process_params(pos, size);
-		scale *= global_scale;
+ //   UIEntity* Controller::make_text(const std::string& text, const std::string& alias, glm::vec2 pos, const Color& color, float scale, glm::vec2 size)
+	//{
+	//	process_params(pos, size);
+	//	scale *= global_scale;
 
-        TextWidget* text_widget = new TextWidget(text, pos, scale, color);
-		append_widget(text_widget, alias);
-		return text_widget;
-	}
+ //       TextWidget* text_widget = new TextWidget(text, pos, scale, color);
+	//	append_widget(text_widget, alias);
+	//	return text_widget;
+	//}
 
-    UIEntity* Controller::make_label(const json* j)
-    {
-        std::string text = (*j)["name"];
-        std::string alias = (*j).value("alias", text);
+ //   UIEntity* Controller::make_label(const json* j)
+ //   {
+ //       std::string text = (*j)["name"];
+ //       std::string alias = (*j).value("alias", text);
 
-        static int num_labels = 0;
+ //       static int num_labels = 0;
 
-        // World attributes
-        float workspace_width = workspace.size.x / global_scale;
-        float margin = 2.f;
+ //       // World attributes
+ //       float workspace_width = workspace.size.x / global_scale;
+ //       float margin = 2.f;
 
-        // Text follows after icon (right)
-        glm::vec2 pos = { LABEL_BUTTON_SIZE + 4.f, num_labels * LABEL_BUTTON_SIZE + (num_labels + 1.f) * margin };
-        glm::vec2 size = glm::vec2(workspace_width, LABEL_BUTTON_SIZE);
-
-        UIEntity* text_widget = make_text(text, "text@" + alias, pos, colors::WHITE, 12.f);
-        text_widget->m_priority = -1;
-        // ((Entity*)text_widget)->set_process_children(true);
-        text_widget->center_pos = false;
-
-        // Icon goes to the left of the workspace
-        pos = { 
-            -workspace_width * 0.5f + LABEL_BUTTON_SIZE * 0.5f,
-            num_labels * LABEL_BUTTON_SIZE + (num_labels + 1.f) * margin
-        };
-
-        process_params(pos, size);
-
-        // Icon 
-        LabelWidget* m_icon = new LabelWidget(text, pos, glm::vec2(size.y, size.y));
-        m_icon->add_surface(RendererStorage::get_surface("quad"));
-
-        Material material;
-        material.shader = RendererStorage::get_shader("data/shaders/ui/ui_texture.wgsl");
-
-        if (j->count("texture") > 0)
-        {
-            std::string texture = (*j)["texture"];
-            material.diffuse_texture = RendererStorage::get_texture(texture);
-            material.flags |= MATERIAL_DIFFUSE;
-        }
-
-        m_icon->set_surface_material_override(m_icon->get_surface(0), material);
-
-        m_icon->button = j->value("button", -1);
-        m_icon->subtext = j->value("subtext", "");
-
-        if (m_icon->button != -1)
-        {
-            bind(m_icon->button, [widget = m_icon, text_widget = text_widget]() {
-                widget->selected = !widget->selected;
-                static_cast<ui::TextWidget*>(text_widget)->set_text(widget->selected ? widget->subtext : widget->text);
-            });
-        }
-
-        append_widget(m_icon, alias, text_widget);
-
-        num_labels++;
-
-        return m_icon;
-    }
-
-    UIEntity* Controller::make_button(const std::string& signal, const std::string& texture, const Color& color, bool selected, bool unique_selection,
-        bool allow_toggle, bool is_color_button, bool disabled, bool keep_rgb)
-    {
-        // World attributes
-        glm::vec2 pos = compute_position();
-        glm::vec2 size = glm::vec2(BUTTON_SIZE);
-
-        glm::vec2 _pos = pos;
-        glm::vec2 _size = size;
-
-        process_params(pos, size);
-
-        // Render quad in local workspace position
-        ButtonWidget* e_button = new ButtonWidget(signal, pos, size, color, is_color_button);
-        e_button->add_surface(RendererStorage::get_surface("quad"));
-
-        Material material;
-        material.flags |= MATERIAL_UI;
-
-        std::string shader = "data/shaders/ui/ui_button.wgsl";
-        std::vector<std::string> define_specializations;
-
-        if (texture.size() > 0)
-        {
-            material.diffuse_texture = RendererStorage::get_texture(texture);
-            material.flags |= MATERIAL_DIFFUSE;
-            define_specializations.push_back("USES_TEXTURE");
-        }
-
-        material.color = color;
-        material.shader = RendererStorage::get_shader(shader, define_specializations);
-
-        e_button->set_surface_material_override(e_button->get_surface(0), material);
-
-        // Widget props
-        e_button->is_unique_selection = unique_selection;
-        e_button->selected = selected;
-        e_button->ui_data.keep_rgb = keep_rgb;
-        e_button->ui_data.is_button_disabled = disabled;
+ //       // Text follows after icon (right)
+ //       glm::vec2 pos = { LABEL_BUTTON_SIZE + 4.f, num_labels * LABEL_BUTTON_SIZE + (num_labels + 1.f) * margin };
+ //       glm::vec2 size = glm::vec2(workspace_width, LABEL_BUTTON_SIZE);
+
+ //       UIEntity* text_widget = make_text(text, "text@" + alias, pos, colors::WHITE, 12.f);
+ //       text_widget->m_priority = -1;
+ //       // ((Entity*)text_widget)->set_process_children(true);
+ //       text_widget->center_pos = false;
+
+ //       // Icon goes to the left of the workspace
+ //       pos = { 
+ //           -workspace_width * 0.5f + LABEL_BUTTON_SIZE * 0.5f,
+ //           num_labels * LABEL_BUTTON_SIZE + (num_labels + 1.f) * margin
+ //       };
+
+ //       process_params(pos, size);
+
+ //       // Icon 
+ //       LabelWidget* m_icon = new LabelWidget(text, pos, glm::vec2(size.y, size.y));
+ //       m_icon->add_surface(RendererStorage::get_surface("quad"));
+
+ //       Material material;
+ //       material.shader = RendererStorage::get_shader("data/shaders/ui/ui_texture.wgsl");
+
+ //       if (j->count("texture") > 0)
+ //       {
+ //           std::string texture = (*j)["texture"];
+ //           material.diffuse_texture = RendererStorage::get_texture(texture);
+ //           material.flags |= MATERIAL_DIFFUSE;
+ //       }
+
+ //       m_icon->set_surface_material_override(m_icon->get_surface(0), material);
+
+ //       m_icon->button = j->value("button", -1);
+ //       m_icon->subtext = j->value("subtext", "");
+
+ //       if (m_icon->button != -1)
+ //       {
+ //           bind(m_icon->button, [widget = m_icon, text_widget = text_widget]() {
+ //               widget->selected = !widget->selected;
+ //               static_cast<ui::TextWidget*>(text_widget)->set_text(widget->selected ? widget->subtext : widget->text);
+ //           });
+ //       }
+
+ //       append_widget(m_icon, alias, text_widget);
+
+ //       num_labels++;
+
+ //       return m_icon;
+ //   }
+
+ //   UIEntity* Controller::make_button(const std::string& signal, const std::string& texture, const Color& color, bool selected, bool unique_selection,
+ //       bool allow_toggle, bool is_color_button, bool disabled, bool keep_rgb)
+ //   {
+ //       // World attributes
+ //       glm::vec2 pos = compute_position();
+ //       glm::vec2 size = glm::vec2(BUTTON_SIZE);
+
+ //       glm::vec2 _pos = pos;
+ //       glm::vec2 _size = size;
+
+ //       process_params(pos, size);
+
+ //       // Render quad in local workspace position
+ //       ButtonWidget* e_button = new ButtonWidget(signal, pos, size, color, is_color_button);
+ //       e_button->add_surface(RendererStorage::get_surface("quad"));
+
+ //       Material material;
+ //       material.flags |= MATERIAL_UI;
+
+ //       std::string shader = "data/shaders/ui/ui_button.wgsl";
+ //       std::vector<std::string> define_specializations;
+
+ //       if (texture.size() > 0)
+ //       {
+ //           material.diffuse_texture = RendererStorage::get_texture(texture);
+ //           material.flags |= MATERIAL_DIFFUSE;
+ //           define_specializations.push_back("USES_TEXTURE");
+ //       }
+
+ //       material.color = color;
+ //       material.shader = RendererStorage::get_shader(shader, define_specializations);
+
+ //       e_button->set_surface_material_override(e_button->get_surface(0), material);
+
+ //       // Widget props
+ //       e_button->is_unique_selection = unique_selection;
+ //       e_button->selected = selected;
+ //       e_button->ui_data.keep_rgb = keep_rgb;
+ //       e_button->ui_data.is_button_disabled = disabled;
 
-        if (group_opened)
-            e_button->m_priority = 1;
+ //       if (group_opened)
+ //           e_button->m_priority = 1;
 
-        if (!disabled && (is_color_button || e_button->is_unique_selection || allow_toggle))
-        {
-            bind(signal, [widget = e_button, allow_toggle](const std::string& signal, void* button) {
-                // Unselect siblings
-                UIEntity* parent = static_cast<ui::UIEntity*>(widget->get_parent());
-                const bool last_value = widget->selected;
-                if (!allow_toggle)
-                {
-                    for (auto w : parent->get_children())
-                        static_cast<ui::UIEntity*>(w)->set_selected(false);
-                }
-                widget->set_selected(allow_toggle ? !last_value : true);
-            });
-        }
+ //       if (!disabled && (is_color_button || e_button->is_unique_selection || allow_toggle))
+ //       {
+ //           bind(signal, [widget = e_button, allow_toggle](const std::string& signal, void* button) {
+ //               // Unselect siblings
+ //               UIEntity* parent = static_cast<ui::UIEntity*>(widget->get_parent());
+ //               const bool last_value = widget->selected;
+ //               if (!allow_toggle)
+ //               {
+ //                   for (auto w : parent->get_children())
+ //                       static_cast<ui::UIEntity*>(w)->set_selected(false);
+ //               }
+ //               widget->set_selected(allow_toggle ? !last_value : true);
+ //           });
+ //       }
 
-        e_button->m_layer = static_cast<uint8_t>(layout_iterator.y);
+ //       e_button->m_layer = static_cast<uint8_t>(layout_iterator.y);
 
-        append_widget(e_button, signal);
-        return e_button;
-    }
+ //       append_widget(e_button, signal);
+ //       return e_button;
+ //   }
 
-    UIEntity* Controller::make_button(const json* j)
-	{
-        std::string signal = (*j)["name"];
-        std::string texture = j->value("texture", "");
+ //   UIEntity* Controller::make_button(const json* j)
+	//{
+ //       std::string signal = (*j)["name"];
+ //       std::string texture = j->value("texture", "");
 
-        const bool unique_selection = j->value("unique_selection", false);
-        const bool disabled = j->value("disabled", false);
-        const bool allow_toggle = j->value("allow_toggle", false);
-        const bool selected = j->value("selected", false);
-        const bool keep_rgb = j->value("keep_rgb", false) ? 1.f : 0.f;
-        const bool is_color_button = j->count("color") > 0;
+ //       const bool unique_selection = j->value("unique_selection", false);
+ //       const bool disabled = j->value("disabled", false);
+ //       const bool allow_toggle = j->value("allow_toggle", false);
+ //       const bool selected = j->value("selected", false);
+ //       const bool keep_rgb = j->value("keep_rgb", false) ? 1.f : 0.f;
+ //       const bool is_color_button = j->count("color") > 0;
 
-        Color color = is_color_button ? load_vec4((*j)["color"]) : colors::WHITE;
-        color = glm::pow(color, Color(2.2f));
+ //       Color color = is_color_button ? load_vec4((*j)["color"]) : colors::WHITE;
+ //       color = glm::pow(color, Color(2.2f));
 
-        return make_button(signal, texture, color, selected, unique_selection, allow_toggle, is_color_button, disabled, keep_rgb);
-	}
+ //       return make_button(signal, texture, color, selected, unique_selection, allow_toggle, is_color_button, disabled, keep_rgb);
+	//}
 
-    UIEntity* Controller::make_slider(const json* j, const std::string& force_name)
-	{
-        std::string signal = j->value("name", "");
+ //   UIEntity* Controller::make_slider(const json* j, const std::string& force_name)
+	//{
+ //       std::string signal = j->value("name", "");
 
-        if (force_name.size())
-            signal = force_name;
+ //       if (force_name.size())
+ //           signal = force_name;
 
-        std::string s_mode = j->value("mode", "horizontal");
-        int mode = (s_mode == "horizontal" ? SliderWidget::HORIZONTAL : SliderWidget::VERTICAL);
-        bool is_horizontal_slider = (mode == SliderWidget::HORIZONTAL);
+ //       std::string s_mode = j->value("mode", "horizontal");
+ //       int mode = (s_mode == "horizontal" ? SliderWidget::HORIZONTAL : SliderWidget::VERTICAL);
+ //       bool is_horizontal_slider = (mode == SliderWidget::HORIZONTAL);
 
-        // World attributes
-        float offset = is_horizontal_slider ? 2.f : 1.f;
-        glm::vec2 pos = compute_position( offset );
-        glm::vec2 size = glm::vec2(BUTTON_SIZE * offset, BUTTON_SIZE); // Slider space is 2*BUTTONSIZE at X
+ //       // World attributes
+ //       float offset = is_horizontal_slider ? 2.f : 1.f;
+ //       glm::vec2 pos = compute_position( offset );
+ //       glm::vec2 size = glm::vec2(BUTTON_SIZE * offset, BUTTON_SIZE); // Slider space is 2*BUTTONSIZE at X
 
-        glm::vec2 _pos = pos;
-        glm::vec2 _size = size;
+ //       glm::vec2 _pos = pos;
+ //       glm::vec2 _size = size;
 
-        process_params(pos, size);
+ //       process_params(pos, size);
 
-		/*
-		*	Create slider entity
-		*/
+	//	/*
+	//	*	Create slider entity
+	//	*/
 
-        float default_value = j->value("value", 1.f);
-        Color color = Color(0.47f, 0.37f, 0.94f, 1.f);
-        if (j->count("color")) color = load_vec4((*j)["color"]);
-        color = glm::pow(color, Color(2.2f));
+ //       float default_value = j->value("value", 1.f);
+ //       Color color = Color(0.47f, 0.37f, 0.94f, 1.f);
+ //       if (j->count("color")) color = load_vec4((*j)["color"]);
+ //       color = glm::pow(color, Color(2.2f));
 
-		SliderWidget* slider = new SliderWidget(signal, default_value, pos, size, color, mode);
-        slider->add_surface(RendererStorage::get_surface("quad"));
-        // ((Entity*)slider)->set_process_children(true);
+	//	SliderWidget* slider = new SliderWidget(signal, default_value, pos, size, color, mode);
+ //       slider->add_surface(RendererStorage::get_surface("quad"));
+ //       // ((Entity*)slider)->set_process_children(true);
 
-        Material material;
+ //       Material material;
 
-        material.shader = RendererStorage::get_shader(is_horizontal_slider ? "data/shaders/ui/ui_slider_h.wgsl" : "data/shaders/ui/ui_slider.wgsl");
-        material.color = color;
-        material.flags |= MATERIAL_UI;
+ //       material.shader = RendererStorage::get_shader(is_horizontal_slider ? "data/shaders/ui/ui_slider_h.wgsl" : "data/shaders/ui/ui_slider.wgsl");
+ //       material.color = color;
+ //       material.flags |= MATERIAL_UI;
 
-        slider->set_surface_material_override(slider->get_surface(0), material);
+ //       slider->set_surface_material_override(slider->get_surface(0), material);
 
-        slider->min_value = j->value("min", slider->min_value);
-        slider->max_value = j->value("max", slider->max_value);
-        slider->step = j->value("step", slider->step);
-        slider->ui_data.num_group_items = offset;
-        slider->m_layer = static_cast<uint8_t>(layout_iterator.y);
+ //       slider->min_value = j->value("min", slider->min_value);
+ //       slider->max_value = j->value("max", slider->max_value);
+ //       slider->step = j->value("step", slider->step);
+ //       slider->ui_data.num_group_items = offset;
+ //       slider->m_layer = static_cast<uint8_t>(layout_iterator.y);
 
-        bind(signal + "@changed", [this, s = slider](const std::string& signal, float value) {
-            s->set_value(value);
-        });
+ //       bind(signal + "@changed", [this, s = slider](const std::string& signal, float value) {
+ //           s->set_value(value);
+ //       });
 
-        if (group_opened)
-            slider->m_priority = 1;
+ //       if (group_opened)
+ //           slider->m_priority = 1;
 
-		append_widget(slider, signal);
+	//	append_widget(slider, signal);
 
-		return slider;
-	}
+	//	return slider;
+	//}
 
-    UIEntity* Controller::make_color_picker(const json* j)
-    {
-        std::string signal = (*j)["name"];
-        bool has_slider = j->count("slider") > 0.f;
+ //   UIEntity* Controller::make_color_picker(const json* j)
+ //   {
+ //       std::string signal = (*j)["name"];
+ //       bool has_slider = j->count("slider") > 0.f;
 
-        // World attributes
-        glm::vec2 pos = compute_position();
-        glm::vec2 size = glm::vec2(BUTTON_SIZE);
+ //       // World attributes
+ //       glm::vec2 pos = compute_position();
+ //       glm::vec2 size = glm::vec2(BUTTON_SIZE);
 
-        glm::vec2 _pos = pos;
-        glm::vec2 _size = size;
+ //       glm::vec2 _pos = pos;
+ //       glm::vec2 _size = size;
 
-        process_params(pos, size);
+ //       process_params(pos, size);
 
-        Color default_color = load_vec4(j->value("color", ""));
+ //       Color default_color = load_vec4(j->value("color", ""));
 
-        ColorPickerWidget* picker = new ColorPickerWidget(signal, pos, size, default_color);
-        picker->add_surface(RendererStorage::get_surface("quad"));
+ //       ColorPickerWidget* picker = new ColorPickerWidget(signal, pos, size, default_color);
+ //       picker->add_surface(RendererStorage::get_surface("quad"));
 
-        Material material;
-        material.shader = RendererStorage::get_shader("data/shaders/ui/ui_color_picker.wgsl");
-        material.color = Color(0.175f);
-        material.flags |= MATERIAL_UI;
+ //       Material material;
+ //       material.shader = RendererStorage::get_shader("data/shaders/ui/ui_color_picker.wgsl");
+ //       material.color = Color(0.175f);
+ //       material.flags |= MATERIAL_UI;
 
-        picker->set_surface_material_override(picker->get_surface(0), material);
+ //       picker->set_surface_material_override(picker->get_surface(0), material);
 
-        picker->m_layer = static_cast<uint8_t>(layout_iterator.y);
-        // ((Entity*)picker)->set_process_children(true);
+ //       picker->m_layer = static_cast<uint8_t>(layout_iterator.y);
+ //       // ((Entity*)picker)->set_process_children(true);
 
-        if (group_opened)
-            picker->m_priority = 1;
+ //       if (group_opened)
+ //           picker->m_priority = 1;
 
-        append_widget(picker, signal);
+ //       append_widget(picker, signal);
 
-        if (has_slider)
-        {
-            std::string new_name = signal + "_intensity";
-            SliderWidget* slider = (SliderWidget*)make_slider( &(*j)["slider"], new_name);
-            bind(new_name, [this, p = picker](const std::string& signal, float value) {
-                p->current_color.a = value;
-                glm::vec3 new_color = glm::pow(glm::vec3(p->current_color) * value, glm::vec3(2.2f));
-                emit_signal(p->signal, Color(new_color, value));
-            });
+ //       if (has_slider)
+ //       {
+ //           std::string new_name = signal + "_intensity";
+ //           SliderWidget* slider = (SliderWidget*)make_slider( &(*j)["slider"], new_name);
+ //           bind(new_name, [this, p = picker](const std::string& signal, float value) {
+ //               p->current_color.a = value;
+ //               glm::vec3 new_color = glm::pow(glm::vec3(p->current_color) * value, glm::vec3(2.2f));
+ //               emit_signal(p->signal, Color(new_color, value));
+ //           });
 
-            // Set initial value
-            picker->current_color.a = (*j)["slider"].value("value", 1.f);
-        }
+ //           // Set initial value
+ //           picker->current_color.a = (*j)["slider"].value("value", 1.f);
+ //       }
 
-        bind(signal + "@changed", [this, p = picker](const std::string& signal, Color color) {
-            p->set_color(color);
-        });
+ //       bind(signal + "@changed", [this, p = picker](const std::string& signal, Color color) {
+ //           p->set_color(color);
+ //       });
 
-        return picker;
-    }
+ //       return picker;
+ //   }
 
-	void Controller::make_submenu(ui::UIEntity* widget, const std::string& name)
-	{
-        static_cast<ButtonWidget*>(widget)->is_submenu = true;
+	//void Controller::make_submenu(ui::UIEntity* widget, const std::string& name)
+	//{
+ //       static_cast<ButtonWidget*>(widget)->is_submenu = true;
 
-        // Add mark
+ //       // Add mark
 
-        {
-            ButtonWidget* mark = new ButtonWidget(widget->get_name() + "@mark", {0.f, 0.f}, {0.f, 0.f}, colors::WHITE);
-            mark->add_surface(RendererStorage::get_surface("quad"));
+ //       {
+ //           ButtonWidget* mark = new ButtonWidget(widget->get_name() + "@mark", {0.f, 0.f}, {0.f, 0.f}, colors::WHITE);
+ //           mark->add_surface(RendererStorage::get_surface("quad"));
 
-            Material material;
-            material.shader = RendererStorage::get_shader("data/shaders/ui/ui_texture.wgsl");
-            material.diffuse_texture = RendererStorage::get_texture("data/textures/submenu_mark.png");
-            material.flags |= MATERIAL_DIFFUSE | MATERIAL_UI;
-            material.color = colors::WHITE;
+ //           Material material;
+ //           material.shader = RendererStorage::get_shader("data/shaders/ui/ui_texture.wgsl");
+ //           material.diffuse_texture = RendererStorage::get_texture("data/textures/submenu_mark.png");
+ //           material.flags |= MATERIAL_DIFFUSE | MATERIAL_UI;
+ //           material.color = colors::WHITE;
 
-            mark->set_surface_material_override(mark->get_surface(0), material);
+ //           mark->set_surface_material_override(mark->get_surface(0), material);
 
-            ((ButtonWidget*)widget)->mark = mark;
-        }
+ //           ((ButtonWidget*)widget)->mark = mark;
+ //       }
 
-        // Visibility callback...
-		bind(name, [widget = widget](const std::string& signal, void* button) {
+ //       // Visibility callback...
+	//	bind(name, [widget = widget](const std::string& signal, void* button) {
 
-            const bool last_value = true; // widget->get_process_children();
+ //           const bool last_value = true; // widget->get_process_children();
 
-            for (auto& w : all_widgets)
-            {
-                ButtonWidget* b = dynamic_cast<ButtonWidget*>(w.second);
+ //           for (auto& w : all_widgets)
+ //           {
+ //               ButtonWidget* b = dynamic_cast<ButtonWidget*>(w.second);
 
-                if (!b || !b->is_submenu || b->m_layer < widget->m_layer)
-                    continue;
+ //               if (!b || !b->is_submenu || b->m_layer < widget->m_layer)
+ //                   continue;
 
-                b->set_process_children(false);
-            }
+ //               b->set_process_children(false);
+ //           }
 
-            widget->set_process_children(!last_value);
-		});
+ //           widget->set_process_children(!last_value);
+	//	});
 
-        // root layer width
-        if (layers_width[0] == 0.f)
-            layers_width[0] = layout_iterator.x;
+ //       // root layer width
+ //       if (layers_width[0] == 0.f)
+ //           layers_width[0] = layout_iterator.x;
 
-        // Set new interators
-        layout_iterator.x = 0.f;
-        layout_iterator.y = widget->m_layer + 1.f;
+ //       // Set new interators
+ //       layout_iterator.x = 0.f;
+ //       layout_iterator.y = widget->m_layer + 1.f;
 
-        // Update last layout pos
-        float x = 0.f;
-        float y = layout_iterator.y * BUTTON_SIZE + (layout_iterator.y + 1.f) * Y_MARGIN;
-        last_layout_pos = { x, y };
+ //       // Update last layout pos
+ //       float x = 0.f;
+ //       float y = layout_iterator.y * BUTTON_SIZE + (layout_iterator.y + 1.f) * Y_MARGIN;
+ //       last_layout_pos = { x, y };
 
-        // Set as new parent...
-        parent_queue.push_back(widget);
-	}
+ //       // Set as new parent...
+ //       parent_queue.push_back(widget);
+	//}
 
-    void Controller::close_submenu()
-    {
-        UIEntity* active_submenu = parent_queue.back();
+ //   void Controller::close_submenu()
+ //   {
+ //       UIEntity* active_submenu = parent_queue.back();
 
-        // Store layer width to center widgets
-        layers_width[active_submenu->uid] = layout_iterator.x - X_MARGIN - X_GROUP_MARGIN;
+ //       // Store layer width to center widgets
+ //       layers_width[active_submenu->uid] = layout_iterator.x - X_MARGIN - X_GROUP_MARGIN;
 
-        // Remove parent...
-        parent_queue.pop_back();
-    }
+ //       // Remove parent...
+ //       parent_queue.pop_back();
+ //   }
 
-    UIEntity* Controller::make_group(const json* j)
-    {
-        const bool has_icon = (*j).count("icon_texture") > 0;
+ //   UIEntity* Controller::make_group(const json* j)
+ //   {
+ //       const bool has_icon = (*j).count("icon_texture") > 0;
 
-        std::string group_name = (*j)["name"];
-        float number_of_widgets = (*j)["nitems"];
-        if (has_icon) number_of_widgets++;
+ //       std::string group_name = (*j)["name"];
+ //       float number_of_widgets = (*j)["nitems"];
+ //       if (has_icon) number_of_widgets++;
 
-        Color color = Color(0.41f, 0.38f, 0.44f, 1.0f);
-        if ((*j).count("color")) color = load_vec4((*j)["color"]);
-        color = glm::pow(color, Color(2.2f));
+ //       Color color = Color(0.41f, 0.38f, 0.44f, 1.0f);
+ //       if ((*j).count("color")) color = load_vec4((*j)["color"]);
+ //       color = glm::pow(color, Color(2.2f));
 
-        current_number_of_group_widgets = number_of_widgets;
+ //       current_number_of_group_widgets = number_of_widgets;
 
-        layout_iterator.x += X_MARGIN;
+ //       layout_iterator.x += X_MARGIN;
 
-        // World attributes
-        glm::vec2 pos = compute_position() - X_MARGIN;
-        glm::vec2 size = glm::vec2(
-            BUTTON_SIZE * number_of_widgets + (number_of_widgets - 1.f) * X_GROUP_MARGIN + X_MARGIN * 2.f,
-            BUTTON_SIZE + X_MARGIN * 2.f
-        );
+ //       // World attributes
+ //       glm::vec2 pos = compute_position() - X_MARGIN;
+ //       glm::vec2 size = glm::vec2(
+ //           BUTTON_SIZE * number_of_widgets + (number_of_widgets - 1.f) * X_GROUP_MARGIN + X_MARGIN * 2.f,
+ //           BUTTON_SIZE + X_MARGIN * 2.f
+ //       );
 
-        glm::vec2 _size = size;
+ //       glm::vec2 _size = size;
 
-        process_params(pos, size);
+ //       process_params(pos, size);
 
-        WidgetGroup* group = new WidgetGroup(pos, size, number_of_widgets);
-        group->add_surface(RendererStorage::get_surface("quad"));
+ //       WidgetGroup* group = new WidgetGroup(pos, size, number_of_widgets);
+ //       group->add_surface(RendererStorage::get_surface("quad"));
 
-        Material material;
-        material.shader = RendererStorage::get_shader("data/shaders/ui/ui_group.wgsl");
-        material.color = color;
-        material.flags |= MATERIAL_UI;
+ //       Material material;
+ //       material.shader = RendererStorage::get_shader("data/shaders/ui/ui_group.wgsl");
+ //       material.color = color;
+ //       material.flags |= MATERIAL_UI;
 
-        group->set_surface_material_override(group->get_surface(0), material);
+ //       group->set_surface_material_override(group->get_surface(0), material);
 
-        group->set_layer( static_cast<uint8_t>(layout_iterator.y) );
+ //       group->set_layer( static_cast<uint8_t>(layout_iterator.y) );
 
-        append_widget(group, group_name);
+ //       append_widget(group, group_name);
 
-        parent_queue.push_back(group);
-        group_opened = true;
-        layout_iterator.x += _size.x - (BUTTON_SIZE + X_GROUP_MARGIN);
+ //       parent_queue.push_back(group);
+ //       group_opened = true;
+ //       layout_iterator.x += _size.x - (BUTTON_SIZE + X_GROUP_MARGIN);
 
-        if (has_icon)
-        {
-            make_button(&(*j)["icon_texture"]);
-        }
+ //       if (has_icon)
+ //       {
+ //           make_button(&(*j)["icon_texture"]);
+ //       }
 
-        return group;
-    }
+ //       return group;
+ //   }
 
     void Controller::close_group()
     {
@@ -628,7 +627,7 @@ namespace ui {
         g_iterator = 0.f;
     }
 
-    void Controller::set_next_parent(UIEntity* parent)
+    void Controller::set_next_parent(Node2D* parent)
     {
         parent_queue.push_back(parent);
         dirty = true;
@@ -644,43 +643,43 @@ namespace ui {
         controller_signals[button].push_back(callback);
     }
 
-    UIEntity* Controller::get(const std::string& alias)
+    Node2D* Controller::get(const std::string& alias)
     {
         if (all_widgets.count(alias)) return all_widgets[alias];
         return nullptr;
     }
 
-    UIEntity* Controller::get_widget_from_name(const std::string& alias)
+    Node2D* Controller::get_widget_from_name(const std::string& alias)
     {
         if(widgets.count(alias)) return widgets[alias];
         return nullptr;
     }
 
-    float Controller::get_layer_width(unsigned int uid)
-    {
-        UIEntity* widget = nullptr;
+    //float Controller::get_layer_width(unsigned int uid)
+    //{
+    //    Node2D* widget = nullptr;
 
-        for (auto& it : all_widgets) {
+    //    for (auto& it : all_widgets) {
 
-            if (it.second->uid == uid)
-            {
-                widget = it.second;
-                break;
-            }
-        }
+    //        if (it.second->uid == uid)
+    //        {
+    //            widget = it.second;
+    //            break;
+    //        }
+    //    }
 
-        if (!widget)
-            return 0.f;
+    //    if (!widget)
+    //        return 0.f;
 
-        UIEntity* parent = static_cast<ui::UIEntity*>(widget->get_parent());
-        if (parent == nullptr) return 0.f;
+    //    UIEntity* parent = static_cast<ui::UIEntity*>(widget->get_parent());
+    //    if (parent == nullptr) return 0.f;
 
-        // Go up to get root or submenu
-        while (parent->uid != 0 && !parent->is_submenu)
-            parent = static_cast<ui::UIEntity*>(parent->get_parent());
+    //    // Go up to get root or submenu
+    //    while (parent->uid != 0 && !parent->is_submenu)
+    //        parent = static_cast<ui::UIEntity*>(parent->get_parent());
 
-        return (layers_width[parent->uid] - X_MARGIN) * global_scale;
-    }
+    //    return (layers_width[parent->uid] - X_MARGIN) * global_scale;
+    //}
 
     void Controller::load_layout(const std::string& filename)
     {
@@ -706,11 +705,11 @@ namespace ui {
 
                 group_elements_pending = nitems;
 
-                UIEntity* group = make_group(&j);
+                // UIEntity* group = make_group(&j);
             }
             else if (type == "button")
             {
-                make_button(&j);
+                // make_button(&j);
 
                 group_elements_pending--;
 
@@ -721,7 +720,7 @@ namespace ui {
             }
             else if (type == "picker")
             {
-                make_color_picker(&j);
+                // make_color_picker(&j);
 
                 int slots = j.count("slider") > 0 ? 2 : 1;
                 group_elements_pending -= slots;
@@ -733,11 +732,11 @@ namespace ui {
             }
             else if (type == "label")
             {
-                make_label(&j);
+                // make_label(&j);
             }
             else if (type == "slider")
             {
-                make_slider(&j);
+                // make_slider(&j);
 
                 int slots = j.value("mode", "horizontal") == "horizontal" ? 2 : 1;
                 group_elements_pending -= slots;
@@ -747,7 +746,7 @@ namespace ui {
                     group_elements_pending = -1;
                 }
             }
-            else if (type == "submenu")
+            /*else if (type == "submenu")
             {
                 UIEntity* parent = get_widget_from_name(name);
 
@@ -766,7 +765,7 @@ namespace ui {
                 }
 
                 close_submenu();
-            }
+            }*/
             };
 
         auto& _elements = j["elements"];
@@ -804,7 +803,7 @@ namespace ui {
             // widget->set_active(true);
 
             // Display also its text...
-            if (widget->type == LABEL)
+            if (widget->get_type() == LABEL)
             {
                 widget = get_widget_from_name("text@" + name);
                 // widget->set_active(true);
