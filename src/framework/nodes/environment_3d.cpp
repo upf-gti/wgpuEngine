@@ -1,5 +1,4 @@
-#include "environment.h"
-
+#include "environment_3d.h"
 #include "framework/scene/parse_obj.h"
 #include "graphics/renderer.h"
 
@@ -7,20 +6,13 @@ Environment3D::Environment3D() : MeshInstance3D()
 {
     parse_obj("data/meshes/cube.obj", this);
 
-    set_surface_material_shader(0, RendererStorage::get_shader("data/shaders/mesh_texture_cube.wgsl"));
-
     set_surface_material_diffuse(0, Renderer::instance->get_irradiance_texture());
 
-    scale(glm::vec3(100.f));
-
     set_surface_material_priority(0, 2);
-}
 
-void Environment3D::render()
-{
-    Renderer::instance->add_renderable(this);
+    set_surface_material_shader(0, RendererStorage::get_shader("data/shaders/mesh_texture_cube.wgsl"));
 
-    Node3D::render();
+    scale(glm::vec3(100.f));
 }
 
 void Environment3D::update(float delta_time)
