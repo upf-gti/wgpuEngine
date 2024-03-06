@@ -47,7 +47,6 @@ void MeshInstance3D::set_surface_material_diffuse(int surface_idx, Texture* diff
     }
 
     surfaces[surface_idx]->set_material_diffuse(diffuse);
-    surfaces[surface_idx]->set_material_flag(MATERIAL_DIFFUSE);
 }
 
 void MeshInstance3D::set_surface_material_shader(int surface_idx, Shader* shader)
@@ -81,6 +80,50 @@ void MeshInstance3D::set_surface_material_priority(int surface_idx, uint8_t prio
     }
 
     surfaces[surface_idx]->set_material_priority(priority);
+}
+
+void MeshInstance3D::set_surface_material_transparency_type(int surface_idx, eTransparencyType transparency_type)
+{
+    assert(surface_idx < surfaces.size());
+
+    if (surface_idx >= surfaces.size()) {
+        return;
+    }
+
+    surfaces[surface_idx]->set_material_transparency_type(transparency_type);
+}
+
+void MeshInstance3D::set_surface_material_cull_type(int surface_idx, eCullType cull_type)
+{
+    assert(surface_idx < surfaces.size());
+
+    if (surface_idx >= surfaces.size()) {
+        return;
+    }
+
+    surfaces[surface_idx]->set_material_cull_type(cull_type);
+}
+
+void MeshInstance3D::set_surface_material_topology_type(int surface_idx, eTopologyType topology_type)
+{
+    assert(surface_idx < surfaces.size());
+
+    if (surface_idx >= surfaces.size()) {
+        return;
+    }
+
+    surfaces[surface_idx]->set_material_topology_type(topology_type);
+}
+
+void MeshInstance3D::set_surface_material_depth_write(int surface_idx, bool depth_write)
+{
+    assert(surface_idx < surfaces.size());
+
+    if (surface_idx >= surfaces.size()) {
+        return;
+    }
+
+    surfaces[surface_idx]->set_material_depth_write(depth_write);
 }
 
 // Material override
@@ -140,6 +183,50 @@ void MeshInstance3D::set_surface_material_override_priority(int surface_idx, uin
     }
 
     material_overrides[get_surface(surface_idx)].priority = priority;
+}
+
+void MeshInstance3D::set_surface_material_override_transparency_type(int surface_idx, eTransparencyType transparency_type)
+{
+    assert(surface_idx < surfaces.size());
+
+    if (surface_idx >= surfaces.size()) {
+        return;
+    }
+
+    material_overrides[get_surface(surface_idx)].transparency_type = transparency_type;
+}
+
+void MeshInstance3D::set_surface_material_override_cull_type(int surface_idx, eCullType cull_type)
+{
+    assert(surface_idx < surfaces.size());
+
+    if (surface_idx >= surfaces.size()) {
+        return;
+    }
+
+    material_overrides[get_surface(surface_idx)].cull_type = cull_type;
+}
+
+void MeshInstance3D::set_surface_material_override_topology_type(int surface_idx, eTopologyType topology_type)
+{
+    assert(surface_idx < surfaces.size());
+
+    if (surface_idx >= surfaces.size()) {
+        return;
+    }
+
+    material_overrides[get_surface(surface_idx)].topology_type = topology_type;
+}
+
+void MeshInstance3D::set_surface_material_override_depth_write(int surface_idx, bool depth_write)
+{
+    assert(surface_idx < surfaces.size());
+
+    if (surface_idx >= surfaces.size()) {
+        return;
+    }
+
+    material_overrides[get_surface(surface_idx)].depth_write = depth_write;
 }
 
 void MeshInstance3D::set_surface_material_override(Surface* surface, const Material& material)

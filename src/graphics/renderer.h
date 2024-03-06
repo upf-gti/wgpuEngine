@@ -63,8 +63,8 @@ protected:
 
     enum eRenderListType {
         RENDER_LIST_OPAQUE,
-        RENDER_LIST_UI,
-        RENDER_LIST_ALPHA,
+        RENDER_LIST_TRANPARENT,
+        RENDER_LIST_2D,
         RENDER_LIST_SIZE
     };
 
@@ -109,6 +109,7 @@ public:
     void prepare_instancing();
     void render_opaque(WGPURenderPassEncoder render_pass, const WGPUBindGroup& render_bind_group_camera);
     void render_transparent(WGPURenderPassEncoder render_pass, const WGPUBindGroup& render_bind_group_camera);
+    void render_2D(WGPURenderPassEncoder render_pass, const WGPUBindGroup& render_bind_group_camera);
 
     bool get_openxr_available() { return is_openxr_available; }
     bool get_use_mirror_screen() { return use_mirror_screen; }

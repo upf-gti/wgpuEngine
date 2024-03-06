@@ -7,10 +7,11 @@ Environment3D::Environment3D() : MeshInstance3D()
     parse_obj("data/meshes/cube.obj", this);
 
     set_surface_material_diffuse(0, Renderer::instance->get_irradiance_texture());
-
+    set_surface_material_cull_type(0, CULL_FRONT);
+    set_surface_material_depth_write(0, false);
     set_surface_material_priority(0, 2);
 
-    set_surface_material_shader(0, RendererStorage::get_shader("data/shaders/mesh_texture_cube.wgsl"));
+    set_surface_material_shader(0, RendererStorage::get_shader("data/shaders/mesh_texture_cube.wgsl", surfaces[0]->get_material()));
 
     scale(glm::vec3(100.f));
 }

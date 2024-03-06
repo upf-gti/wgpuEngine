@@ -176,7 +176,7 @@ void Renderer::prepare_instancing()
 
             Material* material_override = entity_mesh->get_surface_material_override(surface);
 
-            const Material& material = material_override ? *material_override : surface->get_material();
+            Material& material = material_override ? *material_override : surface->get_material();
 
             if (!material.shader) {
                 continue;
@@ -186,11 +186,10 @@ void Renderer::prepare_instancing()
                 RendererStorage::instance->register_material(&webgpu_context, material);
             }
 
-            if (material.flags & MATERIAL_TRANSPARENT) {
-                render_list[RENDER_LIST_ALPHA].push_back({ surface, 1, global_matrix, rotation_matrix, entity_mesh });
-            } else
-            if (material.flags & MATERIAL_UI) {
-                render_list[RENDER_LIST_UI].push_back({ surface, 1, global_matrix, rotation_matrix, entity_mesh });
+            Pipeline::register_render_pipeline(material);
+
+            if (material.transparency_type == ALPHA_BLEND) {
+                render_list[RENDER_LIST_TRANPARENT].push_back({ surface, 1, global_matrix, rotation_matrix, entity_mesh });
             }
             else {
                 render_list[RENDER_LIST_OPAQUE].push_back({ surface, 1, global_matrix, rotation_matrix, entity_mesh });
@@ -226,7 +225,7 @@ void Renderer::prepare_instancing()
             if (equal_priority && equal_shader && equal_diffuse && equal_normal && equal_metallic_rougness && lhs_mat.emissive_texture > rhs_mat.emissive_texture) return true;
 
             return false;
-        });
+            });
 
         // Check instances
         {
@@ -252,7 +251,7 @@ void Renderer::prepare_instancing()
                     prev_normal == material.normal_texture &&
                     prev_metallic_roughness == material.metallic_roughness_texture &&
                     prev_emissive == material.emissive_texture &&
-                    !(material.flags & MATERIAL_UI)) {
+                    !(material.flags & MATERIAL_2D)) {
                     repeats++;
                 }
                 else {
@@ -313,10 +312,11 @@ void Renderer::prepare_instancing()
                 j += render_data.repeat;
             }
 
-        } else
-        if (instances > 0) {
-            webgpu_context.update_buffer(std::get<WGPUBuffer>(instance_data_uniform[i].data), 0, instance_data[i].data(), sizeof(sUniformData) * instances);
         }
+        else
+            if (instances > 0) {
+                webgpu_context.update_buffer(std::get<WGPUBuffer>(instance_data_uniform[i].data), 0, instance_data[i].data(), sizeof(sUniformData) * instances);
+            }
     }
 }
 
@@ -330,9 +330,12 @@ void Renderer::render_render_list(int list_index, WGPURenderPassEncoder render_p
 
         Material* material_override = render_data.entity_mesh_ref->get_surface_material_override(render_data.surface);
 
-        const Material& material = material_override ? *material_override :  render_data.surface->get_material();
+        const Material& material = material_override ? *material_override : render_data.surface->get_material();
 
         Pipeline* pipeline = material.shader->get_pipeline();
+
+        assert(pipeline);        
+
         if (pipeline != prev_pipeline) {
             pipeline->set(render_pass);
         }
@@ -353,7 +356,7 @@ void Renderer::render_render_list(int list_index, WGPURenderPassEncoder render_p
             wgpuRenderPassEncoderSetBindGroup(render_pass, bind_group_index++, renderer_storage.get_material_bind_group(material), 0, nullptr);
         }
 
-        if (material.flags & MATERIAL_UI) {
+        if (material.flags & MATERIAL_2D) {
             wgpuRenderPassEncoderSetBindGroup(render_pass, bind_group_index++, renderer_storage.get_ui_widget_bind_group(render_data.entity_mesh_ref), 0, nullptr);
         }
 
@@ -375,14 +378,17 @@ void Renderer::render_render_list(int list_index, WGPURenderPassEncoder render_p
 
 void Renderer::render_opaque(WGPURenderPassEncoder render_pass, const WGPUBindGroup& render_bind_group_camera)
 {
-    for (int i = 0; i < RENDER_LIST_SIZE - 1; ++i) {
-        render_render_list(i, render_pass, render_bind_group_camera);
-    }
+    render_render_list(RENDER_LIST_OPAQUE, render_pass, render_bind_group_camera);
 }
 
 void Renderer::render_transparent(WGPURenderPassEncoder render_pass, const WGPUBindGroup& render_bind_group_camera)
 {
-    render_render_list(RENDER_LIST_ALPHA, render_pass, render_bind_group_camera);
+    render_render_list(RENDER_LIST_TRANPARENT, render_pass, render_bind_group_camera);
+}
+
+void Renderer::render_2D(WGPURenderPassEncoder render_pass, const WGPUBindGroup& render_bind_group_camera)
+{
+    render_render_list(RENDER_LIST_2D, render_pass, render_bind_group_camera);
 }
 
 void Renderer::add_renderable(MeshInstance3D* entity_mesh)
