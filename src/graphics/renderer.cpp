@@ -188,11 +188,16 @@ void Renderer::prepare_instancing()
 
             Pipeline::register_render_pipeline(material);
 
+            Renderer::sRenderData data = { surface, 1, global_matrix, rotation_matrix, entity_mesh };
+
             if (material.transparency_type == ALPHA_BLEND) {
-                render_list[RENDER_LIST_TRANPARENT].push_back({ surface, 1, global_matrix, rotation_matrix, entity_mesh });
+                render_list[RENDER_LIST_TRANPARENT].push_back(data);
+            }
+            if (material.flags & MATERIAL_2D) {
+                render_list[RENDER_LIST_2D].push_back(data);
             }
             else {
-                render_list[RENDER_LIST_OPAQUE].push_back({ surface, 1, global_matrix, rotation_matrix, entity_mesh });
+                render_list[RENDER_LIST_OPAQUE].push_back(data);
             }
         }
     }
@@ -356,9 +361,9 @@ void Renderer::render_render_list(int list_index, WGPURenderPassEncoder render_p
             wgpuRenderPassEncoderSetBindGroup(render_pass, bind_group_index++, renderer_storage.get_material_bind_group(material), 0, nullptr);
         }
 
-        if (material.flags & MATERIAL_2D) {
+        /*if (material.flags & MATERIAL_2D) {
             wgpuRenderPassEncoderSetBindGroup(render_pass, bind_group_index++, renderer_storage.get_ui_widget_bind_group(render_data.entity_mesh_ref), 0, nullptr);
-        }
+        }*/
 
         if (material.flags & MATERIAL_PBR) {
             wgpuRenderPassEncoderSetBindGroup(render_pass, 3, ibl_bind_group, 0, nullptr);

@@ -28,6 +28,8 @@ protected:
     WebGPUContext   webgpu_context;
 
     Camera* camera = nullptr;
+    Camera* camera_2d = nullptr;
+
     Texture* irradiance_texture = nullptr;
 
     RendererStorage renderer_storage;

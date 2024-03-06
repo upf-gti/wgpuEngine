@@ -1,8 +1,8 @@
 #pragma once
 
-#include "camera.h"
+#include "camera_3d.h"
 
-class FlyoverCamera : public Camera {
+class FlyoverCamera : public Camera3D {
 
 public:
 

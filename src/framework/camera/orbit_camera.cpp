@@ -7,7 +7,7 @@
 #include "glm/gtx/norm.hpp"
 #include "spdlog/spdlog.h"
 
-OrbitCamera::OrbitCamera() : Camera()
+OrbitCamera::OrbitCamera() : Camera3D()
 {
     speed = 0.05f;
 }
@@ -20,7 +20,7 @@ void OrbitCamera::update(float delta_time)
     glm::vec3 new_forward;
 
     if (!pan_enabled) {
-        Camera::update(delta_time);
+        Camera3D::update(delta_time);
 
         new_forward = glm::normalize(yaw_pitch_to_vector(delta_yaw_lerp.value, delta_pitch_lerp.value));
 
@@ -57,7 +57,7 @@ void OrbitCamera::update(float delta_time)
 
 void OrbitCamera::look_at(const glm::vec3& eye, const glm::vec3& center, const glm::vec3& up, bool reset_internals)
 {
-    Camera::look_at(eye, center, up, reset_internals);
+    Camera3D::look_at(eye, center, up, reset_internals);
 
     if (reset_internals) {
         distance = glm::length(eye - center);

@@ -137,43 +137,6 @@ namespace ui {
     //}
 
     /*
-    *   Text
-    */
-
-    //TextWidget::TextWidget(const std::string& _text, const glm::vec2& pos, float scale, const Color& color) : UIEntity(pos) {
-
-    //    type = eWidgetType::TEXT;
-
-    //    text_entity = new TextEntity(_text);
-    //    text_entity->set_scale(scale);
-    //    text_entity->generate_mesh();
-    //    text_entity->set_surface_material_color(0, color);
-    //}
-
-    //void TextWidget::render()
-    //{
-    //    UIEntity::render();
-
-    //    //if (active)
-    //        text_entity->render();
-    //}
-
-    //void TextWidget::update(float delta_time)
-    //{
-    //    //if (!active) return;
-
-    //    UIEntity::update(delta_time);
-
-    //    float pos_x = center_pos ?
-    //        m_position.x + controller->get_workspace().size.x - controller->get_layer_width(this->uid)
-    //        : m_position.x;
-
-    //    text_entity->set_model(controller->get_matrix());
-    //    text_entity->translate(glm::vec3(pos_x, m_position.y, -1e-3f - m_priority * 1e-3f));
-    //    text_entity->scale(glm::vec3(m_scale.x, m_scale.y, 1.f));
-    //}
-
-    /*
     *   Label
     */
 
@@ -183,26 +146,60 @@ namespace ui {
     }*/
 
     /*
-    *	Button
+    *	Panel
     */
 
-    Panel2D::Panel2D(const glm::vec2& p, const glm::vec2& s, const Color& c)
-        : Node2D(p, s), color(c)
+    Panel2D::Panel2D(const glm::vec2& pos, const glm::vec2& scale, const Color& col)
+        : Node2D(pos, scale), color(col)
     {
         type = Node2DType::PANEL;
 
         Material material;
         material.color = color;
-        material.shader = RendererStorage::get_shader("data/shaders/mesh_color.wgsl");
+        material.flags = MATERIAL_2D;
+        material.shader = RendererStorage::get_shader("data/shaders/mesh_color.wgsl", material);
 
         quad = new MeshInstance3D();
         quad->add_surface(RendererStorage::get_surface("quad"));
         quad->set_surface_material_override(quad->get_surface(0), material);
+
+        // set 0 as the origin
+        quad->translate(-glm::vec3(1.0f, 1.0f, 0.0f));
+
+        // apply transformations
+        quad->scale(glm::vec3(scale, 0.0f));
+        quad->translate(glm::vec3(1.0f + pos / scale * 2.0f, 0.0f));
     }
 
     void Panel2D::render()
     {
         quad->render();
+
+        Node2D::render();
+    }
+
+    /*
+    *   Text
+    */
+
+    Text2D::Text2D(const std::string& _text, const glm::vec2& pos, float scale, const Color& color)
+        : Node2D(pos, {1.0f, 1.0f}) {
+
+        type = Node2DType::TEXT;
+
+        text_entity = new TextEntity(_text);
+        //text_entity->set_scale(scale);
+        text_entity->generate_mesh(color, MATERIAL_2D);
+
+        // set 0 as the origin
+        text_entity->translate(-glm::vec3(1.0f, 1.0f, 0.0f));
+        text_entity->scale(glm::vec3(scale, scale, 0.0f));
+        text_entity->translate(glm::vec3(1.0f + pos / scale * 2.0f, 0.0f));
+    }
+
+    void Text2D::render()
+    {
+        text_entity->render();
 
         Node2D::render();
     }

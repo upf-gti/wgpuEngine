@@ -8,13 +8,13 @@
 
 #include "spdlog/spdlog.h"
 
-FlyoverCamera::FlyoverCamera() : Camera()
+FlyoverCamera::FlyoverCamera() : Camera3D()
 {
 }
 
 void FlyoverCamera::update(float delta_time)
 {
-    Camera::update(delta_time);
+    Camera3D::update(delta_time);
 
     float final_speed = speed;
     glm::vec3 move_dir = glm::vec3(0.0f, 0.0f, 0.0f);

@@ -32,7 +32,7 @@ void TextEntity::append_char(glm::vec3 pos, Character& ch)
 	}
 }
 
-void TextEntity::generate_mesh()
+void TextEntity::generate_mesh(const Color& color, eMaterialFlags flags)
 {
     assert(font || "No font set prior to draw!");
 
@@ -44,6 +44,9 @@ void TextEntity::generate_mesh()
         vertices.clear();
         surfaces.clear();
     }
+
+    this->color = color;
+    this->flags = flags;
 
     float size = (float)font_scale / font->size;
     float space = (float)font->characters[' '].xadvance;
@@ -109,6 +112,9 @@ void TextEntity::generate_mesh()
     if (font) {
         set_surface_material_diffuse(0, font->textures[0]);
     }
+
+    set_surface_material_color(0, this->color);
+    set_surface_material_flag(0, this->flags);
 
     surface->set_material_shader((RendererStorage::get_shader("data/shaders/sdf_fonts.wgsl", surface->get_material())));
 }

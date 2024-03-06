@@ -26,6 +26,18 @@ namespace ui {
         void render() override;
     };
 
+    class Text2D : public Node2D {
+    public:
+
+        TextEntity* text_entity = nullptr;
+
+        Text2D(const std::string& _text, const glm::vec2& pos, float scale = 1.f, const Color& color = colors::WHITE);
+
+        void set_text(const std::string& text) { text_entity->set_text(text); };
+
+        void render() override;
+    };
+
 	/*class UIEntity : public MeshInstance3D {
 	public:
 
@@ -53,29 +65,18 @@ namespace ui {
         bool is_hovered(glm::vec3& intersection);
 
 		void update(float delta_time) override;
-	};*/
+	};
 
-    /*class ButtonGroup2D : public Node2D {
+    class ButtonGroup2D : public Node2D {
     public:
 
         ButtonGroup2D(const glm::vec2& p, const glm::vec2& s, float number_of_widgets);
 
         float get_number_of_widgets();
         void set_number_of_widgets(float number);
-    };*/
+    };
 
-	/*class TextWidget : public UIEntity {
-	public:
-
-        TextEntity* text_entity = nullptr;
-
-		TextWidget(const std::string& _text, const glm::vec2& pos, float scale = 1.f, const Color& color = colors::WHITE);
-
-        void set_text(const std::string& text) { text_entity->set_text(text); };
-
-        void render() override;
-        void update(float delta_time) override;
-	};
+	
 
     class LabelWidget : public UIEntity {
     public:
