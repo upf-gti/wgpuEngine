@@ -2,8 +2,8 @@
 
 #include "framework/colors.h"
 #include "graphics/renderer_storage.h"
-#include "entity_mesh.h"
-#include "entity_text.h"
+#include "mesh_instance_3d.h"
+#include "text.h"
 
 #include <functional>
 #include <map>
@@ -24,7 +24,7 @@ namespace ui {
         GROUP
 	};
 
-	class UIEntity : public EntityMesh {
+	class UIEntity : public MeshInstance3D {
 	public:
 
         UIEntity();

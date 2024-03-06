@@ -1,6 +1,6 @@
 #pragma once
 
-class EntityMesh;
+class MeshInstance3D;
 
-void parse_obj(const char* obj_path, EntityMesh* entity);
-EntityMesh* parse_obj(const char* obj_path);
+void parse_obj(const char* obj_path, MeshInstance3D* entity);
+MeshInstance3D* parse_obj(const char* obj_path);

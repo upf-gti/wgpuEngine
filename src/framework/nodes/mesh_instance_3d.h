@@ -1,6 +1,6 @@
 #pragma once
 
-#include "entity.h"
+#include "node_3d.h"
 #include "graphics/material.h"
 #include "graphics/surface.h"
 
@@ -9,7 +9,7 @@
 class Shader;
 class Texture;
 
-class EntityMesh : public Entity {
+class MeshInstance3D : public Node3D {
 
 protected:
 
@@ -18,8 +18,8 @@ protected:
 
 public:
 
-	EntityMesh();
-	virtual ~EntityMesh();
+    MeshInstance3D();
+	virtual ~MeshInstance3D();
 
 	virtual void render() override;
 	virtual void update(float delta_time) override;

@@ -165,7 +165,7 @@ void Renderer::init_ibl_bind_group()
 void Renderer::prepare_instancing()
 {
     // Get all surfaces from entity meshes
-    for (EntityMesh* entity_mesh : render_entity_list)
+    for (MeshInstance3D* entity_mesh : render_entity_list)
     {
         const std::vector<Surface*>& surfaces = entity_mesh->get_surfaces();
 
@@ -246,7 +246,7 @@ void Renderer::prepare_instancing()
 
                 const Material& material = material_override ? *material_override : render_data.surface->get_material();
 
-                // Repeated EntityMesh, must be instanced
+                // Repeated MeshInstance3D, must be instanced
                 if (prev_surface == render_data.surface && prev_shader == material.shader &&
                     prev_diffuse == material.diffuse_texture &&
                     prev_normal == material.normal_texture &&
@@ -385,7 +385,7 @@ void Renderer::render_transparent(WGPURenderPassEncoder render_pass, const WGPUB
     render_render_list(RENDER_LIST_ALPHA, render_pass, render_bind_group_camera);
 }
 
-void Renderer::add_renderable(EntityMesh* entity_mesh)
+void Renderer::add_renderable(MeshInstance3D* entity_mesh)
 {
     render_entity_list.push_back(entity_mesh);
 }

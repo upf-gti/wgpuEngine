@@ -12,8 +12,8 @@
 #include "tiny_gltf.h"
 
 #include "framework/utils/utils.h"
-#include "framework/entities/entity_mesh.h"
-#include "framework/entities/entity_camera.h"
+#include "framework/nodes/mesh_instance_3d.h"
+#include "framework/nodes/camera.h"
 
 #include "graphics/texture.h"
 #include "graphics/shader.h"
@@ -94,9 +94,9 @@ void create_material_texture(tinygltf::Model& model, int tex_index, Texture** te
 
 }
 
-void read_mesh(tinygltf::Model& model, tinygltf::Mesh& mesh, Entity* entity, std::map<uint32_t, Texture*>& texture_cache) {
+void read_mesh(tinygltf::Model& model, tinygltf::Mesh& mesh, Node3D* entity, std::map<uint32_t, Texture*>& texture_cache) {
 
-    EntityMesh* entity_mesh = dynamic_cast<EntityMesh*>(entity);
+    MeshInstance3D* entity_mesh = dynamic_cast<MeshInstance3D*>(entity);
 
     if (!entity_mesh) {
         assert(0);
@@ -513,24 +513,24 @@ void read_mesh(tinygltf::Model& model, tinygltf::Mesh& mesh, Entity* entity, std
     }
 };
 
-Entity* create_node_entity(tinygltf::Node& node) {
+Node3D* create_node_entity(tinygltf::Node& node) {
 
-    Entity* new_entity = nullptr;
+    Node3D* new_node = nullptr;
 
     if (node.mesh >= 0) {
-        new_entity = new EntityMesh();
+        new_node = new MeshInstance3D();
     }
     else if (node.camera >= 0) {
-        new_entity = new EntityCamera();
+        new_node = new EntityCamera();
     }
     else {
-        new_entity = new Entity();
+        new_node = new Node3D();
     }
 
-    return new_entity;
+    return new_node;
 };
 
-void parse_model_nodes(tinygltf::Model& model, tinygltf::Node& node, Entity* entity, std::map<uint32_t, Texture*> &texture_cache) {
+void parse_model_nodes(tinygltf::Model& model, tinygltf::Node& node, Node3D* entity, std::map<uint32_t, Texture*> &texture_cache) {
 
     entity->set_name(node.name);
 
@@ -583,14 +583,14 @@ void parse_model_nodes(tinygltf::Model& model, tinygltf::Node& node, Entity* ent
     for (size_t i = 0; i < node.children.size(); i++) {
         assert((node.children[i] >= 0) && (node.children[i] < model.nodes.size()));
 
-        Entity* child_entity = create_node_entity(model.nodes[node.children[i]]);
-        entity->add_child(child_entity);
+        Node3D* child_node = create_node_entity(model.nodes[node.children[i]]);
+        entity->add_child(child_node);
 
-        parse_model_nodes(model, model.nodes[node.children[i]], child_entity, texture_cache);
+        parse_model_nodes(model, model.nodes[node.children[i]], child_node, texture_cache);
     }
 };
 
-bool parse_gltf(const char* gltf_path, std::vector<Entity*>& entities)
+bool parse_gltf(const char* gltf_path, std::vector<Node3D*>& entities)
 {
     tinygltf::TinyGLTF loader;
     tinygltf::Model model;
@@ -639,7 +639,7 @@ bool parse_gltf(const char* gltf_path, std::vector<Entity*>& entities)
 
         tinygltf::Node node = model.nodes[scene->nodes[i]];
 
-        Entity* entity = create_node_entity(node);
+        Node3D* entity = create_node_entity(node);
 
         parse_model_nodes(model, node, entity, texture_cache);
 

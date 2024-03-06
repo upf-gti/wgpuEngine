@@ -4,8 +4,6 @@
 
 #include "material.h"
 
-class EntityMesh;
-
 namespace normals {
     const glm::vec3 pX = glm::vec3(1.f, 0.f, 0.0);
     const glm::vec3 nX = glm::vec3(-1.f, 0.f, 0.0);

@@ -1,7 +1,7 @@
 #include "camera.h"
 
 #include "framework/input.h"
-#include "framework/entities/entity_mesh.h"
+#include "framework/nodes/node_3d.h"
 
 void Camera::update(float delta_time)
 {
@@ -76,7 +76,7 @@ void Camera::look_at(const glm::vec3& eye, const glm::vec3& center, const glm::v
     }
 }
 
-void Camera::look_at_entity(Entity* entity)
+void Camera::look_at_entity(Node3D* entity)
 {
     if (!entity) {
         return;

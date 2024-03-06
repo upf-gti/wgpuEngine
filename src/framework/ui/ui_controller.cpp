@@ -2,9 +2,9 @@
 
 #include "framework/utils/utils.h"
 #include "framework/input.h"
-#include "framework/entities/entity_ui.h"
 #include "framework/utils/intersections.h"
-#include "framework/entities/entity_text.h"
+#include "framework/nodes/ui.h"
+#include "framework/nodes/text.h"
 #include "framework/scene/parse_scene.h"
 
 #include "json.hpp"
@@ -30,7 +30,7 @@ namespace ui {
 		};
 
         root = new UIEntity();
-        ((Entity*)root)->set_process_children(true);
+        // ((Entity*)root)->set_process_children(true);
 
         raycast_pointer = parse_mesh("data/meshes/raycast.obj");
 
@@ -44,7 +44,7 @@ namespace ui {
         // Debug
         if (render_background)
         {
-            background = new EntityMesh();
+            background = new MeshInstance3D();
             background->add_surface(RendererStorage::get_surface("quad"));
 
             Material material;
@@ -254,7 +254,7 @@ namespace ui {
 
         UIEntity* text_widget = make_text(text, "text@" + alias, pos, colors::WHITE, 12.f);
         text_widget->m_priority = -1;
-        ((Entity*)text_widget)->set_process_children(true);
+        // ((Entity*)text_widget)->set_process_children(true);
         text_widget->center_pos = false;
 
         // Icon goes to the left of the workspace
@@ -413,7 +413,7 @@ namespace ui {
 
 		SliderWidget* slider = new SliderWidget(signal, default_value, pos, size, color, mode);
         slider->add_surface(RendererStorage::get_surface("quad"));
-        ((Entity*)slider)->set_process_children(true);
+        // ((Entity*)slider)->set_process_children(true);
 
         Material material;
 
@@ -468,7 +468,7 @@ namespace ui {
         picker->set_surface_material_override(picker->get_surface(0), material);
 
         picker->m_layer = static_cast<uint8_t>(layout_iterator.y);
-        ((Entity*)picker)->set_process_children(true);
+        // ((Entity*)picker)->set_process_children(true);
 
         if (group_opened)
             picker->m_priority = 1;
@@ -520,7 +520,7 @@ namespace ui {
         // Visibility callback...
 		bind(name, [widget = widget](const std::string& signal, void* button) {
 
-            const bool last_value = widget->get_process_children();
+            const bool last_value = true; // widget->get_process_children();
 
             for (auto& w : all_widgets)
             {
@@ -788,7 +788,7 @@ namespace ui {
 
         // Disable all widgets
         for (auto& w : widgets) {
-            w.second->set_active(false);
+            // w.second->set_active(false);
         }
 
         // Enable only widgets in list...
@@ -801,13 +801,13 @@ namespace ui {
         for (auto& it : lists[list_name]) {
             const std::string& name = it;
             auto widget = get_widget_from_name(name);
-            widget->set_active(true);
+            // widget->set_active(true);
 
             // Display also its text...
             if (widget->type == LABEL)
             {
                 widget = get_widget_from_name("text@" + name);
-                widget->set_active(true);
+                // widget->set_active(true);
             }
         }
     }

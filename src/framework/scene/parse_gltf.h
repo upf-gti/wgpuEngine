@@ -3,6 +3,6 @@
 #include <vector>
 #include <string>
 
-class Entity;
+class Node3D;
 
-bool parse_gltf(const char* gltf_path, std::vector<Entity*>& entities);
+bool parse_gltf(const char* gltf_path, std::vector<Node3D*>& entities);

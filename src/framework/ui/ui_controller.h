@@ -12,7 +12,7 @@
 #include <string>
 #include <vector>
 
-class EntityMesh;
+class MeshInstance3D;
 
 namespace ui {
     class UIEntity;
@@ -54,10 +54,10 @@ namespace ui {
 
         // Debug
         bool render_background      = false;
-        EntityMesh* background      = nullptr;
+        MeshInstance3D* background = nullptr;
         // ...
 
-		EntityMesh* raycast_pointer = nullptr;
+        MeshInstance3D* raycast_pointer = nullptr;
 
 		ui::UIEntity* root = nullptr;
 		std::map<std::string, std::vector<SignalType>> mapping_signals;

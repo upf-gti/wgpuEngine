@@ -7,13 +7,13 @@
 #include "graphics/shader.h"
 #include "graphics/renderer_storage.h"
 
-#include "framework/entities/entity_mesh.h"
+#include "framework/nodes/mesh_instance_3d.h"
 
 #include <filesystem>
 
 #include "spdlog/spdlog.h"
 
-void parse_obj(const char* obj_path, EntityMesh* entity)
+void parse_obj(const char* obj_path, MeshInstance3D* entity)
 {
     if (!entity) {
         return;
@@ -105,9 +105,9 @@ void parse_obj(const char* obj_path, EntityMesh* entity)
     new_surface->create_vertex_buffer();
 }
 
-EntityMesh* parse_obj(const char* obj_path)
+MeshInstance3D* parse_obj(const char* obj_path)
 {
-    EntityMesh* new_entity = new EntityMesh();
+    MeshInstance3D* new_entity = new MeshInstance3D();
 
     parse_obj(obj_path, new_entity);
 
