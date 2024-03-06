@@ -179,9 +179,9 @@ bool Shader::parse_preprocessor(std::string &shader_content, const std::string &
 
             dynamic_bindings[group] = binding;
 
-            shader_content.replace(line_pos, tag.length(), "");
+            shader_content.replace(line_pos, tag.length() + 1, "");
 
-            line_pos += line.length();
+            line_pos += line.length() - (tag.length() + 1);
         }
         else if (tag == "#ifdef") {
 
