@@ -44,10 +44,6 @@ namespace ui {
         // Debug
         if (render_background)
         {
-            Material material;
-            material.color = colors::RED;
-            material.shader = RendererStorage::get_shader("data/shaders/mesh_color.wgsl");
-
             background = new MeshInstance3D();
             background->add_surface(RendererStorage::get_surface("quad"));
 
