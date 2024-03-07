@@ -13,18 +13,6 @@ namespace ui {
 
  //   UIEntity* UIEntity::current_selected = nullptr;
 
- //   UIEntity::UIEntity()
- //   {
- //       uid = last_uid++;
- //       //process_children = false;
- //   }
-
- //   UIEntity::UIEntity(const glm::vec2& p, const glm::vec2& s) : m_position(p), m_scale(s)
- //   {
- //       uid = last_uid++;
- //       //process_children = false;
- //   }
-
  //   void UIEntity::set_process_children(bool value, bool force)
  //   {
  //       Button2D* bw = dynamic_cast<Button2D*>(this);
@@ -53,26 +41,6 @@ namespace ui {
  //       }
  //   }
 
-
-	//void UIEntity::update(float delta_time)
-	//{
- //       //if (!active) return;
-
- //       float row_width = center_pos ? controller->get_layer_width(this->uid) : 0.f;
- //       float pos_x = center_pos ?
- //           position_to_world(controller->get_workspace().size).x - row_width + m_scale.x
- //           : m_position.x;
-
- //       set_model(controller->get_matrix());
-	//	translate(glm::vec3(pos_x, m_position.y, -1e-3f - m_priority * 1e-3f));
- //       scale(glm::vec3(m_scale.x, m_scale.y, 1.f));
-
-	//	/*if (!process_children)
-	//		return;*/
-
- //       MeshInstance3D::update(delta_time);
-	//}
-
     /*
     *   Label
     */
@@ -86,8 +54,8 @@ namespace ui {
     *	Panel
     */
 
-    Panel2D::Panel2D(const glm::vec2& pos, const glm::vec2& size, const Color& col)
-        : Node2D(pos, size), color(col)
+    Panel2D::Panel2D(const std::string& name, const glm::vec2& pos, const glm::vec2& size, const Color& col)
+        : Node2D(name, pos, size), color(col)
     {
         type = Node2DType::PANEL;
 
@@ -103,8 +71,22 @@ namespace ui {
         quad = new MeshInstance3D();
         quad->add_surface(quad_surface);
         quad->set_surface_material_override(quad->get_surface(0), material);
+    }
 
-        quad->translate(glm::vec3(get_translation() + size * 0.50f, 0.0f));
+    void Panel2D::set_color(const Color& c)
+    {
+        color = c;
+
+        quad->set_surface_material_override_color(0, c);
+    }
+
+    void Panel2D::update(float delta_time)
+    {
+        // Move quad to node position..
+
+        quad->set_translation(glm::vec3(get_translation() + size * 0.50f, 0.0f));
+
+        Node2D::update(delta_time);
     }
 
     void Panel2D::render()
@@ -115,11 +97,95 @@ namespace ui {
     }
 
     /*
+    *	Containers
+    */
+
+    HContainer2D::HContainer2D(const std::string& name, const glm::vec2& pos, const Color& col)
+        : Panel2D(name, pos, { 0.0f, 0.0f }, col)
+    {
+        type = Node2DType::HCONTAINER;
+
+        Material material;
+        material.color = color;
+        material.flags = MATERIAL_2D;
+        material.priority = type;
+        material.shader = RendererStorage::get_shader("data/shaders/mesh_color.wgsl", material);
+
+        Surface* quad_surface = new Surface();
+        quad_surface->create_quad(size.x, size.y);
+
+        quad = new MeshInstance3D();
+        quad->add_surface(quad_surface);
+        quad->set_surface_material_override(quad->get_surface(0), material);
+    }
+
+    void HContainer2D::on_children_changed()
+    {
+        size_t num_items = get_children().size();
+        size = glm::vec2(0.0f);
+
+        for (size_t i = 0; i < num_items; ++i)
+        {
+            Node2D* node_2d = static_cast<Node2D*>(get_children()[i]);
+            node_2d->set_translation({ size.x, 0.0f });
+
+            glm::vec2 node_size = node_2d->get_size();
+            size.x += node_size.x;
+            size.y = glm::max(size.y, node_size.y);
+        }
+
+        // Recreate quad using new size and reposition accordingly
+
+        Surface* quad_surface = quad->get_surface(0);
+        quad_surface->create_quad(size.x, size.y);
+    }
+
+    VContainer2D::VContainer2D(const std::string& name, const glm::vec2& pos, const Color& col)
+        : Panel2D(name, pos, { 0.0f, 0.0f }, col)
+    {
+        type = Node2DType::VCONTAINER;
+
+        Material material;
+        material.color = color;
+        material.flags = MATERIAL_2D;
+        material.priority = type;
+        material.shader = RendererStorage::get_shader("data/shaders/mesh_color.wgsl", material);
+
+        Surface* quad_surface = new Surface();
+        quad_surface->create_quad(size.x, size.y);
+
+        quad = new MeshInstance3D();
+        quad->add_surface(quad_surface);
+        quad->set_surface_material_override(quad->get_surface(0), material);
+    }
+
+    void VContainer2D::on_children_changed()
+    {
+        size_t num_items = get_children().size();
+        size = glm::vec2(0.0f);
+
+        for (size_t i = 0; i < num_items; ++i)
+        {
+            Node2D* node_2d = static_cast<Node2D*>(get_children()[i]);
+            node_2d->set_translation({ 0.0f, size.y });
+
+            glm::vec2 node_size = node_2d->get_size();
+            size.x = glm::max(size.x, node_size.x);
+            size.y += node_size.y;
+        }
+
+        // Recreate quad using new size and reposition accordingly
+
+        Surface* quad_surface = quad->get_surface(0);
+        quad_surface->create_quad(size.x, size.y);
+    }
+
+    /*
     *   Text
     */
 
     Text2D::Text2D(const std::string& _text, const glm::vec2& pos, float scale, const Color& color)
-        : Node2D(pos, {1.0f, 1.0f}) {
+        : Node2D(_text, pos, {1.0f, 1.0f}) {
 
         type = Node2DType::TEXT;
 
@@ -144,7 +210,7 @@ namespace ui {
         : Button2D(sg, {0.0f, 0.0f}, glm::vec2(BUTTON_SIZE), is_color_button, col) { }
 
     Button2D::Button2D(const std::string& sg, const glm::vec2& pos, const glm::vec2& size, bool is_color_button, const Color& col)
-        : Node2D(pos, size), signal(sg), color(col), is_color_button(is_color_button) {
+        : Panel2D(sg, pos, size, col), signal(sg), is_color_button(is_color_button) {
 
         type = Node2DType::BUTTON;
 
@@ -190,9 +256,7 @@ namespace ui {
 
     void Button2D::render()
     {
-        quad->render();
-
-        Node2D::render();
+        Panel2D::render();
 
         /*if (mark) mark->render();
         if (label) label->render();*/
@@ -200,8 +264,6 @@ namespace ui {
 
     void Button2D::update(float delta_time)
 	{
-        quad->set_translation(glm::vec3(get_translation() + size * 0.50f, 0.0f));
-
         /*if (mark)
         {
             mark->set_model(get_model());
@@ -235,9 +297,7 @@ namespace ui {
 
         if (was_pressed)
         {
-			// controller->emit_signal(signal, (void*)this);
-
-            spdlog::info("BUTTON PRESSED");
+			Node::emit_signal(signal, (void*)this);
 
             if (selected)
             {
@@ -261,14 +321,15 @@ namespace ui {
 
         // label->update(delta_time);
 
-        Node2D::update(delta_time);
+        Panel2D::update(delta_time);
 	}
 
     /*
     *   Widget Group
     */
 
-    ButtonGroup2D::ButtonGroup2D(const glm::vec2& pos, const glm::vec2& item_size) : Node2D(pos, item_size) {
+    ButtonGroup2D::ButtonGroup2D(const glm::vec2& pos, const glm::vec2& item_size)
+        : Panel2D("button_group", pos, item_size) {
 
         type = Node2DType::GROUP;
 
@@ -306,42 +367,62 @@ namespace ui {
         RendererStorage::update_ui_widget(webgpu_context, quad, ui_data);
     }
 
-    void ButtonGroup2D::update(float delta_time)
+    void ButtonGroup2D::on_children_changed()
     {
-        Node2D::update(delta_time);
-    }
-
-    void ButtonGroup2D::render()
-    {
-        if (get_number_of_items() == 0.0f)
-            return;
-
-        quad->render();
-
-        Node2D::render();
-    }
-
-    void ButtonGroup2D::add_child(Node2D* child)
-    {
-        Node2D::add_child(child);
-
         float num_items = get_number_of_items();
-        child->set_translation({ GROUP_MARGIN + num_items * item_size.x + GROUP_MARGIN * num_items, GROUP_MARGIN });
+
+        Node2D* last_child = static_cast<Node2D*>(get_children().back());
+
+        last_child->set_translation({ GROUP_MARGIN + num_items * item_size.x + GROUP_MARGIN * num_items, GROUP_MARGIN });
 
         num_items++;
         set_number_of_items(num_items);
 
         // Recreate quad using new size and reposition accordingly
 
-        glm::vec2 group_size = { num_items * item_size.x + GROUP_MARGIN * (num_items - 1), item_size.y };
-        group_size += GROUP_MARGIN * 2.0f;
+        size = { num_items * item_size.x + GROUP_MARGIN * (num_items - 1), item_size.y };
+        size += GROUP_MARGIN * 2.0f;
 
         Surface* quad_surface = quad->get_surface(0);
-        quad_surface->create_quad(group_size.x, group_size.y);
+        quad_surface->create_quad(size.x, size.y);
+    }
 
-        glm::vec2 new_pos = { get_translation() + group_size * 0.50f};
+    /*
+    *   Widget Submenu
+    */
 
-        quad->set_translation(glm::vec3(new_pos, 0.0f));
+    ButtonSubmenu2D::ButtonSubmenu2D(const std::string& sg, const glm::vec2& pos, const glm::vec2& size)
+        : Button2D(sg, pos, size) {
+
+        Node::bind(sg, [&](const std::string& sg, void* data) {
+            const bool last_value = true; // widget->get_process_children();
+
+            for (auto& w : all_widgets)
+            {
+                ButtonSubmenu2D* b = dynamic_cast<ButtonSubmenu2D*>(w.second);
+
+                /*if (!b || b->m_layer < widget->m_layer)
+                    continue;*/
+
+                // b->set_process_children(false);
+            }
+
+            // this->set_process_children(!last_value);
+
+            spdlog::info("SUBMENU {} TOGGLED", this->get_name());
+        });
+    }
+
+    void ButtonSubmenu2D::on_children_changed()
+    {
+        float num_items = get_children().size();
+        float row_width = num_items * size.x + GROUP_MARGIN * (num_items - 1) - size.x * 0.5f - GROUP_MARGIN * 0.5f;
+
+        for (size_t i = 0; i < num_items; ++i)
+        {
+            Node2D* node_2d = static_cast<Node2D*>(get_children()[i]);
+            node_2d->set_translation({ -row_width + (i + 1) * size.x + i * GROUP_MARGIN, size.y + LAYER_MARGIN });
+        }
     }
 
 	/*
@@ -349,7 +430,7 @@ namespace ui {
 	*/
 
     Slider2D::Slider2D(const std::string& sg, float value, const glm::vec2& pos, int mode)
-        : Node2D(pos, {0.0f, 0.0f}), signal(sg), current_value(value) {
+        : Panel2D(sg, pos, {0.0f, 0.0f}), signal(sg), current_value(value) {
 
         this->type = Node2DType::SLIDER;
         this->mode = mode;
@@ -375,9 +456,7 @@ namespace ui {
 
     void Slider2D::render()
 	{
-        quad->render();
-
-        Node2D::render();
+        Panel2D::render();
 
         /*if(label) label->render();
         if(text_value) text_value->render();*/
@@ -385,8 +464,6 @@ namespace ui {
 
 	void Slider2D::update(float delta_time)
 	{
-        quad->set_translation(glm::vec3(get_translation() + size * 0.50f, 0.0f));
-
         /*if (!label || !text_value) {
             create_helpers();
         }*/
@@ -408,7 +485,7 @@ namespace ui {
             // set in range min-max
             current_value = current_value * (max_value - min_value) + min_value;
             if (step == 1.0f) current_value = std::roundf(current_value);
-			// controller->emit_signal(signal, current_value);
+			Node::emit_signal(signal, current_value);
             std::string value_as_string = std::to_string(std::ceil(current_value * 100.f) / 100.f);
             // text_value->text_entity->set_text(value_as_string.substr(0, 4));
 		}
@@ -425,7 +502,7 @@ namespace ui {
         /*label->update(delta_time);
         text_value->update(delta_time);*/
 
-        Node2D::update(delta_time);
+        Panel2D::update(delta_time);
 	}
 
     void Slider2D::set_value(float new_value)
@@ -468,7 +545,7 @@ namespace ui {
     */
 
     ColorPicker2D::ColorPicker2D(const std::string& sg, const glm::vec2& p, const glm::vec2& s, const Color& c)
-        : Node2D(p, s), signal(sg), current_color(c)
+        : Panel2D(sg, p, s, c), signal(sg)
     {
         type = Node2DType::COLOR_PICKER;
 
@@ -488,24 +565,13 @@ namespace ui {
         RendererStorage::register_ui_widget(webgpu_context, material.shader, quad, ui_data, 2);
     }
 
-    void ColorPicker2D::set_color(const Color& c)
-    {
-        current_color = c;
-
-        quad->set_surface_material_override_color(0, c);
-    }
-
     void ColorPicker2D::render()
     {
-        quad->render();
-
-        Node2D::render();
+        Panel2D::render();
     }
 
     void ColorPicker2D::update(float delta_time)
     {
-        quad->set_translation(glm::vec3(get_translation() + size * 0.50f, 0.0f));
-
         bool hovered = is_hovered();
 
         glm::vec2 local_mouse_pos = Input::get_mouse_position() - get_translation();
@@ -529,25 +595,25 @@ namespace ui {
             glm::vec3 hsv = glm::vec3(percent, 1.0f, polar.y);
 
             // Store it without conversion and intensity multiplier
-            current_color = glm::vec4(hsv2rgb(hsv), current_color.a);
+            color = glm::vec4(hsv2rgb(hsv), color.a);
             // Send the signal using the final color
-            glm::vec3 new_color = glm::pow(glm::vec3(current_color) * current_color.a, glm::vec3(2.2f));
-            // controller->emit_signal(signal, glm::vec4(new_color, current_color.a));
+            glm::vec3 new_color = glm::pow(glm::vec3(color) * color.a, glm::vec3(2.2f));
+            Node::emit_signal(signal, glm::vec4(new_color, color.a));
         }
 
         if (was_released)
         {
-            // controller->emit_signal(signal + "@released", current_color);
+            Node::emit_signal(signal + "@released", color);
         }
 
         // Update uniforms
         ui_data.is_hovered = hovered ? 1.f : 0.f;
-        ui_data.picker_color = current_color;
+        ui_data.picker_color = color;
 
         auto webgpu_context = Renderer::instance->get_webgpu_context();
 
         RendererStorage::update_ui_widget(webgpu_context, quad, ui_data);
 
-        Node2D::update(delta_time);
+        Panel2D::update(delta_time);
     }
 }

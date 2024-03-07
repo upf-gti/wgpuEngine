@@ -14,17 +14,6 @@
 
 class MeshInstance3D;
 
-using FuncEmpty = std::function<void()>;
-
-using FuncVoid = std::function<void(const std::string&, void*)>;
-using FuncFloat = std::function<void(const std::string&, float)>;
-using FuncString = std::function<void(const std::string&, std::string)>;
-using FuncVec2 = std::function<void(const std::string&, glm::vec2)>;
-using FuncVec3 = std::function<void(const std::string&, glm::vec3)>;
-using FuncVec4 = std::function<void(const std::string&, glm::vec4)>;
-
-using SignalType = std::variant <FuncFloat, FuncString, FuncVec2, FuncVec3, FuncVec4, FuncVoid>;
-
 namespace ui {
 
 	struct WorkSpaceData {
@@ -48,8 +37,6 @@ namespace ui {
         MeshInstance3D* raycast_pointer = nullptr;
 
 		Node2D* root = nullptr;
-		std::map<std::string, std::vector<SignalType>> mapping_signals;
-        std::map<uint8_t, std::vector<FuncEmpty>> controller_signals;
 
         json* mjson = nullptr;
         std::map<std::string, Node2D*> widgets;
@@ -117,36 +104,10 @@ namespace ui {
         void set_next_parent(Node2D* parent);
 
         const std::map<std::string, Node2D*>& get_widgets() { return widgets; };
-        static Node2D* get(const std::string& alias);
-        Node2D* get_widget_from_name(const std::string& alias);
+
         // float get_layer_width(unsigned int uid);
 
         void load_layout(const std::string& filename);
         void change_list_layout(const std::string& list_name);
-
-		/*
-		*	Callbacks
-		*/
-
-		void bind(const std::string& name, SignalType callback);
-        void bind(uint8_t button, FuncEmpty callback);
-
-		template<typename T>
-		bool emit_signal(const std::string& name, T value) {
-
-			auto it = mapping_signals.find(name);
-			if (it == mapping_signals.end())
-				return false;
-
-			using FuncT = std::function<void(const std::string&, T)>;
-
-			for (auto& f : mapping_signals[name])
-			{
-				if (std::holds_alternative<FuncT>(f))
-					std::get<FuncT>(f)(name, value);
-			}
-
-			return true;
-		}
 	};
 }

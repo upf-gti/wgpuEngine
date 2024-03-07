@@ -107,17 +107,6 @@ namespace ui {
         for (auto child : root->get_children()) {
             child->update(delta_time);
         }
-
-        // Update controller buttons
-
-        for (auto& it : controller_signals)
-        {
-            if (!Input::was_button_pressed(it.first))
-                continue;
-
-            for (auto& callback : it.second)
-                callback();
-        }
 	}
 
 	void Controller::process_params(glm::vec2& position, glm::vec2& size, bool skip_to_local)
@@ -634,28 +623,6 @@ namespace ui {
         dirty = true;
     }
 
-	void Controller::bind(const std::string& name, SignalType callback)
-	{
-        mapping_signals[name].push_back(callback);
-	}
-
-    void Controller::bind(uint8_t button, FuncEmpty callback)
-    {
-        controller_signals[button].push_back(callback);
-    }
-
-    Node2D* Controller::get(const std::string& alias)
-    {
-        if (all_widgets.count(alias)) return all_widgets[alias];
-        return nullptr;
-    }
-
-    Node2D* Controller::get_widget_from_name(const std::string& alias)
-    {
-        if(widgets.count(alias)) return widgets[alias];
-        return nullptr;
-    }
-
     //float Controller::get_layer_width(unsigned int uid)
     //{
     //    Node2D* widget = nullptr;
@@ -798,17 +765,17 @@ namespace ui {
             return;
         }
 
-        for (auto& it : lists[list_name]) {
-            const std::string& name = it;
-            auto widget = get_widget_from_name(name);
-            // widget->set_active(true);
+        //for (auto& it : lists[list_name]) {
+        //    const std::string& name = it;
+        //    auto widget = get_widget_from_name(name);
+        //    widget->set_active(true);
 
-            // Display also its text...
-            if (widget->get_type() == LABEL)
-            {
-                widget = get_widget_from_name("text@" + name);
-                // widget->set_active(true);
-            }
-        }
+        //    // Display also its text...
+        //    if (widget->get_type() == LABEL)
+        //    {
+        //        widget = get_widget_from_name("text@" + name);
+        //        widget->set_active(true);
+        //    }
+        //}
     }
 }

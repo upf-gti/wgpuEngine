@@ -60,7 +60,7 @@ bool Shader::load(const std::string& shader_path, const std::string& specialized
     }
 
     for (const std::string& specialization : define_specializations) {
-        spdlog::info("\t{}", specialization);
+        spdlog::trace("\t{}", specialization);
     }
 
 	shader_module = webgpu_context->create_shader_module(shader_content.c_str());

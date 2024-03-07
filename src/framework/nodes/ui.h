@@ -14,6 +14,7 @@ namespace ui {
 
     const float BUTTON_SIZE = 128.f;
     const float GROUP_MARGIN = 16.f;
+    const float LAYER_MARGIN = 24.f;
 
     class Panel2D : public Node2D {
     public:
@@ -22,9 +23,28 @@ namespace ui {
 
         MeshInstance3D* quad = nullptr;
 
-        Panel2D(const glm::vec2& p, const glm::vec2& s, const Color& c = colors::WHITE);
+        Panel2D(const std::string& name, const glm::vec2& p, const glm::vec2& s, const Color& c = colors::WHITE);
 
+        void set_color(const Color& c);
+
+        void update(float delta_time) override;
         void render() override;
+    };
+
+    class HContainer2D : public Panel2D {
+    public:
+
+        HContainer2D(const std::string& name, const glm::vec2& p, const Color& c = colors::WHITE);
+
+        void on_children_changed() override;
+    };
+
+    class VContainer2D : public Panel2D {
+    public:
+
+        VContainer2D(const std::string& name, const glm::vec2& p, const Color& c = colors::WHITE);
+
+        void on_children_changed() override;
     };
 
     class Text2D : public Node2D {
@@ -39,14 +59,12 @@ namespace ui {
         void render() override;
     };
 
-    class Button2D : public Node2D {
+    class Button2D : public Panel2D {
     public:
 
         // TextWidget* label = nullptr;
 
-        MeshInstance3D* quad = nullptr;
         std::string     signal;
-        Color           color;
 
         // ButtonWidget* mark = nullptr;
 
@@ -58,25 +76,29 @@ namespace ui {
         Button2D(const std::string& sg, bool is_color_button = false, const Color& color = colors::WHITE);
         Button2D(const std::string& sg, const glm::vec2& pos, const glm::vec2& size = glm::vec2(BUTTON_SIZE), bool is_color_button = false, const Color& color = colors::WHITE);
 
-        void render() override;
         void update(float delta_time) override;
+        void render() override;
     };
 
-    class ButtonGroup2D : public Node2D {
+    class ButtonGroup2D : public Panel2D {
     public:
 
         glm::vec2 item_size;
 
-        MeshInstance3D* quad = nullptr;
-
-        ButtonGroup2D(const glm::vec2& pos, const glm::vec2& item_size);
+        ButtonGroup2D(const glm::vec2& pos, const glm::vec2& item_size = glm::vec2(BUTTON_SIZE));
 
         float get_number_of_items();
         void set_number_of_items(float number);
 
-        void render() override;
-        void update(float delta_time) override;
-        void add_child(Node2D* child) override;
+        void on_children_changed() override;
+    };
+
+    class ButtonSubmenu2D : public Button2D {
+    public:
+
+        ButtonSubmenu2D(const std::string& sg, const glm::vec2& pos, const glm::vec2& size = glm::vec2(BUTTON_SIZE));
+
+        void on_children_changed() override;
     };
 
     enum SliderMode {
@@ -84,13 +106,12 @@ namespace ui {
         VERTICAL
     };
 
-    class Slider2D : public Node2D {
+    class Slider2D : public Panel2D {
     public:
 
         /*TextWidget* label = nullptr;
         TextWidget* text_value = nullptr;*/
 
-        MeshInstance3D* quad = nullptr;
         std::string     signal;
 
         int mode = SliderMode::HORIZONTAL;
@@ -102,26 +123,22 @@ namespace ui {
 
         Slider2D(const std::string& sg, float v, const glm::vec2& pos, int mode = SliderMode::VERTICAL);
 
-        void render() override;
         void update(float delta_time) override;
+        void render() override;
 
         void set_value(float new_value);
         void create_helpers();
     };
 
-    class ColorPicker2D : public Node2D {
+    class ColorPicker2D : public Panel2D {
     public:
 
-        MeshInstance3D* quad = nullptr;
         std::string     signal;
-        Color           current_color;
 
         ColorPicker2D(const std::string& sg, const glm::vec2& p, const glm::vec2& s, const Color& c);
 
-        void set_color(const Color& c);
-
-        void render() override;
         void update(float delta_time) override;
+        void render() override;
     };
 
 	/*class UIEntity : public MeshInstance3D {

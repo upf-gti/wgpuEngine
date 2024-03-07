@@ -6,8 +6,16 @@
 
 unsigned int Node2D::last_uid = 0;
 
-Node2D::Node2D(const glm::vec2& p, const glm::vec2& s) : size(s)
+std::map<std::string, Node2D*> Node2D::all_widgets;
+
+Node2D::Node2D(const std::string& n, const glm::vec2& p, const glm::vec2& s) : size(s)
 {
+    uid = last_uid++;
+
+    name = n;
+
+    all_widgets[name] = this;
+
     set_translation(p);
 }
 
@@ -27,6 +35,8 @@ void Node2D::add_child(Node2D* child)
 
     child->parent = this;
     children.push_back(child);
+
+    on_children_changed();
 }
 
 void Node2D::remove_child(Node2D* child)
@@ -40,6 +50,8 @@ void Node2D::remove_child(Node2D* child)
 
     children.erase(it);
     child->parent = nullptr;
+
+    on_children_changed();
 }
 
 void Node2D::render()
@@ -120,6 +132,11 @@ glm::mat3x3 Node2D::get_rotation() const
     return trans * inv;
 }
 
+glm::vec2 Node2D::get_size() const
+{
+    return size;
+}
+
 bool Node2D::is_hovered()
 {
     glm::vec2 mouse_pos = Input::get_mouse_position();
@@ -128,4 +145,12 @@ bool Node2D::is_hovered()
     glm::vec2 max = min + size;
 
     return mouse_pos.x >= min.x && mouse_pos.y >= min.y && mouse_pos.x <= max.x && mouse_pos.y <= max.y;
+}
+
+Node2D* Node2D::get_widget_from_name(const std::string& name)
+{
+    if (all_widgets.count(name)) {
+        return all_widgets[name];
+    }
+    return nullptr;
 }

@@ -1,5 +1,11 @@
 #include "node.h"
+
+#include "framework/input.h"
+
 #include "spdlog/spdlog.h"
+
+std::map<std::string, std::vector<SignalType>> Node::mapping_signals;
+std::map<uint8_t, std::vector<FuncEmpty>> Node::controller_signals;
 
 void Node::render()
 {
@@ -34,4 +40,28 @@ AABB Node::get_aabb() const
     }
 
     return new_aabb;
+}
+
+void Node::bind(const std::string& name, SignalType callback)
+{
+    mapping_signals[name].push_back(callback);
+}
+
+void Node::bind(uint8_t button, FuncEmpty callback)
+{
+    controller_signals[button].push_back(callback);
+}
+
+void Node::check_controller_signals()
+{
+    // Update controller buttons
+
+    for (auto& it : controller_signals)
+    {
+        if (!Input::was_button_pressed(it.first))
+            continue;
+
+        for (auto& callback : it.second)
+            callback();
+    }
 }
