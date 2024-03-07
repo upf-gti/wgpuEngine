@@ -100,11 +100,9 @@ namespace ui {
     *	Containers
     */
 
-    HContainer2D::HContainer2D(const std::string& name, const glm::vec2& pos, const Color& col)
+    Container2D::Container2D(const std::string& name, const glm::vec2& pos, const Color& col)
         : Panel2D(name, pos, { 0.0f, 0.0f }, col)
     {
-        type = Node2DType::HCONTAINER;
-
         Material material;
         material.color = color;
         material.flags = MATERIAL_2D;
@@ -117,67 +115,73 @@ namespace ui {
         quad = new MeshInstance3D();
         quad->add_surface(quad_surface);
         quad->set_surface_material_override(quad->get_surface(0), material);
+
+        padding = glm::vec2(GROUP_MARGIN);
+        item_margin = glm::vec2(GROUP_MARGIN);
+    }
+
+    void Container2D::on_children_changed()
+    {
+        // Recreate quad using new size and reposition accordingly
+
+        Surface* quad_surface = quad->get_surface(0);
+        quad_surface->create_quad(size.x, size.y);
+
+        Node2D::on_children_changed();
+    }
+
+    HContainer2D::HContainer2D(const std::string& name, const glm::vec2& pos, const Color& col)
+        : Container2D(name, pos, col)
+    {
+        type = Node2DType::HCONTAINER;
     }
 
     void HContainer2D::on_children_changed()
     {
-        size_t num_items = get_children().size();
+        size_t child_count = get_children().size();
         size = glm::vec2(0.0f);
 
-        for (size_t i = 0; i < num_items; ++i)
+        for (size_t i = 0; i < child_count; ++i)
         {
             Node2D* node_2d = static_cast<Node2D*>(get_children()[i]);
-            node_2d->set_translation({ size.x, 0.0f });
+            node_2d->set_translation(padding + glm::vec2(size.x + item_margin.x * static_cast<float>(i), 0.0f));
 
             glm::vec2 node_size = node_2d->get_size();
             size.x += node_size.x;
             size.y = glm::max(size.y, node_size.y);
         }
 
-        // Recreate quad using new size and reposition accordingly
+        size += padding * 2.0f;
+        size.x += item_margin.x * static_cast<float>(child_count - 1);
 
-        Surface* quad_surface = quad->get_surface(0);
-        quad_surface->create_quad(size.x, size.y);
+        Container2D::on_children_changed();
     }
 
     VContainer2D::VContainer2D(const std::string& name, const glm::vec2& pos, const Color& col)
-        : Panel2D(name, pos, { 0.0f, 0.0f }, col)
+        : Container2D(name, pos, col)
     {
         type = Node2DType::VCONTAINER;
-
-        Material material;
-        material.color = color;
-        material.flags = MATERIAL_2D;
-        material.priority = type;
-        material.shader = RendererStorage::get_shader("data/shaders/mesh_color.wgsl", material);
-
-        Surface* quad_surface = new Surface();
-        quad_surface->create_quad(size.x, size.y);
-
-        quad = new MeshInstance3D();
-        quad->add_surface(quad_surface);
-        quad->set_surface_material_override(quad->get_surface(0), material);
     }
 
     void VContainer2D::on_children_changed()
     {
-        size_t num_items = get_children().size();
+        size_t child_count = get_children().size();
         size = glm::vec2(0.0f);
 
-        for (size_t i = 0; i < num_items; ++i)
+        for (size_t i = 0; i < child_count; ++i)
         {
             Node2D* node_2d = static_cast<Node2D*>(get_children()[i]);
-            node_2d->set_translation({ 0.0f, size.y });
+            node_2d->set_translation(padding + glm::vec2(0.0f, size.y + item_margin.y * static_cast<float>(i)));
 
             glm::vec2 node_size = node_2d->get_size();
             size.x = glm::max(size.x, node_size.x);
             size.y += node_size.y;
         }
 
-        // Recreate quad using new size and reposition accordingly
+        size += padding * 2.0f;
+        size.y += item_margin.y * static_cast<float>(child_count - 1);
 
-        Surface* quad_surface = quad->get_surface(0);
-        quad_surface->create_quad(size.x, size.y);
+        Container2D::on_children_changed();
     }
 
     /*
@@ -328,26 +332,19 @@ namespace ui {
     *   Widget Group
     */
 
-    ButtonGroup2D::ButtonGroup2D(const glm::vec2& pos, const glm::vec2& item_size)
-        : Panel2D("button_group", pos, item_size) {
+    ButtonGroup2D::ButtonGroup2D(const glm::vec2& pos, const Color& color)
+        : HContainer2D("button_group", pos, color) {
 
         type = Node2DType::GROUP;
-
-        this->item_size = item_size;
 
         ui_data.num_group_items = 0;
 
         Material material;
-        material.color = colors::GREEN;
+        material.color = color;
         material.flags = MATERIAL_2D;
         material.priority = type;
         material.shader = RendererStorage::get_shader("data/shaders/ui/ui_group.wgsl", material);
 
-        Surface* quad_surface = new Surface();
-        quad_surface->create_quad(0.0f, 0.0f);
-
-        quad = new MeshInstance3D();
-        quad->add_surface(quad_surface);
         quad->set_surface_material_override(quad->get_surface(0), material);
 
         auto webgpu_context = Renderer::instance->get_webgpu_context();
@@ -369,22 +366,9 @@ namespace ui {
 
     void ButtonGroup2D::on_children_changed()
     {
-        float num_items = get_number_of_items();
+        HContainer2D::on_children_changed();
 
-        Node2D* last_child = static_cast<Node2D*>(get_children().back());
-
-        last_child->set_translation({ GROUP_MARGIN + num_items * item_size.x + GROUP_MARGIN * num_items, GROUP_MARGIN });
-
-        num_items++;
-        set_number_of_items(num_items);
-
-        // Recreate quad using new size and reposition accordingly
-
-        size = { num_items * item_size.x + GROUP_MARGIN * (num_items - 1), item_size.y };
-        size += GROUP_MARGIN * 2.0f;
-
-        Surface* quad_surface = quad->get_surface(0);
-        quad_surface->create_quad(size.x, size.y);
+        set_number_of_items(static_cast<float>(get_children().size()));
     }
 
     /*
@@ -423,6 +407,8 @@ namespace ui {
             Node2D* node_2d = static_cast<Node2D*>(get_children()[i]);
             node_2d->set_translation({ -row_width + (i + 1) * size.x + i * GROUP_MARGIN, size.y + LAYER_MARGIN });
         }
+
+        Node2D::on_children_changed();
     }
 
 	/*

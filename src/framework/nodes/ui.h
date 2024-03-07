@@ -31,7 +31,18 @@ namespace ui {
         void render() override;
     };
 
-    class HContainer2D : public Panel2D {
+    class Container2D : public Panel2D {
+    public:
+
+        glm::vec2 padding;
+        glm::vec2 item_margin;
+
+        Container2D(const std::string& name, const glm::vec2& p, const Color& c = colors::WHITE);
+
+        void on_children_changed() override;
+    };
+
+    class HContainer2D : public Container2D {
     public:
 
         HContainer2D(const std::string& name, const glm::vec2& p, const Color& c = colors::WHITE);
@@ -39,7 +50,7 @@ namespace ui {
         void on_children_changed() override;
     };
 
-    class VContainer2D : public Panel2D {
+    class VContainer2D : public Container2D {
     public:
 
         VContainer2D(const std::string& name, const glm::vec2& p, const Color& c = colors::WHITE);
@@ -80,12 +91,10 @@ namespace ui {
         void render() override;
     };
 
-    class ButtonGroup2D : public Panel2D {
+    class ButtonGroup2D : public HContainer2D {
     public:
 
-        glm::vec2 item_size;
-
-        ButtonGroup2D(const glm::vec2& pos, const glm::vec2& item_size = glm::vec2(BUTTON_SIZE));
+        ButtonGroup2D(const glm::vec2& pos, const Color& color = colors::GREEN);
 
         float get_number_of_items();
         void set_number_of_items(float number);

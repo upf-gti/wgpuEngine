@@ -48,6 +48,7 @@ public:
 
     virtual void add_child(Node2D* child);
     virtual void remove_child(Node2D* child);
+    virtual void on_children_changed();
 
 	virtual void render();
 	virtual void update(float delta_time);
@@ -71,6 +72,4 @@ public:
     void set_model(const glm::mat3x3& _model);
 
     static Node2D* get_widget_from_name(const std::string& name);
-
-    virtual void on_children_changed() {};
 };
