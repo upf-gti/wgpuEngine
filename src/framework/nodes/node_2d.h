@@ -29,14 +29,12 @@ protected:
 
     static std::map<std::string, Node2D*> all_widgets;
 
+    uint32_t    uid = 0;
+    uint8_t     type = Node2DType::UNDEFINED;
+    Node2D*     parent = nullptr;
+    bool        visibility = true;
 	glm::mat3x3 model = glm::mat3x3(1.0f);
-
-    glm::vec2 size;
-
-    Node2D* parent = nullptr;
-
-    unsigned int uid = 0;
-    uint8_t type = Node2DType::UNDEFINED;
+    glm::vec2   size = { 0.0f, 0.0f };
 
     RendererStorage::sUIData ui_data;
 
@@ -65,11 +63,13 @@ public:
     glm::mat3x3 get_rotation() const;
     glm::vec2 get_size() const;
     uint8_t get_type() const;
+    bool get_visibility() const;
 
     bool is_hovered();
 
 	void set_translation(const glm::vec2& translation);
     void set_model(const glm::mat3x3& _model);
+    void set_visibility(bool value);
 
     static Node2D* get_widget_from_name(const std::string& name);
 };

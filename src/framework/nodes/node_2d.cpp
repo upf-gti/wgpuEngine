@@ -64,11 +64,17 @@ void Node2D::on_children_changed()
 
 void Node2D::render()
 {
+    if (!visibility)
+        return;
+
     Node::render();
 }
 
 void Node2D::update(float delta_time)
 {
+    if (!visibility)
+        return;
+
     Node::update(delta_time);
 }
 
@@ -95,6 +101,11 @@ void Node2D::scale(glm::vec2 scale)
 void Node2D::set_model(const glm::mat3x3& _model)
 {
     model = _model;
+}
+
+void Node2D::set_visibility(bool value)
+{
+    visibility = value;
 }
 
 void Node2D::set_translation(const glm::vec2& translation)
@@ -127,6 +138,11 @@ glm::mat3x3 Node2D::get_global_model() const
 uint8_t Node2D::get_type() const
 {
     return type;
+}
+
+bool Node2D::get_visibility() const
+{
+    return visibility;
 }
 
 glm::mat3x3 Node2D::get_rotation() const

@@ -21,6 +21,8 @@ namespace ui {
 
         Color color;
 
+        bool centered = false;
+
         MeshInstance3D* quad = nullptr;
 
         Panel2D(const std::string& name, const glm::vec2& p, const glm::vec2& s, const Color& c = colors::WHITE);
@@ -91,10 +93,10 @@ namespace ui {
         void render() override;
     };
 
-    class ButtonGroup2D : public HContainer2D {
+    class ItemGroup2D : public HContainer2D {
     public:
 
-        ButtonGroup2D(const glm::vec2& pos, const Color& color = colors::GREEN);
+        ItemGroup2D(const glm::vec2& pos, const Color& color = colors::GREEN);
 
         float get_number_of_items();
         void set_number_of_items(float number);
@@ -105,9 +107,11 @@ namespace ui {
     class ButtonSubmenu2D : public Button2D {
     public:
 
+        HContainer2D* box = nullptr;
+
         ButtonSubmenu2D(const std::string& sg, const glm::vec2& pos, const glm::vec2& size = glm::vec2(BUTTON_SIZE));
 
-        void on_children_changed() override;
+        void add_child(Node2D* child) override;
     };
 
     enum SliderMode {
@@ -150,35 +154,7 @@ namespace ui {
         void render() override;
     };
 
-	/*class UIEntity : public MeshInstance3D {
-	public:
-
-        UIEntity();
-        UIEntity(const glm::vec2& p, const glm::vec2& s = {1.f, 1.f});
-
-        static UIEntity* current_selected;
-
-        Controller* controller = nullptr;
-
-        bool is_submenu         = false;
-        bool center_pos         = true;
-
-        glm::vec2   m_position = { 0.f, 0.f };
-        glm::vec2   m_scale = { 1.f, 1.f };
-
-        uint8_t     m_layer = 0;
-		int         m_priority = 0;
-        void set_process_children(bool value, bool force = false);
-        void set_selected(bool value);
-        void set_layer(uint8_t l) { m_layer = l; };
-        void set_ui_priority(int p) { m_priority = p; }
-
-        const glm::vec2 position_to_world(const glm::vec2& workspace_size) { return m_position + workspace_size - m_scale;  };
-
-		void update(float delta_time) override;
-	};
-	
-
+	/*
     class LabelWidget : public UIEntity {
     public:
 

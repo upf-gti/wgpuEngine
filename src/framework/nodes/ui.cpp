@@ -11,45 +11,6 @@
 
 namespace ui {
 
- //   UIEntity* UIEntity::current_selected = nullptr;
-
- //   void UIEntity::set_process_children(bool value, bool force)
- //   {
- //       Button2D* bw = dynamic_cast<Button2D*>(this);
- //       if (bw && bw->is_submenu) {
- //           //process_children = value;
- //           selected = value;
- //       }
-
- //       // Only hiding is recursive...
- //       if (!value || force)
- //       {
- //           for (auto c : children)
- //               static_cast<UIEntity*>(c)->set_process_children(value, force);
- //       }
- //   }
-
- //   void UIEntity::set_selected(bool value)
- //   {
- //       selected = value;
-
- //       // Only unselecting is recursive...
- //       if (!value)
- //       {
- //           for (auto c : children)
- //               static_cast<UIEntity*>(c)->set_selected(value);
- //       }
- //   }
-
-    /*
-    *   Label
-    */
-
-    /*LabelWidget::LabelWidget(const std::string& p_text, const glm::vec2& p, const glm::vec2& s) : UIEntity(p, s), text(p_text) {
-        type = eWidgetType::LABEL;
-        center_pos = false;
-    }*/
-
     /*
     *	Panel
     */
@@ -82,15 +43,28 @@ namespace ui {
 
     void Panel2D::update(float delta_time)
     {
+        if (!visibility)
+            return;
+
         // Move quad to node position..
 
-        quad->set_translation(glm::vec3(get_translation() + size * 0.50f, 0.0f));
+        glm::vec2 t = get_translation() + size * 0.50f;
+
+        if (centered && parent) {
+            auto psize = parent->get_size();
+            t.x = get_translation().x + psize.x * 0.5f;
+        }
+
+        quad->set_translation(glm::vec3(t, 0.0f));
 
         Node2D::update(delta_time);
     }
 
     void Panel2D::render()
     {
+        if (!visibility)
+            return;
+
         quad->render();
 
         Node2D::render();
@@ -332,7 +306,7 @@ namespace ui {
     *   Widget Group
     */
 
-    ButtonGroup2D::ButtonGroup2D(const glm::vec2& pos, const Color& color)
+    ItemGroup2D::ItemGroup2D(const glm::vec2& pos, const Color& color)
         : HContainer2D("button_group", pos, color) {
 
         type = Node2DType::GROUP;
@@ -351,12 +325,12 @@ namespace ui {
         RendererStorage::register_ui_widget(webgpu_context, material.shader, quad, ui_data, 2);
     }
 
-    float ButtonGroup2D::get_number_of_items()
+    float ItemGroup2D::get_number_of_items()
     {
         return ui_data.num_group_items;
     }
 
-    void ButtonGroup2D::set_number_of_items(float number)
+    void ItemGroup2D::set_number_of_items(float number)
     {
         ui_data.num_group_items = number;
 
@@ -364,7 +338,7 @@ namespace ui {
         RendererStorage::update_ui_widget(webgpu_context, quad, ui_data);
     }
 
-    void ButtonGroup2D::on_children_changed()
+    void ItemGroup2D::on_children_changed()
     {
         HContainer2D::on_children_changed();
 
@@ -378,37 +352,34 @@ namespace ui {
     ButtonSubmenu2D::ButtonSubmenu2D(const std::string& sg, const glm::vec2& pos, const glm::vec2& size)
         : Button2D(sg, pos, size) {
 
-        Node::bind(sg, [&](const std::string& sg, void* data) {
-            const bool last_value = true; // widget->get_process_children();
+        box = new ui::HContainer2D("h_container", glm::vec2(0.0f, size.y + GROUP_MARGIN));
+        box->set_visibility(false);
+
+        // box->centered = true;
+
+        Node2D::add_child(box);
+
+        Node::bind(sg, [box = box](const std::string& sg, void* data) {
+
+            const bool last_value = box->get_visibility();
 
             for (auto& w : all_widgets)
             {
-                ButtonSubmenu2D* b = dynamic_cast<ButtonSubmenu2D*>(w.second);
+                ButtonSubmenu2D* submenu = dynamic_cast<ButtonSubmenu2D*>(w.second);
 
-                /*if (!b || b->m_layer < widget->m_layer)
-                    continue;*/
+                if (!submenu) // || b->m_layer < widget->m_layer)
+                    continue;
 
-                // b->set_process_children(false);
+                submenu->box->set_visibility(false);
             }
 
-            // this->set_process_children(!last_value);
-
-            spdlog::info("SUBMENU {} TOGGLED", this->get_name());
+            box->set_visibility(!last_value);
         });
     }
 
-    void ButtonSubmenu2D::on_children_changed()
+    void ButtonSubmenu2D::add_child(Node2D* child)
     {
-        float num_items = get_children().size();
-        float row_width = num_items * size.x + GROUP_MARGIN * (num_items - 1) - size.x * 0.5f - GROUP_MARGIN * 0.5f;
-
-        for (size_t i = 0; i < num_items; ++i)
-        {
-            Node2D* node_2d = static_cast<Node2D*>(get_children()[i]);
-            node_2d->set_translation({ -row_width + (i + 1) * size.x + i * GROUP_MARGIN, size.y + LAYER_MARGIN });
-        }
-
-        Node2D::on_children_changed();
+        box->add_child(child);
     }
 
 	/*
@@ -495,12 +466,12 @@ namespace ui {
     {
         /*if (!text_value) {
             create_helpers();
-        }
+        }*/
 
         current_value = glm::clamp(new_value, min_value, max_value);
         if (step == 1.0f) current_value = std::roundf(current_value);
         std::string value_as_string = std::to_string(std::ceil(current_value * 100.f) / 100.f);
-        text_value->text_entity->set_text(value_as_string.substr(0, 4));*/
+        // text_value->text_entity->set_text(value_as_string.substr(0, 4));
     }
 
     void Slider2D::create_helpers()
@@ -602,4 +573,13 @@ namespace ui {
 
         Panel2D::update(delta_time);
     }
+
+    /*
+    *   Label
+    */
+
+    /*LabelWidget::LabelWidget(const std::string& p_text, const glm::vec2& p, const glm::vec2& s) : UIEntity(p, s), text(p_text) {
+        type = eWidgetType::LABEL;
+        center_pos = false;
+    }*/
 }
