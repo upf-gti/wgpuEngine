@@ -1,12 +1,14 @@
 #include "node_2d.h"
+
+#include "framework/input.h"
+
 #include "spdlog/spdlog.h"
 
 unsigned int Node2D::last_uid = 0;
 
-Node2D::Node2D(const glm::vec2& p, const glm::vec2& s)
+Node2D::Node2D(const glm::vec2& p, const glm::vec2& s) : size(s)
 {
     set_translation(p);
-    scale(s);
 }
 
 void Node2D::add_child(Node2D* child)
@@ -116,4 +118,14 @@ glm::mat3x3 Node2D::get_rotation() const
     glm::inverse(model);
 
     return trans * inv;
+}
+
+bool Node2D::is_hovered()
+{
+    glm::vec2 mouse_pos = Input::get_mouse_position();
+
+    glm::vec2 min = get_translation();
+    glm::vec2 max = min + size;
+
+    return mouse_pos.x >= min.x && mouse_pos.y >= min.y && mouse_pos.x <= max.x && mouse_pos.y <= max.y;
 }

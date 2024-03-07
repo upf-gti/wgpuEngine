@@ -83,8 +83,8 @@ std::vector<InterleavedData> Surface::generate_quad(float w, float h, const glm:
 {
     InterleavedData points[4];
 
-    glm::vec3 vX = get_perpendicular(normal);
-    glm::vec3 vY = glm::cross(normal, vX);
+    glm::vec3 vY = get_perpendicular(normal);
+    glm::vec3 vX = glm::cross(normal, vY);
     glm::vec3 delta1 = w * vX;
     glm::vec3 delta2 = h * vY;
 
@@ -99,7 +99,7 @@ std::vector<InterleavedData> Surface::generate_quad(float w, float h, const glm:
             auto vtx = &points[counter++];
             vtx->position = position + 2.f * (orig + float(i1) * delta1 - float(i2) * delta2);
             vtx->normal = normal;
-            vtx->uv = glm::vec2(i2, i1);
+            vtx->uv = 1.0f - glm::vec2(i1, i2);
         }
     }
 
@@ -128,7 +128,7 @@ void Surface::create_quad(float w, float h, const glm::vec3& color)
         wgpuBufferDestroy(vertex_buffer);
     }
 
-    vertices = generate_quad(w, h, glm::vec3(0.f), normals::pZ, color);
+    vertices = generate_quad(w * 0.5f, h * 0.5f, glm::vec3(0.f), normals::pZ, color);
 
     spdlog::trace("Quad mesh created ({} vertices)", vertices.size());
 

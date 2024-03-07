@@ -7,6 +7,8 @@
 #include "graphics/renderer.h"
 #include "graphics/webgpu_context.h"
 
+#include "spdlog/spdlog.h"
+
 namespace ui {
 
  //   UIEntity* UIEntity::current_selected = nullptr;
@@ -51,41 +53,6 @@ namespace ui {
  //       }
  //   }
 
- //   bool UIEntity::is_hovered(glm::vec3& intersection)
- //   {
-
- //       const WorkSpaceData& workspace = controller->get_workspace();
-
- //       /*
- //       *	Manage intersection
- //       */
-
- //       uint8_t hand = workspace.hand;
- //       uint8_t select_hand = workspace.select_hand;
- //       uint8_t pose = workspace.root_pose;
-
- //       // Ray
- //       glm::vec3 ray_origin = Input::get_controller_position(select_hand, pose);
- //       glm::mat4x4 select_hand_pose = Input::get_controller_pose(select_hand, pose);
- //       glm::vec3 ray_direction = get_front(select_hand_pose);
-
- //       // Quad
- //       glm::vec3 quad_position = get_local_translation();
- //       glm::quat quad_rotation = glm::quat_cast(controller->get_matrix());
-
- //       float collision_dist;
-
- //       // Check hover with slider background to move thumb
- //       return intersection::ray_quad(
- //           ray_origin,
- //           ray_direction,
- //           quad_position,
- //           m_scale,
- //           quad_rotation,
- //           intersection,
- //           collision_dist
- //       );
- //   }
 
 	//void UIEntity::update(float delta_time)
 	//{
@@ -107,36 +74,6 @@ namespace ui {
 	//}
 
     /*
-    *   Widget Group
-    */
-
-    //ButtonGroup2D::ButtonGroup2D(const glm::vec2& p, const glm::vec2& s, float n) : Node2D(p, s) {
-
-    //    //process_children = true;
-    //    type = eWidgetType::GROUP;
-
-    //    ui_data.num_group_items = n;
-    //    auto webgpu_context = Renderer::instance->get_webgpu_context();
-    //    RendererStorage::register_ui_widget(webgpu_context, RendererStorage::get_shader("data/shaders/ui/ui_group.wgsl"), this, ui_data, 2);
-    //}
-
-    //float ButtonGroup2D::get_number_of_widgets()
-    //{
-    //    return ui_data.num_group_items;
-    //}
-
-    //void ButtonGroup2D::set_number_of_widgets(float number)
-    //{
-    //    // Set new size and pos
-    //    m_scale.x = (BUTTON_SIZE * number + (number - 1.f) * X_GROUP_MARGIN + X_MARGIN * 2.f) *
-    //        controller->global_scale;
-
-    //    m_position.x += (BUTTON_SIZE + X_GROUP_MARGIN) * controller->global_scale;
-
-    //    ui_data.num_group_items = number;
-    //}
-
-    /*
     *   Label
     */
 
@@ -149,26 +86,25 @@ namespace ui {
     *	Panel
     */
 
-    Panel2D::Panel2D(const glm::vec2& pos, const glm::vec2& scale, const Color& col)
-        : Node2D(pos, scale), color(col)
+    Panel2D::Panel2D(const glm::vec2& pos, const glm::vec2& size, const Color& col)
+        : Node2D(pos, size), color(col)
     {
         type = Node2DType::PANEL;
 
         Material material;
         material.color = color;
         material.flags = MATERIAL_2D;
+        material.priority = type;
         material.shader = RendererStorage::get_shader("data/shaders/mesh_color.wgsl", material);
 
+        Surface* quad_surface = new Surface();
+        quad_surface->create_quad(size.x, size.y);
+
         quad = new MeshInstance3D();
-        quad->add_surface(RendererStorage::get_surface("quad"));
+        quad->add_surface(quad_surface);
         quad->set_surface_material_override(quad->get_surface(0), material);
 
-        // set 0 as the origin
-        quad->translate(-glm::vec3(1.0f, 1.0f, 0.0f));
-
-        // apply transformations
-        quad->scale(glm::vec3(scale, 0.0f));
-        quad->translate(glm::vec3(1.0f + pos / scale * 2.0f, 0.0f));
+        quad->translate(glm::vec3(get_translation() + size * 0.50f, 0.0f));
     }
 
     void Panel2D::render()
@@ -188,13 +124,9 @@ namespace ui {
         type = Node2DType::TEXT;
 
         text_entity = new TextEntity(_text);
-        //text_entity->set_scale(scale);
+        text_entity->set_scale(scale);
         text_entity->generate_mesh(color, MATERIAL_2D);
-
-        // set 0 as the origin
-        text_entity->translate(-glm::vec3(1.0f, 1.0f, 0.0f));
-        text_entity->scale(glm::vec3(scale, scale, 0.0f));
-        text_entity->translate(glm::vec3(1.0f + pos / scale * 2.0f, 0.0f));
+        text_entity->translate(glm::vec3(get_translation(), 0.0f));
     }
 
     void Text2D::render()
@@ -208,276 +140,414 @@ namespace ui {
     *	Button
     */
 
- //   Button2D::Button2D(const std::string& sg, const glm::vec2& p, const glm::vec2& s, const Color& c, bool is_color_button)
- //       : Node2D(), signal(sg), color(c), is_color_button(is_color_button) {
+    Button2D::Button2D(const std::string& sg, bool is_color_button, const Color& col)
+        : Button2D(sg, {0.0f, 0.0f}, glm::vec2(BUTTON_SIZE), is_color_button, col) { }
 
- //       type = Node2DType::BUTTON;
+    Button2D::Button2D(const std::string& sg, const glm::vec2& pos, const glm::vec2& size, bool is_color_button, const Color& col)
+        : Node2D(pos, size), signal(sg), color(col), is_color_button(is_color_button) {
 
- //       std::vector<std::string> define_specializations;
+        type = Node2DType::BUTTON;
 
- //       if (!is_color_button) {
- //           define_specializations.push_back("USES_TEXTURE");
- //       }
+        Material material;
+        material.color = color;
+        material.flags = MATERIAL_2D;
+        material.priority = type;
 
- //       auto webgpu_context = Renderer::instance->get_webgpu_context();
- //       RendererStorage::register_ui_widget(webgpu_context,
- //           RendererStorage::get_shader("data/shaders/ui/ui_button.wgsl", define_specializations), this, ui_data, is_color_button ? 2 : 3);
- //   }
+        std::vector<std::string> define_specializations;
 
- //   void Button2D::render()
- //   {
- //       Node2D::render();
- //       /*if (mark) mark->render();
- //       if (label) label->render();*/
- //   }
+        if (!is_color_button) {
+            define_specializations.push_back("USES_TEXTURE");
+            material.diffuse_texture = RendererStorage::get_texture("data/textures/material_samples.png");
+            material.flags |= MATERIAL_DIFFUSE;
+        }
 
- //   void Button2D::update(float delta_time)
-	//{
- //       Node2D::update(delta_time);
+        material.shader = RendererStorage::get_shader("data/shaders/ui/ui_button.wgsl", material, define_specializations);
 
- //       /*if (mark)
- //       {
- //           mark->set_model(get_model());
- //           mark->translate(glm::vec3(0.7f, 0.7f, -1e-3f));
- //           mark->scale(glm::vec3(0.35f, 0.35f, 1.0f));
- //       }*/
+        Surface* quad_surface = new Surface();
+        quad_surface->create_quad(size.x, size.y);
 
-	//	const WorkSpaceData& workspace = controller->get_workspace();
+        quad = new MeshInstance3D();
+        quad->add_surface(quad_surface);
+        quad->set_surface_material_override(quad->get_surface(0), material);
 
-	//	// Check hover (intersects)
- //       glm::vec3 intersection;
- //       bool hovered = false;// is_hovered(intersection);
+        auto webgpu_context = Renderer::instance->get_webgpu_context();
+        RendererStorage::register_ui_widget(webgpu_context, material.shader, quad, ui_data, is_color_button ? 2 : 3);
 
- //       /*if (!label)
- //       {
- //           float magic = 0.002125f;
- //           label = new TextWidget(signal, { m_position.x - signal.length() * magic, m_position.y - m_scale.y * 0.75f }, 0.01f, colors::WHITE);
- //           label->m_priority = 2;
- //           label->uid = uid;
- //           label->controller = controller;
- //       }*/
+        // Submenu icon..
+        {
+            /*Button2D* submenu_mark = new Button2D(sg + "@mark", {0.f, 0.f}, {0.f, 0.f}, colors::WHITE);
+            submenu_mark->add_surface(RendererStorage::get_surface("quad"));
+            
+            Material material;
+            material.diffuse_texture = RendererStorage::get_texture("data/textures/submenu_mark.png");
+            material.flags |= MATERIAL_DIFFUSE | MATERIAL_2D;
+            material.color = colors::WHITE;
+            material.shader = RendererStorage::get_shader("data/shaders/ui/ui_texture.wgsl", material);
+            
+            submenu_mark->set_surface_material_override(mark->get_surface(0), material);*/
+        }
+    }
 
- //       // label->set_active(hovered);
+    void Button2D::render()
+    {
+        quad->render();
 
- //       // Used to disable presses and active hovers
- //       hovered &= (!ui_data.is_button_disabled);
+        Node2D::render();
 
-	//	/*
-	//	*	Create mesh and render button
-	//	*/
+        /*if (mark) mark->render();
+        if (label) label->render();*/
+    }
 
-	//	bool is_pressed = hovered && Input::is_button_pressed(workspace.select_button);
-	//	bool was_pressed = hovered && Input::was_button_pressed(workspace.select_button);
+    void Button2D::update(float delta_time)
+	{
+        quad->set_translation(glm::vec3(get_translation() + size * 0.50f, 0.0f));
 
- //       if (was_pressed)
- //       {
-	//		controller->emit_signal(signal, (void*)this);
+        /*if (mark)
+        {
+            mark->set_model(get_model());
+            mark->translate(glm::vec3(0.7f, 0.7f, -1e-3f));
+            mark->scale(glm::vec3(0.35f, 0.35f, 1.0f));
+        }*/
 
- //           if (selected)
- //           {
- //               if (is_color_button)
- //               {
- //                   /*if (current_selected) {
- //                       current_selected->selected = false;
- //                   }
- //                   current_selected = this;*/
- //               }
- //           }
- //       }
+		// Check hover (intersects)
+        bool hovered = is_hovered();
 
- //       // Update uniforms
- //       ui_data.is_hovered = hovered ? 1.f : 0.f;
- //       ui_data.is_selected = selected ? 1.f : 0.f;
- //       ui_data.is_color_button = is_color_button ? 1.f : 0.f;
+        /*if (!label)
+        {
+            float magic = 0.002125f;
+            label = new TextWidget(signal, { m_position.x - signal.length() * magic, m_position.y - m_scale.y * 0.75f }, 0.01f, colors::WHITE);
+            label->m_priority = 2;
+            label->uid = uid;
+            label->controller = controller;
+        }*/
 
- //       auto webgpu_context = Renderer::instance->get_webgpu_context();
+        // label->set_active(hovered);
 
- //       RendererStorage::update_ui_widget(webgpu_context, this, ui_data);
+        // Used to disable presses and active hovers
+        hovered &= (!ui_data.is_button_disabled);
 
- //       // label->update(delta_time);
-	//}
+		/*
+		*	Create mesh and render button
+		*/
+
+        bool is_pressed = hovered && Input::is_mouse_pressed(GLFW_MOUSE_BUTTON_LEFT);
+        bool was_pressed = hovered && Input::was_mouse_pressed(GLFW_MOUSE_BUTTON_LEFT);
+
+        if (was_pressed)
+        {
+			// controller->emit_signal(signal, (void*)this);
+
+            spdlog::info("BUTTON PRESSED");
+
+            if (selected)
+            {
+                if (is_color_button)
+                {
+                    /*if (current_selected) {
+                        current_selected->selected = false;
+                    }
+                    current_selected = this;*/
+                }
+            }
+        }
+
+        // Update uniforms
+        ui_data.is_hovered = hovered ? 1.f : 0.f;
+        ui_data.is_selected = selected ? 1.f : 0.f;
+        ui_data.is_color_button = is_color_button ? 1.f : 0.f;
+
+        auto webgpu_context = Renderer::instance->get_webgpu_context();
+        RendererStorage::update_ui_widget(webgpu_context, quad, ui_data);
+
+        // label->update(delta_time);
+
+        Node2D::update(delta_time);
+	}
+
+    /*
+    *   Widget Group
+    */
+
+    ButtonGroup2D::ButtonGroup2D(const glm::vec2& pos, const glm::vec2& item_size) : Node2D(pos, item_size) {
+
+        type = Node2DType::GROUP;
+
+        this->item_size = item_size;
+
+        ui_data.num_group_items = 0;
+
+        Material material;
+        material.color = colors::GREEN;
+        material.flags = MATERIAL_2D;
+        material.priority = type;
+        material.shader = RendererStorage::get_shader("data/shaders/ui/ui_group.wgsl", material);
+
+        Surface* quad_surface = new Surface();
+        quad_surface->create_quad(0.0f, 0.0f);
+
+        quad = new MeshInstance3D();
+        quad->add_surface(quad_surface);
+        quad->set_surface_material_override(quad->get_surface(0), material);
+
+        auto webgpu_context = Renderer::instance->get_webgpu_context();
+        RendererStorage::register_ui_widget(webgpu_context, material.shader, quad, ui_data, 2);
+    }
+
+    float ButtonGroup2D::get_number_of_items()
+    {
+        return ui_data.num_group_items;
+    }
+
+    void ButtonGroup2D::set_number_of_items(float number)
+    {
+        ui_data.num_group_items = number;
+
+        auto webgpu_context = Renderer::instance->get_webgpu_context();
+        RendererStorage::update_ui_widget(webgpu_context, quad, ui_data);
+    }
+
+    void ButtonGroup2D::update(float delta_time)
+    {
+        Node2D::update(delta_time);
+    }
+
+    void ButtonGroup2D::render()
+    {
+        if (get_number_of_items() == 0.0f)
+            return;
+
+        quad->render();
+
+        Node2D::render();
+    }
+
+    void ButtonGroup2D::add_child(Node2D* child)
+    {
+        Node2D::add_child(child);
+
+        float num_items = get_number_of_items();
+        child->set_translation({ GROUP_MARGIN + num_items * item_size.x + GROUP_MARGIN * num_items, GROUP_MARGIN });
+
+        num_items++;
+        set_number_of_items(num_items);
+
+        // Recreate quad using new size and reposition accordingly
+
+        glm::vec2 group_size = { num_items * item_size.x + GROUP_MARGIN * (num_items - 1), item_size.y };
+        group_size += GROUP_MARGIN * 2.0f;
+
+        Surface* quad_surface = quad->get_surface(0);
+        quad_surface->create_quad(group_size.x, group_size.y);
+
+        glm::vec2 new_pos = { get_translation() + group_size * 0.50f};
+
+        quad->set_translation(glm::vec3(new_pos, 0.0f));
+    }
 
 	/*
 	*	Slider
 	*/
 
- //   SliderWidget::SliderWidget(const std::string& sg, float v, const glm::vec2& p, const glm::vec2& s, const Color& c, int mode)
- //       : UIEntity(p, s), signal(sg), current_value(v), color(c) {
+    Slider2D::Slider2D(const std::string& sg, float value, const glm::vec2& pos, int mode)
+        : Node2D(pos, {0.0f, 0.0f}), signal(sg), current_value(value) {
 
- //       this->type = eWidgetType::SLIDER;
- //       this->mode = mode;
+        this->type = Node2DType::SLIDER;
+        this->mode = mode;
 
- //       auto webgpu_context = Renderer::instance->get_webgpu_context();
- //       RendererStorage::register_ui_widget(webgpu_context,
- //           RendererStorage::get_shader(mode == HORIZONTAL ? "data/shaders/ui/ui_slider_h.wgsl" : "data/shaders/ui/ui_slider.wgsl"), this, ui_data, 2);
- //   }
+        ui_data.num_group_items = mode == SliderMode::HORIZONTAL ? 2.f : 1.f;
+        size = glm::vec2(BUTTON_SIZE * ui_data.num_group_items, BUTTON_SIZE);
 
- //   void SliderWidget::render()
-	//{
- //       UIEntity::render();
- //       if(label) label->render();
- //       if(text_value) text_value->render();
-	//}
+        Material material;
+        material.flags = MATERIAL_2D;
+        material.priority = type;
+        material.shader = RendererStorage::get_shader("data/shaders/ui/ui_slider.wgsl", material);
 
-	//void SliderWidget::update(float delta_time)
-	//{
-	//	const WorkSpaceData& workspace = controller->get_workspace();
+        Surface* quad_surface = new Surface();
+        quad_surface->create_quad(size.x, size.y);
 
-	//	/*
-	//	*	Update elements
-	//	*/
+        quad = new MeshInstance3D();
+        quad->add_surface(quad_surface);
+        quad->set_surface_material_override(quad->get_surface(0), material);
 
- //       UIEntity::update(delta_time);
+        auto webgpu_context = Renderer::instance->get_webgpu_context();
+        RendererStorage::register_ui_widget(webgpu_context, material.shader, quad, ui_data, 2);
+    }
 
- //       float magic_t = 0.002125f;
- //       float magic_c = 0.005f;
+    void Slider2D::render()
+	{
+        quad->render();
 
- //       if (!label || !text_value) {
- //           create_helpers();
- //       }
+        Node2D::render();
 
- //       glm::vec3 intersection;
- //       bool hovered = is_hovered(intersection);
- //       // label->set_active(hovered);
+        /*if(label) label->render();
+        if(text_value) text_value->render();*/
+	}
 
-	//	bool is_pressed = hovered && Input::is_button_pressed(workspace.select_button);
+	void Slider2D::update(float delta_time)
+	{
+        quad->set_translation(glm::vec3(get_translation() + size * 0.50f, 0.0f));
 
-	//	if (is_pressed)
-	//	{
- //           float range = (mode == HORIZONTAL ? m_scale.x : m_scale.y);
- //           float bounds = range * 0.975f;
- //           // -scale..scale -> 0..1
- //           float local_point = (mode == HORIZONTAL ? intersection.x : -intersection.y);
- //           local_point = glm::max(glm::min(local_point, bounds), -bounds);
- //           // this is at range 0..1
-	//		current_value = glm::clamp((local_point / bounds) * 0.5f + 0.5f, 0.f, 1.f);
- //           // set in range min-max
- //           current_value = current_value * (max_value - min_value) + min_value;
- //           if (step == 1.0f) current_value = std::roundf(current_value);
-	//		controller->emit_signal(signal, current_value);
- //           std::string value_as_string = std::to_string(std::ceil(current_value * 100.f) / 100.f);
- //           text_value->text_entity->set_text(value_as_string.substr(0, 4));
-	//	}
+        /*if (!label || !text_value) {
+            create_helpers();
+        }*/
 
- //       // Update uniforms
- //       ui_data.is_hovered = hovered ? 1.f : 0.f;
- //       ui_data.slider_value = current_value;
- //       ui_data.slider_max = max_value;
+        bool hovered = is_hovered();
+        // label->set_active(hovered);
 
- //       auto webgpu_context = Renderer::instance->get_webgpu_context();
+        bool is_pressed = hovered && Input::is_mouse_pressed(GLFW_MOUSE_BUTTON_LEFT);
 
- //       RendererStorage::update_ui_widget(webgpu_context, this, ui_data);
+		if (is_pressed)
+		{
+            float range = (mode == HORIZONTAL ? size.x : size.y);
+            glm::vec2 local_mouse_pos = Input::get_mouse_position() - get_translation();
+            float bounds = range * 0.975f;
+            // -scale..scale -> 0..1
+            float local_point = (mode == HORIZONTAL ? local_mouse_pos.x : size.y - local_mouse_pos.y);
+            // this is at range 0..1
+			current_value = glm::clamp(local_point / bounds, 0.f, 1.f);
+            // set in range min-max
+            current_value = current_value * (max_value - min_value) + min_value;
+            if (step == 1.0f) current_value = std::roundf(current_value);
+			// controller->emit_signal(signal, current_value);
+            std::string value_as_string = std::to_string(std::ceil(current_value * 100.f) / 100.f);
+            // text_value->text_entity->set_text(value_as_string.substr(0, 4));
+		}
 
- //       label->update(delta_time);
- //       text_value->update(delta_time);
-	//}
+        // Update uniforms
+        ui_data.is_hovered = hovered ? 1.f : 0.f;
+        ui_data.slider_value = current_value;
+        ui_data.slider_max = max_value;
 
- //   void SliderWidget::set_value(float new_value)
- //   {
- //       if (!text_value) {
- //           create_helpers();
- //       }
+        auto webgpu_context = Renderer::instance->get_webgpu_context();
 
- //       current_value = glm::clamp(new_value, min_value, max_value);
- //       if (step == 1.0f) current_value = std::roundf(current_value);
- //       std::string value_as_string = std::to_string(std::ceil(current_value * 100.f) / 100.f);
- //       text_value->text_entity->set_text(value_as_string.substr(0, 4));
- //   }
+        RendererStorage::update_ui_widget(webgpu_context, quad, ui_data);
 
- //   void SliderWidget::create_helpers()
- //   {
- //       float magic_t = 0.002125f;
- //       float magic_c = 0.005f;
+        /*label->update(delta_time);
+        text_value->update(delta_time);*/
 
- //       if (!label)
- //       {
- //           label = new TextWidget(signal, { m_position.x - signal.length() * magic_t, m_position.y + m_scale.y * 0.5f }, 0.01f, colors::WHITE);
- //           label->m_priority = 2;
- //           label->uid = uid;
- //           label->controller = controller;
- //       }
+        Node2D::update(delta_time);
+	}
 
- //       if (!text_value)
- //       {
- //           std::string value_as_string = std::to_string(std::ceil(current_value * 100.f) / 100.f);
- //           text_value = new TextWidget(value_as_string.substr(0, 4), { m_position.x - 4 * magic_t, m_position.y - magic_c }, 0.01f, colors::WHITE);
- //           text_value->m_priority = 2;
- //           text_value->uid = uid;
- //           text_value->controller = controller;
- //       }
- //   }
+    void Slider2D::set_value(float new_value)
+    {
+        /*if (!text_value) {
+            create_helpers();
+        }
 
- //   /*
- //   *	ColorPicker
- //   */
+        current_value = glm::clamp(new_value, min_value, max_value);
+        if (step == 1.0f) current_value = std::roundf(current_value);
+        std::string value_as_string = std::to_string(std::ceil(current_value * 100.f) / 100.f);
+        text_value->text_entity->set_text(value_as_string.substr(0, 4));*/
+    }
 
- //   ColorPickerWidget::ColorPickerWidget(const std::string& sg, const glm::vec2& p, const glm::vec2& s, const Color& c)
- //       : UIEntity(p, s), signal(sg), current_color(c)
- //   {
- //       type = eWidgetType::COLOR_PICKER;
+    void Slider2D::create_helpers()
+    {
+        float magic_t = 0.002125f;
+        float magic_c = 0.005f;
 
- //       auto webgpu_context = Renderer::instance->get_webgpu_context();
- //       RendererStorage::register_ui_widget(webgpu_context, RendererStorage::get_shader("data/shaders/ui/ui_color_picker.wgsl"), this, ui_data, 2);
- //   }
+        /*if (!label)
+        {
+            label = new TextWidget(signal, { m_position.x - signal.length() * magic_t, m_position.y + m_scale.y * 0.5f }, 0.01f, colors::WHITE);
+            label->m_priority = 2;
+            label->uid = uid;
+            label->controller = controller;
+        }
 
- //   void ColorPickerWidget::set_color(const Color& c)
- //   {
- //       current_color = c;
+        if (!text_value)
+        {
+            std::string value_as_string = std::to_string(std::ceil(current_value * 100.f) / 100.f);
+            text_value = new TextWidget(value_as_string.substr(0, 4), { m_position.x - 4 * magic_t, m_position.y - magic_c }, 0.01f, colors::WHITE);
+            text_value->m_priority = 2;
+            text_value->uid = uid;
+            text_value->controller = controller;
+        }*/
+    }
 
- //       set_surface_material_override_color(0, c);
- //   }
+    /*
+    *	ColorPicker
+    */
 
- //   void ColorPickerWidget::update(float delta_time)
- //   {
- //       const WorkSpaceData& workspace = controller->get_workspace();
+    ColorPicker2D::ColorPicker2D(const std::string& sg, const glm::vec2& p, const glm::vec2& s, const Color& c)
+        : Node2D(p, s), signal(sg), current_color(c)
+    {
+        type = Node2DType::COLOR_PICKER;
 
- //       /*
- //       *	Update elements
- //       */
+        Material material;
+        material.flags = MATERIAL_2D;
+        material.priority = type;
+        material.shader = RendererStorage::get_shader("data/shaders/ui/ui_color_picker.wgsl", material);
 
- //       UIEntity::update(delta_time);
+        Surface* quad_surface = new Surface();
+        quad_surface->create_quad(size.x, size.y);
 
- //       glm::vec3 intersection;
- //       bool hovered = is_hovered(intersection);
+        quad = new MeshInstance3D();
+        quad->add_surface(quad_surface);
+        quad->set_surface_material_override(quad->get_surface(0), material);
 
- //       glm::vec2 local_point = glm::vec2(intersection);
- //       glm::vec2 bounds = m_scale * 0.975f;
- //       local_point = glm::max(glm::min(local_point, bounds), -bounds) / bounds; // -1..1
- //       float dist = glm::distance(local_point, glm::vec2(0.f));
+        auto webgpu_context = Renderer::instance->get_webgpu_context();
+        RendererStorage::register_ui_widget(webgpu_context, material.shader, quad, ui_data, 2);
+    }
 
- //       // Update hover
- //       hovered &= (dist < 1.f);
+    void ColorPicker2D::set_color(const Color& c)
+    {
+        current_color = c;
 
- //       bool is_pressed = hovered && Input::is_button_pressed(workspace.select_button);
- //       bool was_released = hovered && Input::was_button_released(workspace.select_button);
+        quad->set_surface_material_override_color(0, c);
+    }
 
- //       if (is_pressed)
- //       {
- //           constexpr float pi = glm::pi<float>();
- //           float r = pi / 2.f;
- //           local_point = glm::mat2x2(cos(r), -sin(r), sin(r), cos(r)) * local_point;
- //           glm::vec2 polar = glm::vec2(atan2(local_point.y, local_point.x), glm::length(local_point));
- //           float percent = (polar.x + pi) / (2.0f * pi);
- //           glm::vec3 hsv = glm::vec3(percent, 1., polar.y);
+    void ColorPicker2D::render()
+    {
+        quad->render();
 
- //           // Store it without conversion and intensity multiplier
- //           current_color = glm::vec4(hsv2rgb(hsv), current_color.a);
- //           // Send the signal using the final color
- //           glm::vec3 new_color = glm::pow(glm::vec3(current_color) * current_color.a, glm::vec3(2.2f));
- //           controller->emit_signal(signal, glm::vec4(new_color, current_color.a));
- //       }
+        Node2D::render();
+    }
 
- //       if (was_released)
- //       {
- //           controller->emit_signal(signal + "@released", current_color);
- //       }
+    void ColorPicker2D::update(float delta_time)
+    {
+        quad->set_translation(glm::vec3(get_translation() + size * 0.50f, 0.0f));
 
- //       // Update uniforms
- //       ui_data.is_hovered = hovered ? 1.f : 0.f;
- //       ui_data.picker_color = current_color;
+        bool hovered = is_hovered();
 
- //       auto webgpu_context = Renderer::instance->get_webgpu_context();
+        glm::vec2 local_mouse_pos = Input::get_mouse_position() - get_translation();
+        local_mouse_pos /= size;
+        local_mouse_pos = local_mouse_pos * 2.0f - 1.0f; // -1..1
+        float dist = glm::distance(local_mouse_pos, glm::vec2(0.f));
 
- //       RendererStorage::update_ui_widget(webgpu_context, this, ui_data);
- //   }
+        // Update hover
+        hovered &= (dist < 1.f);
+
+        bool is_pressed = hovered && Input::is_mouse_pressed(GLFW_MOUSE_BUTTON_LEFT);
+        bool was_released = hovered && Input::was_mouse_released(GLFW_MOUSE_BUTTON_LEFT);
+
+        if (is_pressed)
+        {
+            constexpr float pi = glm::pi<float>();
+            float r = pi / 2.f;
+            local_mouse_pos = glm::mat2x2(cos(r), -sin(r), sin(r), cos(r)) * local_mouse_pos;
+            glm::vec2 polar = glm::vec2(atan2(local_mouse_pos.y, local_mouse_pos.x), glm::length(local_mouse_pos));
+            float percent = (polar.x + pi) / (2.0f * pi);
+            glm::vec3 hsv = glm::vec3(percent, 1.0f, polar.y);
+
+            // Store it without conversion and intensity multiplier
+            current_color = glm::vec4(hsv2rgb(hsv), current_color.a);
+            // Send the signal using the final color
+            glm::vec3 new_color = glm::pow(glm::vec3(current_color) * current_color.a, glm::vec3(2.2f));
+            // controller->emit_signal(signal, glm::vec4(new_color, current_color.a));
+        }
+
+        if (was_released)
+        {
+            // controller->emit_signal(signal + "@released", current_color);
+        }
+
+        // Update uniforms
+        ui_data.is_hovered = hovered ? 1.f : 0.f;
+        ui_data.picker_color = current_color;
+
+        auto webgpu_context = Renderer::instance->get_webgpu_context();
+
+        RendererStorage::update_ui_widget(webgpu_context, quad, ui_data);
+
+        Node2D::update(delta_time);
+    }
 }

@@ -102,7 +102,12 @@ void Pipeline::register_render_pipeline(Material& material)
         assert(0);
     }
 
-    description.depth_write = material.depth_write;
+    if (material.flags & MATERIAL_2D) {
+        description.depth_write = false;
+    }
+    else {
+        description.depth_write = material.depth_write;
+    }
 
     switch (material.cull_type) {
     case CULL_NONE:

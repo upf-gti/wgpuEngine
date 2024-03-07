@@ -65,8 +65,9 @@ protected:
 
     enum eRenderListType {
         RENDER_LIST_OPAQUE,
-        RENDER_LIST_TRANPARENT,
+        RENDER_LIST_TRANSPARENT,
         RENDER_LIST_2D,
+        RENDER_LIST_2D_TRANSPARENT,
         RENDER_LIST_SIZE
     };
 

@@ -188,17 +188,16 @@ void Renderer::prepare_instancing()
 
             Pipeline::register_render_pipeline(material);
 
-            Renderer::sRenderData data = { surface, 1, global_matrix, rotation_matrix, entity_mesh };
+            eRenderListType list = RENDER_LIST_OPAQUE;
 
-            if (material.transparency_type == ALPHA_BLEND) {
-                render_list[RENDER_LIST_TRANPARENT].push_back(data);
-            }
             if (material.flags & MATERIAL_2D) {
-                render_list[RENDER_LIST_2D].push_back(data);
+                list = material.transparency_type == ALPHA_BLEND ? RENDER_LIST_2D_TRANSPARENT : RENDER_LIST_2D;
             }
-            else {
-                render_list[RENDER_LIST_OPAQUE].push_back(data);
+            else if (material.transparency_type == ALPHA_BLEND) {
+                list = RENDER_LIST_TRANSPARENT;
             }
+
+            render_list[list].push_back({ surface, 1, global_matrix, rotation_matrix, entity_mesh });
         }
     }
 
@@ -361,9 +360,12 @@ void Renderer::render_render_list(int list_index, WGPURenderPassEncoder render_p
             wgpuRenderPassEncoderSetBindGroup(render_pass, bind_group_index++, renderer_storage.get_material_bind_group(material), 0, nullptr);
         }
 
-        /*if (material.flags & MATERIAL_2D) {
-            wgpuRenderPassEncoderSetBindGroup(render_pass, bind_group_index++, renderer_storage.get_ui_widget_bind_group(render_data.entity_mesh_ref), 0, nullptr);
-        }*/
+        if (material.flags & MATERIAL_2D) {
+            WGPUBindGroup ui_bind_group = renderer_storage.get_ui_widget_bind_group(render_data.entity_mesh_ref);
+            if (ui_bind_group) {
+                wgpuRenderPassEncoderSetBindGroup(render_pass, bind_group_index++, ui_bind_group, 0, nullptr);
+            }
+        }
 
         if (material.flags & MATERIAL_PBR) {
             wgpuRenderPassEncoderSetBindGroup(render_pass, 3, ibl_bind_group, 0, nullptr);
@@ -388,12 +390,14 @@ void Renderer::render_opaque(WGPURenderPassEncoder render_pass, const WGPUBindGr
 
 void Renderer::render_transparent(WGPURenderPassEncoder render_pass, const WGPUBindGroup& render_bind_group_camera)
 {
-    render_render_list(RENDER_LIST_TRANPARENT, render_pass, render_bind_group_camera);
+    render_render_list(RENDER_LIST_TRANSPARENT, render_pass, render_bind_group_camera);
 }
 
 void Renderer::render_2D(WGPURenderPassEncoder render_pass, const WGPUBindGroup& render_bind_group_camera)
 {
     render_render_list(RENDER_LIST_2D, render_pass, render_bind_group_camera);
+
+    render_render_list(RENDER_LIST_2D_TRANSPARENT, render_pass, render_bind_group_camera);
 }
 
 void Renderer::add_renderable(MeshInstance3D* entity_mesh)

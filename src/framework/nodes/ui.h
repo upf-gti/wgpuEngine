@@ -12,7 +12,8 @@
 
 namespace ui {
 
-	class Controller;
+    const float BUTTON_SIZE = 128.f;
+    const float GROUP_MARGIN = 16.f;
 
     class Panel2D : public Node2D {
     public:
@@ -36,6 +37,91 @@ namespace ui {
         void set_text(const std::string& text) { text_entity->set_text(text); };
 
         void render() override;
+    };
+
+    class Button2D : public Node2D {
+    public:
+
+        // TextWidget* label = nullptr;
+
+        MeshInstance3D* quad = nullptr;
+        std::string     signal;
+        Color           color;
+
+        // ButtonWidget* mark = nullptr;
+
+        bool is_color_button        = false;
+        bool is_unique_selection    = false;
+        bool allow_toggle           = false;
+        bool selected               = false;
+
+        Button2D(const std::string& sg, bool is_color_button = false, const Color& color = colors::WHITE);
+        Button2D(const std::string& sg, const glm::vec2& pos, const glm::vec2& size = glm::vec2(BUTTON_SIZE), bool is_color_button = false, const Color& color = colors::WHITE);
+
+        void render() override;
+        void update(float delta_time) override;
+    };
+
+    class ButtonGroup2D : public Node2D {
+    public:
+
+        glm::vec2 item_size;
+
+        MeshInstance3D* quad = nullptr;
+
+        ButtonGroup2D(const glm::vec2& pos, const glm::vec2& item_size);
+
+        float get_number_of_items();
+        void set_number_of_items(float number);
+
+        void render() override;
+        void update(float delta_time) override;
+        void add_child(Node2D* child) override;
+    };
+
+    enum SliderMode {
+        HORIZONTAL,
+        VERTICAL
+    };
+
+    class Slider2D : public Node2D {
+    public:
+
+        /*TextWidget* label = nullptr;
+        TextWidget* text_value = nullptr;*/
+
+        MeshInstance3D* quad = nullptr;
+        std::string     signal;
+
+        int mode = SliderMode::HORIZONTAL;
+
+        float current_value = 0.0f;
+        float min_value = 0.0f;
+        float max_value = 1.0f;
+        float step = 0.0f;
+
+        Slider2D(const std::string& sg, float v, const glm::vec2& pos, int mode = SliderMode::VERTICAL);
+
+        void render() override;
+        void update(float delta_time) override;
+
+        void set_value(float new_value);
+        void create_helpers();
+    };
+
+    class ColorPicker2D : public Node2D {
+    public:
+
+        MeshInstance3D* quad = nullptr;
+        std::string     signal;
+        Color           current_color;
+
+        ColorPicker2D(const std::string& sg, const glm::vec2& p, const glm::vec2& s, const Color& c);
+
+        void set_color(const Color& c);
+
+        void render() override;
+        void update(float delta_time) override;
     };
 
 	/*class UIEntity : public MeshInstance3D {
@@ -62,20 +148,9 @@ namespace ui {
         void set_ui_priority(int p) { m_priority = p; }
 
         const glm::vec2 position_to_world(const glm::vec2& workspace_size) { return m_position + workspace_size - m_scale;  };
-        bool is_hovered(glm::vec3& intersection);
 
 		void update(float delta_time) override;
 	};
-
-    class ButtonGroup2D : public Node2D {
-    public:
-
-        ButtonGroup2D(const glm::vec2& p, const glm::vec2& s, float number_of_widgets);
-
-        float get_number_of_widgets();
-        void set_number_of_widgets(float number);
-    };
-
 	
 
     class LabelWidget : public UIEntity {
@@ -88,67 +163,4 @@ namespace ui {
 
         LabelWidget(const std::string& p_text, const glm::vec2& p, const glm::vec2& s = {0.f, 0.f});
     };*/
-
-	//class Button2D : public Node2D {
-	//public:
-
- //       // TextWidget* label = nullptr;
- //       Color color;
-	//	std::string signal;
-
- //       // ButtonWidget* mark = nullptr;
-
- //       bool is_color_button        = false;
- //       bool is_unique_selection    = false;
- //       bool allow_toggle           = false;
- //       bool selected               = false;
-
- //       Button2D(const std::string& sg, const glm::vec2& p, const glm::vec2& s, const Color& c, bool is_color_button = false);
-
- //       void render() override;
-	//    void update(float delta_time) override;
-	//};
-
-	/*class SliderWidget : public UIEntity {
-	public:
-
-        TextWidget* label = nullptr;
-        TextWidget* text_value = nullptr;
-
-        Color color;
-        std::string signal;
-
-        enum {
-            HORIZONTAL,
-            VERTICAL
-        };
-
-        int mode = HORIZONTAL;
-
-        float current_value = 0.0f;
-        float min_value     = 0.0f;
-        float max_value     = 1.0f;
-        float step          = 0.0f;
-
-		SliderWidget(const std::string& sg, float v, const glm::vec2& p, const glm::vec2& s, const Color& c, int mode = VERTICAL);
-
-        void render() override;
-        void update(float delta_time) override;
-
-        void set_value(float new_value);
-        void create_helpers();
-	};
-
-    class ColorPickerWidget : public UIEntity {
-	public:
-
-		Color current_color;
-        std::string signal;
-
-		ColorPickerWidget(const std::string& sg, const glm::vec2& p, const glm::vec2& s, const Color& c);
-
-        void set_color(const Color& c);
-
-        void update(float delta_time) override;
-	};*/
 }

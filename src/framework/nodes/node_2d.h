@@ -9,13 +9,13 @@
 
 enum Node2DType {
     UNDEFINED,
-    PANEL,
     TEXT,
+    LABEL,
     BUTTON,
     SLIDER,
-    LABEL,
     COLOR_PICKER,
     GROUP,
+    PANEL,
     NUM_2D_TYPES
 };
 
@@ -26,6 +26,8 @@ protected:
     static unsigned int last_uid;
 
 	glm::mat3x3 model = glm::mat3x3(1.0f);
+
+    glm::vec2 size;
 
     Node2D* parent = nullptr;
 
@@ -40,8 +42,8 @@ public:
     Node2D(const glm::vec2& p, const glm::vec2& s);
 	virtual ~Node2D() {};
 
-    void add_child(Node2D* child);
-    void remove_child(Node2D* child);
+    virtual void add_child(Node2D* child);
+    virtual void remove_child(Node2D* child);
 
 	virtual void render();
 	virtual void update(float delta_time);
@@ -57,6 +59,8 @@ public:
     glm::mat3x3 get_model() const;
     glm::mat3x3 get_rotation() const;
     uint8_t get_type() const;
+
+    bool is_hovered();
 
 	void set_translation(const glm::vec2& translation);
     void set_model(const glm::mat3x3& _model);

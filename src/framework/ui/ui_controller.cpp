@@ -620,7 +620,7 @@ namespace ui {
     {
         assert(g_iterator == current_number_of_group_widgets && "Num Widgets in group does not correspond");
 
-        layout_iterator.x -= X_GROUP_MARGIN;
+        //layout_iterator.x -= X_GROUP_MARGIN;
 
         // Clear group info
         parent_queue.pop_back();

@@ -167,7 +167,7 @@ void RendererStorage::register_ui_widget(WebGPUContext* webgpu_context, Shader* 
 WGPUBindGroup RendererStorage::get_ui_widget_bind_group(const void* widget)
 {
     if (!ui_widget_bind_groups.contains(widget)) {
-        assert(false);
+        return nullptr;
     }
 
     return ui_widget_bind_groups[widget].bind_group;
