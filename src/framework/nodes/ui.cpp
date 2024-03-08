@@ -115,14 +115,22 @@ namespace ui {
         size_t child_count = get_children().size();
         size = glm::vec2(0.0f);
 
+        // Get HEIGHT in first pass..
         for (size_t i = 0; i < child_count; ++i)
         {
             Node2D* node_2d = static_cast<Node2D*>(get_children()[i]);
-            node_2d->set_translation(padding + glm::vec2(size.x + item_margin.x * static_cast<float>(i), 0.0f));
+            size.y = glm::max(size.y, node_2d->get_size().y);
+        }
 
+        // Reorder in WIDTH..
+        for (size_t i = 0; i < child_count; ++i)
+        {
+            Node2D* node_2d = static_cast<Node2D*>(get_children()[i]);
             glm::vec2 node_size = node_2d->get_size();
+
+            node_2d->set_translation(padding + glm::vec2(size.x + item_margin.x * static_cast<float>(i), (size.y - node_size.y) * 0.50f));
+
             size.x += node_size.x;
-            size.y = glm::max(size.y, node_size.y);
         }
 
         size += padding * 2.0f;
@@ -181,14 +189,17 @@ namespace ui {
     }
 
     /*
-    *	Button
+    *	Buttons
     */
 
-    Button2D::Button2D(const std::string& sg, bool is_color_button, const Color& col)
-        : Button2D(sg, {0.0f, 0.0f}, glm::vec2(BUTTON_SIZE), is_color_button, col) { }
+    Button2D::Button2D(const std::string& sg, const Color& col)
+        : Button2D(sg, col, {0.0f, 0.0f}, glm::vec2(BUTTON_SIZE)) { }
 
-    Button2D::Button2D(const std::string& sg, const glm::vec2& pos, const glm::vec2& size, bool is_color_button, const Color& col)
-        : Panel2D(sg, pos, size, col), signal(sg), is_color_button(is_color_button) {
+    Button2D::Button2D(const std::string& sg, const glm::vec2& pos, const glm::vec2& size)
+        : Panel2D(sg, pos, size), signal(sg) { }
+
+    Button2D::Button2D(const std::string& sg, const Color& col, const glm::vec2& pos, const glm::vec2& size)
+        : Panel2D(sg, pos, size, col), signal(sg) {
 
         type = Node2DType::BUTTON;
 
@@ -196,16 +207,7 @@ namespace ui {
         material.color = color;
         material.flags = MATERIAL_2D;
         material.priority = type;
-
-        std::vector<std::string> define_specializations;
-
-        if (!is_color_button) {
-            define_specializations.push_back("USES_TEXTURE");
-            material.diffuse_texture = RendererStorage::get_texture("data/textures/material_samples.png");
-            material.flags |= MATERIAL_DIFFUSE;
-        }
-
-        material.shader = RendererStorage::get_shader("data/shaders/ui/ui_button.wgsl", material, define_specializations);
+        material.shader = RendererStorage::get_shader("data/shaders/ui/ui_button.wgsl", material);
 
         Surface* quad_surface = new Surface();
         quad_surface->create_quad(size.x, size.y);
@@ -215,7 +217,31 @@ namespace ui {
         quad->set_surface_material_override(quad->get_surface(0), material);
 
         auto webgpu_context = Renderer::instance->get_webgpu_context();
-        RendererStorage::register_ui_widget(webgpu_context, material.shader, quad, ui_data, is_color_button ? 2 : 3);
+        RendererStorage::register_ui_widget(webgpu_context, material.shader, quad, ui_data, 2);
+
+        // Selection styling visibility callback..
+        if (is_color_button || is_unique_selection || allow_toggle)
+        {
+            Node::bind(signal, [&](const std::string& signal, void* button) {
+
+                if (disabled)
+                    return;
+
+                const bool last_value = selected;
+
+                // Unselect siblings
+                Button2D* b_parent = static_cast<Button2D*>(parent);
+                if (b_parent && !allow_toggle) {
+                    for (auto c : b_parent->get_children()) {
+                        Button2D* b = static_cast<Button2D*>(c);
+                        if (b) {
+                            b->set_selected(false);
+                        }
+                    }
+                }
+                set_selected(allow_toggle ? !last_value : true);
+            });
+        }
 
         // Submenu icon..
         {
@@ -229,6 +255,23 @@ namespace ui {
             material.shader = RendererStorage::get_shader("data/shaders/ui/ui_texture.wgsl", material);
             
             submenu_mark->set_surface_material_override(mark->get_surface(0), material);*/
+        }
+    }
+
+    void Button2D::set_selected(bool value)
+    {
+        selected = value;
+
+        // Only unselecting is recursive...
+        if (!value)
+        {
+            for (auto c : children) {
+
+                Button2D* b = static_cast<Button2D*>(c);
+                if (b) {
+                    b->set_selected(value);
+                }
+            }
         }
     }
 
@@ -302,12 +345,89 @@ namespace ui {
         Panel2D::update(delta_time);
 	}
 
+    TextureButton2D::TextureButton2D(const std::string& sg, const std::string& texture_path, uint8_t parameter_flags)
+        : TextureButton2D(sg, texture_path, parameter_flags, {0.0f, 0.0f}) { }
+
+    TextureButton2D::TextureButton2D(const std::string& sg, const std::string& texture_path, uint8_t parameter_flags, const glm::vec2& pos, const glm::vec2& size)
+        : Button2D(sg, pos, size) {
+
+        type = Node2DType::BUTTON;
+
+        is_color_button = false;
+
+        selected = parameter_flags & SELECTED;
+        disabled = parameter_flags & DISABLED;
+        is_unique_selection = parameter_flags & UNIQUE_SELECTION;
+        allow_toggle = parameter_flags & ALLOW_TOGGLE;
+        keep_rgb = parameter_flags & KEEP_RGB;
+
+        Material material;
+        material.color = color;
+        material.flags = MATERIAL_2D;
+        material.priority = type;
+
+        std::vector<std::string> define_specializations = { "USES_TEXTURE" };
+
+        material.diffuse_texture = RendererStorage::get_texture(texture_path);
+        material.flags |= MATERIAL_DIFFUSE;
+
+        material.shader = RendererStorage::get_shader("data/shaders/ui/ui_button.wgsl", material, define_specializations);
+
+        Surface* quad_surface = new Surface();
+        quad_surface->create_quad(size.x, size.y);
+
+        quad = new MeshInstance3D();
+        quad->add_surface(quad_surface);
+        quad->set_surface_material_override(quad->get_surface(0), material);
+
+        auto webgpu_context = Renderer::instance->get_webgpu_context();
+        RendererStorage::register_ui_widget(webgpu_context, material.shader, quad, ui_data, 3);
+
+        // Selection styling visibility callback..
+        if (is_color_button || is_unique_selection || allow_toggle)
+        {
+            Node::bind(signal, [&](const std::string& signal, void* button) {
+
+                if (disabled)
+                    return;
+
+                const bool last_value = selected;
+
+                // Unselect siblings
+                Button2D* b_parent = static_cast<Button2D*>(parent);
+                if (b_parent && !allow_toggle) {
+                    for (auto c : b_parent->get_children()) {
+                        Button2D* b = static_cast<Button2D*>(c);
+                        if (b) {
+                            b->set_selected(false);
+                        }
+                    }
+                }
+                set_selected(allow_toggle ? !last_value : true);
+            });
+        }
+
+        // Submenu icon..
+        {
+            /*Button2D* submenu_mark = new Button2D(sg + "@mark", {0.f, 0.f}, {0.f, 0.f}, colors::WHITE);
+            submenu_mark->add_surface(RendererStorage::get_surface("quad"));
+
+            Material material;
+            material.diffuse_texture = RendererStorage::get_texture("data/textures/submenu_mark.png");
+            material.flags |= MATERIAL_DIFFUSE | MATERIAL_2D;
+            material.color = colors::WHITE;
+            material.shader = RendererStorage::get_shader("data/shaders/ui/ui_texture.wgsl", material);
+
+            submenu_mark->set_surface_material_override(mark->get_surface(0), material);*/
+        }
+    }
+
     /*
     *   Widget Group
     */
 
-    ItemGroup2D::ItemGroup2D(const glm::vec2& pos, const Color& color)
-        : HContainer2D("button_group", pos, color) {
+    ItemGroup2D::ItemGroup2D(const std::string& name, const glm::vec2& pos, const Color& color)
+        : HContainer2D(name, pos, color) {
 
         type = Node2DType::GROUP;
 
@@ -349,8 +469,8 @@ namespace ui {
     *   Widget Submenu
     */
 
-    ButtonSubmenu2D::ButtonSubmenu2D(const std::string& sg, const glm::vec2& pos, const glm::vec2& size)
-        : Button2D(sg, pos, size) {
+    ButtonSubmenu2D::ButtonSubmenu2D(const std::string& sg, const std::string& texture_path, const glm::vec2& pos, const glm::vec2& size)
+        : TextureButton2D(sg, texture_path, 0, pos, size) {
 
         box = new ui::HContainer2D("h_container", glm::vec2(0.0f, size.y + GROUP_MARGIN));
         box->set_visibility(false);
@@ -386,14 +506,14 @@ namespace ui {
 	*	Slider
 	*/
 
-    Slider2D::Slider2D(const std::string& sg, float value, const glm::vec2& pos, int mode)
-        : Panel2D(sg, pos, {0.0f, 0.0f}), signal(sg), current_value(value) {
+    Slider2D::Slider2D(const std::string& sg, float value, const glm::vec2& pos, const glm::vec2& size, int mode, float min, float max, float step)
+        : Panel2D(sg, pos, {0.0f, 0.0f}), signal(sg), current_value(value), min_value(min), max_value(max), step_value(step) {
 
         this->type = Node2DType::SLIDER;
         this->mode = mode;
 
         ui_data.num_group_items = mode == SliderMode::HORIZONTAL ? 2.f : 1.f;
-        size = glm::vec2(BUTTON_SIZE * ui_data.num_group_items, BUTTON_SIZE);
+        this->size = glm::vec2(size.x * ui_data.num_group_items, size.y);
 
         Material material;
         material.flags = MATERIAL_2D;
@@ -401,7 +521,7 @@ namespace ui {
         material.shader = RendererStorage::get_shader("data/shaders/ui/ui_slider.wgsl", material);
 
         Surface* quad_surface = new Surface();
-        quad_surface->create_quad(size.x, size.y);
+        quad_surface->create_quad(this->size.x, this->size.y);
 
         quad = new MeshInstance3D();
         quad->add_surface(quad_surface);
@@ -409,6 +529,10 @@ namespace ui {
 
         auto webgpu_context = Renderer::instance->get_webgpu_context();
         RendererStorage::register_ui_widget(webgpu_context, material.shader, quad, ui_data, 2);
+
+        Node::bind(signal + "@changed", [&](const std::string& signal, float value) {
+            set_value(value);
+        });
     }
 
     void Slider2D::render()
@@ -441,7 +565,7 @@ namespace ui {
 			current_value = glm::clamp(local_point / bounds, 0.f, 1.f);
             // set in range min-max
             current_value = current_value * (max_value - min_value) + min_value;
-            if (step == 1.0f) current_value = std::roundf(current_value);
+            if (step_value == 1.0f) current_value = std::roundf(current_value);
 			Node::emit_signal(signal, current_value);
             std::string value_as_string = std::to_string(std::ceil(current_value * 100.f) / 100.f);
             // text_value->text_entity->set_text(value_as_string.substr(0, 4));
@@ -469,7 +593,7 @@ namespace ui {
         }*/
 
         current_value = glm::clamp(new_value, min_value, max_value);
-        if (step == 1.0f) current_value = std::roundf(current_value);
+        if (step_value == 1.0f) current_value = std::roundf(current_value);
         std::string value_as_string = std::to_string(std::ceil(current_value * 100.f) / 100.f);
         // text_value->text_entity->set_text(value_as_string.substr(0, 4));
     }
@@ -501,8 +625,8 @@ namespace ui {
     *	ColorPicker
     */
 
-    ColorPicker2D::ColorPicker2D(const std::string& sg, const glm::vec2& p, const glm::vec2& s, const Color& c)
-        : Panel2D(sg, p, s, c), signal(sg)
+    ColorPicker2D::ColorPicker2D(const std::string& sg, const glm::vec2& pos, const glm::vec2& size, const Color& c, bool skip_intensity)
+        : Panel2D(sg, pos, size, c), signal(sg)
     {
         type = Node2DType::COLOR_PICKER;
 
@@ -520,6 +644,23 @@ namespace ui {
 
         auto webgpu_context = Renderer::instance->get_webgpu_context();
         RendererStorage::register_ui_widget(webgpu_context, material.shader, quad, ui_data, 2);
+
+        if (!skip_intensity)
+        {
+            std::string slider_name = signal + "_intensity";
+            ui::Slider2D* intensity_slider = new ui::Slider2D(slider_name, 1.0f, { size.x + GROUP_MARGIN, 0.f }, size * 0.50f, ui::SliderMode::VERTICAL);
+
+            add_child(intensity_slider);
+
+            Node::bind(slider_name, [&, picker_sg = sg](const std::string& _sg, float value) {
+                color.a = value;
+                glm::vec3 new_color = glm::pow(glm::vec3(color) * value, glm::vec3(2.2f));
+                Node::emit_signal(picker_sg, Color(new_color, value));
+            });
+
+            // Set initial value
+            color.a = 1.0f;
+        }
     }
 
     void ColorPicker2D::render()
