@@ -242,29 +242,28 @@ Shader* RendererStorage::get_shader(const std::string& shader_path, const std::v
     return sh;
 }
 
-std::vector<std::string> RendererStorage::get_shader_for_reload(const std::string& shader_path)
+void RendererStorage::reload_shader(const std::string& shader_path)
 {
     std::string name = shader_path;
 
-    std::vector<std::string> shaders_to_reload;
     // Check if already loaded
     for (auto& [shader_name, shader] : shaders) {
         if (shader_name.find(shader_path) != std::string::npos) {
-            shaders_to_reload.push_back(shader_name);
+            shader->reload();
         }
-    }
-
-    if (!shaders_to_reload.empty()) {
-        return shaders_to_reload;
     }
 
     // If it is not a shader, check if it is a library
     auto it1 = shader_library_references.find(shader_path);
     if (it1 != shader_library_references.end())
-        return shader_library_references[shader_path];
-
-    // The shader is not being used
-    return {};
+    {
+        for (auto& shader_name : shader_library_references[shader_path]) {
+            if (shaders.contains(shader_name)) {
+                Shader* shader = shaders[shader_name];
+                shader->reload();
+            }
+        }
+    }
 }
 
 Texture* RendererStorage::get_texture(const std::string& texture_path)

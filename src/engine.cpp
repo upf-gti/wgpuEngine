@@ -48,16 +48,7 @@ int Engine::initialize(Renderer* renderer, GLFWwindow* window, bool use_glfw, bo
         switch (status) {
         case eFileStatus::Modified: {
             spdlog::info("Shader modified: {}", path_to_watch);
-
-            const std::vector<std::string> shader_paths = RendererStorage::get_shader_for_reload(path_to_watch);
-
-            for (const auto& shader_path : shader_paths) {
-                Shader* shader = RendererStorage::get_shader(shader_path);
-                if (shader) {
-                    shader->reload();
-                }
-            }
-
+            RendererStorage::reload_shader(path_to_watch);
             break;
         }
         default:

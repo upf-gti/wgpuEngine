@@ -50,7 +50,7 @@ bool Shader::load(const std::string& shader_path, const std::string& specialized
 
 	std::string shader_content;
     if (!read_file(path, shader_content)) {
-        spdlog::error("\tError reading file");
+        spdlog::error("\tError reading shader");
 		return false;
     }
 
