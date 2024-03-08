@@ -28,8 +28,6 @@ protected:
 
     static unsigned int last_uid;
 
-    static std::map<std::string, Node2D*> all_widgets;
-
     uint32_t    uid = 0;
     uint8_t     class_type = Node2DClassType::UNDEFINED;
     Node2D*     parent = nullptr;
@@ -71,6 +69,8 @@ public:
 	void set_translation(const glm::vec2& translation);
     void set_model(const glm::mat3x3& _model);
     void set_visibility(bool value);
+
+    static std::map<std::string, Node2D*> all_widgets;
 
     static Node2D* get_widget_from_name(const std::string& name);
     static void clean();

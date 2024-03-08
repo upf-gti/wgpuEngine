@@ -497,8 +497,8 @@ namespace ui {
     *   Widget Submenu
     */
 
-    ButtonSubmenu2D::ButtonSubmenu2D(const std::string& sg, const std::string& texture_path, const glm::vec2& pos, const glm::vec2& size)
-        : TextureButton2D(sg, texture_path, 0, pos, size) {
+    ButtonSubmenu2D::ButtonSubmenu2D(const std::string& sg, const std::string& texture_path, uint8_t parameter_flags, const glm::vec2& pos, const glm::vec2& size)
+        : TextureButton2D(sg, texture_path, parameter_flags, pos, size) {
 
         class_type = Node2DClassType::SUBMENU;
 

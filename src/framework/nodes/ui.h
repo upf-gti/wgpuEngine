@@ -131,7 +131,7 @@ namespace ui {
 
         HContainer2D* box = nullptr;
 
-        ButtonSubmenu2D(const std::string& sg, const std::string& texture_path, const glm::vec2& pos = { 0.0f, 0.0f }, const glm::vec2& size = glm::vec2(BUTTON_SIZE));
+        ButtonSubmenu2D(const std::string& sg, const std::string& texture_path, uint8_t parameter_flags = 0, const glm::vec2& pos = { 0.0f, 0.0f }, const glm::vec2& size = glm::vec2(BUTTON_SIZE));
 
         void add_child(Node2D* child) override;
     };
