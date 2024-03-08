@@ -10,6 +10,8 @@ std::map<std::string, Node2D*> Node2D::all_widgets;
 
 Node2D::Node2D(const std::string& n, const glm::vec2& p, const glm::vec2& s) : size(s)
 {
+    type = NodeType::NODE_2D;
+
     uid = last_uid++;
 
     name = n;
@@ -135,9 +137,9 @@ glm::mat3x3 Node2D::get_global_model() const
 	return model;
 }
 
-uint8_t Node2D::get_type() const
+uint8_t Node2D::get_class_type() const
 {
-    return type;
+    return class_type;
 }
 
 bool Node2D::get_visibility() const
@@ -177,4 +179,14 @@ Node2D* Node2D::get_widget_from_name(const std::string& name)
         return all_widgets[name];
     }
     return nullptr;
+}
+
+void Node2D::clean()
+{
+    for (auto pair : all_widgets)
+    {
+        delete pair.second;
+    }
+
+    all_widgets.clear();
 }

@@ -7,7 +7,7 @@
 #include <string>
 #include <vector>
 
-enum Node2DType {
+enum Node2DClassType {
     UNDEFINED,
     TEXT,
     LABEL,
@@ -17,6 +17,7 @@ enum Node2DType {
     GROUP,
     HCONTAINER,
     VCONTAINER,
+    SUBMENU,
     PANEL,
     NUM_2D_TYPES
 };
@@ -30,7 +31,7 @@ protected:
     static std::map<std::string, Node2D*> all_widgets;
 
     uint32_t    uid = 0;
-    uint8_t     type = Node2DType::UNDEFINED;
+    uint8_t     class_type = Node2DClassType::UNDEFINED;
     Node2D*     parent = nullptr;
     bool        visibility = true;
 	glm::mat3x3 model = glm::mat3x3(1.0f);
@@ -62,7 +63,7 @@ public:
     glm::mat3x3 get_model() const;
     glm::mat3x3 get_rotation() const;
     glm::vec2 get_size() const;
-    uint8_t get_type() const;
+    uint8_t get_class_type() const;
     bool get_visibility() const;
 
     bool is_hovered();
@@ -72,4 +73,5 @@ public:
     void set_visibility(bool value);
 
     static Node2D* get_widget_from_name(const std::string& name);
+    static void clean();
 };

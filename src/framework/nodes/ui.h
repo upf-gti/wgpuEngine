@@ -69,6 +69,7 @@ namespace ui {
 
         void set_text(const std::string& text) { text_entity->set_text(text); };
 
+        void update(float delta_time) override;
         void render() override;
     };
 
@@ -83,7 +84,7 @@ namespace ui {
     class Button2D : public Panel2D {
     public:
 
-        // TextWidget* label = nullptr;
+        Text2D* text_2d = nullptr;
 
         std::string     signal;
 
@@ -142,8 +143,9 @@ namespace ui {
     class Slider2D : public Panel2D {
     public:
 
-        /*TextWidget* label = nullptr;
-        TextWidget* text_value = nullptr;*/
+        /*TextWidget* label = nullptr;*/
+
+        Text2D* text_2d = nullptr;
 
         std::string     signal;
 
@@ -157,10 +159,8 @@ namespace ui {
         Slider2D(const std::string& sg, float v, const glm::vec2& pos, const glm::vec2& size = glm::vec2(BUTTON_SIZE), int mode = SliderMode::VERTICAL, float min = 0.0f, float max = 1.0f, float step = 0.0f);
 
         void update(float delta_time) override;
-        void render() override;
 
         void set_value(float new_value);
-        void create_helpers();
     };
 
     class ColorPicker2D : public Panel2D {
