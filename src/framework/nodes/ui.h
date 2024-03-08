@@ -21,7 +21,8 @@ namespace ui {
 
         Color color;
 
-        bool centered = false;
+        bool render_background  = true;
+        bool centered           = false;
 
         MeshInstance3D* quad = nullptr;
 
@@ -97,9 +98,9 @@ namespace ui {
         bool disabled               = false;
         bool is_color_button        = true;
 
-        Button2D(const std::string& sg, const Color& color = colors::WHITE);
-        Button2D(const std::string& sg, const glm::vec2& pos, const glm::vec2& size = glm::vec2(BUTTON_SIZE));
-        Button2D(const std::string& sg, const Color& color, const glm::vec2& pos, const glm::vec2& size = glm::vec2(BUTTON_SIZE));
+        Button2D(const std::string& sg, const Color& color = colors::WHITE, uint8_t parameter_flags = 0);
+        Button2D(const std::string& sg, uint8_t parameter_flags, const glm::vec2& pos, const glm::vec2& size = glm::vec2(BUTTON_SIZE));
+        Button2D(const std::string& sg, const Color& color, uint8_t parameter_flags, const glm::vec2& pos, const glm::vec2& size = glm::vec2(BUTTON_SIZE));
 
         void set_selected(bool value);
 
@@ -149,13 +150,14 @@ namespace ui {
 
         std::string     signal;
 
-        int mode = SliderMode::HORIZONTAL;
+        int mode = SliderMode::VERTICAL;
 
         float current_value = 0.0f;
         float min_value = 0.0f;
         float max_value = 1.0f;
         float step_value = 0.0f;
 
+        Slider2D(const std::string& sg, float v, int mode = SliderMode::VERTICAL, float min = 0.0f, float max = 1.0f, float step = 0.0f);
         Slider2D(const std::string& sg, float v, const glm::vec2& pos, const glm::vec2& size = glm::vec2(BUTTON_SIZE), int mode = SliderMode::VERTICAL, float min = 0.0f, float max = 1.0f, float step = 0.0f);
 
         void update(float delta_time) override;
@@ -166,8 +168,10 @@ namespace ui {
     class ColorPicker2D : public Panel2D {
     public:
 
-        std::string     signal;
+        std::string signal;
 
+
+        ColorPicker2D(const std::string& sg, const Color& c, bool skip_intensity = false);
         ColorPicker2D(const std::string& sg, const glm::vec2& p, const glm::vec2& s, const Color& c, bool skip_intensity = false);
 
         void update(float delta_time) override;

@@ -65,7 +65,9 @@ namespace ui {
         if (!visibility)
             return;
 
-        quad->render();
+        if (render_background) {
+            quad->render();
+        }
 
         Node2D::render();
     }
@@ -92,6 +94,8 @@ namespace ui {
 
         padding = glm::vec2(GROUP_MARGIN);
         item_margin = glm::vec2(GROUP_MARGIN);
+
+        render_background = false;
     }
 
     void Container2D::on_children_changed()
@@ -204,16 +208,25 @@ namespace ui {
     *	Buttons
     */
 
-    Button2D::Button2D(const std::string& sg, const Color& col)
-        : Button2D(sg, col, { 0.0f, 0.0f }, glm::vec2(BUTTON_SIZE)) { }
+    Button2D::Button2D(const std::string& sg, const Color& col, uint8_t parameter_flags)
+        : Button2D(sg, col, 0, { 0.0f, 0.0f }, glm::vec2(BUTTON_SIZE)) { }
 
-    Button2D::Button2D(const std::string& sg, const glm::vec2& pos, const glm::vec2& size)
+    Button2D::Button2D(const std::string& sg, uint8_t parameter_flags, const glm::vec2& pos, const glm::vec2& size)
         : Panel2D(sg, pos, size), signal(sg) { }
 
-    Button2D::Button2D(const std::string& sg, const Color& col, const glm::vec2& pos, const glm::vec2& size)
+    Button2D::Button2D(const std::string& sg, const Color& col, uint8_t parameter_flags, const glm::vec2& pos, const glm::vec2& size)
         : Panel2D(sg, pos, size, col), signal(sg) {
 
         class_type = Node2DClassType::BUTTON;
+
+        selected = parameter_flags & SELECTED;
+        disabled = parameter_flags & DISABLED;
+        is_unique_selection = parameter_flags & UNIQUE_SELECTION;
+        allow_toggle = parameter_flags & ALLOW_TOGGLE;
+        keep_rgb = parameter_flags & KEEP_RGB;
+
+        ui_data.keep_rgb = keep_rgb;
+        ui_data.is_color_button = is_color_button;
 
         Material material;
         material.color = color;
@@ -341,7 +354,6 @@ namespace ui {
         // Update uniforms
         ui_data.is_hovered = hovered ? 1.f : 0.f;
         ui_data.is_selected = selected ? 1.f : 0.f;
-        ui_data.is_color_button = is_color_button ? 1.f : 0.f;
 
         auto webgpu_context = Renderer::instance->get_webgpu_context();
         RendererStorage::update_ui_widget(webgpu_context, quad, ui_data);
@@ -353,7 +365,7 @@ namespace ui {
         : TextureButton2D(sg, texture_path, parameter_flags, { 0.0f, 0.0f }) { }
 
     TextureButton2D::TextureButton2D(const std::string& sg, const std::string& texture_path, uint8_t parameter_flags, const glm::vec2& pos, const glm::vec2& size)
-        : Button2D(sg, pos, size) {
+        : Button2D(sg, parameter_flags, pos, size) {
 
         class_type = Node2DClassType::BUTTON;
 
@@ -364,6 +376,9 @@ namespace ui {
         is_unique_selection = parameter_flags & UNIQUE_SELECTION;
         allow_toggle = parameter_flags & ALLOW_TOGGLE;
         keep_rgb = parameter_flags & KEEP_RGB;
+
+        ui_data.keep_rgb = keep_rgb;
+        ui_data.is_color_button = is_color_button;
 
         Material material;
         material.color = color;
@@ -454,6 +469,8 @@ namespace ui {
 
         auto webgpu_context = Renderer::instance->get_webgpu_context();
         RendererStorage::register_ui_widget(webgpu_context, material.shader, quad, ui_data, 2);
+
+        render_background = true;
     }
 
     float ItemGroup2D::get_number_of_items()
@@ -492,7 +509,7 @@ namespace ui {
 
         Node2D::add_child(box);
 
-        Node::bind(sg, [box = box](const std::string& sg, void* data) {
+        Node::bind(sg, [&, box = box](const std::string& sg, void* data) {
 
             const bool last_value = box->get_visibility();
 
@@ -500,7 +517,12 @@ namespace ui {
             {
                 ButtonSubmenu2D* submenu = dynamic_cast<ButtonSubmenu2D*>(w.second);
 
-                if (!submenu) // || b->m_layer < widget->m_layer)
+                if (!submenu)
+                    continue;
+
+                bool lower_layer = submenu->get_translation().y < get_translation().y;
+
+                if (lower_layer)
                     continue;
 
                 submenu->box->set_visibility(false);
@@ -518,6 +540,9 @@ namespace ui {
     /*
     *	Slider
     */
+
+    Slider2D::Slider2D(const std::string& sg, float v, int mode, float min, float max, float step)
+        : Slider2D(sg, v, { 0.0f, 0.0f }, glm::vec2(BUTTON_SIZE), mode, min, max, step) {}
 
     Slider2D::Slider2D(const std::string& sg, float value, const glm::vec2& pos, const glm::vec2& size, int mode, float min, float max, float step)
         : Panel2D(sg, pos, { 0.0f, 0.0f }), signal(sg), current_value(value), min_value(min), max_value(max), step_value(step) {
@@ -600,6 +625,9 @@ namespace ui {
     /*
     *	ColorPicker
     */
+
+    ColorPicker2D::ColorPicker2D(const std::string& sg, const Color& c, bool skip_intensity)
+        : ColorPicker2D(sg, {0.0f, 0.0f}, glm::vec2(BUTTON_SIZE), c, skip_intensity) {}
 
     ColorPicker2D::ColorPicker2D(const std::string& sg, const glm::vec2& pos, const glm::vec2& size, const Color& c, bool skip_intensity)
         : Panel2D(sg, pos, size, c), signal(sg)
