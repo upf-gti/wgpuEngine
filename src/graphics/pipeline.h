@@ -22,6 +22,7 @@ struct PipelineDescription {
     bool depth_read         = true;
     bool depth_write        = true;
     bool blending_enabled   = false;
+    uint8_t sample_count    = 1;
 };
 
 struct RenderPipelineKey {
@@ -83,6 +84,9 @@ public:
 
 	void set(const WGPURenderPassEncoder& render_pass);
 	void set(const WGPUComputePassEncoder& compute_pass);
+
+    bool is_render_pipeline();
+    bool is_compute_pipeline();
 
 private:
 

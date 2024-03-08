@@ -81,4 +81,7 @@ public:
     static void register_basic_surfaces();
 
     static std::vector<std::string> get_common_define_specializations(const Material& material);
+
+    static void reload_all_render_pipelines();
+
 };

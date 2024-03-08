@@ -444,3 +444,16 @@ std::vector<std::string> RendererStorage::get_common_define_specializations(cons
 
     return define_specializations;
 }
+
+void RendererStorage::reload_all_render_pipelines()
+{
+    for (auto& shader_pair : shaders) {
+
+        Shader* shader = shader_pair.second;
+        Pipeline* pipeline = shader->get_pipeline();
+
+        if (pipeline && pipeline->is_render_pipeline()) {
+            shader->reload();
+        }
+    }
+}

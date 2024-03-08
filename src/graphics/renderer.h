@@ -7,6 +7,7 @@
 #include "graphics/webgpu_context.h"
 #include "graphics/renderer_storage.h"
 #include "graphics/surface.h"
+#include "texture.h"
 
 #ifdef XR_SUPPORT
 #include "xr/openxr_context.h"
@@ -31,6 +32,13 @@ protected:
     Camera* camera_2d = nullptr;
 
     Texture* irradiance_texture = nullptr;
+
+    Texture         eye_depth_textures[EYE_COUNT] = {};
+    WGPUTextureView eye_depth_texture_view[EYE_COUNT] = {};
+
+    uint8_t msaa_count = 1;
+    Texture multisample_textures[EYE_COUNT];
+    WGPUTextureView multisample_textures_views[EYE_COUNT];
 
     RendererStorage renderer_storage;
 
@@ -108,6 +116,12 @@ public:
 
     void init_ibl_bind_group();
     WGPUBindGroup get_ibl_bind_group() { return ibl_bind_group; }
+
+    void init_depth_buffers();
+    void init_multisample_textures();
+
+    void set_msaa_count(uint8_t msaa_count);
+    uint8_t get_msaa_count();
 
     void prepare_instancing();
     void render_opaque(WGPURenderPassEncoder render_pass, const WGPUBindGroup& render_bind_group_camera);

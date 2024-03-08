@@ -222,7 +222,7 @@ int WebGPUContext::initialize(WGPURequestAdapterOptions adapter_opts, WGPURequir
 
         brdf_lut_texture = new Texture();
         brdf_lut_texture->create(WGPUTextureDimension_2D, WGPUTextureFormat_RG32Float, { 512, 512, 1 },
-            static_cast<WGPUTextureUsage>(WGPUTextureUsage_StorageBinding | WGPUTextureUsage_TextureBinding), 1, nullptr);
+            static_cast<WGPUTextureUsage>(WGPUTextureUsage_StorageBinding | WGPUTextureUsage_TextureBinding), 1, 1, nullptr);
 
         generate_brdf_lut_texture();
     }
@@ -309,13 +309,13 @@ WGPUBuffer WebGPUContext::create_buffer(uint64_t size, int usage, const void* da
     return buffer;
 }
 
-WGPUTexture WebGPUContext::create_texture(WGPUTextureDimension dimension, WGPUTextureFormat format, WGPUExtent3D size, WGPUTextureUsage usage, uint32_t mipmaps)
+WGPUTexture WebGPUContext::create_texture(WGPUTextureDimension dimension, WGPUTextureFormat format, WGPUExtent3D size, WGPUTextureUsage usage, uint32_t mipmaps, uint8_t sample_count)
 {
     WGPUTextureDescriptor textureDesc = {};
     textureDesc.dimension = dimension;
     textureDesc.format = format;
     textureDesc.size = size;
-    textureDesc.sampleCount = 1;
+    textureDesc.sampleCount = sample_count;
     textureDesc.viewFormatCount = 0;
     textureDesc.viewFormats = nullptr;
     textureDesc.usage = usage;
@@ -605,7 +605,8 @@ void WebGPUContext::copy_texture_to_texture(WGPUTexture texture_src, WGPUTexture
     wgpuCommandEncoderRelease(command_encoder);
 }
 
-WGPURenderPipeline WebGPUContext::create_render_pipeline(WGPUShaderModule render_shader_module, WGPUPipelineLayout pipeline_layout, const std::vector<WGPUVertexBufferLayout>& vertex_attributes, WGPUColorTargetState color_target, bool depth_read, bool depth_write, WGPUCullMode cull_mode, WGPUPrimitiveTopology topology)
+WGPURenderPipeline WebGPUContext::create_render_pipeline(WGPUShaderModule render_shader_module, WGPUPipelineLayout pipeline_layout, const std::vector<WGPUVertexBufferLayout>& vertex_attributes,
+    WGPUColorTargetState color_target, bool depth_read, bool depth_write, WGPUCullMode cull_mode, WGPUPrimitiveTopology topology, uint8_t sample_count)
 {    
     WGPUVertexState vertex_state = {};
     vertex_state.module = render_shader_module;
@@ -655,7 +656,7 @@ WGPURenderPipeline WebGPUContext::create_render_pipeline(WGPUShaderModule render
 
     pipeline_descr.depthStencil = (depth_read) ? &depth_state : nullptr;
     pipeline_descr.multisample = {
-            .count = 1,
+            .count = sample_count,
             .mask = ~0u,
             .alphaToCoverageEnabled = false
     };

@@ -53,7 +53,7 @@ struct WebGPUContext {
     WGPUShaderModule       create_shader_module(char const* code);
 
     WGPUBuffer             create_buffer(uint64_t size, int usage, const void* data, const char* label = nullptr);
-    WGPUTexture            create_texture(WGPUTextureDimension dimension, WGPUTextureFormat format, WGPUExtent3D size, WGPUTextureUsage usage, uint32_t mipmaps);
+    WGPUTexture            create_texture(WGPUTextureDimension dimension, WGPUTextureFormat format, WGPUExtent3D size, WGPUTextureUsage usage, uint32_t mipmaps, uint8_t sample_count);
     WGPUTextureView        create_texture_view(WGPUTexture texture, WGPUTextureViewDimension dimension, WGPUTextureFormat format, WGPUTextureAspect aspect = WGPUTextureAspect_All, uint32_t mip_level_count = 1, uint32_t base_mip_level = 0, uint32_t array_layer_count = 1, const char* label = "");
     
                            // By now wrapU = wrapV = wrapW
@@ -69,7 +69,7 @@ struct WebGPUContext {
     void                   copy_texture_to_texture(WGPUTexture texture_src, WGPUTexture texture_dst, uint32_t src_mipmap_level, uint32_t dst_mipmap_level, const WGPUExtent3D& copy_size);
 
     WGPURenderPipeline     create_render_pipeline(WGPUShaderModule render_shader_module, WGPUPipelineLayout pipeline_layout, const std::vector<WGPUVertexBufferLayout>& vertex_attributes,
-                                                  WGPUColorTargetState color_target, bool depth_read = true, bool depth_write = true, WGPUCullMode cull_mode = WGPUCullMode_None, WGPUPrimitiveTopology topology = WGPUPrimitiveTopology_TriangleList);
+                                                  WGPUColorTargetState color_target, bool depth_read = true, bool depth_write = true, WGPUCullMode cull_mode = WGPUCullMode_None, WGPUPrimitiveTopology topology = WGPUPrimitiveTopology_TriangleList, uint8_t sample_count = 1);
     WGPUComputePipeline    create_compute_pipeline(WGPUShaderModule compute_shader_module, WGPUPipelineLayout pipeline_layout);
 
     WGPUVertexBufferLayout create_vertex_buffer_layout(const std::vector<WGPUVertexAttribute>& vertex_attributes, uint64_t stride, WGPUVertexStepMode step_mode);

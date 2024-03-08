@@ -44,7 +44,7 @@ void Pipeline::create_render(Shader* shader, const WGPUColorTargetState& p_color
 
 	pipeline_layout = webgpu_context->create_pipeline_layout(bind_group_layouts);
 
-	pipeline = webgpu_context->create_render_pipeline(shader->get_module(), pipeline_layout, shader->get_vertex_buffer_layouts(), p_color_target, desc.depth_read, desc.depth_write, desc.cull_mode, desc.topology);
+	pipeline = webgpu_context->create_render_pipeline(shader->get_module(), pipeline_layout, shader->get_vertex_buffer_layouts(), p_color_target, desc.depth_read, desc.depth_write, desc.cull_mode, desc.topology, desc.sample_count);
 
 	shader->set_pipeline(this);
 }
@@ -158,6 +158,8 @@ void Pipeline::register_render_pipeline(Material& material)
         break;
     }
 
+    description.sample_count = Renderer::instance->get_msaa_count();
+
     RenderPipelineKey key = { material.shader, color_target, description };
 
     if (registered_render_pipelines.contains(key)) {
@@ -198,8 +200,11 @@ void Pipeline::reload(Shader* shader)
         if (description.blending_enabled) {
             color_target.blend = blend_state;
         }
+
+        description.sample_count = Renderer::instance->get_msaa_count();
+
 		pipeline = webgpu_context->create_render_pipeline(shader->get_module(), pipeline_layout, shader->get_vertex_buffer_layouts(),
-            color_target, description.depth_read, description.depth_write, description.cull_mode, description.topology);
+            color_target, description.depth_read, description.depth_write, description.cull_mode, description.topology, description.sample_count);
 	}
 	else {
 		wgpuComputePipelineRelease(std::get<WGPUComputePipeline>(pipeline));
@@ -215,4 +220,14 @@ void Pipeline::set(const WGPURenderPassEncoder& render_pass)
 void Pipeline::set(const WGPUComputePassEncoder& compute_pass)
 {
 	wgpuComputePassEncoderSetPipeline(compute_pass, std::get<WGPUComputePipeline>(pipeline));
+}
+
+bool Pipeline::is_render_pipeline()
+{
+    return std::holds_alternative<WGPURenderPipeline>(pipeline);
+}
+
+bool Pipeline::is_compute_pipeline()
+{
+    return std::holds_alternative<WGPUComputePipeline>(pipeline);
 }

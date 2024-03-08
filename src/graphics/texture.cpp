@@ -15,19 +15,20 @@ Texture::~Texture() {
     }
 }
 
-void Texture::create(WGPUTextureDimension dimension, WGPUTextureFormat format, WGPUExtent3D size, WGPUTextureUsage usage, uint32_t mipmaps, const void* data)
+void Texture::create(WGPUTextureDimension dimension, WGPUTextureFormat format, WGPUExtent3D size, WGPUTextureUsage usage, uint32_t mipmaps, uint8_t sample_count, const void* data)
 {
     this->dimension = dimension;
     this->format = format;
     this->size = size;
     this->usage = usage;
     this->mipmaps = mipmaps;
+    this->sample_count = sample_count;
 
     if (texture) {
         wgpuTextureDestroy(texture);
     }
 
-    texture = webgpu_context->create_texture(dimension, format, size, usage, mipmaps);
+    texture = webgpu_context->create_texture(dimension, format, size, usage, mipmaps, sample_count);
 
     if (data != nullptr) {
         webgpu_context->create_texture_mipmaps(texture, size, mipmaps, data);
@@ -90,16 +91,16 @@ void Texture::load_from_data(const std::string& name, int width, int height, voi
     usage = static_cast<WGPUTextureUsage>(WGPUTextureUsage_TextureBinding | WGPUTextureUsage_CopyDst);
     mipmaps = std::bit_width(std::max(size.width, size.height));
 
-    texture = webgpu_context->create_texture(dimension, format, size, usage, mipmaps);
+    texture = webgpu_context->create_texture(dimension, format, size, usage, mipmaps, 1);
 
     // Create mipmaps
     {
         WGPUTextureUsage mipmaps_usage = static_cast<WGPUTextureUsage>(WGPUTextureUsage_TextureBinding | WGPUTextureUsage_StorageBinding | WGPUTextureUsage_CopyDst | WGPUTextureUsage_CopySrc);
 
-        WGPUTexture texture_temp = webgpu_context->create_texture(dimension, WGPUTextureFormat_RGBA8Unorm, size, mipmaps_usage, mipmaps);
+        WGPUTexture texture_temp = webgpu_context->create_texture(dimension, WGPUTextureFormat_RGBA8Unorm, size, mipmaps_usage, mipmaps, 1);
         webgpu_context->create_texture_mipmaps(texture_temp, size, mipmaps, data, WGPUTextureViewDimension_2D, WGPUTextureFormat_RGBA8Unorm);
 
-        for (int i = 0; i < mipmaps; ++i) {
+        for (uint32_t i = 0; i < mipmaps; ++i) {
             WGPUExtent3D mipmap_size;
 
             if (i > 0) {
@@ -128,7 +129,7 @@ void Texture::load_from_hdre(HDRE* hdre)
     usage = static_cast<WGPUTextureUsage>(WGPUTextureUsage_TextureBinding | WGPUTextureUsage_CopyDst);
     mipmaps = 6; // num generated levels
 
-    texture = webgpu_context->create_texture(dimension, format, size, usage, mipmaps);
+    texture = webgpu_context->create_texture(dimension, format, size, usage, mipmaps, 1);
 
     for (uint32_t level = 0; level < 6; ++level)
     {

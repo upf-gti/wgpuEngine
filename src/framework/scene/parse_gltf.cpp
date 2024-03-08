@@ -425,7 +425,7 @@ void read_mesh(tinygltf::Model& model, tinygltf::Mesh& mesh, Node3D* entity, std
             if (gltf_material.occlusionTexture.index >= 0) {
                 if (texture_cache.contains(gltf_material.occlusionTexture.index)) {
                     material.oclussion_texture = texture_cache[gltf_material.occlusionTexture.index];
-                    material.occlusion = gltf_material.occlusionTexture.strength;
+                    material.occlusion = static_cast<float>(gltf_material.occlusionTexture.strength);
                 }
                 else {
                     create_material_texture(model, gltf_material.occlusionTexture.index, &material.oclussion_texture, true);

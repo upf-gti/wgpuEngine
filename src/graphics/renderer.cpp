@@ -109,7 +109,11 @@ int Renderer::initialize(GLFWwindow* window, bool use_mirror_screen)
         irradiance_texture = RendererStorage::get_texture("data/textures/environments/sky.hdre");
     }
 
+    init_depth_buffers();
+
     init_ibl_bind_group();
+
+    init_multisample_textures();
 
     return 0;
 }
@@ -119,6 +123,12 @@ void Renderer::clean()
 #ifdef XR_SUPPORT
     xr_context.clean();
 #endif
+
+    uint8_t num_textures = is_openxr_available ? 2 : 1;
+    for (int i = 0; i < num_textures; ++i)
+    {
+        wgpuTextureViewRelease(eye_depth_texture_view[i]);
+    }
 
     Pipeline::clean_registered_pipelines();
 
@@ -160,6 +170,73 @@ void Renderer::init_ibl_bind_group()
 
     std::vector<Uniform*> uniforms = { &irradiance_texture_uniform, &brdf_lut_uniform, &ibl_sampler_uniform };
     ibl_bind_group = webgpu_context.create_bind_group(uniforms, RendererStorage::get_shader("data/shaders/mesh_pbr.wgsl"), 3);
+}
+
+void Renderer::init_depth_buffers()
+{
+    if (eye_depth_textures[0].get_texture() != nullptr) {
+        uint8_t num_textures = is_openxr_available ? 2 : 1;
+        for (int i = 0; i < num_textures; ++i)
+        {
+            wgpuTextureViewRelease(eye_depth_texture_view[i]);
+        }
+    }
+
+    uint8_t num_textures = is_openxr_available ? 2 : 1;
+    for (int i = 0; i < num_textures; ++i)
+    {
+        eye_depth_textures[i].create(
+            WGPUTextureDimension_2D,
+            WGPUTextureFormat_Depth32Float,
+            { webgpu_context.render_width, webgpu_context.render_height, 1 },
+            WGPUTextureUsage_RenderAttachment,
+            1, msaa_count, nullptr);
+
+        if (eye_depth_texture_view[i]) {
+            wgpuTextureViewRelease(eye_depth_texture_view[i]);
+        }
+
+        // Generate Texture views of depth buffers
+        eye_depth_texture_view[i] = eye_depth_textures[i].get_view();
+    }
+}
+
+void Renderer::init_multisample_textures()
+{
+    if (multisample_textures[0].get_texture() != nullptr) {
+        uint8_t num_textures = is_openxr_available ? 2 : 1;
+        for (int i = 0; i < num_textures; ++i)
+        {
+            wgpuTextureViewRelease(multisample_textures_views[i]);
+        }
+    }
+
+    WGPUTextureFormat swapchain_format = is_openxr_available ? webgpu_context.xr_swapchain_format : webgpu_context.swapchain_format;
+
+    uint8_t num_textures = is_openxr_available ? 2 : 1;
+    for (int i = 0; i < num_textures; ++i) {
+        multisample_textures[i].create(WGPUTextureDimension_2D, swapchain_format, { webgpu_context.render_width, webgpu_context.render_height, 1 }, WGPUTextureUsage_RenderAttachment, 1, msaa_count, nullptr);
+        multisample_textures_views[i] = multisample_textures[i].get_view();
+    }
+}
+
+void Renderer::set_msaa_count(uint8_t msaa_count)
+{
+    bool recreate = msaa_count != this->msaa_count && multisample_textures[0].get_texture() != nullptr;
+
+    this->msaa_count = msaa_count;
+
+    if (recreate) {
+        init_depth_buffers();
+        init_multisample_textures();
+    }
+
+    RendererStorage::reload_all_render_pipelines();
+}
+
+uint8_t Renderer::get_msaa_count()
+{
+    return msaa_count;
 }
 
 void Renderer::prepare_instancing()
@@ -426,6 +503,9 @@ void Renderer::resize_window(int width, int height)
             camera->set_perspective(glm::radians(45.0f), webgpu_context.render_width / static_cast<float>(webgpu_context.render_height), z_near, z_far);
         }
     }
+
+    init_depth_buffers();
+    init_multisample_textures();
 }
 
 void Renderer::set_irradiance_texture(Texture* texture)
