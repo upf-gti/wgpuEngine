@@ -1,7 +1,7 @@
 #pragma once
 
 #include "node_2d.h"
-#include "node_3d.h"
+#include "mesh_instance_3d.h"
 #include "graphics/material.h"
 #include "graphics/surface.h"
 
@@ -9,7 +9,9 @@ class Viewport3D : public Node3D {
 
     Node2D* root = nullptr;
 
-    float viewport_size = 1.0f;
+    glm::mat4x4 global_transform;
+
+    MeshInstance3D* raycast_pointer = nullptr;
 
 public:
 

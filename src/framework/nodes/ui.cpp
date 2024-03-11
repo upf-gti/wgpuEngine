@@ -4,6 +4,7 @@
 #include "framework/utils/intersections.h"
 #include "framework/input.h"
 #include "framework/nodes/text.h"
+#include "framework/camera/camera.h"
 #include "graphics/renderer.h"
 #include "graphics/webgpu_context.h"
 #include "spdlog/spdlog.h"
@@ -39,6 +40,13 @@ namespace ui {
         quad_mesh.set_surface_material_override_color(0, c);
     }
 
+    void Panel2D::update(float delta_time)
+    {
+        // set_color(is_hovered() ? colors::GREEN : colors::RED);
+
+        Node2D::update(delta_time);
+    }
+
     void Panel2D::render()
     {
         if (!visibility)
@@ -46,12 +54,106 @@ namespace ui {
 
         if (render_background) {
             // Convert the mat3x3 to mat4x4
-            glm::mat4x4 model = glm::translate(glm::mat4x4(1.0f), glm::vec3(get_translation(), 0.0f));
+            uint8_t priority = class_type;
+            glm::mat4x4 model = glm::translate(glm::mat4x4(1.0f), glm::vec3(get_translation(), -priority * 1e-5));
             model = glm::scale(model, glm::vec3(get_scale(), 1.0f));
             Renderer::instance->add_renderable(&quad_mesh, model);
         }
 
         Node2D::render();
+    }
+
+    bool Panel2D::is_hovered()
+    {
+        WebGPUContext* webgpu_context = Renderer::instance->get_webgpu_context();
+
+        Material* material = quad_mesh.get_surface_material_override(quad_mesh.get_surface(0));
+
+        if (material->flags & MATERIAL_2D)
+        {
+            glm::vec2 mouse_pos = Input::get_mouse_position();
+            mouse_pos.y = webgpu_context->render_height - mouse_pos.y;
+
+            glm::vec2 min = get_translation();
+            glm::vec2 max = min + size;
+
+            return mouse_pos.x >= min.x && mouse_pos.y >= min.y && mouse_pos.x <= max.x && mouse_pos.y <= max.y;
+        }
+        else if (Renderer::instance->get_openxr_available())
+        {
+            // HANDLE RAY USING CONTROLLER
+
+            // Ray
+            glm::vec3 ray_origin = Input::get_controller_position(HAND_RIGHT, POSE_AIM);
+            glm::mat4x4 select_hand_pose = Input::get_controller_pose(HAND_RIGHT, POSE_AIM);
+            glm::vec3 ray_direction = get_front(select_hand_pose);
+
+            // Quad
+            uint8_t priority = class_type;
+            glm::mat4x4 model = glm::translate(glm::mat4x4(1.0f), glm::vec3(get_translation(), -priority * 1e-5));
+
+            glm::vec3 quad_position = model[3];
+            glm::quat quad_rotation = glm::quat_cast(glm::mat4x4(1.0f));
+            float ar = webgpu_context->render_width / webgpu_context->render_height;
+            glm::vec2 quad_size = size * get_scale();
+
+            float collision_dist;
+            glm::vec3 intersection_point;
+
+            return intersection::ray_quad(
+                ray_origin,
+                ray_direction,
+                quad_position,
+                quad_size,
+                quad_rotation,
+                intersection_point,
+                collision_dist,
+                false
+            );
+        }
+        else
+        {
+            // HANDLE RAY USING MOUSE
+
+            Camera* camera = Renderer::instance->get_camera();
+            const glm::mat4x4& view_projection_inv = glm::inverse(camera->get_view_projection());
+
+            glm::vec2 mouse_pos = Input::get_mouse_position();
+            glm::vec3 mouse_pos_ndc;
+            mouse_pos_ndc.x = (mouse_pos.x / webgpu_context->render_width) * 2.0f - 1.0f;
+            mouse_pos_ndc.y = -((mouse_pos.y / webgpu_context->render_height) * 2.0f - 1.0f);
+            mouse_pos_ndc.z = 1.0f;
+
+            glm::vec4 ray_dir = view_projection_inv * glm::vec4(mouse_pos_ndc, 1.0f);
+            ray_dir /= ray_dir.w;
+
+            // Ray
+            glm::vec3 ray_origin = camera->get_eye();
+            glm::vec3 ray_direction = glm::normalize(glm::vec3(ray_dir));
+
+            // Quad
+            uint8_t priority = class_type;
+            glm::mat4x4 model = glm::translate(glm::mat4x4(1.0f), glm::vec3(get_translation(), -priority * 1e-5));
+
+            glm::vec3 quad_position = model[3];
+            glm::quat quad_rotation = glm::quat_cast(glm::mat4x4(1.0f));
+            float ar = webgpu_context->render_width / webgpu_context->render_height;
+            glm::vec2 quad_size = size * get_scale();
+
+            float collision_dist;
+            glm::vec3 intersection_point;
+
+            return intersection::ray_quad(
+                ray_origin,
+                ray_direction,
+                quad_position,
+                quad_size,
+                quad_rotation,
+                intersection_point,
+                collision_dist,
+                false
+            );
+        }
     }
 
     void Panel2D::remove_flag(uint8_t flag)
@@ -574,10 +676,13 @@ namespace ui {
         if (is_pressed)
         {
             float range = (mode == HORIZONTAL ? size.x : size.y);
-            glm::vec2 local_mouse_pos = Input::get_mouse_position() - get_translation();
+            auto webgpu_context = Renderer::instance->get_webgpu_context();
+            glm::vec2 mouse_pos = Input::get_mouse_position();
+            mouse_pos.y = webgpu_context->render_height - mouse_pos.y;
+            glm::vec2 local_mouse_pos = mouse_pos - get_translation();
             float bounds = range * 0.975f;
             // -scale..scale -> 0..1
-            float local_point = (mode == HORIZONTAL ? local_mouse_pos.x : size.y - local_mouse_pos.y);
+            float local_point = (mode == HORIZONTAL ? local_mouse_pos.x : local_mouse_pos.y);
             // this is at range 0..1
             current_value = glm::clamp(local_point / bounds, 0.f, 1.f);
             // set in range min-max

@@ -1,6 +1,8 @@
 #include "node_2d.h"
 
 #include "framework/input.h"
+#include "framework/utils/intersections.h"
+#include "graphics/renderer.h"
 
 #include "spdlog/spdlog.h"
 
@@ -167,16 +169,6 @@ glm::mat3x3 Node2D::get_rotation() const
 glm::vec2 Node2D::get_size() const
 {
     return size;
-}
-
-bool Node2D::is_hovered()
-{
-    glm::vec2 mouse_pos = Input::get_mouse_position();
-
-    glm::vec2 min = get_translation();
-    glm::vec2 max = min + size;
-
-    return mouse_pos.x >= min.x && mouse_pos.y >= min.y && mouse_pos.x <= max.x && mouse_pos.y <= max.y;
 }
 
 Node2D* Node2D::get_widget_from_name(const std::string& name)

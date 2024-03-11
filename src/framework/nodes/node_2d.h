@@ -12,12 +12,12 @@ enum Node2DClassType {
     TEXT,
     LABEL,
     BUTTON,
+    SUBMENU,
     SLIDER,
     COLOR_PICKER,
     GROUP,
     HCONTAINER,
     VCONTAINER,
-    SUBMENU,
     PANEL,
     NUM_2D_TYPES
 };
@@ -64,8 +64,6 @@ public:
     glm::vec2 get_size() const;
     uint8_t get_class_type() const;
     bool get_visibility() const;
-
-    bool is_hovered();
 
 	void set_translation(const glm::vec2& translation);
     void set_model(const glm::mat3x3& _model);
