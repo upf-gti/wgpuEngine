@@ -32,7 +32,8 @@ namespace intersection {
 						 const glm::vec2& quad_size,
 						 const glm::quat& quad_rotation,
 						 glm::vec3& intersection,
-						 float& collision_distance) {
+						 float& collision_distance,
+                         bool centered = true) {
 
 		// Assumtion: the original quad orientation is (0,1,0)
 		const glm::vec3 quad_orientation = quad_rotation * glm::vec3(0.f, 0.f, -1.f);
@@ -59,9 +60,16 @@ namespace intersection {
 		intersection_point = rotate_to_quad_local * intersection_point;
 		intersection = intersection_point;
 
-		if (quad_size.x > intersection_point.x && -quad_size.x < intersection_point.x)
-			if (quad_size.y > intersection_point.y && -quad_size.y < intersection_point.y)
-				return true;
+        if (centered) {
+		    if (quad_size.x > intersection_point.x && -quad_size.x < intersection_point.x)
+			    if (quad_size.y > intersection_point.y && -quad_size.y < intersection_point.y)
+				    return true;
+        }
+        else {
+            if (quad_size.x > intersection_point.x && 0.0f < intersection_point.x)
+                if (quad_size.y > intersection_point.y && 0.0f < intersection_point.y)
+                    return true;
+        }
 
 		return false;
 	}

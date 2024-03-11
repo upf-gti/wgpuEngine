@@ -1,6 +1,8 @@
 #include "node_2d.h"
 
 #include "framework/input.h"
+#include "framework/utils/intersections.h"
+#include "graphics/renderer.h"
 
 #include "spdlog/spdlog.h"
 
@@ -55,7 +57,6 @@ void Node2D::remove_child(Node2D* child)
 
     on_children_changed();
 }
-
 
 void Node2D::on_children_changed()
 {
@@ -125,6 +126,13 @@ const glm::vec2 Node2D::get_translation() const
 	return get_global_model()[2];
 }
 
+// This assumes there's no rotation..
+const glm::vec2 Node2D::get_scale() const
+{
+    glm::mat3x3 model = get_global_model();
+    return glm::vec2(model[0][0], model[1][1]);
+}
+
 glm::mat3x3 Node2D::get_model() const
 {
     return model;
@@ -161,16 +169,6 @@ glm::mat3x3 Node2D::get_rotation() const
 glm::vec2 Node2D::get_size() const
 {
     return size;
-}
-
-bool Node2D::is_hovered()
-{
-    glm::vec2 mouse_pos = Input::get_mouse_position();
-
-    glm::vec2 min = get_translation();
-    glm::vec2 max = min + size;
-
-    return mouse_pos.x >= min.x && mouse_pos.y >= min.y && mouse_pos.x <= max.x && mouse_pos.y <= max.y;
 }
 
 Node2D* Node2D::get_widget_from_name(const std::string& name)

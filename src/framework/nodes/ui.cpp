@@ -4,9 +4,9 @@
 #include "framework/utils/intersections.h"
 #include "framework/input.h"
 #include "framework/nodes/text.h"
+#include "framework/camera/camera.h"
 #include "graphics/renderer.h"
 #include "graphics/webgpu_context.h"
-
 #include "spdlog/spdlog.h"
 
 namespace ui {
@@ -27,35 +27,22 @@ namespace ui {
         material.shader = RendererStorage::get_shader("data/shaders/mesh_color.wgsl", material);
 
         Surface* quad_surface = new Surface();
-        quad_surface->create_quad(size.x, size.y);
+        quad_surface->create_quad(size.x, size.y, false);
 
-        quad = new MeshInstance3D();
-        quad->add_surface(quad_surface);
-        quad->set_surface_material_override(quad->get_surface(0), material);
+        quad_mesh.add_surface(quad_surface);
+        quad_mesh.set_surface_material_override(quad_mesh.get_surface(0), material);
     }
 
     void Panel2D::set_color(const Color& c)
     {
         color = c;
 
-        quad->set_surface_material_override_color(0, c);
+        quad_mesh.set_surface_material_override_color(0, c);
     }
 
     void Panel2D::update(float delta_time)
     {
-        if (!visibility)
-            return;
-
-        // Move quad to node position..
-
-        glm::vec2 t = get_translation() + size * 0.50f;
-
-        if (centered && parent) {
-            auto psize = parent->get_size();
-            t.x = get_translation().x + psize.x * 0.5f;
-        }
-
-        quad->set_translation(glm::vec3(t, 0.0f));
+        // set_color(is_hovered() ? colors::GREEN : colors::RED);
 
         Node2D::update(delta_time);
     }
@@ -66,10 +53,115 @@ namespace ui {
             return;
 
         if (render_background) {
-            quad->render();
+            // Convert the mat3x3 to mat4x4
+            uint8_t priority = class_type;
+            glm::mat4x4 model = glm::translate(glm::mat4x4(1.0f), glm::vec3(get_translation(), -priority * 1e-5));
+            model = glm::scale(model, glm::vec3(get_scale(), 1.0f));
+            Renderer::instance->add_renderable(&quad_mesh, model);
         }
 
         Node2D::render();
+    }
+
+    bool Panel2D::is_hovered()
+    {
+        WebGPUContext* webgpu_context = Renderer::instance->get_webgpu_context();
+
+        Material* material = quad_mesh.get_surface_material_override(quad_mesh.get_surface(0));
+
+        if (material->flags & MATERIAL_2D)
+        {
+            glm::vec2 mouse_pos = Input::get_mouse_position();
+            mouse_pos.y = webgpu_context->render_height - mouse_pos.y;
+
+            glm::vec2 min = get_translation();
+            glm::vec2 max = min + size;
+
+            return mouse_pos.x >= min.x && mouse_pos.y >= min.y && mouse_pos.x <= max.x && mouse_pos.y <= max.y;
+        }
+        else if (Renderer::instance->get_openxr_available())
+        {
+            // HANDLE RAY USING CONTROLLER
+
+            // Ray
+            glm::vec3 ray_origin = Input::get_controller_position(HAND_RIGHT, POSE_AIM);
+            glm::mat4x4 select_hand_pose = Input::get_controller_pose(HAND_RIGHT, POSE_AIM);
+            glm::vec3 ray_direction = get_front(select_hand_pose);
+
+            // Quad
+            uint8_t priority = class_type;
+            glm::mat4x4 model = glm::translate(glm::mat4x4(1.0f), glm::vec3(get_translation(), -priority * 1e-5));
+
+            glm::vec3 quad_position = model[3];
+            glm::quat quad_rotation = glm::quat_cast(glm::mat4x4(1.0f));
+            float ar = webgpu_context->render_width / webgpu_context->render_height;
+            glm::vec2 quad_size = size * get_scale();
+
+            float collision_dist;
+            glm::vec3 intersection_point;
+
+            return intersection::ray_quad(
+                ray_origin,
+                ray_direction,
+                quad_position,
+                quad_size,
+                quad_rotation,
+                intersection_point,
+                collision_dist,
+                false
+            );
+        }
+        else
+        {
+            // HANDLE RAY USING MOUSE
+
+            Camera* camera = Renderer::instance->get_camera();
+            const glm::mat4x4& view_projection_inv = glm::inverse(camera->get_view_projection());
+
+            glm::vec2 mouse_pos = Input::get_mouse_position();
+            glm::vec3 mouse_pos_ndc;
+            mouse_pos_ndc.x = (mouse_pos.x / webgpu_context->render_width) * 2.0f - 1.0f;
+            mouse_pos_ndc.y = -((mouse_pos.y / webgpu_context->render_height) * 2.0f - 1.0f);
+            mouse_pos_ndc.z = 1.0f;
+
+            glm::vec4 ray_dir = view_projection_inv * glm::vec4(mouse_pos_ndc, 1.0f);
+            ray_dir /= ray_dir.w;
+
+            // Ray
+            glm::vec3 ray_origin = camera->get_eye();
+            glm::vec3 ray_direction = glm::normalize(glm::vec3(ray_dir));
+
+            // Quad
+            uint8_t priority = class_type;
+            glm::mat4x4 model = glm::translate(glm::mat4x4(1.0f), glm::vec3(get_translation(), -priority * 1e-5));
+
+            glm::vec3 quad_position = model[3];
+            glm::quat quad_rotation = glm::quat_cast(glm::mat4x4(1.0f));
+            float ar = webgpu_context->render_width / webgpu_context->render_height;
+            glm::vec2 quad_size = size * get_scale();
+
+            float collision_dist;
+            glm::vec3 intersection_point;
+
+            return intersection::ray_quad(
+                ray_origin,
+                ray_direction,
+                quad_position,
+                quad_size,
+                quad_rotation,
+                intersection_point,
+                collision_dist,
+                false
+            );
+        }
+    }
+
+    void Panel2D::remove_flag(uint8_t flag)
+    {
+        Material* material = quad_mesh.get_surface_material_override(quad_mesh.get_surface(0));
+        material->flags ^= flag;
+
+        Node2D::remove_flag(flag);
     }
 
     /*
@@ -86,11 +178,10 @@ namespace ui {
         material.shader = RendererStorage::get_shader("data/shaders/mesh_color.wgsl", material);
 
         Surface* quad_surface = new Surface();
-        quad_surface->create_quad(size.x, size.y);
+        quad_surface->create_quad(size.x, size.y, false);
 
-        quad = new MeshInstance3D();
-        quad->add_surface(quad_surface);
-        quad->set_surface_material_override(quad->get_surface(0), material);
+        quad_mesh.add_surface(quad_surface);
+        quad_mesh.set_surface_material_override(quad_mesh.get_surface(0), material);
 
         padding = glm::vec2(GROUP_MARGIN);
         item_margin = glm::vec2(GROUP_MARGIN);
@@ -102,8 +193,8 @@ namespace ui {
     {
         // Recreate quad using new size and reposition accordingly
 
-        Surface* quad_surface = quad->get_surface(0);
-        quad_surface->create_quad(size.x, size.y);
+        Surface* quad_surface = quad_mesh.get_surface(0);
+        quad_surface->create_quad(size.x, size.y, false);
 
         Node2D::on_children_changed();
     }
@@ -175,7 +266,7 @@ namespace ui {
     */
 
     Text2D::Text2D(const std::string& _text, const glm::vec2& pos, float scale, const Color& color)
-        : Node2D(_text + "@text", pos, {1.0f, 1.0f}) {
+        : Panel2D(_text + "@text", pos, { 1.0f, 1.0f }) {
 
         class_type = Node2DClassType::TEXT;
 
@@ -230,19 +321,18 @@ namespace ui {
 
         Material material;
         material.color = color;
-        material.flags = MATERIAL_2D;
+        material.flags = MATERIAL_2D | MATERIAL_UI;
         material.priority = class_type;
         material.shader = RendererStorage::get_shader("data/shaders/ui/ui_button.wgsl", material);
 
         Surface* quad_surface = new Surface();
-        quad_surface->create_quad(size.x, size.y);
+        quad_surface->create_quad(size.x, size.y, false);
 
-        quad = new MeshInstance3D();
-        quad->add_surface(quad_surface);
-        quad->set_surface_material_override(quad->get_surface(0), material);
+        quad_mesh.add_surface(quad_surface);
+        quad_mesh.set_surface_material_override(quad_mesh.get_surface(0), material);
 
         auto webgpu_context = Renderer::instance->get_webgpu_context();
-        RendererStorage::register_ui_widget(webgpu_context, material.shader, quad, ui_data, 2);
+        RendererStorage::register_ui_widget(webgpu_context, material.shader, &quad_mesh, ui_data, 2);
 
         // Selection styling visibility callback..
         Node::bind(signal, [&](const std::string& signal, void* button) {
@@ -262,7 +352,7 @@ namespace ui {
                 }
             }
             set_selected(allow_toggle ? !last_value : true);
-        });
+            });
 
         // Submenu icon..
         {
@@ -356,7 +446,7 @@ namespace ui {
         ui_data.is_selected = selected ? 1.f : 0.f;
 
         auto webgpu_context = Renderer::instance->get_webgpu_context();
-        RendererStorage::update_ui_widget(webgpu_context, quad, ui_data);
+        RendererStorage::update_ui_widget(webgpu_context, &quad_mesh, ui_data);
 
         Panel2D::update(delta_time);
     }
@@ -382,7 +472,7 @@ namespace ui {
 
         Material material;
         material.color = color;
-        material.flags = MATERIAL_2D;
+        material.flags = MATERIAL_2D | MATERIAL_UI;
         material.priority = class_type;
 
         std::vector<std::string> define_specializations = { "USES_TEXTURE" };
@@ -393,14 +483,13 @@ namespace ui {
         material.shader = RendererStorage::get_shader("data/shaders/ui/ui_button.wgsl", material, define_specializations);
 
         Surface* quad_surface = new Surface();
-        quad_surface->create_quad(size.x, size.y);
+        quad_surface->create_quad(size.x, size.y, false);
 
-        quad = new MeshInstance3D();
-        quad->add_surface(quad_surface);
-        quad->set_surface_material_override(quad->get_surface(0), material);
+        quad_mesh.add_surface(quad_surface);
+        quad_mesh.set_surface_material_override(quad_mesh.get_surface(0), material);
 
         auto webgpu_context = Renderer::instance->get_webgpu_context();
-        RendererStorage::register_ui_widget(webgpu_context, material.shader, quad, ui_data, 3);
+        RendererStorage::register_ui_widget(webgpu_context, material.shader, &quad_mesh, ui_data, 3);
 
         // Selection styling visibility callback..
         if (is_unique_selection || allow_toggle)
@@ -422,7 +511,7 @@ namespace ui {
                     }
                 }
                 set_selected(allow_toggle ? !last_value : true);
-            });
+                });
         }
 
         // Submenu icon..
@@ -461,14 +550,14 @@ namespace ui {
 
         Material material;
         material.color = color;
-        material.flags = MATERIAL_2D;
+        material.flags = MATERIAL_2D | MATERIAL_UI;
         material.priority = class_type;
         material.shader = RendererStorage::get_shader("data/shaders/ui/ui_group.wgsl", material);
 
-        quad->set_surface_material_override(quad->get_surface(0), material);
+        quad_mesh.set_surface_material_override(quad_mesh.get_surface(0), material);
 
         auto webgpu_context = Renderer::instance->get_webgpu_context();
-        RendererStorage::register_ui_widget(webgpu_context, material.shader, quad, ui_data, 2);
+        RendererStorage::register_ui_widget(webgpu_context, material.shader, &quad_mesh, ui_data, 2);
 
         render_background = true;
     }
@@ -483,7 +572,7 @@ namespace ui {
         ui_data.num_group_items = number;
 
         auto webgpu_context = Renderer::instance->get_webgpu_context();
-        RendererStorage::update_ui_widget(webgpu_context, quad, ui_data);
+        RendererStorage::update_ui_widget(webgpu_context, &quad_mesh, ui_data);
     }
 
     void ItemGroup2D::on_children_changed()
@@ -529,7 +618,7 @@ namespace ui {
             }
 
             box->set_visibility(!last_value);
-        });
+            });
     }
 
     void ButtonSubmenu2D::add_child(Node2D* child)
@@ -545,7 +634,7 @@ namespace ui {
         : Slider2D(sg, v, { 0.0f, 0.0f }, glm::vec2(BUTTON_SIZE), mode, min, max, step) {}
 
     Slider2D::Slider2D(const std::string& sg, float value, const glm::vec2& pos, const glm::vec2& size, int mode, float min, float max, float step)
-        : Panel2D(sg, pos, { 0.0f, 0.0f }), signal(sg), current_value(value), min_value(min), max_value(max), step_value(step) {
+        : Panel2D(sg, pos, size), signal(sg), current_value(value), min_value(min), max_value(max), step_value(step) {
 
         this->class_type = Node2DClassType::SLIDER;
         this->mode = mode;
@@ -554,23 +643,22 @@ namespace ui {
         this->size = glm::vec2(size.x * ui_data.num_group_items, size.y);
 
         Material material;
-        material.flags = MATERIAL_2D;
+        material.flags = MATERIAL_2D | MATERIAL_UI;
         material.priority = class_type;
         material.shader = RendererStorage::get_shader("data/shaders/ui/ui_slider.wgsl", material);
 
         Surface* quad_surface = new Surface();
-        quad_surface->create_quad(this->size.x, this->size.y);
+        quad_surface->create_quad(this->size.x, this->size.y, false);
 
-        quad = new MeshInstance3D();
-        quad->add_surface(quad_surface);
-        quad->set_surface_material_override(quad->get_surface(0), material);
+        quad_mesh.add_surface(quad_surface);
+        quad_mesh.set_surface_material_override(quad_mesh.get_surface(0), material);
 
         auto webgpu_context = Renderer::instance->get_webgpu_context();
-        RendererStorage::register_ui_widget(webgpu_context, material.shader, quad, ui_data, 2);
+        RendererStorage::register_ui_widget(webgpu_context, material.shader, &quad_mesh, ui_data, 2);
 
         Node::bind(signal + "@changed", [&](const std::string& signal, float value) {
             set_value(value);
-            });
+        });
 
         // Text label
         {
@@ -588,10 +676,13 @@ namespace ui {
         if (is_pressed)
         {
             float range = (mode == HORIZONTAL ? size.x : size.y);
-            glm::vec2 local_mouse_pos = Input::get_mouse_position() - get_translation();
+            auto webgpu_context = Renderer::instance->get_webgpu_context();
+            glm::vec2 mouse_pos = Input::get_mouse_position();
+            mouse_pos.y = webgpu_context->render_height - mouse_pos.y;
+            glm::vec2 local_mouse_pos = mouse_pos - get_translation();
             float bounds = range * 0.975f;
             // -scale..scale -> 0..1
-            float local_point = (mode == HORIZONTAL ? local_mouse_pos.x : size.y - local_mouse_pos.y);
+            float local_point = (mode == HORIZONTAL ? local_mouse_pos.x : local_mouse_pos.y);
             // this is at range 0..1
             current_value = glm::clamp(local_point / bounds, 0.f, 1.f);
             // set in range min-max
@@ -609,7 +700,7 @@ namespace ui {
 
         auto webgpu_context = Renderer::instance->get_webgpu_context();
 
-        RendererStorage::update_ui_widget(webgpu_context, quad, ui_data);
+        RendererStorage::update_ui_widget(webgpu_context, &quad_mesh, ui_data);
 
         Panel2D::update(delta_time);
     }
@@ -627,7 +718,7 @@ namespace ui {
     */
 
     ColorPicker2D::ColorPicker2D(const std::string& sg, const Color& c, bool skip_intensity)
-        : ColorPicker2D(sg, {0.0f, 0.0f}, glm::vec2(BUTTON_SIZE), c, skip_intensity) {}
+        : ColorPicker2D(sg, { 0.0f, 0.0f }, glm::vec2(BUTTON_SIZE), c, skip_intensity) {}
 
     ColorPicker2D::ColorPicker2D(const std::string& sg, const glm::vec2& pos, const glm::vec2& size, const Color& c, bool skip_intensity)
         : Panel2D(sg, pos, size, c), signal(sg)
@@ -635,19 +726,18 @@ namespace ui {
         class_type = Node2DClassType::COLOR_PICKER;
 
         Material material;
-        material.flags = MATERIAL_2D;
+        material.flags = MATERIAL_2D | MATERIAL_UI;
         material.priority = class_type;
         material.shader = RendererStorage::get_shader("data/shaders/ui/ui_color_picker.wgsl", material);
 
         Surface* quad_surface = new Surface();
-        quad_surface->create_quad(size.x, size.y);
+        quad_surface->create_quad(size.x, size.y, false);
 
-        quad = new MeshInstance3D();
-        quad->add_surface(quad_surface);
-        quad->set_surface_material_override(quad->get_surface(0), material);
+        quad_mesh.add_surface(quad_surface);
+        quad_mesh.set_surface_material_override(quad_mesh.get_surface(0), material);
 
         auto webgpu_context = Renderer::instance->get_webgpu_context();
-        RendererStorage::register_ui_widget(webgpu_context, material.shader, quad, ui_data, 2);
+        RendererStorage::register_ui_widget(webgpu_context, material.shader, &quad_mesh, ui_data, 2);
 
         if (!skip_intensity)
         {
@@ -714,7 +804,7 @@ namespace ui {
 
         auto webgpu_context = Renderer::instance->get_webgpu_context();
 
-        RendererStorage::update_ui_widget(webgpu_context, quad, ui_data);
+        RendererStorage::update_ui_widget(webgpu_context, &quad_mesh, ui_data);
 
         Panel2D::update(delta_time);
     }

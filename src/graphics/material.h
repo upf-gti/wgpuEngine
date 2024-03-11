@@ -10,9 +10,10 @@ class Shader;
 class Texture;
 
 enum eMaterialFlags {
-    MATERIAL_DIFFUSE     = 1 << 0,
-    MATERIAL_PBR         = 1 << 1,
-    MATERIAL_2D          = 1 << 2
+    MATERIAL_DIFFUSE    = 1 << 0,
+    MATERIAL_PBR        = 1 << 1,
+    MATERIAL_2D         = 1 << 2,
+    MATERIAL_UI         = 1 << 3
 };
 
 enum eTransparencyType {

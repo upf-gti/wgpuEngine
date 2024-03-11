@@ -54,8 +54,10 @@ public:
     void set_name(std::string name) { this->name = name; }
     void set_aabb(const AABB& aabb) { this->aabb = aabb; }
 
+    virtual void remove_flag(uint8_t flag);
+
     /*
-    *	Callbacks (move to Node?)
+    *	Callbacks
     */
 
     static void bind(const std::string& name, SignalType callback);
