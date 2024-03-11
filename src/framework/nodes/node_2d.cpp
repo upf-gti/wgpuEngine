@@ -124,6 +124,13 @@ const glm::vec2 Node2D::get_translation() const
 	return get_global_model()[2];
 }
 
+// This assumes there's no rotation..
+const glm::vec2 Node2D::get_scale() const
+{
+    glm::mat3x3 model = get_global_model();
+    return glm::vec2(model[0][0], model[1][1]);
+}
+
 glm::mat3x3 Node2D::get_model() const
 {
     return model;

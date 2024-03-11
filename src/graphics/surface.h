@@ -29,7 +29,7 @@ class Surface
     WGPUBuffer vertex_buffer = nullptr;
     static Surface* quad_mesh;
 
-    std::vector<InterleavedData> generate_quad(float w = 1.f, float h = 1.f, const glm::vec3& position = { 0.f, 0.f, 0.f }, const glm::vec3& normal = { 0.f, 1.f, 0.f }, const glm::vec3& color = { 1.f, 1.f, 1.f });
+    std::vector<InterleavedData> generate_quad(float w = 1.f, float h = 1.f, const glm::vec3& position = { 0.f, 0.f, 0.f }, const glm::vec3& normal = { 0.f, 1.f, 0.f }, bool centered = true, const glm::vec3& color = { 1.f, 1.f, 1.f });
 
 public:
 
@@ -54,7 +54,7 @@ public:
 
     const WGPUBuffer& get_vertex_buffer() const;
 
-    void create_quad(float w = 1.f, float h = 1.f, const glm::vec3& color = { 1.f, 1.f, 1.f });
+    void create_quad(float w = 1.f, float h = 1.f, bool centered = true, const glm::vec3& color = { 1.f, 1.f, 1.f });
     void create_box(float w = 1.f, float h = 1.f, float d = 1.f, const glm::vec3& color = { 1.f, 1.f, 1.f });
     void create_rounded_box(float w = 1.f, float h = 1.f, float d = 1.f, float c = 0.2f, const glm::vec3& color = { 1.f, 1.f, 1.f });
     void create_sphere(float r = 1.f, uint32_t segments = 32, uint32_t rings = 32, const glm::vec3& color = { 1.f, 1.f, 1.f });

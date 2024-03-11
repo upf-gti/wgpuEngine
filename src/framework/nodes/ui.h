@@ -1,8 +1,8 @@
 #pragma once
 
 #include "framework/colors.h"
+#include "graphics/mesh_instance.h"
 #include "node_2d.h"
-#include "mesh_instance_3d.h"
 #include "text.h"
 
 #include <functional>
@@ -24,13 +24,12 @@ namespace ui {
         bool render_background  = true;
         bool centered           = false;
 
-        MeshInstance3D* quad = nullptr;
+        MeshInstance quad_mesh;
 
         Panel2D(const std::string& name, const glm::vec2& p, const glm::vec2& s, const Color& c = colors::WHITE);
 
         void set_color(const Color& c);
 
-        void update(float delta_time) override;
         void render() override;
 
         void remove_flag(uint8_t flag) override;

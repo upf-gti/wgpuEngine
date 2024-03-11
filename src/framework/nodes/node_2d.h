@@ -57,6 +57,7 @@ public:
 
 	const glm::vec2 get_local_translation() const;
     const glm::vec2 get_translation() const;
+    const glm::vec2 get_scale() const;
     virtual glm::mat3x3 get_global_model() const;
     glm::mat3x3 get_model() const;
     glm::mat3x3 get_rotation() const;
