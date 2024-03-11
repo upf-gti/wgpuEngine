@@ -6,3 +6,4 @@ libraries/tinyobjloader/
 libraries/stb/
 libraries/nlohmann_json/
 libraries/tiny_gltf/
+*.gen.h
