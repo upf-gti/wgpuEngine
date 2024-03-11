@@ -102,9 +102,30 @@ if (NOT EMSCRIPTEN)
     WGPU_SOURCES_APPEND(${WGPU_DIR_SOURCES}/dawnxr)
 endif()
 
+find_package(PythonInterp 3 REQUIRED)
+
+file(GLOB_RECURSE
+    SHADERS
+    CONFIGURE_DEPENDS
+    RELATIVE ${WGPU_DIR_SOURCES}/shaders
+    ${WGPU_DIR_SOURCES}/shaders/**.wgsl
+)
+
+message(STATUS "Processing shaders...")
+
+FOREACH(SHADER ${SHADERS})
+    execute_process (
+	    COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/glsl_builder.py ${SHADER}
+	    WORKING_DIRECTORY ${WGPU_DIR_SOURCES}/shaders
+    )
+ENDFOREACH()
+
+WGPU_SOURCES_APPEND(${WGPU_DIR_SOURCES}/shaders)
+
 add_library(${PROJECT_NAME} ${WGPU_SOURCES} ${WGPU_HEADERS})
 
 target_include_directories(${PROJECT_NAME} PUBLIC ${WGPU_DIR_SOURCES})
+target_include_directories(${PROJECT_NAME} PUBLIC ${WGPU_DIR_SOURCES}/shaders)
 
 set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 20)
 
