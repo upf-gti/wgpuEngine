@@ -29,7 +29,7 @@ namespace ui {
         Panel2D(const std::string& name, const glm::vec2& p, const glm::vec2& s, const Color& c = colors::WHITE);
 
         void set_color(const Color& c);
-        bool is_hovered();
+        sInputData get_input_data() override;
 
         void render() override;
         void update(float delta_time) override;

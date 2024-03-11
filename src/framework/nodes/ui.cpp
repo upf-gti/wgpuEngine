@@ -42,7 +42,7 @@ namespace ui {
 
     void Panel2D::update(float delta_time)
     {
-        // set_color(is_hovered() ? colors::GREEN : colors::RED);
+        // set_color(get_input_data() ? colors::GREEN : colors::RED);
 
         Node2D::update(delta_time);
     }
@@ -55,16 +55,19 @@ namespace ui {
         if (render_background) {
             // Convert the mat3x3 to mat4x4
             uint8_t priority = class_type;
-            glm::mat4x4 model = glm::translate(glm::mat4x4(1.0f), glm::vec3(get_translation(), -priority * 1e-5));
+            glm::mat4x4 model = glm::translate(glm::mat4x4(1.0f), glm::vec3(get_translation(), -priority * 1e-4));
             model = glm::scale(model, glm::vec3(get_scale(), 1.0f));
+            model = get_global_viewport_model() * model;
             Renderer::instance->add_renderable(&quad_mesh, model);
         }
 
         Node2D::render();
     }
 
-    bool Panel2D::is_hovered()
+    sInputData Panel2D::get_input_data()
     {
+        sInputData data;
+
         WebGPUContext* webgpu_context = Renderer::instance->get_webgpu_context();
 
         Material* material = quad_mesh.get_surface_material_override(quad_mesh.get_surface(0));
@@ -77,73 +80,57 @@ namespace ui {
             glm::vec2 min = get_translation();
             glm::vec2 max = min + size;
 
-            return mouse_pos.x >= min.x && mouse_pos.y >= min.y && mouse_pos.x <= max.x && mouse_pos.y <= max.y;
+            data.is_hovered = mouse_pos.x >= min.x && mouse_pos.y >= min.y && mouse_pos.x <= max.x && mouse_pos.y <= max.y;
+            data.is_pressed = data.is_hovered && Input::is_mouse_pressed(GLFW_MOUSE_BUTTON_LEFT);
+            data.was_pressed = data.is_hovered && Input::was_mouse_pressed(GLFW_MOUSE_BUTTON_LEFT);
+            data.was_released = Input::was_mouse_released(GLFW_MOUSE_BUTTON_LEFT);
         }
-        else if (Renderer::instance->get_openxr_available())
-        {
+        else {
+
+            glm::vec3 ray_origin;
+            glm::vec3 ray_direction;
+
             // HANDLE RAY USING CONTROLLER
-
-            // Ray
-            glm::vec3 ray_origin = Input::get_controller_position(HAND_RIGHT, POSE_AIM);
-            glm::mat4x4 select_hand_pose = Input::get_controller_pose(HAND_RIGHT, POSE_AIM);
-            glm::vec3 ray_direction = get_front(select_hand_pose);
-
-            // Quad
-            uint8_t priority = class_type;
-            glm::mat4x4 model = glm::translate(glm::mat4x4(1.0f), glm::vec3(get_translation(), -priority * 1e-5));
-
-            glm::vec3 quad_position = model[3];
-            glm::quat quad_rotation = glm::quat_cast(glm::mat4x4(1.0f));
-            float ar = webgpu_context->render_width / webgpu_context->render_height;
-            glm::vec2 quad_size = size * get_scale();
-
-            float collision_dist;
-            glm::vec3 intersection_point;
-
-            return intersection::ray_quad(
-                ray_origin,
-                ray_direction,
-                quad_position,
-                quad_size,
-                quad_rotation,
-                intersection_point,
-                collision_dist,
-                false
-            );
-        }
-        else
-        {
+            if (Renderer::instance->get_openxr_available())
+            {
+                // Ray
+                ray_origin = Input::get_controller_position(HAND_RIGHT, POSE_AIM);
+                glm::mat4x4 select_hand_pose = Input::get_controller_pose(HAND_RIGHT, POSE_AIM);
+                ray_direction = get_front(select_hand_pose);
+            }
             // HANDLE RAY USING MOUSE
+            else
+            {
+                Camera* camera = Renderer::instance->get_camera();
+                const glm::mat4x4& view_projection_inv = glm::inverse(camera->get_view_projection());
 
-            Camera* camera = Renderer::instance->get_camera();
-            const glm::mat4x4& view_projection_inv = glm::inverse(camera->get_view_projection());
+                glm::vec2 mouse_pos = Input::get_mouse_position();
+                glm::vec3 mouse_pos_ndc;
+                mouse_pos_ndc.x = (mouse_pos.x / webgpu_context->render_width) * 2.0f - 1.0f;
+                mouse_pos_ndc.y = -((mouse_pos.y / webgpu_context->render_height) * 2.0f - 1.0f);
+                mouse_pos_ndc.z = 1.0f;
 
-            glm::vec2 mouse_pos = Input::get_mouse_position();
-            glm::vec3 mouse_pos_ndc;
-            mouse_pos_ndc.x = (mouse_pos.x / webgpu_context->render_width) * 2.0f - 1.0f;
-            mouse_pos_ndc.y = -((mouse_pos.y / webgpu_context->render_height) * 2.0f - 1.0f);
-            mouse_pos_ndc.z = 1.0f;
+                glm::vec4 ray_dir = view_projection_inv * glm::vec4(mouse_pos_ndc, 1.0f);
+                ray_dir /= ray_dir.w;
 
-            glm::vec4 ray_dir = view_projection_inv * glm::vec4(mouse_pos_ndc, 1.0f);
-            ray_dir /= ray_dir.w;
-
-            // Ray
-            glm::vec3 ray_origin = camera->get_eye();
-            glm::vec3 ray_direction = glm::normalize(glm::vec3(ray_dir));
+                // Ray
+                ray_origin = camera->get_eye();
+                ray_direction = glm::normalize(glm::vec3(ray_dir));
+            }
 
             // Quad
             uint8_t priority = class_type;
-            glm::mat4x4 model = glm::translate(glm::mat4x4(1.0f), glm::vec3(get_translation(), -priority * 1e-5));
+            glm::mat4x4 model = glm::translate(glm::mat4x4(1.0f), glm::vec3(get_translation(), -priority * 1e-4));
+            model = get_global_viewport_model() * model;
 
             glm::vec3 quad_position = model[3];
-            glm::quat quad_rotation = glm::quat_cast(glm::mat4x4(1.0f));
-            float ar = webgpu_context->render_width / webgpu_context->render_height;
+            glm::quat quad_rotation = glm::quat_cast(model);
             glm::vec2 quad_size = size * get_scale();
 
             float collision_dist;
             glm::vec3 intersection_point;
 
-            return intersection::ray_quad(
+            data.is_hovered = intersection::ray_quad(
                 ray_origin,
                 ray_direction,
                 quad_position,
@@ -153,7 +140,15 @@ namespace ui {
                 collision_dist,
                 false
             );
+
+            data.is_pressed = data.is_hovered && Input::is_button_pressed(XR_BUTTON_A);
+            data.was_pressed = data.is_hovered && Input::was_button_pressed(XR_BUTTON_A);
+            data.was_released = Input::was_button_released(XR_BUTTON_A);
+
+            data.ray_distance = collision_dist;
         }
+
+        return data;
     }
 
     void Panel2D::remove_flag(uint8_t flag)
@@ -410,8 +405,10 @@ namespace ui {
             mark->scale(glm::vec3(0.35f, 0.35f, 1.0f));
         }*/
 
+        sInputData input_data = get_input_data();
+
         // Check hover (intersects)
-        bool hovered = is_hovered();
+        bool hovered = input_data.is_hovered;
 
         text_2d->set_visibility(hovered);
 
@@ -422,10 +419,7 @@ namespace ui {
         *	Create mesh and render button
         */
 
-        bool is_pressed = hovered && Input::is_mouse_pressed(GLFW_MOUSE_BUTTON_LEFT);
-        bool was_pressed = hovered && Input::was_mouse_pressed(GLFW_MOUSE_BUTTON_LEFT);
-
-        if (was_pressed)
+        if (input_data.was_pressed)
         {
             Node::emit_signal(signal, (void*)this);
 
@@ -670,10 +664,11 @@ namespace ui {
 
     void Slider2D::update(float delta_time)
     {
-        bool hovered = is_hovered();
-        bool is_pressed = hovered && Input::is_mouse_pressed(GLFW_MOUSE_BUTTON_LEFT);
+        sInputData input_data = get_input_data();
 
-        if (is_pressed)
+        bool hovered = input_data.is_hovered;
+
+        if (input_data.is_pressed)
         {
             float range = (mode == HORIZONTAL ? size.x : size.y);
             auto webgpu_context = Renderer::instance->get_webgpu_context();
@@ -764,7 +759,9 @@ namespace ui {
 
     void ColorPicker2D::update(float delta_time)
     {
-        bool hovered = is_hovered();
+        sInputData input_data = get_input_data();
+
+        bool hovered = input_data.is_hovered;
 
         glm::vec2 local_mouse_pos = Input::get_mouse_position() - get_translation();
         local_mouse_pos /= size;
@@ -774,10 +771,7 @@ namespace ui {
         // Update hover
         hovered &= (dist < 1.f);
 
-        bool is_pressed = hovered && Input::is_mouse_pressed(GLFW_MOUSE_BUTTON_LEFT);
-        bool was_released = hovered && Input::was_mouse_released(GLFW_MOUSE_BUTTON_LEFT);
-
-        if (is_pressed)
+        if (input_data.is_pressed)
         {
             constexpr float pi = glm::pi<float>();
             float r = pi / 2.f;
@@ -793,7 +787,7 @@ namespace ui {
             Node::emit_signal(signal, glm::vec4(new_color, color.a));
         }
 
-        if (was_released)
+        if (input_data.was_released)
         {
             Node::emit_signal(signal + "@released", color);
         }

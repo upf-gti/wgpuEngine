@@ -22,6 +22,14 @@ enum Node2DClassType {
     NUM_2D_TYPES
 };
 
+struct sInputData {
+    bool is_hovered = false;
+    bool is_pressed = false;
+    bool was_pressed = false;
+    bool was_released = false;
+    float ray_distance = 0.0f;
+};
+
 class Node2D : public Node {
 
 protected:
@@ -34,6 +42,8 @@ protected:
     bool        visibility = true;
 	glm::mat3x3 model = glm::mat3x3(1.0f);
     glm::vec2   size = { 0.0f, 0.0f };
+
+    glm::mat4x4 viewport_model = glm::mat4x4(1.0f);
 
     RendererStorage::sUIData ui_data;
 
@@ -50,6 +60,8 @@ public:
 	virtual void render();
 	virtual void update(float delta_time);
 
+    virtual sInputData get_input_data() { return sInputData(); };
+
 	void translate(const glm::vec2& translation);
 	void rotate(float angle);
     void rotate(const glm::quat& q);
@@ -59,6 +71,7 @@ public:
     const glm::vec2 get_translation() const;
     const glm::vec2 get_scale() const;
     virtual glm::mat3x3 get_global_model() const;
+    glm::mat4x4 get_global_viewport_model() const;
     glm::mat3x3 get_model() const;
     glm::mat3x3 get_rotation() const;
     glm::vec2 get_size() const;
@@ -68,6 +81,7 @@ public:
 	void set_translation(const glm::vec2& translation);
     void set_model(const glm::mat3x3& _model);
     void set_visibility(bool value);
+    void set_viewport_model(glm::mat4x4 model);
 
     static std::map<std::string, Node2D*> all_widgets;
 
