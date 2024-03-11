@@ -50,10 +50,10 @@ namespace ui {
 
         glm::vec2 t = get_translation() + size * 0.50f;
 
-        if (centered && parent) {
+        /*if (centered && parent) {
             auto psize = parent->get_size();
             t.x = get_translation().x + psize.x * 0.5f;
-        }
+        }*/
 
         quad->set_translation(glm::vec3(t, 0.0f));
 
@@ -70,6 +70,14 @@ namespace ui {
         }
 
         Node2D::render();
+    }
+
+    void Panel2D::remove_flag(uint8_t flag)
+    {
+        Material* material = quad->get_surface_material_override( quad->get_surface(0) );
+        material->flags ^= flag;
+
+        Node2D::remove_flag(flag);
     }
 
     /*
@@ -175,7 +183,7 @@ namespace ui {
     */
 
     Text2D::Text2D(const std::string& _text, const glm::vec2& pos, float scale, const Color& color)
-        : Node2D(_text + "@text", pos, {1.0f, 1.0f}) {
+        : Panel2D(_text + "@text", pos, {1.0f, 1.0f}) {
 
         class_type = Node2DClassType::TEXT;
 
@@ -230,7 +238,7 @@ namespace ui {
 
         Material material;
         material.color = color;
-        material.flags = MATERIAL_2D;
+        material.flags = MATERIAL_2D | MATERIAL_UI;
         material.priority = class_type;
         material.shader = RendererStorage::get_shader("data/shaders/ui/ui_button.wgsl", material);
 
@@ -382,7 +390,7 @@ namespace ui {
 
         Material material;
         material.color = color;
-        material.flags = MATERIAL_2D;
+        material.flags = MATERIAL_2D | MATERIAL_UI;
         material.priority = class_type;
 
         std::vector<std::string> define_specializations = { "USES_TEXTURE" };
@@ -461,7 +469,7 @@ namespace ui {
 
         Material material;
         material.color = color;
-        material.flags = MATERIAL_2D;
+        material.flags = MATERIAL_2D | MATERIAL_UI;
         material.priority = class_type;
         material.shader = RendererStorage::get_shader("data/shaders/ui/ui_group.wgsl", material);
 
@@ -554,7 +562,7 @@ namespace ui {
         this->size = glm::vec2(size.x * ui_data.num_group_items, size.y);
 
         Material material;
-        material.flags = MATERIAL_2D;
+        material.flags = MATERIAL_2D | MATERIAL_UI;
         material.priority = class_type;
         material.shader = RendererStorage::get_shader("data/shaders/ui/ui_slider.wgsl", material);
 
@@ -635,7 +643,7 @@ namespace ui {
         class_type = Node2DClassType::COLOR_PICKER;
 
         Material material;
-        material.flags = MATERIAL_2D;
+        material.flags = MATERIAL_2D | MATERIAL_UI;
         material.priority = class_type;
         material.shader = RendererStorage::get_shader("data/shaders/ui/ui_color_picker.wgsl", material);
 

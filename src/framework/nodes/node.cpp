@@ -42,6 +42,13 @@ AABB Node::get_aabb() const
     return new_aabb;
 }
 
+void Node::remove_flag(uint8_t flag)
+{
+    for (Node* child : children) {
+        child->remove_flag(flag);
+    }
+}
+
 void Node::bind(const std::string& name, SignalType callback)
 {
     mapping_signals[name].push_back(callback);

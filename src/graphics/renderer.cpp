@@ -242,16 +242,18 @@ uint8_t Renderer::get_msaa_count()
 void Renderer::prepare_instancing()
 {
     // Get all surfaces from entity meshes
-    for (MeshInstance3D* entity_mesh : render_entity_list)
+    for (auto render_list_data : render_entity_list)
     {
-        const std::vector<Surface*>& surfaces = entity_mesh->get_surfaces();
+        MeshInstance* mesh_instance = render_list_data.mesh_instance;
+        glm::mat4x4 global_matrix = render_list_data.global_matrix;
 
-        glm::mat4x4 global_matrix = entity_mesh->get_global_model();
+        const std::vector<Surface*>& surfaces = mesh_instance->get_surfaces();
+
         glm::mat4x4 rotation_matrix = glm::toMat4(glm::quat_cast(global_matrix));
 
         for (Surface* surface : surfaces) {
 
-            Material* material_override = entity_mesh->get_surface_material_override(surface);
+            Material* material_override = mesh_instance->get_surface_material_override(surface);
 
             Material& material = material_override ? *material_override : surface->get_material();
 
@@ -274,7 +276,7 @@ void Renderer::prepare_instancing()
                 list = RENDER_LIST_TRANSPARENT;
             }
 
-            render_list[list].push_back({ surface, 1, global_matrix, rotation_matrix, entity_mesh });
+            render_list[list].push_back({ surface, 1, global_matrix, rotation_matrix, mesh_instance });
         }
     }
 
@@ -286,8 +288,8 @@ void Renderer::prepare_instancing()
         // Sort render_list
         std::sort(render_list[i].begin(), render_list[i].end(), [](auto& lhs, auto& rhs) {
 
-            Material* lhs_ov_mat = lhs.entity_mesh_ref->get_surface_material_override(lhs.surface);
-            Material* rhs_ov_mat = rhs.entity_mesh_ref->get_surface_material_override(rhs.surface);
+            Material* lhs_ov_mat = lhs.mesh_instance_ref->get_surface_material_override(lhs.surface);
+            Material* rhs_ov_mat = rhs.mesh_instance_ref->get_surface_material_override(rhs.surface);
 
             const Material& lhs_mat = lhs_ov_mat ? *lhs_ov_mat : lhs.surface->get_material();
             const Material& rhs_mat = rhs_ov_mat ? *rhs_ov_mat : rhs.surface->get_material();
@@ -322,7 +324,7 @@ void Renderer::prepare_instancing()
 
                 const sRenderData& render_data = render_list[i][j];
 
-                Material* material_override = render_data.entity_mesh_ref->get_surface_material_override(render_data.surface);
+                Material* material_override = render_data.mesh_instance_ref->get_surface_material_override(render_data.surface);
 
                 const Material& material = material_override ? *material_override : render_data.surface->get_material();
 
@@ -380,7 +382,7 @@ void Renderer::prepare_instancing()
 
                 const sRenderData& render_data = render_list[i][j];
 
-                Material* material_override = render_data.entity_mesh_ref->get_surface_material_override(render_data.surface);
+                Material* material_override = render_data.mesh_instance_ref->get_surface_material_override(render_data.surface);
 
                 Shader* shader = material_override ? material_override->shader : render_data.surface->get_material().shader;
 
@@ -409,7 +411,7 @@ void Renderer::render_render_list(int list_index, WGPURenderPassEncoder render_p
 
         const sRenderData& render_data = render_list[list_index][i];
 
-        Material* material_override = render_data.entity_mesh_ref->get_surface_material_override(render_data.surface);
+        Material* material_override = render_data.mesh_instance_ref->get_surface_material_override(render_data.surface);
 
         const Material& material = material_override ? *material_override : render_data.surface->get_material();
 
@@ -437,8 +439,8 @@ void Renderer::render_render_list(int list_index, WGPURenderPassEncoder render_p
             wgpuRenderPassEncoderSetBindGroup(render_pass, bind_group_index++, renderer_storage.get_material_bind_group(material), 0, nullptr);
         }
 
-        if (material.flags & MATERIAL_2D) {
-            WGPUBindGroup ui_bind_group = renderer_storage.get_ui_widget_bind_group(render_data.entity_mesh_ref);
+        if (material.flags & MATERIAL_UI) {
+            WGPUBindGroup ui_bind_group = renderer_storage.get_ui_widget_bind_group(render_data.mesh_instance_ref);
             if (ui_bind_group) {
                 wgpuRenderPassEncoderSetBindGroup(render_pass, bind_group_index++, ui_bind_group, 0, nullptr);
             }
@@ -477,9 +479,9 @@ void Renderer::render_2D(WGPURenderPassEncoder render_pass, const WGPUBindGroup&
     render_render_list(RENDER_LIST_2D_TRANSPARENT, render_pass, render_bind_group_camera);
 }
 
-void Renderer::add_renderable(MeshInstance3D* entity_mesh)
+void Renderer::add_renderable(MeshInstance* mesh_instance, glm::mat4x4 global_matrix)
 {
-    render_entity_list.push_back(entity_mesh);
+    render_entity_list.push_back({ mesh_instance, global_matrix });
 }
 
 void Renderer::clear_renderables()

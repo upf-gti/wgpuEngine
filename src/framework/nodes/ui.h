@@ -32,6 +32,8 @@ namespace ui {
 
         void update(float delta_time) override;
         void render() override;
+
+        void remove_flag(uint8_t flag) override;
     };
 
     class Container2D : public Panel2D {
@@ -61,7 +63,7 @@ namespace ui {
         void on_children_changed() override;
     };
 
-    class Text2D : public Node2D {
+    class Text2D : public Panel2D {
     public:
 
         TextEntity* text_entity = nullptr;

@@ -56,7 +56,6 @@ void Node2D::remove_child(Node2D* child)
     on_children_changed();
 }
 
-
 void Node2D::on_children_changed()
 {
     if (parent) {

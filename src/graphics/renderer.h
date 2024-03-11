@@ -13,7 +13,7 @@
 #include "xr/openxr_context.h"
 #endif
 
-#include "framework/nodes/mesh_instance_3d.h"
+#include "graphics/mesh_instance.h"
 
 #include "graphics/debug/renderdoc_capture.h"
 
@@ -63,12 +63,17 @@ protected:
         glm::vec4   color;
     };
 
+    struct sRenderListData {
+        MeshInstance* mesh_instance;
+        glm::mat4x4 global_matrix;
+    };
+
     struct sRenderData {
         Surface* surface;
         uint32_t repeat;
         glm::mat4x4 global_matrix;
         glm::mat4x4 rotation_matrix;
-        MeshInstance3D* entity_mesh_ref;
+        MeshInstance* mesh_instance_ref;
     };
 
     enum eRenderListType {
@@ -88,7 +93,7 @@ protected:
     Uniform	instance_ui_data_uniform;
 
     // Entities to be rendered this frame
-    std::vector<MeshInstance3D*> render_entity_list;
+    std::vector<sRenderListData> render_entity_list;
 
     std::vector<sRenderData> render_list[RENDER_LIST_SIZE];
 
@@ -140,7 +145,7 @@ public:
 
     void set_required_limits(const WGPURequiredLimits& required_limits) { this->required_limits = required_limits; }
 
-    void add_renderable(MeshInstance3D* entity_mesh);
+    void add_renderable(MeshInstance* mesh_instance, glm::mat4x4 global_matrix);
     void clear_renderables();
 
     virtual void resize_window(int width, int height);
