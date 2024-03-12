@@ -68,6 +68,7 @@ public:
     void rotate(const glm::quat& q);
 	void scale(glm::vec2 scale);
 
+    Node2D* get_parent() const { return parent; }
 	const glm::vec2 get_local_translation() const;
     const glm::vec2 get_translation() const;
     const glm::vec2 get_scale() const;
