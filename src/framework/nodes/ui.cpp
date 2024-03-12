@@ -84,6 +84,9 @@ namespace ui {
             data.is_pressed = data.is_hovered && Input::is_mouse_pressed(GLFW_MOUSE_BUTTON_LEFT);
             data.was_pressed = data.is_hovered && Input::was_mouse_pressed(GLFW_MOUSE_BUTTON_LEFT);
             data.was_released = Input::was_mouse_released(GLFW_MOUSE_BUTTON_LEFT);
+
+            glm::vec2 local_mouse_pos = mouse_pos - get_translation();
+            data.local_position = glm::vec2(local_mouse_pos.x, size.y - local_mouse_pos.y);
         }
         else {
 
@@ -144,8 +147,10 @@ namespace ui {
             data.is_pressed = data.is_hovered && Input::is_button_pressed(XR_BUTTON_A);
             data.was_pressed = data.is_hovered && Input::was_button_pressed(XR_BUTTON_A);
             data.was_released = Input::was_button_released(XR_BUTTON_A);
-
             data.ray_distance = collision_dist;
+
+            glm::vec2 local_pos = glm::vec2(intersection_point) / get_scale();
+            data.local_position = glm::vec2(local_pos.x, size.y - local_pos.y);
         }
 
         return data;
@@ -671,13 +676,9 @@ namespace ui {
         if (input_data.is_pressed)
         {
             float range = (mode == HORIZONTAL ? size.x : size.y);
-            auto webgpu_context = Renderer::instance->get_webgpu_context();
-            glm::vec2 mouse_pos = Input::get_mouse_position();
-            mouse_pos.y = webgpu_context->render_height - mouse_pos.y;
-            glm::vec2 local_mouse_pos = mouse_pos - get_translation();
             float bounds = range * 0.975f;
             // -scale..scale -> 0..1
-            float local_point = (mode == HORIZONTAL ? local_mouse_pos.x : local_mouse_pos.y);
+            float local_point = (mode == HORIZONTAL ? input_data.local_position.x : size.y - input_data.local_position.y);
             // this is at range 0..1
             current_value = glm::clamp(local_point / bounds, 0.f, 1.f);
             // set in range min-max
@@ -763,7 +764,7 @@ namespace ui {
 
         bool hovered = input_data.is_hovered;
 
-        glm::vec2 local_mouse_pos = Input::get_mouse_position() - get_translation();
+        glm::vec2 local_mouse_pos = input_data.local_position;
         local_mouse_pos /= size;
         local_mouse_pos = local_mouse_pos * 2.0f - 1.0f; // -1..1
         float dist = glm::distance(local_mouse_pos, glm::vec2(0.f));
@@ -771,7 +772,7 @@ namespace ui {
         // Update hover
         hovered &= (dist < 1.f);
 
-        if (input_data.is_pressed)
+        if (hovered && input_data.is_pressed)
         {
             constexpr float pi = glm::pi<float>();
             float r = pi / 2.f;
@@ -797,7 +798,6 @@ namespace ui {
         ui_data.picker_color = color;
 
         auto webgpu_context = Renderer::instance->get_webgpu_context();
-
         RendererStorage::update_ui_widget(webgpu_context, &quad_mesh, ui_data);
 
         Panel2D::update(delta_time);
