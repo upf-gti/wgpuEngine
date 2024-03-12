@@ -40,6 +40,7 @@ void Viewport3D::update(float delta_time)
 {
     if(Renderer::instance->get_openxr_available())
     {
+        // TODO: Move this out of here so we can set any transform
         glm::mat4x4 raycast_transform = Input::get_controller_pose(HAND_RIGHT, POSE_AIM);
         raycast_pointer->set_model(raycast_transform);
 
