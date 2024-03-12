@@ -21,11 +21,19 @@ Viewport3D::~Viewport3D()
    
 }
 
+void Viewport3D::set_viewport_size(const glm::vec2& new_size)
+{
+    viewport_size = new_size;
+}
+
 void Viewport3D::render()
 {
     root->render();
 
-    raycast_pointer->render();
+    if (Renderer::instance->get_openxr_available())
+    {
+        raycast_pointer->render();
+    }
 }
 
 void Viewport3D::update(float delta_time)
@@ -34,7 +42,14 @@ void Viewport3D::update(float delta_time)
     {
         glm::mat4x4 raycast_transform = Input::get_controller_pose(HAND_RIGHT, POSE_AIM);
         raycast_pointer->set_model(raycast_transform);
+
+        sInputData data = root->get_input_data();
+        if (data.is_hovered) {
+            raycast_pointer->scale(glm::vec3(1.0f, 1.0f, data.ray_distance * 2.5f));
+        }
     }
+
+    // Manage 3d transform data
 
     glm::vec2 pos_2d = root->get_translation();
 
@@ -50,8 +65,7 @@ void Viewport3D::update(float delta_time)
     root->set_translation(pos_2d);
     root->scale(1.0f / glm::vec2(width, height * ar));
 
-    // TODO; apply transform of the viewport3d node itself..
-    // ...
+    root->set_viewport_model(get_global_model());
 
     root->update(delta_time);
 }

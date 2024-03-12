@@ -111,6 +111,11 @@ void Node2D::set_visibility(bool value)
     visibility = value;
 }
 
+void Node2D::set_viewport_model(glm::mat4x4 model)
+{
+    viewport_model = model;
+}
+
 void Node2D::set_translation(const glm::vec2& translation)
 {
 	model = glm::translate(glm::mat3x3(1.f), translation);
@@ -126,11 +131,10 @@ const glm::vec2 Node2D::get_translation() const
 	return get_global_model()[2];
 }
 
-// This assumes there's no rotation..
 const glm::vec2 Node2D::get_scale() const
 {
     glm::mat3x3 model = get_global_model();
-    return glm::vec2(model[0][0], model[1][1]);
+    return glm::vec2(glm::length(model[0]), glm::length(model[1]));
 }
 
 glm::mat3x3 Node2D::get_model() const
@@ -143,6 +147,13 @@ glm::mat3x3 Node2D::get_global_model() const
 	if (parent)
 		return parent->get_global_model() * model;
 	return model;
+}
+
+glm::mat4x4 Node2D::get_global_viewport_model() const
+{
+    if (parent)
+        return parent->get_global_viewport_model() * viewport_model;
+    return viewport_model;
 }
 
 uint8_t Node2D::get_class_type() const
