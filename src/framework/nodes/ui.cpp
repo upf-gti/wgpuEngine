@@ -452,12 +452,9 @@ namespace ui {
         sInputData input_data = get_input_data();
 
         // Check hover (intersects)
-        bool hovered = input_data.is_hovered;
+        bool hovered = input_data.is_hovered && !ui_data.is_button_disabled;
 
         text_2d->set_visibility(hovered);
-
-        // Used to disable presses and active hovers
-        hovered &= (!ui_data.is_button_disabled);
 
         /*
         *	Create mesh and render button
@@ -851,10 +848,10 @@ namespace ui {
 
         class_type = Node2DClassType::LABEL;
 
-        text = new Text2D(p_text, {0.0f, 0.0f});
-        add_child(text);
-
         TextureButton2D* image = new TextureButton2D(p_text + "@image", image_path, DISABLED, {0.0f, 0.0f}, glm::vec2(24.0f));
         add_child(image);
+
+        text = new Text2D(p_text, { 0.0f, 0.0f });
+        add_child(text);
     }
 }
