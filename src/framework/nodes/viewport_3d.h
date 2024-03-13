@@ -11,7 +11,7 @@
 
 class Viewport3D : public Node3D {
 
-    bool active = false;
+    bool active = true;
 
     Node2D* root = nullptr;
 
