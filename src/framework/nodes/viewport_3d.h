@@ -5,7 +5,13 @@
 #include "graphics/material.h"
 #include "graphics/surface.h"
 
+/*
+*   This 3D Node allows to use a 2D UI in 3D
+*/
+
 class Viewport3D : public Node3D {
+
+    bool active = false;
 
     Node2D* root = nullptr;
 
@@ -22,4 +28,5 @@ public:
 	virtual void update(float delta_time) override;
 
     void set_viewport_size(const glm::vec2& new_size);
+    void set_active(bool value) { active = value; }
 };

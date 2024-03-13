@@ -337,7 +337,7 @@ namespace ui {
     */
 
     Button2D::Button2D(const std::string& sg, const Color& col, uint8_t parameter_flags)
-        : Button2D(sg, col, 0, { 0.0f, 0.0f }, glm::vec2(BUTTON_SIZE)) { }
+        : Button2D(sg, col, parameter_flags, { 0.0f, 0.0f }, glm::vec2(BUTTON_SIZE)) { }
 
     Button2D::Button2D(const std::string& sg, uint8_t parameter_flags, const glm::vec2& pos, const glm::vec2& size)
         : Panel2D(sg, pos, size), signal(sg) { }
