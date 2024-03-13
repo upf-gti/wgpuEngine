@@ -71,12 +71,13 @@ namespace ui {
         TextEntity* text_entity = nullptr;
 
         Text2D() {};
-        Text2D(const std::string& _text, const glm::vec2& pos, float scale = 1.f, const Color& color = colors::WHITE);
+        Text2D(const std::string& _text, const glm::vec2& pos, float scale = 16.f, const Color& color = colors::WHITE);
 
         void set_text(const std::string& text) { text_entity->set_text(text); };
 
         void update(float delta_time) override;
         void render() override;
+        void remove_flag(uint8_t flag) override;
     };
 
     enum eButtonParams : uint8_t {
@@ -182,18 +183,11 @@ namespace ui {
         ColorPicker2D(const std::string& sg, const glm::vec2& p, const glm::vec2& s, const Color& c, bool skip_intensity = false);
 
         void update(float delta_time) override;
-        void render() override;
     };
 
-	/*
-    class LabelWidget : public UIEntity {
+    class ImageLabel2D : public HContainer2D {
     public:
 
-        int button = -1;
-
-        std::string text;
-        std::string subtext;
-
-        LabelWidget(const std::string& p_text, const glm::vec2& p, const glm::vec2& s = {0.f, 0.f});
-    };*/
+        ImageLabel2D(const std::string& p_text, const std::string& image_path, float text_scale = 16.0f, const glm::vec2& p = { 0.f, 0.f });
+    };
 }

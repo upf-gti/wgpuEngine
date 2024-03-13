@@ -92,7 +92,7 @@ namespace ui {
             glm::vec3 ray_origin;
             glm::vec3 ray_direction;
 
-            // HANDLE RAY USING CONTROLLER
+            // Handle ray using VR controller
             if (Renderer::instance->get_openxr_available())
             {
                 // Ray
@@ -100,7 +100,7 @@ namespace ui {
                 glm::mat4x4 select_hand_pose = Input::get_controller_pose(HAND_RIGHT, POSE_AIM);
                 ray_direction = get_front(select_hand_pose);
             }
-            // HANDLE RAY USING MOUSE
+            // Handle ray using mouse position
             else
             {
                 Camera* camera = Renderer::instance->get_camera();
@@ -143,9 +143,17 @@ namespace ui {
                 false
             );
 
-            data.is_pressed = data.is_hovered && Input::is_button_pressed(XR_BUTTON_A);
-            data.was_pressed = data.is_hovered && Input::was_button_pressed(XR_BUTTON_A);
-            data.was_released = Input::was_button_released(XR_BUTTON_A);
+            if (Renderer::instance->get_openxr_available()) {
+                data.is_pressed = data.is_hovered && Input::is_button_pressed(XR_BUTTON_A);
+                data.was_pressed = data.is_hovered && Input::was_button_pressed(XR_BUTTON_A);
+                data.was_released = Input::was_button_released(XR_BUTTON_A);
+            }
+            else {
+                data.is_pressed = data.is_hovered && Input::is_mouse_pressed(GLFW_MOUSE_BUTTON_LEFT);
+                data.was_pressed = data.is_hovered && Input::was_mouse_pressed(GLFW_MOUSE_BUTTON_LEFT);
+                data.was_released = Input::was_mouse_released(GLFW_MOUSE_BUTTON_LEFT);
+            }
+
             data.ray_distance = collision_dist;
 
             glm::vec2 local_pos = glm::vec2(intersection_point) / get_scale();
@@ -243,20 +251,30 @@ namespace ui {
     void VContainer2D::on_children_changed()
     {
         size_t child_count = get_children().size();
+        float rect_height = 0.0f;
         size = glm::vec2(0.0f);
+
+        // Get HEIGHT in first pass..
+        for (size_t i = 0; i < child_count; ++i)
+        {
+            Node2D* node_2d = static_cast<Node2D*>(get_children()[i]);
+            rect_height += node_2d->get_size().y;
+        }
+
+        rect_height += padding.y * 2.0f + item_margin.y * static_cast<float>(child_count - 1);;
 
         for (size_t i = 0; i < child_count; ++i)
         {
             Node2D* node_2d = static_cast<Node2D*>(get_children()[i]);
-            node_2d->set_translation(padding + glm::vec2(0.0f, size.y + item_margin.y * static_cast<float>(i)));
-
             glm::vec2 node_size = node_2d->get_size();
+            node_2d->set_translation(glm::vec2(padding.x, rect_height - (size.y + node_size.y) - padding.y - item_margin.y * static_cast<float>(i)));
+
             size.x = glm::max(size.x, node_size.x);
             size.y += node_size.y;
         }
 
-        size += padding * 2.0f;
-        size.y += item_margin.y * static_cast<float>(child_count - 1);
+        size.x += padding.x * 2.0f;
+        size.y = rect_height;
 
         Container2D::on_children_changed();
     }
@@ -273,6 +291,9 @@ namespace ui {
         text_entity = new TextEntity(_text);
         text_entity->set_scale(scale);
         text_entity->generate_mesh(color, MATERIAL_2D);
+
+        size.x = text_entity->get_text_width(_text) * 6.0f / scale;
+        size.y = scale * 0.5f;
     }
 
     void Text2D::update(float delta_time)
@@ -280,7 +301,13 @@ namespace ui {
         if (!visibility)
             return;
 
-        text_entity->set_translation(glm::vec3(get_translation(), 0.0f));
+        // Convert the mat3x3 to mat4x4
+        uint8_t priority = class_type;
+        glm::mat4x4 model = glm::translate(glm::mat4x4(1.0f), glm::vec3(get_translation(), -priority * 1e-4));
+        model = glm::scale(model, glm::vec3(get_scale(), 1.0f));
+        model = get_global_viewport_model() * model;
+
+        text_entity->set_model(model);
 
         Node2D::update(delta_time);
     }
@@ -293,6 +320,16 @@ namespace ui {
         text_entity->render();
 
         Node2D::render();
+    }
+
+    void Text2D::remove_flag(uint8_t flag)
+    {
+        uint8_t flags = text_entity->get_flags();
+        flags ^= MATERIAL_2D;
+
+        text_entity->generate_mesh(color, (eMaterialFlags)flags);
+
+        Node2D::remove_flag(flag);
     }
 
     /*
@@ -318,6 +355,7 @@ namespace ui {
 
         ui_data.keep_rgb = keep_rgb;
         ui_data.is_color_button = is_color_button;
+        ui_data.is_button_disabled = disabled;
 
         Material material;
         material.color = color;
@@ -353,7 +391,7 @@ namespace ui {
                 }
             }
             set_selected(allow_toggle ? !last_value : true);
-            });
+        });
 
         // Submenu icon..
         {
@@ -371,8 +409,8 @@ namespace ui {
 
         // Text label
         {
-            float magic = 3.25f;
-            text_2d = new Text2D(signal, { size.x * 0.5f - signal.length() * magic, 0.0f }, 16.f, colors::PURPLE);
+            float magic = 3.5f;
+            text_2d = new Text2D(signal, { size.x * 0.5f - signal.length() * magic, size.y }, 16.f, colors::PURPLE);
             text_2d->set_visibility(false);
             add_child(text_2d);
         }
@@ -469,6 +507,7 @@ namespace ui {
 
         ui_data.keep_rgb = keep_rgb;
         ui_data.is_color_button = is_color_button;
+        ui_data.is_button_disabled = disabled;
 
         Material material;
         material.color = color;
@@ -531,8 +570,8 @@ namespace ui {
 
         // Text label
         {
-            float magic = 3.25f;
-            text_2d = new Text2D(signal, { size.x * 0.5f - signal.length() * magic, 0.0f }, 16.f, colors::PURPLE);
+            float magic = 3.65f;
+            text_2d = new Text2D(signal, { size.x * 0.5f - signal.length() * magic, size.y }, 16.f, colors::PURPLE);
             text_2d->set_visibility(false);
             add_child(text_2d);
         }
@@ -604,7 +643,7 @@ namespace ui {
 
             const bool last_value = box->get_visibility();
 
-            for (auto& w : all_widgets)
+            for (const auto& w : all_widgets)
             {
                 ButtonSubmenu2D* submenu = dynamic_cast<ButtonSubmenu2D*>(w.second);
 
@@ -665,7 +704,7 @@ namespace ui {
 
         // Text label
         {
-            float magic = 3.25f;
+            float magic = 3.5f;
             text_2d = new Text2D(signal, { size.x * 0.5f - signal.length() * magic, 0.0f }, 16.f, colors::PURPLE);
             add_child(text_2d);
         }
@@ -758,11 +797,6 @@ namespace ui {
         }
     }
 
-    void ColorPicker2D::render()
-    {
-        Panel2D::render();
-    }
-
     void ColorPicker2D::update(float delta_time)
     {
         sInputData input_data = get_input_data();
@@ -812,8 +846,15 @@ namespace ui {
     *   Label
     */
 
-    /*LabelWidget::LabelWidget(const std::string& p_text, const glm::vec2& p, const glm::vec2& s) : UIEntity(p, s), text(p_text) {
-        type = eWidgetType::LABEL;
-        center_pos = false;
-    }*/
+    ImageLabel2D::ImageLabel2D(const std::string& p_text, const std::string& image_path, float text_scale, const glm::vec2& p)
+        : HContainer2D(p_text + "@box", p) {
+
+        class_type = Node2DClassType::LABEL;
+
+        Text2D* text = new Text2D(p_text, {0.0f, 0.0f});
+        add_child(text);
+
+        TextureButton2D* image = new TextureButton2D(p_text + "@image", image_path, DISABLED, {0.0f, 0.0f}, glm::vec2(24.0f));
+        add_child(image);
+    }
 }
