@@ -851,7 +851,7 @@ namespace ui {
 
         class_type = Node2DClassType::LABEL;
 
-        Text2D* text = new Text2D(p_text, {0.0f, 0.0f});
+        text = new Text2D(p_text, {0.0f, 0.0f});
         add_child(text);
 
         TextureButton2D* image = new TextureButton2D(p_text + "@image", image_path, DISABLED, {0.0f, 0.0f}, glm::vec2(24.0f));

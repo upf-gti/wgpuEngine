@@ -186,7 +186,11 @@ namespace ui {
     };
 
     class ImageLabel2D : public HContainer2D {
+        Text2D* text = nullptr;
     public:
+        void set_text(const std::string& p_text) {
+            text->set_text(p_text);
+        }
 
         ImageLabel2D(const std::string& p_text, const std::string& image_path, float text_scale = 16.0f, const glm::vec2& p = { 0.f, 0.f });
     };
