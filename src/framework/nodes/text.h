@@ -37,6 +37,7 @@ public:
 
 	int get_text_width(const std::string& text);
 	void generate_mesh(const Color& color, eMaterialFlags flags);
+    eMaterialFlags get_flags() { return flags; }
 
     void set_text(const std::string& p_text) { text = p_text; generate_mesh(color, flags); };
 	TextEntity* set_scale(float _scale) { font_scale = _scale; return this; }

@@ -23,12 +23,14 @@ void TextEntity::append_char(glm::vec3 pos, Character& ch)
 	float size = (float)font_scale / font->size;
 	for (int k = 0; k < 6; ++k) {
 
-        vertices.push_back({
-            .position = (pos + ch.vertices[k]) * size,
+        InterleavedData vertex = {
+            .position = (pos + glm::vec3(ch.vertices[k].x, -ch.vertices[k].y + font_scale * 2.0f, ch.vertices[k].z)) * size,
             .uv = ch.uvs[k] / glm::vec2(font->scaleW, font->scaleH),
             .normal = glm::vec3(0.f, 1.f, 0.f),
             .color = { 1.0f, 1.0f, 1.0f }
-        });
+        };
+
+        vertices.push_back(vertex);
 	}
 }
 

@@ -28,6 +28,10 @@ void Viewport3D::set_viewport_size(const glm::vec2& new_size)
 
 void Viewport3D::render()
 {
+    if (!active) {
+        return;
+    }
+
     root->render();
 
     if (Renderer::instance->get_openxr_available())
@@ -38,8 +42,13 @@ void Viewport3D::render()
 
 void Viewport3D::update(float delta_time)
 {
+    if (!active) {
+        return;
+    }
+
     if(Renderer::instance->get_openxr_available())
     {
+        // TODO: Move this out of here so we can set any transform
         glm::mat4x4 raycast_transform = Input::get_controller_pose(HAND_RIGHT, POSE_AIM);
         raycast_pointer->set_model(raycast_transform);
 

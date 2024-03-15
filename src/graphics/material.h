@@ -9,7 +9,7 @@
 class Shader;
 class Texture;
 
-enum eMaterialFlags {
+enum eMaterialFlags : uint8_t {
     MATERIAL_DIFFUSE    = 1 << 0,
     MATERIAL_PBR        = 1 << 1,
     MATERIAL_2D         = 1 << 2,

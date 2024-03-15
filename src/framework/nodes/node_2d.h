@@ -27,6 +27,7 @@ struct sInputData {
     bool is_pressed = false;
     bool was_pressed = false;
     bool was_released = false;
+    glm::vec2 local_position = glm::vec2(0.0f);
     float ray_distance = 0.0f;
 };
 
@@ -67,6 +68,7 @@ public:
     void rotate(const glm::quat& q);
 	void scale(glm::vec2 scale);
 
+    Node2D* get_parent() const { return parent; }
 	const glm::vec2 get_local_translation() const;
     const glm::vec2 get_translation() const;
     const glm::vec2 get_scale() const;
