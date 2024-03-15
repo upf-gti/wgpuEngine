@@ -39,7 +39,9 @@ void RendererStorage::register_material(WebGPUContext* webgpu_context, const Mat
 
     if (material.diffuse_texture) {
         Uniform* u = new Uniform();
-        u->data = material.diffuse_texture->get_view();
+        uint32_t array_layers = material.diffuse_texture->get_array_layers();
+        WGPUTextureViewDimension view_dimension = array_layers > 1 ? WGPUTextureViewDimension_Cube : WGPUTextureViewDimension_2D;
+        u->data = material.diffuse_texture->get_view(view_dimension, 0, material.diffuse_texture->get_mipmap_count(), 0, array_layers);
         u->binding = 0;
         uniforms.push_back(u);
         uses_textures |= true;
@@ -187,33 +189,12 @@ void RendererStorage::update_ui_widget(WebGPUContext* webgpu_context, void* widg
 Shader* RendererStorage::get_shader(const std::string& shader_path, const Material& material,
     const std::vector<std::string> &custom_define_specializations)
 {
-    std::string name = std::filesystem::relative(std::filesystem::path(shader_path)).string();
-
     std::vector<std::string> define_specializations = get_common_define_specializations(material);
 
     // concatenate
     define_specializations.insert(define_specializations.end(), custom_define_specializations.begin(), custom_define_specializations.end());
 
-    std::string specialized_name = name;
-    for (const std::string& specialization : define_specializations) {
-        specialized_name += "_" + specialization;
-    }
-
-    // check if already loaded
-    std::map<std::string, Shader*>::iterator it = shaders.find(specialized_name);
-    if (it != shaders.end())
-        return it->second;
-
-    Shader* sh = new Shader();
-
-    if (!sh->load(name, specialized_name, define_specializations)) {
-        return nullptr;
-    }
-
-    // register in map
-    shaders[specialized_name] = sh;
-
-    return sh;
+    return get_shader(shader_path, define_specializations);
 }
 
 Shader* RendererStorage::get_shader(const std::string& shader_path, const std::vector<std::string>& custom_define_specializations)
@@ -232,7 +213,7 @@ Shader* RendererStorage::get_shader(const std::string& shader_path, const std::v
 
     Shader* sh = new Shader();
 
-    if (!sh->load(name, specialized_name, custom_define_specializations)) {
+    if (!sh->load_from_file(name, specialized_name, custom_define_specializations)) {
         return nullptr;
     }
 
@@ -240,6 +221,16 @@ Shader* RendererStorage::get_shader(const std::string& shader_path, const std::v
     shaders[specialized_name] = sh;
 
     return sh;
+}
+
+Shader* RendererStorage::get_shader_from_source(const std::string& source, const std::string& name, const Material& material, const std::vector<std::string>& custom_define_specializations)
+{
+    return nullptr;
+}
+
+Shader* RendererStorage::get_shader_from_source(const std::string& source, const std::string& name, const std::vector<std::string>& custom_define_specializations)
+{
+    return nullptr;
 }
 
 void RendererStorage::reload_shader(const std::string& shader_path)
@@ -279,11 +270,17 @@ Texture* RendererStorage::get_texture(const std::string& texture_path)
 
     std::string extension = texture_path.substr(texture_path.find_last_of(".") + 1);
 
-    if (extension != "hdre")
+    if (extension == "hdr")
     {
-        tx->load(texture_path);
-    }
-    else
+        Texture* hdr_texture = new Texture();
+        hdr_texture->load_hdr(texture_path);
+
+        tx->create(WGPUTextureDimension_2D, WGPUTextureFormat_RGBA32Float, { 512, 512, 6 },
+            static_cast<WGPUTextureUsage>(WGPUTextureUsage_StorageBinding | WGPUTextureUsage_TextureBinding), 6, 1, nullptr);
+
+        Renderer::instance->get_webgpu_context()->generate_prefiltered_env_texture(tx, hdr_texture);
+    } else
+    if (extension == "hdre")
     {
         HDRE* hdre = HDRE::Get(texture_path.c_str());
         if (!hdre) {
@@ -291,6 +288,10 @@ Texture* RendererStorage::get_texture(const std::string& texture_path)
         }
         tx->load_from_hdre(hdre);
         current_skybox_texture = tx;
+    }
+    else
+    {
+        tx->load(texture_path);
     }
 
     // register in map

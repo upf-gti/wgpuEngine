@@ -54,13 +54,13 @@ void create_material_texture(tinygltf::Model& model, int tex_index, Texture** te
 
         if (Texture::convert_to_rgba8unorm(image.width, image.height, texture_format, image.image.data(), converted_texture)) {
             *texture = new Texture();
-            (*texture)->load_from_data(image.uri, image.width, image.height, converted_texture, is_srgb ? WGPUTextureFormat_RGBA8UnormSrgb : WGPUTextureFormat_RGBA8Unorm);
+            (*texture)->load_from_data(image.uri, image.width, image.height, 1, converted_texture, is_srgb ? WGPUTextureFormat_RGBA8UnormSrgb : WGPUTextureFormat_RGBA8Unorm);
             delete[] converted_texture;
         }
     }
     else {
         *texture = new Texture();
-        (*texture)->load_from_data(image.uri, image.width, image.height, image.image.data(), is_srgb ? WGPUTextureFormat_RGBA8UnormSrgb : WGPUTextureFormat_RGBA8Unorm);
+        (*texture)->load_from_data(image.uri, image.width, image.height, 1, image.image.data(), is_srgb ? WGPUTextureFormat_RGBA8UnormSrgb : WGPUTextureFormat_RGBA8Unorm);
     }
 
     if (tex.sampler != -1)

@@ -76,25 +76,42 @@ void Texture::load(const std::string& texture_path)
 
     path = texture_path;
 
-    load_from_data(path, width, height, data);
+    load_from_data(path, width, height, 1, data);
 
     stbi_image_free(data);
 
     spdlog::info("Texture loaded: {}", texture_path);
 }
 
-void Texture::load_from_data(const std::string& name, int width, int height, void* data, WGPUTextureFormat p_format)
+void Texture::load_hdr(const std::string& texture_path)
+{
+    int width, height, channels;
+    float* data = stbi_loadf(texture_path.c_str(), &width, &height, &channels, 4);
+
+    if (!data)
+        return;
+
+    path = texture_path;
+
+    load_from_data(path, width, height, 1, data, false, WGPUTextureFormat_RGBA32Float);
+
+    stbi_image_free(data);
+
+    spdlog::info("Texture HDR loaded: {}", texture_path);
+}
+
+void Texture::load_from_data(const std::string& name, int width, int height, int array_layers, void* data, bool create_mipmaps, WGPUTextureFormat p_format)
 {
     dimension = WGPUTextureDimension_2D;
     format = p_format;
-    size = { (unsigned int)width, (unsigned int)height, 1 };
+    size = { (unsigned int)width, (unsigned int)height, (unsigned int)array_layers };
     usage = static_cast<WGPUTextureUsage>(WGPUTextureUsage_TextureBinding | WGPUTextureUsage_CopyDst);
-    mipmaps = std::bit_width(std::max(size.width, size.height));
+    mipmaps = create_mipmaps ? std::bit_width(std::max(size.width, size.height)) : 1;
 
     texture = webgpu_context->create_texture(dimension, format, size, usage, mipmaps, 1);
 
     // Create mipmaps
-    {
+    if (create_mipmaps) {
         WGPUTextureUsage mipmaps_usage = static_cast<WGPUTextureUsage>(WGPUTextureUsage_TextureBinding | WGPUTextureUsage_StorageBinding | WGPUTextureUsage_CopyDst | WGPUTextureUsage_CopySrc);
 
         WGPUTexture texture_temp = webgpu_context->create_texture(dimension, WGPUTextureFormat_RGBA8Unorm, size, mipmaps_usage, mipmaps, 1);
@@ -118,6 +135,9 @@ void Texture::load_from_data(const std::string& name, int width, int height, voi
         }
 
         wgpuTextureRelease(texture_temp);
+    }
+    else {
+        webgpu_context->upload_texture_mipmaps(texture, size, 0, data, {0, 0, 0});
     }
 }
 
@@ -144,28 +164,7 @@ void Texture::load_from_hdre(HDRE* hdre)
     }
 }
 
-WGPUTextureView Texture::get_view()
+WGPUTextureView Texture::get_view(WGPUTextureViewDimension view_dimension, uint32_t base_mip_level, uint32_t mip_level_count, uint32_t base_array_layer, uint32_t array_layer_count)
 {
-    WGPUTextureViewDimension view_dimension;
-    uint32_t array_layer_count = 1;
-
-    switch (dimension) {
-    case WGPUTextureDimension_1D:
-        view_dimension = WGPUTextureViewDimension_1D;
-        break;
-    case WGPUTextureDimension_2D:
-        view_dimension = size.depthOrArrayLayers > 1 ? WGPUTextureViewDimension_Cube : WGPUTextureViewDimension_2D;
-        if (view_dimension == WGPUTextureViewDimension_Cube)
-            array_layer_count = size.depthOrArrayLayers;
-        break;
-    case WGPUTextureDimension_3D:
-        view_dimension = WGPUTextureViewDimension_3D;
-        break;
-    default:
-        spdlog::error("Texture View dimension not implemented");
-        assert(0);
-        break;
-    }
-
-    return webgpu_context->create_texture_view(texture, view_dimension, format, WGPUTextureAspect_All, mipmaps, 0, array_layer_count);
+    return webgpu_context->create_texture_view(texture, view_dimension, format, WGPUTextureAspect_All, base_mip_level, mip_level_count, base_array_layer, array_layer_count);
 }

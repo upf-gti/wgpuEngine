@@ -18,7 +18,9 @@ public:
 
 	static WebGPUContext* webgpu_context;
 
-    bool load(const std::string& shader_path, const std::string& specialized_path = "", std::vector<std::string> define_specializations = {});
+    bool load_from_file(const std::string& shader_path, const std::string& specialized_path = "", std::vector<std::string> define_specializations = {});
+    bool load_from_source(const std::string& shader_source, const std::string& name, const std::string& specialized_name = "", std::vector<std::string> define_specializations = {});
+
 	void reload();
 
 	WGPUShaderModule get_module() const;
@@ -37,9 +39,11 @@ public:
 
 private:
 
-	void get_reflection_data(const std::string& shader_path, const std::string& shader_content);
+	void get_reflection_data(const std::string& shader_content);
 
     bool parse_preprocessor(std::string& shader_content, const std::string& shader_path);
+
+    bool load(const std::string& shader_source, const std::string& specialized_name = "", std::vector<std::string> define_specializations = {});
 
 	std::string path;
 	std::string specialized_path;

@@ -72,6 +72,12 @@ public:
 
     static Shader* get_shader(const std::string& shader_path, const std::vector<std::string>& custom_define_specializations);
 
+    static Shader* get_shader_from_source(const std::string& source, const std::string& name = "", const Material& material = {},
+        const std::vector<std::string>& custom_define_specializations = {});
+
+    static Shader* get_shader_from_source(const std::string& source, const std::string& name = "",
+        const std::vector<std::string>& custom_define_specializations = {});
+
     static void reload_shader(const std::string& shader_path);
 
     static Texture* get_texture(const std::string& texture_path);

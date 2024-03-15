@@ -153,7 +153,7 @@ void Renderer::init_ibl_bind_group()
         return;
     }
 
-    irradiance_texture_uniform.data = irradiance_texture->get_view();
+    irradiance_texture_uniform.data = irradiance_texture->get_view(WGPUTextureViewDimension_Cube, 0, 6, 0, 6);
     irradiance_texture_uniform.binding = 0;
 
     ibl_sampler_uniform.data = webgpu_context.create_sampler(

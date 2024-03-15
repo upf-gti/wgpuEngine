@@ -9,6 +9,8 @@ class Pipeline;
 class Texture;
 struct GLFWwindow;
 
+#define ENVIRONMENT_RESOLUTION 512
+
 struct WebGPUContext {
 
     WGPUInstance            instance = nullptr;
@@ -30,9 +32,17 @@ struct WebGPUContext {
     Pipeline*               mipmaps_pipeline;
     Shader*                 mipmaps_shader;
 
+    Pipeline*               panorama_to_cubemap_pipeline;
+    Shader*                 panorama_to_cubemap_shader;
+
+    Pipeline*               prefiltered_env_pipeline;
+    Shader*                 prefiltered_env_shader;
+
     Pipeline*               brdf_lut_pipeline;
     Shader*                 brdf_lut_shader;
     Texture*                brdf_lut_texture = nullptr;
+
+    WGPURequiredLimits      required_limits;
 
     bool                    is_initialized = false;
 
@@ -54,7 +64,7 @@ struct WebGPUContext {
 
     WGPUBuffer             create_buffer(uint64_t size, int usage, const void* data, const char* label = nullptr);
     WGPUTexture            create_texture(WGPUTextureDimension dimension, WGPUTextureFormat format, WGPUExtent3D size, WGPUTextureUsage usage, uint32_t mipmaps, uint8_t sample_count);
-    WGPUTextureView        create_texture_view(WGPUTexture texture, WGPUTextureViewDimension dimension, WGPUTextureFormat format, WGPUTextureAspect aspect = WGPUTextureAspect_All, uint32_t mip_level_count = 1, uint32_t base_mip_level = 0, uint32_t array_layer_count = 1, const char* label = "");
+    WGPUTextureView        create_texture_view(WGPUTexture texture, WGPUTextureViewDimension dimension, WGPUTextureFormat format, WGPUTextureAspect aspect = WGPUTextureAspect_All, uint32_t base_mip_level = 0, uint32_t mip_level_count = 1, uint32_t base_array_layer = 0, uint32_t array_layer_count = 1, const char* label = "");
     
                            // By now wrapU = wrapV = wrapW
     WGPUSampler            create_sampler(WGPUAddressMode wrap_u = WGPUAddressMode_ClampToEdge, WGPUAddressMode wrap_v = WGPUAddressMode_ClampToEdge, WGPUAddressMode wrap_w = WGPUAddressMode_ClampToEdge, WGPUFilterMode mag_filter = WGPUFilterMode_Linear, WGPUFilterMode min_filter = WGPUFilterMode_Linear, WGPUMipmapFilterMode mipmap_filter = WGPUMipmapFilterMode_Linear, float lod_max_clamp = 1.0f, uint16_t max_anisotropy = 1);
@@ -75,8 +85,10 @@ struct WebGPUContext {
     WGPUVertexBufferLayout create_vertex_buffer_layout(const std::vector<WGPUVertexAttribute>& vertex_attributes, uint64_t stride, WGPUVertexStepMode step_mode);
 
     void                   generate_brdf_lut_texture();
+    void                   generate_prefiltered_env_texture(Texture* prefiltered_env_texture, Texture* hdr_texture);
 
     void                   update_buffer(WGPUBuffer buffer, uint64_t buffer_offset, void const* data, uint64_t size);
+    void                   update_texture(WGPUTexture buffer, void const* data, uint64_t size);
 
     void process_events();
 

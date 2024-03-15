@@ -31,7 +31,7 @@ Shader::~Shader()
     }
 }
 
-bool Shader::load(const std::string& shader_path, const std::string& specialized_path, std::vector<std::string> define_specializations)
+bool Shader::load_from_file(const std::string& shader_path, const std::string& specialized_path, std::vector<std::string> define_specializations)
 {
 	path = shader_path;
 
@@ -54,41 +54,25 @@ bool Shader::load(const std::string& shader_path, const std::string& specialized
 		return false;
     }
 
-    if (!parse_preprocessor(shader_content, path)) {
-        spdlog::error("\tPreprocessor parsing error");
-        return false;
+	return load(shader_content, specialized_path, define_specializations);
+}
+
+bool Shader::load_from_source(const std::string& shader_source, const std::string& name, const std::string& specialized_name, std::vector<std::string> define_specializations)
+{
+    path = name;
+
+    if (!specialized_path.empty()) {
+        this->specialized_path = specialized_path;
+    }
+    else {
+        this->specialized_path = path;
     }
 
-    for (const std::string& specialization : define_specializations) {
-        spdlog::trace("\t{}", specialization);
+    if (!define_specializations.empty()) {
+        this->define_specializations = define_specializations;
     }
 
-	shader_module = webgpu_context->create_shader_module(shader_content.c_str());
-
-	struct UserData {
-		bool any_error = false;
-	} user_data;
-
-	auto callback = [](WGPUCompilationInfoRequestStatus status, struct WGPUCompilationInfo const* compilation_info, void* p_user_data) {
-		UserData& user_data = *reinterpret_cast<UserData*>(p_user_data);
-		user_data.any_error = compilation_info->messageCount > 0;
-	};
-
-#ifndef __EMSCRIPTEN__
-	wgpuShaderModuleGetCompilationInfo(shader_module, callback, &user_data);
-#endif
-
-	if (!user_data.any_error) {
-		get_reflection_data(shader_path, shader_content);
-		loaded = true;
-	}
-	else {
-		loaded = false;
-	}
-
-	webgpu_context->process_events();
-
-	return loaded;
+    return load(shader_source, specialized_path, define_specializations);
 }
 
 bool Shader::parse_preprocessor(std::string &shader_content, const std::string &shader_path)
@@ -230,14 +214,55 @@ bool Shader::parse_preprocessor(std::string &shader_content, const std::string &
     return true;
 }
 
+bool Shader::load(const std::string& shader_source, const std::string& specialized_name, std::vector<std::string> define_specializations)
+{
+    std::string shader_source_processed = shader_source;
+
+    if (!parse_preprocessor(shader_source_processed, path)) {
+        spdlog::error("\tPreprocessor parsing error");
+        return false;
+    }
+
+    for (const std::string& specialization : define_specializations) {
+        spdlog::trace("\t{}", specialization);
+    }
+
+    shader_module = webgpu_context->create_shader_module(shader_source_processed.c_str());
+
+    struct UserData {
+        bool any_error = false;
+    } user_data;
+
+    auto callback = [](WGPUCompilationInfoRequestStatus status, struct WGPUCompilationInfo const* compilation_info, void* p_user_data) {
+        UserData& user_data = *reinterpret_cast<UserData*>(p_user_data);
+        user_data.any_error = compilation_info->messageCount > 0;
+    };
+
+#ifndef __EMSCRIPTEN__
+    wgpuShaderModuleGetCompilationInfo(shader_module, callback, &user_data);
+#endif
+
+    if (!user_data.any_error) {
+        get_reflection_data(shader_source_processed);
+        loaded = true;
+    }
+    else {
+        loaded = false;
+    }
+
+    webgpu_context->process_events();
+
+    return loaded;
+}
+
 void Shader::set_custom_define(const std::string& define_name, custom_define_type value)
 {
     custom_defines[define_name] = value;
 }
 
-void Shader::get_reflection_data(const std::string& shader_path, const std::string& shader_content)
+void Shader::get_reflection_data(const std::string& shader_content)
 {
-	tint::Source::File file(shader_path, shader_content);
+	tint::Source::File file("", shader_content);
     tint::wgsl::reader::Options parser_options;
     parser_options.allowed_features = tint::wgsl::AllowedFeatures::Everything();
 	tint::Program tint_program = tint::wgsl::reader::Parse(&file, parser_options);
@@ -460,6 +485,9 @@ void Shader::get_reflection_data(const std::string& shader_path, const std::stri
 				case ResourceBinding::TextureDimension::k2d:
 					entry.storageTexture.viewDimension = WGPUTextureViewDimension_2D;
 					break;
+                case ResourceBinding::TextureDimension::k2dArray:
+                    entry.storageTexture.viewDimension = WGPUTextureViewDimension_2DArray;
+                    break;
 				case ResourceBinding::TextureDimension::k3d:
 					entry.storageTexture.viewDimension = WGPUTextureViewDimension_3D;
 					break;
@@ -503,7 +531,7 @@ void Shader::reload()
 	vertex_attributes.clear();
 	vertex_buffer_layouts.clear();
 
-	load(path, specialized_path, define_specializations);
+	load_from_file(path, specialized_path, define_specializations);
 
 	if (pipeline_ref) {
 		pipeline_ref->reload(this);

@@ -137,6 +137,8 @@ int WebGPUContext::initialize(WGPURequestAdapterOptions adapter_opts, WGPURequir
     WGPUDeviceDescriptor device_desc = {};
     device_desc.label = "My Device";
 
+    this->required_limits = required_limits;
+
     WGPUFeatureName required_features[1] = { WGPUFeatureName_Float32Filterable };
 
     device_desc.requiredFeatureCount = 1;
@@ -215,6 +217,20 @@ int WebGPUContext::initialize(WGPURequestAdapterOptions adapter_opts, WGPURequir
     }
 
     {
+        panorama_to_cubemap_shader = RendererStorage::get_shader("data/shaders/panorama_to_cubemap.wgsl");
+
+        panorama_to_cubemap_pipeline = new Pipeline();
+        panorama_to_cubemap_pipeline->create_compute(panorama_to_cubemap_shader);
+    }
+
+    {
+        prefiltered_env_shader = RendererStorage::get_shader("data/shaders/prefilter_env.wgsl");
+
+        prefiltered_env_pipeline = new Pipeline();
+        prefiltered_env_pipeline->create_compute(prefiltered_env_shader);
+    }
+
+    {
         brdf_lut_shader = RendererStorage::get_shader("data/shaders/brdf_lut_gen.wgsl");
 
         brdf_lut_pipeline = new Pipeline();
@@ -250,8 +266,11 @@ void WebGPUContext::destroy()
     wgpuSwapChainRelease(screen_swapchain);
 
     delete mipmaps_pipeline;
+
     delete brdf_lut_pipeline;
     delete brdf_lut_texture;
+
+    delete prefiltered_env_pipeline;
 }
 
 void WebGPUContext::create_instance()
@@ -324,11 +343,11 @@ WGPUTexture WebGPUContext::create_texture(WGPUTextureDimension dimension, WGPUTe
     return wgpuDeviceCreateTexture(device, &textureDesc);
 }
 
-WGPUTextureView WebGPUContext::create_texture_view(WGPUTexture texture, WGPUTextureViewDimension dimension, WGPUTextureFormat format, WGPUTextureAspect aspect, uint32_t mip_level_count, uint32_t base_mip_level, uint32_t array_layer_count, const char* label)
+WGPUTextureView WebGPUContext::create_texture_view(WGPUTexture texture, WGPUTextureViewDimension dimension, WGPUTextureFormat format, WGPUTextureAspect aspect, uint32_t base_mip_level, uint32_t mip_level_count, uint32_t base_array_layer, uint32_t array_layer_count, const char* label)
 {
     WGPUTextureViewDescriptor textureViewDesc = {};
     textureViewDesc.aspect = aspect;
-    textureViewDesc.baseArrayLayer = 0;
+    textureViewDesc.baseArrayLayer = base_array_layer;
     textureViewDesc.arrayLayerCount = array_layer_count;
     textureViewDesc.dimension = dimension;
     textureViewDesc.format = format;
@@ -404,7 +423,7 @@ void WebGPUContext::create_texture_mipmaps(WGPUTexture texture, WGPUExtent3D tex
         {
             std::string label = "MIP level #" + std::to_string(level);
             texture_mip_views.push_back(
-                create_texture_view(texture, view_dimension, format, WGPUTextureAspect_All, 1, level, texture_size.depthOrArrayLayers, label.c_str())
+                create_texture_view(texture, view_dimension, format, WGPUTextureAspect_All, level, 1, 0, texture_size.depthOrArrayLayers, label.c_str())
             );
 
             if (level > 0) {
@@ -732,6 +751,152 @@ void WebGPUContext::generate_brdf_lut_texture()
     wgpuComputePassEncoderRelease(compute_pass);
     wgpuCommandEncoderRelease(command_encoder);
     
+    wgpuQueueRelease(brdf_queue);
+}
+
+void WebGPUContext::generate_prefiltered_env_texture(Texture* prefiltered_env_texture, Texture* hdr_texture)
+{
+    WGPUQueue brdf_queue = wgpuDeviceGetQueue(device);
+
+    //Texture cubemap_texture;
+    //cubemap_texture.create(WGPUTextureDimension_2D, WGPUTextureFormat_RGBA32Float, { ENVIRONMENT_RESOLUTION, ENVIRONMENT_RESOLUTION, 6 },
+    //    static_cast<WGPUTextureUsage>(WGPUTextureUsage_StorageBinding | WGPUTextureUsage_TextureBinding), 1, 1, nullptr);
+
+    Uniform cubemap_mipmaps_uniforms[5];
+    for (int i = 0; i < 5; ++i) {
+        cubemap_mipmaps_uniforms[i].data = prefiltered_env_texture->get_view(WGPUTextureViewDimension_2DArray, i + 1, 1, 0, 6);
+        cubemap_mipmaps_uniforms[i].binding = 1;
+    }
+
+    Uniform cubemap_all_faces_output_uniform;
+    cubemap_all_faces_output_uniform.data = prefiltered_env_texture->get_view(WGPUTextureViewDimension_2DArray, 0, 1, 0, 6);
+    cubemap_all_faces_output_uniform.binding = 1;
+
+    Uniform cubemap_all_input_output_uniform;
+    cubemap_all_input_output_uniform.data = prefiltered_env_texture->get_view(WGPUTextureViewDimension_Cube, 0, 1, 0, 6);
+    cubemap_all_input_output_uniform.binding = 0;
+
+    Uniform sampler;
+    sampler.data = create_sampler(WGPUAddressMode_ClampToEdge, WGPUAddressMode_ClampToEdge, WGPUAddressMode_ClampToEdge, WGPUFilterMode_Linear, WGPUFilterMode_Linear);
+    sampler.binding = 2;
+
+    Uniform hdr_uniform;
+    hdr_uniform.data = hdr_texture->get_view();
+    hdr_uniform.binding = 0;
+
+    struct PrefilterEnvUniformData {
+        uint32_t current_mip_level;
+        uint32_t mip_level_count;
+        uint32_t pad0;
+        uint32_t pad1;
+    } prefilter_env_uniform_data;
+
+    uint32_t buffer_stride = std::max(static_cast<uint32_t>(sizeof(PrefilterEnvUniformData)), required_limits.limits.minUniformBufferOffsetAlignment);
+
+    Uniform current_level_uniform;
+    current_level_uniform.data = create_buffer(buffer_stride * 6, WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform, nullptr, "previlter env uniform_data");
+    current_level_uniform.buffer_size = buffer_stride;
+    current_level_uniform.binding = 3;
+
+    // Initialize a command encoder
+    WGPUCommandEncoderDescriptor encoder_desc = {};
+    WGPUCommandEncoder command_encoder = wgpuDeviceCreateCommandEncoder(device, &encoder_desc);
+
+    // Panorama to cubemap
+    {
+        std::vector<Uniform*> uniforms = { &hdr_uniform, &cubemap_all_faces_output_uniform, &sampler };
+        WGPUBindGroup bind_group = create_bind_group(uniforms, panorama_to_cubemap_shader, 0);
+
+        WGPUComputePassDescriptor compute_pass_desc = {};
+        compute_pass_desc.timestampWrites = nullptr;
+        WGPUComputePassEncoder compute_pass = wgpuCommandEncoderBeginComputePass(command_encoder, &compute_pass_desc);
+
+        panorama_to_cubemap_pipeline->set(compute_pass);
+
+        uint32_t invocationCountX = prefiltered_env_texture->get_width();
+        uint32_t invocationCountY = prefiltered_env_texture->get_height();
+        uint32_t workgroupSizePerDim = 4;
+
+        uint32_t workgroupCountX = (invocationCountX + workgroupSizePerDim - 1) / workgroupSizePerDim;
+        uint32_t workgroupCountY = (invocationCountY + workgroupSizePerDim - 1) / workgroupSizePerDim;
+
+        wgpuComputePassEncoderSetBindGroup(compute_pass, 0, bind_group, 0, nullptr);
+
+        wgpuComputePassEncoderDispatchWorkgroups(compute_pass, workgroupCountX, workgroupCountY, 1);
+
+        wgpuBindGroupRelease(bind_group);
+
+        // Finalize compute_raymarching pass
+        wgpuComputePassEncoderEnd(compute_pass);
+
+        wgpuComputePassEncoderRelease(compute_pass);
+    }
+
+    // Prefilter cubemap
+    {
+        WGPUBindGroup bind_groups[5];
+
+        for (uint32_t i = 0; i < 5; ++i) {
+            std::vector<Uniform*> uniforms = { &cubemap_all_input_output_uniform, &cubemap_mipmaps_uniforms[i], &sampler, &current_level_uniform };
+            bind_groups[i] = create_bind_group(uniforms, prefiltered_env_shader, 0);
+        }
+
+        // Setup uniform buffers
+        for (uint32_t i = 0; i < 5; ++i) {
+            prefilter_env_uniform_data.current_mip_level = i + 1;
+            prefilter_env_uniform_data.mip_level_count = 6;
+            update_buffer(std::get<WGPUBuffer>(current_level_uniform.data), i * buffer_stride, &prefilter_env_uniform_data, sizeof(PrefilterEnvUniformData));
+        }
+
+        WGPUComputePassDescriptor compute_pass_desc = {};
+        compute_pass_desc.timestampWrites = nullptr;
+        WGPUComputePassEncoder compute_pass = wgpuCommandEncoderBeginComputePass(command_encoder, &compute_pass_desc);
+
+        prefiltered_env_pipeline->set(compute_pass);
+
+        uint32_t invocationCountX = prefiltered_env_texture->get_width();
+        uint32_t invocationCountY = prefiltered_env_texture->get_height();
+        uint32_t workgroupSizePerDim = 4;
+
+        uint32_t workgroupCountX = (invocationCountX + workgroupSizePerDim - 1) / workgroupSizePerDim;
+        uint32_t workgroupCountY = (invocationCountY + workgroupSizePerDim - 1) / workgroupSizePerDim;
+
+        uint32_t dynamicOffset = 0;
+
+        for (uint32_t i = 0; i < 5; ++i) {
+
+            dynamicOffset = i * buffer_stride;
+
+            wgpuComputePassEncoderSetBindGroup(compute_pass, 0, bind_groups[i], 1, &dynamicOffset);
+
+            invocationCountX = invocationCountX / 2;
+            invocationCountY = invocationCountY / 2;
+            workgroupCountX = (invocationCountX + workgroupSizePerDim - 1) / workgroupSizePerDim;
+            workgroupCountY = (invocationCountY + workgroupSizePerDim - 1) / workgroupSizePerDim;
+
+            wgpuComputePassEncoderDispatchWorkgroups(compute_pass, workgroupCountX, workgroupCountY, 1);
+        }
+
+        for (uint32_t i = 0; i < 5; ++i) {
+            wgpuBindGroupRelease(bind_groups[i]);
+        }
+
+        // Finalize compute_raymarching pass
+        wgpuComputePassEncoderEnd(compute_pass);
+
+        wgpuComputePassEncoderRelease(compute_pass);
+    }
+
+    WGPUCommandBufferDescriptor cmd_buff_descriptor = {};
+    cmd_buff_descriptor.nextInChain = NULL;
+    cmd_buff_descriptor.label = "Create Prefiltered Env Command Buffer";
+
+    // Encode and submit the GPU commands
+    WGPUCommandBuffer commands = wgpuCommandEncoderFinish(command_encoder, &cmd_buff_descriptor);
+    wgpuQueueSubmit(brdf_queue, 1, &commands);
+
+    wgpuCommandBufferRelease(commands);
+    wgpuCommandEncoderRelease(command_encoder);
 
     wgpuQueueRelease(brdf_queue);
 }
