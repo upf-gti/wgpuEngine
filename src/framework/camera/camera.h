@@ -29,6 +29,8 @@ public:
     const glm::vec3& get_center() const { return center; }
     const glm::vec3& get_up() const { return up; }
 
+    float get_speed() const { return speed; }
+
     const glm::mat4x4& get_view_projection() const { return view_projection; }
 
     void set_speed(float speed) { this->speed = speed; }
