@@ -145,6 +145,17 @@ set_target_properties(${PROJECT_NAME} PROPERTIES VS_DEBUGGER_ENVIRONMENT "DAWN_D
 add_subdirectory(libraries/webgpu)
 target_link_libraries(${PROJECT_NAME} PUBLIC webgpu)
 
+# glm
+add_subdirectory(libraries/glm)
+
+target_compile_definitions(glm PUBLIC GLM_ENABLE_EXPERIMENTAL)
+target_compile_definitions(glm PUBLIC GLM_FORCE_QUAT_DATA_XYZW)
+target_compile_definitions(glm PUBLIC GLM_FORCE_QUAT_CTOR_XYZW)
+
+set_property(TARGET glm PROPERTY CXX_STANDARD 20)
+set_property(TARGET glm PROPERTY FOLDER "External/glm")
+target_link_libraries(${PROJECT_NAME} PUBLIC glm)
+
 if (NOT EMSCRIPTEN)
 
     # vulkan
@@ -171,17 +182,6 @@ if (NOT EMSCRIPTEN)
     target_include_directories(${PROJECT_NAME} PUBLIC ${WGPU_DIR_LIBS}/renderdoc)
 
 endif()
-
-# glm
-add_subdirectory(libraries/glm)
-
-target_compile_definitions(glm PUBLIC GLM_ENABLE_EXPERIMENTAL)
-target_compile_definitions(glm PUBLIC GLM_FORCE_QUAT_DATA_XYZW)
-target_compile_definitions(glm PUBLIC GLM_FORCE_QUAT_CTOR_XYZW)
-
-set_property(TARGET glm PROPERTY CXX_STANDARD 20)
-set_property(TARGET glm PROPERTY FOLDER "External/glm")
-target_link_libraries(${PROJECT_NAME} PUBLIC glm)
 
 # tinyobjloader
 target_include_directories(${PROJECT_NAME} PUBLIC ${WGPU_DIR_LIBS}/tinyobjloader)
