@@ -9,7 +9,7 @@ class Pipeline;
 class Texture;
 struct GLFWwindow;
 
-#define ENVIRONMENT_RESOLUTION 512
+#define ENVIRONMENT_RESOLUTION 1024
 
 struct WebGPUContext {
 

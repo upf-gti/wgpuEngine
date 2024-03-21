@@ -781,6 +781,55 @@ void Surface::create_torus(float r, float ir, uint32_t segments_section, uint32_
     create_vertex_buffer();
 }
 
+void Surface::create_skybox()
+{
+    vertices.resize(36);
+
+    vertices[0].position = { -1.0f, 1.0f, -1.0f };
+    vertices[1].position = { -1.0f, -1.0f, -1.0f };
+    vertices[2].position = {  1.0f, -1.0f, -1.0f };
+    vertices[3].position = {  1.0f, -1.0f, -1.0f };
+    vertices[4].position = {  1.0f,  1.0f, -1.0f };
+    vertices[5].position = { -1.0f,  1.0f, -1.0f };
+
+    vertices[6].position = { -1.0f, -1.0f,  1.0f };
+    vertices[7].position = { -1.0f, -1.0f, -1.0f };
+    vertices[8].position = { -1.0f,  1.0f, -1.0f };
+    vertices[9].position = { -1.0f,  1.0f, -1.0f };
+    vertices[10].position = { -1.0f,  1.0f,  1.0f };
+    vertices[11].position = { -1.0f, -1.0f,  1.0f };
+
+    vertices[12].position = { 1.0f, -1.0f, -1.0f };
+    vertices[13].position = { 1.0f, -1.0f,  1.0f };
+    vertices[14].position = { 1.0f,  1.0f,  1.0f };
+    vertices[15].position = { 1.0f,  1.0f,  1.0f };
+    vertices[16].position = { 1.0f,  1.0f, -1.0f };
+    vertices[17].position = { 1.0f, -1.0f, -1.0f };
+
+    vertices[18].position = { -1.0f, -1.0f,  1.0f };
+    vertices[19].position = { -1.0f,  1.0f,  1.0f };
+    vertices[20].position = {  1.0f,  1.0f,  1.0f };
+    vertices[21].position = {  1.0f,  1.0f,  1.0f };
+    vertices[22].position = {  1.0f, -1.0f,  1.0f };
+    vertices[23].position = { -1.0f, -1.0f,  1.0f };
+
+    vertices[24].position = { -1.0f,  1.0f, -1.0f };
+    vertices[25].position = { 1.0f,  1.0f, -1.0f };
+    vertices[26].position = { 1.0f,  1.0f,  1.0f };
+    vertices[27].position = { 1.0f,  1.0f,  1.0f };
+    vertices[28].position = { -1.0f,  1.0f,  1.0f };
+    vertices[29].position = { -1.0f,  1.0f, -1.0f };
+
+    vertices[30].position = { -1.0f, -1.0f, -1.0f };
+    vertices[31].position = { -1.0f, -1.0f,  1.0f };
+    vertices[32].position = {  1.0f, -1.0f, -1.0f };
+    vertices[33].position = {  1.0f, -1.0f, -1.0f };
+    vertices[34].position = { -1.0f, -1.0f,  1.0f };
+    vertices[35].position = { 1.0f, -1.0f,  1.0f };
+
+    create_vertex_buffer();
+}
+
 void Surface::create_from_vertices(const std::vector<InterleavedData>& _vertices)
 {
     vertices = _vertices;
