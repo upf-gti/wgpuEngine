@@ -79,12 +79,13 @@ const WGPUBuffer& Surface::get_vertex_buffer() const
     return vertex_buffer;
 }
 
-std::vector<InterleavedData> Surface::generate_quad(float w, float h, const glm::vec3& position, const glm::vec3& normal, bool centered, const glm::vec3& color)
+std::vector<InterleavedData> Surface::generate_quad(float w, float h, const glm::vec3& position, const glm::vec3& normal, const glm::vec3& color)
 {
     InterleavedData points[4];
 
-    glm::vec3 vY = get_perpendicular(normal);
-    glm::vec3 vX = glm::cross(normal, vY);
+    glm::vec3 n = -normal;
+    glm::vec3 vY = get_perpendicular(n);
+    glm::vec3 vX = glm::cross(n, vY);
     glm::vec3 delta1 = w * vX;
     glm::vec3 delta2 = h * vY;
 
@@ -98,8 +99,8 @@ std::vector<InterleavedData> Surface::generate_quad(float w, float h, const glm:
         {
             auto vtx = &points[counter++];
             vtx->position = position + (orig + float(i1) * delta1 - float(i2) * delta2);
-            vtx->normal = normal;
-            vtx->uv = glm::vec2(1.0f - i1, i2);
+            vtx->normal = n;
+            vtx->uv = glm::vec2(1.0f - i1, 1.0f - i2);
         }
     }
 
@@ -134,12 +135,8 @@ void Surface::create_quad(float w, float h, bool centered, const glm::vec3& colo
     {
         origin += glm::vec3(w * 0.5f, h * 0.5f, 0.0f);
     }
-    else
-    {
 
-    }
-
-    vertices = generate_quad(w, h, origin, normals::pZ, centered, color);
+    vertices = generate_quad(w, h, origin, normals::pZ, color);
 
     spdlog::trace("Quad mesh created ({} vertices)", vertices.size());
 
@@ -155,19 +152,22 @@ void Surface::create_box(float w, float h, float d, const glm::vec3& color)
         wgpuBufferDestroy(vertex_buffer);
     }
 
-    auto pos_x = generate_quad(w, h, d * normals::pX, normals::pX, true, color);
+    w *= 2.0f;
+    h *= 2.0f;
+
+    auto pos_x = generate_quad(w, h, d * normals::pX, normals::pX, color);
     vertices.insert(vertices.end(), pos_x.begin(), pos_x.end());
-    auto neg_x = generate_quad(w, h, d * normals::nX, normals::nX, true, color);
+    auto neg_x = generate_quad(w, h, d * normals::nX, normals::nX, color);
     vertices.insert(vertices.end(), neg_x.begin(), neg_x.end());
 
-    auto pos_y = generate_quad(w, h, d * normals::pY, normals::pY, true, color);
+    auto pos_y = generate_quad(w, h, d * normals::pY, normals::pY, color);
     vertices.insert(vertices.end(), pos_y.begin(), pos_y.end());
-    auto neg_y = generate_quad(w, h, d * normals::nY, normals::nY, true, color);
+    auto neg_y = generate_quad(w, h, d * normals::nY, normals::nY, color);
     vertices.insert(vertices.end(), neg_y.begin(), neg_y.end());
 
-    auto pos_z = generate_quad(w, h, d * normals::pZ, normals::pZ, true, color);
+    auto pos_z = generate_quad(w, h, d * normals::pZ, normals::pZ, color);
     vertices.insert(vertices.end(), pos_z.begin(), pos_z.end());
-    auto neg_z = generate_quad(w, h, d * normals::nZ, normals::nZ, true, color);
+    auto neg_z = generate_quad(w, h, d * normals::nZ, normals::nZ, color);
     vertices.insert(vertices.end(), neg_z.begin(), neg_z.end());
 
     spdlog::trace("Box mesh created ({} vertices)", vertices.size());
@@ -188,19 +188,19 @@ void Surface::create_rounded_box(float w, float h, float d, float c, const glm::
     h -= c;
 
     // Add side vertices adding the chamfer translation
-    auto pos_x = generate_quad(w, h, d * normals::pX, normals::pX, true, color);
+    auto pos_x = generate_quad(w, h, d * normals::pX, normals::pX, color);
     vertices.insert(vertices.end(), pos_x.begin(), pos_x.end());
-    auto neg_x = generate_quad(w, h, d * normals::nX, normals::nX, true, color);
+    auto neg_x = generate_quad(w, h, d * normals::nX, normals::nX, color);
     vertices.insert(vertices.end(), neg_x.begin(), neg_x.end());
 
-    auto pos_y = generate_quad(w, h, d * normals::pY, normals::pY, true, color);
+    auto pos_y = generate_quad(w, h, d * normals::pY, normals::pY, color);
     vertices.insert(vertices.end(), pos_y.begin(), pos_y.end());
-    auto neg_y = generate_quad(w, h, d * normals::nY, normals::nY, true, color);
+    auto neg_y = generate_quad(w, h, d * normals::nY, normals::nY, color);
     vertices.insert(vertices.end(), neg_y.begin(), neg_y.end());
 
-    auto pos_z = generate_quad(w, h, d * normals::pZ, normals::pZ, true, color);
+    auto pos_z = generate_quad(w, h, d * normals::pZ, normals::pZ, color);
     vertices.insert(vertices.end(), pos_z.begin(), pos_z.end());
-    auto neg_z = generate_quad(w, h, d * normals::nZ, normals::nZ, true, color);
+    auto neg_z = generate_quad(w, h, d * normals::nZ, normals::nZ, color);
     vertices.insert(vertices.end(), neg_z.begin(), neg_z.end());
 
     constexpr float     pi = glm::pi<float>();

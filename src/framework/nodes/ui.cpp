@@ -210,7 +210,7 @@ namespace ui {
         material.color = color;
         material.flags = MATERIAL_2D;
         material.priority = class_type;
-        material.cull_type = CULL_FRONT;
+        material.cull_type = CULL_BACK;
         material.shader = RendererStorage::get_shader("data/shaders/mesh_color.wgsl", material);
 
         Surface* quad_surface = new Surface();
@@ -315,7 +315,7 @@ namespace ui {
         Material material;
         material.color = color;
         material.flags = MATERIAL_2D | MATERIAL_UI;
-        material.cull_type = CULL_FRONT;
+        material.cull_type = CULL_BACK;
         material.priority = class_type;
         material.transparency_type = ALPHA_BLEND;
         material.shader = RendererStorage::get_shader("data/shaders/ui/ui_selector.wgsl", material);
@@ -436,7 +436,7 @@ namespace ui {
         Material material;
         material.color = color;
         material.flags = MATERIAL_2D | MATERIAL_UI;
-        material.cull_type = CULL_FRONT;
+        material.cull_type = CULL_BACK;
         material.priority = class_type;
         material.shader = RendererStorage::get_shader("data/shaders/ui/ui_button.wgsl", material);
 
@@ -585,7 +585,7 @@ namespace ui {
         Material material;
         material.color = color;
         material.flags = MATERIAL_2D | MATERIAL_UI;
-        material.cull_type = CULL_FRONT;
+        material.cull_type = CULL_BACK;
         material.transparency_type = ALPHA_BLEND;
         material.priority = class_type;
 
@@ -665,7 +665,7 @@ namespace ui {
         Material material;
         material.color = color;
         material.flags = MATERIAL_2D | MATERIAL_UI;
-        material.cull_type = CULL_FRONT;
+        material.cull_type = CULL_BACK;
         material.priority = class_type;
         material.shader = RendererStorage::get_shader("data/shaders/ui/ui_group.wgsl", material);
 
@@ -799,7 +799,7 @@ namespace ui {
 
         Material material;
         material.flags = MATERIAL_2D | MATERIAL_UI;
-        material.cull_type = CULL_FRONT;
+        material.cull_type = CULL_BACK;
         material.priority = class_type;
         material.shader = RendererStorage::get_shader("data/shaders/ui/ui_slider.wgsl", material);
 
@@ -880,7 +880,7 @@ namespace ui {
 
         Material material;
         material.flags = MATERIAL_2D | MATERIAL_UI;
-        material.cull_type = CULL_FRONT;
+        material.cull_type = CULL_BACK;
         material.priority = class_type;
         material.shader = RendererStorage::get_shader("data/shaders/ui/ui_color_picker.wgsl", material);
 

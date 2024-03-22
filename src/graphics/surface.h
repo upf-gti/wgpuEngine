@@ -29,7 +29,7 @@ class Surface
     WGPUBuffer vertex_buffer = nullptr;
     static Surface* quad_mesh;
 
-    std::vector<InterleavedData> generate_quad(float w = 1.f, float h = 1.f, const glm::vec3& position = { 0.f, 0.f, 0.f }, const glm::vec3& normal = { 0.f, 1.f, 0.f }, bool centered = true, const glm::vec3& color = { 1.f, 1.f, 1.f });
+    std::vector<InterleavedData> generate_quad(float w = 1.f, float h = 1.f, const glm::vec3& position = { 0.f, 0.f, 0.f }, const glm::vec3& normal = { 0.f, 1.f, 0.f }, const glm::vec3& color = { 1.f, 1.f, 1.f });
 
     AABB aabb;
 public:
