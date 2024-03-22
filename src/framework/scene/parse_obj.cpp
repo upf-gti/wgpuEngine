@@ -64,6 +64,9 @@ void parse_obj(const char* obj_path, MeshInstance3D* entity)
 
     InterleavedData vertex_data;
 
+    glm::vec3 min_pos = { FLT_MAX, FLT_MAX, FLT_MAX };
+    glm::vec3 max_pos = { -FLT_MAX, -FLT_MAX, -FLT_MAX };
+
     // Loop over shapes
     for (size_t s = 0; s < shapes.size(); s++) {
         // Loop over faces(polygon)
@@ -95,11 +98,29 @@ void parse_obj(const char* obj_path, MeshInstance3D* entity)
                 vertex_data.color.z = attrib.colors[3 * size_t(idx.vertex_index) + 2];
 
                 vertices.push_back(vertex_data);
+
+                glm::bvec3 less_than = glm::lessThan(vertex_data.position, min_pos);
+
+                min_pos.x = less_than.x ? vertex_data.position.x : min_pos.x;
+                min_pos.y = less_than.y ? vertex_data.position.y : min_pos.y;
+                min_pos.z = less_than.z ? vertex_data.position.z : min_pos.z;
+
+                glm::bvec3 greater_than = glm::greaterThan(vertex_data.position, max_pos);
+
+                max_pos.x = greater_than.x ? vertex_data.position.x : max_pos.x;
+                max_pos.y = greater_than.y ? vertex_data.position.y : max_pos.y;
+                max_pos.z = greater_than.z ? vertex_data.position.z : max_pos.z;
             }
 
             index_offset += fv;
         }
     }
+
+    AABB aabb;
+    aabb.center = (max_pos - min_pos) * glm::vec3(0.5);
+    aabb.half_size = max_pos - aabb.center;
+
+    entity->set_aabb(aabb);
 
     new_surface->create_vertex_buffer();
 }
