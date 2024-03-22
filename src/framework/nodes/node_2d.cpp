@@ -116,6 +116,11 @@ void Node2D::set_viewport_model(glm::mat4x4 model)
     viewport_model = model;
 }
 
+void Node2D::set_priority(uint8_t priority)
+{
+    class_type = priority;
+}
+
 void Node2D::set_translation(const glm::vec2& translation)
 {
 	model = glm::translate(glm::mat3x3(1.f), translation);

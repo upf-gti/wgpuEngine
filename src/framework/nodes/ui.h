@@ -35,6 +35,7 @@ namespace ui {
         void render() override;
         void update(float delta_time) override;
         void remove_flag(uint8_t flag) override;
+        void set_priority(uint8_t priority) override;
     };
 
     class Container2D : public Panel2D {
@@ -61,6 +62,14 @@ namespace ui {
     public:
         VContainer2D() {};
         VContainer2D(const std::string& name, const glm::vec2& p, const Color& c = colors::WHITE);
+
+        void on_children_changed() override;
+    };
+
+    class Selector2D : public Container2D {
+    public:
+        Selector2D() {};
+        Selector2D(const std::string& name, const glm::vec2& p, const Color& c = colors::WHITE);
 
         void on_children_changed() override;
     };

@@ -8,7 +8,7 @@
 #include <vector>
 
 enum Node2DClassType {
-    UNDEFINED,
+    OVER_TOP,
     TEXT,
     LABEL,
     BUTTON,
@@ -16,9 +16,11 @@ enum Node2DClassType {
     SLIDER,
     COLOR_PICKER,
     GROUP,
+    SELECTOR,
     HCONTAINER,
     VCONTAINER,
     PANEL,
+    UNDEFINED,
     NUM_2D_TYPES
 };
 
@@ -84,6 +86,7 @@ public:
     void set_model(const glm::mat3x3& _model);
     void set_visibility(bool value);
     void set_viewport_model(glm::mat4x4 model);
+    virtual void set_priority(uint8_t priority);
 
     static std::map<std::string, Node2D*> all_widgets;
 

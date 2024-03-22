@@ -41,8 +41,6 @@ namespace ui {
 
     void Panel2D::update(float delta_time)
     {
-        // set_color(get_input_data() ? colors::GREEN : colors::RED);
-
         Node2D::update(delta_time);
     }
 
@@ -171,6 +169,14 @@ namespace ui {
         Node2D::remove_flag(flag);
     }
 
+    void Panel2D::set_priority(uint8_t priority)
+    {
+        Material* material = quad_mesh.get_surface_material_override(quad_mesh.get_surface(0));
+        material->priority = priority;
+
+        Node2D::set_priority(priority);
+    }
+
     /*
     *	Containers
     */
@@ -261,7 +267,7 @@ namespace ui {
             rect_height += node_2d->get_size().y;
         }
 
-        rect_height += padding.y * 2.0f + item_margin.y * static_cast<float>(child_count - 1);;
+        rect_height += padding.y * 2.0f + item_margin.y * static_cast<float>(child_count - 1);
 
         for (size_t i = 0; i < child_count; ++i)
         {
@@ -275,6 +281,35 @@ namespace ui {
 
         size.x += padding.x * 2.0f;
         size.y = rect_height;
+
+        Container2D::on_children_changed();
+    }
+
+    Selector2D::Selector2D(const std::string& name, const glm::vec2& pos, const Color& col)
+        : Container2D(name, pos, col)
+    {
+        class_type = Node2DClassType::SELECTOR;
+    }
+
+    void Selector2D::on_children_changed()
+    {
+        size_t child_count = get_children().size();
+        float radius = BUTTON_SIZE + child_count * 4.0f;
+
+        size = glm::vec2(0.0f);
+
+        constexpr float m_pi = glm::pi<float>();
+        glm::vec2 center = glm::vec2(0.0f, -BUTTON_SIZE - padding.y);
+
+        for (size_t i = 0; i < child_count; ++i)
+        {
+            double angle = (m_pi / 2.0f) + 2.0f * m_pi * i / (float)child_count;
+            glm::vec2 translation = glm::vec2(radius * cos(angle), radius * sin(angle));
+
+            Node2D* node_2d = static_cast<Node2D*>(get_children()[i]);
+            node_2d->set_translation(center + translation);
+            node_2d->set_priority(Node2DClassType::OVER_TOP);
+        }
 
         Container2D::on_children_changed();
     }
