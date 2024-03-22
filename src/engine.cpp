@@ -2,6 +2,7 @@
 
 #include "framework/input.h"
 #include "framework/utils/file_watcher.h"
+#include "framework/nodes/node_2d.h"
 
 #include "graphics/renderer.h"
 
@@ -117,6 +118,10 @@ void Engine::on_frame()
     current_time = glfwGetTime();
 
     delta_time = static_cast<float>((current_time - last_time));
+
+    if (Node2D::must_allow_propagation) {
+        Node2D::allow_propagation();
+    }
 
     update(delta_time);
 

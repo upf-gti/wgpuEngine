@@ -36,6 +36,8 @@ namespace ui {
         void update(float delta_time) override;
         void remove_flag(uint8_t flag) override;
         void set_priority(uint8_t priority) override;
+
+        virtual void on_pressed();
     };
 
     class Container2D : public Panel2D {
@@ -66,10 +68,10 @@ namespace ui {
         void on_children_changed() override;
     };
 
-    class Selector2D : public Container2D {
+    class CircleContainer2D : public Container2D {
     public:
-        Selector2D() {};
-        Selector2D(const std::string& name, const glm::vec2& p, const Color& c = colors::WHITE);
+        CircleContainer2D() {};
+        CircleContainer2D(const std::string& name, const glm::vec2& p, const Color& c = colors::GRAY);
 
         void on_children_changed() override;
     };
@@ -148,6 +150,16 @@ namespace ui {
         HContainer2D* box = nullptr;
 
         ButtonSubmenu2D(const std::string& sg, const std::string& texture_path, uint8_t parameter_flags = 0, const glm::vec2& pos = { 0.0f, 0.0f }, const glm::vec2& size = glm::vec2(BUTTON_SIZE));
+
+        void add_child(Node2D* child) override;
+    };
+
+    class ButtonSelector2D : public TextureButton2D {
+    public:
+
+        CircleContainer2D* box = nullptr;
+
+        ButtonSelector2D(const std::string& sg, const std::string& texture_path, uint8_t parameter_flags = 0, const glm::vec2& pos = { 0.0f, 0.0f }, const glm::vec2& size = glm::vec2(BUTTON_SIZE));
 
         void add_child(Node2D* child) override;
     };

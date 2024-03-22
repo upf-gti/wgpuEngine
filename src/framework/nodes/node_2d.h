@@ -8,7 +8,8 @@
 #include <vector>
 
 enum Node2DClassType {
-    OVER_TOP,
+    SELECTOR_BUTTON,
+    SELECTOR,
     TEXT,
     LABEL,
     BUTTON,
@@ -16,7 +17,6 @@ enum Node2DClassType {
     SLIDER,
     COLOR_PICKER,
     GROUP,
-    SELECTOR,
     HCONTAINER,
     VCONTAINER,
     PANEL,
@@ -38,6 +38,7 @@ class Node2D : public Node {
 protected:
 
     static unsigned int last_uid;
+    static bool propagate_event;
 
     uint32_t    uid = 0;
     uint8_t     class_type = Node2DClassType::UNDEFINED;
@@ -92,4 +93,10 @@ public:
 
     static Node2D* get_widget_from_name(const std::string& name);
     static void clean();
+
+    static bool must_allow_propagation;
+
+    static void allow_propagation();
+    static void stop_propagation();
+    static bool should_propagate_event(uint8_t priority);
 };

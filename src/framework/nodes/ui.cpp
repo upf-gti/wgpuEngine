@@ -65,6 +65,10 @@ namespace ui {
     {
         sInputData data;
 
+        if (!Node2D::should_propagate_event(class_type)) {
+            return data;
+        }
+
         WebGPUContext* webgpu_context = Renderer::instance->get_webgpu_context();
 
         Material* material = quad_mesh.get_surface_material_override(quad_mesh.get_surface(0));
@@ -158,6 +162,10 @@ namespace ui {
             data.local_position = glm::vec2(local_pos.x, size.y - local_pos.y);
         }
 
+        if (data.was_pressed) {
+            on_pressed();
+        }
+
         return data;
     }
 
@@ -175,6 +183,20 @@ namespace ui {
         material->priority = priority;
 
         Node2D::set_priority(priority);
+    }
+
+    void Panel2D::on_pressed()
+    {
+        // on press, close button selector..
+
+        if (class_type == Node2DClassType::SELECTOR_BUTTON) {
+
+            CircleContainer2D* selector = static_cast<CircleContainer2D*>(get_parent());
+            selector->set_visibility(false);
+
+            // Don't allow in this frame to avoid undesired behaviours
+            Node2D::must_allow_propagation = true;
+        }
     }
 
     /*
@@ -285,30 +307,49 @@ namespace ui {
         Container2D::on_children_changed();
     }
 
-    Selector2D::Selector2D(const std::string& name, const glm::vec2& pos, const Color& col)
+    CircleContainer2D::CircleContainer2D(const std::string& name, const glm::vec2& pos, const Color& col)
         : Container2D(name, pos, col)
     {
         class_type = Node2DClassType::SELECTOR;
+
+        Material material;
+        material.color = color;
+        material.flags = MATERIAL_2D | MATERIAL_UI;
+        material.cull_type = CULL_FRONT;
+        material.priority = class_type;
+        material.transparency_type = ALPHA_BLEND;
+        material.shader = RendererStorage::get_shader("data/shaders/ui/ui_selector.wgsl", material);
+
+        quad_mesh.set_surface_material_override(quad_mesh.get_surface(0), material);
+
+        auto webgpu_context = Renderer::instance->get_webgpu_context();
+        RendererStorage::register_ui_widget(webgpu_context, material.shader, &quad_mesh, ui_data, 2);
+
+        render_background = true;
     }
 
-    void Selector2D::on_children_changed()
+    void CircleContainer2D::on_children_changed()
     {
         size_t child_count = get_children().size();
         float radius = BUTTON_SIZE + child_count * 4.0f;
 
-        size = glm::vec2(0.0f);
+        size = glm::vec2(radius * 2.f + BUTTON_SIZE) * 1.05f;
 
         constexpr float m_pi = glm::pi<float>();
-        glm::vec2 center = glm::vec2(0.0f, -BUTTON_SIZE - padding.y);
+
+        float cc = (-size.x + BUTTON_SIZE) * 0.5f;
+        glm::vec2 center = glm::vec2(cc);
+
+        set_translation(center);
 
         for (size_t i = 0; i < child_count; ++i)
         {
             double angle = (m_pi / 2.0f) + 2.0f * m_pi * i / (float)child_count;
-            glm::vec2 translation = glm::vec2(radius * cos(angle), radius * sin(angle));
+            glm::vec2 translation = glm::vec2(radius * cos(angle), radius * sin(angle)) - center;
 
             Node2D* node_2d = static_cast<Node2D*>(get_children()[i]);
-            node_2d->set_translation(center + translation);
-            node_2d->set_priority(Node2DClassType::OVER_TOP);
+            node_2d->set_translation(translation);
+            node_2d->set_priority(Node2DClassType::SELECTOR_BUTTON);
         }
 
         Container2D::on_children_changed();
@@ -545,6 +586,7 @@ namespace ui {
         material.color = color;
         material.flags = MATERIAL_2D | MATERIAL_UI;
         material.cull_type = CULL_FRONT;
+        material.transparency_type = ALPHA_BLEND;
         material.priority = class_type;
 
         std::vector<std::string> define_specializations = { "USES_TEXTURE" };
@@ -583,7 +625,7 @@ namespace ui {
                     }
                 }
                 set_selected(allow_toggle ? !last_value : true);
-                });
+            });
         }
 
         // Submenu icon..
@@ -656,7 +698,7 @@ namespace ui {
     }
 
     /*
-    *   Widget Submenu
+    *   Widget Submenus
     */
 
     ButtonSubmenu2D::ButtonSubmenu2D(const std::string& sg, const std::string& texture_path, uint8_t parameter_flags, const glm::vec2& pos, const glm::vec2& size)
@@ -691,10 +733,50 @@ namespace ui {
             }
 
             box->set_visibility(!last_value);
-            });
+        });
     }
 
     void ButtonSubmenu2D::add_child(Node2D* child)
+    {
+        box->add_child(child);
+    }
+
+    ButtonSelector2D::ButtonSelector2D(const std::string& sg, const std::string& texture_path, uint8_t parameter_flags, const glm::vec2& pos, const glm::vec2& size)
+        : TextureButton2D(sg, texture_path, parameter_flags, pos, size) {
+
+        class_type = Node2DClassType::SELECTOR;
+
+        box = new ui::CircleContainer2D("circle_container", glm::vec2(0.0f, size.y + GROUP_MARGIN));
+        box->set_visibility(false);
+
+        Node2D::add_child(box);
+
+        Node::bind(sg, [&, box = box](const std::string& sg, void* data) {
+
+            bool new_value = !box->get_visibility();
+
+            for (const auto& w : all_widgets)
+            {
+                ButtonSelector2D* selector = dynamic_cast<ButtonSelector2D*>(w.second);
+
+                if (!selector)
+                    continue;
+
+                selector->box->set_visibility(false);
+            }
+
+            box->set_visibility(new_value);
+
+            if (new_value) {
+                Node2D::stop_propagation();
+            }
+            else {
+                Node2D::allow_propagation();
+            }
+        });
+    }
+
+    void ButtonSelector2D::add_child(Node2D* child)
     {
         box->add_child(child);
     }

@@ -7,6 +7,8 @@
 #include "spdlog/spdlog.h"
 
 unsigned int Node2D::last_uid = 0;
+bool Node2D::propagate_event = true;
+bool Node2D::must_allow_propagation = false;
 
 std::map<std::string, Node2D*> Node2D::all_widgets;
 
@@ -203,4 +205,20 @@ void Node2D::clean()
     }
 
     all_widgets.clear();
+}
+
+void Node2D::allow_propagation()
+{
+    propagate_event = true;
+    must_allow_propagation = false;
+}
+
+void Node2D::stop_propagation()
+{
+    propagate_event = false;
+}
+
+bool Node2D::should_propagate_event(uint8_t priority)
+{
+    return propagate_event || priority == Node2DClassType::SELECTOR_BUTTON || priority == Node2DClassType::SELECTOR;
 }
