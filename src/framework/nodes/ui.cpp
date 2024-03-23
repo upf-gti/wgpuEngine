@@ -14,6 +14,8 @@ namespace ui {
     *	Panel
     */
 
+    uint8_t Panel2D::last_event = Node2DClassType::UNDEFINED;
+
     Panel2D::Panel2D(const std::string& name, const glm::vec2& pos, const glm::vec2& size, const Color& col)
         : Node2D(name, pos, size), color(col)
     {
@@ -162,10 +164,6 @@ namespace ui {
             data.local_position = glm::vec2(local_pos.x, size.y - local_pos.y);
         }
 
-        if (data.was_pressed) {
-            on_pressed();
-        }
-
         return data;
     }
 
@@ -197,6 +195,8 @@ namespace ui {
             // Don't allow in this frame to avoid undesired behaviours
             Node2D::must_allow_propagation = true;
         }
+
+        last_event = class_type;
     }
 
     /*
@@ -331,7 +331,7 @@ namespace ui {
     void CircleContainer2D::on_children_changed()
     {
         size_t child_count = get_children().size();
-        float radius = BUTTON_SIZE + child_count * 4.0f;
+        float radius = BUTTON_SIZE + child_count * 2.5f;
 
         size = glm::vec2(radius * 2.f + BUTTON_SIZE) * 1.05f;
 
@@ -437,6 +437,7 @@ namespace ui {
         material.color = color;
         material.flags = MATERIAL_2D | MATERIAL_UI;
         material.cull_type = CULL_BACK;
+        material.transparency_type = ALPHA_BLEND;
         material.priority = class_type;
         material.shader = RendererStorage::get_shader("data/shaders/ui/ui_button.wgsl", material);
 
@@ -550,6 +551,8 @@ namespace ui {
                     current_selected = this;*/
                 }
             }
+
+            on_pressed();
         }
 
         // Update uniforms
@@ -667,6 +670,7 @@ namespace ui {
         material.flags = MATERIAL_2D | MATERIAL_UI;
         material.cull_type = CULL_BACK;
         material.priority = class_type;
+        material.transparency_type = ALPHA_BLEND;
         material.shader = RendererStorage::get_shader("data/shaders/ui/ui_group.wgsl", material);
 
         quad_mesh.set_surface_material_override(quad_mesh.get_surface(0), material);
@@ -753,6 +757,10 @@ namespace ui {
 
         Node::bind(sg, [&, box = box](const std::string& sg, void* data) {
 
+            // Don't do nothing in case of discard frame..
+            if (Node2D::must_allow_propagation)
+                return;
+
             bool new_value = !box->get_visibility();
 
             for (const auto& w : all_widgets)
@@ -771,7 +779,7 @@ namespace ui {
                 Node2D::stop_propagation();
             }
             else {
-                Node2D::allow_propagation();
+                Node2D::must_allow_propagation = true;
             }
         });
     }
@@ -800,6 +808,7 @@ namespace ui {
         Material material;
         material.flags = MATERIAL_2D | MATERIAL_UI;
         material.cull_type = CULL_BACK;
+        material.transparency_type = ALPHA_BLEND;
         material.priority = class_type;
         material.shader = RendererStorage::get_shader("data/shaders/ui/ui_slider.wgsl", material);
 
@@ -844,6 +853,8 @@ namespace ui {
             Node::emit_signal(signal, current_value);
             std::string value_as_string = std::to_string(std::ceil(current_value * 100.f) / 100.f);
             text_2d->text_entity->set_text(value_as_string.substr(0, 4));
+
+            on_pressed();
         }
 
         // Update uniforms
@@ -881,6 +892,7 @@ namespace ui {
         Material material;
         material.flags = MATERIAL_2D | MATERIAL_UI;
         material.cull_type = CULL_BACK;
+        material.transparency_type = ALPHA_BLEND;
         material.priority = class_type;
         material.shader = RendererStorage::get_shader("data/shaders/ui/ui_color_picker.wgsl", material);
 
@@ -939,6 +951,8 @@ namespace ui {
             // Send the signal using the final color
             glm::vec3 new_color = glm::pow(glm::vec3(color) * color.a, glm::vec3(2.2f));
             Node::emit_signal(signal, glm::vec4(new_color, color.a));
+
+            on_pressed();
         }
 
         if (input_data.was_released)

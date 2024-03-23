@@ -19,6 +19,8 @@ namespace ui {
     class Panel2D : public Node2D {
     public:
 
+        static uint8_t last_event;
+
         Color color = glm::vec4(0.0f);
 
         bool render_background  = true;
@@ -162,6 +164,7 @@ namespace ui {
         ButtonSelector2D(const std::string& sg, const std::string& texture_path, uint8_t parameter_flags = 0, const glm::vec2& pos = { 0.0f, 0.0f }, const glm::vec2& size = glm::vec2(BUTTON_SIZE));
 
         void add_child(Node2D* child) override;
+        std::vector<Node*>& get_children() override { return box->get_children(); }
     };
 
     enum SliderMode {

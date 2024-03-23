@@ -48,7 +48,7 @@ public:
 	virtual void update(float delta_time);
 
     std::string get_name() const { return name; }
-    std::vector<Node*>& get_children() { return children; }
+    virtual std::vector<Node*>& get_children() { return children; }
     AABB get_aabb() const;
 
     void set_name(std::string name) { this->name = name; }
