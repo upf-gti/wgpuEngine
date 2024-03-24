@@ -66,7 +66,7 @@ bool Texture::convert_to_rgba8unorm(uint32_t width, uint32_t height, WGPUTexture
     return true;
 }
 
-void Texture::load(const std::string& texture_path)
+void Texture::load(const std::string& texture_path, bool is_srgb)
 {
     int width, height, channels;
     unsigned char* data = stbi_load(texture_path.c_str(), &width, &height, &channels, 4);
@@ -76,7 +76,7 @@ void Texture::load(const std::string& texture_path)
 
     path = texture_path;
 
-    load_from_data(path, width, height, 1, data);
+    load_from_data(path, width, height, 1, data, true, is_srgb ? WGPUTextureFormat_RGBA8UnormSrgb : WGPUTextureFormat_RGBA8Unorm);
 
     stbi_image_free(data);
 

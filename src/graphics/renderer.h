@@ -59,8 +59,6 @@ protected:
 
     struct sUniformData {
         glm::mat4x4 model;
-        glm::mat4x4 rotation;
-        glm::vec4   color;
     };
 
     struct sRenderListData {

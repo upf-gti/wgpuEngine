@@ -21,7 +21,7 @@ void Surface::set_material_color(const glm::vec4& color)
 
 void Surface::set_material_diffuse(Texture* diffuse)
 {
-    material.diffuse_texture = diffuse; material.flags |= MATERIAL_DIFFUSE;
+    material.diffuse_texture = diffuse;
 }
 
 void Surface::set_material_shader(Shader* shader)

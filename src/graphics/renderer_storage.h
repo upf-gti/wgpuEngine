@@ -80,7 +80,7 @@ public:
 
     static void reload_shader(const std::string& shader_path);
 
-    static Texture* get_texture(const std::string& texture_path);
+    static Texture* get_texture(const std::string& texture_path, bool is_srgb = false);
 
     static Surface* get_surface(const std::string& mesh_path);
 

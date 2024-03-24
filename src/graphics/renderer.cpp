@@ -261,9 +261,7 @@ void Renderer::prepare_instancing()
                 continue;
             }
 
-            if (material.flags & MATERIAL_DIFFUSE || material.flags & MATERIAL_PBR) {
-                RendererStorage::instance->register_material(&webgpu_context, material);
-            }
+            RendererStorage::instance->register_material(&webgpu_context, material);
 
             Pipeline::register_render_pipeline(material);
 
@@ -354,7 +352,7 @@ void Renderer::prepare_instancing()
                 prev_emissive = material.emissive_texture;
 
                 // Fill instance_data
-                instance_data[i][j] = { render_data.global_matrix, render_data.rotation_matrix, material.color };
+                instance_data[i][j] = { render_data.global_matrix };
             }
 
             if (repeats > 0) {
@@ -435,10 +433,8 @@ void Renderer::render_render_list(int list_index, WGPURenderPassEncoder render_p
         wgpuRenderPassEncoderSetBindGroup(render_pass, bind_group_index++, bind_groups[list_index], 0, nullptr);
         wgpuRenderPassEncoderSetBindGroup(render_pass, bind_group_index++, render_bind_group_camera, 0, nullptr);
 
-        if (material.flags & MATERIAL_DIFFUSE || material.flags & MATERIAL_PBR) {
-            wgpuRenderPassEncoderSetBindGroup(render_pass, bind_group_index++, renderer_storage.get_material_bind_group(material), 0, nullptr);
-        }
-
+        wgpuRenderPassEncoderSetBindGroup(render_pass, bind_group_index++, renderer_storage.get_material_bind_group(material), 0, nullptr);
+        
         if (material.flags & MATERIAL_UI) {
             WGPUBindGroup ui_bind_group = renderer_storage.get_ui_widget_bind_group(render_data.mesh_instance_ref);
             if (ui_bind_group) {

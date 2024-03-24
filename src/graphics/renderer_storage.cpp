@@ -48,7 +48,7 @@ void RendererStorage::register_material(WebGPUContext* webgpu_context, const Mat
         texture_ref = material.diffuse_texture;
     }
 
-    if (material.flags & MATERIAL_PBR) {
+    {
         Uniform* u = new Uniform();
         u->data = webgpu_context->create_buffer(sizeof(glm::vec4), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform, &material.color, "mat_albedo");
         u->binding = 1;
@@ -257,7 +257,7 @@ void RendererStorage::reload_shader(const std::string& shader_path)
     }
 }
 
-Texture* RendererStorage::get_texture(const std::string& texture_path)
+Texture* RendererStorage::get_texture(const std::string& texture_path, bool is_srgb)
 {
     std::string name = texture_path;
 
@@ -291,7 +291,7 @@ Texture* RendererStorage::get_texture(const std::string& texture_path)
     }
     else
     {
-        tx->load(texture_path);
+        tx->load(texture_path, is_srgb);
     }
 
     // register in map

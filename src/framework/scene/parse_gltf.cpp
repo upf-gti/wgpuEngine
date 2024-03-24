@@ -54,13 +54,13 @@ void create_material_texture(tinygltf::Model& model, int tex_index, Texture** te
 
         if (Texture::convert_to_rgba8unorm(image.width, image.height, texture_format, image.image.data(), converted_texture)) {
             *texture = new Texture();
-            (*texture)->load_from_data(image.uri, image.width, image.height, 1, converted_texture, is_srgb ? WGPUTextureFormat_RGBA8UnormSrgb : WGPUTextureFormat_RGBA8Unorm);
+            (*texture)->load_from_data(image.uri, image.width, image.height, 1, converted_texture, true, is_srgb ? WGPUTextureFormat_RGBA8UnormSrgb : WGPUTextureFormat_RGBA8Unorm);
             delete[] converted_texture;
         }
     }
     else {
         *texture = new Texture();
-        (*texture)->load_from_data(image.uri, image.width, image.height, 1, image.image.data(), is_srgb ? WGPUTextureFormat_RGBA8UnormSrgb : WGPUTextureFormat_RGBA8Unorm);
+        (*texture)->load_from_data(image.uri, image.width, image.height, 1, image.image.data(), true, is_srgb ? WGPUTextureFormat_RGBA8UnormSrgb : WGPUTextureFormat_RGBA8Unorm);
     }
 
     if (tex.sampler != -1)
@@ -378,8 +378,6 @@ void read_mesh(tinygltf::Model& model, tinygltf::Mesh& mesh, Node3D* entity, std
                     create_material_texture(model, pbrMetallicRoughness.baseColorTexture.index, &material.diffuse_texture, true);
                     texture_cache[pbrMetallicRoughness.baseColorTexture.index] = material.diffuse_texture;
                 }
-
-                material.flags |= MATERIAL_DIFFUSE;
             }
 
             material.color = glm::vec4(

@@ -48,7 +48,7 @@ void PrintDeviceError(WGPUErrorType errorType, const char* message, void* userda
 }
 
 void DeviceLostCallback(WGPUDeviceLostReason reason, const char* message, void*) {
-    spdlog::error("Device lost: {}");
+    spdlog::error("Device lost: {}", message);
 }
 
 void PrintGLFWError(int code, const char* message) {
@@ -493,7 +493,6 @@ void WebGPUContext::create_texture_mipmaps(WGPUTexture texture, WGPUExtent3D tex
     }
 
     wgpuQueueRelease(mipmap_queue);
-
 }
 
 void WebGPUContext::upload_texture_mipmaps(WGPUTexture texture, WGPUExtent3D texture_size, uint32_t mip_level, const void* data, WGPUOrigin3D origin)

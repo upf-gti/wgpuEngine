@@ -323,7 +323,7 @@ namespace ui {
         quad_mesh.set_surface_material_override(quad_mesh.get_surface(0), material);
 
         auto webgpu_context = Renderer::instance->get_webgpu_context();
-        RendererStorage::register_ui_widget(webgpu_context, material.shader, &quad_mesh, ui_data, 2);
+        RendererStorage::register_ui_widget(webgpu_context, material.shader, &quad_mesh, ui_data, 3);
 
         render_background = true;
     }
@@ -448,7 +448,7 @@ namespace ui {
         quad_mesh.set_surface_material_override(quad_mesh.get_surface(0), material);
 
         auto webgpu_context = Renderer::instance->get_webgpu_context();
-        RendererStorage::register_ui_widget(webgpu_context, material.shader, &quad_mesh, ui_data, 2);
+        RendererStorage::register_ui_widget(webgpu_context, material.shader, &quad_mesh, ui_data, 3);
 
         // Selection styling visibility callback..
         Node::bind(signal, [&](const std::string& signal, void* button) {
@@ -477,7 +477,7 @@ namespace ui {
 
             Material material;
             material.diffuse_texture = RendererStorage::get_texture("data/textures/submenu_mark.png");
-            material.flags |= MATERIAL_DIFFUSE | MATERIAL_2D;
+            material.flags |= MATERIAL_2D;
             material.color = colors::WHITE;
             material.shader = RendererStorage::get_shader("data/shaders/ui/ui_texture.wgsl", material);
 
@@ -592,12 +592,9 @@ namespace ui {
         material.transparency_type = ALPHA_BLEND;
         material.priority = class_type;
 
-        std::vector<std::string> define_specializations = { "USES_TEXTURE" };
+        material.diffuse_texture = RendererStorage::get_texture(texture_path, true);
 
-        material.diffuse_texture = RendererStorage::get_texture(texture_path);
-        material.flags |= MATERIAL_DIFFUSE;
-
-        material.shader = RendererStorage::get_shader("data/shaders/ui/ui_button.wgsl", material, define_specializations);
+        material.shader = RendererStorage::get_shader("data/shaders/ui/ui_button.wgsl", material);
 
         Surface* quad_surface = new Surface();
         quad_surface->create_quad(size.x, size.y, false);
@@ -638,7 +635,7 @@ namespace ui {
 
             Material material;
             material.diffuse_texture = RendererStorage::get_texture("data/textures/submenu_mark.png");
-            material.flags |= MATERIAL_DIFFUSE | MATERIAL_2D;
+            material.flags |= -MATERIAL_2D;
             material.color = colors::WHITE;
             material.shader = RendererStorage::get_shader("data/shaders/ui/ui_texture.wgsl", material);
 
@@ -676,7 +673,7 @@ namespace ui {
         quad_mesh.set_surface_material_override(quad_mesh.get_surface(0), material);
 
         auto webgpu_context = Renderer::instance->get_webgpu_context();
-        RendererStorage::register_ui_widget(webgpu_context, material.shader, &quad_mesh, ui_data, 2);
+        RendererStorage::register_ui_widget(webgpu_context, material.shader, &quad_mesh, ui_data, 3);
 
         render_background = true;
     }
@@ -819,7 +816,7 @@ namespace ui {
         quad_mesh.set_surface_material_override(quad_mesh.get_surface(0), material);
 
         auto webgpu_context = Renderer::instance->get_webgpu_context();
-        RendererStorage::register_ui_widget(webgpu_context, material.shader, &quad_mesh, ui_data, 2);
+        RendererStorage::register_ui_widget(webgpu_context, material.shader, &quad_mesh, ui_data, 3);
 
         Node::bind(signal + "@changed", [&](const std::string& signal, float value) {
             set_value(value);
@@ -903,7 +900,7 @@ namespace ui {
         quad_mesh.set_surface_material_override(quad_mesh.get_surface(0), material);
 
         auto webgpu_context = Renderer::instance->get_webgpu_context();
-        RendererStorage::register_ui_widget(webgpu_context, material.shader, &quad_mesh, ui_data, 2);
+        RendererStorage::register_ui_widget(webgpu_context, material.shader, &quad_mesh, ui_data, 3);
 
         if (!skip_intensity)
         {

@@ -135,7 +135,6 @@ void MeshInstance::set_surface_material_override_diffuse(int surface_idx, Textur
     }
 
     Surface* surface = get_surface(surface_idx);
-    material_overrides[surface].flags |= MATERIAL_DIFFUSE;
     material_overrides[surface].diffuse_texture = diffuse;
 }
 
