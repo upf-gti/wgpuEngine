@@ -232,6 +232,10 @@ namespace ui {
             Node2D* node_2d = static_cast<Node2D*>(get_children()[i]);
             glm::vec2 node_size = node_2d->get_size();
 
+            if (node_2d->get_class_type() == Node2DClassType::COLOR_PICKER) {
+                node_size.x += static_cast<Node2D*>(node_2d->get_children()[0])->get_size().x + GROUP_MARGIN * 0.5f;
+            }
+
             node_2d->set_translation(padding + glm::vec2(size.x + item_margin.x * static_cast<float>(i), (size.y - node_size.y) * 0.50f));
 
             size.x += node_size.x;
@@ -683,7 +687,16 @@ namespace ui {
     {
         HContainer2D::on_children_changed();
 
-        set_number_of_items(static_cast<float>(get_children().size()));
+        size_t num_childs = get_children().size();
+
+        Node2D* last_child = static_cast<Node2D*>(get_children().back());
+
+        // case to support color picker intensity slider..
+        if (last_child->get_class_type() == Node2DClassType::COLOR_PICKER) {
+            num_childs += last_child->get_children().size();
+        }
+
+        set_number_of_items(static_cast<float>(num_childs));
     }
 
     /*
@@ -895,7 +908,7 @@ namespace ui {
         if (!skip_intensity)
         {
             std::string slider_name = signal + "_intensity";
-            ui::Slider2D* intensity_slider = new ui::Slider2D(slider_name, 1.0f, { size.x + GROUP_MARGIN, 0.f }, size * 0.50f, ui::SliderMode::VERTICAL);
+            ui::Slider2D* intensity_slider = new ui::Slider2D(slider_name, 1.0f, { size.x + GROUP_MARGIN * 0.5f, 0.f }, size, ui::SliderMode::VERTICAL);
 
             add_child(intensity_slider);
 

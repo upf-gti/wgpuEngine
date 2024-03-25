@@ -177,7 +177,7 @@ namespace ui {
 
         Text2D* text_2d = nullptr;
 
-        std::string     signal;
+        std::string signal;
 
         int mode = SliderMode::VERTICAL;
 
