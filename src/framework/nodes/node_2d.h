@@ -37,6 +37,8 @@ class Node2D : public Node {
 
 protected:
 
+    static std::vector<std::pair<Node2D*, sInputData>> frame_inputs;
+
     static unsigned int last_uid;
     static bool propagate_event;
 
@@ -65,6 +67,8 @@ public:
 	virtual void update(float delta_time);
 
     virtual sInputData get_input_data() { return sInputData(); };
+    virtual bool on_input(sInputData data) { return false; };
+    virtual void on_pressed() {};
 
 	void translate(const glm::vec2& translation);
 	void rotate(float angle);
@@ -94,9 +98,6 @@ public:
     static Node2D* get_widget_from_name(const std::string& name);
     static void clean();
 
-    static bool must_allow_propagation;
-
-    static void allow_propagation();
-    static void stop_propagation();
-    static bool should_propagate_event(uint8_t priority);
+    static void push_input(Node2D* node, sInputData data);
+    static void process_input();
 };

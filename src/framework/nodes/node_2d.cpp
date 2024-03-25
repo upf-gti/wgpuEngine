@@ -6,11 +6,13 @@
 
 #include "spdlog/spdlog.h"
 
+#include <algorithm>
+
 unsigned int Node2D::last_uid = 0;
 bool Node2D::propagate_event = true;
-bool Node2D::must_allow_propagation = false;
 
 std::map<std::string, Node2D*> Node2D::all_widgets;
+std::vector<std::pair<Node2D*, sInputData>> Node2D::frame_inputs;
 
 Node2D::Node2D(const std::string& n, const glm::vec2& p, const glm::vec2& s) : size(s)
 {
@@ -207,18 +209,36 @@ void Node2D::clean()
     all_widgets.clear();
 }
 
-void Node2D::allow_propagation()
+void Node2D::push_input(Node2D* node, sInputData data)
 {
-    propagate_event = true;
-    must_allow_propagation = false;
+    frame_inputs.push_back({ node, data });
 }
 
-void Node2D::stop_propagation()
+void Node2D::process_input()
 {
-    propagate_event = false;
-}
+    // sort inputs by priority..
 
-bool Node2D::should_propagate_event(uint8_t priority)
-{
-    return propagate_event || priority == Node2DClassType::SELECTOR_BUTTON || priority == Node2DClassType::SELECTOR;
+    std::sort(frame_inputs.begin(), frame_inputs.end(), [](auto& lhs, auto& rhs) {
+
+        Node2D* lhs_node = lhs.first;
+        Node2D* rhs_node = rhs.first;
+
+        // bool equal_priority = lhs_node->get_class_type() == rhs_node->get_class_type();
+
+        if (lhs_node->get_class_type() < rhs_node->get_class_type()) return true;
+
+        return false;
+    });
+
+    // call on_input functions..
+
+    for (const auto& i : frame_inputs)
+    {
+        bool event_processed = i.first->on_input(i.second);
+        if (event_processed) {
+            break;
+        }
+    }
+
+    frame_inputs.clear();
 }

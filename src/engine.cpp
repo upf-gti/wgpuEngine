@@ -119,11 +119,9 @@ void Engine::on_frame()
 
     delta_time = static_cast<float>((current_time - last_time));
 
-    if (Node2D::must_allow_propagation) {
-        Node2D::allow_propagation();
-    }
-
     update(delta_time);
+
+    Node2D::process_input();
 
     // Start the Dear ImGui frame
     ImGui_ImplWGPU_NewFrame();

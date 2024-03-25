@@ -19,8 +19,6 @@ namespace ui {
     class Panel2D : public Node2D {
     public:
 
-        static uint8_t last_event;
-
         Color color = glm::vec4(0.0f);
 
         bool render_background  = true;
@@ -31,15 +29,13 @@ namespace ui {
         Panel2D() {};
         Panel2D(const std::string& name, const glm::vec2& p, const glm::vec2& s, const Color& c = colors::WHITE);
 
-        void set_color(const Color& c);
         sInputData get_input_data() override;
 
         void render() override;
-        void update(float delta_time) override;
+
         void remove_flag(uint8_t flag) override;
         void set_priority(uint8_t priority) override;
-
-        virtual void on_pressed();
+        void set_color(const Color& c);
     };
 
     class Container2D : public Panel2D {
@@ -126,6 +122,8 @@ namespace ui {
 
         void update(float delta_time) override;
         void render() override;
+        void on_pressed() override;
+        bool on_input(sInputData data) override;
     };
 
     class TextureButton2D : public Button2D {
@@ -193,6 +191,7 @@ namespace ui {
         Slider2D(const std::string& sg, float v, const glm::vec2& pos, const glm::vec2& size = glm::vec2(BUTTON_SIZE), int mode = SliderMode::VERTICAL, float min = 0.0f, float max = 1.0f, float step = 0.0f);
 
         void update(float delta_time) override;
+        bool on_input(sInputData data) override;
 
         void set_value(float new_value);
     };
@@ -207,6 +206,7 @@ namespace ui {
         ColorPicker2D(const std::string& sg, const glm::vec2& p, const glm::vec2& s, const Color& c, bool skip_intensity = false);
 
         void update(float delta_time) override;
+        bool on_input(sInputData data) override;
     };
 
     class ImageLabel2D : public HContainer2D {

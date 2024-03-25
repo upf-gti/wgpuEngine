@@ -14,8 +14,6 @@ namespace ui {
     *	Panel
     */
 
-    uint8_t Panel2D::last_event = Node2DClassType::UNDEFINED;
-
     Panel2D::Panel2D(const std::string& name, const glm::vec2& pos, const glm::vec2& size, const Color& col)
         : Node2D(name, pos, size), color(col)
     {
@@ -41,11 +39,6 @@ namespace ui {
         quad_mesh.set_surface_material_override_color(0, c);
     }
 
-    void Panel2D::update(float delta_time)
-    {
-        Node2D::update(delta_time);
-    }
-
     void Panel2D::render()
     {
         if (!visibility)
@@ -66,10 +59,6 @@ namespace ui {
     sInputData Panel2D::get_input_data()
     {
         sInputData data;
-
-        if (!Node2D::should_propagate_event(class_type)) {
-            return data;
-        }
 
         WebGPUContext* webgpu_context = Renderer::instance->get_webgpu_context();
 
@@ -181,22 +170,6 @@ namespace ui {
         material->priority = priority;
 
         Node2D::set_priority(priority);
-    }
-
-    void Panel2D::on_pressed()
-    {
-        // on press, close button selector..
-
-        if (class_type == Node2DClassType::SELECTOR_BUTTON) {
-
-            CircleContainer2D* selector = static_cast<CircleContainer2D*>(get_parent());
-            selector->set_visibility(false);
-
-            // Don't allow in this frame to avoid undesired behaviours
-            Node2D::must_allow_propagation = true;
-        }
-
-        last_event = class_type;
     }
 
     /*
@@ -432,6 +405,7 @@ namespace ui {
         ui_data.keep_rgb = keep_rgb;
         ui_data.is_color_button = is_color_button;
         ui_data.is_button_disabled = disabled;
+        ui_data.is_selected= selected;
 
         Material material;
         material.color = color;
@@ -493,6 +467,17 @@ namespace ui {
         }
     }
 
+    void Button2D::on_pressed()
+    {
+        // on press, close button selector..
+
+        if (class_type == Node2DClassType::SELECTOR_BUTTON) {
+
+            CircleContainer2D* selector = static_cast<CircleContainer2D*>(get_parent());
+            selector->set_visibility(false);
+        }
+    }
+
     void Button2D::set_selected(bool value)
     {
         selected = value;
@@ -519,6 +504,8 @@ namespace ui {
 
     void Button2D::update(float delta_time)
     {
+        Panel2D::update(delta_time);
+
         /*if (mark)
         {
             mark->set_model(get_model());
@@ -526,43 +513,43 @@ namespace ui {
             mark->scale(glm::vec3(0.35f, 0.35f, 1.0f));
         }*/
 
-        sInputData input_data = get_input_data();
+        if (ui_data.is_button_disabled)
+            return;
 
-        // Check hover (intersects)
-        bool hovered = input_data.is_hovered && !ui_data.is_button_disabled;
+        sInputData data = get_input_data();
 
-        text_2d->set_visibility(hovered);
+        if(data.is_hovered)
+        {
+            Node2D::push_input(this, data);
+        }
 
-        /*
-        *	Create mesh and render button
-        */
+        // reset event stuff..
+        ui_data.is_hovered = 0.0f;
+        ui_data.is_selected = selected ? 1.f : 0.f;
+        text_2d->set_visibility(false);
 
-        if (input_data.was_pressed)
+        auto webgpu_context = Renderer::instance->get_webgpu_context();
+        RendererStorage::update_ui_widget(webgpu_context, &quad_mesh, ui_data);
+    }
+
+    bool Button2D::on_input(sInputData data)
+    {
+        text_2d->set_visibility(true);
+
+        if (data.was_pressed)
         {
             Node::emit_signal(signal, (void*)this);
-
-            if (selected)
-            {
-                if (is_color_button)
-                {
-                    /*if (current_selected) {
-                        current_selected->selected = false;
-                    }
-                    current_selected = this;*/
-                }
-            }
 
             on_pressed();
         }
 
         // Update uniforms
-        ui_data.is_hovered = hovered ? 1.f : 0.f;
-        ui_data.is_selected = selected ? 1.f : 0.f;
+        ui_data.is_hovered = 1.0f;
 
         auto webgpu_context = Renderer::instance->get_webgpu_context();
         RendererStorage::update_ui_widget(webgpu_context, &quad_mesh, ui_data);
 
-        Panel2D::update(delta_time);
+        return true;
     }
 
     TextureButton2D::TextureButton2D(const std::string& sg, const std::string& texture_path, uint8_t parameter_flags)
@@ -581,6 +568,7 @@ namespace ui {
         allow_toggle = parameter_flags & ALLOW_TOGGLE;
         keep_rgb = parameter_flags & KEEP_RGB;
 
+        ui_data.is_selected = selected;
         ui_data.keep_rgb = keep_rgb;
         ui_data.is_color_button = is_color_button;
         ui_data.is_button_disabled = disabled;
@@ -754,10 +742,6 @@ namespace ui {
 
         Node::bind(sg, [&, box = box](const std::string& sg, void* data) {
 
-            // Don't do nothing in case of discard frame..
-            if (Node2D::must_allow_propagation)
-                return;
-
             bool new_value = !box->get_visibility();
 
             for (const auto& w : all_widgets)
@@ -771,13 +755,6 @@ namespace ui {
             }
 
             box->set_visibility(new_value);
-
-            if (new_value) {
-                Node2D::stop_propagation();
-            }
-            else {
-                Node2D::must_allow_propagation = true;
-            }
         });
     }
 
@@ -832,16 +809,32 @@ namespace ui {
 
     void Slider2D::update(float delta_time)
     {
-        sInputData input_data = get_input_data();
+        Panel2D::update(delta_time);
 
-        bool hovered = input_data.is_hovered;
+        sInputData data = get_input_data();
 
-        if (input_data.is_pressed)
+        if (data.is_hovered)
+        {
+            Node2D::push_input(this, data);
+        }
+
+        // Update uniforms
+        ui_data.is_hovered = 0.0f;
+        ui_data.slider_value = current_value;
+        ui_data.slider_max = max_value;
+
+        auto webgpu_context = Renderer::instance->get_webgpu_context();
+        RendererStorage::update_ui_widget(webgpu_context, &quad_mesh, ui_data);
+    }
+
+    bool Slider2D::on_input(sInputData data)
+    {
+        if (data.is_pressed)
         {
             float range = (mode == HORIZONTAL ? size.x : size.y);
             float bounds = range * 0.975f;
             // -scale..scale -> 0..1
-            float local_point = (mode == HORIZONTAL ? input_data.local_position.x : size.y - input_data.local_position.y);
+            float local_point = (mode == HORIZONTAL ? data.local_position.x : size.y - data.local_position.y);
             // this is at range 0..1
             current_value = glm::clamp(local_point / bounds, 0.f, 1.f);
             // set in range min-max
@@ -855,15 +848,12 @@ namespace ui {
         }
 
         // Update uniforms
-        ui_data.is_hovered = hovered ? 1.f : 0.f;
-        ui_data.slider_value = current_value;
-        ui_data.slider_max = max_value;
+        ui_data.is_hovered = 1.0f;
 
         auto webgpu_context = Renderer::instance->get_webgpu_context();
-
         RendererStorage::update_ui_widget(webgpu_context, &quad_mesh, ui_data);
 
-        Panel2D::update(delta_time);
+        return true;
     }
 
     void Slider2D::set_value(float new_value)
@@ -922,11 +912,13 @@ namespace ui {
 
     void ColorPicker2D::update(float delta_time)
     {
-        sInputData input_data = get_input_data();
+        Panel2D::update(delta_time);
 
-        bool hovered = input_data.is_hovered;
+        sInputData data = get_input_data();
 
-        glm::vec2 local_mouse_pos = input_data.local_position;
+        bool hovered = data.is_hovered;
+
+        glm::vec2 local_mouse_pos = data.local_position;
         local_mouse_pos /= size;
         local_mouse_pos = local_mouse_pos * 2.0f - 1.0f; // -1..1
         float dist = glm::distance(local_mouse_pos, glm::vec2(0.f));
@@ -934,37 +926,54 @@ namespace ui {
         // Update hover
         hovered &= (dist < 1.f);
 
-        if (hovered && input_data.is_pressed)
-        {
-            constexpr float pi = glm::pi<float>();
-            float r = pi / 2.f;
-            local_mouse_pos = glm::mat2x2(cos(r), -sin(r), sin(r), cos(r)) * local_mouse_pos;
-            glm::vec2 polar = glm::vec2(atan2(local_mouse_pos.y, local_mouse_pos.x), glm::length(local_mouse_pos));
-            float percent = (polar.x + pi) / (2.0f * pi);
-            glm::vec3 hsv = glm::vec3(percent, 1.0f, polar.y);
-
-            // Store it without conversion and intensity multiplier
-            color = glm::vec4(hsv2rgb(hsv), color.a);
-            // Send the signal using the final color
-            glm::vec3 new_color = glm::pow(glm::vec3(color) * color.a, glm::vec3(2.2f));
-            Node::emit_signal(signal, glm::vec4(new_color, color.a));
-
-            on_pressed();
-        }
-
-        if (input_data.was_released)
-        {
-            Node::emit_signal(signal + "@released", color);
+        if (hovered) {
+            Node2D::push_input(this, data);
         }
 
         // Update uniforms
-        ui_data.is_hovered = hovered ? 1.f : 0.f;
+        ui_data.is_hovered = 0.0f;
         ui_data.picker_color = color;
 
         auto webgpu_context = Renderer::instance->get_webgpu_context();
         RendererStorage::update_ui_widget(webgpu_context, &quad_mesh, ui_data);
+    }
 
-        Panel2D::update(delta_time);
+    bool ColorPicker2D::on_input(sInputData data)
+    {
+        glm::vec2 local_mouse_pos = data.local_position;
+        local_mouse_pos /= size;
+        local_mouse_pos = local_mouse_pos * 2.0f - 1.0f; // -1..1
+
+       if (data.is_pressed)
+       {
+           constexpr float pi = glm::pi<float>();
+           float r = pi / 2.f;
+           local_mouse_pos = glm::mat2x2(cos(r), -sin(r), sin(r), cos(r)) * local_mouse_pos;
+           glm::vec2 polar = glm::vec2(atan2(local_mouse_pos.y, local_mouse_pos.x), glm::length(local_mouse_pos));
+           float percent = (polar.x + pi) / (2.0f * pi);
+           glm::vec3 hsv = glm::vec3(percent, 1.0f, polar.y);
+
+           // Store it without conversion and intensity multiplier
+           color = glm::vec4(hsv2rgb(hsv), color.a);
+           // Send the signal using the final color
+           glm::vec3 new_color = glm::pow(glm::vec3(color) * color.a, glm::vec3(2.2f));
+           Node::emit_signal(signal, glm::vec4(new_color, color.a));
+
+           on_pressed();
+       }
+
+       if (data.was_released)
+       {
+           Node::emit_signal(signal + "@released", color);
+       }
+
+        // Update uniforms
+        ui_data.is_hovered = 1.0f;
+
+        auto webgpu_context = Renderer::instance->get_webgpu_context();
+        RendererStorage::update_ui_widget(webgpu_context, &quad_mesh, ui_data);
+
+        return true;
     }
 
     /*
