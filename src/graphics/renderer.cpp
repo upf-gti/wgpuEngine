@@ -106,7 +106,7 @@ int Renderer::initialize(GLFWwindow* window, bool use_mirror_screen)
     RendererStorage::register_basic_surfaces();
 
     if (!irradiance_texture) {
-        irradiance_texture = RendererStorage::get_texture("data/textures/environments/sky.hdre");
+        irradiance_texture = RendererStorage::get_texture("data/textures/environments/sky.hdr");
     }
 
     init_depth_buffers();

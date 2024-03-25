@@ -755,7 +755,7 @@ void WebGPUContext::generate_brdf_lut_texture()
 
 void WebGPUContext::generate_prefiltered_env_texture(Texture* prefiltered_env_texture, Texture* hdr_texture)
 {
-    WGPUQueue brdf_queue = wgpuDeviceGetQueue(device);
+    WGPUQueue prefilter_queue = wgpuDeviceGetQueue(device);
 
     //Texture cubemap_texture;
     //cubemap_texture.create(WGPUTextureDimension_2D, WGPUTextureFormat_RGBA32Float, { ENVIRONMENT_RESOLUTION, ENVIRONMENT_RESOLUTION, 6 },
@@ -794,7 +794,7 @@ void WebGPUContext::generate_prefiltered_env_texture(Texture* prefiltered_env_te
 
     Uniform current_level_uniform;
     current_level_uniform.data = create_buffer(buffer_stride * 6, WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform, nullptr, "previlter env uniform_data");
-    current_level_uniform.buffer_size = buffer_stride;
+    current_level_uniform.buffer_size = sizeof(PrefilterEnvUniformData);
     current_level_uniform.binding = 3;
 
     // Initialize a command encoder
@@ -840,11 +840,12 @@ void WebGPUContext::generate_prefiltered_env_texture(Texture* prefiltered_env_te
             bind_groups[i] = create_bind_group(uniforms, prefiltered_env_shader, 0);
         }
 
+        prefilter_env_uniform_data.mip_level_count = 6;
+
         // Setup uniform buffers
         for (uint32_t i = 0; i < 5; ++i) {
             prefilter_env_uniform_data.current_mip_level = i + 1;
-            prefilter_env_uniform_data.mip_level_count = 6;
-            update_buffer(std::get<WGPUBuffer>(current_level_uniform.data), i * buffer_stride, &prefilter_env_uniform_data, sizeof(PrefilterEnvUniformData));
+            wgpuQueueWriteBuffer(prefilter_queue, std::get<WGPUBuffer>(current_level_uniform.data), i * buffer_stride, &prefilter_env_uniform_data, sizeof(PrefilterEnvUniformData));
         }
 
         WGPUComputePassDescriptor compute_pass_desc = {};
@@ -892,12 +893,12 @@ void WebGPUContext::generate_prefiltered_env_texture(Texture* prefiltered_env_te
 
     // Encode and submit the GPU commands
     WGPUCommandBuffer commands = wgpuCommandEncoderFinish(command_encoder, &cmd_buff_descriptor);
-    wgpuQueueSubmit(brdf_queue, 1, &commands);
+    wgpuQueueSubmit(prefilter_queue, 1, &commands);
 
     wgpuCommandBufferRelease(commands);
     wgpuCommandEncoderRelease(command_encoder);
 
-    wgpuQueueRelease(brdf_queue);
+    wgpuQueueRelease(prefilter_queue);
 }
 
 void WebGPUContext::update_buffer(WGPUBuffer buffer, uint64_t buffer_offset, void const* data, uint64_t size)
