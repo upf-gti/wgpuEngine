@@ -35,7 +35,7 @@ public:
         // Common
         float is_hovered = 0.f;
         // Groups
-        float num_group_items = 2;
+        float num_group_items = 2; // combo buttons use this prop by now to the index in combo
         // Buttons
         float is_selected = 0.f;
         float is_color_button = 0.f;

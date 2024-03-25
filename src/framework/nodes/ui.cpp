@@ -73,9 +73,15 @@ namespace ui {
             glm::vec2 max = min + size;
 
             data.is_hovered = mouse_pos.x >= min.x && mouse_pos.y >= min.y && mouse_pos.x <= max.x && mouse_pos.y <= max.y;
-            data.is_pressed = data.is_hovered && Input::is_mouse_pressed(GLFW_MOUSE_BUTTON_LEFT);
             data.was_pressed = data.is_hovered && Input::was_mouse_pressed(GLFW_MOUSE_BUTTON_LEFT);
+            if (data.was_pressed) {
+                pressed_inside = true;
+            }
             data.was_released = Input::was_mouse_released(GLFW_MOUSE_BUTTON_LEFT);
+            if (data.was_released) {
+                pressed_inside = false;
+            }
+            data.is_pressed = pressed_inside && Input::is_mouse_pressed(GLFW_MOUSE_BUTTON_LEFT);
 
             glm::vec2 local_mouse_pos = mouse_pos - get_translation();
             data.local_position = glm::vec2(local_mouse_pos.x, size.y - local_mouse_pos.y);
@@ -137,14 +143,26 @@ namespace ui {
             );
 
             if (Renderer::instance->get_openxr_available()) {
-                data.is_pressed = data.is_hovered && Input::is_button_pressed(XR_BUTTON_A);
                 data.was_pressed = data.is_hovered && Input::was_button_pressed(XR_BUTTON_A);
+                if (data.was_pressed) {
+                    pressed_inside = true;
+                }
                 data.was_released = Input::was_button_released(XR_BUTTON_A);
+                if (data.was_released) {
+                    pressed_inside = false;
+                }
+                data.is_pressed = pressed_inside && Input::is_button_pressed(XR_BUTTON_A);
             }
             else {
-                data.is_pressed = data.is_hovered && Input::is_mouse_pressed(GLFW_MOUSE_BUTTON_LEFT);
                 data.was_pressed = data.is_hovered && Input::was_mouse_pressed(GLFW_MOUSE_BUTTON_LEFT);
+                if (data.was_pressed) {
+                    pressed_inside = true;
+                }
                 data.was_released = Input::was_mouse_released(GLFW_MOUSE_BUTTON_LEFT);
+                if (data.was_released) {
+                    pressed_inside = false;
+                }
+                data.is_pressed = pressed_inside && Input::is_mouse_pressed(GLFW_MOUSE_BUTTON_LEFT);
             }
 
             data.ray_distance = collision_dist;
@@ -170,6 +188,12 @@ namespace ui {
         material->priority = priority;
 
         Node2D::set_priority(priority);
+    }
+
+    void Panel2D::update_ui_data()
+    {
+        auto webgpu_context = Renderer::instance->get_webgpu_context();
+        RendererStorage::update_ui_widget(webgpu_context, &quad_mesh, ui_data);
     }
 
     /*
@@ -233,7 +257,7 @@ namespace ui {
             glm::vec2 node_size = node_2d->get_size();
 
             if (node_2d->get_class_type() == Node2DClassType::COLOR_PICKER) {
-                node_size.x += static_cast<Node2D*>(node_2d->get_children()[0])->get_size().x + GROUP_MARGIN * 0.5f;
+                node_size.x += static_cast<Node2D*>(node_2d->get_children()[0])->get_size().x + padding.x * 0.5f;
             }
 
             node_2d->set_translation(padding + glm::vec2(size.x + item_margin.x * static_cast<float>(i), (size.y - node_size.y) * 0.50f));
@@ -410,6 +434,7 @@ namespace ui {
         ui_data.is_color_button = is_color_button;
         ui_data.is_button_disabled = disabled;
         ui_data.is_selected= selected;
+        ui_data.num_group_items = ComboIndex::UNIQUE;
 
         Material material;
         material.color = color;
@@ -499,6 +524,11 @@ namespace ui {
         }
     }
 
+    void Button2D::set_is_unique_selection(bool value)
+    {
+        is_unique_selection = value;
+    }
+
     void Button2D::render()
     {
         Panel2D::render();
@@ -532,8 +562,7 @@ namespace ui {
         ui_data.is_selected = selected ? 1.f : 0.f;
         text_2d->set_visibility(false);
 
-        auto webgpu_context = Renderer::instance->get_webgpu_context();
-        RendererStorage::update_ui_widget(webgpu_context, &quad_mesh, ui_data);
+        update_ui_data();
     }
 
     bool Button2D::on_input(sInputData data)
@@ -550,8 +579,7 @@ namespace ui {
         // Update uniforms
         ui_data.is_hovered = 1.0f;
 
-        auto webgpu_context = Renderer::instance->get_webgpu_context();
-        RendererStorage::update_ui_widget(webgpu_context, &quad_mesh, ui_data);
+        update_ui_data();
 
         return true;
     }
@@ -576,6 +604,7 @@ namespace ui {
         ui_data.keep_rgb = keep_rgb;
         ui_data.is_color_button = is_color_button;
         ui_data.is_button_disabled = disabled;
+        ui_data.num_group_items = ComboIndex::UNIQUE;
 
         Material material;
         material.color = color;
@@ -598,27 +627,24 @@ namespace ui {
         RendererStorage::register_ui_widget(webgpu_context, material.shader, &quad_mesh, ui_data, 3);
 
         // Selection styling visibility callback..
-        if (is_unique_selection || allow_toggle)
-        {
-            Node::bind(signal, [&](const std::string& signal, void* button) {
+        Node::bind(signal, [&](const std::string& signal, void* button) {
 
-                if (disabled)
-                    return;
+            if (disabled || (!is_unique_selection && !allow_toggle))
+                return;
 
-                const bool last_value = selected;
+            const bool last_value = selected;
 
-                // Unselect siblings
-                if (parent && !allow_toggle) {
-                    for (auto c : parent->get_children()) {
-                        Button2D* b = dynamic_cast<Button2D*>(c);
-                        if (b) {
-                            b->set_selected(false);
-                        }
+            // Unselect siblings
+            if (parent && !allow_toggle) {
+                for (auto c : parent->get_children()) {
+                    Button2D* b = dynamic_cast<Button2D*>(c);
+                    if (b) {
+                        b->set_selected(false);
                     }
                 }
-                set_selected(allow_toggle ? !last_value : true);
-            });
-        }
+            }
+            set_selected(allow_toggle ? !last_value : true);
+        });
 
         // Submenu icon..
         {
@@ -679,24 +705,60 @@ namespace ui {
     {
         ui_data.num_group_items = number;
 
-        auto webgpu_context = Renderer::instance->get_webgpu_context();
-        RendererStorage::update_ui_widget(webgpu_context, &quad_mesh, ui_data);
+        update_ui_data();
     }
 
     void ItemGroup2D::on_children_changed()
     {
         HContainer2D::on_children_changed();
 
-        size_t num_childs = get_children().size();
+        size_t child_count = get_children().size();
 
         Node2D* last_child = static_cast<Node2D*>(get_children().back());
 
         // case to support color picker intensity slider..
         if (last_child->get_class_type() == Node2DClassType::COLOR_PICKER) {
-            num_childs += last_child->get_children().size();
+            child_count += last_child->get_children().size();
         }
 
-        set_number_of_items(static_cast<float>(num_childs));
+        set_number_of_items(static_cast<float>(child_count));
+    }
+
+    /*
+    *   Combo buttons
+    */
+
+    ComboButtons2D::ComboButtons2D(const std::string& name, const glm::vec2& pos, const Color& color)
+        : ItemGroup2D(name, pos, color) {
+
+        class_type = Node2DClassType::COMBO;
+
+        item_margin = glm::vec2(0.0f);
+    }
+
+    void ComboButtons2D::on_children_changed()
+    {
+        size_t child_count = get_children().size();
+
+        for (size_t i = 0; i < child_count; ++i)
+        {
+            Button2D* node_2d = static_cast<Button2D*>(get_children()[i]);
+
+            if (child_count == 1) {
+                node_2d->ui_data.num_group_items = ComboIndex::UNIQUE;
+            }
+            else if (child_count == 2) {
+                node_2d->ui_data.num_group_items = i == 0 ? ComboIndex::FIRST : ComboIndex::LAST;
+            }
+            else {
+                node_2d->ui_data.num_group_items = i == 0 ? ComboIndex::FIRST : (i == child_count - 1 ? ComboIndex::LAST : ComboIndex::MIDDLE);
+            }
+
+            node_2d->set_is_unique_selection(true);
+            node_2d->update_ui_data();
+        }
+
+        ItemGroup2D::on_children_changed();
     }
 
     /*
@@ -836,8 +898,7 @@ namespace ui {
         ui_data.slider_value = current_value;
         ui_data.slider_max = max_value;
 
-        auto webgpu_context = Renderer::instance->get_webgpu_context();
-        RendererStorage::update_ui_widget(webgpu_context, &quad_mesh, ui_data);
+        update_ui_data();
     }
 
     bool Slider2D::on_input(sInputData data)
@@ -863,8 +924,7 @@ namespace ui {
         // Update uniforms
         ui_data.is_hovered = 1.0f;
 
-        auto webgpu_context = Renderer::instance->get_webgpu_context();
-        RendererStorage::update_ui_widget(webgpu_context, &quad_mesh, ui_data);
+        update_ui_data();
 
         return true;
     }
@@ -947,8 +1007,7 @@ namespace ui {
         ui_data.is_hovered = 0.0f;
         ui_data.picker_color = color;
 
-        auto webgpu_context = Renderer::instance->get_webgpu_context();
-        RendererStorage::update_ui_widget(webgpu_context, &quad_mesh, ui_data);
+        update_ui_data();
     }
 
     bool ColorPicker2D::on_input(sInputData data)
@@ -983,8 +1042,7 @@ namespace ui {
         // Update uniforms
         ui_data.is_hovered = 1.0f;
 
-        auto webgpu_context = Renderer::instance->get_webgpu_context();
-        RendererStorage::update_ui_widget(webgpu_context, &quad_mesh, ui_data);
+        update_ui_data();
 
         return true;
     }

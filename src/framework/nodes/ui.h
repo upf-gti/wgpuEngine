@@ -16,13 +16,20 @@ namespace ui {
     const float GROUP_MARGIN = 8.f;
     const float LAYER_MARGIN = 12.f;
 
+    enum ComboIndex {
+        UNIQUE,
+        FIRST,
+        MIDDLE,
+        LAST
+    };
+
     class Panel2D : public Node2D {
     public:
 
         Color color = glm::vec4(0.0f);
 
         bool render_background  = true;
-        bool centered           = false;
+        bool pressed_inside     = false;
 
         MeshInstance quad_mesh;
 
@@ -35,6 +42,7 @@ namespace ui {
 
         void remove_flag(uint8_t flag) override;
         void set_priority(uint8_t priority) override;
+        void update_ui_data() override;
         void set_color(const Color& c);
     };
 
@@ -119,6 +127,7 @@ namespace ui {
         Button2D(const std::string& sg, const Color& color, uint8_t parameter_flags, const glm::vec2& pos, const glm::vec2& size = glm::vec2(BUTTON_SIZE));
 
         void set_selected(bool value);
+        void set_is_unique_selection(bool value);
 
         void update(float delta_time) override;
         void render() override;
@@ -140,6 +149,14 @@ namespace ui {
 
         float get_number_of_items();
         void set_number_of_items(float number);
+
+        void on_children_changed() override;
+    };
+
+    class ComboButtons2D : public ItemGroup2D {
+    public:
+
+        ComboButtons2D(const std::string& name, const glm::vec2& pos = { 0.0f, 0.0f }, const Color& color = colors::GRAY);
 
         void on_children_changed() override;
     };

@@ -17,6 +17,7 @@ enum Node2DClassType {
     SLIDER,
     COLOR_PICKER,
     GROUP,
+    COMBO,
     HCONTAINER,
     VCONTAINER,
     PANEL,
@@ -51,9 +52,9 @@ protected:
 
     glm::mat4x4 viewport_model = glm::mat4x4(1.0f);
 
-    RendererStorage::sUIData ui_data;
-
 public:
+
+    RendererStorage::sUIData ui_data;
 
     Node2D() : Node2D("unnamed", { 0.0f, 0.0f }, { 0.0f, 0.0f }) {};
     Node2D(const std::string& name, const glm::vec2& p, const glm::vec2& s);
@@ -62,6 +63,7 @@ public:
     virtual void add_child(Node2D* child);
     virtual void remove_child(Node2D* child);
     virtual void on_children_changed();
+    virtual void update_ui_data() {};
 
 	virtual void render();
 	virtual void update(float delta_time);
