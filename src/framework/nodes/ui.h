@@ -79,6 +79,8 @@ namespace ui {
         CircleContainer2D() {};
         CircleContainer2D(const std::string& name, const glm::vec2& p, const Color& c = colors::GRAY);
 
+        void update(float delta_time) override;
+        bool on_input(sInputData data) override;
         void on_children_changed() override;
     };
 

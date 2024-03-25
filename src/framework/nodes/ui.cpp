@@ -356,6 +356,29 @@ namespace ui {
         Container2D::on_children_changed();
     }
 
+    void CircleContainer2D::update(float delta_time)
+    {
+        Container2D::update(delta_time);
+
+        if (!visibility)
+            return;
+
+        sInputData data = get_input_data();
+
+        if (data.is_hovered)
+        {
+            Node2D::push_input(this, data);
+        }
+    }
+
+    bool CircleContainer2D::on_input(sInputData data)
+    {
+        // use this to get the event and stop the propagation
+        float dist = glm::distance(data.local_position, size * 0.5f);
+        // allow using buttons inside the circle..
+        return dist > BUTTON_SIZE * 0.5f;
+    }
+
     /*
     *   Text
     */
@@ -539,6 +562,9 @@ namespace ui {
     void Button2D::update(float delta_time)
     {
         Panel2D::update(delta_time);
+
+        if (!visibility)
+            return;
 
         /*if (mark)
         {
@@ -886,6 +912,9 @@ namespace ui {
     {
         Panel2D::update(delta_time);
 
+        if (!visibility)
+            return;
+
         sInputData data = get_input_data();
 
         if (data.is_hovered)
@@ -986,6 +1015,9 @@ namespace ui {
     void ColorPicker2D::update(float delta_time)
     {
         Panel2D::update(delta_time);
+
+        if (!visibility)
+            return;
 
         sInputData data = get_input_data();
 
