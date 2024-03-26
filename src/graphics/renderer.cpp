@@ -174,14 +174,6 @@ void Renderer::init_ibl_bind_group()
 
 void Renderer::init_depth_buffers()
 {
-    if (eye_depth_textures[0].get_texture() != nullptr) {
-        uint8_t num_textures = is_openxr_available ? 2 : 1;
-        for (int i = 0; i < num_textures; ++i)
-        {
-            wgpuTextureViewRelease(eye_depth_texture_view[i]);
-        }
-    }
-
     uint8_t num_textures = is_openxr_available ? 2 : 1;
     for (int i = 0; i < num_textures; ++i)
     {
@@ -203,19 +195,21 @@ void Renderer::init_depth_buffers()
 
 void Renderer::init_multisample_textures()
 {
-    if (multisample_textures[0].get_texture() != nullptr) {
-        uint8_t num_textures = is_openxr_available ? 2 : 1;
-        for (int i = 0; i < num_textures; ++i)
-        {
-            wgpuTextureViewRelease(multisample_textures_views[i]);
-        }
-    }
-
     WGPUTextureFormat swapchain_format = is_openxr_available ? webgpu_context.xr_swapchain_format : webgpu_context.swapchain_format;
 
     uint8_t num_textures = is_openxr_available ? 2 : 1;
     for (int i = 0; i < num_textures; ++i) {
-        multisample_textures[i].create(WGPUTextureDimension_2D, swapchain_format, { webgpu_context.render_width, webgpu_context.render_height, 1 }, WGPUTextureUsage_RenderAttachment, 1, msaa_count, nullptr);
+        multisample_textures[i].create(
+            WGPUTextureDimension_2D,
+            swapchain_format,
+            { webgpu_context.render_width, webgpu_context.render_height, 1 },
+            WGPUTextureUsage_RenderAttachment,
+            1, msaa_count, nullptr);
+
+        if (multisample_textures_views[i]) {
+            wgpuTextureViewRelease(multisample_textures_views[i]);
+        }
+
         multisample_textures_views[i] = multisample_textures[i].get_view();
     }
 }

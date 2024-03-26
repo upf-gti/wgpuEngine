@@ -38,7 +38,7 @@ protected:
 
     uint8_t msaa_count = 1;
     Texture multisample_textures[EYE_COUNT];
-    WGPUTextureView multisample_textures_views[EYE_COUNT];
+    WGPUTextureView multisample_textures_views[EYE_COUNT] = {};
 
     RendererStorage renderer_storage;
 
