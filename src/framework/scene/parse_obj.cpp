@@ -100,15 +100,27 @@ void parse_obj(const char* obj_path, MeshInstance3D* entity)
 
                 glm::bvec3 less_than = glm::lessThan(vertex_data.position, min_pos);
 
-                min_pos.x = less_than.x ? vertex_data.position.x : min_pos.x;
-                min_pos.y = less_than.y ? vertex_data.position.y : min_pos.y;
-                min_pos.z = less_than.z ? vertex_data.position.z : min_pos.z;
+                if (less_than.x) {
+                    min_pos.x = vertex_data.position.x;
+                }
+                if (less_than.y) {
+                    min_pos.y = vertex_data.position.y;
+                }
+                if (less_than.z) {
+                    min_pos.z = vertex_data.position.z;
+                }
 
                 glm::bvec3 greater_than = glm::greaterThan(vertex_data.position, max_pos);
 
-                max_pos.x = greater_than.x ? vertex_data.position.x : max_pos.x;
-                max_pos.y = greater_than.y ? vertex_data.position.y : max_pos.y;
-                max_pos.z = greater_than.z ? vertex_data.position.z : max_pos.z;
+                if (greater_than.x) {
+                    max_pos.x = vertex_data.position.x;
+                }
+                if (greater_than.y) {
+                    max_pos.y = vertex_data.position.y;
+                }
+                if (greater_than.z) {
+                    max_pos.z = vertex_data.position.z;
+                }
             }
 
             index_offset += fv;
@@ -116,8 +128,8 @@ void parse_obj(const char* obj_path, MeshInstance3D* entity)
     }
 
     AABB aabb;
-    aabb.center = (max_pos - min_pos) * glm::vec3(0.5);
-    aabb.half_size = max_pos - aabb.center;
+    aabb.half_size = (max_pos - min_pos) * glm::vec3(0.5);
+    aabb.center = max_pos - aabb.half_size;
 
     entity->set_aabb(aabb);
 
