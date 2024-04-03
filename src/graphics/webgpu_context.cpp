@@ -210,13 +210,6 @@ int WebGPUContext::initialize(WGPURequestAdapterOptions adapter_opts, WGPURequir
     device_queue = wgpuDeviceGetQueue(device);
 
     {
-        mipmaps_shader = RendererStorage::get_shader("data/shaders/mipmaps.wgsl");
-
-        mipmaps_pipeline = new Pipeline();
-        mipmaps_pipeline->create_compute(mipmaps_shader);
-    }
-
-    {
         panorama_to_cubemap_shader = RendererStorage::get_shader("data/shaders/panorama_to_cubemap.wgsl");
 
         panorama_to_cubemap_pipeline = new Pipeline();
@@ -265,7 +258,9 @@ void WebGPUContext::destroy()
     wgpuQueueRelease(device_queue);
     wgpuSwapChainRelease(screen_swapchain);
 
-    delete mipmaps_pipeline;
+    for (auto &mipmap_struct : mipmap_pipelines) {
+        delete mipmap_struct.second.mipmap_pipeline;
+    }
 
     delete brdf_lut_pipeline;
     delete brdf_lut_texture;
@@ -375,40 +370,14 @@ WGPUSampler WebGPUContext::create_sampler(WGPUAddressMode wrap_u, WGPUAddressMod
     return wgpuDeviceCreateSampler(device, &samplerDesc);
 }
 
-void WebGPUContext::create_texture_mipmaps(WGPUTexture texture, WGPUExtent3D texture_size, uint32_t mip_level_count, const void* data, WGPUTextureViewDimension view_dimension, WGPUTextureFormat format, WGPUOrigin3D origin)
+void WebGPUContext::create_texture_mipmaps(WGPUTexture texture, WGPUExtent3D texture_size, uint32_t mip_level_count, WGPUTextureViewDimension view_dimension, WGPUTextureFormat format, WGPUOrigin3D origin)
 {
     WGPUQueue mipmap_queue = wgpuDeviceGetQueue(device);
 
-    WGPUImageCopyTexture destination = {};
-    destination.texture = texture;
-    destination.origin = origin;
-    destination.aspect = WGPUTextureAspect_All;
-    destination.mipLevel = 0;
-
-    WGPUTextureDataLayout source = {};
-    source.offset = 0;
-
-    size_t byte_size = 0;
-    uint32_t pixel_size = 0;
-
-    switch (format) {
-    case WGPUTextureFormat_RGBA8Unorm:
-        pixel_size = 4 * sizeof(uint8_t);
-        break;
-    case WGPUTextureFormat_RGBA16Uint:
-        pixel_size = 4 * sizeof(uint16_t);
-        break;
-    default:
-        assert(false);
+    sMipmapPipeline mipmap_pipeline = get_mipmap_pipeline(format);
+    if (!mipmap_pipeline.mipmap_pipeline) {
+        return;
     }
-
-    source.bytesPerRow = pixel_size * texture_size.width;
-    byte_size = source.bytesPerRow * texture_size.height;
-
-    source.rowsPerImage = texture_size.height;
-
-    // For level 0
-    wgpuQueueWriteTexture(mipmap_queue, &destination, data, byte_size, &source, &texture_size);
 
     // For ALL levels
     {
@@ -444,7 +413,7 @@ void WebGPUContext::create_texture_mipmaps(WGPUTexture texture, WGPUExtent3D tex
         compute_pass_desc.timestampWrites = nullptr;
         WGPUComputePassEncoder compute_pass = wgpuCommandEncoderBeginComputePass(command_encoder, &compute_pass_desc);
 
-        mipmaps_pipeline->set(compute_pass);
+        mipmap_pipeline.mipmap_pipeline->set(compute_pass);
 
         for (uint32_t nextLevel = 1; nextLevel < texture_mip_sizes.size(); ++nextLevel) {
 
@@ -457,7 +426,7 @@ void WebGPUContext::create_texture_mipmaps(WGPUTexture texture, WGPUExtent3D tex
             output_view.binding = 1;
 
             std::vector<Uniform*> uniforms = { &source_view, &output_view };
-            WGPUBindGroup mipmaps_bind_group = create_bind_group(uniforms, mipmaps_shader, 0);
+            WGPUBindGroup mipmaps_bind_group = create_bind_group(uniforms, mipmap_pipeline.mipmap_shader, 0);
 
             wgpuComputePassEncoderSetBindGroup(compute_pass, 0, mipmaps_bind_group, 0, nullptr);
 
@@ -495,26 +464,46 @@ void WebGPUContext::create_texture_mipmaps(WGPUTexture texture, WGPUExtent3D tex
     wgpuQueueRelease(mipmap_queue);
 }
 
-void WebGPUContext::upload_texture_mipmaps(WGPUTexture texture, WGPUExtent3D texture_size, uint32_t mip_level, const void* data, WGPUOrigin3D origin)
+void WebGPUContext::upload_texture(WGPUTexture texture, WGPUExtent3D texture_size, uint32_t mip_level, WGPUTextureFormat format, const void* data, WGPUOrigin3D origin)
 {
     WGPUQueue mipmap_queue = wgpuDeviceGetQueue(device);
 
     WGPUImageCopyTexture destination = {};
     destination.texture = texture;
     destination.origin = origin;
-    destination.mipLevel = mip_level;
     destination.aspect = WGPUTextureAspect_All;
-
-    WGPUExtent3D layer_size = { texture_size.width, texture_size.height, 1 };
-    uint32_t channel_size = sizeof(float); // hardcoded by now...
+    destination.mipLevel = 0;
 
     WGPUTextureDataLayout source = {};
     source.offset = 0;
-    source.bytesPerRow = channel_size * 4 * texture_size.width;
+
+    size_t byte_size = 0;
+    uint32_t pixel_size = 0;
+
+    switch (format) {
+    case WGPUTextureFormat_RGBA8Unorm:
+        pixel_size = 4 * sizeof(uint8_t);
+        break;
+    case WGPUTextureFormat_RGBA8UnormSrgb:
+        pixel_size = 4 * sizeof(uint8_t);
+        break;
+    case WGPUTextureFormat_RGBA16Uint:
+        pixel_size = 4 * sizeof(uint16_t);
+        break;
+    case WGPUTextureFormat_RGBA32Float:
+        pixel_size = 4 * sizeof(float);
+        break;
+    default:
+        assert(false);
+    }
+
+    source.bytesPerRow = pixel_size * texture_size.width;
+    byte_size = source.bytesPerRow * texture_size.height;
+
     source.rowsPerImage = texture_size.height;
 
     // Copy data to the selected mipmap
-    wgpuQueueWriteTexture(mipmap_queue, &destination, data, (channel_size * 4 * texture_size.width * texture_size.height), &source, &layer_size);
+    wgpuQueueWriteTexture(mipmap_queue, &destination, data, byte_size, &source, &texture_size);
 
     wgpuQueueRelease(mipmap_queue);
 }
@@ -572,6 +561,37 @@ WGPUBindGroup WebGPUContext::create_bind_group(const std::vector<Uniform*>& unif
     bindGroupDesc.entries = entries.data();
 
     return wgpuDeviceCreateBindGroup(device, &bindGroupDesc);
+}
+
+WebGPUContext::sMipmapPipeline WebGPUContext::get_mipmap_pipeline(WGPUTextureFormat texture_format)
+{
+    if (mipmap_pipelines.contains(texture_format)) {
+        return mipmap_pipelines[texture_format];
+    }
+
+    std::string custom_define;
+
+    switch (texture_format) {
+    case WGPUTextureFormat_RGBA8Unorm:
+    case WGPUTextureFormat_RGBA8UnormSrgb:
+        custom_define = "RGBA8_UNORM";
+        break;
+    case WGPUTextureFormat_RGBA32Float:
+        custom_define = "RGBA32_FLOAT";
+        break;
+    default:
+        assert(false);
+    }
+
+    Shader* shader = RendererStorage::get_shader("data/shaders/mipmaps.wgsl", { custom_define });
+
+    Pipeline* pipeline = new Pipeline();
+    pipeline->create_compute(shader);
+
+    sMipmapPipeline mipmap_pipeline = { pipeline, shader };
+    mipmap_pipelines[texture_format] = mipmap_pipeline;
+
+    return mipmap_pipeline;
 }
 
 void WebGPUContext::process_events()
@@ -830,6 +850,8 @@ void WebGPUContext::generate_prefiltered_env_texture(Texture* prefiltered_env_te
 
         wgpuComputePassEncoderRelease(compute_pass);
     }
+
+    //create_texture_mipmaps(prefiltered_env_texture->get_texture(), prefiltered_env_texture->get_size(), 6, WGPUTextureViewDimension_2D, prefiltered_env_texture->get_format());
 
     // Prefilter cubemap
     {

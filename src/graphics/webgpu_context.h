@@ -2,7 +2,9 @@
 
 #include "includes.h"
 
-#include "uniform.h" 
+#include "uniform.h"
+
+#include <unordered_map>
 
 class Shader;
 class Pipeline;
@@ -29,8 +31,12 @@ struct WebGPUContext {
     uint32_t                render_width = 0;
     uint32_t                render_height = 0;
 
-    Pipeline*               mipmaps_pipeline;
-    Shader*                 mipmaps_shader;
+    struct sMipmapPipeline {
+        Pipeline* mipmap_pipeline;
+        Shader* mipmap_shader;
+    };
+
+    std::unordered_map<WGPUTextureFormat, sMipmapPipeline> mipmap_pipelines;
 
     Pipeline*               panorama_to_cubemap_pipeline;
     Shader*                 panorama_to_cubemap_shader;
@@ -68,8 +74,8 @@ struct WebGPUContext {
     
                            // By now wrapU = wrapV = wrapW
     WGPUSampler            create_sampler(WGPUAddressMode wrap_u = WGPUAddressMode_ClampToEdge, WGPUAddressMode wrap_v = WGPUAddressMode_ClampToEdge, WGPUAddressMode wrap_w = WGPUAddressMode_ClampToEdge, WGPUFilterMode mag_filter = WGPUFilterMode_Linear, WGPUFilterMode min_filter = WGPUFilterMode_Linear, WGPUMipmapFilterMode mipmap_filter = WGPUMipmapFilterMode_Linear, float lod_max_clamp = 1.0f, uint16_t max_anisotropy = 1);
-    void                   create_texture_mipmaps(WGPUTexture texture, WGPUExtent3D texture_size, uint32_t mip_level_count, const void* data, WGPUTextureViewDimension view_dimension = WGPUTextureViewDimension_2D, WGPUTextureFormat format = WGPUTextureFormat_RGBA8Unorm, WGPUOrigin3D origin = {0, 0, 0});
-    void                   upload_texture_mipmaps(WGPUTexture texture, WGPUExtent3D texture_size, uint32_t mip_level, const void* data, WGPUOrigin3D origin = { 0, 0, 0 });
+    void                   create_texture_mipmaps(WGPUTexture texture, WGPUExtent3D texture_size, uint32_t mip_level_count, WGPUTextureViewDimension view_dimension = WGPUTextureViewDimension_2D, WGPUTextureFormat format = WGPUTextureFormat_RGBA8Unorm, WGPUOrigin3D origin = {0, 0, 0});
+    void                   upload_texture(WGPUTexture texture, WGPUExtent3D texture_size, uint32_t mip_level, WGPUTextureFormat format, const void* data, WGPUOrigin3D origin = { 0, 0, 0 });
 
     WGPUBindGroupLayout    create_bind_group_layout(const std::vector<WGPUBindGroupLayoutEntry>& entries);
     WGPUBindGroup          create_bind_group(const std::vector<Uniform*>& uniforms, WGPUBindGroupLayout bind_group_layout);
@@ -89,6 +95,8 @@ struct WebGPUContext {
 
     void                   update_buffer(WGPUBuffer buffer, uint64_t buffer_offset, void const* data, uint64_t size);
     void                   update_texture(WGPUTexture buffer, void const* data, uint64_t size);
+
+    sMipmapPipeline        get_mipmap_pipeline(WGPUTextureFormat texture_format);
 
     void process_events();
 
