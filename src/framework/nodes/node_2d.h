@@ -48,7 +48,9 @@ protected:
     Node2D*     parent = nullptr;
     bool        visibility = true;
 	glm::mat3x3 model = glm::mat3x3(1.0f);
+
     glm::vec2   size = { 0.0f, 0.0f };
+    glm::vec2   scaling = { 1.0f, 1.0f };
 
     glm::mat4x4 viewport_model = glm::mat4x4(1.0f);
 
