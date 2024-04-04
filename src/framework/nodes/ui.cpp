@@ -611,7 +611,9 @@ namespace ui {
             on_pressed();
         }
 
-        target_scale = 1.1f;
+        if (class_type != Node2DClassType::COMBO_BUTTON) {
+            target_scale = 1.1f;
+        }
 
         // Update uniforms
         ui_data.is_hovered = 1.0f;
@@ -627,7 +629,7 @@ namespace ui {
     TextureButton2D::TextureButton2D(const std::string& sg, const std::string& texture_path, uint8_t parameter_flags, const glm::vec2& pos, const glm::vec2& size)
         : Button2D(sg, parameter_flags, pos, size) {
 
-        class_type = Node2DClassType::BUTTON;
+        class_type = Node2DClassType::TEXTURE_BUTTON;
 
         is_color_button = false;
 
@@ -649,9 +651,7 @@ namespace ui {
         material.cull_type = CULL_BACK;
         material.transparency_type = ALPHA_BLEND;
         material.priority = class_type;
-
         material.diffuse_texture = RendererStorage::get_texture(texture_path, true);
-
         material.shader = RendererStorage::get_shader("data/shaders/ui/ui_button.wgsl", material);
 
         quad_mesh.set_surface_material_override(quad_mesh.get_surface(0), material);
@@ -787,6 +787,7 @@ namespace ui {
                 node_2d->ui_data.num_group_items = i == 0 ? ComboIndex::FIRST : (i == child_count - 1 ? ComboIndex::LAST : ComboIndex::MIDDLE);
             }
 
+            node_2d->set_priority(Node2DClassType::COMBO_BUTTON);
             node_2d->set_is_unique_selection(true);
             node_2d->update_ui_data();
         }

@@ -13,6 +13,8 @@ enum Node2DClassType {
     TEXT,
     LABEL,
     BUTTON,
+    TEXTURE_BUTTON,
+    COMBO_BUTTON,
     SUBMENU,
     SLIDER,
     COLOR_PICKER,
