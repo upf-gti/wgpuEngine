@@ -210,6 +210,12 @@ int WebGPUContext::initialize(WGPURequestAdapterOptions adapter_opts, WGPURequir
     device_queue = wgpuDeviceGetQueue(device);
 
     {
+        cubemap_mipmap_pipeline.mipmap_shader = RendererStorage::get_shader("data/shaders/cubemap_downsampler.wgsl");
+        cubemap_mipmap_pipeline.mipmap_pipeline = new Pipeline();
+        cubemap_mipmap_pipeline.mipmap_pipeline->create_compute(cubemap_mipmap_pipeline.mipmap_shader);
+    }
+
+    {
         panorama_to_cubemap_shader = RendererStorage::get_shader("data/shaders/panorama_to_cubemap.wgsl");
 
         panorama_to_cubemap_pipeline = new Pipeline();
@@ -453,6 +459,117 @@ void WebGPUContext::create_texture_mipmaps(WGPUTexture texture, WGPUExtent3D tex
         for (WGPUTextureView texture_view : texture_mip_views) {
             wgpuTextureViewRelease(texture_view);
         }
+    }
+
+    // Finalize compute_raymarching pass
+    wgpuComputePassEncoderEnd(compute_pass);
+
+    WGPUCommandBufferDescriptor cmd_buff_descriptor = {};
+    cmd_buff_descriptor.nextInChain = NULL;
+    cmd_buff_descriptor.label = "Create Mipmaps Command Buffer";
+
+    if (!custom_command_encoder) {
+        // Encode and submit the GPU commands
+        WGPUCommandBuffer commands = wgpuCommandEncoderFinish(command_encoder, &cmd_buff_descriptor);
+        wgpuQueueSubmit(mipmap_queue, 1, &commands);
+
+        wgpuCommandBufferRelease(commands);
+        wgpuCommandEncoderRelease(command_encoder);
+    }
+
+    wgpuComputePassEncoderRelease(compute_pass);
+
+    if (!custom_command_encoder) {
+        wgpuQueueRelease(mipmap_queue);
+    }
+}
+
+void WebGPUContext::create_cubemap_mipmaps(WGPUTexture texture, WGPUExtent3D texture_size, uint32_t mip_level_count, WGPUTextureViewDimension view_dimension, WGPUTextureFormat format, WGPUOrigin3D origin, WGPUCommandEncoder custom_command_encoder)
+{
+    WGPUQueue mipmap_queue;
+
+    if (!custom_command_encoder) {
+        mipmap_queue = wgpuDeviceGetQueue(device);
+    }
+
+    // Initialize a command encoder
+    WGPUCommandEncoderDescriptor encoder_desc = {};
+    WGPUCommandEncoder command_encoder = custom_command_encoder ? custom_command_encoder : wgpuDeviceCreateCommandEncoder(device, &encoder_desc);
+
+    WGPUComputePassDescriptor compute_pass_desc = {};
+    compute_pass_desc.timestampWrites = nullptr;
+    WGPUComputePassEncoder compute_pass = wgpuCommandEncoderBeginComputePass(command_encoder, &compute_pass_desc);
+
+    Uniform sampler;
+    sampler.data = create_sampler(WGPUAddressMode_ClampToEdge, WGPUAddressMode_ClampToEdge, WGPUAddressMode_ClampToEdge, WGPUFilterMode_Linear, WGPUFilterMode_Linear);
+    sampler.binding = 2;
+
+    // For all levels
+    std::vector<WGPUExtent3D> texture_mip_sizes;
+    texture_mip_sizes.resize(mip_level_count);
+    texture_mip_sizes[0] = texture_size;
+
+    std::vector<WGPUTextureView> texture_mip_views_read;
+    texture_mip_views_read.reserve(texture_mip_sizes.size());
+
+    std::vector<WGPUTextureView> texture_mip_views_write;
+    texture_mip_views_write.reserve(texture_mip_sizes.size());
+
+    for (uint32_t level = 0; level < texture_mip_sizes.size(); ++level)
+    {
+        std::string label = "MIP level #" + std::to_string(level);
+        texture_mip_views_read.push_back(
+            create_texture_view(texture, view_dimension, format, WGPUTextureAspect_All, level, 1, 0, 6, label.c_str())
+        );
+
+        texture_mip_views_write.push_back(
+            create_texture_view(texture, WGPUTextureViewDimension_2DArray, format, WGPUTextureAspect_All, level, 1, 0, 6, label.c_str())
+        );
+
+        if (level > 0) {
+            WGPUExtent3D previous_size = texture_mip_sizes[level - 1];
+            texture_mip_sizes[level] = {
+                previous_size.width / 2,
+                previous_size.height / 2,
+                previous_size.depthOrArrayLayers / 2
+            };
+        }
+    }
+
+    cubemap_mipmap_pipeline.mipmap_pipeline->set(compute_pass);
+
+    for (uint32_t nextLevel = 1; nextLevel < texture_mip_sizes.size(); ++nextLevel) {
+
+        Uniform source_view;
+        source_view.data = texture_mip_views_read[nextLevel - 1];
+        source_view.binding = 0;
+
+        Uniform output_view;
+        output_view.data = texture_mip_views_write[nextLevel];
+        output_view.binding = 1;
+
+        std::vector<Uniform*> uniforms = { &source_view, &output_view, &sampler };
+        WGPUBindGroup mipmaps_bind_group = create_bind_group(uniforms, cubemap_mipmap_pipeline.mipmap_shader, 0);
+
+        wgpuComputePassEncoderSetBindGroup(compute_pass, 0, mipmaps_bind_group, 0, nullptr);
+
+        uint32_t invocationCountX = texture_mip_sizes[nextLevel].width;
+        uint32_t invocationCountY = texture_mip_sizes[nextLevel].height;
+        uint32_t workgroupSizePerDim = 8;
+        // This ceils invocationCountX / workgroupSizePerDim
+        uint32_t workgroupCountX = (invocationCountX + workgroupSizePerDim - 1) / workgroupSizePerDim;
+        uint32_t workgroupCountY = (invocationCountY + workgroupSizePerDim - 1) / workgroupSizePerDim;
+        wgpuComputePassEncoderDispatchWorkgroups(compute_pass, workgroupCountX, workgroupCountY, 6);
+
+        wgpuBindGroupRelease(mipmaps_bind_group);
+    }
+
+    for (WGPUTextureView texture_view : texture_mip_views_read) {
+        wgpuTextureViewRelease(texture_view);
+    }
+
+    for (WGPUTextureView texture_view : texture_mip_views_write) {
+        wgpuTextureViewRelease(texture_view);
     }
 
     // Finalize compute_raymarching pass
@@ -874,7 +991,7 @@ void WebGPUContext::generate_prefiltered_env_texture(Texture* prefiltered_env_te
         wgpuComputePassEncoderRelease(compute_pass);
     }
 
-    create_texture_mipmaps(cubemap_texture.get_texture(), cubemap_texture.get_size(), 6, WGPUTextureViewDimension_2D, cubemap_texture.get_format(), { 0, 0, 0 }, command_encoder);
+    create_cubemap_mipmaps(cubemap_texture.get_texture(), cubemap_texture.get_size(), 6, WGPUTextureViewDimension_Cube, cubemap_texture.get_format(), { 0, 0, 0 }, command_encoder);
 
     // copy first cubemap mipmap to final texture
     copy_texture_to_texture(cubemap_texture.get_texture(), prefiltered_env_texture->get_texture(), 0, 0, cubemap_texture.get_size(), command_encoder);
