@@ -158,6 +158,7 @@ void Pipeline::register_render_pipeline(Material& material)
         break;
     }
 
+    description.depth_read = material.depth_read;
     description.sample_count = Renderer::instance->get_msaa_count();
 
     RenderPipelineKey key = { material.shader, color_target, description };

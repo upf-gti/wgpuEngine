@@ -800,22 +800,20 @@ WGPURenderPipeline WebGPUContext::create_render_pipeline(WGPUShaderModule render
     fragment_state.targets = &color_target;
 
     WGPUDepthStencilState depth_state = {};
-    if (depth_read) {
-        depth_state.depthCompare = WGPUCompareFunction_Less;
-        depth_state.depthWriteEnabled = depth_write;
-        depth_state.format = WGPUTextureFormat_Depth32Float;
-        depth_state.stencilReadMask = 0;
-        depth_state.stencilWriteMask = 0;
-        // Configure the stencils even if unused
-        depth_state.stencilFront.compare = WGPUCompareFunction_Always;
-        depth_state.stencilFront.failOp = WGPUStencilOperation_Keep;
-        depth_state.stencilFront.depthFailOp = WGPUStencilOperation_Keep;
-        depth_state.stencilFront.passOp = WGPUStencilOperation_Keep;
-        depth_state.stencilBack.compare = WGPUCompareFunction_Always;
-        depth_state.stencilBack.failOp = WGPUStencilOperation_Keep;
-        depth_state.stencilBack.depthFailOp = WGPUStencilOperation_Keep;
-        depth_state.stencilBack.passOp = WGPUStencilOperation_Keep;
-    }
+    depth_state.depthCompare = depth_read ? WGPUCompareFunction_Less : WGPUCompareFunction_Always;
+    depth_state.depthWriteEnabled = depth_write;
+    depth_state.format = WGPUTextureFormat_Depth32Float;
+    depth_state.stencilReadMask = 0;
+    depth_state.stencilWriteMask = 0;
+    // Configure the stencils even if unused
+    depth_state.stencilFront.compare = WGPUCompareFunction_Always;
+    depth_state.stencilFront.failOp = WGPUStencilOperation_Keep;
+    depth_state.stencilFront.depthFailOp = WGPUStencilOperation_Keep;
+    depth_state.stencilFront.passOp = WGPUStencilOperation_Keep;
+    depth_state.stencilBack.compare = WGPUCompareFunction_Always;
+    depth_state.stencilBack.failOp = WGPUStencilOperation_Keep;
+    depth_state.stencilBack.depthFailOp = WGPUStencilOperation_Keep;
+    depth_state.stencilBack.passOp = WGPUStencilOperation_Keep;
 
     WGPURenderPipelineDescriptor pipeline_descr = {};
     pipeline_descr.nextInChain = NULL;
@@ -829,7 +827,7 @@ WGPURenderPipeline WebGPUContext::create_render_pipeline(WGPUShaderModule render
         .cullMode = cull_mode
     },
 
-    pipeline_descr.depthStencil = (depth_read) ? &depth_state : nullptr;
+    pipeline_descr.depthStencil = &depth_state;
     pipeline_descr.multisample = {
             .count = sample_count,
             .mask = ~0u,

@@ -46,6 +46,7 @@ public:
     void set_material_transparency_type(eTransparencyType transparency_type);
     void set_material_cull_type(eCullType cull_type);
     void set_material_topology_type(eTopologyType topology_type);
+    void set_material_depth_read(bool depth_read);
     void set_material_depth_write(bool depth_write);
 
     std::vector<InterleavedData>& get_vertices() { return vertices; }

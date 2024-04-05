@@ -28,6 +28,7 @@ public:
     void set_surface_material_transparency_type(int surface_idx, eTransparencyType transparency_type);
     void set_surface_material_cull_type(int surface_idx, eCullType cull_type);
     void set_surface_material_topology_type(int surface_idx, eTopologyType topology_type);
+    void set_surface_material_depth_read(int surface_idx, bool depth_read);
     void set_surface_material_depth_write(int surface_idx, bool depth_write);
 
     void set_surface_material_override_color(int surface_idx, const glm::vec4& color);
@@ -38,6 +39,7 @@ public:
     void set_surface_material_override_transparency_type(int surface_idx, eTransparencyType transparency_type);
     void set_surface_material_override_cull_type(int surface_idx, eCullType cull_type);
     void set_surface_material_override_topology_type(int surface_idx, eTopologyType topology_type);
+    void set_surface_material_override_depth_read(int surface_idx, bool depth_read);
     void set_surface_material_override_depth_write(int surface_idx, bool depth_write);
 
     void set_surface_material_override(Surface* surface, const Material& material);
