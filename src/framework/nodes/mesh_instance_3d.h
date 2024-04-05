@@ -13,10 +13,13 @@ private:
     Skeleton* skeleton = nullptr;
 public:
 
+    bool is_skinned;
+
     MeshInstance3D();
 	virtual ~MeshInstance3D();
 
 	virtual void render() override;
 	virtual void update(float delta_time) override;
     void set_skeleton(Skeleton *skeleton);
+    Skeleton* get_skeleton();
 };
