@@ -62,12 +62,10 @@ void SkeletonInstance3D::init_skeleton_helper() {
     skeleton_helper = new MeshInstance3D();
     skeleton_helper->add_surface(s);
     Material skeleton_material;
-    skeleton_material.shader = RendererStorage::get_shader("data/shaders/mesh_color.wgsl", skeleton_material);
-    skeleton_material.depth_write = false;
+    skeleton_material.depth_read = false;
     skeleton_material.transparency_type = eTransparencyType::ALPHA_BLEND;
     skeleton_material.topology_type = eTopologyType::TOPOLOGY_LINE_LIST;
-    skeleton_material.priority = 10;
-    s->set_material_priority(10);
+    skeleton_material.shader = RendererStorage::get_shader("data/shaders/mesh_color.wgsl", skeleton_material);
     skeleton_helper->set_surface_material_override(s, skeleton_material);
 }
 Skeleton* SkeletonInstance3D::get_skeleton() {

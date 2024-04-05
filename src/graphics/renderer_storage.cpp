@@ -438,6 +438,10 @@ std::vector<std::string> RendererStorage::get_common_define_specializations(cons
         break;
     }
 
+    if (material.depth_read) {
+        define_specializations.push_back("DEPTH_READ");
+    }
+
     if (material.depth_write) {
         define_specializations.push_back("DEPTH_WRITE");
     }

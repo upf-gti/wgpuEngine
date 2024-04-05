@@ -54,6 +54,11 @@ void Surface::set_material_topology_type(eTopologyType topology_type)
     material.topology_type = topology_type;
 }
 
+void Surface::set_material_depth_read(bool depth_read)
+{
+    material.depth_write = depth_read;
+}
+
 void Surface::set_material_depth_write(bool depth_write)
 {
     material.depth_write = depth_write;

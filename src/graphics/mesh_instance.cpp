@@ -102,6 +102,17 @@ void MeshInstance::set_surface_material_topology_type(int surface_idx, eTopology
     surfaces[surface_idx]->set_material_topology_type(topology_type);
 }
 
+void MeshInstance::set_surface_material_depth_read(int surface_idx, bool depth_read)
+{
+    assert(surface_idx < surfaces.size());
+
+    if (surface_idx >= surfaces.size()) {
+        return;
+    }
+
+    surfaces[surface_idx]->set_material_depth_read(depth_read);
+}
+
 void MeshInstance::set_surface_material_depth_write(int surface_idx, bool depth_write)
 {
     assert(surface_idx < surfaces.size());
@@ -202,6 +213,17 @@ void MeshInstance::set_surface_material_override_topology_type(int surface_idx, 
     }
 
     material_overrides[get_surface(surface_idx)].topology_type = topology_type;
+}
+
+void MeshInstance::set_surface_material_override_depth_read(int surface_idx, bool depth_read)
+{
+    assert(surface_idx < surfaces.size());
+
+    if (surface_idx >= surfaces.size()) {
+        return;
+    }
+
+    material_overrides[get_surface(surface_idx)].depth_read = depth_read;
 }
 
 void MeshInstance::set_surface_material_override_depth_write(int surface_idx, bool depth_write)
