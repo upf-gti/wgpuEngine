@@ -562,7 +562,7 @@ namespace ui {
 
         if (current_scale != target_scale) {
             timer += delta_time;
-            scaling = glm::vec2(glm::lerp(current_scale, target_scale, glm::quadraticEaseOut(timer / 1.5f)));
+            scaling = glm::vec2(glm::lerp(current_scale, target_scale, glm::quadraticEaseOut(glm::clamp(timer / 1.5f, 0.0f, 1.0f))));
         }
         else {
             timer = 0.0f;

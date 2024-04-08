@@ -306,6 +306,7 @@ void Renderer::prepare_instancing()
         {
             const Surface* prev_surface = nullptr;
             Shader* prev_shader = nullptr;
+            glm::vec4 prev_color = {};
             Texture* prev_diffuse = nullptr;
             Texture* prev_normal = nullptr;
             Texture* prev_metallic_roughness = nullptr;
@@ -322,6 +323,7 @@ void Renderer::prepare_instancing()
 
                 // Repeated MeshInstance3D, must be instanced
                 if (prev_surface == render_data.surface && prev_shader == material.shader &&
+                    prev_color == material.color &&
                     prev_diffuse == material.diffuse_texture &&
                     prev_normal == material.normal_texture &&
                     prev_metallic_roughness == material.metallic_roughness_texture &&
@@ -340,6 +342,7 @@ void Renderer::prepare_instancing()
 
                 prev_surface = render_data.surface;
                 prev_shader = material.shader;
+                prev_color = material.color;
                 prev_diffuse = material.diffuse_texture;
                 prev_normal = material.normal_texture;
                 prev_metallic_roughness = material.metallic_roughness_texture;
