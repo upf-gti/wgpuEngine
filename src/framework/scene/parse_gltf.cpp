@@ -334,8 +334,54 @@ void read_mesh(tinygltf::Model& model, tinygltf::Mesh& mesh, Node3D* entity, std
                     }
                 }
 
+                // joints (skinning)
+                if (attrib.first == std::string("JOINTS_0")) {
+                    glm::ivec4 joints;
+
+                    switch (accessor.componentType) {
+                    case TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE:
+                        joints.x = *(uint8_t*)&buffer.data[buffer_idx + 0];
+                        joints.y = *(uint8_t*)&buffer.data[buffer_idx + 1];
+                        joints.z = *(uint8_t*)&buffer.data[buffer_idx + 2];
+                        joints.z = *(uint8_t*)&buffer.data[buffer_idx + 2];
+                        break;
+                    case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT:
+                        vertices[vertex_idx].color.x = *(uint16_t*)&buffer.data[buffer_idx + 0];
+                        vertices[vertex_idx].color.y = *(uint16_t*)&buffer.data[buffer_idx + 2];
+                        vertices[vertex_idx].color.z = *(uint16_t*)&buffer.data[buffer_idx + 4];
+                        break;
+                    default:
+                        assert(0);
+                    }
+
+                    // TO DO: convert the joint indices so that they go from being relative to the joints array to being relative to the skeleton hierarchy
+                    // 
+                    //Make sure that even the invalid nodes have a value of 0 (any negative joint indices will break the skinning implementation)
+                    joints.x = std::max(0, joints.x);
+                    joints.y = std::max(0, joints.y);
+                    joints.z = std::max(0, joints.z);
+                    joints.w = std::max(0, joints.w);
+
+                    vertices[vertex_idx].joints.x = joints.x;
+                    vertices[vertex_idx].joints.y = joints.y;
+                    vertices[vertex_idx].joints.z = joints.z;
+                    vertices[vertex_idx].joints.w = joints.w;
+                }
+
+                // weights (skinning)
+                if (attrib.first == std::string("WEIGHTS_0")) {
+                    vertices[vertex_idx].weights.x = *(float*)&buffer.data[buffer_idx + 0];
+                    vertices[vertex_idx].weights.y = *(float*)&buffer.data[buffer_idx + 4];
+                    vertices[vertex_idx].weights.z = *(float*)&buffer.data[buffer_idx + 8];                 
+                    vertices[vertex_idx].weights.w = *(float*)&buffer.data[buffer_idx + 12];
+                }
+
+                if (attrib.first == std::string("JOINTS_1") || attrib.first == std::string("WEIGHTS_1")) {
+                    assert(0); // skinned supports only 4 joint influences for the moment
+                }
                 vertex_idx++;
             }
+
         }
 
         glm::vec3 aabb_half_size = (max_pos - min_pos) * 0.5f;
@@ -461,6 +507,12 @@ void read_mesh(tinygltf::Model& model, tinygltf::Mesh& mesh, Node3D* entity, std
 
         material.shader = RendererStorage::get_shader("data/shaders/mesh_pbr.wgsl", material);
 
+        if (entity_mesh->is_skinned) {
+            material.shader = RendererStorage::get_shader("data/shaders/mesh_pbr_skinning.wgsl", material);
+            material.use_skinning = true;
+            //TO DO : something I dont remember
+
+        }
         surface->create_vertex_buffer();
         surface->set_material_priority(1);
         entity_mesh->add_surface(surface);
@@ -731,6 +783,11 @@ void parse_model_skins(tinygltf::Model& model, std::map<int, int> hierarchy, std
 
                         instance->set_skeleton(skeleton);
 
+                        for (auto child : instance->get_children()) {
+                            MeshInstance* child_instance = dynamic_cast<MeshInstance*>(child);
+                            assert(child_instance);
+                            child_instance->set_skeleton(skeleton);
+                        }
                     }
                 }
                 //skin_map[s]->set_skeleton(skeleton);

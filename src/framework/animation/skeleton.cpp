@@ -9,6 +9,7 @@ Skeleton::Skeleton(const Pose& rest, const Pose& bind, const std::vector<std::st
 void Skeleton::set(const Pose& rest, const Pose& bind, const std::vector<std::string>& names) {
 	rest_pose = rest;
 	bind_pose = bind;
+    current_pose = rest;
 	joint_names = names;
 	update_inv_bind_pose();
 }
@@ -19,6 +20,14 @@ Pose& Skeleton::get_bind_pose() {
 
 Pose& Skeleton::get_rest_pose() {
 	return rest_pose;
+}
+
+Pose& Skeleton::get_current_pose() {
+    return current_pose;
+}
+
+void Skeleton::set_current_pose(Pose pose) {
+    current_pose = pose;
 }
 
 std::vector<glm::mat4>& Skeleton::get_inv_bind_pose() {

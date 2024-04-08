@@ -25,7 +25,7 @@ RendererStorage::RendererStorage()
     instance = this;
 }
 
-void RendererStorage::register_material(WebGPUContext* webgpu_context, const Material& material)
+void RendererStorage::register_material(WebGPUContext* webgpu_context, MeshInstance* mesh_instance, const Material& material)
 {
     if (material_bind_groups.contains(material)) {
         return;
@@ -132,6 +132,37 @@ void RendererStorage::register_material(WebGPUContext* webgpu_context, const Mat
         u->data = webgpu_context->create_buffer(sizeof(float), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform, &material.alpha_mask, "mat_alpha_cutoff");
         u->binding = 8;
         u->buffer_size = sizeof(float);
+        uniforms.push_back(u);
+    }
+
+    if (material.use_skinning) {
+        Uniform* u = new Uniform();
+        Skeleton* skeleton = mesh_instance->get_skeleton();
+        Pose current_pose = skeleton->get_current_pose();
+        Pose bind_pose = skeleton->get_bind_pose();
+
+        std::vector<InterleavedData> vertices = mesh_instance->get_surface(0)->get_vertices();
+
+        std::vector<glm::mat4> animated_matrices(current_pose.size());
+        for (unsigned int i = 0; i < vertices.size(); i++) {
+            glm::ivec4 joints = vertices[i].joints;
+
+            Transform animated_transform = combine(current_pose[joints.x], inverse(bind_pose[joints.x]));
+            animated_matrices[joints.x] = transformToMat4(animated_transform);
+
+            animated_transform = combine(current_pose[joints.y], inverse(bind_pose[joints.y]));
+            animated_matrices[joints.y] = transformToMat4(animated_transform);
+
+            animated_transform = combine(current_pose[joints.z], inverse(bind_pose[joints.z]));
+            animated_matrices[joints.z] = transformToMat4(animated_transform);
+
+            animated_transform = combine(current_pose[joints.w], inverse(bind_pose[joints.w]));
+            animated_matrices[joints.w] = transformToMat4(animated_transform);
+        }
+
+        u->data = webgpu_context->create_buffer(sizeof(glm::mat4x4) * current_pose.size(), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform, &animated_matrices, "animated");
+        u->binding = 10;
+        u->buffer_size = sizeof(glm::mat4x4) * current_pose.size();
         uniforms.push_back(u);
     }
 
@@ -446,6 +477,10 @@ std::vector<std::string> RendererStorage::get_common_define_specializations(cons
         define_specializations.push_back("DEPTH_WRITE");
     }
 
+    if (material.use_skinning) {
+        define_specializations.push_back("USE_SKINNING");
+
+    }
     return define_specializations;
 }
 

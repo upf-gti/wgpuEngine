@@ -2,13 +2,17 @@
 
 #include "material.h"
 #include "surface.h"
-
+#include "framework/animation/skeleton.h"
 #include <unordered_map>
 
 class Shader;
 class Texture;
+class Skeleton;
 
 class MeshInstance {
+
+private:
+    Skeleton* skeleton = nullptr;
 
 protected:
 
@@ -48,4 +52,8 @@ public:
 	void  add_surface(Surface* surface);
     const std::vector<Surface*>& get_surfaces() const;
     Surface* get_surface(int surface_idx) const;
+
+    void set_skeleton(Skeleton* s);
+    Skeleton* get_skeleton();
+
 };

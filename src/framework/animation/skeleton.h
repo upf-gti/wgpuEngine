@@ -8,6 +8,7 @@ class Skeleton
 protected:
 	Pose bind_pose;
 	Pose rest_pose;
+	Pose current_pose;
 
 	std::vector<glm::mat4> inv_bind_pose; // vector of inverse bind pose matrix of each joint
 	std::vector<std::string> joint_names; // vector of the name of each joint
@@ -24,6 +25,8 @@ public:
 
 	Pose& get_bind_pose();
 	Pose& get_rest_pose();
+	Pose& get_current_pose();
+	void set_current_pose(Pose pose);
 
 	std::vector<glm::mat4>& get_inv_bind_pose();
 	std::vector<std::string>& get_joint_names();

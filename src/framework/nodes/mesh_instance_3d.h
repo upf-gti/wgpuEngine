@@ -9,8 +9,6 @@ class Skeleton;
 
 class MeshInstance3D : public MeshInstance, public Node3D {
 
-private:
-    Skeleton* skeleton = nullptr;
 public:
 
     bool is_skinned;
@@ -20,6 +18,4 @@ public:
 
 	virtual void render() override;
 	virtual void update(float delta_time) override;
-    void set_skeleton(Skeleton *skeleton);
-    Skeleton* get_skeleton();
 };

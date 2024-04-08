@@ -3,22 +3,6 @@
 #include "graphics/renderer.h"
 
 
-void SkeletonInstance3D::render()
-{
-    if (skeleton_helper) {
-
-        Renderer::instance->add_renderable(skeleton_helper, get_global_model());
-
-        Node3D::render();
-    }
-
-}
-
-void SkeletonInstance3D::update(float delta_time)
-{
-    Node3D::update(delta_time);
-}
-
 void SkeletonInstance3D::set_skeleton(Skeleton* s)
 {
     skeleton = s;
@@ -59,14 +43,13 @@ void SkeletonInstance3D::init_skeleton_helper() {
 
     Surface* s = new Surface();
     s->create_from_vertices(vertices);
-    skeleton_helper = new MeshInstance3D();
-    skeleton_helper->add_surface(s);
+    add_surface(s);
     Material skeleton_material;
     skeleton_material.depth_read = false;
     skeleton_material.transparency_type = eTransparencyType::ALPHA_BLEND;
     skeleton_material.topology_type = eTopologyType::TOPOLOGY_LINE_LIST;
     skeleton_material.shader = RendererStorage::get_shader("data/shaders/mesh_color.wgsl", skeleton_material);
-    skeleton_helper->set_surface_material_override(s, skeleton_material);
+    set_surface_material_override(s, skeleton_material);
 }
 Skeleton* SkeletonInstance3D::get_skeleton() {
     return skeleton;
