@@ -343,12 +343,13 @@ void read_mesh(tinygltf::Model& model, tinygltf::Mesh& mesh, Node3D* entity, std
                         joints.x = *(uint8_t*)&buffer.data[buffer_idx + 0];
                         joints.y = *(uint8_t*)&buffer.data[buffer_idx + 1];
                         joints.z = *(uint8_t*)&buffer.data[buffer_idx + 2];
-                        joints.z = *(uint8_t*)&buffer.data[buffer_idx + 2];
+                        joints.w = *(uint8_t*)&buffer.data[buffer_idx + 2];
                         break;
                     case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT:
-                        vertices[vertex_idx].color.x = *(uint16_t*)&buffer.data[buffer_idx + 0];
-                        vertices[vertex_idx].color.y = *(uint16_t*)&buffer.data[buffer_idx + 2];
-                        vertices[vertex_idx].color.z = *(uint16_t*)&buffer.data[buffer_idx + 4];
+                        joints.x = *(uint16_t*)&buffer.data[buffer_idx + 0];
+                        joints.y = *(uint16_t*)&buffer.data[buffer_idx + 2];
+                        joints.z = *(uint16_t*)&buffer.data[buffer_idx + 4];
+                        joints.w = *(uint16_t*)&buffer.data[buffer_idx + 4];
                         break;
                     default:
                         assert(0);
@@ -508,8 +509,8 @@ void read_mesh(tinygltf::Model& model, tinygltf::Mesh& mesh, Node3D* entity, std
         material.shader = RendererStorage::get_shader("data/shaders/mesh_pbr.wgsl", material);
 
         if (entity_mesh->is_skinned) {
-            material.shader = RendererStorage::get_shader("data/shaders/mesh_pbr_skinning.wgsl", material);
             material.use_skinning = true;
+            material.shader = RendererStorage::get_shader("data/shaders/mesh_pbr_skinning.wgsl", material);
             //TO DO : something I dont remember
 
         }

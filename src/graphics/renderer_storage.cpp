@@ -160,7 +160,7 @@ void RendererStorage::register_material(WebGPUContext* webgpu_context, MeshInsta
             animated_matrices[joints.w] = transformToMat4(animated_transform);
         }
 
-        u->data = webgpu_context->create_buffer(sizeof(glm::mat4x4) * current_pose.size(), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform, &animated_matrices, "animated");
+        u->data = webgpu_context->create_buffer(sizeof(glm::mat4x4) * current_pose.size(), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Storage, &animated_matrices, "animated");
         u->binding = 10;
         u->buffer_size = sizeof(glm::mat4x4) * current_pose.size();
         uniforms.push_back(u);
