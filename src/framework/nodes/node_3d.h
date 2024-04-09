@@ -1,7 +1,5 @@
 #pragma once
 
-#include "framework/math.h"
-#include "framework/aabb.h"
 #include "framework/nodes/node.h"
 
 #include <string>
