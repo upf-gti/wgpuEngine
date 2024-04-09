@@ -63,7 +63,7 @@ glm::quat fromTo(const glm::vec3& from, const glm::vec3& to) {
     glm::vec3 t = normalize(to);
 
     if (f == t) { // parallel vectors 
-        return glm::quat();
+        return glm::quat(0.f, 0.f, 0.f, 1.f);
     }
     else if (f == t * -1.0f) { 	// check whether the two vectors are opposites of each other
         glm::vec3 ortho = glm::vec3(1, 0, 0);
@@ -127,8 +127,18 @@ Transform mat4ToTransform(const glm::mat4x4& m) {
     rotScaleMat[2][3] = 0.f;
     rotScaleMat[3][3] = 1.f;
 
-	glm::mat4x4 invRotMat = toMat4(inverse(out.rotation));
-	glm::mat4x4 scaleSkewMat = rotScaleMat * invRotMat;
+    glm::quat inv_rot = inverse(out.rotation);
+    glm::vec3 r = inv_rot * glm::vec3(1, 0, 0);
+    glm::vec3 u = inv_rot * glm::vec3(0, 1, 0);
+    glm::vec3 f = inv_rot * glm::vec3(0, 0, 1);
+glm::mat4x4 invRotMat =
+    glm::mat4x4(r.x, r.y, r.z, 0,
+        u.x, u.y, u.z, 0,
+        f.x, f.y, f.z, 0,
+        0, 0, 0, 1
+    );
+	//glm::mat4x4 invRotMat = toMat4(inverse(out.rotation));
+	glm::mat4x4 scaleSkewMat = invRotMat*rotScaleMat ;
 	out.scale = glm::vec3(scaleSkewMat[0][0], scaleSkewMat[1][1], scaleSkewMat[2][2]);
 	return out;
 }

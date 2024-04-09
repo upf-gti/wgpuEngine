@@ -27,14 +27,14 @@ void SkeletonInstance3D::init_skeleton_helper() {
     vertices.resize(0);
     glm::mat4x4 global_model = get_global_model();
     
-    for (unsigned int i = 0; i < numJoints - 1; ++i) {
+    for (unsigned int i = 0; i < numJoints ; ++i) {
         InterleavedData data;
         if (pose.get_parent(i) < 0) {
             continue;
         }
-        else if (pose.get_parent(pose.get_parent(i)) < 0)
+   /*     else if (pose.get_parent(pose.get_parent(i)) < 0)
             continue;
-        
+        */
         data.position = pose.get_global_transform(i).position;// combine(mat4ToTransform(model), pose.get_global_transform(i)).position; 
         vertices.push_back(data);
         data.position = pose.get_global_transform(pose.get_parent(i)).position; //combine(mat4ToTransform(model), pose.get_global_transform(pose.get_parent(i))).position;
