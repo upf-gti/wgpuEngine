@@ -4,7 +4,7 @@
 
 class OmniLight3D : public Light3D {
 
-    float range = 5.0f;
+    float range = -1.0f;
 
 public:
 

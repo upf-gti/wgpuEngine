@@ -4,8 +4,10 @@
 
 class SpotLight3D : public Light3D {
 
-    float range = 5.0f;
-    float angle = 45.0f;
+    float range = -1.0f;
+
+    float inner_cone_angle = 0.0f;
+    float outer_cone_angle = glm::pi<float>() / 4.0f;
 
 public:
 
@@ -17,8 +19,10 @@ public:
     sLightUniformData get_uniform_data() override;
 
     float get_range() { return range; };
-    float get_angle() { return angle; };
+    float get_inner_cone_angle() { return inner_cone_angle; };
+    float get_outer_cone_angle() { return outer_cone_angle; };
 
     void set_range(float value);
-    void set_angle(float value);
+    void set_inner_cone_angle(float value);
+    void set_outer_cone_angle(float value);
 };
