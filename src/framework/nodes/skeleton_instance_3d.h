@@ -18,6 +18,7 @@ public:
     virtual ~SkeletonInstance3D() {};
 
     void set_skeleton(Skeleton* skeleton);
+    void update(float dt);
 
     Skeleton* get_skeleton();
 };

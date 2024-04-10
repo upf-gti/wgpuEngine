@@ -138,7 +138,7 @@ glm::mat4x4 invRotMat =
         0, 0, 0, 1
     );
 	//glm::mat4x4 invRotMat = toMat4(inverse(out.rotation));
-	glm::mat4x4 scaleSkewMat = invRotMat*rotScaleMat ;
+	glm::mat4x4 scaleSkewMat = rotScaleMat * invRotMat;
 	out.scale = glm::vec3(scaleSkewMat[0][0], scaleSkewMat[1][1], scaleSkewMat[2][2]);
 	return out;
 }

@@ -349,7 +349,7 @@ void read_mesh(tinygltf::Model& model, tinygltf::Mesh& mesh, Node3D* entity, std
 
                 // joints (skinning)
                 if (attrib.first == std::string("JOINTS_0")) {
-                    glm::ivec4 joints;
+                    glm::ivec4 &joints = vertices[vertex_idx].joints;
 
                     switch (accessor.componentType) {
                     case TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE:
@@ -383,43 +383,37 @@ void read_mesh(tinygltf::Model& model, tinygltf::Mesh& mesh, Node3D* entity, std
                     joints.y = std::max(0, joints.y);
                     joints.z = std::max(0, joints.z);
                     joints.w = std::max(0, joints.w);
-
-                    vertices[vertex_idx].joints.x = joints.x;
-                    vertices[vertex_idx].joints.y = joints.y;
-                    vertices[vertex_idx].joints.z = joints.z;
-                    vertices[vertex_idx].joints.w = joints.w;
                 }
 
                 // weights (skinning)
                 if (attrib.first == std::string("WEIGHTS_0")) {
+                    glm::vec4& weights = vertices[vertex_idx].weights;
+
                     switch (accessor.componentType) {
                     case TINYGLTF_COMPONENT_TYPE_FLOAT:
-                        vertices[vertex_idx].weights.x = *(float*)&buffer.data[buffer_idx + 0];
-                        vertices[vertex_idx].weights.y = *(float*)&buffer.data[buffer_idx + 4];
-                        vertices[vertex_idx].weights.z = *(float*)&buffer.data[buffer_idx + 8];
-                        vertices[vertex_idx].weights.w = *(float*)&buffer.data[buffer_idx + 12];
+                        weights.x = *(float*)&buffer.data[buffer_idx + 0];
+                        weights.y = *(float*)&buffer.data[buffer_idx + 4];
+                        weights.z = *(float*)&buffer.data[buffer_idx + 8];
+                        weights.w = *(float*)&buffer.data[buffer_idx + 12];
                         break;
                     case TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE:
-                        vertices[vertex_idx].weights.x = *(uint8_t*)&buffer.data[buffer_idx + 0];
-                        vertices[vertex_idx].weights.y = *(uint8_t*)&buffer.data[buffer_idx + 1];
-                        vertices[vertex_idx].weights.z = *(uint8_t*)&buffer.data[buffer_idx + 2];
-                        vertices[vertex_idx].weights.w = *(uint8_t*)&buffer.data[buffer_idx + 3];
+                        weights.x = *(uint8_t*)&buffer.data[buffer_idx + 0];
+                        weights.y = *(uint8_t*)&buffer.data[buffer_idx + 1];
+                        weights.z = *(uint8_t*)&buffer.data[buffer_idx + 2];
+                        weights.w = *(uint8_t*)&buffer.data[buffer_idx + 3];
                         break;
                     case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT:
-                        vertices[vertex_idx].weights.x = *(uint16_t*)&buffer.data[buffer_idx + 0];
-                        vertices[vertex_idx].weights.y = *(uint16_t*)&buffer.data[buffer_idx + 2];
-                        vertices[vertex_idx].weights.z = *(uint16_t*)&buffer.data[buffer_idx + 4];
-                        vertices[vertex_idx].weights.w = *(uint16_t*)&buffer.data[buffer_idx + 8];
+                        weights.x = *(uint16_t*)&buffer.data[buffer_idx + 0];
+                        weights.y = *(uint16_t*)&buffer.data[buffer_idx + 2];
+                        weights.z = *(uint16_t*)&buffer.data[buffer_idx + 4];
+                        weights.w = *(uint16_t*)&buffer.data[buffer_idx + 8];
                         break;
                     default:
                         assert(0);
                     }
 
                     //Make sure that even the invalid nodes have a value of 0 (any negative joint indices will break the skinning implementation)
-                    vertices[vertex_idx].weights.x = std::min(1.f, std::max(0.f, vertices[vertex_idx].weights.x));
-                    vertices[vertex_idx].weights.y = std::min(1.f, std::max(0.f, vertices[vertex_idx].weights.y));
-                    vertices[vertex_idx].weights.z = std::min(1.f, std::max(0.f, vertices[vertex_idx].weights.z));
-                    vertices[vertex_idx].weights.w = std::min(1.f, std::max(0.f, vertices[vertex_idx].weights.w));
+                    weights = glm::clamp(weights, 0.0f, 1.0f);
                 }
 
                 if (attrib.first == std::string("JOINTS_1") || attrib.first == std::string("WEIGHTS_1")) {
@@ -647,7 +641,6 @@ void parse_model_nodes(tinygltf::Model& model, int id, Node3D* entity, std::map<
 
         if (model.nodes[node.children[i]].skin >= 0) {
             SkeletonInstance3D* e = new SkeletonInstance3D();
-            //e->set_model(inverse(entity->get_model())); // Harcoded 
             e->set_name(entity->get_name() + "_" + "skeleton");
             e->skin = model.nodes[node.children[i]].skin;
             entity->add_child(e);
@@ -832,8 +825,9 @@ void parse_model_skins(tinygltf::Model& model, std::map<int, int> hierarchy, std
                         current = combine(inverse(parent), current);
 
                     }
-                    else if (hierarchy[skin.joints[i]] >= 0) {
-                        p = hierarchy[skin.joints[i]];
+                    else if (hierarchy[skin.joints[i]] >= 0) { // ONLY NEEDED IF THERE IS NOT SCENE ENITIES HIERARCHY
+                        
+                       /* p = hierarchy[skin.joints[i]];
                         Transform parent;
                         tinygltf::Node node = model.nodes[p];
                         if (!node.matrix.empty())
@@ -873,7 +867,7 @@ void parse_model_skins(tinygltf::Model& model, std::map<int, int> hierarchy, std
                             parent = transform;
                         }
                         
-                        current = combine(inverse(parent), current);
+                        current = combine(inverse(parent), current);*/
                     }
                     bind_pose.set_local_transform(i, current);
                 }

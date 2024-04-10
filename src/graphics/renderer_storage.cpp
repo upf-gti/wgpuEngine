@@ -138,9 +138,11 @@ void RendererStorage::register_material(WebGPUContext* webgpu_context, MeshInsta
     if (material.use_skinning) {
         Uniform* u = new Uniform();
         Skeleton* skeleton = mesh_instance->get_skeleton();
-        Pose current_pose = skeleton->get_bind_pose();
-        Pose bind_pose = skeleton->get_bind_pose();
-
+        Pose &current_pose = skeleton->get_current_pose();
+        Pose bind_pose = skeleton->get_bind_pose();    
+        Transform t = current_pose.get_local_transform(2);
+        t.rotation = glm::quat(0, 0.707, 0, 0.707);
+        current_pose.set_local_transform(2, t);
         std::vector<InterleavedData> vertices = mesh_instance->get_surface(0)->get_vertices();
 
         std::vector<glm::mat4x4> animated_matrices;        
@@ -164,7 +166,7 @@ void RendererStorage::register_material(WebGPUContext* webgpu_context, MeshInsta
             }
         }
 
-        u->data = webgpu_context->create_buffer(sizeof(glm::mat4x4) * animated_matrices.size(), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Storage, &animated_matrices, "animated");
+        u->data = webgpu_context->create_buffer(sizeof(glm::mat4x4) * animated_matrices.size(), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Storage, animated_matrices.data(), "animated");
         u->binding = 10;
         u->buffer_size = sizeof(glm::mat4x4) * animated_matrices.size();
         uniforms.push_back(u);
