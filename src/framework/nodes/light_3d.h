@@ -10,11 +10,24 @@ enum LightType {
     LIGHT_SPOT
 };
 
+struct sLightUniformData {
+    glm::vec3 position;
+    int type = LightType::LIGHT_UNDEFINED;
+    glm::vec3 color = { 0.0f, 0.0f, 0.0f };
+    float intensity = 0.0f;
+    glm::vec3 direction = { 0.0f, 0.0f, 0.0f };
+    float range = 0.0f;
+    glm::vec2 dummy = { 0.0f, 0.0f };
+    // spots
+    float inner_cone_cos = 0.0f;
+    float outer_cone_cos = 0.0f;
+};
+
 class Light3D : public Node3D {
 
 protected:
 
-    LightType type = LIGHT_UNDEFINED;
+    LightType   type = LIGHT_UNDEFINED;
 
     float       intensity = 1.0f;
     glm::vec3   color = { 1.0f, 1.0f, 1.0f };
@@ -33,6 +46,12 @@ public:
 
     Light3D();
     ~Light3D();
+
+    void render_gui() override;
+
+    virtual sLightUniformData get_uniform_data() = 0;
+
+    LightType get_type() { return type; };
 
     float get_intensity() { return intensity; };
     const glm::vec3& get_color() { return color; };

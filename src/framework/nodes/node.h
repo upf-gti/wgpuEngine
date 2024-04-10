@@ -31,21 +31,22 @@ class Node {
 
 protected:
 
-	std::string name;
+    std::string name;
 
     NodeType type;
 
-	std::vector<Node*> children;
+    std::vector<Node*> children;
 
     AABB aabb = {};
 
 public:
 
     Node() {};
-	virtual ~Node() {};
+    virtual ~Node() {};
 
-	virtual void render();
-	virtual void update(float delta_time);
+    virtual void render();
+    virtual void update(float delta_time);
+    virtual void render_gui() {};
 
     std::string get_name() const { return name; }
     virtual std::vector<Node*>& get_children() { return children; }

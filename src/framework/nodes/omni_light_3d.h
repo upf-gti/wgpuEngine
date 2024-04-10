@@ -11,6 +11,10 @@ public:
     OmniLight3D();
     ~OmniLight3D();
 
+    void render_gui() override;
+
+    sLightUniformData get_uniform_data() override;
+
     float get_range() { return range; };
 
     void set_range(float value);

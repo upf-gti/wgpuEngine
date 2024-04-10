@@ -14,6 +14,7 @@
 #endif
 
 #include "graphics/mesh_instance.h"
+#include "framework/nodes/light_3d.h"
 
 #include "graphics/debug/renderdoc_capture.h"
 
@@ -98,11 +99,22 @@ protected:
     // Bind group per shader
     WGPUBindGroup bind_groups[RENDER_LIST_SIZE] = {};
 
-    // Bind group for image based lighting
-    WGPUBindGroup ibl_bind_group;
+    // Bind group for lighting
+
+    WGPUBindGroup lighting_bind_group;
+
+    // Indirect lighting
+
     Uniform irradiance_texture_uniform;
     Uniform brdf_lut_uniform;
     Uniform ibl_sampler_uniform;
+
+    // Direct lighting
+
+    std::vector<Light3D*> lights;
+    std::vector<sLightUniformData> lights_uniform_data;
+
+    Uniform lights_buffer;
 
 public:
 
@@ -117,8 +129,8 @@ public:
     virtual void update(float delta_time) = 0;
     virtual void render() = 0;
 
-    void init_ibl_bind_group();
-    WGPUBindGroup get_ibl_bind_group() { return ibl_bind_group; }
+    void init_lighting_bind_group();
+    WGPUBindGroup get_lighting_bind_group() { return lighting_bind_group; }
 
     void init_depth_buffers();
     void init_multisample_textures();
@@ -145,6 +157,9 @@ public:
 
     void add_renderable(MeshInstance* mesh_instance, glm::mat4x4 global_matrix);
     void clear_renderables();
+
+    void update_lights();
+    void add_light(Light3D* new_light);
 
     virtual void resize_window(int width, int height);
 
