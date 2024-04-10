@@ -40,15 +40,20 @@ void TransformGizmo::initialize(const eGizmoType& gizmo_type, const glm::vec3 &p
 void TransformGizmo::init_arrow_meshes()
 {
     Material m;
-    m.shader = RendererStorage::get_shader("data/shaders/mesh_color.wgsl");
 
     arrow_mesh_x = parse_mesh("data/meshes/arrow.obj");
+    m.color = colors::RED;
+    m.shader = RendererStorage::get_shader("data/shaders/mesh_color.wgsl", m);
     arrow_mesh_x->set_surface_material_override(arrow_mesh_x->get_surface(0), m);
 
     arrow_mesh_y = parse_mesh("data/meshes/arrow.obj");
+    m.color = colors::GREEN;
+    m.shader = RendererStorage::get_shader("data/shaders/mesh_color.wgsl", m);
     arrow_mesh_y->set_surface_material_override(arrow_mesh_y->get_surface(0), m);
 
     arrow_mesh_z = parse_mesh("data/meshes/arrow.obj");
+    m.color = colors::BLUE;
+    m.shader = RendererStorage::get_shader("data/shaders/mesh_color.wgsl", m);
     arrow_mesh_z->set_surface_material_override(arrow_mesh_z->get_surface(0), m);
 }
 

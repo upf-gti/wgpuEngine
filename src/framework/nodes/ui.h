@@ -110,9 +110,13 @@ namespace ui {
     class Button2D : public Panel2D {
     public:
 
-        Text2D* text_2d = nullptr;
+        Text2D*     text_2d = nullptr;
+        std::string signal;
 
-        std::string     signal;
+        // Animations
+
+        float target_scale = 1.0f;
+        float timer = 0.0f;
 
         // ButtonWidget* mark = nullptr;
 

@@ -31,8 +31,44 @@ void Texture::create(WGPUTextureDimension dimension, WGPUTextureFormat format, W
     texture = webgpu_context->create_texture(dimension, format, size, usage, mipmaps, sample_count);
 
     if (data != nullptr) {
-        webgpu_context->create_texture_mipmaps(texture, size, mipmaps, data);
+        // For the rest of the mipmaps
+        generate_mipmaps(data);
     }
+}
+
+void Texture::generate_mipmaps(const void* data)
+{
+    WGPUTextureUsage mipmaps_usage = static_cast<WGPUTextureUsage>(WGPUTextureUsage_TextureBinding | WGPUTextureUsage_StorageBinding | WGPUTextureUsage_CopyDst | WGPUTextureUsage_CopySrc);
+
+    WGPUTextureFormat final_format = format;
+    if (format == WGPUTextureFormat_RGBA8UnormSrgb) {
+        final_format = WGPUTextureFormat_RGBA8Unorm;
+    }
+
+    // Needed because WEBGPU does not support rgb8unorm-srgb as storage binding
+    // also prevents all textures having storage binding
+    WGPUTexture texture_temp = webgpu_context->create_texture(dimension, final_format, size, mipmaps_usage, mipmaps, 1);
+    webgpu_context->upload_texture(texture_temp, size, 0, final_format, data, { 0, 0, 0 });
+    webgpu_context->create_texture_mipmaps(texture_temp, size, mipmaps, WGPUTextureViewDimension_2D, final_format);
+
+    for (uint32_t i = 0; i < mipmaps; ++i) {
+        WGPUExtent3D mipmap_size;
+
+        if (i > 0) {
+            mipmap_size = {
+                size.width / (2 << (i - 1)),
+                size.height / (2 << (i - 1)),
+                size.depthOrArrayLayers
+            };
+        }
+        else {
+            mipmap_size = size;
+        }
+
+        webgpu_context->copy_texture_to_texture(texture_temp, texture, i, i, mipmap_size);
+    }
+
+    wgpuTextureRelease(texture_temp);
 }
 
 bool Texture::convert_to_rgba8unorm(uint32_t width, uint32_t height, WGPUTextureFormat src_format, void* src, uint8_t* dst)
@@ -112,32 +148,10 @@ void Texture::load_from_data(const std::string& name, int width, int height, int
 
     // Create mipmaps
     if (create_mipmaps) {
-        WGPUTextureUsage mipmaps_usage = static_cast<WGPUTextureUsage>(WGPUTextureUsage_TextureBinding | WGPUTextureUsage_StorageBinding | WGPUTextureUsage_CopyDst | WGPUTextureUsage_CopySrc);
-
-        WGPUTexture texture_temp = webgpu_context->create_texture(dimension, WGPUTextureFormat_RGBA8Unorm, size, mipmaps_usage, mipmaps, 1);
-        webgpu_context->create_texture_mipmaps(texture_temp, size, mipmaps, data, WGPUTextureViewDimension_2D, WGPUTextureFormat_RGBA8Unorm);
-
-        for (uint32_t i = 0; i < mipmaps; ++i) {
-            WGPUExtent3D mipmap_size;
-
-            if (i > 0) {
-                mipmap_size = {
-                    size.width / (2 << (i - 1)),
-                    size.height / (2 << (i - 1)),
-                    size.depthOrArrayLayers
-                };
-            }
-            else {
-                mipmap_size = size;
-            }
-
-            webgpu_context->copy_texture_to_texture(texture_temp, texture, i, i, mipmap_size);
-        }
-
-        wgpuTextureRelease(texture_temp);
+        generate_mipmaps(data);
     }
     else {
-        webgpu_context->upload_texture_mipmaps(texture, size, 0, data, {0, 0, 0});
+        webgpu_context->upload_texture(texture, size, 0, format, data, {0, 0, 0});
     }
 }
 
@@ -159,7 +173,7 @@ void Texture::load_from_hdre(HDRE* hdre)
             void* data = hdre_level.faces[face];
             WGPUOrigin3D origin = { 0, 0, face };
             WGPUExtent3D tex_size = { (unsigned int)hdre_level.width, (unsigned int)hdre_level.height, 1 };
-            webgpu_context->upload_texture_mipmaps(texture, tex_size, level, data, origin);
+            webgpu_context->upload_texture(texture, tex_size, level, format, data, origin);
         }
     }
 }

@@ -315,7 +315,7 @@ Texture* RendererStorage::get_texture(const std::string& texture_path, bool is_s
         hdr_texture->load_hdr(texture_path);
 
         tx->create(WGPUTextureDimension_2D, WGPUTextureFormat_RGBA32Float, { ENVIRONMENT_RESOLUTION, ENVIRONMENT_RESOLUTION, 6 },
-            static_cast<WGPUTextureUsage>(WGPUTextureUsage_StorageBinding | WGPUTextureUsage_TextureBinding), 6, 1, nullptr);
+            static_cast<WGPUTextureUsage>(WGPUTextureUsage_StorageBinding | WGPUTextureUsage_TextureBinding | WGPUTextureUsage_CopyDst), 6, 1, nullptr);
 
         Renderer::instance->get_webgpu_context()->generate_prefiltered_env_texture(tx, hdr_texture);
     } else

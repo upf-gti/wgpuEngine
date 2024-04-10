@@ -102,7 +102,8 @@ void Node2D::rotate(const glm::quat& q)
 
 void Node2D::scale(glm::vec2 scale)
 {
-	model = glm::scale(model, scale);
+    scaling = scale;
+    model = glm::scale(model, scaling);
 }
 
 void Node2D::set_model(const glm::mat3x3& _model)

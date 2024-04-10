@@ -7,6 +7,7 @@
 #include "graphics/renderer.h"
 #include "graphics/webgpu_context.h"
 #include "spdlog/spdlog.h"
+#include "glm/gtx/easing.hpp"
 
 namespace ui {
 
@@ -26,7 +27,7 @@ namespace ui {
         material.shader = RendererStorage::get_shader("data/shaders/mesh_color.wgsl", material);
 
         Surface* quad_surface = new Surface();
-        quad_surface->create_quad(size.x, size.y, false);
+        quad_surface->create_quad(size.x, size.y);
 
         quad_mesh.add_surface(quad_surface);
         quad_mesh.set_surface_material_override(quad_mesh.get_surface(0), material);
@@ -47,8 +48,10 @@ namespace ui {
         if (render_background) {
             // Convert the mat3x3 to mat4x4
             uint8_t priority = class_type;
-            glm::mat4x4 model = glm::translate(glm::mat4x4(1.0f), glm::vec3(get_translation(), -priority * 1e-4));
-            model = glm::scale(model, glm::vec3(get_scale(), 1.0f));
+            glm::vec2 position = get_translation() + size * 0.5f * get_scale();
+            glm::vec2 scale = get_scale() * scaling;
+            glm::mat4x4 model = glm::translate(glm::mat4x4(1.0f), glm::vec3(position, -priority * 1e-4));
+            model = glm::scale(model, glm::vec3(scale, 1.0f));
             model = get_global_viewport_model() * model;
             Renderer::instance->add_renderable(&quad_mesh, model);
         }
@@ -210,10 +213,6 @@ namespace ui {
         material.cull_type = CULL_BACK;
         material.shader = RendererStorage::get_shader("data/shaders/mesh_color.wgsl", material);
 
-        Surface* quad_surface = new Surface();
-        quad_surface->create_quad(size.x, size.y, false);
-
-        quad_mesh.add_surface(quad_surface);
         quad_mesh.set_surface_material_override(quad_mesh.get_surface(0), material);
 
         padding = glm::vec2(GROUP_MARGIN);
@@ -227,7 +226,7 @@ namespace ui {
         // Recreate quad using new size and reposition accordingly
 
         Surface* quad_surface = quad_mesh.get_surface(0);
-        quad_surface->create_quad(size.x, size.y, false);
+        quad_surface->create_quad(size.x, size.y);
 
         Node2D::on_children_changed();
     }
@@ -467,10 +466,6 @@ namespace ui {
         material.priority = class_type;
         material.shader = RendererStorage::get_shader("data/shaders/ui/ui_button.wgsl", material);
 
-        Surface* quad_surface = new Surface();
-        quad_surface->create_quad(size.x, size.y, false);
-
-        quad_mesh.add_surface(quad_surface);
         quad_mesh.set_surface_material_override(quad_mesh.get_surface(0), material);
 
         auto webgpu_context = Renderer::instance->get_webgpu_context();
@@ -561,6 +556,18 @@ namespace ui {
 
     void Button2D::update(float delta_time)
     {
+        // Set new size
+
+        float current_scale = scaling.x;
+
+        if (current_scale != target_scale) {
+            timer += delta_time;
+            scaling = glm::vec2(glm::lerp(current_scale, target_scale, glm::quadraticEaseOut(glm::clamp(timer / 1.5f, 0.0f, 1.0f))));
+        }
+        else {
+            timer = 0.0f;
+        }
+
         Panel2D::update(delta_time);
 
         if (!visibility)
@@ -588,6 +595,8 @@ namespace ui {
         ui_data.is_selected = selected ? 1.f : 0.f;
         text_2d->set_visibility(false);
 
+        target_scale = 1.0f;
+
         update_ui_data();
     }
 
@@ -600,6 +609,10 @@ namespace ui {
             Node::emit_signal(signal, (void*)this);
 
             on_pressed();
+        }
+
+        if (class_type != Node2DClassType::COMBO_BUTTON) {
+            target_scale = 1.1f;
         }
 
         // Update uniforms
@@ -616,7 +629,7 @@ namespace ui {
     TextureButton2D::TextureButton2D(const std::string& sg, const std::string& texture_path, uint8_t parameter_flags, const glm::vec2& pos, const glm::vec2& size)
         : Button2D(sg, parameter_flags, pos, size) {
 
-        class_type = Node2DClassType::BUTTON;
+        class_type = Node2DClassType::TEXTURE_BUTTON;
 
         is_color_button = false;
 
@@ -638,15 +651,9 @@ namespace ui {
         material.cull_type = CULL_BACK;
         material.transparency_type = ALPHA_BLEND;
         material.priority = class_type;
-
         material.diffuse_texture = RendererStorage::get_texture(texture_path, true);
-
         material.shader = RendererStorage::get_shader("data/shaders/ui/ui_button.wgsl", material);
 
-        Surface* quad_surface = new Surface();
-        quad_surface->create_quad(size.x, size.y, false);
-
-        quad_mesh.add_surface(quad_surface);
         quad_mesh.set_surface_material_override(quad_mesh.get_surface(0), material);
 
         auto webgpu_context = Renderer::instance->get_webgpu_context();
@@ -780,6 +787,7 @@ namespace ui {
                 node_2d->ui_data.num_group_items = i == 0 ? ComboIndex::FIRST : (i == child_count - 1 ? ComboIndex::LAST : ComboIndex::MIDDLE);
             }
 
+            node_2d->set_priority(Node2DClassType::COMBO_BUTTON);
             node_2d->set_is_unique_selection(true);
             node_2d->update_ui_data();
         }
@@ -887,10 +895,9 @@ namespace ui {
         material.priority = class_type;
         material.shader = RendererStorage::get_shader("data/shaders/ui/ui_slider.wgsl", material);
 
-        Surface* quad_surface = new Surface();
-        quad_surface->create_quad(this->size.x, this->size.y, false);
+        Surface* quad_surface = quad_mesh.get_surface(0);
+        quad_surface->create_quad(this->size.x, this->size.y);
 
-        quad_mesh.add_surface(quad_surface);
         quad_mesh.set_surface_material_override(quad_mesh.get_surface(0), material);
 
         auto webgpu_context = Renderer::instance->get_webgpu_context();
@@ -985,10 +992,6 @@ namespace ui {
         material.priority = class_type;
         material.shader = RendererStorage::get_shader("data/shaders/ui/ui_color_picker.wgsl", material);
 
-        Surface* quad_surface = new Surface();
-        quad_surface->create_quad(size.x, size.y, false);
-
-        quad_mesh.add_surface(quad_surface);
         quad_mesh.set_surface_material_override(quad_mesh.get_surface(0), material);
 
         auto webgpu_context = Renderer::instance->get_webgpu_context();
