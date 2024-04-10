@@ -70,6 +70,11 @@ void Animation::recalculate_duration() {
 
 // retrieves the TransformTrack object for a specific joint in the Animation
 TransformTrack& Animation::operator[](unsigned int joint) {
+    return get_track(joint);
+}
+
+// retrieves the TransformTrack object for a specific joint in the Animation
+TransformTrack& Animation::get_track(unsigned int joint) {
     for (int i = 0, s = tracks.size(); i < s; ++i) {
         if (tracks[i].get_id() == joint) {
             return tracks[i];

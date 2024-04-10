@@ -356,6 +356,21 @@ Surface* RendererStorage::get_surface(const std::string& mesh_path)
     return new_surface;
 }
 
+void RendererStorage::register_animation(const std::string& animation_path, Animation* animation) {
+    // register in map
+    animations[animation_path] = animation;
+}
+
+Animation* RendererStorage::get_animation(const std::string& animation_path)
+{
+    // check if already loaded
+    std::map<std::string, Animation*>::iterator it = animations.find(animation_path);
+    if (it != animations.end())
+        return it->second;    
+
+    return nullptr;
+}
+
 void RendererStorage::register_basic_surfaces()
 {
     // Quad

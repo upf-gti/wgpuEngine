@@ -94,4 +94,7 @@ public:
 
     static void reload_all_render_pipelines();
 
+    static void register_animation(const std::string& animation_path, Animation* animation);
+    static Animation* get_animation(const std::string& animation_path);
+
 };
