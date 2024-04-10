@@ -1,5 +1,6 @@
 #include "camera.h"
 #include "framework/input.h"
+#include "graphics/renderer.h"
 
 void Camera::set_perspective(float fov, float aspect, float z_near, float z_far)
 {
@@ -25,6 +26,23 @@ void Camera::set_orthographic(float left, float right, float bottom, float top, 
     this->z_far = z_far;
 
     update_projection_matrix();
+}
+
+const glm::vec3& Camera::screen_to_ray(const glm::vec2& mouse_position)
+{
+    WebGPUContext* webgpu_context = Renderer::instance->get_webgpu_context();
+    const glm::mat4x4& view_projection_inv = glm::inverse(get_view_projection());
+
+    glm::vec2 mouse_pos = Input::get_mouse_position();
+    glm::vec3 mouse_pos_ndc;
+    mouse_pos_ndc.x = (mouse_pos.x / webgpu_context->render_width) * 2.0f - 1.0f;
+    mouse_pos_ndc.y = -((mouse_pos.y / webgpu_context->render_height) * 2.0f - 1.0f);
+    mouse_pos_ndc.z = 1.0f;
+
+    glm::vec4 ray_dir = view_projection_inv * glm::vec4(mouse_pos_ndc, 1.0f);
+    ray_dir /= ray_dir.w;
+
+    return ray_dir;
 }
 
 void Camera::look_at(const glm::vec3& eye, const glm::vec3& center, const glm::vec3& up, bool reset_internals)

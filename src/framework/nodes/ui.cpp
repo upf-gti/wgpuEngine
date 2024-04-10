@@ -106,20 +106,11 @@ namespace ui {
             else
             {
                 Camera* camera = Renderer::instance->get_camera();
-                const glm::mat4x4& view_projection_inv = glm::inverse(camera->get_view_projection());
-
-                glm::vec2 mouse_pos = Input::get_mouse_position();
-                glm::vec3 mouse_pos_ndc;
-                mouse_pos_ndc.x = (mouse_pos.x / webgpu_context->render_width) * 2.0f - 1.0f;
-                mouse_pos_ndc.y = -((mouse_pos.y / webgpu_context->render_height) * 2.0f - 1.0f);
-                mouse_pos_ndc.z = 1.0f;
-
-                glm::vec4 ray_dir = view_projection_inv * glm::vec4(mouse_pos_ndc, 1.0f);
-                ray_dir /= ray_dir.w;
+                glm::vec3 ray_dir = camera->screen_to_ray(Input::get_mouse_position());
 
                 // Ray
                 ray_origin = camera->get_eye();
-                ray_direction = glm::normalize(glm::vec3(ray_dir));
+                ray_direction = glm::normalize(ray_dir);
             }
 
             // Quad
