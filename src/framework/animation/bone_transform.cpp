@@ -1,5 +1,4 @@
 #include "bone_transform.h"
-#include <glm/gtx/matrix_decompose.hpp>
 
 #define EPSILON 0.0001f
 // Transforms can be combined in the same way as matrices and quaternions and the effects of two transforms can be combined into one transform

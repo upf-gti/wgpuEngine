@@ -15,10 +15,12 @@ RendererStorage* RendererStorage::instance = nullptr;
 std::map<std::string, Surface*> RendererStorage::surfaces;
 std::map<std::string, Texture*> RendererStorage::textures;
 std::map<std::string, Shader*> RendererStorage::shaders;
+std::map<std::string, Animation*> RendererStorage::animations;
 Texture* RendererStorage::current_skybox_texture = nullptr;
 std::map<std::string, std::vector<std::string>> RendererStorage::shader_library_references;
 std::unordered_map<Material, RendererStorage::sBindingData> RendererStorage::material_bind_groups;
 std::unordered_map<const void*, RendererStorage::sBindingData> RendererStorage::ui_widget_bind_groups;
+
 
 RendererStorage::RendererStorage()
 {

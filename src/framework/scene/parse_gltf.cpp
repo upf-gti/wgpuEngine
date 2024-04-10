@@ -12,9 +12,9 @@
 #include "tiny_gltf.h"
 
 #include "framework/utils/utils.h"
+#include "framework/nodes/camera.h"
 #include "framework/nodes/mesh_instance_3d.h"
 #include "framework/nodes/skeleton_instance_3d.h"
-#include "framework/nodes/camera.h"
 
 #include "graphics/texture.h"
 #include "graphics/shader.h"
@@ -886,14 +886,37 @@ void parse_model_skins(tinygltf::Model& model, std::map<int, int> hierarchy, std
                             child_instance->set_skeleton(skeleton);
                         }
                     }
-                }
-                //skin_map[s]->set_skeleton(skeleton);
-                //skinning_matrices[s].inverseBindMatrices = inverse_bind_matrices;
+                }               
             }
         }
     }
 
 };
+
+void parse_model_animations(tinygltf::Model& model) {
+
+    std::vector<tinygltf::Animation> animations = model.animations;
+    unsigned int num_animations = animations.size();
+
+    std::vector<Animation> result(num_animations);
+
+    for (unsigned int i = 0; i < num_animations; ++i) {
+        
+        result[i].set_name(animations[i].name);
+        // each channel of a glTF file is an animation track
+        unsigned int num_channels = animations[i].channels.size();
+        for (unsigned int j = 0; j < num_channels; ++j) {
+
+            tinygltf::AnimationChannel channel = animations[i].channels[j];
+            int node_id = channel.target_node;//model.nodes[channel.target_node];
+
+            if (channel.target_path == "translation") {
+                VectorTrack& track = result[i][node_id].get_position_track();
+            }
+        }
+
+    }
+}
 
 bool parse_gltf(const char* gltf_path, std::vector<Node3D*>& entities)
 {
@@ -963,6 +986,7 @@ bool parse_gltf(const char* gltf_path, std::vector<Node3D*>& entities)
     }
 
     parse_model_skins(model, hierarchy, skeleton_instances);
+    parse_model_animations(model);
 
     texture_cache.clear();
 

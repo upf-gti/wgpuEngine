@@ -10,10 +10,12 @@
 #include "webgpu_context.h"
 #include "material.h"
 #include "graphics/mesh_instance.h"
+#include "framework/animation/animation.h"
 
 class Surface;
 class Texture;
 class Shader;
+class Animation;
 struct Uniform;
 
 class RendererStorage {
@@ -29,6 +31,7 @@ public:
     static std::map<std::string, std::vector<std::string>> shader_library_references;
     static std::map<std::string, Texture*> textures;
     static std::map<std::string, Surface*> surfaces;
+    static std::map<std::string, Animation*> animations;
 
     static Texture* current_skybox_texture;
 
