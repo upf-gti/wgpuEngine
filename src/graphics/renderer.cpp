@@ -109,6 +109,8 @@ int Renderer::initialize(GLFWwindow* window, bool use_mirror_screen)
         irradiance_texture = RendererStorage::get_texture("data/textures/environments/sky.hdr");
     }
 
+    Shader::set_custom_define("MAX_LIGHTS", MAX_LIGHTS);
+
     init_depth_buffers();
 
     init_lighting_bind_group();
@@ -172,12 +174,15 @@ void Renderer::init_lighting_bind_group()
         lights_buffer.data = {};
     }
 
-    // TODO: use more size (only 1 light now)
-    lights_buffer.data = webgpu_context.create_buffer(sizeof(sLightUniformData), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform, lights_uniform_data.data(), "lights_buffer");
+    lights_buffer.data = webgpu_context.create_buffer(sizeof(sLightUniformData) * MAX_LIGHTS, WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform, &lights_uniform_data[0], "lights_buffer");
     lights_buffer.binding = 3;
-    lights_buffer.buffer_size = sizeof(sLightUniformData);
+    lights_buffer.buffer_size = sizeof(sLightUniformData) * MAX_LIGHTS;
 
-    std::vector<Uniform*> uniforms = { &irradiance_texture_uniform, &brdf_lut_uniform, &ibl_sampler_uniform, &lights_buffer };
+    num_lights_buffer.data = webgpu_context.create_buffer(sizeof(int), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform, &num_lights, "num_lights_buffer");
+    num_lights_buffer.binding = 4;
+    num_lights_buffer.buffer_size = sizeof(int);
+
+    std::vector<Uniform*> uniforms = { &irradiance_texture_uniform, &brdf_lut_uniform, &ibl_sampler_uniform, &lights_buffer, &num_lights_buffer };
     lighting_bind_group = webgpu_context.create_bind_group(uniforms, RendererStorage::get_shader("data/shaders/mesh_pbr.wgsl"), 3);
 }
 
@@ -244,6 +249,8 @@ uint8_t Renderer::get_msaa_count()
 
 void Renderer::prepare_instancing()
 {
+    update_lights();
+
     // Get all surfaces from entity meshes
     for (auto render_list_data : render_entity_list)
     {
@@ -493,31 +500,29 @@ void Renderer::clear_renderables()
     for (int i = 0; i < RENDER_LIST_SIZE; ++i) {
         render_list[i].clear();
     }
+
+    for (int i = 0; i < MAX_LIGHTS; ++i) {
+        lights_uniform_data[i] = {};
+    }
+
+    num_lights = 0;
 }
 
 void Renderer::update_lights()
 {
-    // recreate new uniform data
+    // update uniform data
 
-    lights_uniform_data.clear();
+    uint64_t buffer_size = sizeof(sLightUniformData) * num_lights;
 
-    for (auto light : lights) {
-        lights_uniform_data.push_back(light->get_uniform_data());
-    }
+    webgpu_context.update_buffer(std::get<WGPUBuffer>(lights_buffer.data), 0, &lights_uniform_data[0], buffer_size);
 
-    // WIP: using 1 light by now
-    uint64_t buffer_size = sizeof(sLightUniformData);// *lights_uniform_data.size();
-
-    webgpu_context.update_buffer(std::get<WGPUBuffer>(lights_buffer.data), 0, lights_uniform_data.data(), buffer_size);
+    webgpu_context.update_buffer(std::get<WGPUBuffer>(num_lights_buffer.data), 0, &num_lights, sizeof(int));
 }
 
 void Renderer::add_light(Light3D* new_light)
 {
-    lights.push_back(new_light);
-
-    lights_uniform_data.push_back(new_light->get_uniform_data());
-
-    update_lights();
+    lights_uniform_data[num_lights] = new_light->get_uniform_data();
+    num_lights++;
 }
 
 void Renderer::resize_window(int width, int height)

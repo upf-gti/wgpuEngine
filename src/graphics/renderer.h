@@ -18,6 +18,8 @@
 
 #include "graphics/debug/renderdoc_capture.h"
 
+#define MAX_LIGHTS 8
+
 class Camera;
 
 class Renderer {
@@ -111,10 +113,11 @@ protected:
 
     // Direct lighting
 
-    std::vector<Light3D*> lights;
-    std::vector<sLightUniformData> lights_uniform_data;
+    sLightUniformData lights_uniform_data[MAX_LIGHTS];
+    int num_lights = 0;
 
     Uniform lights_buffer;
+    Uniform num_lights_buffer;
 
 public:
 

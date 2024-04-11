@@ -20,14 +20,9 @@ void SpotLight3D::render_gui()
 
     if (ImGui::TreeNodeEx("SpotLight3D"))
     {
-        changed |= ImGui::SliderFloat("Range", &range, 0.f, 10.0f);
-        changed |= ImGui::SliderFloat("Inner Angle", &inner_cone_angle, 0.f, pi_2);
-        changed |= ImGui::SliderFloat("Outer Angle", &outer_cone_angle, 0.f, pi_2);
-
-        if (changed)
-        {
-            Renderer::instance->update_lights();
-        }
+        ImGui::SliderFloat("Range", &range, -1.f, 10.0f);
+        ImGui::SliderFloat("Inner Angle", &inner_cone_angle, 0.f, pi_2);
+        ImGui::SliderFloat("Outer Angle", &outer_cone_angle, 0.f, pi_2);
 
         ImGui::TreePop();
     }
@@ -47,11 +42,6 @@ sLightUniformData SpotLight3D::get_uniform_data()
         .inner_cone_cos = cosf(inner_cone_angle),
         .outer_cone_cos = cosf(outer_cone_angle)
     };
-}
-
-void SpotLight3D::set_range(float value)
-{
-    this->range = value;
 }
 
 void SpotLight3D::set_inner_cone_angle(float value)

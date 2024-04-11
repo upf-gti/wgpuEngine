@@ -17,17 +17,12 @@ void Light3D::render_gui()
     {
         bool changed = false;
 
-        changed |= ImGui::ColorEdit3("Color", &color[0]);
-        changed |= ImGui::SliderFloat("Intensity", &intensity, 0.f, 10.0f);
-        changed |= ImGui::Checkbox("Cast Shadows", &cast_shadows);
+        ImGui::ColorEdit3("Color", &color[0]);
+        ImGui::SliderFloat("Intensity", &intensity, 0.f, 100.0f);
+        ImGui::Checkbox("Cast Shadows", &cast_shadows);
 
         if (cast_shadows) {
-            changed |= ImGui::SliderFloat("Shadow Bias", &shadow_bias, 0.0f, 0.001f);
-        }
-
-        if (changed)
-        {
-            Renderer::instance->update_lights();
+            ImGui::SliderFloat("Shadow Bias", &shadow_bias, 0.0f, 0.001f);
         }
 
         ImGui::TreePop();
@@ -42,6 +37,11 @@ void Light3D::set_color(glm::vec3 color)
 void Light3D::set_intensity(float value)
 {
     this->intensity = value;
+}
+
+void Light3D::set_range(float value)
+{
+    this->range = value;
 }
 
 void Light3D::set_fading_enabled(bool value)

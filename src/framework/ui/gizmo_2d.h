@@ -15,5 +15,5 @@ public:
     void set_mode(ImGuizmo::MODE new_mode);
     void set_operation(ImGuizmo::OPERATION new_operation);
 
-    void render(const glm::mat4x4& m_view, const glm::mat4x4& m_proj, glm::mat4x4& m_model);
+    bool render(const glm::mat4x4& m_view, const glm::mat4x4& m_proj, glm::mat4x4& m_model);
 };

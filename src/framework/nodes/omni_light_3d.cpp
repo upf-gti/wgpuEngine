@@ -18,12 +18,7 @@ void OmniLight3D::render_gui()
 
     if (ImGui::TreeNodeEx("OmniLight3D"))
     {
-        changed |= ImGui::SliderFloat("Range", &range, 0.f, 10.0f);
-
-        if (changed)
-        {
-            Renderer::instance->update_lights();
-        }
+        ImGui::SliderFloat("Range", &range, -1.f, 10.0f);
 
         ImGui::TreePop();
     }
@@ -40,9 +35,4 @@ sLightUniformData OmniLight3D::get_uniform_data()
         .intensity = intensity,
         .range = range
     };
-}
-
-void OmniLight3D::set_range(float value)
-{
-    this->range = value;
 }

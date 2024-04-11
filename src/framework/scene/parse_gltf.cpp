@@ -15,6 +15,9 @@
 #include "framework/nodes/mesh_instance_3d.h"
 #include "framework/nodes/skeleton_instance_3d.h"
 #include "framework/nodes/camera.h"
+#include "framework/nodes/directional_light_3d.h"
+#include "framework/nodes/spot_light_3d.h"
+#include "framework/nodes/omni_light_3d.h"
 
 #include "graphics/texture.h"
 #include "graphics/shader.h"
@@ -467,7 +470,34 @@ void read_mesh(tinygltf::Model& model, tinygltf::Mesh& mesh, Node3D* entity, std
     }
 }
 
-Node3D* create_node_entity(tinygltf::Node& node) {
+void create_light(tinygltf::Light& gltf_light, Light3D* light_node) {
+
+    light_node->set_intensity(gltf_light.intensity);
+
+    // Blender exports 0.0 if no custom distance is used.. so keep -1 as range
+    if (gltf_light.range != 0.0f) {
+        light_node->set_range(gltf_light.range);
+    }
+    if (gltf_light.color.size()) {
+        light_node->set_color({ gltf_light.color[0], gltf_light.color[1], gltf_light.color[2] });
+    }
+
+    if (light_node->get_type() == LIGHT_SPOT) {
+        static_cast<SpotLight3D*>(light_node)->set_inner_cone_angle(gltf_light.spot.innerConeAngle);
+        static_cast<SpotLight3D*>(light_node)->set_outer_cone_angle(gltf_light.spot.outerConeAngle);
+    }
+    else if (light_node->get_type() == LIGHT_OMNI) {
+        // ..
+    }
+    else if (light_node->get_type() == LIGHT_DIRECTIONAL) {
+        // ..
+    }
+    else {
+        assert(0);
+    }
+}
+
+Node3D* create_node_entity(tinygltf::Node& node, tinygltf::Model& model) {
 
     Node3D* new_node = nullptr;
 
@@ -480,6 +510,23 @@ Node3D* create_node_entity(tinygltf::Node& node) {
     }
     else if (node.camera >= 0) {
         new_node = new EntityCamera();
+    }
+    else if (node.light >= 0) {
+
+        tinygltf::Light& gltf_light = model.lights[node.light];
+        std::string light_type = gltf_light.type;
+
+        if (light_type == "spot") {
+            new_node = new SpotLight3D();
+        }
+        else if (light_type == "point") {
+            new_node = new OmniLight3D();
+        }
+        else {
+            new_node = new DirectionalLight3D();
+        }
+
+        create_light(gltf_light, static_cast<Light3D*>(new_node));
     }
     else {
         new_node = new Node3D();
@@ -496,7 +543,6 @@ void parse_model_nodes(tinygltf::Model& model, int id, Node3D* entity, std::map<
 
     if ((node.mesh >= 0) && (node.mesh < model.meshes.size())) {
         read_mesh(model, model.meshes[node.mesh], entity, texture_cache);
-
     }
 
     // Set model matrix
@@ -540,12 +586,11 @@ void parse_model_nodes(tinygltf::Model& model, int id, Node3D* entity, std::map<
         entity->set_model(translation_matrix * glm::toMat4(rotation_quat) * scale_matrix);
     }
 
-
     // Parse children
     for (size_t i = 0; i < node.children.size(); i++) {
         assert((node.children[i] >= 0) && (node.children[i] < model.nodes.size()));
         bool is_joint = false;
-        Node3D* child_node = create_node_entity(model.nodes[node.children[i]]);
+        Node3D* child_node = create_node_entity(model.nodes[node.children[i]], model);
 
         if (model.nodes[node.children[i]].skin >= 0) {
             SkeletonInstance3D* e = new SkeletonInstance3D();
@@ -556,8 +601,6 @@ void parse_model_nodes(tinygltf::Model& model, int id, Node3D* entity, std::map<
             e->add_child(child_node);
 
             skeleton_instances.push_back(e);
-            
-
         }
         else {
 
@@ -573,8 +616,8 @@ void parse_model_nodes(tinygltf::Model& model, int id, Node3D* entity, std::map<
                 entity->add_child(child_node);
             }
         }
-        parse_model_nodes(model, node.children[i], child_node, texture_cache, hierarchy, skeleton_instances);
 
+        parse_model_nodes(model, node.children[i], child_node, texture_cache, hierarchy, skeleton_instances);
     }
 };
 
@@ -734,7 +777,6 @@ bool parse_gltf(const char* gltf_path, std::vector<Node3D*>& entities)
         spdlog::error(err);
     }
 
-
     const tinygltf::Scene* scene = nullptr;
 
     if (model.defaultScene >= 0) {
@@ -748,18 +790,26 @@ bool parse_gltf(const char* gltf_path, std::vector<Node3D*>& entities)
 
     int entity_name_idx = 0;
     std::map<int, int> hierarchy;
+
     std::vector<SkeletonInstance3D*> skeleton_instances;
 
-    for (size_t i = 0; i < scene->nodes.size(); ++i) {
+    std::vector<Light3D*> lights;
+
+    for (size_t i = 0; i < scene->nodes.size(); ++i)
+    {
         assert((scene->nodes[i] >= 0) && (scene->nodes[i] < model.nodes.size()));
 
         tinygltf::Node node = model.nodes[scene->nodes[i]];
 
-        Node3D* entity = create_node_entity(node);
+        Node3D* entity = create_node_entity(node, model);
+
+        // Add node as light
+        Light3D* light = dynamic_cast<Light3D*>(entity);
+        if (light) {
+            lights.push_back(light);
+        }
 
         parse_model_nodes(model, scene->nodes[i], entity, texture_cache, hierarchy, skeleton_instances);
-
-       
 
         if (entity->get_name().empty()) {
             entity->set_name(path.stem().string() + "_" + std::to_string(entity_name_idx));

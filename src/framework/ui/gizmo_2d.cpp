@@ -14,7 +14,7 @@ void Gizmo2D::set_operation(ImGuizmo::OPERATION new_operation)
     this->operation = new_operation;
 }
 
-void Gizmo2D::render(const glm::mat4x4& m_view, const glm::mat4x4& m_proj, glm::mat4x4& m_model)
+bool Gizmo2D::render(const glm::mat4x4& m_view, const glm::mat4x4& m_proj, glm::mat4x4& m_model)
 {
     if (Input::was_key_pressed(GLFW_KEY_1))
         operation = ImGuizmo::TRANSLATE;
@@ -25,6 +25,6 @@ void Gizmo2D::render(const glm::mat4x4& m_view, const glm::mat4x4& m_proj, glm::
 
     ImGuiIO& io = ImGui::GetIO();
     ImGuizmo::SetRect(0, 0, io.DisplaySize.x, io.DisplaySize.y);
-    ImGuizmo::Manipulate(glm::value_ptr(m_view), glm::value_ptr(m_proj),
-        operation, mode, glm::value_ptr(m_model));
+
+    return ImGuizmo::Manipulate(glm::value_ptr(m_view), glm::value_ptr(m_proj), operation, mode, glm::value_ptr(m_model));
 }

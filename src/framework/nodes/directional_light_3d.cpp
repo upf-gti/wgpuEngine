@@ -18,6 +18,6 @@ sLightUniformData DirectionalLight3D::get_uniform_data()
         .type = type,
         .color = color,
         .intensity = intensity,
-        .direction = -get_global_model()[2],
+        .direction = -get_global_model()[2]
     };
 }
