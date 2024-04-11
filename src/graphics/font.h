@@ -4,11 +4,12 @@
 #include "framework/utils/json_utils.h"
 #include "framework/math.h"
 #include "font_common.h"
-#include "graphics/texture.h"
 
 #include <map>
 #include <string>
 #include <vector>
+
+class Texture;
 
 class Font {
 

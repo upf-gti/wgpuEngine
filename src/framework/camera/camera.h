@@ -33,6 +33,8 @@ public:
 
     float get_speed() const { return speed; }
 
+    const glm::mat4x4& get_view() const { return view; }
+    const glm::mat4x4& get_projection() const { return projection; }
     const glm::mat4x4& get_view_projection() const { return view_projection; }
 
     void set_speed(float speed) { this->speed = speed; }

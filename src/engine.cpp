@@ -11,6 +11,7 @@
 #include "imgui.h"
 #include "backends/imgui_impl_wgpu.h"
 #include "backends/imgui_impl_glfw.h"
+#include "framework/utils/ImGuizmo.h"
 
 #include <GLFW/glfw3.h>
 
@@ -127,6 +128,9 @@ void Engine::on_frame()
     ImGui_ImplWGPU_NewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
+
+    ImGuizmo::SetOrthographic(false);
+    ImGuizmo::BeginFrame();
 
     render();
 
