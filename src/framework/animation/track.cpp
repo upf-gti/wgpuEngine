@@ -51,6 +51,16 @@ Track<T, N>::Track() {
 }
 
 template<typename T, int N>
+unsigned int Track<T, N>::get_id() {
+    return id;
+}
+
+template<typename T, int N>
+void Track<T, N>::set_id(unsigned int index) {
+    id = index;
+}
+
+template<typename T, int N>
 float Track<T, N>::get_start_time() {
     return frames[0].time;
 }

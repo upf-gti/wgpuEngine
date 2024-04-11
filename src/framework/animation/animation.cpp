@@ -7,20 +7,18 @@ Animation::Animation() {
     looping = true;
 }
 
-float Animation::sample(Pose& outPose, float time) {
+float Animation::sample(std::vector<float>& out, float time) {
     if (get_duration() == 0.0f) {
         return 0.0f;
     }
     time = adjust_time_to_fit_range(time);
     unsigned int size = tracks.size();
     for (unsigned int i = 0; i < size; ++i) {
-        // get the joint ID of the  track
-        unsigned int j = tracks[i].get_id(); // Joint
-        Transform local = outPose.get_local_transform(j);
+        // get the ID of the  track
         // sample the track
-        Transform animated = tracks[i].sample(local, time, looping);
+        float animated = tracks[i].sample(time, looping);
         // assign the sampled value back to the Pose reference
-        outPose.set_local_transform(j, animated);
+        out[i] = animated;
     }
     return time;
 }
@@ -53,7 +51,7 @@ void Animation::recalculate_duration() {
     bool endSet = false;
     unsigned int tracksSize = tracks.size();
     for (unsigned int i = 0; i < tracksSize; ++i) {
-        if (tracks[i].is_valid()) {
+        if (tracks[i].size()) {
             float minstart_time = tracks[i].get_start_time();
             float max_end_time = tracks[i].get_end_time();
             if (minstart_time < start_time || !startSet) {
@@ -68,21 +66,21 @@ void Animation::recalculate_duration() {
     }
 }
 
-// retrieves the TransformTrack object for a specific joint in the Animation
-TransformTrack& Animation::operator[](unsigned int joint) {
-    return get_track(joint);
+// retrieves the Track object for a specific id in the Animation
+ScalarTrack& Animation::operator[](unsigned int id) {
+    return get_track(id);
 }
 
-// retrieves the TransformTrack object for a specific joint in the Animation
-TransformTrack& Animation::get_track(unsigned int joint) {
+// retrieves the Track object for a specific id in the Animation
+ScalarTrack& Animation::get_track(unsigned int id) {
     for (int i = 0, s = tracks.size(); i < s; ++i) {
-        if (tracks[i].get_id() == joint) {
+        if (tracks[i].get_id() == id) {
             return tracks[i];
         }
     }
     // if no qualifying track is found, a new one is created and returned
-    tracks.push_back(TransformTrack());
-    tracks[tracks.size() - 1].set_id(joint);
+    tracks.push_back(ScalarTrack());
+    tracks[tracks.size() - 1].set_id(id);
     return tracks[tracks.size() - 1];
 }
 

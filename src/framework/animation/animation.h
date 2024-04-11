@@ -1,12 +1,12 @@
 #pragma once
 #include <vector>
 #include <string>
-#include "transform_track.h"
-#include "pose.h"
+#include "track.h"
 
 class Animation {
 protected:
-    std::vector<TransformTrack> tracks;
+
+    std::vector<ScalarTrack> tracks;
     std::string name;
     float start_time;
     float end_time;
@@ -17,18 +17,18 @@ protected:
 
 public:
     Animation();
-
+    ~Animation();
     //gets joint Id based for a specific track index
     unsigned int get_id_at_index(unsigned int index);
     //sets joint ID based on the index of the joint in the clip
     void set_id_at_index(unsigned int idx, unsigned int id);
     unsigned int size();
 
-    //samples the animation clip at the provided time into the Pose reference
-    float sample(Pose& outPose, float inTime);
+    //samples the animation clip at the provided time into the out reference
+    float sample(std::vector<float> &out, float inTime);
     //returns a transform track for the specified joint
-    TransformTrack& operator[](unsigned int index);
-    TransformTrack& get_track(unsigned int index);
+    ScalarTrack& operator[](unsigned int index);
+    ScalarTrack& get_track(unsigned int index);
 
     //sets the start/end time of the animation clip based on the tracks that make up the clip
     void recalculate_duration();
@@ -41,3 +41,5 @@ public:
     bool get_looping();
     void set_looping(bool in_looping);
 };
+
+

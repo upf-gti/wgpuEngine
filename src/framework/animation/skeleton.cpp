@@ -2,16 +2,30 @@
 
 Skeleton::Skeleton() {}
 
-Skeleton::Skeleton(const Pose& rest, const Pose& bind, const std::vector<std::string>& names) {
-	set(rest, bind, names);
+Skeleton::Skeleton(const Pose& rest, const Pose& bind, const std::vector<std::string>& names, const std::vector<unsigned int>& indices) {
+	set(rest, bind, names, indices);
 }
 
-void Skeleton::set(const Pose& rest, const Pose& bind, const std::vector<std::string>& names) {
+void Skeleton::set(const Pose& rest, const Pose& bind, const std::vector<std::string>& names, const std::vector<unsigned int>& indices) {
 	rest_pose = rest;
 	bind_pose = bind;
     current_pose = rest;
 	joint_names = names;
+    if (joint_names.size() != indices.size()) {
+        joint_ids.resize(joint_names.size());
+        for (unsigned int i = 0; i < joint_names.size(); i++) {
+            joint_ids[i] = i;
+        }
+    }
+    else {
+        joint_ids = indices;
+    }
+
 	update_inv_bind_pose();
+}
+
+Skeleton::~Skeleton() {
+
 }
 
 Pose& Skeleton::get_bind_pose() {
@@ -41,6 +55,15 @@ std::vector<std::string>& Skeleton::get_joint_names() {
 std::string& Skeleton::get_joint_name(unsigned int id) {
 	return joint_names[id];
 }
+
+std::vector<unsigned int>& Skeleton::get_joint_indices() {
+    return joint_ids;
+}
+
+unsigned int& Skeleton::get_joint_indice(unsigned int id) {
+    return joint_ids[id];
+}
+
 
 void Skeleton::update_inv_bind_pose() {
 	unsigned int size = bind_pose.size();

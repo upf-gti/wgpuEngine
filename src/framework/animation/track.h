@@ -22,10 +22,13 @@ enum class Interpolation {
 template<typename T, int N>
 class Track {
 protected:
+    unsigned int id = 0; // id
     std::vector<Frame<N>> frames;
     Interpolation interpolation; // interpolation type
 public:
     Track();
+    unsigned int get_id();
+    void set_id(unsigned int id);
     void resize(unsigned int size);
     unsigned int size();
     Interpolation get_interpolation();

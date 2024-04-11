@@ -15,6 +15,8 @@
 #include "framework/nodes/camera.h"
 #include "framework/nodes/mesh_instance_3d.h"
 #include "framework/nodes/skeleton_instance_3d.h"
+#include "framework/nodes/animation_player.h"
+#include "framework/animation/skeletal_animation.h"
 
 #include "graphics/texture.h"
 #include "graphics/shader.h"
@@ -701,12 +703,15 @@ void parse_model_skins(tinygltf::Model& model, std::map<int, int> hierarchy, std
 
                 std::vector<glm::mat4> inverse_bind_matrices(accessor.count);
                 std::vector<std::string> joint_names;
+                std::vector<unsigned int> joint_indices;
 
                 //for each joint in the skin, get the inverse bind pose matrix
                 for (size_t i = 0; i < skin.joints.size(); i++) {
 
                     tinygltf::Node node = model.nodes[skin.joints[i]];
                     joint_names.push_back(node.name);
+                    joint_indices.push_back(skin.joints[i]);
+
                     if (!node.matrix.empty())
                     {
                         glm::mat4x4 model_matrix;
@@ -873,10 +878,11 @@ void parse_model_skins(tinygltf::Model& model, std::map<int, int> hierarchy, std
                 }
 
 
-                Skeleton *skeleton = new Skeleton(rest_pose, bind_pose, joint_names);
+                Skeleton *skeleton = new Skeleton(rest_pose, bind_pose, joint_names, joint_indices);
                 for (auto instance : skeleton_instances) {
 
                     if (instance->skin == s) {
+                        RendererStorage::register_skeleton(instance->get_name(), skeleton);
 
                         instance->set_skeleton(skeleton);
 
@@ -1017,47 +1023,97 @@ void track_from_channel(Track<T, N>& result, tinygltf::AnimationChannel channel,
     }
 }
 
-void parse_model_animations(tinygltf::Model& model) {
+void parse_model_animations(tinygltf::Model& model, std::vector<SkeletonInstance3D*> skeleton_instances, AnimationPlayer* player) {
 
     std::vector<tinygltf::Animation> animations = model.animations;
     unsigned int num_animations = animations.size();
 
     std::vector<Animation*> result(num_animations);
+    std::string root_node = "";
 
     for (unsigned int i = 0; i < num_animations; ++i) {
+       
+        Skeleton* skeleton = nullptr;
+        SkeletalAnimation* sanimation = nullptr;
+        
+        for (auto & instance : skeleton_instances) {
+            std::vector<unsigned int> indices = instance->get_skeleton()->get_joint_indices();
 
-        result[i] = new Animation();
+            for (unsigned int s = 0; s < indices.size(); s++) {
+                if (indices[s] != animations[i].channels[0].target_node)
+                    continue;
+                skeleton = instance->get_skeleton();
+                sanimation = new SkeletalAnimation();
+                root_node = instance->get_name();
+                break;
+            }
+            if (skeleton)
+                break;
+        }
+        if(!result[i])
+            result[i] = new Animation();
 
-        result[i]->set_name(animations[i].name);
+        /*for (auto const& instance : RendererStorage::skeletons)
+        {
+            std::string name = instance.first;
+            std::vector<unsigned int> indices = instance.second->get_joint_indices();
+            for (unsigned int s = 0; s < indices.size(); s++) {
+                if (indices[s] != animations[i].channels[0].target_node)
+                    continue;
+                skeleton = instance.second;
+                result[i] = new SkeletalAnimation();
+                root_node = instance.first;
+                break;
+            }
+            if (skeleton)
+                break;
+        }*/
+            // TO DO: if there isn't a skeleton, check if it's another type of animation
+        
+
         // each channel of a glTF file is an animation track
         unsigned int num_channels = animations[i].channels.size();
         for (unsigned int j = 0; j < num_channels; ++j) {
-
+            
             tinygltf::AnimationChannel channel = animations[i].channels[j];
             tinygltf::AnimationSampler sampler = animations[i].samplers[channel.sampler];
-            int node_id = channel.target_node;//model.nodes[channel.target_node]; //change to skin joint indices
+            int node_id = channel.target_node;//model.nodes[channel.target_node]; //change to skin joint indices            
 
-            if (channel.target_path == "translation") {
-                VectorTrack& track = result[i]->get_track(node_id).get_position_track();
-                track_from_channel<glm::vec3, 3>(track, channel, sampler, model);
-            }
-            else if (channel.target_path == "scale") {
-                VectorTrack& track = result[i]->get_track(node_id).get_scale_track();
-                track_from_channel<glm::vec3, 3>(track, channel, sampler, model);
+            if (skeleton) {
+                if (channel.target_path == "translation") {
+                    result[i]->get_track(node_id);
+                    VectorTrack& track = sanimation->get_track(node_id).get_position_track();
+                    track_from_channel<glm::vec3, 3>(track, channel, sampler, model);
+                }
+                else if (channel.target_path == "scale") {
+                    VectorTrack& track = sanimation->get_track(node_id).get_scale_track();
+                    track_from_channel<glm::vec3, 3>(track, channel, sampler, model);
 
+                }
+                else if (channel.target_path == "rotation") {
+                    QuaternionTrack& track = sanimation->get_track(node_id).get_rotation_track();
+                    track_from_channel<glm::quat, 4>(track, channel, sampler, model);
+                }
+                result[i] = sanimation;
             }
-            else if (channel.target_path == "rotation") {
-                QuaternionTrack& track = result[i]->get_track(node_id).get_rotation_track();
-                track_from_channel<glm::quat, 4>(track, channel, sampler, model);
-            }
-
-            // TO DO: weight tracks
+            else {               
+                if (channel.target_path == "weight") {
+                    ScalarTrack& track = result[i]->get_track(node_id);
+                    track_from_channel<float, 1>(track, channel, sampler, model);
+                }
+            }            
 
         } // End num channels loop
+        result[i]->set_name(animations[i].name);
         result[i]->recalculate_duration();
-        RendererStorage::register_animation(result[i]->get_name(), result[i]);
+        RendererStorage::register_animation(result[i]->get_name(), result[i], root_node, "skeleton");
+        if (i == 0) {
+           
+            player->play(result[0]->get_name());
+        }
     } // End num clips loop
-
+    //Node3D* node = dynamic_cast<Node3D*>(RendererStorage::get_skeleton(RendererStorage::get_animation(result[0]->get_name())->node_path));
+   
 }
 
 bool parse_gltf(const char* gltf_path, std::vector<Node3D*>& entities)
@@ -1115,9 +1171,7 @@ bool parse_gltf(const char* gltf_path, std::vector<Node3D*>& entities)
 
         Node3D* entity = create_node_entity(node);
 
-        parse_model_nodes(model, scene->nodes[i], entity, texture_cache, hierarchy, skeleton_instances);
-
-       
+        parse_model_nodes(model, scene->nodes[i], entity, texture_cache, hierarchy, skeleton_instances);       
 
         if (entity->get_name().empty()) {
             entity->set_name(path.stem().string() + "_" + std::to_string(entity_name_idx));
@@ -1127,8 +1181,16 @@ bool parse_gltf(const char* gltf_path, std::vector<Node3D*>& entities)
         entities.push_back(entity);
     }
 
-    parse_model_skins(model, hierarchy, skeleton_instances);
-    parse_model_animations(model);
+    if (model.skins.size()) {
+        parse_model_skins(model, hierarchy, skeleton_instances);
+    }
+
+    if (model.animations.size()) {
+        AnimationPlayer* player = new AnimationPlayer();
+        entities[entities.size() - 1]->add_child(player);
+        player->set_root_node(entities[entities.size() - 1]);
+        parse_model_animations(model, skeleton_instances, player);
+    }
 
     texture_cache.clear();
 
