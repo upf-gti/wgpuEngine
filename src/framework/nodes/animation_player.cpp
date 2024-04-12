@@ -1,6 +1,6 @@
 #include "animation_player.h"
 
-void AnimationPlayer::set_next_animation(const std::string animation_name)
+void AnimationPlayer::set_next_animation(const std::string& animation_name)
 {
     animations_queue.push_back(animation_name);
 }
@@ -52,7 +52,7 @@ std::vector<std::string> AnimationPlayer::get_queue()
     return animations_queue;
 }
 
-void AnimationPlayer::queue(std::string animation_name)
+void AnimationPlayer::queue(const std::string& animation_name)
 {
     animations_queue.push_back(animation_name);
 }
@@ -73,7 +73,7 @@ bool AnimationPlayer::is_playing()
     return playing;
 }
 
-void AnimationPlayer::play(std::string animation_name, float custom_blend, float custom_speed, bool from_end)
+void AnimationPlayer::play(const std::string& animation_name, float custom_blend, float custom_speed, bool from_end)
 {
     if (animation_name != "") {
         current_animation = animation_name;
@@ -119,9 +119,8 @@ void AnimationPlayer::update(float delta_time) {
 
     if (playing) {
         if (type == "skeleton") {
-          /*  Skeleton* skeleton = (static_cast<SkeletonInstance3D*>(node))->get_skeleton();
-            playback = (static_cast<SkeletalAnimation*>(animation))->sample(skeleton->get_current_pose(), delta_time * speed);*/
-
+           /* Skeleton* skeleton = (static_cast<SkeletonInstance3D*>(node))->get_skeleton();
+            playback = animation->sample(skeleton->get_current_pose(), delta_time * speed);*/
         }
     }
     Node::update(delta_time);

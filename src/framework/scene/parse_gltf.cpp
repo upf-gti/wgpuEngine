@@ -20,8 +20,6 @@
 #include "framework/nodes/spot_light_3d.h"
 #include "framework/nodes/omni_light_3d.h"
 
-#include "framework/animation/skeletal_animation.h"
-
 #include "graphics/texture.h"
 #include "graphics/shader.h"
 #include "graphics/renderer_storage.h"
@@ -917,7 +915,6 @@ void parse_model_skins(tinygltf::Model& model, std::map<int, int> hierarchy, std
                     bind_pose.set_local_transform(i, current);
                 }
 
-
                 Skeleton *skeleton = new Skeleton(rest_pose, bind_pose, joint_names, joint_indices);
                 for (auto instance : skeleton_instances) {
 
@@ -939,7 +936,7 @@ void parse_model_skins(tinygltf::Model& model, std::map<int, int> hierarchy, std
 
 };
 
-void get_scalar_values(std::vector<float>& out, unsigned int component_size, const tinygltf::Model& model, int accessor_idx) {
+void get_scalar_values(std::vector<T>& out, unsigned int component_size, const tinygltf::Model& model, int accessor_idx) {
     uint32_t size;
     const tinygltf::Accessor& accessor = model.accessors[accessor_idx];
     const tinygltf::BufferView& buffer_view = model.bufferViews[accessor.bufferView];
@@ -952,7 +949,7 @@ void get_scalar_values(std::vector<float>& out, unsigned int component_size, con
     case TINYGLTF_COMPONENT_TYPE_FLOAT:
         size = component_size * sizeof(float);
         break;
-    case TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE:
+    /*case TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE:
         size = component_size * sizeof(uint8_t);
         break;
     case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT:
@@ -960,7 +957,7 @@ void get_scalar_values(std::vector<float>& out, unsigned int component_size, con
         break;
     case TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT:
         size = component_size * sizeof(uint32_t);
-        break;
+        break;*/
     default:
         assert(0);
     }
@@ -987,23 +984,57 @@ void get_scalar_values(std::vector<float>& out, unsigned int component_size, con
     out.resize((buffer_end - buffer_start) / final_stride * component_size);
     size_t id = 0;
 
+    
     for (size_t i = buffer_start; i < buffer_end; i += final_stride) {
         switch (accessor.componentType) {
         case TINYGLTF_COMPONENT_TYPE_FLOAT:
-            for (size_t j = 0; j < component_size; j+=4) {
-                out[id + j] = *(float*)&buffer.data[i + j];
+            switch (component_size)
+            {
+            case 1:
+                out[id] = *(float*)&buffer.data[i];
+                break;
+            case 3: // translate/scale
+                glm::vec3 v = { *(float*)&buffer.data[i] , *(float*)&buffer.data[i + 4] , *(float*)&buffer.data[i + 8] };
+                out[id] = v;
+                break;
+            case 4: // rotation (quat)
+                glm::quat q = { *(float*)&buffer.data[i] , *(float*)&buffer.data[i + 4] , *(float*)&buffer.data[i + 8], *(float*)&buffer.data[i + 12] };
+                out[id] = q;
+                break;
             }
             break;
-        case TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE:
-            for (size_t j = 0; j < component_size; j++) {
-                out[id + j] = *(uint8_t*)&buffer.data[i + j];
-            }
-            break;
-        case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT:
-            for (size_t j = 0; j < component_size; j+=2) {
-                out[id + j] = *(uint16_t*)&buffer.data[i + j];
-            }
-            break;
+        //case TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE:
+        //    switch (component_size)
+        //    {
+        //    case 1:
+        //        out[id] = *(uint8_t*)&buffer.data[i];
+        //        break;
+        //    case 3: // translate/scale
+        //        glm::vec3 v = { *(uint8_t*)&buffer.data[i] , *(uint8_t*)&buffer.data[i + 1] , *(uint8_t*)&buffer.data[i + 2] };
+        //        out[id] = v;
+        //        break;
+        //    case 4: // rotation (quat)
+        //        glm::quat q = { *(uint8_t*)&buffer.data[i] , *(uint8_t*)&buffer.data[i + 1] , *(uint8_t*)&buffer.data[i + 2], *(uint8_t*)&buffer.data[i + 3] };
+        //        out[id] = q;
+        //        break;
+        //    }
+        //    break;
+        //case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT:
+        //    switch (component_size)
+        //    {
+        //    case 1:
+        //        out[id] = *(uint16_t*)&buffer.data[i];
+        //        break;
+        //    case 3: // translate/scale
+        //        glm::vec3 v = { *(uint16_t*)&buffer.data[i] , *(uint16_t*)&buffer.data[i + 2] , *(uint16_t*)&buffer.data[i + 4] };
+        //        out[id] = v;
+        //        break;
+        //    case 4: // rotation (quat)
+        //        glm::quat q = { *(uint16_t*)&buffer.data[i] , *(uint16_t*)&buffer.data[i + 2] , *(uint16_t*)&buffer.data[i + 4], *(uint16_t*)&buffer.data[i + 6] };
+        //        out[id] = q;
+        //        break;
+        //    }
+        //    break;
         default:
             assert(0);
         }
@@ -1012,27 +1043,26 @@ void get_scalar_values(std::vector<float>& out, unsigned int component_size, con
 }
 
 // converts a glTF animation channel into a VectorTrack or a QuaternionTrack
-template<typename T, int N>
-void track_from_channel(Track<T, N>& result, tinygltf::AnimationChannel channel, tinygltf::AnimationSampler sampler, const tinygltf::Model model) {
+void track_from_channel(Track& result, tinygltf::AnimationChannel channel, tinygltf::AnimationSampler sampler, const tinygltf::Model model) {
 
-    Interpolation interpolation = Interpolation::Constant;
+    Interpolation interpolation = Interpolation::CONSTANT;
 
     // make sure the Interpolation type of the track matches the cgltf_interpolation_type type of the sampler
     if (sampler.interpolation == "LINEAR") {
-        interpolation = Interpolation::Linear;
+        interpolation = Interpolation::LINEAR;
     }
     else if (sampler.interpolation == "CUBICSPLINE") {
-        interpolation = Interpolation::Cubic;
+        interpolation = Interpolation::CUBIC;
     }
-    bool is_sampler_cubic = interpolation == Interpolation::Cubic;
+    bool is_sampler_cubic = interpolation == Interpolation::CUBIC;
     result.set_interpolation(interpolation);
 
     // convert sampler input and output accessors into linear arrays of floating-point numbers
-    std::vector<float> time; // times 
+    std::vector<T> time; // times 
     get_scalar_values(time, 1, model, sampler.input);
 
-    std::vector<float> values; // values
-    get_scalar_values(values, N, model, sampler.output);
+    std::vector<T> values; // values
+    get_scalar_values(values, TrackHelpers::get_size(result), model, sampler.output);
 
     unsigned int num_frames = time.size();
     unsigned int comp_count = values.size() / time.size(); // components (vec3 or quat) per frame}
@@ -1042,24 +1072,18 @@ void track_from_channel(Track<T, N>& result, tinygltf::AnimationChannel channel,
     // parse the time and value arrays into frame structures
     for (unsigned int i = 0; i < num_frames; ++i) {
         int baseIndex = i * comp_count;
-        Frame<N>& frame = result[i];
+        Keyframe& frame = result[i];
         // offset used to deal with cubic tracks since the input and output tangents are as large as the number of components
         int offset = 0;
 
-        frame.time = time[i];
+        frame.time = std::get<float>(time[i]);
 
         // read input tangent (only if the sample is cubic)
-        for (int comp = 0; comp < N; ++comp) {
-            frame.in[comp] = is_sampler_cubic ? values[baseIndex + offset++] : 0.0f;
-        }
+        frame.in = is_sampler_cubic ? values[baseIndex + offset++] : 0.0f;
         // read the value
-        for (int comp = 0; comp < N; ++comp) {
-            frame.value[comp] = values[baseIndex + offset++];
-        }
+        frame.value = values[baseIndex + offset++];
         // read the output tangent (only if the sample is cubic)
-        for (int comp = 0; comp < N; ++comp) {
-            frame.out[comp] = is_sampler_cubic ? values[baseIndex + offset++] : 0.0f;
-        }
+        frame.out = is_sampler_cubic ? values[baseIndex + offset++] : 0.0f;        
     }
 }
 
@@ -1074,7 +1098,6 @@ void parse_model_animations(tinygltf::Model& model, std::vector<SkeletonInstance
     for (unsigned int i = 0; i < num_animations; ++i) {
        
         Skeleton* skeleton = nullptr;
-        SkeletalAnimation* sanimation = nullptr;
         
         for (auto & instance : skeleton_instances) {
             std::vector<unsigned int> indices = instance->get_skeleton()->get_joint_indices();
@@ -1083,7 +1106,6 @@ void parse_model_animations(tinygltf::Model& model, std::vector<SkeletonInstance
                 if (indices[s] != animations[i].channels[0].target_node)
                     continue;
                 skeleton = instance->get_skeleton();
-                sanimation = new SkeletalAnimation();
                 root_node = instance->get_name();
                 break;
             }
@@ -1119,38 +1141,27 @@ void parse_model_animations(tinygltf::Model& model, std::vector<SkeletonInstance
             tinygltf::AnimationSampler sampler = animations[i].samplers[channel.sampler];
             int node_id = channel.target_node;//model.nodes[channel.target_node]; //change to skin joint indices            
 
-            if (skeleton) {
-                if (channel.target_path == "translation") {
-                    result[i]->get_track(node_id);
-                    VectorTrack& track = sanimation->get_track(node_id).get_position_track();
-                    track_from_channel<glm::vec3, 3>(track, channel, sampler, model);
-                }
-                else if (channel.target_path == "scale") {
-                    VectorTrack& track = sanimation->get_track(node_id).get_scale_track();
-                    track_from_channel<glm::vec3, 3>(track, channel, sampler, model);
-
-                }
-                else if (channel.target_path == "rotation") {
-                    QuaternionTrack& track = sanimation->get_track(node_id).get_rotation_track();
-                    track_from_channel<glm::quat, 4>(track, channel, sampler, model);
-                }
-                result[i] = sanimation;
+            Track& track = result[i]->get_track(node_id);
+            
+            if (channel.target_path == "translation" || channel.target_path == "scale") {
+                track.set_type(TrackType::TYPE_VECTOR3);                
             }
-            else {               
-                if (channel.target_path == "weight") {
-                    ScalarTrack& track = result[i]->get_track(node_id);
-                    track_from_channel<float, 1>(track, channel, sampler, model);
-                }
+            else if (channel.target_path == "rotation") {
+                track.set_type(TrackType::TYPE_QUAT);
+            }
+            else if (channel.target_path == "weight") {
+                track.set_type(TrackType::TYPE_FLOAT);
             }            
+            track_from_channel(track, channel, sampler, model);
 
         } // End num channels loop
-        /*result[i]->set_name(animations[i].name);
+        result[i]->set_name(animations[i].name);
         result[i]->recalculate_duration();
         RendererStorage::register_animation(result[i]->get_name(), result[i], root_node, "skeleton");
         if (i == 0) {
            
             player->play(result[0]->get_name());
-        }*/
+        }
     } // End num clips loop
     //Node3D* node = dynamic_cast<Node3D*>(RendererStorage::get_skeleton(RendererStorage::get_animation(result[0]->get_name())->node_path));
    
@@ -1226,12 +1237,12 @@ bool parse_gltf(const char* gltf_path, std::vector<Node3D*>& entities)
         parse_model_skins(model, hierarchy, skeleton_instances);
     }
 
-    /*if (model.animations.size()) {
+    if (model.animations.size()) {
         AnimationPlayer* player = new AnimationPlayer();
         entities[entities.size() - 1]->add_child(player);
         player->set_root_node(entities[entities.size() - 1]);
         parse_model_animations(model, skeleton_instances, player);
-    }*/
+    }
 
     texture_cache.clear();
 

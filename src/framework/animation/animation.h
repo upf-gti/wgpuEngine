@@ -6,14 +6,14 @@
 class Animation {
 protected:
 
-    std::vector<ScalarTrack> tracks;
+    std::vector<Track> tracks;
     std::string name;
     float start_time;
     float end_time;
     bool looping;
 
 protected:
-    float adjust_time_to_fit_range(float inTime);
+    float adjust_time_to_fit_range(float time);
 
 public:
     Animation();
@@ -25,10 +25,10 @@ public:
     unsigned int size();
 
     //samples the animation clip at the provided time into the out reference
-    float sample(std::vector<float> &out, float inTime);
+    T sample(std::vector<T>& out, float time);
     //returns a transform track for the specified joint
-    ScalarTrack& operator[](unsigned int index);
-    ScalarTrack& get_track(unsigned int index);
+    Track& operator[](unsigned int index);
+    Track& get_track(unsigned int index);
 
     //sets the start/end time of the animation clip based on the tracks that make up the clip
     void recalculate_duration();

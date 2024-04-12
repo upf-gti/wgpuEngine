@@ -2,18 +2,17 @@
 
 #include "animation_mixer.h"
 #include "skeleton_instance_3d.h"
-#include "../animation/skeletal_animation.h"
 
-class AnimationPlayer : public AnimationMixer, public Node3D
+class AnimationPlayer : public AnimationMixer
 {
     std::string current_animation;
     std::string next_animation;
     bool autoplay = false;
     bool playing = false;
-    float playback = 0.0;
-    float duration;
-    float speed = 1.0;
-    float blend_time;
+    float playback = 0.f;
+    float duration = 0.f;
+    float speed = 1.f;
+    float blend_time = 0.f;
     float looping = false;
 
     std::string type = "simple";
@@ -25,7 +24,7 @@ class AnimationPlayer : public AnimationMixer, public Node3D
 
 public:
 
-    void set_next_animation(const std::string animation_name);
+    void set_next_animation(const std::string& animation_name);
     void set_speed(float time);
     void set_blend_time(float time);
     void set_looping(bool loop);
@@ -36,12 +35,12 @@ public:
     float get_speed();
     std::vector<std::string> get_queue();
 
-    void queue(std::string animation_name);
+    void queue(const std::string& animation_name);
     void clear_queue();
 
     bool is_looping();
     bool is_playing();
-    void play(std::string animation_name = "", float custom_blend = -1, float custom_speed = 1.0, bool from_end = false);
+    void play(const std::string& animation_name = "", float custom_blend = -1, float custom_speed = 1.0, bool from_end = false);
     void pause();
     void stop(bool keep_state = false);
 
