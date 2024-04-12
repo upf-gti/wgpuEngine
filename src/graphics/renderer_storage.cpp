@@ -160,12 +160,13 @@ void RendererStorage::register_material(WebGPUContext* webgpu_context, MeshInsta
 
             animated_transform = combine(current_pose[joints.y], inverse(bind_pose[joints.y]));
             animated_matrices[joints.y] = transformToMat4(animated_transform);
-            if (current_pose.size() > 2) {
+            if (current_pose.size() > 2 && joints.z < animated_matrices.size()) {
                 animated_transform = combine(current_pose[joints.z], inverse(bind_pose[joints.z]));
                 animated_matrices[joints.z] = transformToMat4(animated_transform);
             }
-            if (current_pose.size() > 3) {
+            if (current_pose.size() > 3 && joints.w < animated_matrices.size()) {
                 animated_transform = combine(current_pose[joints.w], inverse(bind_pose[joints.w]));
+                
                 animated_matrices[joints.w] = transformToMat4(animated_transform);
             }
         }

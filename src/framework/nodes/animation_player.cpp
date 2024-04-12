@@ -119,8 +119,8 @@ void AnimationPlayer::update(float delta_time) {
 
     if (playing) {
         if (type == "skeleton") {
-            Skeleton* skeleton = (static_cast<SkeletonInstance3D*>(node))->get_skeleton();
-            playback = (static_cast<SkeletalAnimation*>(animation))->sample(skeleton->get_current_pose(), delta_time * speed);
+          /*  Skeleton* skeleton = (static_cast<SkeletonInstance3D*>(node))->get_skeleton();
+            playback = (static_cast<SkeletalAnimation*>(animation))->sample(skeleton->get_current_pose(), delta_time * speed);*/
 
         }
     }

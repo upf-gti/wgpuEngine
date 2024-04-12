@@ -19,13 +19,10 @@ enum eGizmoType : uint8_t {
 class MeshInstance3D;
 
 /*
-	TRANSFORM GIZMO COMPONENT
-	- Declare the kind of gizmo that you want (for now, only Position)
-	- On update, give it the base position, and get the new position of
-	  the gizmo, in order to use it for the parent.
+	TRANSFORM GIZMO COMPONENT FOR VR
 */
 
-class TransformGizmo {
+class Gizmo3D {
 
 	eGizmoType type;
     eGizmoAxis axis;

@@ -1,6 +1,7 @@
 #include "font.h"
 
 #include "renderer_storage.h"
+#include "graphics/texture.h"
 
 #include <filesystem>
 namespace fs = std::filesystem;

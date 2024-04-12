@@ -8,4 +8,6 @@ public:
 
     DirectionalLight3D();
     ~DirectionalLight3D();
+
+    sLightUniformData get_uniform_data() override;
 };

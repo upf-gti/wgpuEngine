@@ -4,6 +4,8 @@
 
 Environment3D::Environment3D() : MeshInstance3D()
 {
+    name = "Environment3D";
+
     Surface* surface = new Surface;
 
     surface->create_skybox();

@@ -1,4 +1,7 @@
 #include "spot_light_3d.h"
+#include "graphics/renderer.h"
+#include "framework/utils/utils.h"
+#include "imgui.h"
 
 SpotLight3D::SpotLight3D() : Light3D()
 {
@@ -10,12 +13,43 @@ SpotLight3D::~SpotLight3D()
     
 }
 
-void SpotLight3D::set_range(float value)
+void SpotLight3D::render_gui()
 {
-    this->range = value;
+    bool changed = false;
+    constexpr float pi_2 = glm::pi<float>() * 0.5f;
+
+    if (ImGui::TreeNodeEx("SpotLight3D"))
+    {
+        ImGui::SliderFloat("Range", &range, -1.f, 10.0f);
+        ImGui::SliderFloat("Inner Angle", &inner_cone_angle, 0.f, pi_2);
+        ImGui::SliderFloat("Outer Angle", &outer_cone_angle, 0.f, pi_2);
+
+        ImGui::TreePop();
+    }
+
+    Light3D::render_gui();
 }
 
-void SpotLight3D::set_angle(float value)
+sLightUniformData SpotLight3D::get_uniform_data()
 {
-    this->angle = value;
+    return {
+        .position = get_translation(),
+        .type = type,
+        .color = color,
+        .intensity = intensity,
+        .direction = -get_global_model()[2],
+        .range = range,
+        .inner_cone_cos = cosf(inner_cone_angle),
+        .outer_cone_cos = cosf(outer_cone_angle)
+    };
+}
+
+void SpotLight3D::set_inner_cone_angle(float value)
+{
+    this->inner_cone_angle = value;
+}
+
+void SpotLight3D::set_outer_cone_angle(float value)
+{
+    this->outer_cone_angle = value;
 }

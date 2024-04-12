@@ -109,9 +109,11 @@ int Renderer::initialize(GLFWwindow* window, bool use_mirror_screen)
         irradiance_texture = RendererStorage::get_texture("data/textures/environments/sky.hdr");
     }
 
+    Shader::set_custom_define("MAX_LIGHTS", MAX_LIGHTS);
+
     init_depth_buffers();
 
-    init_ibl_bind_group();
+    init_lighting_bind_group();
 
     init_multisample_textures();
 
@@ -135,13 +137,13 @@ void Renderer::clean()
     webgpu_context.destroy();
 }
 
-void Renderer::init_ibl_bind_group()
+void Renderer::init_lighting_bind_group()
 {
     // delete if already created
     if (std::holds_alternative<WGPUTextureView>(irradiance_texture_uniform.data)) {
         wgpuTextureViewRelease(std::get<WGPUTextureView>(irradiance_texture_uniform.data));
         wgpuSamplerRelease(std::get<WGPUSampler>(ibl_sampler_uniform.data));
-        wgpuBindGroupRelease(ibl_bind_group);
+        wgpuBindGroupRelease(lighting_bind_group);
     }
     else {
         // only created once
@@ -149,27 +151,39 @@ void Renderer::init_ibl_bind_group()
         brdf_lut_uniform.binding = 1;
     }
 
-    if (!irradiance_texture) {
-        return;
+    if (irradiance_texture) {
+
+        irradiance_texture_uniform.data = irradiance_texture->get_view(WGPUTextureViewDimension_Cube, 0, 6, 0, 6);
+        irradiance_texture_uniform.binding = 0;
+
+        ibl_sampler_uniform.data = webgpu_context.create_sampler(
+            WGPUAddressMode_ClampToEdge,
+            WGPUAddressMode_ClampToEdge,
+            WGPUAddressMode_ClampToEdge,
+            WGPUFilterMode_Linear,
+            WGPUFilterMode_Linear,
+            WGPUMipmapFilterMode_Linear,
+            static_cast<float>(irradiance_texture->get_mipmap_count())
+        );
+
+        ibl_sampler_uniform.binding = 2;
     }
 
-    irradiance_texture_uniform.data = irradiance_texture->get_view(WGPUTextureViewDimension_Cube, 0, 6, 0, 6);
-    irradiance_texture_uniform.binding = 0;
+    if (std::holds_alternative<WGPUBuffer>(lights_buffer.data)) {
+        wgpuBufferDestroy(std::get<WGPUBuffer>(lights_buffer.data));
+        lights_buffer.data = {};
+    }
 
-    ibl_sampler_uniform.data = webgpu_context.create_sampler(
-        WGPUAddressMode_ClampToEdge,
-        WGPUAddressMode_ClampToEdge,
-        WGPUAddressMode_ClampToEdge,
-        WGPUFilterMode_Linear,
-        WGPUFilterMode_Linear,
-        WGPUMipmapFilterMode_Linear,
-        static_cast<float>(irradiance_texture->get_mipmap_count())
-    );
+    lights_buffer.data = webgpu_context.create_buffer(sizeof(sLightUniformData) * MAX_LIGHTS, WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform, &lights_uniform_data[0], "lights_buffer");
+    lights_buffer.binding = 3;
+    lights_buffer.buffer_size = sizeof(sLightUniformData) * MAX_LIGHTS;
 
-    ibl_sampler_uniform.binding = 2;
+    num_lights_buffer.data = webgpu_context.create_buffer(sizeof(int), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform, &num_lights, "num_lights_buffer");
+    num_lights_buffer.binding = 4;
+    num_lights_buffer.buffer_size = sizeof(int);
 
-    std::vector<Uniform*> uniforms = { &irradiance_texture_uniform, &brdf_lut_uniform, &ibl_sampler_uniform };
-    ibl_bind_group = webgpu_context.create_bind_group(uniforms, RendererStorage::get_shader("data/shaders/mesh_pbr.wgsl"), 3);
+    std::vector<Uniform*> uniforms = { &irradiance_texture_uniform, &brdf_lut_uniform, &ibl_sampler_uniform, &lights_buffer, &num_lights_buffer };
+    lighting_bind_group = webgpu_context.create_bind_group(uniforms, RendererStorage::get_shader("data/shaders/mesh_pbr.wgsl"), 3);
 }
 
 void Renderer::init_depth_buffers()
@@ -235,6 +249,8 @@ uint8_t Renderer::get_msaa_count()
 
 void Renderer::prepare_instancing()
 {
+    update_lights();
+
     // Get all surfaces from entity meshes
     for (auto render_list_data : render_entity_list)
     {
@@ -440,7 +456,7 @@ void Renderer::render_render_list(int list_index, WGPURenderPassEncoder render_p
         }
 
         if (material.flags & MATERIAL_PBR) {
-            wgpuRenderPassEncoderSetBindGroup(render_pass, 3, ibl_bind_group, 0, nullptr);
+            wgpuRenderPassEncoderSetBindGroup(render_pass, 3, lighting_bind_group, 0, nullptr);
         }
 
         // Set vertex buffer while encoding the render pass
@@ -484,6 +500,29 @@ void Renderer::clear_renderables()
     for (int i = 0; i < RENDER_LIST_SIZE; ++i) {
         render_list[i].clear();
     }
+
+    for (int i = 0; i < MAX_LIGHTS; ++i) {
+        lights_uniform_data[i] = {};
+    }
+
+    num_lights = 0;
+}
+
+void Renderer::update_lights()
+{
+    // update uniform data
+
+    uint64_t buffer_size = sizeof(sLightUniformData) * num_lights;
+
+    webgpu_context.update_buffer(std::get<WGPUBuffer>(lights_buffer.data), 0, &lights_uniform_data[0], buffer_size);
+
+    webgpu_context.update_buffer(std::get<WGPUBuffer>(num_lights_buffer.data), 0, &num_lights, sizeof(int));
+}
+
+void Renderer::add_light(Light3D* new_light)
+{
+    lights_uniform_data[num_lights] = new_light->get_uniform_data();
+    num_lights++;
 }
 
 void Renderer::resize_window(int width, int height)
@@ -507,7 +546,7 @@ void Renderer::set_irradiance_texture(Texture* texture)
 {
     irradiance_texture = texture;
 
-    init_ibl_bind_group();
+    init_lighting_bind_group();
 }
 
 glm::vec3 Renderer::get_camera_eye()

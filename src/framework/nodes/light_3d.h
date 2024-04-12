@@ -10,14 +10,28 @@ enum LightType {
     LIGHT_SPOT
 };
 
+struct sLightUniformData {
+    glm::vec3 position;
+    int type = LightType::LIGHT_UNDEFINED;
+    glm::vec3 color = { 0.0f, 0.0f, 0.0f };
+    float intensity = 0.0f;
+    glm::vec3 direction = { 0.0f, 0.0f, 0.0f };
+    float range = 0.0f;
+    glm::vec2 dummy = { 0.0f, 0.0f };
+    // spots
+    float inner_cone_cos = 0.0f;
+    float outer_cone_cos = 0.0f;
+};
+
 class Light3D : public Node3D {
 
 protected:
 
-    LightType type = LIGHT_UNDEFINED;
+    LightType   type = LIGHT_UNDEFINED;
 
     float       intensity = 1.0f;
     glm::vec3   color = { 1.0f, 1.0f, 1.0f };
+    float       range = -1.0f;
 
     // Fading
 
@@ -34,13 +48,22 @@ public:
     Light3D();
     ~Light3D();
 
+    void render_gui() override;
+
+    virtual sLightUniformData get_uniform_data() = 0;
+
+    LightType get_type() { return type; };
+
+
     float get_intensity() { return intensity; };
     const glm::vec3& get_color() { return color; };
     bool get_fading_enabled() { return fading_enabled; };
     bool get_cast_shadows() { return cast_shadows; };
+    float get_range() { return range; };
 
     void set_color(glm::vec3 color);
     void set_intensity(float value);
+    void set_range(float value);
     void set_fading_enabled(bool value);
     void set_cast_shadows(bool value);
 };

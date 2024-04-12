@@ -1,4 +1,4 @@
-#include "transform_gizmo.h"
+#include "gizmo_3d.h"
 
 #include <graphics/shader.h>
 #include <framework/nodes/mesh_instance_3d.h>
@@ -12,9 +12,9 @@
 
 #include "spdlog/spdlog.h"
 
-void TransformGizmo::initialize(const eGizmoType& gizmo_type, const glm::vec3 &position, const eGizmoAxis& axis)
+void Gizmo3D::initialize(const eGizmoType& gizmo_type, const glm::vec3& position, const eGizmoAxis& axis)
 {
-	this->type = gizmo_type;
+    this->type = gizmo_type;
     this->axis = axis;
 
     Material m;
@@ -32,12 +32,12 @@ void TransformGizmo::initialize(const eGizmoType& gizmo_type, const glm::vec3 &p
         init_circle_meshes();
     }
 
-	position_gizmo_scale = glm::vec3(0.1f, 0.1f, 0.1f);
-    rotation_gizmo_scale = glm::vec3(0.1f, 0.1f, 0.1f);
+    position_gizmo_scale = glm::vec3(0.05f);
+    rotation_gizmo_scale = glm::vec3(0.05f);
     gizmo_position = position;
 }
 
-void TransformGizmo::init_arrow_meshes()
+void Gizmo3D::init_arrow_meshes()
 {
     Material m;
 
@@ -57,24 +57,29 @@ void TransformGizmo::init_arrow_meshes()
     arrow_mesh_z->set_surface_material_override(arrow_mesh_z->get_surface(0), m);
 }
 
-void TransformGizmo::init_circle_meshes()
+void Gizmo3D::init_circle_meshes()
 {
     Material m;
-    m.shader = RendererStorage::get_shader("data/shaders/mesh_color.wgsl");
 
     wire_circle_mesh_x = parse_mesh("data/meshes/wired_circle.obj");
+    m.color = colors::RED;
+    m.shader = RendererStorage::get_shader("data/shaders/mesh_color.wgsl", m);
     wire_circle_mesh_x->set_surface_material_override(wire_circle_mesh_x->get_surface(0), m);
 
     wire_circle_mesh_y = parse_mesh("data/meshes/wired_circle.obj");
+    m.color = colors::GREEN;
+    m.shader = RendererStorage::get_shader("data/shaders/mesh_color.wgsl", m);
     wire_circle_mesh_y->set_surface_material_override(wire_circle_mesh_y->get_surface(0), m);
 
     wire_circle_mesh_z = parse_mesh("data/meshes/wired_circle.obj");
+    m.color = colors::BLUE;
+    m.shader = RendererStorage::get_shader("data/shaders/mesh_color.wgsl", m);
     wire_circle_mesh_z->set_surface_material_override(wire_circle_mesh_z->get_surface(0), m);
 }
 
-void TransformGizmo::clean()
+void Gizmo3D::clean()
 {
-	delete arrow_mesh_x;
+    delete arrow_mesh_x;
     delete arrow_mesh_y;
     delete arrow_mesh_z;
 
@@ -83,7 +88,7 @@ void TransformGizmo::clean()
     delete wire_circle_mesh_z;
 }
 
-void TransformGizmo::set_mode(const eGizmoType& gizmo_type, const eGizmoAxis& axis)
+void Gizmo3D::set_mode(const eGizmoType& gizmo_type, const eGizmoAxis& axis)
 {
     this->type = gizmo_type;
     this->axis = axis;
@@ -103,23 +108,23 @@ void TransformGizmo::set_mode(const eGizmoType& gizmo_type, const eGizmoAxis& ax
     }
 }
 
-bool TransformGizmo::update(glm::vec3 &new_position, const glm::vec3& controller_position, float delta)
+bool Gizmo3D::update(glm::vec3& new_position, const glm::vec3& controller_position, float delta)
 {
-	if (!enabled) {
-		return false;
-	}
+    if (!enabled) {
+        return false;
+    }
 
-	gizmo_position = new_position;
+    gizmo_position = new_position;
 
-	if (!has_graved) {
+    if (!has_graved) {
 
         // The center of the gizmo servers as a free hand mode
         free_hand_selected = intersection::point_sphere(controller_position, gizmo_position, 0.05f);
 
         // POSITION GIZMO TESTS
-		// Generate the AABB size of the bounding box of the arrow mesh
-		// Center the pointa ccordingly, and add a bit of margin (0.01f) for
-		// Grabing all axis in the bottom
+        // Generate the AABB size of the bounding box of the arrow mesh
+        // Center the pointa ccordingly, and add a bit of margin (0.01f) for
+        // Grabing all axis in the bottom
         if (!free_hand_selected) {
             if (type & POSITION_GIZMO) {
                 if (axis & GIZMO_AXIS_X) {
@@ -155,7 +160,8 @@ bool TransformGizmo::update(glm::vec3 &new_position, const glm::vec3& controller
                     rotation_axis_y_selected = !rotation_axis_z_selected && intersection::point_circle_ring(controller_position, gizmo_position, glm::vec3(0.0f, 1.0f, 0.0f), rotation_gizmo_scale.z + 0.02f, 0.04f);
                 }
             }
-        } else {
+        }
+        else {
             position_axis_x_selected = false;
             position_axis_y_selected = false;
             position_axis_z_selected = false;
@@ -164,13 +170,12 @@ bool TransformGizmo::update(glm::vec3 &new_position, const glm::vec3& controller
             rotation_axis_y_selected = false;
             rotation_axis_z_selected = false;
         }
-        
-	}
+    }
 
     const bool is_active = free_hand_selected || position_axis_x_selected || position_axis_y_selected || position_axis_z_selected || rotation_axis_x_selected || rotation_axis_y_selected || rotation_axis_z_selected;
 
-	// Calculate the movement vector for the gizmo
-	if (Input::get_trigger_value(HAND_RIGHT) > 0.3f) {
+    // Calculate the movement vector for the gizmo
+    if (Input::get_trigger_value(HAND_RIGHT) > 0.3f) {
 
         if (!has_graved) {
             reference_rotation_pose = controller_position;
@@ -188,7 +193,8 @@ bool TransformGizmo::update(glm::vec3 &new_position, const glm::vec3& controller
             if (type & ROTATION_GIZMO) {
                 current_rotation = glm::inverse(rotation_diff) * Input::get_controller_rotation(HAND_RIGHT);
             }
-        } else {
+        }
+        else {
             if (type & POSITION_GIZMO) {
                 glm::vec3 constraint = { 0.0f, 0.0f, 0.0f };
                 if (position_axis_x_selected) {
@@ -233,18 +239,19 @@ bool TransformGizmo::update(glm::vec3 &new_position, const glm::vec3& controller
             }
 
         }
-        
-		prev_controller_position = controller_position;
-	} else {
-		has_graved = false;
-	}
 
-	new_position = gizmo_position;
+        prev_controller_position = controller_position;
+    }
+    else {
+        has_graved = false;
+    }
+
+    new_position = gizmo_position;
 
     return is_active;
 }
 
-void TransformGizmo::render(int axis)
+void Gizmo3D::render(int axis)
 {
 	if (!enabled) {
 		return;
@@ -261,7 +268,7 @@ void TransformGizmo::render(int axis)
             arrow_mesh_x->set_translation(gizmo_position);
             arrow_mesh_x->scale(position_gizmo_scale);
 		    arrow_mesh_x->rotate(glm::radians(-90.f), glm::vec3(0.f, 0.f, 1.f));
-		    arrow_mesh_x->set_surface_material_override_color(0, Color(1.f, 0.0f, 0.f, 1.f) + (position_axis_x_selected ? Color(0.5f, 0.5f, 0.5f, 0.f) : Color(0.f)));
+		    arrow_mesh_x->set_surface_material_override_color(0, Color(0.666f, 0.0f, 0.f, 1.f) + (position_axis_x_selected ? Color(0.5f, 0.5f, 0.5f, 0.f) : Color(0.f)));
 		    arrow_mesh_x->render();
         }
 
@@ -269,7 +276,7 @@ void TransformGizmo::render(int axis)
         {
 		    arrow_mesh_y->set_translation(gizmo_position);
 		    arrow_mesh_y->scale(position_gizmo_scale);
-		    arrow_mesh_y->set_surface_material_override_color(0, Color(0.f, 1.f, 0.0f, 1.f) + (position_axis_y_selected ? Color(0.5f, 0.5f, 0.5f, 0.f) : Color(0.f)));
+		    arrow_mesh_y->set_surface_material_override_color(0, Color(0.f, 0.666f, 0.0f, 1.f) + (position_axis_y_selected ? Color(0.5f, 0.5f, 0.5f, 0.f) : Color(0.f)));
             arrow_mesh_y->render();
         }
 
@@ -279,7 +286,7 @@ void TransformGizmo::render(int axis)
             arrow_mesh_z->scale(position_gizmo_scale);
             arrow_mesh_z->rotate(glm::radians(90.f), glm::vec3(0.f, 0.f, 1.f));
 		    arrow_mesh_z->rotate(glm::radians(90.f), glm::vec3(1.f, 0.f, 0.f));
-		    arrow_mesh_z->set_surface_material_override_color(0, Color(0.0f, 0.f, 1.f, 1.f) + (position_axis_z_selected ? Color(0.5f, 0.5f, 0.5f, 0.f) : Color(0.f)));
+		    arrow_mesh_z->set_surface_material_override_color(0, Color(0.0f, 0.f, 0.666f, 1.f) + (position_axis_z_selected ? Color(0.5f, 0.5f, 0.5f, 0.f) : Color(0.f)));
 		    arrow_mesh_z->render();
         }
 	}
@@ -291,7 +298,7 @@ void TransformGizmo::render(int axis)
             wire_circle_mesh_x->set_translation(gizmo_position);
             wire_circle_mesh_x->scale(rotation_gizmo_scale);
             wire_circle_mesh_x->rotate(glm::radians(90.f), glm::vec3(0.f, 1.f, 0.f));
-            wire_circle_mesh_x->set_surface_material_override_color(0, Color(1.f, 0.f, 0.f, 1.f) + (rotation_axis_z_selected ? Color(0.5f, 0.5f, 0.5f, 0.f) : Color(0.f)));
+            wire_circle_mesh_x->set_surface_material_override_color(0, Color(0.666f, 0.f, 0.f, 1.f) + (rotation_axis_z_selected ? Color(0.5f, 0.5f, 0.5f, 0.f) : Color(0.f)));
             wire_circle_mesh_x->render();
         }
 
@@ -300,7 +307,7 @@ void TransformGizmo::render(int axis)
             wire_circle_mesh_y->set_translation(gizmo_position);
             wire_circle_mesh_y->scale(rotation_gizmo_scale);
             wire_circle_mesh_y->rotate(glm::radians(90.f), glm::vec3(1.f, 0.f, 0.f));
-            wire_circle_mesh_y->set_surface_material_override_color(0, Color(0.f, 1.f, 0.f, 1.f) + (rotation_axis_z_selected ? Color(0.5f, 0.5f, 0.5f, 0.f) : Color(0.f)));
+            wire_circle_mesh_y->set_surface_material_override_color(0, Color(0.f, 0.666f, 0.f, 1.f) + (rotation_axis_z_selected ? Color(0.5f, 0.5f, 0.5f, 0.f) : Color(0.f)));
             wire_circle_mesh_y->render();
         }
 
@@ -308,7 +315,7 @@ void TransformGizmo::render(int axis)
         {
             wire_circle_mesh_z->set_translation(gizmo_position);
             wire_circle_mesh_z->scale(rotation_gizmo_scale);
-            wire_circle_mesh_z->set_surface_material_override_color(0, Color(0.f, 0.f, 1.f, 1.f) + (rotation_axis_y_selected ? Color(0.5f, 0.5f, 0.5f, 0.f) : Color(0.f)));
+            wire_circle_mesh_z->set_surface_material_override_color(0, Color(0.f, 0.f, 0.666f, 1.f) + (rotation_axis_y_selected ? Color(0.5f, 0.5f, 0.5f, 0.f) : Color(0.f)));
             wire_circle_mesh_z->render();
         }
     }
