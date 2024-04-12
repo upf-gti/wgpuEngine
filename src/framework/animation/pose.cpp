@@ -37,15 +37,16 @@ void Pose::set_local_transform(unsigned int id, const Transform& transform) {
 }
 
 // get local transform of the joint
-Transform Pose::get_local_transform(unsigned int id) {
+Transform& Pose::get_local_transform(unsigned int id) {
 	return joints[id];
 }
 
 // get global (world) transform of the joint
-Transform Pose::get_global_transform(unsigned int id) {
+Transform& Pose::get_global_transform(unsigned int id) {
 
-    if (id >= joints.size())
-        return Transform();
+    if (id >= joints.size()) {
+        assert(0);
+    }
 
 	Transform transform = joints[id];
 	for (int i = parents[id]; i >= 0; i = parents[i]) {

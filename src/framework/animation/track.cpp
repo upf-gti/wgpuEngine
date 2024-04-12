@@ -1,6 +1,7 @@
 #include "track.h"
 
 #include <algorithm>
+#include <iostream>
 
 // Track helpers avoid having to make specialized versions of the interpolation functions
 namespace TrackHelpers {
@@ -27,6 +28,7 @@ namespace TrackHelpers {
             return normalize(result); // NLerp, not slerp
         }
 
+        assert(0);
         return T();
     }
     
@@ -51,7 +53,7 @@ namespace TrackHelpers {
             glm::quat qb = std::get<glm::quat>(b);
 
             if (dot(qa, qb) < 0) {
-                qb = -qb;
+                b = -qb;
             }
         }
     }
@@ -82,6 +84,11 @@ uint32_t Track::get_id()
     return id;
 }
 
+void Track::set_data(void* data)
+{
+    this->data = data;
+}
+
 void Track::set_id(uint32_t index)
 {
     id = index;
@@ -100,14 +107,39 @@ float Track::get_end_time()
 // call sample_constant, sample_linear, or sample_cubic, depending on the track type.
 T Track::sample(float time, bool looping)
 {
+    std::cout << "SAMPLE TIME: " << time << std::endl;
+
+    T r;
+
     if (interpolation == Interpolation::CONSTANT) {
-        return sample_constant(time, looping);
+        r = sample_constant(time, looping);
     }
     else if (interpolation == Interpolation::LINEAR) {
-        return sample_linear(time, looping);
+        r = sample_linear(time, looping);
+    }
+    else {
+        r = sample_cubic(time, looping);
     }
 
-    return sample_cubic(time, looping);
+    // Update property data of the track
+
+    if (data)
+    {
+        if (std::holds_alternative<float>(r)) {
+            float* p = reinterpret_cast<float*>(data);
+            *p = std::get<float>(r);
+        }
+        else if (std::holds_alternative<glm::vec3>(r)) {
+            glm::vec3* p = reinterpret_cast<glm::vec3*>(data);
+            *p = std::get<glm::vec3>(r);
+        }
+        else if (std::holds_alternative<glm::quat>(r)) {
+            glm::quat* p = reinterpret_cast<glm::quat*>(data);
+            *p = std::get<glm::quat>(r);
+        }
+    }
+
+    return r;
 }
 
 Keyframe& Track::operator[](uint32_t index)
@@ -115,20 +147,24 @@ Keyframe& Track::operator[](uint32_t index)
     return keyframes[index];
 }
 
-// size of the keyframes vector
-void Track::resize(uint32_t size) {
+// Size of the keyframes vector
+void Track::resize(uint32_t size)
+{
     keyframes.resize(size);
 }
 
-uint32_t Track::size() {
+uint32_t Track::size()
+{
     return (uint32_t)keyframes.size();
 }
 
-Interpolation Track::get_interpolation() {
+Interpolation Track::get_interpolation()
+{
     return interpolation;
 }
 
-void Track::set_interpolation(Interpolation interpolationType) {
+void Track::set_interpolation(Interpolation interpolationType)
+{
     interpolation = interpolationType;
 }
 
@@ -138,7 +174,8 @@ T Track::cubic_interpolation(const T& p1, const T& s1, const T& p2, const T& s2,
     return std::get<Tn>(p1) * h1 + std::get<Tn>(p2) * h2 + std::get<Tn>(s1) * h3 + std::get<Tn>(s2) * h4;
 }
 
-T Track::hermite(float t, const T& p1, const T& s1, const T& _p2, const T& s2) {
+T Track::hermite(float t, const T& p1, const T& s1, const T& _p2, const T& s2)
+{
     float tt = t * t;
     float ttt = tt * t;
     T p2 = _p2;
@@ -163,12 +200,15 @@ T Track::hermite(float t, const T& p1, const T& s1, const T& _p2, const T& s2) {
     return TrackHelpers::adjustHermiteResult(result);
 }
 
-// return the frame immediately before that time (on the left)
-int Track::frame_index(float time, bool looping) {
+// Return the frame immediately before that time (on the left)
+int Track::frame_index(float time, bool looping)
+{
     uint32_t size = (uint32_t)keyframes.size();
+
     if (size <= 1) {
         return -1;
     }
+
     // If the track is sampled as looping, the input time needs to be adjusted so that it falls between the start and end keyframes.
     if (looping) {
         float startTime = keyframes[0].time;
@@ -191,17 +231,20 @@ int Track::frame_index(float time, bool looping) {
             return (int)size - 2;
         }
     }
+
     for (int i = (int)size - 1; i >= 0; --i) {
         if (time >= keyframes[i].time) {
             return i;
         }
     }
+
     // Invalid code, we should not reach here!
     return -1;
-} // End of frame_index
+}
 
 // Adjusts the time to be in the range of the start/end keyframes of the track.
-float Track::adjust_time_to_fit_track(float time, bool looping) {
+float Track::adjust_time_to_fit_track(float time, bool looping)
+{
     uint32_t size = (uint32_t)keyframes.size();
     if (size <= 1) {
         return 0.0f;
@@ -231,63 +274,67 @@ float Track::adjust_time_to_fit_track(float time, bool looping) {
     return time;
 }
 
-// often used for things such as visibility flags, where it makes sense for the value of a variable to change from one frame to the next without any real interpolation
-T Track::sample_constant(float t, bool loop) {
+// Often used for things such as visibility flags, where it makes sense for the value of a variable to change from one frame to the next without any real interpolation
+T Track::sample_constant(float t, bool loop)
+{
     int frame = frame_index(t, loop);
     if (frame < 0 || frame >= (int)keyframes.size()) {
-        return T();
+        assert(0);
     }
     return keyframes[frame].value;
 }
 
-// applications provide an option to approximate animation curves by sampling them at set intervals
-T Track::sample_linear(float time, bool looping) {
-    int thisFrame = frame_index(time, looping);
-    if (thisFrame < 0 || thisFrame >= keyframes.size() - 1) {
-        return T();
+// Applications provide an option to approximate animation curves by sampling them at set intervals
+T Track::sample_linear(float time, bool looping)
+{
+    int this_frame = frame_index(time, looping);
+    if (this_frame < 0 || this_frame >= keyframes.size() - 1) {
+        assert(0);
     }
-    int nextFrame = thisFrame + 1;
+    int next_frame = this_frame + 1;
     // make sure the time is valid
-    float trackTime = adjust_time_to_fit_track(time, looping);
-    float thisTime = keyframes[thisFrame].time;
-    float frameDelta = keyframes[nextFrame].time - thisTime;
-    if (frameDelta <= 0.0f) {
-        return T();
+    float track_time = adjust_time_to_fit_track(time, looping);
+    float this_time = keyframes[this_frame].time;
+    float frame_delta = keyframes[next_frame].time - this_time;
+    if (frame_delta <= 0.0f) {
+        assert(0);
     }
-    float t = (trackTime - thisTime) / frameDelta;
-    T start = keyframes[thisFrame].value;
-    T end = keyframes[nextFrame].value;
+    float t = (track_time - this_time) / frame_delta;
+    T start = keyframes[this_frame].value;
+    T end = keyframes[next_frame].value;
     return TrackHelpers::interpolate(start, end, t);
 }
 
-T Track::sample_cubic(float time, bool looping) {
-    int thisFrame = frame_index(time, looping);
-    if (thisFrame < 0 || thisFrame >= keyframes.size() - 1) {
-        return T();
+T Track::sample_cubic(float time, bool looping)
+{
+    int this_frame = frame_index(time, looping);
+    if (this_frame < 0 || this_frame >= keyframes.size() - 1) {
+        assert(0);
     }
-    int nextFrame = thisFrame + 1;
+    int next_frame = this_frame + 1;
 
-    float trackTime = adjust_time_to_fit_track(time, looping);
-    float thisTime = keyframes[thisFrame].time;
-    float frameDelta = keyframes[nextFrame].time - thisTime;
-    if (frameDelta <= 0.0f) {
-        return T();
+    float track_time = adjust_time_to_fit_track(time, looping);
+    float this_time = keyframes[this_frame].time;
+    float frame_delta = keyframes[next_frame].time - this_time;
+
+    if (frame_delta <= 0.0f) {
+        assert(0);
     }
 
     // auto mul_T = std::multiplies<T>();
 
     // cast function normalizes quaternions, which is bad because slopes are not meant to be quaternions.
     // Using memcpy instead of cast copies the values directly, avoiding normalization.
-    float t = (trackTime - thisTime) / frameDelta;
+    float t = (track_time - this_time) / frame_delta;
     size_t fltSize = sizeof(float);
-    T point1 = keyframes[thisFrame].value;
-    /*T slope1 = mul_T(keyframes[thisFrame].out, frameDelta);
+    T point1 = keyframes[this_frame].value;
+    /*T slope1 = mul_T(keyframes[this_frame].out, frame_delta);
     
-    T point2 =keyframes[nextFrame].value;
-    T slope2 = mul_T(keyframes[nextFrame].in, frameDelta);*/
+    T point2 =keyframes[next_frame].value;
+    T slope2 = mul_T(keyframes[next_frame].in, frame_delta);*/
 
-    //memcpy(&slope1, keyframes[thisFrame].out, N * fltSize); // memcpy instead of cast to avoid normalization
-   // memcpy(&slope2, keyframes[nextFrame].in, N * fltSize);
+    //memcpy(&slope1, keyframes[this_frame].out, N * fltSize); // memcpy instead of cast to avoid normalization
+   // memcpy(&slope2, keyframes[next_frame].in, N * fltSize);
 
     return point1;// hermite(t, point1, slope1, point2, slope2);
 }

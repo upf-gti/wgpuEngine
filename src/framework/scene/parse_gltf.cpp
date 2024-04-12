@@ -1112,6 +1112,7 @@ void parse_model_animations(tinygltf::Model& model, std::vector<SkeletonInstance
             if (skeleton)
                 break;
         }
+
         if(!result[i])
             result[i] = new Animation();
 
@@ -1135,36 +1136,51 @@ void parse_model_animations(tinygltf::Model& model, std::vector<SkeletonInstance
 
         // each channel of a glTF file is an animation track
         unsigned int num_channels = animations[i].channels.size();
+
         for (unsigned int j = 0; j < num_channels; ++j) {
             
             tinygltf::AnimationChannel channel = animations[i].channels[j];
             tinygltf::AnimationSampler sampler = animations[i].samplers[channel.sampler];
             int node_id = channel.target_node;//model.nodes[channel.target_node]; //change to skin joint indices            
 
-            Track& track = result[i]->get_track(node_id);
+            // TODO: Pass here the property data pointer so when the track is sampled, the data is properly updated..
+
+            Pose& pose = skeleton->get_current_pose();
+            Transform& t = pose.get_local_transform(node_id);
+
+            TrackType type = TrackType::TYPE_UNDEFINED;
+            void* data = nullptr;
             
             if (channel.target_path == "translation" || channel.target_path == "scale") {
-                track.set_type(TrackType::TYPE_VECTOR3);                
+                type = TrackType::TYPE_VECTOR3;
+                data = &t.position;
             }
             else if (channel.target_path == "rotation") {
-                track.set_type(TrackType::TYPE_QUAT);
+                type = TrackType::TYPE_QUAT;
+                data = &t.rotation;
             }
             else if (channel.target_path == "weight") {
-                track.set_type(TrackType::TYPE_FLOAT);
-            }            
-            track_from_channel(track, channel, sampler, model);
+                type = TrackType::TYPE_FLOAT;
+            }
+
+            Track* track = result[i]->add_track(node_id, data);
+            track->set_type(type);
+
+            track_from_channel(*track, channel, sampler, model);
 
         } // End num channels loop
+
         result[i]->set_name(animations[i].name);
         result[i]->recalculate_duration();
-        RendererStorage::register_animation(result[i]->get_name(), result[i], root_node, "skeleton");
+
+        RendererStorage::register_animation(result[i]->get_name(), result[i], root_node, AnimationType::ANIM_TYPE_SKELETON);
+
         if (i == 0) {
-           
             player->play(result[0]->get_name());
         }
     } // End num clips loop
+
     //Node3D* node = dynamic_cast<Node3D*>(RendererStorage::get_skeleton(RendererStorage::get_animation(result[0]->get_name())->node_path));
-   
 }
 
 bool parse_gltf(const char* gltf_path, std::vector<Node3D*>& entities)

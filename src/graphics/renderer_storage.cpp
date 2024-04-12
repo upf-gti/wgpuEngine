@@ -374,7 +374,7 @@ Skeleton* RendererStorage::get_skeleton(const std::string& node_path)
     return nullptr;
 }
 
-void RendererStorage::register_animation(const std::string& animation_path, Animation* animation, const std::string& node_path, const std::string& type) {
+void RendererStorage::register_animation(const std::string& animation_path, Animation* animation, const std::string& node_path, AnimationType type) {
     // register in map
     AnimationData* data, d;
     data = &d;

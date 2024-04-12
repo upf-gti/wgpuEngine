@@ -42,7 +42,8 @@ class Track {
     std::vector<Keyframe> keyframes;
     Interpolation interpolation; // interpolation type
     TrackType type = TrackType::TYPE_UNDEFINED;
-    void* property = nullptr;
+
+    void* data = nullptr;
 
     // helper functions, a sample for each type of interpolation
     T sample_constant(float time, bool looping);
@@ -68,6 +69,7 @@ public:
     Interpolation get_interpolation();
     TrackType get_type() const { return type; };
 
+    void set_data(void* property);
     void set_id(uint32_t id);
     void set_interpolation(Interpolation interp);
     void set_type(TrackType new_type) { type = new_type; };

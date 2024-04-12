@@ -7,15 +7,17 @@ class AnimationPlayer : public AnimationMixer
 {
     std::string current_animation;
     std::string next_animation;
-    bool autoplay = false;
-    bool playing = false;
-    float playback = 0.f;
-    float duration = 0.f;
-    float speed = 1.f;
-    float blend_time = 0.f;
-    float looping = false;
 
-    std::string type = "simple";
+    bool autoplay   = false;
+    bool playing    = false;
+    bool looping    = true;
+
+    float playback   = 0.f;
+    float duration   = 0.f;
+    float speed      = 1.f;
+    float blend_time = 0.f;
+
+    AnimationType type = AnimationType::ANIM_TYPE_SIMPLE;
 
     std::vector<std::string> animations_queue;
 

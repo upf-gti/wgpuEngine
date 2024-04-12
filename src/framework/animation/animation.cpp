@@ -7,7 +7,7 @@ Animation::Animation() {
     looping = true;
 }
 
-T Animation::sample(std::vector<T>& out, float time)
+float Animation::sample(float time)
 {
     if (get_duration() == 0.0f) {
         return 0.0f;
@@ -18,12 +18,13 @@ T Animation::sample(std::vector<T>& out, float time)
     size_t size = tracks.size();
 
     for (size_t i = 0; i < size; ++i) {
-        // get the ID of the  track
+
+        Track& track = tracks[i];
+
         // sample the track
-        T animated = tracks[i].sample(time, looping);
-        // assign the sampled value back to the Pose reference
-        out[i] = animated;
+        track.sample(time, looping);
     }
+
     return time;
 }
 
@@ -36,7 +37,7 @@ float Animation::adjust_time_to_fit_range(float time)
         if (time < 0.0f) {
             time += end_time - start_time;
         }
-        time = time + start_time;
+        time += start_time;
     }
     else {
         if (time < start_time) {
@@ -74,24 +75,33 @@ void Animation::recalculate_duration()
     }
 }
 
+Track* Animation::add_track(uint32_t id, void* data)
+{
+    Track track = {};
+    track.set_id(id);
+    track.set_data(data);
+
+    tracks.push_back(track);
+    return &tracks[tracks.size() - 1];
+}
+
+
 // retrieves the Track object for a specific id in the Animation
-Track& Animation::operator[](unsigned int id)
+Track* Animation::operator[](uint32_t id)
 {
     return get_track(id);
 }
 
 // retrieves the Track object for a specific id in the Animation
-Track& Animation::get_track(unsigned int id)
+Track* Animation::get_track(uint32_t id)
 {
     for (size_t i = 0, s = tracks.size(); i < s; ++i) {
         if (tracks[i].get_id() == id) {
-            return tracks[i];
+            return &tracks[i];
         }
     }
-    // if no qualifying track is found, a new one is created and returned
-    tracks.push_back(Track());
-    tracks[tracks.size() - 1].set_id(id);
-    return tracks[tracks.size() - 1];
+    assert(0);
+    return nullptr;
 }
 
 // getters
@@ -100,14 +110,14 @@ std::string& Animation::get_name()
     return name;
 }
 
-unsigned int Animation::get_id_at_index(unsigned int index)
+uint32_t Animation::get_id_at_index(uint32_t index)
 {
     return tracks[index].get_id();
 }
 
-unsigned int Animation::size()
+uint32_t Animation::size()
 {
-    return (unsigned int)tracks.size();
+    return (uint32_t)tracks.size();
 }
 
 float Animation::get_duration()
@@ -136,7 +146,7 @@ void Animation::set_name(const std::string& inNewName)
     name = inNewName;
 }
 
-void Animation::set_id_at_index(unsigned int index, unsigned int id)
+void Animation::set_id_at_index(uint32_t index, uint32_t id)
 {
     return tracks[index].set_id(id);
 }

@@ -16,7 +16,6 @@
 class Surface;
 class Texture;
 class Shader;
-class Animation;
 struct Uniform;
 
 class RendererStorage {
@@ -25,11 +24,10 @@ public:
 
     RendererStorage();
 
-
     struct AnimationData {
         Animation* animation;
         std::string node_path;
-        std::string animation_type = "simple";
+        AnimationType animation_type = AnimationType::ANIM_TYPE_SIMPLE;
     };
 
     // Singleton
@@ -107,7 +105,7 @@ public:
     static void register_skeleton(const std::string& node_path, Skeleton* skeleton);
     static Skeleton* get_skeleton(const std::string& node_path);
 
-    static void register_animation(const std::string& animation_path, Animation* animation, const std::string& node_path, const std::string& type);
+    static void register_animation(const std::string& animation_path, Animation* animation, const std::string& node_path, AnimationType type);
     static RendererStorage::AnimationData* get_animation(const std::string& animation_path);
 
 };

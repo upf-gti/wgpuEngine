@@ -26,9 +26,9 @@ public:
 	// Set the transformation for the joint given its id
 	void set_local_transform(unsigned int id, const Transform& transform);
 	// Get the transformation of the joint given its id
-	Transform get_local_transform(unsigned int id);
+	Transform& get_local_transform(unsigned int id);
 	// Get the global transformation (world space) of the joint 
-	Transform get_global_transform(unsigned int id);
+	Transform& get_global_transform(unsigned int id);
 	// Get the global transformation matrix (world space) of all the joints
 	std::vector<glm::mat4> get_global_matrices();
 	Transform operator[](unsigned int index);

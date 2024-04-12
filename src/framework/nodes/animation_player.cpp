@@ -1,5 +1,7 @@
 #include "animation_player.h"
 
+#include "framework/input.h"
+
 void AnimationPlayer::set_next_animation(const std::string& animation_name)
 {
     animations_queue.push_back(animation_name);
@@ -96,32 +98,41 @@ void AnimationPlayer::play(const std::string& animation_name, float custom_blend
             break;
         }
     }
+
     animation->set_looping(looping);
     duration = animation->get_duration();
     playing = true;
     playback = 0;
+
+    // debug
+    animation->set_looping(true);
 }
 
 void AnimationPlayer::pause()
 {
+
 }
 
 void AnimationPlayer::stop(bool keep_state)
 {
+
 }
 
+void AnimationPlayer::update(float delta_time)
+{
+    if (!Input::is_key_pressed(GLFW_KEY_SPACE))
+        return;
 
-void AnimationPlayer::update(float delta_time) {
-
-    if (playback >= duration) { // TO DO: check if works when looping is true
+    if (!looping && playback >= duration) {
         playing = false;
     }
 
     if (playing) {
-        if (type == "skeleton") {
-           /* Skeleton* skeleton = (static_cast<SkeletonInstance3D*>(node))->get_skeleton();
-            playback = animation->sample(skeleton->get_current_pose(), delta_time * speed);*/
-        }
+
+        playback += delta_time * speed;
+
+        playback = animation->sample(playback);
     }
+
     Node::update(delta_time);
 }
