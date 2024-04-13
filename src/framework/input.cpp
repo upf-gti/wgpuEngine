@@ -191,7 +191,7 @@ glm::vec3 Input::get_controller_position(uint8_t controller, uint8_t type)
 glm::quat Input::get_controller_rotation(uint8_t controller, uint8_t type)
 {
 #ifdef XR_SUPPORT
-	if (!openxr_context) return {};
+	if (!openxr_context) return { 0.0f, 0.0f, 0.0f, 1.0f };
 	if (type == POSE_AIM) return xr_data.controllerAimPoses[controller].orientation;
 	else return xr_data.controllerGripPoses[controller].orientation;
 #else
