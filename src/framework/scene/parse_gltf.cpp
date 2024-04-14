@@ -594,7 +594,7 @@ Node3D* create_node_entity(tinygltf::Node& node, tinygltf::Model& model) {
     if (node.mesh >= 0) {
         new_node = new MeshInstance3D();
         if (node.skin >= 0) {
-            ((MeshInstance3D*)(new_node))->is_skinned = true;
+            static_cast<MeshInstance3D*>(new_node)->is_skinned = true;
         }
     }
     else if (node.camera >= 0) {
@@ -982,10 +982,10 @@ void get_scalar_values(std::vector<T>& out, unsigned int component_size, const t
     size_t buffer_start = final_accessor->byteOffset + final_buffer_view->byteOffset;
     size_t buffer_end = final_data_size * final_accessor->count + buffer_start;
 
-    out.resize((buffer_end - buffer_start) / final_stride * component_size);
+    out.resize(buffer_size);
+
     size_t id = 0;
 
-    
     for (size_t i = buffer_start; i < buffer_end; i += final_stride) {
         switch (accessor.componentType) {
         case TINYGLTF_COMPONENT_TYPE_FLOAT:
@@ -1055,6 +1055,7 @@ void track_from_channel(Track& result, tinygltf::AnimationChannel channel, tinyg
     else if (sampler.interpolation == "CUBICSPLINE") {
         interpolation = Interpolation::CUBIC;
     }
+
     bool is_sampler_cubic = interpolation == Interpolation::CUBIC;
     result.set_interpolation(interpolation);
 
@@ -1072,7 +1073,7 @@ void track_from_channel(Track& result, tinygltf::AnimationChannel channel, tinyg
 
     // parse the time and value arrays into frame structures
     for (size_t i = 0; i < num_frames; ++i) {
-        int baseIndex = i * comp_count;
+        int baseIndex = i;// *comp_count;
         Keyframe& frame = result[i];
         // offset used to deal with cubic tracks since the input and output tangents are as large as the number of components
         int offset = 0;
@@ -1152,9 +1153,13 @@ void parse_model_animations(tinygltf::Model& model, std::vector<SkeletonInstance
             TrackType type = TrackType::TYPE_UNDEFINED;
             void* data = nullptr;
             
-            if (channel.target_path == "translation" || channel.target_path == "scale") {
+            if (channel.target_path == "translation") {
                 type = TrackType::TYPE_VECTOR3;
                 data = &t.position;
+            }
+            else if (channel.target_path == "scale") {
+                type = TrackType::TYPE_VECTOR3;
+                data = &t.scale;
             }
             else if (channel.target_path == "rotation") {
                 type = TrackType::TYPE_QUAT;

@@ -107,8 +107,6 @@ float Track::get_end_time()
 // call sample_constant, sample_linear, or sample_cubic, depending on the track type.
 T Track::sample(float time, bool looping)
 {
-    std::cout << "SAMPLE TIME: " << time << std::endl;
-
     T r;
 
     if (interpolation == Interpolation::CONSTANT) {

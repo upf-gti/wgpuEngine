@@ -120,8 +120,8 @@ void AnimationPlayer::stop(bool keep_state)
 
 void AnimationPlayer::update(float delta_time)
 {
-    if (!Input::is_key_pressed(GLFW_KEY_SPACE))
-        return;
+    /*if (!Input::is_key_pressed(GLFW_KEY_SPACE))
+        return;*/
 
     if (!looping && playback >= duration) {
         playing = false;

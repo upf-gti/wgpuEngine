@@ -11,10 +11,9 @@ class Skeleton;
 
 class MeshInstance {
 
-private:
-    Skeleton* skeleton = nullptr;
-
 protected:
+
+    Skeleton* skeleton = nullptr;
 
     std::vector<Surface*> surfaces;
     std::unordered_map<Surface*, Material> material_overrides;
