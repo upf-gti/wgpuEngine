@@ -1,9 +1,11 @@
 #include "bone_transform.h"
 
 #define EPSILON 0.0001f
+
 // Transforms can be combined in the same way as matrices and quaternions and the effects of two transforms can be combined into one transform
 // To keep things consistent, combining transforms should maintain a right-to-left combination order
-Transform combine(const Transform& t1, const Transform& t2) {
+Transform combine(const Transform& t1, const Transform& t2)
+{
 	Transform out;
 	out.scale = t1.scale * t2.scale;
 	out.rotation = t1.rotation * t2.rotation ; 
@@ -13,7 +15,8 @@ Transform combine(const Transform& t1, const Transform& t2) {
 	return out;
 }
 
-Transform inverse(const Transform& t) {
+Transform inverse(const Transform& t)
+{
 	Transform inv;
 	inv.rotation = inverse(t.rotation);
 	inv.scale.x = fabs(t.scale.x) < EPSILON ? 0.0f : 1.0f / t.scale.x;
@@ -24,7 +27,8 @@ Transform inverse(const Transform& t) {
 	return inv;
 }
 
-Transform mix(const Transform& a, const Transform& b, float t) {
+Transform mix(const Transform& a, const Transform& b, float t)
+{
 	glm::quat bRot = b.rotation;
 	if (dot(a.rotation, bRot) < 0.0f) {
 		bRot = -bRot;
@@ -36,7 +40,8 @@ Transform mix(const Transform& a, const Transform& b, float t) {
 }
 
 // Converts a transform into a mat4
-glm::mat4x4 transformToMat4(const Transform& t) {
+glm::mat4x4 transformToMat4(const Transform& t)
+{
 	// First, get the rotation basis of the transform
 	glm::vec3 x = t.rotation * glm::vec3(1.f, 0.f, 0.f);
 	glm::vec3 y = t.rotation * glm::vec3(0.f, 1.f, 0.f);
@@ -56,8 +61,8 @@ glm::mat4x4 transformToMat4(const Transform& t) {
 	);
 }
 
-
-glm::quat fromTo(const glm::vec3& from, const glm::vec3& to) {
+glm::quat fromTo(const glm::vec3& from, const glm::vec3& to)
+{
     glm::vec3 f = normalize(from);
     glm::vec3 t = normalize(to);
 
@@ -81,7 +86,8 @@ glm::quat fromTo(const glm::vec3& from, const glm::vec3& to) {
     return glm::quat(axis.x, axis.y, axis.z, dot(f, half));
 }
 
-glm::quat lookRotation(const glm::vec3& direction, const glm::vec3& up) {
+glm::quat lookRotation(const glm::vec3& direction, const glm::vec3& up)
+{
     // Find orthonormal basis vectors
     glm::vec3 f = normalize(direction); // Object Forward
     glm::vec3 u = normalize(up); // Desired Up
@@ -102,7 +108,8 @@ glm::quat lookRotation(const glm::vec3& direction, const glm::vec3& up) {
 
 // Extract the rotation and the translition from a matrix is easy. But not for the scale
 // M = SRT, ignore the translation: M = SR -> invert R to isolate S
-Transform mat4ToTransform(const glm::mat4x4& m) {
+Transform mat4ToTransform(const glm::mat4x4& m)
+{
 	Transform out;
     glm::vec3 skew;
     glm::vec4 perspective;
@@ -130,20 +137,20 @@ Transform mat4ToTransform(const glm::mat4x4& m) {
     glm::vec3 r = inv_rot * glm::vec3(1, 0, 0);
     glm::vec3 u = inv_rot * glm::vec3(0, 1, 0);
     glm::vec3 f = inv_rot * glm::vec3(0, 0, 1);
-glm::mat4x4 invRotMat =
-    glm::mat4x4(r.x, r.y, r.z, 0,
-        u.x, u.y, u.z, 0,
-        f.x, f.y, f.z, 0,
-        0, 0, 0, 1
-    );
+    glm::mat4x4 invRotMat =
+        glm::mat4x4(r.x, r.y, r.z, 0,
+            u.x, u.y, u.z, 0,
+            f.x, f.y, f.z, 0,
+            0, 0, 0, 1
+        );
 	//glm::mat4x4 invRotMat = toMat4(inverse(out.rotation));
 	glm::mat4x4 scaleSkewMat = rotScaleMat * invRotMat;
 	out.scale = glm::vec3(scaleSkewMat[0][0], scaleSkewMat[1][1], scaleSkewMat[2][2]);
 	return out;
 }
 
-
-glm::vec3 transformPoint(const Transform& a, const glm::vec3& b) {
+glm::vec3 transformPoint(const Transform& a, const glm::vec3& b)
+{
 	glm::vec3 out;
 	out = a.rotation * (a.scale * b);
 	out = a.position + out;
@@ -151,7 +158,8 @@ glm::vec3 transformPoint(const Transform& a, const glm::vec3& b) {
 }
 
 // First, apply the scale, then rotation
-glm::vec3 transformVector(const Transform& t, const glm::vec3& v) {
+glm::vec3 transformVector(const Transform& t, const glm::vec3& v)
+{
 	glm::vec3 out;
 	out = t.rotation * (t.scale * v);
 	return out;

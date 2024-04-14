@@ -143,14 +143,16 @@ void RendererStorage::register_material(WebGPUContext* webgpu_context, MeshInsta
         Uniform* u = new Uniform();
         Skeleton* skeleton = mesh_instance->get_skeleton();
         Pose &current_pose = skeleton->get_current_pose();
-        Pose bind_pose = skeleton->get_bind_pose();    
+        Pose bind_pose = skeleton->get_bind_pose();
+
         Transform t = current_pose.get_local_transform(2);
-        t.rotation = glm::quat(0, 0.707, 0, 0.707);
+        t.rotation = glm::quat(0.0f, 0.707f, 0.0f, 0.707f);
         current_pose.set_local_transform(2, t);
+
         std::vector<InterleavedData> vertices = mesh_instance->get_surface(0)->get_vertices();
 
         std::vector<glm::mat4x4> animated_matrices;        
-        animated_matrices.resize(std::max((int)current_pose.size(), 4), glm::mat4x4(1.0));
+        animated_matrices.resize(std::max((int)current_pose.size(), 4), glm::mat4x4(1.0f));
 
         for (unsigned int i = 0; i < vertices.size(); i++) {
             glm::ivec4 joints = vertices[i].joints;

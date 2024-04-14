@@ -2,6 +2,10 @@
 
 #include "graphics/renderer.h"
 
+SkeletonInstance3D::SkeletonInstance3D()
+{
+
+}
 
 void SkeletonInstance3D::set_skeleton(Skeleton* s)
 {
@@ -10,13 +14,15 @@ void SkeletonInstance3D::set_skeleton(Skeleton* s)
     
 }
 
-void SkeletonInstance3D::update(float dt) {
+void SkeletonInstance3D::update(float dt)
+{
     init_skeleton_helper();
 }
 
-void SkeletonInstance3D::init_skeleton_helper() {
-    
+void SkeletonInstance3D::init_skeleton_helper()
+{
     Surface* s = new Surface();
+
     std::vector<InterleavedData>& vertices = s->get_vertices();
 
     if (get_surfaces().size()) {
@@ -43,8 +49,7 @@ void SkeletonInstance3D::init_skeleton_helper() {
         vertices.push_back(data);
     }
 
-     s->create_from_vertices(vertices);
-    
+    s->create_from_vertices(vertices);
  
     Material skeleton_material;
     skeleton_material.depth_read = false;
@@ -53,6 +58,7 @@ void SkeletonInstance3D::init_skeleton_helper() {
     skeleton_material.shader = RendererStorage::get_shader("data/shaders/mesh_color.wgsl", skeleton_material);
     set_surface_material_override(s, skeleton_material);
 }
-Skeleton* SkeletonInstance3D::get_skeleton() {
+Skeleton* SkeletonInstance3D::get_skeleton()
+{
     return skeleton;
 }

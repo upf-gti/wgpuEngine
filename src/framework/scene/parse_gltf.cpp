@@ -562,19 +562,19 @@ void read_mesh(tinygltf::Model& model, tinygltf::Mesh& mesh, Node3D* entity, std
 
 void create_light(tinygltf::Light& gltf_light, Light3D* light_node) {
 
-    light_node->set_intensity(gltf_light.intensity);
+    light_node->set_intensity(static_cast<float>(gltf_light.intensity));
 
     // Blender exports 0.0 if no custom distance is used.. so keep -1 as range
     if (gltf_light.range != 0.0f) {
-        light_node->set_range(gltf_light.range);
+        light_node->set_range(static_cast<float>(gltf_light.range));
     }
     if (gltf_light.color.size()) {
         light_node->set_color({ gltf_light.color[0], gltf_light.color[1], gltf_light.color[2] });
     }
 
     if (light_node->get_type() == LIGHT_SPOT) {
-        static_cast<SpotLight3D*>(light_node)->set_inner_cone_angle(gltf_light.spot.innerConeAngle);
-        static_cast<SpotLight3D*>(light_node)->set_outer_cone_angle(gltf_light.spot.outerConeAngle);
+        static_cast<SpotLight3D*>(light_node)->set_inner_cone_angle(static_cast<float>(gltf_light.spot.innerConeAngle));
+        static_cast<SpotLight3D*>(light_node)->set_outer_cone_angle(static_cast<float>(gltf_light.spot.outerConeAngle));
     }
     else if (light_node->get_type() == LIGHT_OMNI) {
         // ..
@@ -723,6 +723,7 @@ void parse_model_skins(tinygltf::Model& model, std::map<int, int> hierarchy, std
             Pose rest_pose;
 
             size_t num_joints = skin.joints.size();
+
             if (num_joints > 0) {
 
                 rest_pose.resize(num_joints);
@@ -1064,13 +1065,13 @@ void track_from_channel(Track& result, tinygltf::AnimationChannel channel, tinyg
     std::vector<T> values; // values
     get_scalar_values(values, TrackHelpers::get_size(result), model, sampler.output);
 
-    unsigned int num_frames = time.size();
-    unsigned int comp_count = values.size() / time.size(); // components (vec3 or quat) per frame}
+    size_t num_frames = time.size();
+    size_t comp_count = values.size() / time.size(); // components (vec3 or quat) per frame}
     // resize the track to have enough room to store all the frames
     result.resize(num_frames);
 
     // parse the time and value arrays into frame structures
-    for (unsigned int i = 0; i < num_frames; ++i) {
+    for (size_t i = 0; i < num_frames; ++i) {
         int baseIndex = i * comp_count;
         Keyframe& frame = result[i];
         // offset used to deal with cubic tracks since the input and output tangents are as large as the number of components
@@ -1090,19 +1091,19 @@ void track_from_channel(Track& result, tinygltf::AnimationChannel channel, tinyg
 void parse_model_animations(tinygltf::Model& model, std::vector<SkeletonInstance3D*> skeleton_instances, AnimationPlayer* player) {
 
     std::vector<tinygltf::Animation> animations = model.animations;
-    unsigned int num_animations = animations.size();
+    size_t num_animations = animations.size();
 
     std::vector<Animation*> result(num_animations);
     std::string root_node = "";
 
-    for (unsigned int i = 0; i < num_animations; ++i) {
+    for (size_t i = 0; i < num_animations; ++i) {
        
         Skeleton* skeleton = nullptr;
         
         for (auto & instance : skeleton_instances) {
-            std::vector<unsigned int> indices = instance->get_skeleton()->get_joint_indices();
+            std::vector<uint32_t> indices = instance->get_skeleton()->get_joint_indices();
 
-            for (unsigned int s = 0; s < indices.size(); s++) {
+            for (size_t s = 0; s < indices.size(); s++) {
                 if (indices[s] != animations[i].channels[0].target_node)
                     continue;
                 skeleton = instance->get_skeleton();
@@ -1135,9 +1136,9 @@ void parse_model_animations(tinygltf::Model& model, std::vector<SkeletonInstance
         
 
         // each channel of a glTF file is an animation track
-        unsigned int num_channels = animations[i].channels.size();
+        size_t num_channels = animations[i].channels.size();
 
-        for (unsigned int j = 0; j < num_channels; ++j) {
+        for (size_t j = 0; j < num_channels; ++j) {
             
             tinygltf::AnimationChannel channel = animations[i].channels[j];
             tinygltf::AnimationSampler sampler = animations[i].samplers[channel.sampler];

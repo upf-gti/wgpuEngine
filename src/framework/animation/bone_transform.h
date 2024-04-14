@@ -1,12 +1,6 @@
 #pragma once
 
-#include <glm/glm.hpp>
-#include <glm/gtc/quaternion.hpp>
-#include <glm/gtc/type_ptr.hpp>
-#include <glm/gtx/quaternion.hpp>
-#include <glm/gtx/euler_angles.hpp>
-#include "glm/gtc/matrix_transform.hpp"
-#include "glm/gtx/matrix_transform_2d.hpp"
+#include "framework/math.h"
 
 #include <vector>
 
@@ -18,10 +12,11 @@ struct Transform {
 
 	Transform(const glm::vec3& p, const glm::quat& r, const glm::vec3& s) :
 		position(p), rotation(r), scale(s) {}
+
 	Transform() :
-		position(glm::vec3(0, 0, 0)),
-		rotation(glm::quat(0, 0, 0, 1)),
-		scale(glm::vec3(1, 1, 1))
+		position(glm::vec3(0.0f, 0.0f, 0.0f)),
+		rotation(glm::quat(0.0f, 0.0f, 0.0f, 1.0f)),
+		scale(glm::vec3(1.0f, 1.0f, 1.0f))
 	{}
 
 }; // End of transform struct
