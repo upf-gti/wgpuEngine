@@ -1,7 +1,8 @@
 #include "animation.h"
 
-Animation::Animation() {
-    name = "No name given";
+Animation::Animation()
+{
+    name = "AnimationUnnamed";
     start_time = 0.0f;
     end_time = 0.0f;
     looping = true;
@@ -47,6 +48,7 @@ float Animation::adjust_time_to_fit_range(float time)
             time = end_time;
         }
     }
+
     return time;
 }
 
@@ -55,22 +57,26 @@ void Animation::recalculate_duration()
     start_time = 0.0f;
     end_time = 0.0f;
 
-    bool startSet = false;
-    bool endSet = false;
+    bool start_set = false;
+    bool end_set = false;
 
-    size_t tracksSize = tracks.size();
-    for (size_t i = 0; i < tracksSize; ++i) {
-        if (tracks[i].size()) {
-            float minstart_time = tracks[i].get_start_time();
-            float max_end_time = tracks[i].get_end_time();
-            if (minstart_time < start_time || !startSet) {
-                start_time = minstart_time;
-                startSet = true;
-            }
-            if (max_end_time > end_time || !endSet) {
-                end_time = max_end_time;
-                endSet = true;
-            }
+    size_t tracks_size = tracks.size();
+
+    for (size_t i = 0; i < tracks_size; ++i) {
+
+        if (!tracks[i].size()) {
+            continue;
+        }
+
+        float minstart_time = tracks[i].get_start_time();
+        float max_end_time = tracks[i].get_end_time();
+        if (minstart_time < start_time || !start_set) {
+            start_time = minstart_time;
+            start_set = true;
+        }
+        if (max_end_time > end_time || !end_set) {
+            end_time = max_end_time;
+            end_set = true;
         }
     }
 }
@@ -85,14 +91,13 @@ Track* Animation::add_track(uint32_t id, void* data)
     return &tracks[tracks.size() - 1];
 }
 
-
-// retrieves the Track object for a specific id in the Animation
+// Retrieves the Track object for a specific id in the Animation
 Track* Animation::operator[](uint32_t id)
 {
     return get_track(id);
 }
 
-// retrieves the Track object for a specific id in the Animation
+// Retrieves the Track object for a specific id in the Animation
 Track* Animation::get_track(uint32_t id)
 {
     for (size_t i = 0, s = tracks.size(); i < s; ++i) {
@@ -141,9 +146,15 @@ bool Animation::get_looping()
 }
 
 // setters
-void Animation::set_name(const std::string& inNewName)
+
+void Animation::set_type(AnimationType new_type)
 {
-    name = inNewName;
+    type = new_type;
+}
+
+void Animation::set_name(const std::string& new_name)
+{
+    name = new_name;
 }
 
 void Animation::set_id_at_index(uint32_t index, uint32_t id)
@@ -151,7 +162,7 @@ void Animation::set_id_at_index(uint32_t index, uint32_t id)
     return tracks[index].set_id(id);
 }
 
-void Animation::set_looping(bool inLooping)
+void Animation::set_looping(bool new_looping)
 {
-    looping = inLooping;
+    looping = new_looping;
 }

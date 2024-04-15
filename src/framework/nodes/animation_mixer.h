@@ -15,6 +15,6 @@ public:
     AnimationMixer(Node3D* root_node);
 
     void set_root_node(Node3D* node);
-    RendererStorage::AnimationData* get_animation(std::string animation_name);
+    AnimationData* get_animation(std::string animation_name);
 };
 

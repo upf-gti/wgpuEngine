@@ -1117,8 +1117,10 @@ void parse_model_animations(tinygltf::Model& model, std::vector<SkeletonInstance
                 break;
         }
 
-        if(!result[i])
+        if (!result[i]) {
             result[i] = new Animation();      
+            result[i]->set_type(AnimationType::ANIM_TYPE_SKELETON);
+        }
 
         // each channel of a glTF file is an animation track
         size_t num_channels = animations[i].channels.size();
@@ -1172,7 +1174,7 @@ void parse_model_animations(tinygltf::Model& model, std::vector<SkeletonInstance
         result[i]->set_name(animations[i].name);
         result[i]->recalculate_duration();
 
-        RendererStorage::register_animation(result[i]->get_name(), result[i], root_node, AnimationType::ANIM_TYPE_SKELETON);
+        RendererStorage::register_animation(result[i]->get_name(), result[i], root_node);
 
         if (i == 0) {
             player->play(result[0]->get_name());

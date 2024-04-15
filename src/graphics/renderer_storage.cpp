@@ -17,7 +17,7 @@ std::map<std::string, Surface*> RendererStorage::surfaces;
 std::map<std::string, Texture*> RendererStorage::textures;
 std::map<std::string, Shader*> RendererStorage::shaders;
 std::map<std::string, Skeleton*> RendererStorage::skeletons;
-std::map<std::string, RendererStorage::AnimationData*> RendererStorage::animations;
+std::map<std::string, AnimationData*> RendererStorage::animations;
 
 Texture* RendererStorage::current_skybox_texture = nullptr;
 std::map<std::string, std::vector<std::string>> RendererStorage::shader_library_references;
@@ -364,18 +364,16 @@ Skeleton* RendererStorage::get_skeleton(const std::string& node_path)
     return nullptr;
 }
 
-void RendererStorage::register_animation(const std::string& animation_path, Animation* animation, const std::string& node_path, AnimationType type) {
+void RendererStorage::register_animation(const std::string& animation_path, Animation* animation, const std::string& node_path)
+{
     // register in map
-    AnimationData* data, d;
-    data = &d;
-    (*data).animation = new Animation();
-    (*data).animation = animation;
-    (*data).animation_type = type;
-    (*data).node_path = node_path;
+    AnimationData* data = new AnimationData();
+    data->animation = animation;
+    data->node_path = node_path;
     animations[animation_path] = data;
 }
 
-RendererStorage::AnimationData* RendererStorage::get_animation(const std::string& animation_path)
+AnimationData* RendererStorage::get_animation(const std::string& animation_path)
 {
     // check if already loaded
     std::map<std::string, AnimationData*>::iterator it = animations.find(animation_path);
@@ -384,7 +382,6 @@ RendererStorage::AnimationData* RendererStorage::get_animation(const std::string
 
     return NULL;
 }
-
 
 void RendererStorage::register_basic_surfaces()
 {

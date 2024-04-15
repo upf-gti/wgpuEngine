@@ -10,6 +10,13 @@ enum AnimationType {
     ANIM_TYPE_SKELETON,
 };
 
+class Animation;
+
+struct AnimationData {
+    Animation* animation;
+    std::string node_path;
+};
+
 class Animation {
 
     std::vector<Track> tracks;
@@ -20,6 +27,8 @@ class Animation {
     bool looping = false;
 
     float adjust_time_to_fit_range(float time);
+
+    AnimationType type = ANIM_TYPE_UNDEFINED;
 
 public:
 
@@ -51,8 +60,9 @@ public:
     float get_end_time();
     bool get_looping();
 
-    void set_name(const std::string& in_new_name);
-    void set_looping(bool in_looping);
+    void set_type(AnimationType new_type);
+    void set_name(const std::string& new_name);
+    void set_looping(bool new_looping);
 };
 
 

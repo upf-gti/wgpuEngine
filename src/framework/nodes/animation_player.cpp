@@ -89,25 +89,18 @@ void AnimationPlayer::play(const std::string& animation_name, float custom_blend
         current_animation = animations_queue[0];
         animations_queue.erase(animations_queue.begin());
     }
-    if (custom_blend >= 0) {
+    if (custom_blend >= 0.0f) {
         blend_time = custom_blend;
     }
-    speed = custom_speed;
-    RendererStorage::AnimationData* data = get_animation(current_animation);
-    animation = data->animation;
-    type = data->animation_type;
 
-    for (auto const& instance : root_node->get_children()) {
-        if (instance->get_name() == data->node_path) {
-            node = (Node3D*)instance;
-            break;
-        }
-    }
+    AnimationData* data = get_animation(current_animation);
+    animation = data->animation;
 
     animation->set_looping(looping);
     duration = animation->get_duration();
+    speed = custom_speed;
     playing = true;
-    playback = 0;
+    playback = 0.0f;
 
     // debug
     animation->set_looping(true);
@@ -125,9 +118,6 @@ void AnimationPlayer::stop(bool keep_state)
 
 void AnimationPlayer::update(float delta_time)
 {
-    /*if (!Input::is_key_pressed(GLFW_KEY_SPACE))
-        return;*/
-
     if (!looping && playback >= duration) {
         playing = false;
     }
@@ -135,7 +125,6 @@ void AnimationPlayer::update(float delta_time)
     if (playing) {
 
         playback += delta_time * speed;
-
         playback = animation->sample(playback);
     }
 

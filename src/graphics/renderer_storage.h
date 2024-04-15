@@ -24,12 +24,6 @@ public:
 
     RendererStorage();
 
-    struct AnimationData {
-        Animation* animation;
-        std::string node_path;
-        AnimationType animation_type = AnimationType::ANIM_TYPE_SIMPLE;
-    };
-
     // Singleton
     static RendererStorage* instance;
 
@@ -38,7 +32,7 @@ public:
     static std::map<std::string, Texture*> textures;
     static std::map<std::string, Surface*> surfaces;
     static std::map<std::string, Skeleton*> skeletons;
-    static std::map<std::string, RendererStorage::AnimationData*> animations;
+    static std::map<std::string, AnimationData*> animations;
 
     static Texture* current_skybox_texture;
 
@@ -105,7 +99,7 @@ public:
     static void register_skeleton(const std::string& node_path, Skeleton* skeleton);
     static Skeleton* get_skeleton(const std::string& node_path);
 
-    static void register_animation(const std::string& animation_path, Animation* animation, const std::string& node_path, AnimationType type);
-    static RendererStorage::AnimationData* get_animation(const std::string& animation_path);
+    static void register_animation(const std::string& animation_path, Animation* animation, const std::string& node_path);
+    static AnimationData* get_animation(const std::string& animation_path);
 
 };
