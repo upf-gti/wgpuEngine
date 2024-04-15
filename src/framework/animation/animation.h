@@ -1,8 +1,10 @@
 #pragma once
 #include <vector>
 #include <string>
-#include "track.h"
 #include <iostream>
+
+#include "track.h"
+#include "pose.h"
 
 enum AnimationType {
     ANIM_TYPE_UNDEFINED,
@@ -13,7 +15,7 @@ enum AnimationType {
 class Animation;
 
 struct AnimationData {
-    Animation* animation;
+    Animation* animation = nullptr;
     std::string node_path;
 };
 
@@ -27,6 +29,7 @@ class Animation {
     bool looping = false;
 
     float adjust_time_to_fit_range(float time);
+    void sample_pose(float time, void* out);
 
     AnimationType type = ANIM_TYPE_UNDEFINED;
 
@@ -42,7 +45,7 @@ public:
     uint32_t size();
 
     // Samples the animation clip at the provided time into the out reference
-    float sample(float time);
+    float sample(float time, void* data = nullptr);
 
     // Returns a transform track for the specified track position id
     Track* operator[](uint32_t index);
@@ -60,6 +63,7 @@ public:
     float get_start_time();
     float get_end_time();
     bool get_looping();
+    AnimationType get_type();
 
     void set_type(AnimationType new_type);
     void set_name(const std::string& new_name);

@@ -18,10 +18,13 @@ public:
 
 	// Resize the array of joints and of parents id
 	void resize(uint32_t size);
-	uint32_t size();
+	uint32_t size() const;
 
 	void set_parent(uint32_t id, uint32_t parent_id);
+    void set_joints(std::vector<Transform> new_joints) { joints = new_joints; };
+
 	int get_parent(uint32_t id);
+    const std::vector<Transform>& get_joints() const { return joints; };
 
 	// Set the transformation for the joint given its id
 	void set_local_transform(uint32_t id, const Transform& transform);

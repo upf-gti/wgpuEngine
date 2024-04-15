@@ -49,9 +49,9 @@ Pose& Skeleton::get_current_pose()
     return current_pose;
 }
 
-void Skeleton::set_current_pose(Pose pose)
+void Skeleton::set_current_pose(const Pose& pose)
 {
-    current_pose = pose;
+    current_pose.set_joints(pose.get_joints());
 }
 
 std::vector<glm::mat4>& Skeleton::get_inv_bind_pose()
@@ -74,9 +74,14 @@ std::vector<uint32_t>& Skeleton::get_joint_indices()
     return joint_ids;
 }
 
-uint32_t& Skeleton::get_joint_indice(uint32_t id)
+uint32_t& Skeleton::get_joint_indices(uint32_t id)
 {
     return joint_ids[id];
+}
+
+uint32_t Skeleton::get_joints_count()
+{
+    return (uint32_t)joint_ids.size();
 }
 
 void Skeleton::update_inv_bind_pose()

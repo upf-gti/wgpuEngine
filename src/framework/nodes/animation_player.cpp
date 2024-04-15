@@ -102,6 +102,13 @@ void AnimationPlayer::play(const std::string& animation_name, float custom_blend
     playing = true;
     playback = 0.0f;
 
+    for (auto instance : root_node->get_children()) {
+        if (instance->get_name() == data->node_path) {
+            node = static_cast<MeshInstance3D*>(instance);
+            break;
+        }
+    }
+
     // debug
     animation->set_looping(true);
 }
@@ -123,8 +130,26 @@ void AnimationPlayer::update(float delta_time)
     }
 
     if (playing) {
+
         playback += delta_time * speed;
-        playback = animation->sample(playback);
+
+        // Skeletal animation case: we get the skeleton pose
+        // in case we want to process the values and update it manually
+        if (animation->get_type() == ANIM_TYPE_SKELETON) {
+
+            auto skt = node->get_skeleton();
+            Pose pose(skt->get_joints_count());
+            playback = animation->sample(playback, &pose);
+
+            // Blend animations and update pose manually
+            {
+                skt->set_current_pose(pose);
+            }
+        }
+        else {
+            // General case: out is not used..
+            playback = animation->sample(playback);
+        }
     }
 
     Node::update(delta_time);

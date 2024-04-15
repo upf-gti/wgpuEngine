@@ -8,25 +8,48 @@ Animation::Animation()
     looping = true;
 }
 
-float Animation::sample(float time)
+float Animation::sample(float time, void* data)
 {
     if (get_duration() == 0.0f) {
-        return 0.0f;
+        return time;
     }
 
     time = adjust_time_to_fit_range(time);
 
-    size_t size = tracks.size();
-
-    for (size_t i = 0; i < size; ++i) {
-
-        Track& track = tracks[i];
-
-        // sample the track
-        track.sample(time, looping, track.get_data());
+    if(type == ANIM_TYPE_SKELETON) {
+        sample_pose(time, data);
+    }
+    else {
+        // sample tracks and update data
+        for (size_t i = 0; i < tracks.size(); ++i) {
+            Track& track = tracks[i];
+            track.sample(time, looping, SAMPLE_UPDATE);
+        }
     }
 
     return time;
+}
+
+void Animation::sample_pose(float time, void* out)
+{
+    Pose* pose = reinterpret_cast<Pose*>(out);
+    assert(pose);
+
+    for (size_t i = 0; i < tracks.size(); i += 3) {
+
+        Track& p_track = tracks[i];
+        Track& r_track = tracks[i + 1];
+        Track& s_track = tracks[i + 2];
+
+        Transform transform;
+
+        transform.position = std::get<glm::vec3>(p_track.sample(time, looping, SAMPLE_RETURN));
+        transform.rotation = std::get<glm::quat>(r_track.sample(time, looping, SAMPLE_RETURN));
+        transform.scale = std::get<glm::vec3>(s_track.sample(time, looping, SAMPLE_RETURN));
+
+        uint32_t id = p_track.get_id();
+        pose->set_local_transform(id, transform);
+    }
 }
 
 float Animation::adjust_time_to_fit_range(float time)
@@ -149,6 +172,11 @@ float Animation::get_end_time()
 bool Animation::get_looping()
 {
     return looping;
+}
+
+AnimationType Animation::get_type()
+{
+    return type;
 }
 
 // setters

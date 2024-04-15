@@ -23,7 +23,7 @@ void Pose::resize(uint32_t size)
 }
 
 // get the number of joints
-uint32_t Pose::size()
+uint32_t Pose::size() const
 {
 	return (uint32_t)joints.size();
 }

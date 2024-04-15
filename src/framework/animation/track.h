@@ -6,6 +6,11 @@
 #include <variant>
 #include <string>
 
+enum SampleMode {
+    SAMPLE_UPDATE,
+    SAMPLE_RETURN
+};
+
 enum class Interpolation {
     CONSTANT,
     LINEAR,
@@ -78,7 +83,7 @@ public:
     void resize(uint32_t size);
 
     // Prameters: time value, if the track is looping or not
-    T sample(float time, bool looping, void* out);
+    T sample(float time, bool looping, SampleMode mode);
     Keyframe& operator[](uint32_t index);
 };
 

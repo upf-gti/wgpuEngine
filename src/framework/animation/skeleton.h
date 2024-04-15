@@ -1,7 +1,8 @@
 #pragma once
 
-#include "pose.h"
 #include <string>
+
+#include "pose.h"
 
 class Skeleton
 {
@@ -35,7 +36,8 @@ public:
 	std::vector<std::string>& get_joint_names();
 	std::vector<uint32_t>& get_joint_indices();
 	std::string& get_joint_name(uint32_t id);
-	uint32_t& get_joint_indice(uint32_t id);
+	uint32_t& get_joint_indices(uint32_t id);
+    uint32_t get_joints_count();
 
-	void set_current_pose(Pose pose);
+	void set_current_pose(const Pose& pose);
 };

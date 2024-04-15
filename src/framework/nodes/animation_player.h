@@ -22,7 +22,7 @@ class AnimationPlayer : public AnimationMixer
     std::vector<std::string> animations_queue;
 
     Animation* animation = nullptr;
-    Node3D* node = nullptr;
+    MeshInstance3D* node = nullptr;
 
 public:
     AnimationPlayer(const std::string& name);
