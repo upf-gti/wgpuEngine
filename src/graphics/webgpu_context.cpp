@@ -402,7 +402,7 @@ void WebGPUContext::create_texture_mipmaps(WGPUTexture texture, WGPUExtent3D tex
     sampler.binding = 2;
 
     // For all layers and levels
-    for (int layer = 0; layer < texture_size.depthOrArrayLayers; ++layer)
+    for (uint32_t layer = 0; layer < texture_size.depthOrArrayLayers; ++layer)
     {
         std::vector<WGPUExtent3D> texture_mip_sizes;
         texture_mip_sizes.resize(mip_level_count);

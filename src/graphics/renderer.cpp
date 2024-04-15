@@ -271,7 +271,7 @@ void Renderer::prepare_instancing()
                 continue;
             }
 
-            RendererStorage::instance->register_material(&webgpu_context, material);
+            RendererStorage::instance->register_material(&webgpu_context, mesh_instance, material);
 
             Pipeline::register_render_pipeline(material);
 

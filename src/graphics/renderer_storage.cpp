@@ -5,8 +5,9 @@
 #include "shader.h"
 #include "uniform.h"
 #include "pipeline.h"
-
 #include "renderer.h"
+
+#include "framework/nodes/mesh_instance_3d.h"
 
 #include <filesystem>
 
@@ -15,6 +16,9 @@ RendererStorage* RendererStorage::instance = nullptr;
 std::map<std::string, Surface*> RendererStorage::surfaces;
 std::map<std::string, Texture*> RendererStorage::textures;
 std::map<std::string, Shader*> RendererStorage::shaders;
+std::map<std::string, Skeleton*> RendererStorage::skeletons;
+std::map<std::string, AnimationData*> RendererStorage::animations;
+
 Texture* RendererStorage::current_skybox_texture = nullptr;
 std::map<std::string, std::vector<std::string>> RendererStorage::shader_library_references;
 std::unordered_map<Material, RendererStorage::sBindingData> RendererStorage::material_bind_groups;
@@ -25,7 +29,7 @@ RendererStorage::RendererStorage()
     instance = this;
 }
 
-void RendererStorage::register_material(WebGPUContext* webgpu_context, const Material& material)
+void RendererStorage::register_material(WebGPUContext* webgpu_context, MeshInstance* mesh_instance, const Material& material)
 {
     if (material_bind_groups.contains(material)) {
         return;
@@ -133,6 +137,34 @@ void RendererStorage::register_material(WebGPUContext* webgpu_context, const Mat
         u->binding = 8;
         u->buffer_size = sizeof(float);
         uniforms.push_back(u);
+    }
+
+    if (material.use_skinning) {
+
+        Uniform* anim_u = new Uniform();
+
+        MeshInstance3D* instance_3d = static_cast<MeshInstance3D*>(mesh_instance);
+
+        // Send current animated bones matrices
+        const std::vector<glm::mat4x4>& animated_matrices = instance_3d->get_animated_data();
+
+        anim_u->data = webgpu_context->create_buffer(sizeof(glm::mat4x4) * animated_matrices.size(), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Storage, animated_matrices.data(), "animated_buffer");
+        anim_u->binding = 10;
+        anim_u->buffer_size = sizeof(glm::mat4x4) * animated_matrices.size();
+
+        uniforms.push_back(anim_u);
+
+        Uniform* invbind_u = new Uniform();
+
+        // Send bind bones inverse matrices
+        const std::vector<glm::mat4x4>& invbind_matrices = instance_3d->get_invbind_data();
+        invbind_u->data = webgpu_context->create_buffer(sizeof(glm::mat4x4) * invbind_matrices.size(), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Storage, invbind_matrices.data(), "invbind_buffer");
+        invbind_u->binding = 11;
+        invbind_u->buffer_size = sizeof(glm::mat4x4) * invbind_matrices.size();
+
+        uniforms.push_back(invbind_u);
+
+        instance_3d->set_uniform_data(anim_u, invbind_u);
     }
 
     material_bind_groups[material].bind_group = webgpu_context->create_bind_group(uniforms, material.shader, 2);
@@ -317,6 +349,40 @@ Surface* RendererStorage::get_surface(const std::string& mesh_path)
     return new_surface;
 }
 
+void RendererStorage::register_skeleton(const std::string& node_path, Skeleton* skeleton) {
+    // register in map
+    skeletons[node_path] = skeleton;
+}
+
+Skeleton* RendererStorage::get_skeleton(const std::string& node_path)
+{
+    // check if already loaded
+    std::map<std::string, Skeleton*>::iterator it = skeletons.find(node_path);
+    if (it != skeletons.end())
+        return it->second;
+
+    return nullptr;
+}
+
+void RendererStorage::register_animation(const std::string& animation_path, Animation* animation, const std::string& node_path)
+{
+    // register in map
+    AnimationData* data = new AnimationData();
+    data->animation = animation;
+    data->node_path = node_path;
+    animations[animation_path] = data;
+}
+
+AnimationData* RendererStorage::get_animation(const std::string& animation_path)
+{
+    // check if already loaded
+    std::map<std::string, AnimationData*>::iterator it = animations.find(animation_path);
+    if (it != animations.end())
+        return it->second;    
+
+    return NULL;
+}
+
 void RendererStorage::register_basic_surfaces()
 {
     // Quad
@@ -446,6 +512,10 @@ std::vector<std::string> RendererStorage::get_common_define_specializations(cons
         define_specializations.push_back("DEPTH_WRITE");
     }
 
+    if (material.use_skinning) {
+        define_specializations.push_back("USE_SKINNING");
+
+    }
     return define_specializations;
 }
 

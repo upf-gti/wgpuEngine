@@ -20,7 +20,7 @@ public:
     void set_orthographic(float left, float right, float bottom, float top, float z_near, float z_far);
     virtual void look_at(const glm::vec3& eye, const glm::vec3& center, const glm::vec3& up, bool reset_internals = true);
 
-    const glm::vec3& screen_to_ray(const glm::vec2& mouse_position);
+    glm::vec3 screen_to_ray(const glm::vec2& mouse_position);
 
     void update_view_matrix();
     void update_projection_matrix();

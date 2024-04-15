@@ -12,30 +12,29 @@
 #include "tiny_gltf.h"
 
 #include "framework/utils/utils.h"
+#include "framework/nodes/camera.h"
 #include "framework/nodes/mesh_instance_3d.h"
 #include "framework/nodes/skeleton_instance_3d.h"
-#include "framework/nodes/camera.h"
+#include "framework/nodes/animation_player.h"
 #include "framework/nodes/directional_light_3d.h"
 #include "framework/nodes/spot_light_3d.h"
 #include "framework/nodes/omni_light_3d.h"
 
 #include "graphics/texture.h"
 #include "graphics/shader.h"
-
 #include "graphics/renderer_storage.h"
 #include "graphics/renderer.h"
 
 #include "spdlog/spdlog.h"
 
-
-void create_material_texture(tinygltf::Model& model, int tex_index, Texture** texture, bool is_srgb = false) {
-
+void create_material_texture(const tinygltf::Model& model, int tex_index, Texture** texture, bool is_srgb = false)
+{
     const tinygltf::Texture& tex = model.textures[tex_index];
 
     if (tex.source < 0)
         return;
 
-    tinygltf::Image& image = model.images[tex.source];
+    const tinygltf::Image& image = model.images[tex.source];
 
     assert(image.component == 4);
 
@@ -57,7 +56,7 @@ void create_material_texture(tinygltf::Model& model, int tex_index, Texture** te
     if (convert_image) {
         uint8_t* converted_texture = new uint8_t[image.width * image.height * 4];
 
-        if (Texture::convert_to_rgba8unorm(image.width, image.height, texture_format, image.image.data(), converted_texture)) {
+        if (Texture::convert_to_rgba8unorm(image.width, image.height, texture_format, (void*)image.image.data(), converted_texture)) {
             *texture = new Texture();
             (*texture)->load_from_data(image.uri, image.width, image.height, 1, converted_texture, true, is_srgb ? WGPUTextureFormat_RGBA8UnormSrgb : WGPUTextureFormat_RGBA8Unorm);
             delete[] converted_texture;
@@ -65,12 +64,12 @@ void create_material_texture(tinygltf::Model& model, int tex_index, Texture** te
     }
     else {
         *texture = new Texture();
-        (*texture)->load_from_data(image.uri, image.width, image.height, 1, image.image.data(), true, is_srgb ? WGPUTextureFormat_RGBA8UnormSrgb : WGPUTextureFormat_RGBA8Unorm);
+        (*texture)->load_from_data(image.uri, image.width, image.height, 1, (void*)image.image.data(), true, is_srgb ? WGPUTextureFormat_RGBA8UnormSrgb : WGPUTextureFormat_RGBA8Unorm);
     }
 
     if (tex.sampler != -1)
     {
-        tinygltf::Sampler& sampler = model.samplers[tex.sampler];
+        const tinygltf::Sampler& sampler = model.samplers[tex.sampler];
 
         switch (sampler.wrapS) {
         case TINYGLTF_TEXTURE_WRAP_REPEAT:
@@ -96,11 +95,21 @@ void create_material_texture(tinygltf::Model& model, int tex_index, Texture** te
             break;
         }
     }
-
 }
 
-void read_mesh(tinygltf::Model& model, tinygltf::Mesh& mesh, Node3D* entity, std::map<uint32_t, Texture*>& texture_cache) {
+//int get_node_index(int joint_id, Skeleton * skeleton, std::vector<tinygltf::Node> all_nodes) {
+//    std::vector<std::string> joint_names = skeleton->get_joint_names();
+//
+//    for (unsigned int i = 0; i < joint_names.size(); ++i) {
+//        if (joint_names[i] == all_nodes[i].name) {
+//            return (int)i;
+//        }
+//    }
+//    return -1;
+//}
 
+void read_mesh(const tinygltf::Model& model, const tinygltf::Mesh& mesh, Node3D* entity, std::map<uint32_t, Texture*>& texture_cache)
+{
     MeshInstance3D* entity_mesh = dynamic_cast<MeshInstance3D*>(entity);
 
     if (!entity_mesh) {
@@ -218,6 +227,8 @@ void read_mesh(tinygltf::Model& model, tinygltf::Mesh& mesh, Node3D* entity, std
             vertices.resize((buffer_end - buffer_start) / final_stride);
 
             for (size_t j = buffer_start; j < buffer_end; j += final_stride) {
+                if (vertex_idx >= vertices.size())
+                    break;
 
                 size_t buffer_idx = 0;
 
@@ -337,8 +348,81 @@ void read_mesh(tinygltf::Model& model, tinygltf::Mesh& mesh, Node3D* entity, std
                     }
                 }
 
+                // joints (skinning)
+                if (attrib.first == std::string("JOINTS_0")) {
+                    glm::ivec4 &joints = vertices[vertex_idx].joints;
+
+                    switch (accessor.componentType) {
+                    case TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE:
+                        joints.x = *(uint8_t*)&buffer.data[buffer_idx + 0];
+                        joints.y = *(uint8_t*)&buffer.data[buffer_idx + 1];
+                        joints.z = *(uint8_t*)&buffer.data[buffer_idx + 2];
+                        joints.w = *(uint8_t*)&buffer.data[buffer_idx + 3];
+                        break;
+                    case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT:
+                        joints.x = *(uint16_t*)&buffer.data[buffer_idx + 0];
+                        joints.y = *(uint16_t*)&buffer.data[buffer_idx + 2];
+                        joints.z = *(uint16_t*)&buffer.data[buffer_idx + 4];
+                        joints.w = *(uint16_t*)&buffer.data[buffer_idx + 8];
+                        break;
+                    default:
+                        assert(0);
+                    }
+                    
+                    //// TO DO: convert the joint indices so that they go from being relative to the joints array to being relative to the skeleton hierarchy
+                    ////Skeleton* skeleton = entity_mesh->get_skeleton();
+                    //
+                    //joints.x = model.skins[0].joints[joints.x];//get_node_index(joints.x, skeleton, model.nodes);
+                    //joints.y = model.skins[0].joints[joints.y];//get_node_index(joints.y, skeleton, model.nodes);
+                    //if(model.skins[0].joints.size() > 2)
+                    //    joints.z = model.skins[0].joints[joints.z];//get_node_index(joints.z, skeleton, model.nodes);
+                    //if (model.skins[0].joints.size() > 3)
+                    //    joints.w = model.skins[0].joints[joints.w];//get_node_index(joints.w, skeleton, model.nodes);
+
+                    //Make sure that even the invalid nodes have a value of 0 (any negative joint indices will break the skinning implementation)
+                    joints.x = std::max(0, joints.x);
+                    joints.y = std::max(0, joints.y);
+                    joints.z = std::max(0, joints.z);
+                    joints.w = std::max(0, joints.w);
+                }
+
+                // weights (skinning)
+                if (attrib.first == std::string("WEIGHTS_0")) {
+                    glm::vec4& weights = vertices[vertex_idx].weights;
+
+                    switch (accessor.componentType) {
+                    case TINYGLTF_COMPONENT_TYPE_FLOAT:
+                        weights.x = *(float*)&buffer.data[buffer_idx + 0];
+                        weights.y = *(float*)&buffer.data[buffer_idx + 4];
+                        weights.z = *(float*)&buffer.data[buffer_idx + 8];
+                        weights.w = *(float*)&buffer.data[buffer_idx + 12];
+                        break;
+                    case TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE:
+                        weights.x = *(uint8_t*)&buffer.data[buffer_idx + 0];
+                        weights.y = *(uint8_t*)&buffer.data[buffer_idx + 1];
+                        weights.z = *(uint8_t*)&buffer.data[buffer_idx + 2];
+                        weights.w = *(uint8_t*)&buffer.data[buffer_idx + 3];
+                        break;
+                    case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT:
+                        weights.x = *(uint16_t*)&buffer.data[buffer_idx + 0];
+                        weights.y = *(uint16_t*)&buffer.data[buffer_idx + 2];
+                        weights.z = *(uint16_t*)&buffer.data[buffer_idx + 4];
+                        weights.w = *(uint16_t*)&buffer.data[buffer_idx + 8];
+                        break;
+                    default:
+                        assert(0);
+                    }
+
+                    //Make sure that even the invalid nodes have a value of 0 (any negative joint indices will break the skinning implementation)
+                    weights = glm::clamp(weights, 0.0f, 1.0f);
+                }
+
+                if (attrib.first == std::string("JOINTS_1") || attrib.first == std::string("WEIGHTS_1")) {
+                    assert(0); // skinned supports only 4 joint influences for the moment
+                }
                 vertex_idx++;
             }
+
         }
 
         glm::vec3 aabb_half_size = (max_pos - min_pos) * 0.5f;
@@ -370,7 +454,7 @@ void read_mesh(tinygltf::Model& model, tinygltf::Mesh& mesh, Node3D* entity, std
 
         if (primitive.material >= 0) {
 
-            tinygltf::Material& gltf_material = model.materials[primitive.material];
+            const tinygltf::Material& gltf_material = model.materials[primitive.material];
 
             const tinygltf::PbrMetallicRoughness& pbrMetallicRoughness = gltf_material.pbrMetallicRoughness;
             
@@ -464,27 +548,32 @@ void read_mesh(tinygltf::Model& model, tinygltf::Mesh& mesh, Node3D* entity, std
 
         material.shader = RendererStorage::get_shader("data/shaders/mesh_pbr.wgsl", material);
 
-        surface->create_vertex_buffer();
+        if (entity_mesh->is_skinned) {
+            material.use_skinning = true;
+            material.shader = RendererStorage::get_shader("data/shaders/mesh_pbr_skinning.wgsl", material);
 
+        }
+        surface->create_vertex_buffer();
+        surface->set_material_priority(1);
         entity_mesh->add_surface(surface);
     }
 }
 
-void create_light(tinygltf::Light& gltf_light, Light3D* light_node) {
-
-    light_node->set_intensity(gltf_light.intensity);
+void create_light(const tinygltf::Light& gltf_light, Light3D* light_node)
+{
+    light_node->set_intensity(static_cast<float>(gltf_light.intensity));
 
     // Blender exports 0.0 if no custom distance is used.. so keep -1 as range
     if (gltf_light.range != 0.0f) {
-        light_node->set_range(gltf_light.range);
+        light_node->set_range(static_cast<float>(gltf_light.range));
     }
     if (gltf_light.color.size()) {
         light_node->set_color({ gltf_light.color[0], gltf_light.color[1], gltf_light.color[2] });
     }
 
     if (light_node->get_type() == LIGHT_SPOT) {
-        static_cast<SpotLight3D*>(light_node)->set_inner_cone_angle(gltf_light.spot.innerConeAngle);
-        static_cast<SpotLight3D*>(light_node)->set_outer_cone_angle(gltf_light.spot.outerConeAngle);
+        static_cast<SpotLight3D*>(light_node)->set_inner_cone_angle(static_cast<float>(gltf_light.spot.innerConeAngle));
+        static_cast<SpotLight3D*>(light_node)->set_outer_cone_angle(static_cast<float>(gltf_light.spot.outerConeAngle));
     }
     else if (light_node->get_type() == LIGHT_OMNI) {
         // ..
@@ -497,15 +586,14 @@ void create_light(tinygltf::Light& gltf_light, Light3D* light_node) {
     }
 }
 
-Node3D* create_node_entity(tinygltf::Node& node, tinygltf::Model& model) {
-
+Node3D* create_node_entity(const tinygltf::Node& node, const tinygltf::Model& model)
+{
     Node3D* new_node = nullptr;
 
     if (node.mesh >= 0) {
         new_node = new MeshInstance3D();
         if (node.skin >= 0) {
-            ((MeshInstance3D*)(new_node))->is_skinned = true;
-
+            static_cast<MeshInstance3D*>(new_node)->is_skinned = true;
         }
     }
     else if (node.camera >= 0) {
@@ -513,7 +601,7 @@ Node3D* create_node_entity(tinygltf::Node& node, tinygltf::Model& model) {
     }
     else if (node.light >= 0) {
 
-        tinygltf::Light& gltf_light = model.lights[node.light];
+        const tinygltf::Light& gltf_light = model.lights[node.light];
         std::string light_type = gltf_light.type;
 
         if (light_type == "spot") {
@@ -535,9 +623,9 @@ Node3D* create_node_entity(tinygltf::Node& node, tinygltf::Model& model) {
     return new_node;
 };
 
-void parse_model_nodes(tinygltf::Model& model, int id, Node3D* entity, std::map<uint32_t, Texture*> &texture_cache, std::map<int, int> &hierarchy, std::vector<SkeletonInstance3D*> & skeleton_instances ) {
-
-    tinygltf::Node node = model.nodes[id];
+void parse_model_nodes(const tinygltf::Model& model, int id, Node3D* entity, std::map<uint32_t, Texture*> &texture_cache, std::map<int, int> &hierarchy, std::vector<SkeletonInstance3D*> & skeleton_instances )
+{
+   const tinygltf::Node& node = model.nodes[id];
 
     entity->set_name(node.name);
 
@@ -583,7 +671,7 @@ void parse_model_nodes(tinygltf::Model& model, int id, Node3D* entity, std::map<
             });
         }
 
-        entity->set_model(translation_matrix * glm::toMat4(rotation_quat) * scale_matrix);
+        entity->set_model( glm::toMat4(rotation_quat) * scale_matrix * translation_matrix);
     }
 
     // Parse children
@@ -594,12 +682,10 @@ void parse_model_nodes(tinygltf::Model& model, int id, Node3D* entity, std::map<
 
         if (model.nodes[node.children[i]].skin >= 0) {
             SkeletonInstance3D* e = new SkeletonInstance3D();
-            e->set_model(entity->get_model());
             e->set_name(entity->get_name() + "_" + "skeleton");
             e->skin = model.nodes[node.children[i]].skin;
             entity->add_child(e);
             e->add_child(child_node);
-
             skeleton_instances.push_back(e);
         }
         else {
@@ -621,7 +707,8 @@ void parse_model_nodes(tinygltf::Model& model, int id, Node3D* entity, std::map<
     }
 };
 
-void parse_model_skins(tinygltf::Model& model, std::map<int, int> hierarchy, std::vector<SkeletonInstance3D*>& skeleton_instances) {
+void parse_model_skins(const tinygltf::Model& model, std::map<int, int> hierarchy, std::vector<SkeletonInstance3D*>& skeleton_instances)
+{
     if (!model.skins.size() ) {
         return;
     }
@@ -629,13 +716,16 @@ void parse_model_skins(tinygltf::Model& model, std::map<int, int> hierarchy, std
     std::vector<Transform> world_bind_transforms;
 
     for (size_t s = 0; s < model.skins.size(); s++) {
+
         const tinygltf::Skin& skin = model.skins[s];
+
         if (skin.inverseBindMatrices > -1) {
 
             Pose bind_pose;
             Pose rest_pose;
 
             size_t num_joints = skin.joints.size();
+
             if (num_joints > 0) {
 
                 rest_pose.resize(num_joints);
@@ -651,13 +741,16 @@ void parse_model_skins(tinygltf::Model& model, std::map<int, int> hierarchy, std
 
                 const float* ptr = reinterpret_cast<const float*>(buffer.data.data() + accessor.byteOffset + bufferView.byteOffset);
                 
-
                 std::vector<glm::mat4> inverse_bind_matrices(accessor.count);
-                //for each joint in the skin, get the inverse bind pose matrix
+                std::vector<std::string> joint_names;
+                std::vector<unsigned int> joint_indices;
 
+                //for each joint in the skin, get the inverse bind pose matrix
                 for (size_t i = 0; i < skin.joints.size(); i++) {
 
-                    tinygltf::Node node = model.nodes[skin.joints[i]];
+                    const tinygltf::Node& node = model.nodes[skin.joints[i]];
+                    joint_names.push_back(node.name);
+                    joint_indices.push_back(skin.joints[i]);
 
                     if (!node.matrix.empty())
                     {
@@ -667,7 +760,8 @@ void parse_model_skins(tinygltf::Model& model, std::map<int, int> hierarchy, std
                             model_matrix[(j / 4) % 4][j % 4] = static_cast<float>(node.matrix[j]);
                         }
 
-                        rest_pose.set_local_transform(skin.joints[i], mat4ToTransform(model_matrix));
+                        //rest_pose.set_local_transform(skin.joints[i], mat4ToTransform(model_matrix));
+                        rest_pose.set_local_transform(i, mat4ToTransform(model_matrix));
                         
                     }
                     else {
@@ -697,20 +791,30 @@ void parse_model_skins(tinygltf::Model& model, std::map<int, int> hierarchy, std
                         }
 
                        
-                        rest_pose.set_local_transform(skin.joints[i], transform);
+                        //rest_pose.set_local_transform(skin.joints[i], transform);
+                        rest_pose.set_local_transform(i, transform);
                     }
 
-                    rest_pose.set_parent(skin.joints[i], hierarchy[skin.joints[i]]);
+                    //rest_pose.set_parent(skin.joints[i], hierarchy[skin.joints[i]]);
+                    int parent = -1;
+                    for (unsigned int j = 0; j < skin.joints.size(); j++) {
+                        if (skin.joints[j] != hierarchy[skin.joints[i]])
+                            continue;
+                        parent = j;
+                    }
+                    rest_pose.set_parent(i, parent);
 
                     glm::highp_f32mat4 m;
                     //get the 16 values of the inverse bind matrix and put them into a mat4
                     memcpy(&m, ptr + i * 16, 16 * sizeof(float));
                     m = m;
-                    inverse_bind_matrices[skin.joints[i]] = m;
+                    //inverse_bind_matrices[skin.joints[i]] = m;
+                    inverse_bind_matrices[i] = m;
                     //set the transform into the array of transforms of the joints in the bind pose (world bind pose)
                     glm::mat4x4 bind_matrix = inverse(m);
                     Transform bind_transform = mat4ToTransform(bind_matrix);
-                    world_bind_transforms[skin.joints[i]] = bind_transform;
+                    //world_bind_transforms[skin.joints[i]] = bind_transform;
+                    world_bind_transforms[i] = bind_transform;
                 
                 }
 
@@ -719,31 +823,374 @@ void parse_model_skins(tinygltf::Model& model, std::map<int, int> hierarchy, std
                 for (unsigned int i = 0; i < num_joints; ++i) {
                     Transform current = world_bind_transforms[i];
                     int p = bind_pose.get_parent(i);
-                    if (p >= 0 && p < num_joints) { // Bring into parent space
-                        Transform parent = world_bind_transforms[p];
+                    if (p >= 0 ) { // Bring into local space
+                        Transform parent;
+                        if (p < num_joints) {
+                            parent = world_bind_transforms[p];
+                        }
+                        else {
+                            tinygltf::Node node = model.nodes[p];
+                            if (!node.matrix.empty())
+                            {
+                                glm::mat4x4 model_matrix;
+
+                                for (int j = 0; j < 16; ++j) {
+                                    model_matrix[(j / 4) % 4][j % 4] = static_cast<float>(node.matrix[j]);
+                                }
+                                parent = mat4ToTransform(model_matrix);
+                            }
+                            else {
+                                Transform transform;
+
+                                if (!node.translation.empty()) {
+
+                                    transform.position = glm::vec3({
+                                        static_cast<float>(node.translation[0]),
+                                        static_cast<float>(node.translation[1]),
+                                        static_cast<float>(node.translation[2])
+                                        });
+                                }
+                                if (!node.rotation.empty()) {
+                                    transform.rotation = glm::quat(static_cast<float>(node.rotation[0]),
+                                        static_cast<float>(node.rotation[1]),
+                                        static_cast<float>(node.rotation[2]),
+                                        static_cast<float>(node.rotation[3])
+                                    );
+                                }
+                                if (!node.scale.empty()) {
+                                    transform.scale = glm::vec3({
+                                        static_cast<float>(node.scale[0]),
+                                        static_cast<float>(node.scale[1]),
+                                        static_cast<float>(node.scale[2])
+                                        });
+                                }
+                                parent = transform;
+
+                            }
+                        }
                         current = combine(inverse(parent), current);
+
+                    }
+                    else if (hierarchy[skin.joints[i]] >= 0) { // ONLY NEEDED IF THERE IS NOT SCENE ENITIES HIERARCHY
+                        
+                       /* p = hierarchy[skin.joints[i]];
+                        Transform parent;
+                        tinygltf::Node node = model.nodes[p];
+                        if (!node.matrix.empty())
+                        {
+                            glm::mat4x4 model_matrix;
+
+                            for (int j = 0; j < 16; ++j) {
+                                model_matrix[(j / 4) % 4][j % 4] = static_cast<float>(node.matrix[j]);
+                            }
+                            parent = mat4ToTransform(model_matrix);
+                        }
+                        else {
+                            Transform transform;
+
+                            if (!node.translation.empty()) {
+
+                                transform.position = glm::vec3({
+                                    static_cast<float>(node.translation[0]),
+                                    static_cast<float>(node.translation[1]),
+                                    static_cast<float>(node.translation[2])
+                                    });
+                            }
+                            if (!node.rotation.empty()) {
+                                transform.rotation = glm::quat(static_cast<float>(node.rotation[0]),
+                                    static_cast<float>(node.rotation[1]),
+                                    static_cast<float>(node.rotation[2]),
+                                    static_cast<float>(node.rotation[3])
+                                );
+                            }
+                            if (!node.scale.empty()) {
+                                transform.scale = glm::vec3({
+                                    static_cast<float>(node.scale[0]),
+                                    static_cast<float>(node.scale[1]),
+                                    static_cast<float>(node.scale[2])
+                                    });
+                            }
+                            parent = transform;
+                        }
+                        
+                        current = combine(inverse(parent), current);*/
                     }
                     bind_pose.set_local_transform(i, current);
                 }
 
-                std::vector<std::string> joint_names;
+                Skeleton *skeleton = new Skeleton(rest_pose, bind_pose, joint_names, joint_indices);
 
-                Skeleton *skeleton = new Skeleton(rest_pose, bind_pose, joint_names);
                 for (auto instance : skeleton_instances) {
 
-                    if (instance->skin == s) {
-
-                     instance->set_skeleton(skeleton);
-
+                    if (instance->skin != s) {
+                        continue;
                     }
-                }
-                //skin_map[s]->set_skeleton(skeleton);
-                //skinning_matrices[s].inverseBindMatrices = inverse_bind_matrices;
+
+                    RendererStorage::register_skeleton(instance->get_name(), skeleton);
+
+                    instance->set_skeleton(skeleton);
+
+                    for (auto child : instance->get_children()) {
+                        MeshInstance* child_instance = dynamic_cast<MeshInstance*>(child);
+                        assert(child_instance);
+                        child_instance->set_skeleton(skeleton);
+                    }
+                }               
             }
         }
     }
-
 };
+
+void get_scalar_values(std::vector<T>& out, unsigned int component_size, const tinygltf::Model& model, int accessor_idx)
+{
+    uint32_t size;
+    const tinygltf::Accessor& accessor = model.accessors[accessor_idx];
+    const tinygltf::BufferView& buffer_view = model.bufferViews[accessor.bufferView];
+    const tinygltf::Buffer& buffer = model.buffers[buffer_view.buffer];
+
+    if (accessor.type != TINYGLTF_TYPE_SCALAR) {
+        component_size = accessor.type;
+    }
+
+    switch (accessor.componentType) {
+    case TINYGLTF_COMPONENT_TYPE_FLOAT:
+        size = component_size * sizeof(float);
+        break;
+    /*case TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE:
+        size = component_size * sizeof(uint8_t);
+        break;
+    case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT:
+        size = component_size * sizeof(uint16_t);
+        break;
+    case TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT:
+        size = component_size * sizeof(uint32_t);
+        break;*/
+    default:
+        assert(0);
+    }
+
+    size_t buffer_size = buffer_view.byteLength / size;
+    size_t final_data_size = size;
+    tinygltf::BufferView const* final_buffer_view = &buffer_view;
+    tinygltf::Accessor const* final_accessor = &accessor;
+    tinygltf::Accessor const* index_accessor = nullptr;
+
+    size_t vertex_idx = 0;
+    size_t final_stride;
+
+    if (final_buffer_view->byteStride == 0) {
+        final_stride = final_data_size;
+    }
+    else {
+        final_stride = final_buffer_view->byteStride;
+    }
+
+    size_t buffer_start = final_accessor->byteOffset + final_buffer_view->byteOffset;
+    size_t buffer_end = final_data_size * final_accessor->count + buffer_start;
+
+    out.resize(buffer_size);
+
+    size_t id = 0;
+
+    for (size_t i = buffer_start; i < buffer_end; i += final_stride) {
+        switch (accessor.componentType) {
+        case TINYGLTF_COMPONENT_TYPE_FLOAT:
+            switch (component_size)
+            {
+            case 1:
+                out[id] = *(float*)&buffer.data[i];
+                break;
+            case 3: // translate/scale
+                glm::vec3 v = { *(float*)&buffer.data[i] , *(float*)&buffer.data[i + 4] , *(float*)&buffer.data[i + 8] };
+                out[id] = v;
+                break;
+            case 4: // rotation (quat)
+                glm::quat q = { *(float*)&buffer.data[i] , *(float*)&buffer.data[i + 4] , *(float*)&buffer.data[i + 8], *(float*)&buffer.data[i + 12] };
+                out[id] = q;
+                break;
+            }
+            break;
+        //case TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE:
+        //    switch (component_size)
+        //    {
+        //    case 1:
+        //        out[id] = *(uint8_t*)&buffer.data[i];
+        //        break;
+        //    case 3: // translate/scale
+        //        glm::vec3 v = { *(uint8_t*)&buffer.data[i] , *(uint8_t*)&buffer.data[i + 1] , *(uint8_t*)&buffer.data[i + 2] };
+        //        out[id] = v;
+        //        break;
+        //    case 4: // rotation (quat)
+        //        glm::quat q = { *(uint8_t*)&buffer.data[i] , *(uint8_t*)&buffer.data[i + 1] , *(uint8_t*)&buffer.data[i + 2], *(uint8_t*)&buffer.data[i + 3] };
+        //        out[id] = q;
+        //        break;
+        //    }
+        //    break;
+        //case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT:
+        //    switch (component_size)
+        //    {
+        //    case 1:
+        //        out[id] = *(uint16_t*)&buffer.data[i];
+        //        break;
+        //    case 3: // translate/scale
+        //        glm::vec3 v = { *(uint16_t*)&buffer.data[i] , *(uint16_t*)&buffer.data[i + 2] , *(uint16_t*)&buffer.data[i + 4] };
+        //        out[id] = v;
+        //        break;
+        //    case 4: // rotation (quat)
+        //        glm::quat q = { *(uint16_t*)&buffer.data[i] , *(uint16_t*)&buffer.data[i + 2] , *(uint16_t*)&buffer.data[i + 4], *(uint16_t*)&buffer.data[i + 6] };
+        //        out[id] = q;
+        //        break;
+        //    }
+        //    break;
+        default:
+            assert(0);
+        }
+        id++;
+    }
+}
+
+// converts a glTF animation channel into a VectorTrack or a QuaternionTrack
+void track_from_channel(Track& result, const tinygltf::AnimationChannel& channel, const tinygltf::AnimationSampler& sampler, const tinygltf::Model& model)
+{
+    Interpolation interpolation = Interpolation::CONSTANT;
+
+    // make sure the Interpolation type of the track matches the cgltf_interpolation_type type of the sampler
+    if (sampler.interpolation == "LINEAR") {
+        interpolation = Interpolation::LINEAR;
+    }
+    else if (sampler.interpolation == "CUBICSPLINE") {
+        interpolation = Interpolation::CUBIC;
+    }
+
+    result.set_interpolation(interpolation);
+
+    // convert sampler input and output accessors into linear arrays of floating-point numbers
+    std::vector<T> time; // times 
+    get_scalar_values(time, 1, model, sampler.input);
+
+    std::vector<T> values; // values
+    get_scalar_values(values, TrackHelpers::get_size(result), model, sampler.output);
+
+    size_t num_frames = time.size();
+
+    // Resize the track to have enough room to store all the frames
+    result.resize(num_frames);
+
+    bool is_sampler_cubic = interpolation == Interpolation::CUBIC;
+
+    // Parse the time and value arrays into frame structures
+    for (size_t i = 0; i < num_frames; ++i) {
+        int baseIndex = i;
+        Keyframe& frame = result[i];
+        // offset used to deal with cubic tracks since the input and output tangents are as large as the number of components
+        int offset = 0;
+
+        frame.time = std::get<float>(time[i]);
+
+        // read input tangent (only if the sample is cubic)
+        frame.in = is_sampler_cubic ? values[baseIndex + offset++] : 0.0f;
+        // read the value
+        frame.value = values[baseIndex + offset++];
+        // read the output tangent (only if the sample is cubic)
+        frame.out = is_sampler_cubic ? values[baseIndex + offset++] : 0.0f;        
+    }
+}
+
+void parse_model_animations(const tinygltf::Model& model, std::vector<SkeletonInstance3D*> skeleton_instances, AnimationPlayer* player)
+{
+    const std::vector<tinygltf::Animation>& animations = model.animations;
+    size_t num_animations = animations.size();
+
+    std::vector<Animation*> result(num_animations);
+    std::string root_node = "";
+
+    //TODO: Generalize for other animation types (not skeleton)
+
+    for (size_t i = 0; i < num_animations; ++i) {
+
+        const tinygltf::Animation& animation = animations[i];
+
+        Skeleton* skeleton = nullptr;
+        
+        for (auto & instance : skeleton_instances) {
+
+            const std::vector<uint32_t>& indices = instance->get_skeleton()->get_joint_indices();
+
+            for (size_t s = 0; s < indices.size(); s++) {
+                if (indices[s] != animation.channels[0].target_node)
+                    continue;
+                skeleton = instance->get_skeleton();
+                root_node = instance->get_name();
+                break;
+            }
+            if (skeleton)
+                break;
+        }
+
+        if (!result[i]) {
+            result[i] = new Animation();      
+            result[i]->set_type(AnimationType::ANIM_TYPE_SKELETON);
+        }
+
+        // each channel of a glTF file is an animation track
+        size_t num_channels = animation.channels.size();
+
+        for (size_t j = 0; j < num_channels; ++j) {
+            
+            const tinygltf::AnimationChannel& channel = animation.channels[j];
+            const tinygltf::AnimationSampler& sampler = animation.samplers[channel.sampler];
+
+            int node_id = channel.target_node;
+            const std::vector<uint32_t>& indices = skeleton->get_joint_indices();
+
+            //Convert the id node to skeleton joint id
+            for (uint32_t id = 0; id < indices.size(); id++) {
+                if (node_id != indices[id])
+                    continue;
+                node_id = id;
+                break;
+            }
+
+            // Pass the property data pointer so when the track is sampled, the data is properly updated
+            Pose& pose = skeleton->get_current_pose();
+            Transform& t = pose.get_local_transform(node_id);
+
+            TrackType type = TrackType::TYPE_UNDEFINED;
+            void* data = nullptr;
+            
+            if (channel.target_path == "translation") {
+                type = TrackType::TYPE_VECTOR3;
+                data = &t.position;
+            }
+            else if (channel.target_path == "scale") {
+                type = TrackType::TYPE_VECTOR3;
+                data = &t.scale;
+            }
+            else if (channel.target_path == "rotation") {
+                type = TrackType::TYPE_QUAT;
+                data = &t.rotation;
+            }
+            else if (channel.target_path == "weight") {
+                type = TrackType::TYPE_FLOAT;
+            }
+
+            Track* track = result[i]->add_track(node_id, data);
+            track->set_type(type);
+            track->set_name(skeleton->get_joint_name(node_id) + channel.target_path);
+            track_from_channel(*track, channel, sampler, model);
+
+        } // End num channels loop
+
+        result[i]->set_name(animation.name);
+        result[i]->recalculate_duration();
+
+        RendererStorage::register_animation(result[i]->get_name(), result[i], root_node);
+
+        if (i == 0) {
+            player->play(result[0]->get_name());
+        }
+    } // End num clips loop
+}
 
 bool parse_gltf(const char* gltf_path, std::vector<Node3D*>& entities)
 {
@@ -793,8 +1240,6 @@ bool parse_gltf(const char* gltf_path, std::vector<Node3D*>& entities)
 
     std::vector<SkeletonInstance3D*> skeleton_instances;
 
-    std::vector<Light3D*> lights;
-
     for (size_t i = 0; i < scene->nodes.size(); ++i)
     {
         assert((scene->nodes[i] >= 0) && (scene->nodes[i] < model.nodes.size()));
@@ -803,13 +1248,7 @@ bool parse_gltf(const char* gltf_path, std::vector<Node3D*>& entities)
 
         Node3D* entity = create_node_entity(node, model);
 
-        // Add node as light
-        Light3D* light = dynamic_cast<Light3D*>(entity);
-        if (light) {
-            lights.push_back(light);
-        }
-
-        parse_model_nodes(model, scene->nodes[i], entity, texture_cache, hierarchy, skeleton_instances);
+        parse_model_nodes(model, scene->nodes[i], entity, texture_cache, hierarchy, skeleton_instances);       
 
         if (entity->get_name().empty()) {
             entity->set_name(path.stem().string() + "_" + std::to_string(entity_name_idx));
@@ -819,7 +1258,16 @@ bool parse_gltf(const char* gltf_path, std::vector<Node3D*>& entities)
         entities.push_back(entity);
     }
 
-    parse_model_skins(model, hierarchy, skeleton_instances);
+    if (model.skins.size()) {
+        parse_model_skins(model, hierarchy, skeleton_instances);
+    }
+
+    if (model.animations.size()) {
+        AnimationPlayer* player = new AnimationPlayer("Animation Player");
+        entities[entities.size() - 1]->add_child(player);
+        player->set_root_node(entities[entities.size() - 1]);
+        parse_model_animations(model, skeleton_instances, player);
+    }
 
     texture_cache.clear();
 

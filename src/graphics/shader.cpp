@@ -125,7 +125,7 @@ bool Shader::parse_preprocessor(std::string &shader_content, const std::string &
             std::string final_value;
 
             Renderer* renderer = Renderer::instance;
-
+          
             if (define_name == "GAMMA_CORRECTION") {
                 final_value = renderer->get_openxr_available() ? "0" : "1";
             }

@@ -28,7 +28,7 @@ void Camera::set_orthographic(float left, float right, float bottom, float top, 
     update_projection_matrix();
 }
 
-const glm::vec3& Camera::screen_to_ray(const glm::vec2& mouse_position)
+glm::vec3 Camera::screen_to_ray(const glm::vec2& mouse_position)
 {
     WebGPUContext* webgpu_context = Renderer::instance->get_webgpu_context();
     const glm::mat4x4& view_projection_inv = glm::inverse(get_view_projection());

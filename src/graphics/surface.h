@@ -19,6 +19,8 @@ struct InterleavedData {
     glm::vec3 normal;
     glm::vec3 tangent;
     glm::vec3 color = glm::vec3(1.0f);
+    glm::vec4 weights;
+    glm::ivec4 joints;
 };
 
 class Surface

@@ -55,6 +55,7 @@ struct Material
 
     bool depth_read = true;
     bool depth_write = true;
+    bool use_skinning = false;
 
     eTransparencyType transparency_type = ALPHA_OPAQUE;
     eTopologyType topology_type = TOPOLOGY_TRIANGLE_LIST;
@@ -82,7 +83,8 @@ struct Material
             && topology_type == other.topology_type
             && cull_type == other.cull_type
             && depth_read == other.depth_read
-            && depth_write == other.depth_write);
+            && depth_write == other.depth_write
+            && use_skinning == other.use_skinning);
     }
 };
 
@@ -112,9 +114,10 @@ struct std::hash<Material>
         std::size_t h15 = hash<uint8_t>()(k.cull_type);
         std::size_t h16 = hash<uint8_t>()(k.depth_read);
         std::size_t h17 = hash<uint8_t>()(k.depth_write);
+        std::size_t h18 = hash<uint8_t>()(k.use_skinning);
 
         std::size_t seed = 0;
-        hash_combine(seed, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16, h17);
+        hash_combine(seed, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16, h17, h18);
         return seed;
     }
 };

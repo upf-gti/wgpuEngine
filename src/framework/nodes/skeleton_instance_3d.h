@@ -5,22 +5,18 @@
 
 #include "framework/animation/skeleton.h"
 
-class SkeletonInstance3D : public Node3D {
+class SkeletonInstance3D : public MeshInstance3D {
 
-    Skeleton* skeleton = nullptr;
-    MeshInstance3D* skeleton_helper = nullptr;
+    void init_helper();
+    void update_helper();
 
-    void init_skeleton_helper();
 public:
     int skin = -1;
 
-    SkeletonInstance3D()  {};
-    virtual ~SkeletonInstance3D() {};
-
-    virtual void render();
-    virtual void update(float delta_time);
+    SkeletonInstance3D();
 
     void set_skeleton(Skeleton* skeleton);
+    void update(float dt);
 
     Skeleton* get_skeleton();
 };

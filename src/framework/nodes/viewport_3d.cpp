@@ -64,8 +64,8 @@ void Viewport3D::update(float delta_time)
 
     auto webgpu_context = Renderer::instance->get_webgpu_context();
 
-    float width = webgpu_context->render_width;
-    float height = webgpu_context->render_height;
+    float width = static_cast<float>(webgpu_context->render_width);
+    float height = static_cast<float>(webgpu_context->render_height);
     float ar = width / height;
 
     glm::vec2 screen_size(width, height);

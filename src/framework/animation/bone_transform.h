@@ -1,6 +1,7 @@
 #pragma once
 
 #include "framework/math.h"
+
 #include <vector>
 
 struct Transform {
@@ -11,10 +12,11 @@ struct Transform {
 
 	Transform(const glm::vec3& p, const glm::quat& r, const glm::vec3& s) :
 		position(p), rotation(r), scale(s) {}
+
 	Transform() :
-		position(glm::vec3(0, 0, 0)),
-		rotation(glm::quat(0, 0, 0, 1)),
-		scale(glm::vec3(1, 1, 1))
+		position(glm::vec3(0.0f, 0.0f, 0.0f)),
+		rotation(glm::quat(0.0f, 0.0f, 0.0f, 1.0f)),
+		scale(glm::vec3(1.0f, 1.0f, 1.0f))
 	{}
 
 }; // End of transform struct

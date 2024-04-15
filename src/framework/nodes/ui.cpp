@@ -772,10 +772,10 @@ namespace ui {
                 node_2d->ui_data.num_group_items = ComboIndex::UNIQUE;
             }
             else if (child_count == 2) {
-                node_2d->ui_data.num_group_items = i == 0 ? ComboIndex::FIRST : ComboIndex::LAST;
+                node_2d->ui_data.num_group_items = float(i == 0 ? ComboIndex::FIRST : ComboIndex::LAST);
             }
             else {
-                node_2d->ui_data.num_group_items = i == 0 ? ComboIndex::FIRST : (i == child_count - 1 ? ComboIndex::LAST : ComboIndex::MIDDLE);
+                node_2d->ui_data.num_group_items = float(i == 0 ? ComboIndex::FIRST : (i == child_count - 1 ? ComboIndex::LAST : ComboIndex::MIDDLE));
             }
 
             node_2d->set_priority(Node2DClassType::COMBO_BUTTON);

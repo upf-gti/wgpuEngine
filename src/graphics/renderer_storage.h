@@ -9,6 +9,9 @@
 
 #include "webgpu_context.h"
 #include "material.h"
+#include "graphics/mesh_instance.h"
+#include "framework/animation/skeleton.h"
+#include "framework/animation/animation.h"
 
 class Surface;
 class Texture;
@@ -28,6 +31,8 @@ public:
     static std::map<std::string, std::vector<std::string>> shader_library_references;
     static std::map<std::string, Texture*> textures;
     static std::map<std::string, Surface*> surfaces;
+    static std::map<std::string, Skeleton*> skeletons;
+    static std::map<std::string, AnimationData*> animations;
 
     static Texture* current_skybox_texture;
 
@@ -57,10 +62,11 @@ public:
         WGPUBindGroup bind_group;
     };
 
+
     static std::unordered_map<Material, sBindingData> material_bind_groups;
     static std::unordered_map<const void*, sBindingData> ui_widget_bind_groups;
 
-    static void register_material(WebGPUContext* webgpu_context, const Material& material);
+    static void register_material(WebGPUContext* webgpu_context, MeshInstance* mesh_instance, const Material& material);
     static WGPUBindGroup get_material_bind_group(const Material& material);
 
     static void register_ui_widget(WebGPUContext* webgpu_context, Shader* shader, void* widget, const sUIData& ui_data, uint8_t bind_group_id);
@@ -89,5 +95,11 @@ public:
     static std::vector<std::string> get_common_define_specializations(const Material& material);
 
     static void reload_all_render_pipelines();
+
+    static void register_skeleton(const std::string& node_path, Skeleton* skeleton);
+    static Skeleton* get_skeleton(const std::string& node_path);
+
+    static void register_animation(const std::string& animation_path, Animation* animation, const std::string& node_path);
+    static AnimationData* get_animation(const std::string& animation_path);
 
 };
