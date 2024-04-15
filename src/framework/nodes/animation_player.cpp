@@ -1,6 +1,11 @@
 #include "animation_player.h"
 
 #include "framework/input.h"
+#include "imgui.h"
+
+AnimationPlayer::AnimationPlayer(const std::string& n) {
+    name = n;
+}
 
 void AnimationPlayer::set_next_animation(const std::string& animation_name)
 {
@@ -135,4 +140,10 @@ void AnimationPlayer::update(float delta_time)
     }
 
     Node::update(delta_time);
+}
+
+void AnimationPlayer::render_gui()
+{
+    ImGui::Checkbox("Play", &playing);
+    ImGui::Checkbox("Loop", &looping);
 }

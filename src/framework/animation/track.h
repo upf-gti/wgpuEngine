@@ -4,6 +4,7 @@
 
 #include <vector>
 #include <variant>
+#include <string>
 
 enum class Interpolation {
     CONSTANT,
@@ -36,7 +37,7 @@ class Track {
     std::vector<Keyframe> keyframes;
     Interpolation interpolation; // interpolation type
     TrackType type = TrackType::TYPE_UNDEFINED;
-
+    std::string name = "";
     void* data = nullptr;
 
     // Helper functions, a sample for each type of interpolation
@@ -64,11 +65,13 @@ public:
     float get_start_time();
     Interpolation get_interpolation();
     TrackType get_type() const { return type; };
+    std::string& get_name();
 
     void set_data(void* property);
     void set_id(uint32_t id);
     void set_interpolation(Interpolation interp);
     void set_type(TrackType new_type) { type = new_type; };
+    void set_name(const std::string& name);
 
     uint32_t size();
     void resize(uint32_t size);

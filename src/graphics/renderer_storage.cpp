@@ -141,19 +141,30 @@ void RendererStorage::register_material(WebGPUContext* webgpu_context, MeshInsta
 
     if (material.use_skinning) {
 
-        Uniform* u = new Uniform();
+        Uniform* anim_u = new Uniform();
 
         MeshInstance3D* instance_3d = static_cast<MeshInstance3D*>(mesh_instance);
 
-        const std::vector<glm::mat4x4>& animated_matrices = instance_3d->get_bone_data();
+        // Send current animated bones matrices
+        const std::vector<glm::mat4x4>& animated_matrices = instance_3d->get_animated_data();
 
-        u->data = webgpu_context->create_buffer(sizeof(glm::mat4x4) * animated_matrices.size(), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Storage, animated_matrices.data(), "bones_buffer");
-        u->binding = 10;
-        u->buffer_size = sizeof(glm::mat4x4) * animated_matrices.size();
+        anim_u->data = webgpu_context->create_buffer(sizeof(glm::mat4x4) * animated_matrices.size(), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Storage, animated_matrices.data(), "animated_buffer");
+        anim_u->binding = 10;
+        anim_u->buffer_size = sizeof(glm::mat4x4) * animated_matrices.size();
 
-        uniforms.push_back(u);
+        uniforms.push_back(anim_u);
 
-        instance_3d->set_uniform_data(u);
+        Uniform* invbind_u = new Uniform();
+
+        // Send bind bones inverse matrices
+        const std::vector<glm::mat4x4>& invbind_matrices = instance_3d->get_invbind_data();
+        invbind_u->data = webgpu_context->create_buffer(sizeof(glm::mat4x4) * invbind_matrices.size(), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Storage, invbind_matrices.data(), "invbind_buffer");
+        invbind_u->binding = 11;
+        invbind_u->buffer_size = sizeof(glm::mat4x4) * invbind_matrices.size();
+
+        uniforms.push_back(invbind_u);
+
+        instance_3d->set_uniform_data(anim_u, invbind_u);
     }
 
     material_bind_groups[material].bind_group = webgpu_context->create_bind_group(uniforms, material.shader, 2);

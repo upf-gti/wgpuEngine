@@ -1097,6 +1097,8 @@ void parse_model_animations(tinygltf::Model& model, std::vector<SkeletonInstance
     std::vector<Animation*> result(num_animations);
     std::string root_node = "";
 
+    //TODO: Generalize for other animation types (not skeleton)
+
     for (size_t i = 0; i < num_animations; ++i) {
        
         Skeleton* skeleton = nullptr;
@@ -1116,25 +1118,7 @@ void parse_model_animations(tinygltf::Model& model, std::vector<SkeletonInstance
         }
 
         if(!result[i])
-            result[i] = new Animation();
-
-        /*for (auto const& instance : RendererStorage::skeletons)
-        {
-            std::string name = instance.first;
-            std::vector<unsigned int> indices = instance.second->get_joint_indices();
-            for (unsigned int s = 0; s < indices.size(); s++) {
-                if (indices[s] != animations[i].channels[0].target_node)
-                    continue;
-                skeleton = instance.second;
-                result[i] = new SkeletalAnimation();
-                root_node = instance.first;
-                break;
-            }
-            if (skeleton)
-                break;
-        }*/
-            // TO DO: if there isn't a skeleton, check if it's another type of animation
-        
+            result[i] = new Animation();      
 
         // each channel of a glTF file is an animation track
         size_t num_channels = animations[i].channels.size();
@@ -1143,10 +1127,19 @@ void parse_model_animations(tinygltf::Model& model, std::vector<SkeletonInstance
             
             tinygltf::AnimationChannel channel = animations[i].channels[j];
             tinygltf::AnimationSampler sampler = animations[i].samplers[channel.sampler];
-            int node_id = channel.target_node;//model.nodes[channel.target_node]; //change to skin joint indices            
 
-            // TODO: Pass here the property data pointer so when the track is sampled, the data is properly updated..
+            int node_id = channel.target_node;
+            std::vector<uint32_t> indices = skeleton->get_joint_indices();
 
+            //Convert the id node to skeleton joint id
+            for (uint32_t id = 0; id < indices.size(); id++) {
+                if (node_id != indices[id])
+                    continue;
+                node_id = id;
+                break;
+            }
+
+            // Pass the property data pointer so when the track is sampled, the data is properly updated
             Pose& pose = skeleton->get_current_pose();
             Transform& t = pose.get_local_transform(node_id);
 
@@ -1171,7 +1164,7 @@ void parse_model_animations(tinygltf::Model& model, std::vector<SkeletonInstance
 
             Track* track = result[i]->add_track(node_id, data);
             track->set_type(type);
-
+            track->set_name(skeleton->get_joint_name(node_id) + channel.target_path);
             track_from_channel(*track, channel, sampler, model);
 
         } // End num channels loop
@@ -1185,8 +1178,6 @@ void parse_model_animations(tinygltf::Model& model, std::vector<SkeletonInstance
             player->play(result[0]->get_name());
         }
     } // End num clips loop
-
-    //Node3D* node = dynamic_cast<Node3D*>(RendererStorage::get_skeleton(RendererStorage::get_animation(result[0]->get_name())->node_path));
 }
 
 bool parse_gltf(const char* gltf_path, std::vector<Node3D*>& entities)
@@ -1260,7 +1251,7 @@ bool parse_gltf(const char* gltf_path, std::vector<Node3D*>& entities)
     }
 
     if (model.animations.size()) {
-        AnimationPlayer* player = new AnimationPlayer();
+        AnimationPlayer* player = new AnimationPlayer("Animation Player");
         entities[entities.size() - 1]->add_child(player);
         player->set_root_node(entities[entities.size() - 1]);
         parse_model_animations(model, skeleton_instances, player);

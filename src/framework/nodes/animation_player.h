@@ -25,7 +25,7 @@ class AnimationPlayer : public AnimationMixer
     Node3D* node = nullptr;
 
 public:
-
+    AnimationPlayer(const std::string& name);
     void set_next_animation(const std::string& animation_name);
     void set_speed(float time);
     void set_blend_time(float time);
@@ -47,5 +47,6 @@ public:
     void stop(bool keep_state = false);
 
     void update(float delta_time);
+    void render_gui() override;
 };
 

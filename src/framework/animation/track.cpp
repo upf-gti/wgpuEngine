@@ -1,7 +1,6 @@
 #include "track.h"
 
 #include <algorithm>
-#include <iostream>
 
 // Track helpers avoid having to make specialized versions of the interpolation functions
 namespace TrackHelpers {
@@ -94,6 +93,11 @@ void Track::set_id(uint32_t index)
     id = index;
 }
 
+void Track::set_name(const std::string& n)
+{
+    name = n;
+}
+
 float Track::get_start_time()
 {
     return keyframes[0].time;
@@ -102,6 +106,11 @@ float Track::get_start_time()
 float Track::get_end_time()
 {
     return keyframes[keyframes.size() - 1].time;
+}
+
+std::string& Track::get_name()
+{
+    return name;
 }
 
 // call sample_constant, sample_linear, or sample_cubic, depending on the track type.

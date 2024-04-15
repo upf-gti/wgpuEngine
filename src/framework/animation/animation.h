@@ -2,6 +2,7 @@
 #include <vector>
 #include <string>
 #include "track.h"
+#include <iostream>
 
 enum AnimationType {
     ANIM_TYPE_UNDEFINED,
