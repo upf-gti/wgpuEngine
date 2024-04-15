@@ -17,9 +17,12 @@ class AnimationPlayer : public AnimationMixer
     float speed      = 1.f;
     float blend_time = 0.f;
 
+    AnimationType type = AnimationType::ANIM_TYPE_SIMPLE;
+
     std::vector<std::string> animations_queue;
 
     Animation* animation = nullptr;
+    Node3D* node = nullptr;
 
 public:
     AnimationPlayer(const std::string& name);

@@ -23,7 +23,7 @@ float Animation::sample(float time)
         Track& track = tracks[i];
 
         // sample the track
-        track.sample(time, looping);
+        track.sample(time, looping, track.get_data());
     }
 
     return time;
@@ -94,11 +94,17 @@ Track* Animation::add_track(uint32_t id, void* data)
 // Retrieves the Track object for a specific id in the Animation
 Track* Animation::operator[](uint32_t id)
 {
-    return get_track(id);
+    return &tracks[id];
 }
 
 // Retrieves the Track object for a specific id in the Animation
-Track* Animation::get_track(uint32_t id)
+Track* Animation::get_track(uint32_t i)
+{
+    return &tracks[i];
+}
+
+// Retrieves the Track object for a specific id in the Animation
+Track* Animation::get_track_by_id(uint32_t id)
 {
     for (size_t i = 0, s = tracks.size(); i < s; ++i) {
         if (tracks[i].get_id() == id) {

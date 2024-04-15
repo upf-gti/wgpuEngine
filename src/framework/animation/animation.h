@@ -44,7 +44,7 @@ public:
     // Samples the animation clip at the provided time into the out reference
     float sample(float time);
 
-    // Returns a transform track for the specified joint
+    // Returns a transform track for the specified track position id
     Track* operator[](uint32_t index);
 
     // Sets the start/end time of the animation clip based on the tracks that make up the clip
@@ -53,6 +53,7 @@ public:
     // Adds a new track with the pointer property data of any node
     Track* add_track(uint32_t id, void* data);
 
+    Track* get_track_by_id(uint32_t id);
     Track* get_track(uint32_t index);
     std::string& get_name();
     float get_duration();

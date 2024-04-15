@@ -123,7 +123,6 @@ void AnimationPlayer::update(float delta_time)
     }
 
     if (playing) {
-
         playback += delta_time * speed;
         playback = animation->sample(playback);
     }
@@ -132,7 +131,22 @@ void AnimationPlayer::update(float delta_time)
 }
 
 void AnimationPlayer::render_gui()
-{
+{     
+    if (ImGui::BeginCombo("##current", current_animation.c_str())) // The second parameter is the label previewed before opening the combo.
+    {
+        for (auto& instance : RendererStorage::animations)
+        {
+            bool is_selected = (current_animation == instance.first); // You can store your selection however you want, outside or inside your objects
+            if (ImGui::Selectable(instance.first.c_str(), is_selected)) {
+                queue(instance.first);
+                play();
+            }
+                if (is_selected)
+                    ImGui::SetItemDefaultFocus();   // You may set the initial focus when opening the combo (scrolling + for keyboard navigation support)
+        }
+        ImGui::EndCombo();
+    }
+
     ImGui::Checkbox("Play", &playing);
     ImGui::Checkbox("Loop", &looping);
 }

@@ -66,6 +66,7 @@ public:
     Interpolation get_interpolation();
     TrackType get_type() const { return type; };
     std::string& get_name();
+    void* get_data();
 
     void set_data(void* property);
     void set_id(uint32_t id);
@@ -77,7 +78,7 @@ public:
     void resize(uint32_t size);
 
     // Prameters: time value, if the track is looping or not
-    T sample(float time, bool looping);
+    T sample(float time, bool looping, void* out);
     Keyframe& operator[](uint32_t index);
 };
 
