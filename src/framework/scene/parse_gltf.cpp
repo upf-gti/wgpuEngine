@@ -27,14 +27,14 @@
 
 #include "spdlog/spdlog.h"
 
-void create_material_texture(tinygltf::Model& model, int tex_index, Texture** texture, bool is_srgb = false) {
-
+void create_material_texture(const tinygltf::Model& model, int tex_index, Texture** texture, bool is_srgb = false)
+{
     const tinygltf::Texture& tex = model.textures[tex_index];
 
     if (tex.source < 0)
         return;
 
-    tinygltf::Image& image = model.images[tex.source];
+    const tinygltf::Image& image = model.images[tex.source];
 
     assert(image.component == 4);
 
@@ -56,7 +56,7 @@ void create_material_texture(tinygltf::Model& model, int tex_index, Texture** te
     if (convert_image) {
         uint8_t* converted_texture = new uint8_t[image.width * image.height * 4];
 
-        if (Texture::convert_to_rgba8unorm(image.width, image.height, texture_format, image.image.data(), converted_texture)) {
+        if (Texture::convert_to_rgba8unorm(image.width, image.height, texture_format, (void*)image.image.data(), converted_texture)) {
             *texture = new Texture();
             (*texture)->load_from_data(image.uri, image.width, image.height, 1, converted_texture, true, is_srgb ? WGPUTextureFormat_RGBA8UnormSrgb : WGPUTextureFormat_RGBA8Unorm);
             delete[] converted_texture;
@@ -64,12 +64,12 @@ void create_material_texture(tinygltf::Model& model, int tex_index, Texture** te
     }
     else {
         *texture = new Texture();
-        (*texture)->load_from_data(image.uri, image.width, image.height, 1, image.image.data(), true, is_srgb ? WGPUTextureFormat_RGBA8UnormSrgb : WGPUTextureFormat_RGBA8Unorm);
+        (*texture)->load_from_data(image.uri, image.width, image.height, 1, (void*)image.image.data(), true, is_srgb ? WGPUTextureFormat_RGBA8UnormSrgb : WGPUTextureFormat_RGBA8Unorm);
     }
 
     if (tex.sampler != -1)
     {
-        tinygltf::Sampler& sampler = model.samplers[tex.sampler];
+        const tinygltf::Sampler& sampler = model.samplers[tex.sampler];
 
         switch (sampler.wrapS) {
         case TINYGLTF_TEXTURE_WRAP_REPEAT:
@@ -95,22 +95,21 @@ void create_material_texture(tinygltf::Model& model, int tex_index, Texture** te
             break;
         }
     }
-
 }
 
-int get_node_index(int joint_id, Skeleton * skeleton, std::vector<tinygltf::Node> all_nodes) {
-    std::vector<std::string> joint_names = skeleton->get_joint_names();
+//int get_node_index(int joint_id, Skeleton * skeleton, std::vector<tinygltf::Node> all_nodes) {
+//    std::vector<std::string> joint_names = skeleton->get_joint_names();
+//
+//    for (unsigned int i = 0; i < joint_names.size(); ++i) {
+//        if (joint_names[i] == all_nodes[i].name) {
+//            return (int)i;
+//        }
+//    }
+//    return -1;
+//}
 
-    for (unsigned int i = 0; i < joint_names.size(); ++i) {
-        if (joint_names[i] == all_nodes[i].name) {
-            return (int)i;
-        }
-    }
-    return -1;
-}
-
-void read_mesh(tinygltf::Model& model, tinygltf::Mesh& mesh, Node3D* entity, std::map<uint32_t, Texture*>& texture_cache) {
-
+void read_mesh(const tinygltf::Model& model, const tinygltf::Mesh& mesh, Node3D* entity, std::map<uint32_t, Texture*>& texture_cache)
+{
     MeshInstance3D* entity_mesh = dynamic_cast<MeshInstance3D*>(entity);
 
     if (!entity_mesh) {
@@ -455,7 +454,7 @@ void read_mesh(tinygltf::Model& model, tinygltf::Mesh& mesh, Node3D* entity, std
 
         if (primitive.material >= 0) {
 
-            tinygltf::Material& gltf_material = model.materials[primitive.material];
+            const tinygltf::Material& gltf_material = model.materials[primitive.material];
 
             const tinygltf::PbrMetallicRoughness& pbrMetallicRoughness = gltf_material.pbrMetallicRoughness;
             
@@ -560,8 +559,8 @@ void read_mesh(tinygltf::Model& model, tinygltf::Mesh& mesh, Node3D* entity, std
     }
 }
 
-void create_light(tinygltf::Light& gltf_light, Light3D* light_node) {
-
+void create_light(const tinygltf::Light& gltf_light, Light3D* light_node)
+{
     light_node->set_intensity(static_cast<float>(gltf_light.intensity));
 
     // Blender exports 0.0 if no custom distance is used.. so keep -1 as range
@@ -587,8 +586,8 @@ void create_light(tinygltf::Light& gltf_light, Light3D* light_node) {
     }
 }
 
-Node3D* create_node_entity(tinygltf::Node& node, tinygltf::Model& model) {
-
+Node3D* create_node_entity(const tinygltf::Node& node, const tinygltf::Model& model)
+{
     Node3D* new_node = nullptr;
 
     if (node.mesh >= 0) {
@@ -602,7 +601,7 @@ Node3D* create_node_entity(tinygltf::Node& node, tinygltf::Model& model) {
     }
     else if (node.light >= 0) {
 
-        tinygltf::Light& gltf_light = model.lights[node.light];
+        const tinygltf::Light& gltf_light = model.lights[node.light];
         std::string light_type = gltf_light.type;
 
         if (light_type == "spot") {
@@ -624,9 +623,9 @@ Node3D* create_node_entity(tinygltf::Node& node, tinygltf::Model& model) {
     return new_node;
 };
 
-void parse_model_nodes(tinygltf::Model& model, int id, Node3D* entity, std::map<uint32_t, Texture*> &texture_cache, std::map<int, int> &hierarchy, std::vector<SkeletonInstance3D*> & skeleton_instances ) {
-
-    tinygltf::Node node = model.nodes[id];
+void parse_model_nodes(const tinygltf::Model& model, int id, Node3D* entity, std::map<uint32_t, Texture*> &texture_cache, std::map<int, int> &hierarchy, std::vector<SkeletonInstance3D*> & skeleton_instances )
+{
+   const tinygltf::Node& node = model.nodes[id];
 
     entity->set_name(node.name);
 
@@ -708,7 +707,8 @@ void parse_model_nodes(tinygltf::Model& model, int id, Node3D* entity, std::map<
     }
 };
 
-void parse_model_skins(tinygltf::Model& model, std::map<int, int> hierarchy, std::vector<SkeletonInstance3D*>& skeleton_instances) {
+void parse_model_skins(const tinygltf::Model& model, std::map<int, int> hierarchy, std::vector<SkeletonInstance3D*>& skeleton_instances)
+{
     if (!model.skins.size() ) {
         return;
     }
@@ -716,7 +716,9 @@ void parse_model_skins(tinygltf::Model& model, std::map<int, int> hierarchy, std
     std::vector<Transform> world_bind_transforms;
 
     for (size_t s = 0; s < model.skins.size(); s++) {
+
         const tinygltf::Skin& skin = model.skins[s];
+
         if (skin.inverseBindMatrices > -1) {
 
             Pose bind_pose;
@@ -739,7 +741,6 @@ void parse_model_skins(tinygltf::Model& model, std::map<int, int> hierarchy, std
 
                 const float* ptr = reinterpret_cast<const float*>(buffer.data.data() + accessor.byteOffset + bufferView.byteOffset);
                 
-
                 std::vector<glm::mat4> inverse_bind_matrices(accessor.count);
                 std::vector<std::string> joint_names;
                 std::vector<unsigned int> joint_indices;
@@ -747,7 +748,7 @@ void parse_model_skins(tinygltf::Model& model, std::map<int, int> hierarchy, std
                 //for each joint in the skin, get the inverse bind pose matrix
                 for (size_t i = 0; i < skin.joints.size(); i++) {
 
-                    tinygltf::Node node = model.nodes[skin.joints[i]];
+                    const tinygltf::Node& node = model.nodes[skin.joints[i]];
                     joint_names.push_back(node.name);
                     joint_indices.push_back(skin.joints[i]);
 
@@ -818,6 +819,7 @@ void parse_model_skins(tinygltf::Model& model, std::map<int, int> hierarchy, std
                 }
 
                 bind_pose = rest_pose;
+
                 for (unsigned int i = 0; i < num_joints; ++i) {
                     Transform current = world_bind_transforms[i];
                     int p = bind_pose.get_parent(i);
@@ -917,31 +919,35 @@ void parse_model_skins(tinygltf::Model& model, std::map<int, int> hierarchy, std
                 }
 
                 Skeleton *skeleton = new Skeleton(rest_pose, bind_pose, joint_names, joint_indices);
+
                 for (auto instance : skeleton_instances) {
 
-                    if (instance->skin == s) {
-                        RendererStorage::register_skeleton(instance->get_name(), skeleton);
+                    if (instance->skin != s) {
+                        continue;
+                    }
 
-                        instance->set_skeleton(skeleton);
+                    RendererStorage::register_skeleton(instance->get_name(), skeleton);
 
-                        for (auto child : instance->get_children()) {
-                            MeshInstance* child_instance = dynamic_cast<MeshInstance*>(child);
-                            assert(child_instance);
-                            child_instance->set_skeleton(skeleton);
-                        }
+                    instance->set_skeleton(skeleton);
+
+                    for (auto child : instance->get_children()) {
+                        MeshInstance* child_instance = dynamic_cast<MeshInstance*>(child);
+                        assert(child_instance);
+                        child_instance->set_skeleton(skeleton);
                     }
                 }               
             }
         }
     }
-
 };
 
-void get_scalar_values(std::vector<T>& out, unsigned int component_size, const tinygltf::Model& model, int accessor_idx) {
+void get_scalar_values(std::vector<T>& out, unsigned int component_size, const tinygltf::Model& model, int accessor_idx)
+{
     uint32_t size;
     const tinygltf::Accessor& accessor = model.accessors[accessor_idx];
     const tinygltf::BufferView& buffer_view = model.bufferViews[accessor.bufferView];
     const tinygltf::Buffer& buffer = model.buffers[buffer_view.buffer];
+
     if (accessor.type != TINYGLTF_TYPE_SCALAR) {
         component_size = accessor.type;
     }
@@ -1044,8 +1050,8 @@ void get_scalar_values(std::vector<T>& out, unsigned int component_size, const t
 }
 
 // converts a glTF animation channel into a VectorTrack or a QuaternionTrack
-void track_from_channel(Track& result, tinygltf::AnimationChannel channel, tinygltf::AnimationSampler sampler, const tinygltf::Model model) {
-
+void track_from_channel(Track& result, const tinygltf::AnimationChannel& channel, const tinygltf::AnimationSampler& sampler, const tinygltf::Model& model)
+{
     Interpolation interpolation = Interpolation::CONSTANT;
 
     // make sure the Interpolation type of the track matches the cgltf_interpolation_type type of the sampler
@@ -1056,7 +1062,6 @@ void track_from_channel(Track& result, tinygltf::AnimationChannel channel, tinyg
         interpolation = Interpolation::CUBIC;
     }
 
-    bool is_sampler_cubic = interpolation == Interpolation::CUBIC;
     result.set_interpolation(interpolation);
 
     // convert sampler input and output accessors into linear arrays of floating-point numbers
@@ -1067,13 +1072,15 @@ void track_from_channel(Track& result, tinygltf::AnimationChannel channel, tinyg
     get_scalar_values(values, TrackHelpers::get_size(result), model, sampler.output);
 
     size_t num_frames = time.size();
-    size_t comp_count = values.size() / time.size(); // components (vec3 or quat) per frame}
-    // resize the track to have enough room to store all the frames
+
+    // Resize the track to have enough room to store all the frames
     result.resize(num_frames);
 
-    // parse the time and value arrays into frame structures
+    bool is_sampler_cubic = interpolation == Interpolation::CUBIC;
+
+    // Parse the time and value arrays into frame structures
     for (size_t i = 0; i < num_frames; ++i) {
-        int baseIndex = i;// *comp_count;
+        int baseIndex = i;
         Keyframe& frame = result[i];
         // offset used to deal with cubic tracks since the input and output tangents are as large as the number of components
         int offset = 0;
@@ -1089,9 +1096,9 @@ void track_from_channel(Track& result, tinygltf::AnimationChannel channel, tinyg
     }
 }
 
-void parse_model_animations(tinygltf::Model& model, std::vector<SkeletonInstance3D*> skeleton_instances, AnimationPlayer* player) {
-
-    std::vector<tinygltf::Animation> animations = model.animations;
+void parse_model_animations(const tinygltf::Model& model, std::vector<SkeletonInstance3D*> skeleton_instances, AnimationPlayer* player)
+{
+    const std::vector<tinygltf::Animation>& animations = model.animations;
     size_t num_animations = animations.size();
 
     std::vector<Animation*> result(num_animations);
@@ -1100,14 +1107,17 @@ void parse_model_animations(tinygltf::Model& model, std::vector<SkeletonInstance
     //TODO: Generalize for other animation types (not skeleton)
 
     for (size_t i = 0; i < num_animations; ++i) {
-       
+
+        const tinygltf::Animation& animation = animations[i];
+
         Skeleton* skeleton = nullptr;
         
         for (auto & instance : skeleton_instances) {
-            std::vector<uint32_t> indices = instance->get_skeleton()->get_joint_indices();
+
+            const std::vector<uint32_t>& indices = instance->get_skeleton()->get_joint_indices();
 
             for (size_t s = 0; s < indices.size(); s++) {
-                if (indices[s] != animations[i].channels[0].target_node)
+                if (indices[s] != animation.channels[0].target_node)
                     continue;
                 skeleton = instance->get_skeleton();
                 root_node = instance->get_name();
@@ -1123,15 +1133,15 @@ void parse_model_animations(tinygltf::Model& model, std::vector<SkeletonInstance
         }
 
         // each channel of a glTF file is an animation track
-        size_t num_channels = animations[i].channels.size();
+        size_t num_channels = animation.channels.size();
 
         for (size_t j = 0; j < num_channels; ++j) {
             
-            tinygltf::AnimationChannel channel = animations[i].channels[j];
-            tinygltf::AnimationSampler sampler = animations[i].samplers[channel.sampler];
+            const tinygltf::AnimationChannel& channel = animation.channels[j];
+            const tinygltf::AnimationSampler& sampler = animation.samplers[channel.sampler];
 
             int node_id = channel.target_node;
-            std::vector<uint32_t> indices = skeleton->get_joint_indices();
+            const std::vector<uint32_t>& indices = skeleton->get_joint_indices();
 
             //Convert the id node to skeleton joint id
             for (uint32_t id = 0; id < indices.size(); id++) {
@@ -1171,7 +1181,7 @@ void parse_model_animations(tinygltf::Model& model, std::vector<SkeletonInstance
 
         } // End num channels loop
 
-        result[i]->set_name(animations[i].name);
+        result[i]->set_name(animation.name);
         result[i]->recalculate_duration();
 
         RendererStorage::register_animation(result[i]->get_name(), result[i], root_node);
