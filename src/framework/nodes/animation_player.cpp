@@ -172,6 +172,18 @@ void AnimationPlayer::render_gui()
         ImGui::EndCombo();
     }
 
-    ImGui::Checkbox("Play", &playing);
-    ImGui::Checkbox("Loop", &looping);
+    if (ImGui::Checkbox("Loop", &looping)) {
+        animation->set_looping(looping);
+    }
+
+    ImGui::LabelText(std::to_string(playback).c_str(), "Playback");
+
+    if (!playing && ImGui::Button("Play")) {
+        playing = true;
+        if(playing)
+            playback = 0;
+    }
+    else if(playing && ImGui::Button("Stop")) {
+        playing = false;
+    }
 }
