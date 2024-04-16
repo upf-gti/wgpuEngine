@@ -1,6 +1,7 @@
 #include "node.h"
 
 #include "framework/input.h"
+#include "framework/utils/utils.h"
 
 #include "spdlog/spdlog.h"
 
@@ -40,6 +41,38 @@ AABB Node::get_aabb() const
     }
 
     return new_aabb;
+}
+
+Node* Node::get_node(std::vector<std::string>& path_tokens)
+{
+    if (!path_tokens.size()) {
+        return this;
+    }
+
+    for (Node* child : children) {
+
+        if (child->get_name() == path_tokens[0]) {
+            path_tokens.erase(path_tokens.begin());
+            return child->get_node(path_tokens);
+        }
+    }
+
+    return nullptr;
+}
+
+Node* Node::get_node(const std::string& path)
+{
+    std::vector<std::string> path_tokens = tokenize(path, '/');
+    return get_node(path_tokens);
+}
+
+void* Node::get_property(const std::string& name)
+{
+    if (properties.contains(name)) {
+        return properties[name];
+    }
+
+    return nullptr;
 }
 
 void Node::remove_flag(uint8_t flag)

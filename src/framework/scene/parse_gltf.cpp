@@ -746,6 +746,7 @@ void parse_model_skins(const tinygltf::Model& model, std::map<int, int> hierarch
         std::vector<glm::mat4> inverse_bind_matrices(accessor.count);
         std::vector<std::string> joint_names;
         std::vector<uint32_t> joint_indices;
+        std::vector<Node3D*> joint_nodes;
 
         //for each joint in the skin, get the inverse bind pose matrix
         for (size_t i = 0; i < skin.joints.size(); i++) {
@@ -753,6 +754,10 @@ void parse_model_skins(const tinygltf::Model& model, std::map<int, int> hierarch
             const tinygltf::Node& node = model.nodes[skin.joints[i]];
             joint_names.push_back(node.name);
             joint_indices.push_back(skin.joints[i]);
+
+            Node3D* joint_3d = new Node3D();
+            joint_3d->set_name(node.name);
+            joint_nodes.push_back(joint_3d);
 
             if (!node.matrix.empty())
             {
@@ -792,9 +797,9 @@ void parse_model_skins(const tinygltf::Model& model, std::map<int, int> hierarch
                         });
                 }
 
-                       
-                //rest_pose.set_local_transform(skin.joints[i], transform);
                 rest_pose.set_local_transform(i, transform);
+
+                joint_3d->set_model(transformToMat4(transform));
             }
 
             //rest_pose.set_parent(skin.joints[i], hierarchy[skin.joints[i]]);
@@ -817,7 +822,6 @@ void parse_model_skins(const tinygltf::Model& model, std::map<int, int> hierarch
             Transform bind_transform = mat4ToTransform(bind_matrix);
             //world_bind_transforms[skin.joints[i]] = bind_transform;
             world_bind_transforms[i] = bind_transform;
-                
         }
 
         bind_pose = rest_pose;
@@ -929,6 +933,7 @@ void parse_model_skins(const tinygltf::Model& model, std::map<int, int> hierarch
             }
 
             instance->set_skeleton(skeleton);
+            instance->set_joint_nodes(joint_nodes);
 
             for (auto child : instance->get_children()) {
                 MeshInstance* child_instance = dynamic_cast<MeshInstance*>(child);
@@ -1099,36 +1104,32 @@ void parse_model_animations(const tinygltf::Model& model, std::vector<SkeletonIn
     const std::vector<tinygltf::Animation>& animations = model.animations;
     size_t num_animations = animations.size();
 
-    std::vector<Animation*> result(num_animations);
-    std::string root_node = "";
-
     //TODO: Generalize for other animation types (not skeleton)
 
     for (size_t i = 0; i < num_animations; ++i) {
 
         const tinygltf::Animation& animation = animations[i];
 
-        Skeleton* skeleton = nullptr;
+        SkeletonInstance3D* skeleton_instance = nullptr;
         
-        for (auto & instance : skeleton_instances) {
+        for (SkeletonInstance3D* instance : skeleton_instances) {
 
             const std::vector<uint32_t>& indices = instance->get_skeleton()->get_joint_indices();
 
             for (size_t s = 0; s < indices.size(); s++) {
                 if (indices[s] != animation.channels[0].target_node)
                     continue;
-                skeleton = instance->get_skeleton();
-                root_node = instance->get_name();
+                skeleton_instance = instance;
                 break;
             }
-            if (skeleton)
+            if (skeleton_instance)
                 break;
         }
 
-        if (!result[i]) {
-            result[i] = new Animation();      
-            result[i]->set_type(AnimationType::ANIM_TYPE_SKELETON);
-        }
+        Animation* new_animation = new Animation();
+        new_animation->set_type(AnimationType::ANIM_TYPE_SKELETON);
+
+        Skeleton* skeleton = skeleton_instance->get_skeleton();
 
         // each channel of a glTF file is an animation track
         size_t num_channels = animation.channels.size();
@@ -1148,6 +1149,8 @@ void parse_model_animations(const tinygltf::Model& model, std::vector<SkeletonIn
                 node_id = id;
                 break;
             }
+            
+            Track* track = new_animation->add_track(node_id);
 
             TrackType type = TrackType::TYPE_UNDEFINED;
             
@@ -1164,20 +1167,22 @@ void parse_model_animations(const tinygltf::Model& model, std::vector<SkeletonIn
                 type = TrackType::TYPE_FLOAT;
             }
 
-            Track* track = result[i]->add_track(node_id);
+            const tinygltf::Node& node = model.nodes[channel.target_node];
+
+            track->set_name(node.name + "/" + channel.target_path);
+            track->set_path(skeleton_instance->get_name() + "/" + node.name + "/" + channel.target_path);
             track->set_type(type);
-            track->set_name(skeleton->get_joint_name(node_id) + channel.target_path);
+
             track_from_channel(*track, channel, sampler, model);
+        }
 
-        } // End num channels loop
+        new_animation->set_name(animation.name);
+        new_animation->recalculate_duration();
 
-        result[i]->set_name(animation.name);
-        result[i]->recalculate_duration();
-
-        RendererStorage::register_animation(result[i]->get_name(), result[i], root_node);
+        RendererStorage::register_animation(new_animation->get_name(), new_animation);
 
         if (i == 0) {
-            player->play(result[0]->get_name());
+            player->play(new_animation->get_name());
         }
     }
 }

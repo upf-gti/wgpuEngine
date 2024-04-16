@@ -21,16 +21,16 @@ std::string remove_special_characters(const std::string& str)
     return final_str;
 }
 
-std::vector<std::string> tokenize(const std::string& str)
+std::vector<std::string> tokenize(const std::string& str, char token)
 {
 	std::vector<std::string> results;
     std::string::const_iterator start = str.begin();
     std::string::const_iterator end = str.end();
-    std::string::const_iterator next = std::find(start, end, ' ');
+    std::string::const_iterator next = std::find(start, end, token);
     while (next != end) {
         results.push_back(std::string(start, next));
         start = next + 1;
-        next = std::find(start, end, ' ');
+        next = std::find(start, end, token);
     }
 
     results.push_back(remove_special_characters(std::string(start, next)));

@@ -6,6 +6,7 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <unordered_map>
 #include <variant>
 #include <functional>
 
@@ -39,6 +40,8 @@ protected:
 
     AABB aabb = {};
 
+    std::unordered_map<std::string, void*> properties;
+
 public:
 
     Node() {};
@@ -51,6 +54,11 @@ public:
     std::string get_name() const { return name; }
     virtual std::vector<Node*>& get_children() { return children; }
     AABB get_aabb() const;
+
+    virtual Node* get_node(std::vector<std::string>& path_tokens);
+    Node* get_node(const std::string& path);
+
+    void* get_property(const std::string& name);
 
     void set_name(std::string name) { this->name = name; }
     void set_aabb(const AABB& aabb) { this->aabb = aabb; }

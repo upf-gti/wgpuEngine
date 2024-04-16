@@ -1,6 +1,7 @@
 #pragma once
 
 #include "framework/nodes/node.h"
+#include "framework/animation/bone_transform.h"
 
 #include <string>
 #include <vector>
@@ -13,9 +14,13 @@ protected:
 
     Node3D* parent = nullptr;
 
+    Transform transform;
+
+    bool model_dirty = false;
+
 public:
 
-    Node3D() : model(1.0f) {};
+    Node3D();
 	virtual ~Node3D() {};
 
     void add_child(Node3D* child);

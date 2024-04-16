@@ -37,10 +37,9 @@ public:
     uint32_t get_id_at_index(uint32_t index);
     // Sets joint ID based on the index of the joint in the clip
     void set_id_at_index(uint32_t idx, uint32_t id);
-    uint32_t size();
 
     // Samples the animation clip at the provided time into the out reference
-    float sample(float time, void* out = nullptr);
+    float sample(float time, uint32_t index, void* out = nullptr);
 
     // Returns a transform track for the specified track position id
     Track* operator[](uint32_t index);
@@ -51,6 +50,7 @@ public:
     // Adds a new track
     Track* add_track(uint32_t id);
 
+    uint32_t get_track_count();
     Track* get_track_by_id(uint32_t id);
     Track* get_track(uint32_t index);
     std::string& get_name();

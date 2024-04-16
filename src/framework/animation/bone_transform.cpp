@@ -8,7 +8,7 @@ Transform combine(const Transform& t1, const Transform& t2)
 {
 	Transform out;
 	out.scale = t1.scale * t2.scale;
-	out.rotation = t1.rotation * t2.rotation ; 
+	out.rotation = t1.rotation * t2.rotation; 
 	// The combined position needs to be affected by the rotation and scale
 	out.position =  t1.rotation * (t1.scale * t2.position); // M = T*R*S
 	out.position = t1.position + out.position;

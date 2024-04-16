@@ -20,6 +20,30 @@ void SkeletonInstance3D::update(float dt)
     Node3D::update(dt);
 }
 
+void SkeletonInstance3D::set_joint_nodes(const std::vector<Node3D*>& new_joint_nodes)
+{
+    joint_nodes = new_joint_nodes;
+}
+
+Node* SkeletonInstance3D::get_node(std::vector<std::string>& path_tokens)
+{
+    // path_tokens[0] -> skeleton instance
+    // path_tokens[1] -> node_name
+    // path_tokens[2] -> property
+
+    // TODO: get joint node from list (special case for skeleton instances)
+
+    /*for (Node* child : children) {
+
+        if (child->get_name() == path_tokens[0]) {
+            path_tokens.erase(path_tokens.begin());
+            return child->get_node(path_tokens);
+        }
+    }*/
+
+    return nullptr;
+}
+
 void SkeletonInstance3D::update_helper()
 {
     // Update helper

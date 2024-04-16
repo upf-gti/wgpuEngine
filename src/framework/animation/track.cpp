@@ -88,9 +88,14 @@ void Track::set_id(uint32_t index)
     id = index;
 }
 
-void Track::set_name(const std::string& n)
+void Track::set_name(const std::string& new_name)
 {
-    name = n;
+    name = new_name;
+}
+
+void Track::set_path(const std::string& new_path)
+{
+    path = new_path;
 }
 
 float Track::get_start_time()
@@ -103,13 +108,18 @@ float Track::get_end_time()
     return keyframes[keyframes.size() - 1].time;
 }
 
-std::string& Track::get_name()
+const std::string& Track::get_name()
 {
     return name;
 }
 
+const std::string& Track::get_path()
+{
+    return path;
+}
+
 // call sample_constant, sample_linear, or sample_cubic, depending on the track type.
-T Track::sample(float time, bool looping)
+T Track::sample(float time, bool looping, void* out)
 {
     T r;
 
@@ -121,6 +131,22 @@ T Track::sample(float time, bool looping)
     }
     else {
         r = sample_cubic(time, looping);
+    }
+
+    if (out)
+    {
+        if (std::holds_alternative<float>(r)) {
+            float* p = reinterpret_cast<float*>(out);
+            *p = std::get<float>(r);
+        }
+        else if (std::holds_alternative<glm::vec3>(r)) {
+            glm::vec3* p = reinterpret_cast<glm::vec3*>(out);
+            *p = std::get<glm::vec3>(r);
+        }
+        else if (std::holds_alternative<glm::quat>(r)) {
+            glm::quat* p = reinterpret_cast<glm::quat*>(out);
+            *p = std::get<glm::quat>(r);
+        }
     }
 
     return r;

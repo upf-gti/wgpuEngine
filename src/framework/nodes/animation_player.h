@@ -22,6 +22,10 @@ class AnimationPlayer : public Node3D
 
     BlendAnimation blender;
 
+    std::vector<void*> track_data;
+
+    void generate_track_data();
+
 public:
 
     AnimationPlayer(const std::string& name);

@@ -36,6 +36,32 @@ void AnimationPlayer::play(const std::string& animation_name, float custom_blend
     speed = custom_speed;
     playing = true;
     current_animation_name = animation_name;
+
+    generate_track_data();
+}
+
+void AnimationPlayer::generate_track_data()
+{
+    track_data.clear();
+
+    Animation* animation = RendererStorage::get_animation(current_animation_name);
+    uint32_t num_tracks = animation->get_track_count();
+    track_data.resize(num_tracks);
+
+    // Generate data from tracks
+
+    for (uint32_t i = 0; i < num_tracks; ++i) {
+
+        const std::string& track_path = animation->get_track(i)->get_path();
+
+        uint32_t last_idx = track_path.find_last_of('/');
+        const std::string& node_path = track_path.substr(0, last_idx);
+        const std::string& property_name = track_path.substr(last_idx + 1);
+
+        Node* node = root_node->get_node(node_path);
+
+        track_data[i] = node->get_property(property_name);
+    }
 }
 
 void AnimationPlayer::pause()
@@ -68,22 +94,28 @@ void AnimationPlayer::update(float delta_time)
                 continue;
             }
 
-            Skeleton* skeleton = node->get_skeleton();
-            if (!skeleton) {
-                continue;
+            uint32_t num_tracks = current_animation->get_track_count();
+
+            // Generate data from tracks
+
+            for (uint32_t i = 0; i < num_tracks; ++i) {
+                playback = current_animation->sample(playback + delta_time, i, track_data[i]);
             }
 
             // Skeletal animation case: we get the skeleton pose
             // in case we want to process the values and update it manually
-            if (current_animation->get_type() == ANIM_TYPE_SKELETON) {
-
-                Pose& pose = skeleton->get_current_pose();
-                playback = blender.update(delta_time * speed, &pose);
-            }
-            else {
-                // General case: out is not used..
-                playback = blender.update(delta_time * speed);
-            }
+            //if (current_animation->get_type() == ANIM_TYPE_SKELETON) {
+            //    Skeleton* skeleton = node->get_skeleton();
+            //    if (!skeleton) {
+            //        continue;
+            //    }
+            //    Pose& pose = skeleton->get_current_pose();
+            //    playback = blender.update(delta_time * speed, &pose);
+            //}
+            //else {
+            //    // General case: out is not used..
+            //    playback = blender.update(delta_time * speed);
+            //}
         }
     }
 

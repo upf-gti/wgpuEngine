@@ -1,6 +1,13 @@
 #include "node_3d.h"
 #include "spdlog/spdlog.h"
 
+Node3D::Node3D() : model(1.0f)
+{
+    properties["translation"] = &transform.position;
+    properties["rotation"] = &transform.rotation;
+    properties["scale"] = &transform.scale;
+}
+
 void Node3D::add_child(Node3D* child)
 {
     if (child->parent) {

@@ -41,6 +41,7 @@ class Track {
     Interpolation interpolation; // interpolation type
     TrackType type = TrackType::TYPE_UNDEFINED;
     std::string name = "";
+    std::string path = "";
 
     // Helper functions, a sample for each type of interpolation
     T sample_constant(float time, bool looping);
@@ -67,18 +68,20 @@ public:
     float get_start_time();
     Interpolation get_interpolation();
     TrackType get_type() const { return type; };
-    std::string& get_name();
+    const std::string& get_name();
+    const std::string& get_path();
 
     void set_id(uint32_t id);
     void set_interpolation(Interpolation interp);
     void set_type(TrackType new_type) { type = new_type; };
-    void set_name(const std::string& name);
+    void set_name(const std::string& new_name);
+    void set_path(const std::string& new_path);
 
     uint32_t size();
     void resize(uint32_t size);
 
     // Prameters: time value, if the track is looping or not
-    T sample(float time, bool looping);
+    T sample(float time, bool looping, void* out = nullptr);
     Keyframe& operator[](uint32_t index);
 };
 

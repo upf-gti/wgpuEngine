@@ -8,7 +8,7 @@ Animation::Animation()
     looping = true;
 }
 
-float Animation::sample(float time, void* data)
+float Animation::sample(float time, uint32_t index, void* out)
 {
     if (get_duration() == 0.0f) {
         return 0.0f;
@@ -16,21 +16,23 @@ float Animation::sample(float time, void* data)
 
     time = adjust_time_to_fit_range(time);
 
-    // In this case, we want data to be the pose corresponding to that time
-    if(type == ANIM_TYPE_SKELETON) {
+    Track* track = get_track(index);
+
+    track->sample(time, looping, out);
+
+    /*if(type == ANIM_TYPE_SKELETON) {
         sample_pose(time, data);
     }
-    // Generic case: TODO
     else {
         assert(0);
-    }
+    }*/
 
     return time;
 }
 
 void Animation::sample_pose(float time, void* out)
 {
-    Pose* pose = reinterpret_cast<Pose*>(out);
+    /*Pose* pose = reinterpret_cast<Pose*>(out);
     assert(pose);
 
     for (size_t i = 0; i < tracks.size(); i += 3) {
@@ -60,7 +62,7 @@ void Animation::sample_pose(float time, void* out)
         }
 
         pose->set_local_transform(id, transform);
-    }
+    }*/
 }
 
 float Animation::adjust_time_to_fit_range(float time)
@@ -160,7 +162,7 @@ uint32_t Animation::get_id_at_index(uint32_t index)
     return tracks[index].get_id();
 }
 
-uint32_t Animation::size()
+uint32_t Animation::get_track_count()
 {
     return (uint32_t)tracks.size();
 }
