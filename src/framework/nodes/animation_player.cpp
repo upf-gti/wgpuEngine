@@ -54,10 +54,12 @@ void AnimationPlayer::generate_track_data()
 
         const std::string& track_path = animation->get_track(i)->get_path();
 
-        uint32_t last_idx = track_path.find_last_of('/');
+        size_t last_idx = track_path.find_last_of('/');
         const std::string& node_path = track_path.substr(0, last_idx);
         const std::string& property_name = track_path.substr(last_idx + 1);
 
+        // this get_node is overrided by SkeletonInstance, depending on the class
+        // it will use hierarchical search or linear search in joints array
         Node* node = root_node->get_node(node_path);
 
         track_data[i] = node->get_property(property_name);

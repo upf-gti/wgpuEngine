@@ -54,12 +54,12 @@ void Skeleton::set_current_pose(const Pose& pose)
     current_pose.set_joints(pose.get_joints());
 }
 
-std::vector<glm::mat4>& Skeleton::get_inv_bind_pose()
+const std::vector<glm::mat4>& Skeleton::get_inv_bind_pose()
 {
 	return inv_bind_pose;
 }
 
-std::vector<std::string>& Skeleton::get_joint_names()
+const std::vector<std::string>& Skeleton::get_joint_names()
 {
 	return joint_names;
 }
@@ -69,7 +69,7 @@ std::string& Skeleton::get_joint_name(uint32_t id)
 	return joint_names[id];
 }
 
-std::vector<uint32_t>& Skeleton::get_joint_indices()
+const std::vector<uint32_t>& Skeleton::get_joint_indices()
 {
     return joint_ids;
 }

@@ -32,9 +32,9 @@ public:
 	Pose& get_rest_pose();
 	Pose& get_current_pose();
 
-	std::vector<glm::mat4>& get_inv_bind_pose();
-	std::vector<std::string>& get_joint_names();
-	std::vector<uint32_t>& get_joint_indices();
+	const std::vector<glm::mat4>& get_inv_bind_pose();
+	const std::vector<std::string>& get_joint_names();
+	const std::vector<uint32_t>& get_joint_indices();
 	std::string& get_joint_name(uint32_t id);
 	uint32_t& get_joint_indices(uint32_t id);
     uint32_t get_joints_count();

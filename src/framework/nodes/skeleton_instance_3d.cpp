@@ -27,19 +27,14 @@ void SkeletonInstance3D::set_joint_nodes(const std::vector<Node3D*>& new_joint_n
 
 Node* SkeletonInstance3D::get_node(std::vector<std::string>& path_tokens)
 {
-    // path_tokens[0] -> skeleton instance
-    // path_tokens[1] -> node_name
-    // path_tokens[2] -> property
+    assert(path_tokens.size() == 1);
 
-    // TODO: get joint node from list (special case for skeleton instances)
+    for (Node3D* joint_node : joint_nodes) {
 
-    /*for (Node* child : children) {
-
-        if (child->get_name() == path_tokens[0]) {
-            path_tokens.erase(path_tokens.begin());
-            return child->get_node(path_tokens);
+        if (joint_node->get_name() == path_tokens[0]) {
+            return joint_node;
         }
-    }*/
+    }
 
     return nullptr;
 }
