@@ -1126,6 +1126,10 @@ void parse_model_animations(const tinygltf::Model& model, std::vector<SkeletonIn
                 break;
         }
 
+        if (!skeleton_instance) {
+            continue;
+        }
+
         Animation* new_animation = new Animation();
         new_animation->set_type(AnimationType::ANIM_TYPE_SKELETON);
 

@@ -96,13 +96,17 @@ void AnimationPlayer::update(float delta_time)
                 continue;
             }
 
-            uint32_t num_tracks = current_animation->get_track_count();
+            // Sample data from the animation and store it at &track_data
 
-            // Generate data from tracks
-
-            for (uint32_t i = 0; i < num_tracks; ++i) {
+            for (uint32_t i = 0; i < current_animation->get_track_count(); ++i) {
                 playback = current_animation->sample(playback + delta_time, i, track_data[i]);
             }
+
+            // After sampling, we should have the skeletonInstance joint nodes with the correct
+            // transforms..
+
+            // TODO
+            // .. use those nodes to update the pose of the skeletons
 
             // Skeletal animation case: we get the skeleton pose
             // in case we want to process the values and update it manually

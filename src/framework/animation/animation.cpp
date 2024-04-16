@@ -1,8 +1,10 @@
 #include "animation.h"
 
+uint32_t Animation::last_animation_id = 0;
+
 Animation::Animation()
 {
-    name = "AnimationUnnamed";
+    name = "AnimationUnnamed_" + (last_animation_id++);
     start_time = 0.0f;
     end_time = 0.0f;
     looping = true;
@@ -201,7 +203,9 @@ void Animation::set_type(AnimationType new_type)
 
 void Animation::set_name(const std::string& new_name)
 {
-    name = new_name;
+    if (new_name.size() > 0) {
+        name = new_name;
+    }
 }
 
 void Animation::set_id_at_index(uint32_t index, uint32_t id)

@@ -16,6 +16,8 @@ class Animation;
 
 class Animation {
 
+    static uint32_t last_animation_id;
+
     std::vector<Track> tracks;
     std::string name;
 
