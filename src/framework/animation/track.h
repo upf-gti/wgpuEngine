@@ -6,11 +6,6 @@
 #include <variant>
 #include <string>
 
-enum SampleMode {
-    SAMPLE_UPDATE,
-    SAMPLE_RETURN
-};
-
 enum class Interpolation {
     CONSTANT,
     LINEAR,
@@ -46,7 +41,6 @@ class Track {
     Interpolation interpolation; // interpolation type
     TrackType type = TrackType::TYPE_UNDEFINED;
     std::string name = "";
-    void* data = nullptr;
 
     // Helper functions, a sample for each type of interpolation
     T sample_constant(float time, bool looping);
@@ -74,9 +68,7 @@ public:
     Interpolation get_interpolation();
     TrackType get_type() const { return type; };
     std::string& get_name();
-    void* get_data();
 
-    void set_data(void* property);
     void set_id(uint32_t id);
     void set_interpolation(Interpolation interp);
     void set_type(TrackType new_type) { type = new_type; };
@@ -86,7 +78,7 @@ public:
     void resize(uint32_t size);
 
     // Prameters: time value, if the track is looping or not
-    T sample(float time, bool looping, SampleMode mode);
+    T sample(float time, bool looping);
     Keyframe& operator[](uint32_t index);
 };
 

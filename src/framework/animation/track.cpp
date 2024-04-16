@@ -83,11 +83,6 @@ uint32_t Track::get_id()
     return id;
 }
 
-void Track::set_data(void* data)
-{
-    this->data = data;
-}
-
 void Track::set_id(uint32_t index)
 {
     id = index;
@@ -113,12 +108,8 @@ std::string& Track::get_name()
     return name;
 }
 
-void* Track::get_data()
-{
-    return data;
-}
 // call sample_constant, sample_linear, or sample_cubic, depending on the track type.
-T Track::sample(float time, bool looping, SampleMode mode)
+T Track::sample(float time, bool looping)
 {
     T r;
 
@@ -130,23 +121,6 @@ T Track::sample(float time, bool looping, SampleMode mode)
     }
     else {
         r = sample_cubic(time, looping);
-    }
-
-    // Update property data of the track
-    if (mode == SAMPLE_UPDATE && data)
-    {
-        if (std::holds_alternative<float>(r)) {
-            float* p = reinterpret_cast<float*>(data);
-            *p = std::get<float>(r);
-        }
-        else if (std::holds_alternative<glm::vec3>(r)) {
-            glm::vec3* p = reinterpret_cast<glm::vec3*>(data);
-            *p = std::get<glm::vec3>(r);
-        }
-        else if (std::holds_alternative<glm::quat>(r)) {
-            glm::quat* p = reinterpret_cast<glm::quat*>(data);
-            *p = std::get<glm::quat>(r);
-        }
     }
 
     return r;

@@ -14,11 +14,6 @@ enum AnimationType {
 
 class Animation;
 
-struct AnimationData {
-    Animation* animation = nullptr;
-    std::string node_path;
-};
-
 class Animation {
 
     std::vector<Track> tracks;
@@ -26,7 +21,7 @@ class Animation {
 
     float start_time = 0.0f;
     float end_time = 0.0f;
-    bool looping = false;
+    bool looping = true;
 
     float adjust_time_to_fit_range(float time);
     void sample_pose(float time, void* out);
@@ -36,7 +31,7 @@ class Animation {
 public:
 
     Animation();
-    ~Animation();
+    ~Animation() {};
 
     // Gets joint Id based for a specific track index
     uint32_t get_id_at_index(uint32_t index);
@@ -45,7 +40,7 @@ public:
     uint32_t size();
 
     // Samples the animation clip at the provided time into the out reference
-    float sample(float time, void* data = nullptr);
+    float sample(float time, void* out = nullptr);
 
     // Returns a transform track for the specified track position id
     Track* operator[](uint32_t index);
@@ -53,8 +48,8 @@ public:
     // Sets the start/end time of the animation clip based on the tracks that make up the clip
     void recalculate_duration();
 
-    // Adds a new track with the pointer property data of any node
-    Track* add_track(uint32_t id, void* data);
+    // Adds a new track
+    Track* add_track(uint32_t id);
 
     Track* get_track_by_id(uint32_t id);
     Track* get_track(uint32_t index);

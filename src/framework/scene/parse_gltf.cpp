@@ -100,7 +100,7 @@ void create_material_texture(const tinygltf::Model& model, int tex_index, Textur
 //int get_node_index(int joint_id, Skeleton * skeleton, std::vector<tinygltf::Node> all_nodes) {
 //    std::vector<std::string> joint_names = skeleton->get_joint_names();
 //
-//    for (unsigned int i = 0; i < joint_names.size(); ++i) {
+//    for (uint32_t i = 0; i < joint_names.size(); ++i) {
 //        if (joint_names[i] == all_nodes[i].name) {
 //            return (int)i;
 //        }
@@ -166,7 +166,7 @@ void read_mesh(const tinygltf::Model& model, const tinygltf::Mesh& mesh, Node3D*
                 break;
             case TINYGLTF_COMPONENT_TYPE_INT:
             case TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT:
-                index_data_size = index_coponent_size * sizeof(unsigned int);
+                index_data_size = index_coponent_size * sizeof(uint32_t);
                 index_buffer_size = indices_buffer_view->byteLength / index_data_size;
                 break;
             }
@@ -719,39 +719,119 @@ void parse_model_skins(const tinygltf::Model& model, std::map<int, int> hierarch
 
         const tinygltf::Skin& skin = model.skins[s];
 
-        if (skin.inverseBindMatrices > -1) {
+        if (skin.inverseBindMatrices < 0) {
+            continue;
+        }
 
-            Pose bind_pose;
-            Pose rest_pose;
+        Pose bind_pose;
+        Pose rest_pose;
 
-            size_t num_joints = skin.joints.size();
+        size_t num_joints = skin.joints.size();
 
-            if (num_joints > 0) {
+        if (num_joints <= 0) {
+            continue;
+        }
 
-                rest_pose.resize(num_joints);
-                world_bind_transforms.resize(num_joints);
+        rest_pose.resize(num_joints);
+        world_bind_transforms.resize(num_joints);
 
-                // read the inverse bind pose matrix into a large vector of float values
-                const tinygltf::Accessor& accessor = model.accessors[skin.inverseBindMatrices];
-                assert(accessor.type == TINYGLTF_TYPE_MAT4);
+        // read the inverse bind pose matrix into a large vector of float values
+        const tinygltf::Accessor& accessor = model.accessors[skin.inverseBindMatrices];
+        assert(accessor.type == TINYGLTF_TYPE_MAT4);
+        const tinygltf::BufferView& bufferView = model.bufferViews[accessor.bufferView];
+        const tinygltf::Buffer& buffer = model.buffers[bufferView.buffer];
 
-                const tinygltf::BufferView& bufferView = model.bufferViews[accessor.bufferView];
-
-                const tinygltf::Buffer& buffer = model.buffers[bufferView.buffer];
-
-                const float* ptr = reinterpret_cast<const float*>(buffer.data.data() + accessor.byteOffset + bufferView.byteOffset);
+        const float* ptr = reinterpret_cast<const float*>(buffer.data.data() + accessor.byteOffset + bufferView.byteOffset);
                 
-                std::vector<glm::mat4> inverse_bind_matrices(accessor.count);
-                std::vector<std::string> joint_names;
-                std::vector<unsigned int> joint_indices;
+        std::vector<glm::mat4> inverse_bind_matrices(accessor.count);
+        std::vector<std::string> joint_names;
+        std::vector<uint32_t> joint_indices;
 
-                //for each joint in the skin, get the inverse bind pose matrix
-                for (size_t i = 0; i < skin.joints.size(); i++) {
+        //for each joint in the skin, get the inverse bind pose matrix
+        for (size_t i = 0; i < skin.joints.size(); i++) {
 
-                    const tinygltf::Node& node = model.nodes[skin.joints[i]];
-                    joint_names.push_back(node.name);
-                    joint_indices.push_back(skin.joints[i]);
+            const tinygltf::Node& node = model.nodes[skin.joints[i]];
+            joint_names.push_back(node.name);
+            joint_indices.push_back(skin.joints[i]);
 
+            if (!node.matrix.empty())
+            {
+                glm::mat4x4 model_matrix;
+
+                for (int j = 0; j < 16; ++j) {
+                    model_matrix[(j / 4) % 4][j % 4] = static_cast<float>(node.matrix[j]);
+                }
+
+                //rest_pose.set_local_transform(skin.joints[i], mat4ToTransform(model_matrix));
+                rest_pose.set_local_transform(i, mat4ToTransform(model_matrix));
+                        
+            }
+            else {
+                Transform transform;               
+
+                if (!node.translation.empty()) {
+
+                    transform.position = glm::vec3({
+                        static_cast<float>(node.translation[0]),
+                        static_cast<float>(node.translation[1]),
+                        static_cast<float>(node.translation[2])
+                        });
+                }
+                if (!node.rotation.empty()) {
+                    transform.rotation = glm::quat(static_cast<float>(node.rotation[0]),
+                        static_cast<float>(node.rotation[1]),
+                        static_cast<float>(node.rotation[2]),
+                        static_cast<float>(node.rotation[3])
+                    );
+                }
+                if (!node.scale.empty()) {
+                    transform.scale = glm::vec3({
+                        static_cast<float>(node.scale[0]),
+                        static_cast<float>(node.scale[1]),
+                        static_cast<float>(node.scale[2])
+                        });
+                }
+
+                       
+                //rest_pose.set_local_transform(skin.joints[i], transform);
+                rest_pose.set_local_transform(i, transform);
+            }
+
+            //rest_pose.set_parent(skin.joints[i], hierarchy[skin.joints[i]]);
+            int parent = -1;
+            for (uint32_t j = 0; j < skin.joints.size(); j++) {
+                if (skin.joints[j] != hierarchy[skin.joints[i]])
+                    continue;
+                parent = j;
+            }
+            rest_pose.set_parent(i, parent);
+
+            glm::highp_f32mat4 m;
+            //get the 16 values of the inverse bind matrix and put them into a mat4
+            memcpy(&m, ptr + i * 16, 16 * sizeof(float));
+            m = m;
+            //inverse_bind_matrices[skin.joints[i]] = m;
+            inverse_bind_matrices[i] = m;
+            //set the transform into the array of transforms of the joints in the bind pose (world bind pose)
+            glm::mat4x4 bind_matrix = inverse(m);
+            Transform bind_transform = mat4ToTransform(bind_matrix);
+            //world_bind_transforms[skin.joints[i]] = bind_transform;
+            world_bind_transforms[i] = bind_transform;
+                
+        }
+
+        bind_pose = rest_pose;
+
+        for (uint32_t i = 0; i < num_joints; ++i) {
+            Transform current = world_bind_transforms[i];
+            int p = bind_pose.get_parent(i);
+            if (p >= 0 ) { // Bring into local space
+                Transform parent;
+                if (p < num_joints) {
+                    parent = world_bind_transforms[p];
+                }
+                else {
+                    tinygltf::Node node = model.nodes[p];
                     if (!node.matrix.empty())
                     {
                         glm::mat4x4 model_matrix;
@@ -759,13 +839,10 @@ void parse_model_skins(const tinygltf::Model& model, std::map<int, int> hierarch
                         for (int j = 0; j < 16; ++j) {
                             model_matrix[(j / 4) % 4][j % 4] = static_cast<float>(node.matrix[j]);
                         }
-
-                        //rest_pose.set_local_transform(skin.joints[i], mat4ToTransform(model_matrix));
-                        rest_pose.set_local_transform(i, mat4ToTransform(model_matrix));
-                        
+                        parent = mat4ToTransform(model_matrix);
                     }
                     else {
-                        Transform transform;               
+                        Transform transform;
 
                         if (!node.translation.empty()) {
 
@@ -789,159 +866,80 @@ void parse_model_skins(const tinygltf::Model& model, std::map<int, int> hierarch
                                 static_cast<float>(node.scale[2])
                                 });
                         }
+                        parent = transform;
 
-                       
-                        //rest_pose.set_local_transform(skin.joints[i], transform);
-                        rest_pose.set_local_transform(i, transform);
                     }
-
-                    //rest_pose.set_parent(skin.joints[i], hierarchy[skin.joints[i]]);
-                    int parent = -1;
-                    for (unsigned int j = 0; j < skin.joints.size(); j++) {
-                        if (skin.joints[j] != hierarchy[skin.joints[i]])
-                            continue;
-                        parent = j;
-                    }
-                    rest_pose.set_parent(i, parent);
-
-                    glm::highp_f32mat4 m;
-                    //get the 16 values of the inverse bind matrix and put them into a mat4
-                    memcpy(&m, ptr + i * 16, 16 * sizeof(float));
-                    m = m;
-                    //inverse_bind_matrices[skin.joints[i]] = m;
-                    inverse_bind_matrices[i] = m;
-                    //set the transform into the array of transforms of the joints in the bind pose (world bind pose)
-                    glm::mat4x4 bind_matrix = inverse(m);
-                    Transform bind_transform = mat4ToTransform(bind_matrix);
-                    //world_bind_transforms[skin.joints[i]] = bind_transform;
-                    world_bind_transforms[i] = bind_transform;
-                
                 }
+                current = combine(inverse(parent), current);
 
-                bind_pose = rest_pose;
-
-                for (unsigned int i = 0; i < num_joints; ++i) {
-                    Transform current = world_bind_transforms[i];
-                    int p = bind_pose.get_parent(i);
-                    if (p >= 0 ) { // Bring into local space
-                        Transform parent;
-                        if (p < num_joints) {
-                            parent = world_bind_transforms[p];
-                        }
-                        else {
-                            tinygltf::Node node = model.nodes[p];
-                            if (!node.matrix.empty())
-                            {
-                                glm::mat4x4 model_matrix;
-
-                                for (int j = 0; j < 16; ++j) {
-                                    model_matrix[(j / 4) % 4][j % 4] = static_cast<float>(node.matrix[j]);
-                                }
-                                parent = mat4ToTransform(model_matrix);
-                            }
-                            else {
-                                Transform transform;
-
-                                if (!node.translation.empty()) {
-
-                                    transform.position = glm::vec3({
-                                        static_cast<float>(node.translation[0]),
-                                        static_cast<float>(node.translation[1]),
-                                        static_cast<float>(node.translation[2])
-                                        });
-                                }
-                                if (!node.rotation.empty()) {
-                                    transform.rotation = glm::quat(static_cast<float>(node.rotation[0]),
-                                        static_cast<float>(node.rotation[1]),
-                                        static_cast<float>(node.rotation[2]),
-                                        static_cast<float>(node.rotation[3])
-                                    );
-                                }
-                                if (!node.scale.empty()) {
-                                    transform.scale = glm::vec3({
-                                        static_cast<float>(node.scale[0]),
-                                        static_cast<float>(node.scale[1]),
-                                        static_cast<float>(node.scale[2])
-                                        });
-                                }
-                                parent = transform;
-
-                            }
-                        }
-                        current = combine(inverse(parent), current);
-
-                    }
-                    else if (hierarchy[skin.joints[i]] >= 0) { // ONLY NEEDED IF THERE IS NOT SCENE ENITIES HIERARCHY
-                        
-                       /* p = hierarchy[skin.joints[i]];
-                        Transform parent;
-                        tinygltf::Node node = model.nodes[p];
-                        if (!node.matrix.empty())
-                        {
-                            glm::mat4x4 model_matrix;
-
-                            for (int j = 0; j < 16; ++j) {
-                                model_matrix[(j / 4) % 4][j % 4] = static_cast<float>(node.matrix[j]);
-                            }
-                            parent = mat4ToTransform(model_matrix);
-                        }
-                        else {
-                            Transform transform;
-
-                            if (!node.translation.empty()) {
-
-                                transform.position = glm::vec3({
-                                    static_cast<float>(node.translation[0]),
-                                    static_cast<float>(node.translation[1]),
-                                    static_cast<float>(node.translation[2])
-                                    });
-                            }
-                            if (!node.rotation.empty()) {
-                                transform.rotation = glm::quat(static_cast<float>(node.rotation[0]),
-                                    static_cast<float>(node.rotation[1]),
-                                    static_cast<float>(node.rotation[2]),
-                                    static_cast<float>(node.rotation[3])
-                                );
-                            }
-                            if (!node.scale.empty()) {
-                                transform.scale = glm::vec3({
-                                    static_cast<float>(node.scale[0]),
-                                    static_cast<float>(node.scale[1]),
-                                    static_cast<float>(node.scale[2])
-                                    });
-                            }
-                            parent = transform;
-                        }
-                        
-                        current = combine(inverse(parent), current);*/
-                    }
-                    bind_pose.set_local_transform(i, current);
-                }
-
-                Skeleton *skeleton = new Skeleton(rest_pose, bind_pose, joint_names, joint_indices);
-
-                for (auto instance : skeleton_instances) {
-
-                    if (instance->skin != s) {
-                        continue;
-                    }
-
-                    RendererStorage::register_skeleton(instance->get_name(), skeleton);
-
-                    instance->set_skeleton(skeleton);
-
-                    for (auto child : instance->get_children()) {
-                        MeshInstance* child_instance = dynamic_cast<MeshInstance*>(child);
-                        assert(child_instance);
-                        child_instance->set_skeleton(skeleton);
-                    }
-                }               
             }
-        }
-    }
-};
+            else if (hierarchy[skin.joints[i]] >= 0) { // ONLY NEEDED IF THERE IS NOT SCENE ENITIES HIERARCHY
+                        
+                /* p = hierarchy[skin.joints[i]];
+                Transform parent;
+                tinygltf::Node node = model.nodes[p];
+                if (!node.matrix.empty())
+                {
+                    glm::mat4x4 model_matrix;
 
-void get_scalar_values(std::vector<T>& out, unsigned int component_size, const tinygltf::Model& model, int accessor_idx)
+                    for (int j = 0; j < 16; ++j) {
+                        model_matrix[(j / 4) % 4][j % 4] = static_cast<float>(node.matrix[j]);
+                    }
+                    parent = mat4ToTransform(model_matrix);
+                }
+                else {
+                    Transform transform;
+
+                    if (!node.translation.empty()) {
+
+                        transform.position = glm::vec3({
+                            static_cast<float>(node.translation[0]),
+                            static_cast<float>(node.translation[1]),
+                            static_cast<float>(node.translation[2])
+                            });
+                    }
+                    if (!node.rotation.empty()) {
+                        transform.rotation = glm::quat(static_cast<float>(node.rotation[0]),
+                            static_cast<float>(node.rotation[1]),
+                            static_cast<float>(node.rotation[2]),
+                            static_cast<float>(node.rotation[3])
+                        );
+                    }
+                    if (!node.scale.empty()) {
+                        transform.scale = glm::vec3({
+                            static_cast<float>(node.scale[0]),
+                            static_cast<float>(node.scale[1]),
+                            static_cast<float>(node.scale[2])
+                            });
+                    }
+                    parent = transform;
+                }
+                        
+                current = combine(inverse(parent), current);*/
+            }
+            bind_pose.set_local_transform(i, current);
+        }
+
+        Skeleton *skeleton = new Skeleton(rest_pose, bind_pose, joint_names, joint_indices);
+
+        for (auto instance : skeleton_instances) {
+
+            if (instance->skin != s) {
+                continue;
+            }
+
+            instance->set_skeleton(skeleton);
+
+            for (auto child : instance->get_children()) {
+                MeshInstance* child_instance = dynamic_cast<MeshInstance*>(child);
+                assert(child_instance);
+                child_instance->set_skeleton(skeleton);
+            }
+        }               
+    }
+}
+
+void get_scalar_values(std::vector<T>& out, uint32_t component_size, const tinygltf::Model& model, int accessor_idx)
 {
     uint32_t size;
     const tinygltf::Accessor& accessor = model.accessors[accessor_idx];
@@ -1151,30 +1149,22 @@ void parse_model_animations(const tinygltf::Model& model, std::vector<SkeletonIn
                 break;
             }
 
-            // Pass the property data pointer so when the track is sampled, the data is properly updated
-            Pose& pose = skeleton->get_current_pose();
-            Transform& t = pose.get_local_transform(node_id);
-
             TrackType type = TrackType::TYPE_UNDEFINED;
-            void* data = nullptr;
             
             if (channel.target_path == "translation") {
                 type = TrackType::TYPE_POSITION;
-                data = &t.position;
             }
             else if (channel.target_path == "scale") {
                 type = TrackType::TYPE_SCALE;
-                data = &t.scale;
             }
             else if (channel.target_path == "rotation") {
                 type = TrackType::TYPE_ROTATION;
-                data = &t.rotation;
             }
             else if (channel.target_path == "weight") {
                 type = TrackType::TYPE_FLOAT;
             }
 
-            Track* track = result[i]->add_track(node_id, data);
+            Track* track = result[i]->add_track(node_id);
             track->set_type(type);
             track->set_name(skeleton->get_joint_name(node_id) + channel.target_path);
             track_from_channel(*track, channel, sampler, model);
@@ -1189,7 +1179,7 @@ void parse_model_animations(const tinygltf::Model& model, std::vector<SkeletonIn
         if (i == 0) {
             player->play(result[0]->get_name());
         }
-    } // End num clips loop
+    }
 }
 
 bool parse_gltf(const char* gltf_path, std::vector<Node3D*>& entities)
@@ -1264,8 +1254,8 @@ bool parse_gltf(const char* gltf_path, std::vector<Node3D*>& entities)
 
     if (model.animations.size()) {
         AnimationPlayer* player = new AnimationPlayer("Animation Player");
-        entities[entities.size() - 1]->add_child(player);
-        player->set_root_node(entities[entities.size() - 1]);
+        Node3D* gltf_root = entities[entities.size() - 1];
+        gltf_root->add_child(player);
         parse_model_animations(model, skeleton_instances, player);
     }
 

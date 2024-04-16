@@ -16,15 +16,13 @@ float Animation::sample(float time, void* data)
 
     time = adjust_time_to_fit_range(time);
 
+    // In this case, we want data to be the pose corresponding to that time
     if(type == ANIM_TYPE_SKELETON) {
         sample_pose(time, data);
     }
+    // Generic case: TODO
     else {
-        // sample tracks and update data
-        for (size_t i = 0; i < tracks.size(); ++i) {
-            Track& track = tracks[i];
-            track.sample(time, looping, SAMPLE_UPDATE);
-        }
+        assert(0);
     }
 
     return time;
@@ -36,34 +34,31 @@ void Animation::sample_pose(float time, void* out)
     assert(pose);
 
     for (size_t i = 0; i < tracks.size(); i += 3) {
+
         Transform transform;
-        uint32_t id = -1;
+        uint32_t id;
 
-        for (size_t j = i; j < i + 3; j++) {
+        for (size_t j = i; j < i + 3; ++j) {
+
+            Track& track = tracks[j];
+            id = track.get_id();
+
             switch (tracks[j].get_type()) {
-            case TYPE_POSITION: {
-
-                Track& p_track = tracks[j];
-                transform.position = std::get<glm::vec3>(p_track.sample(time, looping, SAMPLE_RETURN));
-                id = p_track.get_id();
-                break;
+                case TYPE_POSITION: {
+                    transform.position = std::get<glm::vec3>(track.sample(time, looping));
+                    break;
+                }
+                case TYPE_ROTATION: {
+                    transform.rotation = std::get<glm::quat>(track.sample(time, looping));
+                    break;
+                }
+                case TYPE_SCALE: {
+                    transform.scale = std::get<glm::vec3>(track.sample(time, looping));
+                    break;
+                }
             }
+        }
 
-            case TYPE_ROTATION: {
-
-                Track& r_track = tracks[j];
-                transform.rotation = std::get<glm::quat>(r_track.sample(time, looping, SAMPLE_RETURN));
-                break;
-            }
-
-            case TYPE_SCALE: {
-
-                Track& s_track = tracks[j];
-                transform.scale = std::get<glm::vec3>(s_track.sample(time, looping, SAMPLE_RETURN));
-                break;
-            }
-            }
-        }                
         pose->set_local_transform(id, transform);
     }
 }
@@ -120,13 +115,13 @@ void Animation::recalculate_duration()
     }
 }
 
-Track* Animation::add_track(uint32_t id, void* data)
+Track* Animation::add_track(uint32_t id)
 {
     Track track = {};
     track.set_id(id);
-    track.set_data(data);
 
     tracks.push_back(track);
+
     return &tracks[tracks.size() - 1];
 }
 
