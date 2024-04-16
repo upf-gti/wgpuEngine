@@ -23,10 +23,11 @@ public:
     BlendAnimation();
 
     void play(Animation* target);
+    void stop();
     void fade_to(Animation* target, float fade_time);
-    void update(float dt);
+    float update(float dt, void* data = nullptr);
 
-    void blend(T& out, T& a, T& b, float time);
+    void blend(Pose& output, Pose& a, Pose& b, float t);
 
     Animation* get_current_animation();
 };

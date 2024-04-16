@@ -33,6 +33,9 @@ enum TrackType {
     TYPE_VECTOR3, // Vector3 track, can be compressed.
     TYPE_QUAT, // Quaternion track, can be compressed.
     TYPE_METHOD, // Call any method on a specific node.
+    TYPE_POSITION,
+    TYPE_ROTATION,
+    TYPE_SCALE
 };
 
 // Collection of keyframes

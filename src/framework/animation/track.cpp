@@ -63,10 +63,10 @@ namespace TrackHelpers {
         case TrackType::TYPE_FLOAT:
             return 1;
 
-        case TrackType::TYPE_VECTOR3:
+        case TrackType::TYPE_VECTOR3: case TrackType::TYPE_POSITION: case TrackType::TYPE_SCALE:
             return 3;
 
-        case TrackType::TYPE_QUAT:
+        case TrackType::TYPE_QUAT: case TrackType::TYPE_ROTATION:
             return 4;
         }
         return 0;

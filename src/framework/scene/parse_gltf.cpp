@@ -1159,15 +1159,15 @@ void parse_model_animations(const tinygltf::Model& model, std::vector<SkeletonIn
             void* data = nullptr;
             
             if (channel.target_path == "translation") {
-                type = TrackType::TYPE_VECTOR3;
+                type = TrackType::TYPE_POSITION;
                 data = &t.position;
             }
             else if (channel.target_path == "scale") {
-                type = TrackType::TYPE_VECTOR3;
+                type = TrackType::TYPE_SCALE;
                 data = &t.scale;
             }
             else if (channel.target_path == "rotation") {
-                type = TrackType::TYPE_QUAT;
+                type = TrackType::TYPE_ROTATION;
                 data = &t.rotation;
             }
             else if (channel.target_path == "weight") {

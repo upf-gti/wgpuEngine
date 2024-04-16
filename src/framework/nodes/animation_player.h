@@ -2,6 +2,7 @@
 
 #include "animation_mixer.h"
 #include "skeleton_instance_3d.h"
+#include "../animation/blend_animation.h"
 
 class AnimationPlayer : public AnimationMixer
 {
@@ -23,6 +24,7 @@ class AnimationPlayer : public AnimationMixer
 
     Animation* animation = nullptr;
     MeshInstance3D* node = nullptr;
+    BlendAnimation blender;
 
 public:
     AnimationPlayer(const std::string& name);

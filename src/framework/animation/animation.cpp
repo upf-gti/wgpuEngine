@@ -11,7 +11,7 @@ Animation::Animation()
 float Animation::sample(float time, void* data)
 {
     if (get_duration() == 0.0f) {
-        return time;
+        return 0.0f;
     }
 
     time = adjust_time_to_fit_range(time);
@@ -36,18 +36,34 @@ void Animation::sample_pose(float time, void* out)
     assert(pose);
 
     for (size_t i = 0; i < tracks.size(); i += 3) {
-
-        Track& p_track = tracks[i];
-        Track& r_track = tracks[i + 1];
-        Track& s_track = tracks[i + 2];
-
         Transform transform;
+        uint32_t id = -1;
 
-        transform.position = std::get<glm::vec3>(p_track.sample(time, looping, SAMPLE_RETURN));
-        transform.rotation = std::get<glm::quat>(r_track.sample(time, looping, SAMPLE_RETURN));
-        transform.scale = std::get<glm::vec3>(s_track.sample(time, looping, SAMPLE_RETURN));
+        for (size_t j = i; j < i + 3; j++) {
+            switch (tracks[j].get_type()) {
+            case TYPE_POSITION: {
 
-        uint32_t id = p_track.get_id();
+                Track& p_track = tracks[j];
+                transform.position = std::get<glm::vec3>(p_track.sample(time, looping, SAMPLE_RETURN));
+                id = p_track.get_id();
+                break;
+            }
+
+            case TYPE_ROTATION: {
+
+                Track& r_track = tracks[j];
+                transform.rotation = std::get<glm::quat>(r_track.sample(time, looping, SAMPLE_RETURN));
+                break;
+            }
+
+            case TYPE_SCALE: {
+
+                Track& s_track = tracks[j];
+                transform.scale = std::get<glm::vec3>(s_track.sample(time, looping, SAMPLE_RETURN));
+                break;
+            }
+            }
+        }                
         pose->set_local_transform(id, transform);
     }
 }

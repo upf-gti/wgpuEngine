@@ -10,6 +10,10 @@ AnimationPlayer::AnimationPlayer(const std::string& n) {
 void AnimationPlayer::set_next_animation(const std::string& animation_name)
 {
     animations_queue.push_back(animation_name);
+    AnimationData* data = get_animation(animation_name);
+    animation = data->animation;
+    current_animation = animation_name;
+    blender.fade_to(animation, blend_time);
 }
 
 void AnimationPlayer::set_speed(float time)
@@ -108,9 +112,7 @@ void AnimationPlayer::play(const std::string& animation_name, float custom_blend
             break;
         }
     }
-
-    // debug
-    animation->set_looping(true);
+    blender.play(animation);
 }
 
 void AnimationPlayer::pause()
@@ -120,26 +122,28 @@ void AnimationPlayer::pause()
 
 void AnimationPlayer::stop(bool keep_state)
 {
-
+    blender.stop();
+    playing = false;
 }
 
 void AnimationPlayer::update(float delta_time)
 {
-    if (!looping && playback >= duration) {
+    if (playback >= duration) {
         playing = false;
     }
 
     if (playing) {
 
-        playback += delta_time * speed;
+       // playback += delta_time * speed;
 
         // Skeletal animation case: we get the skeleton pose
         // in case we want to process the values and update it manually
         if (animation->get_type() == ANIM_TYPE_SKELETON) {
 
             auto skt = node->get_skeleton();
-            Pose pose(skt->get_joints_count());
-            playback = animation->sample(playback, &pose);
+            Pose pose = skt->get_current_pose();
+            //playback = animation->sample(playback, &pose);
+            playback = blender.update(delta_time * speed, &pose);
 
             // Blend animations and update pose manually
             {
@@ -148,7 +152,8 @@ void AnimationPlayer::update(float delta_time)
         }
         else {
             // General case: out is not used..
-            playback = animation->sample(playback);
+            //playback = animation->sample(playback);
+            playback = blender.update(delta_time * speed);
         }
     }
 
@@ -163,8 +168,8 @@ void AnimationPlayer::render_gui()
         {
             bool is_selected = (current_animation == instance.first); // You can store your selection however you want, outside or inside your objects
             if (ImGui::Selectable(instance.first.c_str(), is_selected)) {
-                queue(instance.first);
-                play();
+                set_next_animation(instance.first);
+               // play();
             }
                 if (is_selected)
                     ImGui::SetItemDefaultFocus();   // You may set the initial focus when opening the combo (scrolling + for keyboard navigation support)
@@ -176,14 +181,13 @@ void AnimationPlayer::render_gui()
         animation->set_looping(looping);
     }
 
+    ImGui::DragFloat("Blend time", &blend_time, 0.1f);
     ImGui::LabelText(std::to_string(playback).c_str(), "Playback");
 
     if (!playing && ImGui::Button("Play")) {
-        playing = true;
-        if(playing)
-            playback = 0;
+        play(current_animation);
     }
     else if(playing && ImGui::Button("Stop")) {
-        playing = false;
+        stop();
     }
 }
