@@ -40,6 +40,7 @@ public:
     glm::mat4x4 get_model()  const;
     glm::mat4x4 get_rotation() const;
     Node3D* get_parent() const;
+    const Transform& get_transform() const;
 
     void set_translation(const glm::vec3& translation);
     void set_model(const glm::mat4x4& _model) { model = _model; }

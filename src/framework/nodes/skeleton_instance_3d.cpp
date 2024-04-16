@@ -20,6 +20,18 @@ void SkeletonInstance3D::update(float dt)
     Node3D::update(dt);
 }
 
+void SkeletonInstance3D::update_pose_from_joints()
+{
+    Pose pose = skeleton->get_current_pose();
+    const std::vector<uint32_t>& indices = skeleton->get_joint_indices();
+
+    for (size_t i = 0; i < joint_nodes.size(); ++i) {
+        pose.set_local_transform(i, joint_nodes[i]->get_transform());
+    }
+
+    skeleton->set_current_pose(pose);
+}
+
 void SkeletonInstance3D::set_joint_nodes(const std::vector<Node3D*>& new_joint_nodes)
 {
     joint_nodes = new_joint_nodes;

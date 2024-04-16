@@ -79,51 +79,54 @@ void AnimationPlayer::stop(bool keep_state)
 
 void AnimationPlayer::update(float delta_time)
 {
-    if (playing) {
-
-        Animation* current_animation = blender.get_current_animation();
-        assert(current_animation);
-
-        if (!current_animation->get_looping() && playback >= current_animation->get_duration()) {
-            playing = false;
-        }
-
-        for (auto instance : root_node->get_children()) {
-
-            MeshInstance3D* node = dynamic_cast<MeshInstance3D*>(instance);
-
-            if (!node) {
-                continue;
-            }
-
-            // Sample data from the animation and store it at &track_data
-
-            for (uint32_t i = 0; i < current_animation->get_track_count(); ++i) {
-                playback = current_animation->sample(playback + delta_time, i, track_data[i]);
-            }
-
-            // After sampling, we should have the skeletonInstance joint nodes with the correct
-            // transforms..
-
-            // TODO
-            // .. use those nodes to update the pose of the skeletons
-
-            // Skeletal animation case: we get the skeleton pose
-            // in case we want to process the values and update it manually
-            //if (current_animation->get_type() == ANIM_TYPE_SKELETON) {
-            //    Skeleton* skeleton = node->get_skeleton();
-            //    if (!skeleton) {
-            //        continue;
-            //    }
-            //    Pose& pose = skeleton->get_current_pose();
-            //    playback = blender.update(delta_time * speed, &pose);
-            //}
-            //else {
-            //    // General case: out is not used..
-            //    playback = blender.update(delta_time * speed);
-            //}
-        }
+    if (!playing) {
+        return;
     }
+
+    Animation* current_animation = blender.get_current_animation();
+    assert(current_animation);
+
+    if (!current_animation->get_looping() && playback >= current_animation->get_duration()) {
+        playing = false;
+    }
+
+    // Sample data from the animation and store it at &track_data
+
+    playback += delta_time * speed;
+
+    for (uint32_t i = 0; i < current_animation->get_track_count(); ++i) {
+        playback = current_animation->sample(playback, i, track_data[i]);
+    }
+
+    // After sampling, we should have the skeletonInstance joint nodes with the correct
+    // transforms.. so use those nodes to update the pose of the skeletons
+
+    SkeletonInstance3D* sk_instance = (SkeletonInstance3D*)root_node->get_children()[0];
+    sk_instance->update_pose_from_joints();
+
+    //for (auto instance : root_node->get_children()) {
+
+    //    MeshInstance3D* node = dynamic_cast<MeshInstance3D*>(instance);
+
+    //    if (!node) {
+    //        continue;
+    //    }
+
+    //    // skeletal animation case: we get the skeleton pose
+    //    // in case we want to process the values and update it manually
+    //    if (current_animation->get_type() == anim_type_skeleton) {
+    //        skeleton* skeleton = node->get_skeleton();
+    //        if (!skeleton) {
+    //            continue;
+    //        }
+    //        pose& pose = skeleton->get_current_pose();
+    //        playback = blender.update(delta_time * speed, &pose);
+    //    }
+    //    else {
+    //        // general case: out is not used..
+    //        playback = blender.update(delta_time * speed);
+    //    }
+    //}
 
     Node::update(delta_time);
 }
