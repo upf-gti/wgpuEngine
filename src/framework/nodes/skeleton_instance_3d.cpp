@@ -10,6 +10,7 @@ SkeletonInstance3D::SkeletonInstance3D()
 void SkeletonInstance3D::set_skeleton(Skeleton* s)
 {
     skeleton = s;
+
     init_helper();
 }
 
@@ -56,33 +57,29 @@ Node* SkeletonInstance3D::get_node(std::vector<std::string>& path_tokens)
 
 void SkeletonInstance3D::update_helper()
 {
-    // Update helper
-    {
-        Surface* s = get_surface(0);
+    Surface* s = get_surface(0);
 
-        std::vector<InterleavedData>& vertices = s->get_vertices();
-        vertices.resize(0);
-        vertices.clear();
+    std::vector<InterleavedData>& vertices = s->get_vertices();
+    vertices.clear();
+    vertices.resize(0);
 
-        unsigned int numJoints = skeleton->get_current_pose().size();
-        Pose pose = skeleton->get_current_pose();
+    unsigned int numJoints = skeleton->get_current_pose().size();
+    Pose pose = skeleton->get_current_pose();
 
-        glm::mat4x4 global_model = get_global_model();
+    glm::mat4x4 global_model = get_global_model();
 
-        for (unsigned int i = 0; i < numJoints; ++i) {
-            InterleavedData data;
-            if (pose.get_parent(i) < 0) {
-                continue;
-            }
+    for (unsigned int i = 0; i < numJoints; ++i) {
+        InterleavedData data;
 
-            data.position = pose.get_global_transform(i).position;
-            vertices.push_back(data);
+        data.position = pose.get_global_transform(i).position;
+        vertices.push_back(data);
+        if (pose.get_parent(i) >= 0) {
             data.position = pose.get_global_transform(pose.get_parent(i)).position;
-            vertices.push_back(data);
         }
-
-        s->create_from_vertices(vertices);
+        vertices.push_back(data);
     }
+
+    s->create_from_vertices(vertices);
 }
 
 void SkeletonInstance3D::init_helper()
@@ -90,29 +87,10 @@ void SkeletonInstance3D::init_helper()
     Surface* s = new Surface();
     add_surface(s);
 
-    std::vector<InterleavedData>& vertices = s->get_vertices();
-
-    unsigned int numJoints = skeleton->get_current_pose().size();
-    Pose pose = skeleton->get_current_pose();
-    vertices.resize(0);
-
-    glm::mat4x4 global_model = get_global_model();
-    
-    for (unsigned int i = 0; i < numJoints ; ++i) {
-        InterleavedData data;
-        if (pose.get_parent(i) < 0) {
-            continue;
-        }
- 
-        data.position = pose.get_global_transform(i).position;
-        vertices.push_back(data);
-        data.position = pose.get_global_transform(pose.get_parent(i)).position;
-        vertices.push_back(data);
-    }
-
-    s->create_from_vertices(vertices);
+    update_helper();
  
     Material skeleton_material;
+    skeleton_material.color = { 1.0f, 0.0f, 0.0f, 1.0f };
     skeleton_material.depth_read = false;
     skeleton_material.transparency_type = eTransparencyType::ALPHA_BLEND;
     skeleton_material.topology_type = eTopologyType::TOPOLOGY_LINE_LIST;

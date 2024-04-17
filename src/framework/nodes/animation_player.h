@@ -16,7 +16,6 @@ class AnimationPlayer : public Node3D
 
     std::string current_animation_name;
 
-    bool active     = true;
     bool autoplay   = false;
     bool playing    = false;
     bool looping    = true;

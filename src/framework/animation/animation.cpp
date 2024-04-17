@@ -4,7 +4,7 @@ uint32_t Animation::last_animation_id = 0;
 
 Animation::Animation()
 {
-    name = "AnimationUnnamed_" + (last_animation_id++);
+    name = "AnimationUnnamed_" + std::to_string(last_animation_id++);
     start_time = 0.0f;
     end_time = 0.0f;
     looping = true;

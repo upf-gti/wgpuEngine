@@ -81,6 +81,9 @@ void AnimationPlayer::stop(bool keep_state)
 void AnimationPlayer::update(float delta_time)
 {
     if (!playing) {
+
+        Node::update(delta_time);
+
         return;
     }
 
@@ -109,7 +112,6 @@ void AnimationPlayer::update(float delta_time)
         last_idx = node_path.find_last_of('/');
         Node3D* node = (Node3D*)root_node->get_node(node_path.substr(0, last_idx));
         if (node) {
-
             SkeletonInstance3D* sk_instance = (SkeletonInstance3D*)node;
             sk_instance->update_pose_from_joints();
         }

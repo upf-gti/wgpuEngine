@@ -620,14 +620,55 @@ Node3D* create_node_entity(const tinygltf::Node& node, const tinygltf::Model& mo
         new_node = new Node3D();
     }
 
+    new_node->set_name(node.name);
+
     return new_node;
 };
 
-void parse_model_nodes(const tinygltf::Model& model, int id, Node3D* entity, std::map<uint32_t, Texture*> &texture_cache, std::map<int, int> &hierarchy, std::vector<SkeletonInstance3D*> & skeleton_instances )
+bool process_skinned_node(const tinygltf::Model& model, int parent_id, uint32_t node_id, Node3D* entity, Node3D* child_node, std::map<int, int>& hierarchy, std::vector<SkeletonInstance3D*>& skeleton_instances)
 {
-   tinygltf::Node node = model.nodes[id];
-   if(node.name != "")
-        entity->set_name(node.name);
+    bool is_root_node = !entity->get_parent();
+    bool is_joint = false;
+
+    const tinygltf::Node& node = model.nodes[node_id];
+
+    if (node.skin >= 0) {
+        SkeletonInstance3D* e = new SkeletonInstance3D();
+        e->set_name(entity->get_name() + "_" + "skeleton");
+        e->skin = node.skin;
+
+        if (is_root_node) {
+            e->add_child(entity);
+        }
+        else {
+            entity->add_child(e);
+            e->add_child(child_node);
+        }
+
+        skeleton_instances.push_back(e);
+    }
+    else {
+
+        for (size_t s = 0; s < model.skins.size(); s++) {
+            auto it = std::find(model.skins[s].joints.begin(), model.skins[s].joints.end(), node_id);
+            if (it != model.skins[s].joints.end()) {
+                is_joint = true;
+                hierarchy[node_id] = parent_id;
+                break;
+            }
+        }
+        if (!is_joint) {
+            entity->add_child(child_node);
+        }
+    }
+
+    return is_joint;
+}
+
+bool parse_model_nodes(tinygltf::Model& model, int parent_id, uint32_t node_id, Node3D* entity, Node3D* child_node, std::map<uint32_t, Texture*>& texture_cache, std::map<int, int> &hierarchy, std::vector<SkeletonInstance3D*>& skeleton_instances )
+{
+    tinygltf::Node& node = model.nodes[node_id];
+
     node.name = entity->get_name();
 
     if ((node.mesh >= 0) && (node.mesh < model.meshes.size())) {
@@ -650,7 +691,7 @@ void parse_model_nodes(const tinygltf::Model& model, int id, Node3D* entity, std
         glm::quat rotation_quat = glm::quat(0.0f, 0.0f, 0.0f, 1.0f);
         glm::mat4x4 scale_matrix = glm::mat4x4(1.0f);
 
-       if (!node.translation.empty()) {
+        if (!node.translation.empty()) {
             translation_matrix = glm::translate(glm::mat4x4(1.0f), {
                 static_cast<float>(node.translation[0]),
                 static_cast<float>(node.translation[1]),
@@ -675,37 +716,23 @@ void parse_model_nodes(const tinygltf::Model& model, int id, Node3D* entity, std
         entity->set_model( glm::toMat4(rotation_quat) * scale_matrix * translation_matrix);
     }
 
+    bool is_joint = false;
+
     // Parse children
     for (size_t i = 0; i < node.children.size(); i++) {
-        assert((node.children[i] >= 0) && (node.children[i] < model.nodes.size()));
-        bool is_joint = false;
-        Node3D* child_node = create_node_entity(model.nodes[node.children[i]], model);
 
-        if (model.nodes[node.children[i]].skin >= 0) {
-            SkeletonInstance3D* e = new SkeletonInstance3D();
-            e->set_name(entity->get_name() + "_" + "skeleton");
-            e->skin = model.nodes[node.children[i]].skin;
-            entity->add_child(e);
-            e->add_child(child_node);
-            skeleton_instances.push_back(e);
-        }
-        else {
+        uint32_t child_id = node.children[i];
 
-            for (size_t s = 0; s < model.skins.size(); s++) {
-                auto it = std::find(model.skins[s].joints.begin(), model.skins[s].joints.end(), node.children[i]);
-                if (it != model.skins[s].joints.end()) {
-                    is_joint = true;
-                    hierarchy[node.children[i]] = id;
-                    break;
-                }
-            }
-            if (!is_joint) {
-                entity->add_child(child_node);
-            }
-        }
+        assert(child_id >= 0 && child_id < model.nodes.size());
 
-        parse_model_nodes(model, node.children[i], child_node, texture_cache, hierarchy, skeleton_instances);
+        Node3D* child_node = create_node_entity(model.nodes[child_id], model);
+
+        is_joint |= process_skinned_node(model, parent_id, node_id, entity, child_node, hierarchy, skeleton_instances);
+
+        parse_model_nodes(model, node_id, child_id, child_node, nullptr, texture_cache, hierarchy, skeleton_instances);
     }
+
+    return is_joint;
 };
 
 void parse_model_skins(const tinygltf::Model& model, std::map<int, int> hierarchy, std::vector<SkeletonInstance3D*>& skeleton_instances)
@@ -803,20 +830,18 @@ void parse_model_skins(const tinygltf::Model& model, std::map<int, int> hierarch
                 joint_3d->set_model(transformToMat4(transform));
             }
 
-            //rest_pose.set_parent(skin.joints[i], hierarchy[skin.joints[i]]);
             int parent = -1;
             for (uint32_t j = 0; j < skin.joints.size(); j++) {
                 if (skin.joints[j] != hierarchy[skin.joints[i]])
                     continue;
                 parent = j;
+                break;
             }
             rest_pose.set_parent(i, parent);
 
             glm::highp_f32mat4 m;
             //get the 16 values of the inverse bind matrix and put them into a mat4
             memcpy(&m, ptr + i * 16, 16 * sizeof(float));
-            m = m;
-            //inverse_bind_matrices[skin.joints[i]] = m;
             inverse_bind_matrices[i] = m;
             //set the transform into the array of transforms of the joints in the bind pose (world bind pose)
             glm::mat4x4 bind_matrix = inverse(m);
@@ -973,25 +998,20 @@ void get_scalar_values(std::vector<T>& out, uint32_t component_size, const tinyg
         assert(0);
     }
 
-    size_t buffer_size = buffer_view.byteLength / size;
-    size_t final_data_size = size;
-    tinygltf::BufferView const* final_buffer_view = &buffer_view;
-    tinygltf::Accessor const* final_accessor = &accessor;
-    tinygltf::Accessor const* index_accessor = nullptr;
-
     size_t vertex_idx = 0;
     size_t final_stride;
 
-    if (final_buffer_view->byteStride == 0) {
-        final_stride = final_data_size;
+    if (buffer_view.byteStride == 0) {
+        final_stride = size;
     }
     else {
-        final_stride = final_buffer_view->byteStride;
+        final_stride = buffer_view.byteStride;
     }
 
-    size_t buffer_start = final_accessor->byteOffset + final_buffer_view->byteOffset;
-    size_t buffer_end = final_data_size * final_accessor->count + buffer_start;
+    size_t buffer_start = accessor.byteOffset + buffer_view.byteOffset;
+    size_t buffer_end = size * accessor.count + buffer_start;
 
+    size_t buffer_size = (buffer_end - buffer_start) / size;
     out.resize(buffer_size);
 
     size_t id = 0;
@@ -1072,8 +1092,10 @@ void track_from_channel(Track& result, const tinygltf::AnimationChannel& channel
     std::vector<T> time; // times 
     get_scalar_values(time, 1, model, sampler.input);
 
+    uint32_t component_size = TrackHelpers::get_size(result);
+
     std::vector<T> values; // values
-    get_scalar_values(values, TrackHelpers::get_size(result), model, sampler.output);
+    get_scalar_values(values, component_size, model, sampler.output);
 
     size_t num_frames = time.size();
 
@@ -1084,10 +1106,12 @@ void track_from_channel(Track& result, const tinygltf::AnimationChannel& channel
 
     // Parse the time and value arrays into frame structures
     for (size_t i = 0; i < num_frames; ++i) {
-        int baseIndex = i;
+
         Keyframe& frame = result[i];
+
         // offset used to deal with cubic tracks since the input and output tangents are as large as the number of components
         int offset = 0;
+        int baseIndex = i;
 
         frame.time = std::get<float>(time[i]);
 
@@ -1206,9 +1230,9 @@ void parse_model_animations(const tinygltf::Model& model, std::vector<SkeletonIn
 
         RendererStorage::register_animation(new_animation->get_name(), new_animation);
 
-        if (i == 0) {
+        /*if (i == 0) {
             player->play(new_animation->get_name());
-        }
+        }*/
     }
 }
 
@@ -1262,20 +1286,20 @@ bool parse_gltf(const char* gltf_path, std::vector<Node3D*>& entities)
 
     for (size_t i = 0; i < scene->nodes.size(); ++i)
     {
-        assert((scene->nodes[i] >= 0) && (scene->nodes[i] < model.nodes.size()));
+        uint32_t node_id = scene->nodes[i];
 
-        const tinygltf::Node& node = model.nodes[scene->nodes[i]];
+        assert(node_id >= 0 && node_id < model.nodes.size());
+
+        const tinygltf::Node& node = model.nodes[node_id];
 
         Node3D* entity = create_node_entity(node, model);
 
-        parse_model_nodes(model, scene->nodes[i], entity, texture_cache, hierarchy, skeleton_instances);       
+        process_skinned_node(model, -1, i, entity, nullptr, hierarchy, skeleton_instances);
 
-        if (entity->get_name().empty()) {
-            entity->set_name(path.stem().string() + "_" + std::to_string(entity_name_idx));
-            entity_name_idx++;
-        }
+        if (parse_model_nodes(model, -1, node_id, entity, nullptr, texture_cache, hierarchy, skeleton_instances))
+            continue;
 
-        entities.push_back(entity);
+        entities.push_back(entity->get_parent() ? entity->get_parent() : entity);
     }
 
     if (model.skins.size()) {

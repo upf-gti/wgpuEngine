@@ -9,10 +9,9 @@ std::map<std::string, std::vector<SignalType>> Node::mapping_signals;
 std::map<uint8_t, std::vector<FuncEmpty>> Node::controller_signals;
 uint32_t Node::last_node_id = 0;
 
-Node::Node() {
-    std::stringstream ss;
-    ss << (last_node_id++);
-    name = "Node_" + ss.str();
+Node::Node()
+{
+    name = "Node_" + std::to_string(last_node_id++);
 }
 
 void Node::render()
