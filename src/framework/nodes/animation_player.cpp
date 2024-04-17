@@ -101,8 +101,13 @@ void AnimationPlayer::update(float delta_time)
     // After sampling, we should have the skeletonInstance joint nodes with the correct
     // transforms.. so use those nodes to update the pose of the skeletons
 
-    SkeletonInstance3D* sk_instance = (SkeletonInstance3D*)root_node->get_children()[0];
-    sk_instance->update_pose_from_joints();
+    if (current_animation->get_type() == ANIM_TYPE_SKELETON) {
+        SkeletonInstance3D* sk_instance = (SkeletonInstance3D*)root_node->get_children()[0];
+        sk_instance->update_pose_from_joints();
+    }
+    else {
+        root_node->set_model_dirty(true);
+    }
 
     //for (auto instance : root_node->get_children()) {
 

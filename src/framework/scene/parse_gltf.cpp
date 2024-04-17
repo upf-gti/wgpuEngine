@@ -1104,36 +1104,37 @@ void parse_model_animations(const tinygltf::Model& model, std::vector<SkeletonIn
     const std::vector<tinygltf::Animation>& animations = model.animations;
     size_t num_animations = animations.size();
 
-    //TODO: Generalize for other animation types (not skeleton)
-
     for (size_t i = 0; i < num_animations; ++i) {
 
         const tinygltf::Animation& animation = animations[i];
 
         SkeletonInstance3D* skeleton_instance = nullptr;
-        
-        for (SkeletonInstance3D* instance : skeleton_instances) {
-
-            const std::vector<uint32_t>& indices = instance->get_skeleton()->get_joint_indices();
-
-            for (size_t s = 0; s < indices.size(); s++) {
-                if (indices[s] != animation.channels[0].target_node)
-                    continue;
-                skeleton_instance = instance;
-                break;
-            }
-            if (skeleton_instance)
-                break;
-        }
-
-        if (!skeleton_instance) {
-            continue;
-        }
+        Skeleton* skeleton = nullptr;
 
         Animation* new_animation = new Animation();
-        new_animation->set_type(AnimationType::ANIM_TYPE_SKELETON);
+        new_animation->set_type(AnimationType::ANIM_TYPE_SIMPLE);
 
-        Skeleton* skeleton = skeleton_instance->get_skeleton();
+        if (skeleton_instances.size() > 0) {
+
+            for (SkeletonInstance3D* instance : skeleton_instances) {
+
+                const std::vector<uint32_t>& indices = instance->get_skeleton()->get_joint_indices();
+
+                for (size_t s = 0; s < indices.size(); s++) {
+                    if (indices[s] != animation.channels[0].target_node)
+                        continue;
+                    skeleton_instance = instance;
+                    skeleton = instance->get_skeleton();
+                    break;
+                }
+                if (skeleton)
+                    break;
+            }
+
+            if (skeleton) {
+                new_animation->set_type(AnimationType::ANIM_TYPE_SKELETON);
+            }
+        }
 
         // each channel of a glTF file is an animation track
         size_t num_channels = animation.channels.size();
@@ -1144,16 +1145,19 @@ void parse_model_animations(const tinygltf::Model& model, std::vector<SkeletonIn
             const tinygltf::AnimationSampler& sampler = animation.samplers[channel.sampler];
 
             int node_id = channel.target_node;
-            const std::vector<uint32_t>& indices = skeleton->get_joint_indices();
 
-            //Convert the id node to skeleton joint id
-            for (uint32_t id = 0; id < indices.size(); id++) {
-                if (node_id != indices[id])
-                    continue;
-                node_id = id;
-                break;
+            if (skeleton) {
+                const std::vector<uint32_t>& indices = skeleton->get_joint_indices();
+
+                //Convert the id node to skeleton joint id
+                for (uint32_t id = 0; id < indices.size(); id++) {
+                    if (node_id != indices[id])
+                        continue;
+                    node_id = id;
+                    break;
+                }
             }
-            
+
             Track* track = new_animation->add_track(node_id);
 
             TrackType type = TrackType::TYPE_UNDEFINED;
@@ -1173,9 +1177,17 @@ void parse_model_animations(const tinygltf::Model& model, std::vector<SkeletonIn
 
             const tinygltf::Node& node = model.nodes[channel.target_node];
 
-            track->set_name(node.name + "/" + channel.target_path);
-            track->set_path(skeleton_instance->get_name() + "/" + node.name + "/" + channel.target_path);
+            std::string track_name = node.name + "/" + channel.target_path;
+
             track->set_type(type);
+            track->set_name(track_name);
+
+            if (skeleton) {
+                track->set_path(skeleton_instance->get_name() + "/" + node.name + "/" + channel.target_path);
+            }
+            else {
+                track->set_path("/" + channel.target_path);
+            }
 
             track_from_channel(*track, channel, sampler, model);
         }

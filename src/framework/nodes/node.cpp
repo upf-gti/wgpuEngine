@@ -45,7 +45,7 @@ AABB Node::get_aabb() const
 
 Node* Node::get_node(std::vector<std::string>& path_tokens)
 {
-    if (!path_tokens.size()) {
+    if (!path_tokens.size() || path_tokens[0] == "") {
         return this;
     }
 

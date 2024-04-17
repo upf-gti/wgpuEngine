@@ -46,6 +46,13 @@ void Node3D::render()
 
 void Node3D::update(float delta_time)
 {
+    if (model_dirty) {
+
+        set_model(transformToMat4(transform));
+
+        model_dirty = false;
+    }
+
     Node::update(delta_time);
 }
 
@@ -67,6 +74,18 @@ void Node3D::rotate(const glm::quat& q)
 void Node3D::scale(glm::vec3 scale)
 {
 	model = glm::scale(model, scale);
+}
+
+void Node3D::set_model_dirty(bool value)
+{
+    model_dirty = value;
+
+    for (Node* child : children) {
+        Node3D* node_3d = dynamic_cast<Node3D*>(child);
+        if (node_3d) {
+            node_3d->set_model_dirty(value);
+        }
+    }
 }
 
 void Node3D::set_translation(const glm::vec3& translation)
