@@ -128,7 +128,7 @@ void read_mesh(const tinygltf::Model& model, const tinygltf::Mesh& mesh, Node3D*
 
         std::vector<InterleavedData>& vertices = surface->get_vertices();
 
-        tinygltf::Primitive primitive = mesh.primitives[primitive_idx];
+        const tinygltf::Primitive& primitive = mesh.primitives[primitive_idx];
 
         bool uses_indices = primitive.indices >= 0;
 
@@ -175,8 +175,8 @@ void read_mesh(const tinygltf::Model& model, const tinygltf::Mesh& mesh, Node3D*
         }
 
         for (auto& attrib : primitive.attributes) {
-            tinygltf::Accessor accessor = model.accessors[attrib.second];
 
+            const tinygltf::Accessor& accessor = model.accessors[attrib.second];
             const tinygltf::BufferView& buffer_view = model.bufferViews[accessor.bufferView];
             const tinygltf::Buffer& buffer = model.buffers[buffer_view.buffer];
 
@@ -835,7 +835,7 @@ void parse_model_skins(const tinygltf::Model& model, std::map<int, int> hierarch
                     parent = world_bind_transforms[p];
                 }
                 else {
-                    tinygltf::Node node = model.nodes[p];
+                    const tinygltf::Node& node = model.nodes[p];
                     if (!node.matrix.empty())
                     {
                         glm::mat4x4 model_matrix;
@@ -1255,7 +1255,7 @@ bool parse_gltf(const char* gltf_path, std::vector<Node3D*>& entities)
     {
         assert((scene->nodes[i] >= 0) && (scene->nodes[i] < model.nodes.size()));
 
-        tinygltf::Node node = model.nodes[scene->nodes[i]];
+        const tinygltf::Node& node = model.nodes[scene->nodes[i]];
 
         Node3D* entity = create_node_entity(node, model);
 
