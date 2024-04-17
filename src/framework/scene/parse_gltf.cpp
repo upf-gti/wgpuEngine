@@ -625,29 +625,21 @@ Node3D* create_node_entity(const tinygltf::Node& node, const tinygltf::Model& mo
     return new_node;
 };
 
-bool process_skinned_node(const tinygltf::Model& model, int parent_id, uint32_t node_id, Node3D* entity, Node3D* child_node, std::map<int, int>& hierarchy, std::vector<SkeletonInstance3D*>& skeleton_instances)
+void process_skinned_node(const tinygltf::Model& model, int parent_id, uint32_t node_id, Node3D* parent_node, Node3D* entity, std::map<int, int>& hierarchy, std::vector<SkeletonInstance3D*>& skeleton_instances)
 {
-    bool is_root_node = !entity->get_parent();
-    bool is_joint = false;
-
     const tinygltf::Node& node = model.nodes[node_id];
 
     if (node.skin >= 0) {
         SkeletonInstance3D* e = new SkeletonInstance3D();
         e->set_name(entity->get_name() + "_" + "skeleton");
         e->skin = node.skin;
-
-        if (is_root_node) {
-            e->add_child(entity);
-        }
-        else {
-            entity->add_child(e);
-            e->add_child(child_node);
-        }
-
+        parent_node->add_child(e);
+        e->add_child(entity);
         skeleton_instances.push_back(e);
     }
     else {
+
+        bool is_joint = false;
 
         for (size_t s = 0; s < model.skins.size(); s++) {
             auto it = std::find(model.skins[s].joints.begin(), model.skins[s].joints.end(), node_id);
@@ -657,15 +649,14 @@ bool process_skinned_node(const tinygltf::Model& model, int parent_id, uint32_t 
                 break;
             }
         }
+
         if (!is_joint) {
-            entity->add_child(child_node);
+            parent_node->add_child(entity);
         }
     }
-
-    return is_joint;
 }
 
-bool parse_model_nodes(tinygltf::Model& model, int parent_id, uint32_t node_id, Node3D* entity, Node3D* child_node, std::map<uint32_t, Texture*>& texture_cache, std::map<int, int> &hierarchy, std::vector<SkeletonInstance3D*>& skeleton_instances )
+void parse_model_nodes(tinygltf::Model& model, int parent_id, uint32_t node_id, Node3D* parent_node, Node3D* entity, std::map<uint32_t, Texture*>& texture_cache, std::map<int, int> &hierarchy, std::vector<SkeletonInstance3D*>& skeleton_instances )
 {
     tinygltf::Node& node = model.nodes[node_id];
 
@@ -716,8 +707,6 @@ bool parse_model_nodes(tinygltf::Model& model, int parent_id, uint32_t node_id, 
         entity->set_model( glm::toMat4(rotation_quat) * scale_matrix * translation_matrix);
     }
 
-    bool is_joint = false;
-
     // Parse children
     for (size_t i = 0; i < node.children.size(); i++) {
 
@@ -727,12 +716,10 @@ bool parse_model_nodes(tinygltf::Model& model, int parent_id, uint32_t node_id, 
 
         Node3D* child_node = create_node_entity(model.nodes[child_id], model);
 
-        is_joint |= process_skinned_node(model, parent_id, node_id, entity, child_node, hierarchy, skeleton_instances);
+        process_skinned_node(model, node_id, child_id, entity, child_node, hierarchy, skeleton_instances);
 
-        parse_model_nodes(model, node_id, child_id, child_node, nullptr, texture_cache, hierarchy, skeleton_instances);
+        parse_model_nodes(model, node_id, child_id, entity, child_node, texture_cache, hierarchy, skeleton_instances);
     }
-
-    return is_joint;
 };
 
 void parse_model_skins(const tinygltf::Model& model, std::map<int, int> hierarchy, std::vector<SkeletonInstance3D*>& skeleton_instances)
@@ -785,6 +772,8 @@ void parse_model_skins(const tinygltf::Model& model, std::map<int, int> hierarch
 
             Node3D* joint_3d = new Node3D();
             joint_3d->set_name(node.name);
+            joint_3d->set_type(JOINT_3D);
+
             joint_nodes.push_back(joint_3d);
 
             if (!node.matrix.empty())
@@ -1211,12 +1200,16 @@ void parse_model_animations(const tinygltf::Model& model, std::vector<SkeletonIn
 
             if (skeleton) {
 
-                Node3D* p = skeleton_instance->get_parent();
-                std::string parent = "";
-                if (p) {
-                     parent = p->get_name() + "/";
+                Node3D* scene_parent = player->get_parent();
+                std::string parent_names = "";
+                Node3D* _node = skeleton_instance;
+
+                while (_node->get_parent() != scene_parent) {
+                    _node = _node->get_parent();
+                    parent_names = _node->get_name() + "/" + parent_names;
                 }
-                track->set_path(parent + skeleton_instance->get_name() + "/" + node.name + "/" + channel.target_path);
+
+                track->set_path(parent_names + skeleton_instance->get_name() + "/" + node.name + "/" + channel.target_path);
             }
             else {
                 track->set_path("/" + channel.target_path);
@@ -1284,6 +1277,12 @@ bool parse_gltf(const char* gltf_path, std::vector<Node3D*>& entities)
 
     std::vector<SkeletonInstance3D*> skeleton_instances;
 
+    std::filesystem::path path_filename = path.replace_extension().filename();
+
+    Node3D* scene_node = new Node3D();
+    scene_node->set_name(path_filename.string());
+    entities.push_back(scene_node);
+
     for (size_t i = 0; i < scene->nodes.size(); ++i)
     {
         uint32_t node_id = scene->nodes[i];
@@ -1294,12 +1293,9 @@ bool parse_gltf(const char* gltf_path, std::vector<Node3D*>& entities)
 
         Node3D* entity = create_node_entity(node, model);
 
-        process_skinned_node(model, -1, i, entity, nullptr, hierarchy, skeleton_instances);
+        process_skinned_node(model, -1, node_id, scene_node, entity, hierarchy, skeleton_instances);
 
-        if (parse_model_nodes(model, -1, node_id, entity, nullptr, texture_cache, hierarchy, skeleton_instances))
-            continue;
-
-        entities.push_back(entity->get_parent() ? entity->get_parent() : entity);
+        parse_model_nodes(model, -1, node_id, scene_node, entity, texture_cache, hierarchy, skeleton_instances);
     }
 
     if (model.skins.size()) {

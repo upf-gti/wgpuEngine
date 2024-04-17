@@ -22,7 +22,8 @@ using SignalType = std::variant <FuncFloat, FuncString, FuncVec2, FuncVec3, Func
 
 enum NodeType {
     NODE_2D,
-    NODE_3D
+    NODE_3D,
+    JOINT_3D
 };
 
 class Node; 
@@ -62,6 +63,7 @@ public:
 
     void* get_property(const std::string& name);
 
+    void set_type(NodeType new_type) { type = new_type; }
     void set_name(std::string name) { if (name.size() > 0) this->name = name; }
     void set_aabb(const AABB& aabb) { this->aabb = aabb; }
 
