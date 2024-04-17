@@ -10,7 +10,6 @@ class SkeletonInstance3D : public MeshInstance3D {
     void init_helper();
     void update_helper();
 
-
 public:
     int skin = -1;
     std::vector<Node3D*> joint_nodes;

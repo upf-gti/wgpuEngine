@@ -5,6 +5,11 @@
 
 class MeshInstance3D;
 
+enum BlendType {
+    CROSSFADE,
+    ADDITIVE
+};
+
 class AnimationPlayer : public Node3D
 {
     Node3D* root_node = nullptr;
@@ -15,6 +20,7 @@ class AnimationPlayer : public Node3D
     bool autoplay   = false;
     bool playing    = false;
     bool looping    = true;
+    bool blend_type = BlendType::CROSSFADE;
 
     float playback   = 0.f;
     float speed      = 1.f;

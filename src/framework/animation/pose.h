@@ -35,4 +35,5 @@ public:
 	// Get the global transformation matrix (world space) of all the joints
 	std::vector<glm::mat4> get_global_matrices();
 	Transform operator[](uint32_t index);
+    Pose& operator=(const Pose& p);
 };

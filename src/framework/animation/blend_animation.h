@@ -28,6 +28,7 @@ public:
     float update(float dt, void* data = nullptr);
 
     void blend(Pose& output, Pose& a, Pose& b, float t);
-
+    void add(Pose& output, Pose& in, Pose& add_pose, Pose& base);
+    
     Animation* get_current_animation();
 };

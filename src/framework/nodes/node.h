@@ -25,10 +25,12 @@ enum NodeType {
     NODE_3D
 };
 
+class Node; 
 class Node {
 
     static std::map<std::string, std::vector<SignalType>> mapping_signals;
     static std::map<uint8_t, std::vector<FuncEmpty>> controller_signals;
+    static uint32_t last_node_id;
 
 protected:
 
@@ -44,7 +46,7 @@ protected:
 
 public:
 
-    Node() {};
+    Node();
     virtual ~Node() {};
 
     virtual void render();
@@ -60,7 +62,7 @@ public:
 
     void* get_property(const std::string& name);
 
-    void set_name(std::string name) { this->name = name; }
+    void set_name(std::string name) { if (name.size() > 0) this->name = name; }
     void set_aabb(const AABB& aabb) { this->aabb = aabb; }
 
     virtual void remove_flag(uint8_t flag);

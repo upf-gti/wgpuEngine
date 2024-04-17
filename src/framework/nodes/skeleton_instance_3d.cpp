@@ -39,6 +39,9 @@ void SkeletonInstance3D::set_joint_nodes(const std::vector<Node3D*>& new_joint_n
 
 Node* SkeletonInstance3D::get_node(std::vector<std::string>& path_tokens)
 {
+    if (path_tokens.size() == 0)
+        return this;
+
     assert(path_tokens.size() == 1);
 
     for (Node3D* joint_node : joint_nodes) {

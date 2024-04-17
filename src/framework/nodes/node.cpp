@@ -7,6 +7,13 @@
 
 std::map<std::string, std::vector<SignalType>> Node::mapping_signals;
 std::map<uint8_t, std::vector<FuncEmpty>> Node::controller_signals;
+uint32_t Node::last_node_id = 0;
+
+Node::Node() {
+    std::stringstream ss;
+    ss << (last_node_id++);
+    name = "Node_" + ss.str();
+}
 
 void Node::render()
 {
@@ -47,6 +54,11 @@ Node* Node::get_node(std::vector<std::string>& path_tokens)
 {
     if (!path_tokens.size() || path_tokens[0] == "") {
         return this;
+    }
+
+    if (this->name == path_tokens[0]) {
+        path_tokens.erase(path_tokens.begin());
+        return this->get_node(path_tokens);
     }
 
     for (Node* child : children) {

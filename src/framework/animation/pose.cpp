@@ -75,6 +75,15 @@ Transform Pose::operator[](uint32_t index)
 	return get_global_transform(index);
 }
 
+Pose& Pose::operator=(const Pose& other) {
+    if (this == &other) {
+        return *this;
+    }
+    joints = other.joints;
+    parents = other.parents;
+    return *this;
+}
+
 // get global matrices of the joints
 std::vector<glm::mat4> Pose::get_global_matrices()
 {

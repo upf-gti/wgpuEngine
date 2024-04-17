@@ -77,6 +77,7 @@ void AnimationPlayer::stop(bool keep_state)
     playing = false;
 }
 
+
 void AnimationPlayer::update(float delta_time)
 {
     if (!playing) {
@@ -102,8 +103,16 @@ void AnimationPlayer::update(float delta_time)
     // transforms.. so use those nodes to update the pose of the skeletons
 
     if (current_animation->get_type() == ANIM_TYPE_SKELETON) {
-        SkeletonInstance3D* sk_instance = (SkeletonInstance3D*)root_node->get_children()[0];
-        sk_instance->update_pose_from_joints();
+        const std::string& track_path = current_animation->get_track(0)->get_path();
+        size_t last_idx = track_path.find_last_of('/');
+        const std::string& node_path = track_path.substr(0, last_idx);
+        last_idx = node_path.find_last_of('/');
+        Node3D* node = (Node3D*)root_node->get_node(node_path.substr(0, last_idx));
+        if (node) {
+
+            SkeletonInstance3D* sk_instance = (SkeletonInstance3D*)node;
+            sk_instance->update_pose_from_joints();
+        }
     }
     else {
         root_node->set_model_dirty(true);

@@ -80,6 +80,7 @@ float BlendAnimation::update(float dt, void* data)
     //        if (t > 1.0f) {
     //            t = 1.0f;
     //        }
+    //        //if(blend_type)
     //        blend(*pose, *pose, target_pose, t);
     //    }
     //}
@@ -95,5 +96,21 @@ void BlendAnimation::blend(Pose& output, Pose& a, Pose& b, float t) {
     size_t num_joints = output.size();
     for (size_t i = 0; i < num_joints; ++i) {        
         output.set_local_transform(i, mix(a.get_local_transform(i), b.get_local_transform(i), t));
+    }
+}
+
+void BlendAnimation::add(Pose& output, Pose& in, Pose& add_pose, Pose& base_pose) {
+    unsigned int numJoints = add_pose.size();
+    for (int i = 0; i < numJoints; ++i) {
+        Transform input = in.get_local_transform(i);
+        Transform additive = add_pose.get_local_transform(i);
+        Transform additiveBase = base_pose.get_local_transform(i);
+   
+        // outPose = inPose + (addPose - basePose)
+        Transform result(
+            input.position + (additive.position - additiveBase.position),
+            normalize(input.rotation * (inverse(additiveBase.rotation) * additive.rotation)),
+            input.scale + (additive.scale - additiveBase.scale));
+        output.set_local_transform(i, result);
     }
 }

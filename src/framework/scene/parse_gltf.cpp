@@ -625,9 +625,10 @@ Node3D* create_node_entity(const tinygltf::Node& node, const tinygltf::Model& mo
 
 void parse_model_nodes(const tinygltf::Model& model, int id, Node3D* entity, std::map<uint32_t, Texture*> &texture_cache, std::map<int, int> &hierarchy, std::vector<SkeletonInstance3D*> & skeleton_instances )
 {
-   const tinygltf::Node& node = model.nodes[id];
-
-    entity->set_name(node.name);
+   tinygltf::Node node = model.nodes[id];
+   if(node.name != "")
+        entity->set_name(node.name);
+    node.name = entity->get_name();
 
     if ((node.mesh >= 0) && (node.mesh < model.meshes.size())) {
         read_mesh(model, model.meshes[node.mesh], entity, texture_cache);
@@ -1120,15 +1121,17 @@ void parse_model_animations(const tinygltf::Model& model, std::vector<SkeletonIn
 
                 const std::vector<uint32_t>& indices = instance->get_skeleton()->get_joint_indices();
 
-                for (size_t s = 0; s < indices.size(); s++) {
-                    if (indices[s] != animation.channels[0].target_node)
-                        continue;
-                    skeleton_instance = instance;
-                    skeleton = instance->get_skeleton();
-                    break;
+                for (size_t j = 0; j < animation.channels.size(); j++) {
+                    for (size_t s = 0; s < indices.size(); s++) {
+                        if (indices[s] != animation.channels[j].target_node)
+                            continue;
+                        skeleton_instance = instance;
+                        skeleton = instance->get_skeleton();
+                        break;
+                    }
+                    if (skeleton)
+                        break;
                 }
-                if (skeleton)
-                    break;
             }
 
             if (skeleton) {
@@ -1183,7 +1186,13 @@ void parse_model_animations(const tinygltf::Model& model, std::vector<SkeletonIn
             track->set_name(track_name);
 
             if (skeleton) {
-                track->set_path(skeleton_instance->get_name() + "/" + node.name + "/" + channel.target_path);
+
+                Node3D* p = skeleton_instance->get_parent();
+                std::string parent = "";
+                if (p) {
+                     parent = p->get_name() + "/";
+                }
+                track->set_path(parent + skeleton_instance->get_name() + "/" + node.name + "/" + channel.target_path);
             }
             else {
                 track->set_path("/" + channel.target_path);

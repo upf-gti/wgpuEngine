@@ -289,7 +289,7 @@ T Track::sample_constant(float t, bool loop)
 {
     int frame = frame_index(t, loop);
     if (frame < 0 || frame >= (int)keyframes.size()) {
-        assert(0);
+        return T();
     }
     return keyframes[frame].value;
 }
@@ -299,7 +299,7 @@ T Track::sample_linear(float time, bool looping)
 {
     int this_frame = frame_index(time, looping);
     if (this_frame < 0 || this_frame >= keyframes.size() - 1) {
-        assert(0);
+        return T();
     }
     int next_frame = this_frame + 1;
     // make sure the time is valid
@@ -307,7 +307,7 @@ T Track::sample_linear(float time, bool looping)
     float this_time = keyframes[this_frame].time;
     float frame_delta = keyframes[next_frame].time - this_time;
     if (frame_delta <= 0.0f) {
-        assert(0);
+        return T();
     }
     float t = (track_time - this_time) / frame_delta;
     T start = keyframes[this_frame].value;
@@ -319,7 +319,7 @@ T Track::sample_cubic(float time, bool looping)
 {
     int this_frame = frame_index(time, looping);
     if (this_frame < 0 || this_frame >= keyframes.size() - 1) {
-        assert(0);
+        return T();
     }
     int next_frame = this_frame + 1;
 
@@ -328,7 +328,7 @@ T Track::sample_cubic(float time, bool looping)
     float frame_delta = keyframes[next_frame].time - this_time;
 
     if (frame_delta <= 0.0f) {
-        assert(0);
+        return T();
     }
 
     // auto mul_T = std::multiplies<T>();
