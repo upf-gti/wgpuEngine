@@ -778,9 +778,11 @@ void parse_model_skins(const tinygltf::Model& model, std::map<int, int>& hierarc
                     model_matrix[(j / 4) % 4][j % 4] = static_cast<float>(node.matrix[j]);
                 }
 
-                //rest_pose.set_local_transform(skin.joints[i], mat4ToTransform(model_matrix));
-                rest_pose.set_local_transform(i, mat4ToTransform(model_matrix));
+                Transform transform = mat4ToTransform(model_matrix);
+                rest_pose.set_local_transform(i, transform);
 
+                joint_3d->set_model(model_matrix);
+                joint_3d->set_transform(transform);
             }
             else {
 
@@ -791,6 +793,7 @@ void parse_model_skins(const tinygltf::Model& model, std::map<int, int>& hierarc
                 rest_pose.set_local_transform(i, transform);
 
                 joint_3d->set_model(transformToMat4(transform));
+                joint_3d->set_transform(transform);
             }
 
             int parent = -1;
