@@ -119,7 +119,7 @@ void Animation::recalculate_duration()
     }
 }
 
-Track* Animation::add_track(uint32_t id)
+Track* Animation::add_track(int id)
 {
     Track track = {};
     track.set_id(id);
@@ -142,7 +142,7 @@ Track* Animation::get_track(uint32_t i)
 }
 
 // Retrieves the Track object for a specific id in the Animation
-Track* Animation::get_track_by_id(uint32_t id)
+Track* Animation::get_track_by_id(int id)
 {
     for (size_t i = 0, s = tracks.size(); i < s; ++i) {
         if (tracks[i].get_id() == id) {
@@ -159,7 +159,7 @@ std::string& Animation::get_name()
     return name;
 }
 
-uint32_t Animation::get_id_at_index(uint32_t index)
+int Animation::get_id_at_index(uint32_t index)
 {
     return tracks[index].get_id();
 }
@@ -208,7 +208,7 @@ void Animation::set_name(const std::string& new_name)
     }
 }
 
-void Animation::set_id_at_index(uint32_t index, uint32_t id)
+void Animation::set_id_at_index(uint32_t index, int id)
 {
     return tracks[index].set_id(id);
 }

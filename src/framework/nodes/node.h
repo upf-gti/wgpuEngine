@@ -54,18 +54,20 @@ public:
     virtual void update(float delta_time);
     virtual void render_gui() {};
 
+    NodeType get_type() const { return type; }
     std::string get_name() const { return name; }
     virtual std::vector<Node*>& get_children() { return children; }
     AABB get_aabb() const;
 
     virtual Node* get_node(std::vector<std::string>& path_tokens);
     Node* get_node(const std::string& path);
+    std::string find_path(const std::string& node_name, const std::string& current_path = "");
 
     void* get_property(const std::string& name);
 
     void set_type(NodeType new_type) { type = new_type; }
-    void set_name(std::string name) { if (name.size() > 0) this->name = name; }
-    void set_aabb(const AABB& aabb) { this->aabb = aabb; }
+    void set_name(std::string new_name) { name = new_name; }
+    void set_aabb(const AABB& new_aabb) { aabb = new_aabb; }
 
     virtual void remove_flag(uint8_t flag);
 

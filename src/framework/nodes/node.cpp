@@ -86,6 +86,22 @@ void* Node::get_property(const std::string& name)
     return nullptr;
 }
 
+std::string Node::find_path(const std::string& node_name, const std::string& current_path)
+{
+    if (get_name() == node_name) {
+        return current_path;
+    }
+
+    for (Node* child : children) {
+        std::string path = child->find_path(node_name, current_path + child->get_name() + "/");
+        if (!path.empty()) {
+            return path;
+        }
+    }
+
+    return ""; // Node not found
+}
+
 void Node::remove_flag(uint8_t flag)
 {
     for (Node* child : children) {

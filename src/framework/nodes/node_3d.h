@@ -44,5 +44,6 @@ public:
 
     void set_translation(const glm::vec3& translation);
     void set_model_dirty(bool value);
-    void set_model(const glm::mat4x4& _model) { model = _model; }
+    void set_model(const glm::mat4x4& new_model) { model = new_model; }
+    void set_transform(const Transform& new_transform) { transform = new_transform; }
 };

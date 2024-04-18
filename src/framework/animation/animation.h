@@ -36,9 +36,10 @@ public:
     ~Animation() {};
 
     // Gets joint Id based for a specific track index
-    uint32_t get_id_at_index(uint32_t index);
+    int get_id_at_index(uint32_t index);
+
     // Sets joint ID based on the index of the joint in the clip
-    void set_id_at_index(uint32_t idx, uint32_t id);
+    void set_id_at_index(uint32_t index, int id);
 
     // Samples the animation clip at the provided time into the out reference
     float sample(float time, uint32_t index, void* out = nullptr);
@@ -50,10 +51,10 @@ public:
     void recalculate_duration();
 
     // Adds a new track
-    Track* add_track(uint32_t id);
+    Track* add_track(int id);
 
     uint32_t get_track_count();
-    Track* get_track_by_id(uint32_t id);
+    Track* get_track_by_id(int id);
     Track* get_track(uint32_t index);
     std::string& get_name();
     float get_duration();

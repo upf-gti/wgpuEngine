@@ -36,7 +36,7 @@ enum TrackType {
 // Collection of keyframes
 class Track {
 
-    uint32_t id = 0;
+    int id = 0;
     std::vector<Keyframe> keyframes;
     Interpolation interpolation; // interpolation type
     TrackType type = TrackType::TYPE_UNDEFINED;
@@ -63,7 +63,7 @@ public:
 
     Track();
 
-    uint32_t get_id();
+    int get_id();
     float get_end_time();
     float get_start_time();
     Interpolation get_interpolation();
@@ -71,7 +71,7 @@ public:
     const std::string& get_name();
     const std::string& get_path();
 
-    void set_id(uint32_t id);
+    void set_id(int id);
     void set_interpolation(Interpolation interp);
     void set_type(TrackType new_type) { type = new_type; };
     void set_name(const std::string& new_name);

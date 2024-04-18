@@ -78,12 +78,12 @@ Track::Track()
     interpolation = Interpolation::LINEAR;
 }
 
-uint32_t Track::get_id()
+int Track::get_id()
 {
     return id;
 }
 
-void Track::set_id(uint32_t index)
+void Track::set_id(int index)
 {
     id = index;
 }

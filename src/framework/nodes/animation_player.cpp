@@ -62,7 +62,12 @@ void AnimationPlayer::generate_track_data()
         // it will use hierarchical search or linear search in joints array
         Node* node = root_node->get_node(node_path);
 
-        track_data[i] = node->get_property(property_name);
+        if (node) {
+            track_data[i] = node->get_property(property_name);
+        }
+        else {
+            spdlog::warn("{} node not found", track_path);
+        }
     }
 }
 
@@ -76,7 +81,6 @@ void AnimationPlayer::stop(bool keep_state)
     blender.stop();
     playing = false;
 }
-
 
 void AnimationPlayer::update(float delta_time)
 {
@@ -102,23 +106,15 @@ void AnimationPlayer::update(float delta_time)
         playback = current_animation->sample(playback, i, track_data[i]);
     }
 
-    // After sampling, we should have the skeletonInstance joint nodes with the correct
-    // transforms.. so use those nodes to update the pose of the skeletons
+    /*
+        After sampling, we should have the skeletonInstance joint nodes with the correct
+        transforms.. so use those nodes to update the pose of the skeletons
+        Setting the model dirty for everyone means that:
+            - skeleton_instances will update the pose from its joints when updating
+            - nodes that are not joints will automatically set its new model from the animatable properties
+    */
 
-    if (current_animation->get_type() == ANIM_TYPE_SKELETON) {
-        const std::string& track_path = current_animation->get_track(0)->get_path();
-        size_t last_idx = track_path.find_last_of('/');
-        const std::string& node_path = track_path.substr(0, last_idx);
-        last_idx = node_path.find_last_of('/');
-        Node3D* node = (Node3D*)root_node->get_node(node_path.substr(0, last_idx));
-        if (node) {
-            SkeletonInstance3D* sk_instance = (SkeletonInstance3D*)node;
-            sk_instance->update_pose_from_joints();
-        }
-    }
-    else {
-        root_node->set_model_dirty(true);
-    }
+    root_node->set_model_dirty(true);
 
     //for (auto instance : root_node->get_children()) {
 
