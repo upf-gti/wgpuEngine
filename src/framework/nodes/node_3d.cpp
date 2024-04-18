@@ -1,4 +1,11 @@
 #include "node_3d.h"
+
+#include "imgui.h"
+#include "framework/utils/ImGuizmo.h"
+#include "framework/camera/camera.h"
+
+#include "graphics/renderer.h"
+
 #include "spdlog/spdlog.h"
 
 Node3D::Node3D() : model(1.0f)
@@ -48,12 +55,48 @@ void Node3D::update(float delta_time)
 {
     if (model_dirty) {
 
+        //transform.rotation = glm::quat(0.0f, 0.0f, 0.0f, 1.0f);
+
         set_model(transformToMat4(transform));
 
         model_dirty = false;
     }
 
     Node::update(delta_time);
+}
+
+void Node3D::render_gui()
+{
+    if (ImGui::TreeNodeEx("Transform"))
+    {
+        glm::mat4x4 test_model = get_model();
+        Camera* camera = Renderer::instance->get_camera();
+
+        ImGuiIO& io = ImGui::GetIO();
+        ImGuizmo::SetRect(0, 0, io.DisplaySize.x, io.DisplaySize.y);
+
+        bool changed = ImGuizmo::Manipulate(glm::value_ptr(camera->get_view()), glm::value_ptr(camera->get_projection()),
+            ImGuizmo::OPERATION::ROTATE, ImGuizmo::MODE::WORLD, glm::value_ptr(test_model));
+
+        if (changed)
+        {
+            set_model(test_model);
+            set_transform(mat4ToTransform(test_model));
+        }
+
+        changed = false;
+
+        changed |= ImGui::DragFloat3("Translation", &transform.position[0], 0.1f);
+        changed |= ImGui::DragFloat4("Rotation", &transform.rotation[0], 0.1f);
+        changed |= ImGui::DragFloat3("Scale", &transform.scale[0], 0.1f);
+
+        if (changed)
+        {
+            set_model(transformToMat4(transform));
+        }
+
+        ImGui::TreePop();
+    }
 }
 
 void Node3D::translate(const glm::vec3& translation)
