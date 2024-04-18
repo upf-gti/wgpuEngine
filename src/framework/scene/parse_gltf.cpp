@@ -119,6 +119,10 @@ void read_mesh(const tinygltf::Model& model, const tinygltf::Mesh& mesh, Node3D*
         return;
     }
 
+    if (mesh.name != "") {
+        entity->set_name(mesh.name);
+    }
+
     glm::vec3 min_pos = { FLT_MAX, FLT_MAX, FLT_MAX };
     glm::vec3 max_pos = { -FLT_MAX, -FLT_MAX, -FLT_MAX };
 
@@ -665,10 +669,10 @@ void parse_model_nodes(tinygltf::Model& model, int parent_id, uint32_t node_id, 
 {
     tinygltf::Node& node = model.nodes[node_id];
 
-    node.name = entity->get_name();
-
-    if ((node.mesh >= 0) && (node.mesh < model.meshes.size())) {
+    if (node.mesh >= 0 && node.mesh < model.meshes.size()) {
         read_mesh(model, model.meshes[node.mesh], entity, texture_cache);
+        // update node name to the mesh name
+        node.name = entity->get_name();
     }
 
     // Set model matrix
@@ -1156,9 +1160,11 @@ void parse_model_animations(const tinygltf::Model& model, std::vector<SkeletonIn
             track->set_type(type);
             track->set_name(track_name);
 
-            if (skeleton) {
+            Node3D* scene_parent = player->get_parent();
 
-                Node3D* scene_parent = player->get_parent();
+            // Check if it's a joint and has a skeleton and get the full path..
+            if (skeleton && node_id >= 0) {
+
                 std::string parent_names = "";
                 Node3D* _node = skeleton_instance;
 
@@ -1167,16 +1173,11 @@ void parse_model_animations(const tinygltf::Model& model, std::vector<SkeletonIn
                     parent_names = _node->get_name() + "/" + parent_names;
                 }
 
-                // Check if it's NOT a joint and get the full path..
-                if (node_id == -1) {
-                    track->set_path(scene_parent->find_path(node.name) + channel.target_path);
-                }
-                else {
-                    track->set_path(parent_names + skeleton_instance->get_name() + "/" + track_name);
-                }
+                track->set_path(parent_names + skeleton_instance->get_name() + "/" + track_name);
             }
             else {
-                track->set_path("/" + channel.target_path);
+                // track->set_path("/" + channel.target_path);
+                track->set_path(scene_parent->find_path(node.name) + channel.target_path);
             }
 
             track_from_channel(*track, channel, sampler, model);
