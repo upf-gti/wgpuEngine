@@ -26,5 +26,6 @@ public:
     void set_joint_nodes(const std::vector<Node3D*>& new_joint_nodes);
 
     Skeleton* get_skeleton();
+    void render_gui();
 };
 

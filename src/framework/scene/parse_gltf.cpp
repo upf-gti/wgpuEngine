@@ -464,7 +464,7 @@ void read_mesh(const tinygltf::Model& model, const tinygltf::Mesh& mesh, Node3D*
                     texture_cache[pbrMetallicRoughness.baseColorTexture.index] = material.diffuse_texture;
                 }
             }
-
+            material.name = gltf_material.name;
             material.color = glm::vec4(
                 pbrMetallicRoughness.baseColorFactor[0],
                 pbrMetallicRoughness.baseColorFactor[1],
@@ -554,6 +554,7 @@ void read_mesh(const tinygltf::Model& model, const tinygltf::Mesh& mesh, Node3D*
         }
         surface->create_vertex_buffer();
         surface->set_material_priority(1);
+        surface->set_name("Surface_" + material.name);
         entity_mesh->add_surface(surface);
     }
 }

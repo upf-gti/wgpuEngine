@@ -64,6 +64,8 @@ struct Material
     uint8_t flags = 0;
     uint8_t priority = 0;
 
+    std::string name = "";
+
     // Don't take transparency into account for now
     bool operator==(const Material& other) const
     {

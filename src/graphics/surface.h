@@ -34,6 +34,8 @@ class Surface
     std::vector<InterleavedData> generate_quad(float w = 1.f, float h = 1.f, const glm::vec3& position = { 0.f, 0.f, 0.f }, const glm::vec3& normal = { 0.f, 1.f, 0.f }, const glm::vec3& color = { 1.f, 1.f, 1.f });
 
     AABB aabb;
+
+    std::string name = "";
 public:
 
     ~Surface();
@@ -50,6 +52,7 @@ public:
     void set_material_topology_type(eTopologyType topology_type);
     void set_material_depth_read(bool depth_read);
     void set_material_depth_write(bool depth_write);
+    void set_name(const std::string& new_name) { name = new_name; };
 
     std::vector<InterleavedData>& get_vertices() { return vertices; }
 
@@ -75,4 +78,5 @@ public:
     void* data();
     uint32_t get_vertex_count() const;
     uint64_t get_byte_size() const;
+    const std::string& get_name() { return name; };
 };

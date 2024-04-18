@@ -1,6 +1,7 @@
 #include "skeleton_instance_3d.h"
 
 #include "graphics/renderer.h"
+#include "imgui.h"
 
 SkeletonInstance3D::SkeletonInstance3D()
 {
@@ -90,6 +91,7 @@ void SkeletonInstance3D::update_helper()
 void SkeletonInstance3D::init_helper()
 {
     Surface* s = new Surface();
+    s->set_name("Skeleton Helper");
     add_surface(s);
 
     update_helper();
@@ -107,4 +109,24 @@ void SkeletonInstance3D::init_helper()
 Skeleton* SkeletonInstance3D::get_skeleton()
 {
     return skeleton;
+}
+
+void SkeletonInstance3D::render_gui() {
+
+    ImGui::Begin(name.c_str());
+    if (ImGui::TreeNode(name.c_str())) {
+        Pose& pose = skeleton->get_current_pose();
+        for (const Node* child : joint_nodes) {
+            if (ImGui::TreeNode(child->get_name().c_str())) {
+                Node3D* c = (Node3D*)child;
+                Transform t = c->get_transform();
+                ImGui::DragFloat3("Translation", &t.position[0], 0.f);
+                ImGui::DragFloat4("Rotation", &t.rotation[0], 0.f);
+                ImGui::DragFloat3("Scale", &t.scale[0], 0.f);
+                ImGui::TreePop();
+            }
+        }
+        ImGui::TreePop();
+    }
+    ImGui::End();
 }
