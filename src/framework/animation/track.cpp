@@ -220,27 +220,27 @@ int Track::frame_index(float time, bool looping)
     }
 
     // If the track is sampled as looping, the input time needs to be adjusted so that it falls between the start and end keyframes.
-    if (looping) {
-        float startTime = keyframes[0].time;
-        float endTime = keyframes[size - 1].time;
-        float duration = endTime - startTime;
-        time = fmodf(time - startTime, endTime - startTime);
-        // looping, time needs to be adjusted so that it is within a valid range.
-        if (time < 0.0f) {
-            time += endTime - startTime;
-        }
-        time = time + startTime;
-    }
-    else {
-        // clamp the time in the track keyframes range
-        if (time <= keyframes[0].time) {
-            return 0;
-        }
-        if (time >= keyframes[size - 2].time) {
-            // The Sample function always needs a current and next frame (for interpolation), so the index of the second-to-last frame is used.
-            return (int)size - 2;
-        }
-    }
+    //if (looping) {
+    //    float startTime = keyframes[0].time;
+    //    float endTime = keyframes[size - 1].time;
+    //    float duration = endTime - startTime;
+    //    time = fmodf(time - startTime, endTime - startTime);
+    //    // looping, time needs to be adjusted so that it is within a valid range.
+    //    if (time < 0.0f) {
+    //        time += endTime - startTime;
+    //    }
+    //    time = time + startTime;
+    //}
+    //else {
+    //    // clamp the time in the track keyframes range
+    //    if (time <= keyframes[0].time) {
+    //        return -1;
+    //    }
+    //    if (time >= keyframes[size - 2].time) {
+    //        // The Sample function always needs a current and next frame (for interpolation), so the index of the second-to-last frame is used.
+    //        return (int)size - 2;
+    //    }
+    //}
 
     for (int i = (int)size - 1; i >= 0; --i) {
         if (time >= keyframes[i].time) {

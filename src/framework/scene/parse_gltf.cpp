@@ -1245,7 +1245,7 @@ bool parse_gltf(const char* gltf_path, std::vector<Node3D*>& entities)
     std::filesystem::path path_filename = path.replace_extension().filename();
 
     Node3D* scene_node = new Node3D();
-    scene_node->set_name(path_filename.string());
+    scene_node->set_name(path_filename.string() + "_root");
     entities.push_back(scene_node);
 
     for (size_t i = 0; i < scene->nodes.size(); ++i)

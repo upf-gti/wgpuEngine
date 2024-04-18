@@ -24,6 +24,7 @@ class Animation {
     float start_time = 0.0f;
     float end_time = 0.0f;
     bool looping = true;
+    float duration = 0.0f;
 
     float adjust_time_to_fit_range(float time);
     void sample_pose(float time, void* out);

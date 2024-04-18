@@ -117,6 +117,8 @@ void Animation::recalculate_duration()
             end_set = true;
         }
     }
+
+    duration = end_time - start_time;
 }
 
 Track* Animation::add_track(int id)
@@ -171,7 +173,7 @@ uint32_t Animation::get_track_count()
 
 float Animation::get_duration()
 {
-    return end_time - start_time;
+    return duration;
 }
 
 float Animation::get_start_time()
