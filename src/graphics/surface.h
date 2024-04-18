@@ -35,6 +35,8 @@ class Surface
 
     AABB aabb;
 
+    uint32_t index;
+
     std::string name = "";
 public:
 
@@ -53,13 +55,13 @@ public:
     void set_material_depth_read(bool depth_read);
     void set_material_depth_write(bool depth_write);
     void set_name(const std::string& new_name) { name = new_name; };
+    void set_index(uint32_t new_index) { index = new_index; };
 
     std::vector<InterleavedData>& get_vertices() { return vertices; }
-
     Material& get_material();
     const Material& get_material() const;
-
     const WGPUBuffer& get_vertex_buffer() const;
+    uint32_t get_index() const { return index; };
 
     void create_quad(float w = 1.f, float h = 1.f, bool centered = true, const glm::vec3& color = { 1.f, 1.f, 1.f });
     void create_box(float w = 1.f, float h = 1.f, float d = 1.f, const glm::vec3& color = { 1.f, 1.f, 1.f });

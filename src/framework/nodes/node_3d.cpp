@@ -18,8 +18,7 @@ Node3D::Node3D() : model(1.0f)
 void Node3D::add_child(Node3D* child)
 {
     if (child->parent) {
-        spdlog::error("Child has already a parent, remove it first!");
-        return;
+        child->parent->remove_child(child);
     }
 
     // Checks if it's already a child
@@ -54,8 +53,6 @@ void Node3D::render()
 void Node3D::update(float delta_time)
 {
     if (model_dirty) {
-
-        //transform.rotation = glm::quat(0.0f, 0.0f, 0.0f, 1.0f);
 
         set_model(transformToMat4(transform));
 
