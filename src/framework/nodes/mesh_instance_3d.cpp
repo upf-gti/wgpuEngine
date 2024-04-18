@@ -10,7 +10,7 @@ MeshInstance3D::MeshInstance3D() : Node3D()
 
 MeshInstance3D::~MeshInstance3D()
 {
-    
+
 }
 
 void MeshInstance3D::render()

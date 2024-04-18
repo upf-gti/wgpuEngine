@@ -101,12 +101,12 @@ void Node3D::render_gui()
 
 void Node3D::translate(const glm::vec3& translation)
 {
-	model = glm::translate(model, translation);
+    model = glm::translate(model, translation);
 }
 
 void Node3D::rotate(float angle, const glm::vec3& axis)
 {
-	model = glm::rotate(model, angle, axis);
+    model = glm::rotate(model, angle, axis);
 }
 
 void Node3D::rotate(const glm::quat& q)
@@ -116,7 +116,7 @@ void Node3D::rotate(const glm::quat& q)
 
 void Node3D::scale(glm::vec3 scale)
 {
-	model = glm::scale(model, scale);
+    model = glm::scale(model, scale);
 }
 
 void Node3D::set_model_dirty(bool value)
@@ -133,7 +133,7 @@ void Node3D::set_model_dirty(bool value)
 
 void Node3D::set_translation(const glm::vec3& translation)
 {
-	model = glm::translate(glm::mat4x4(1.f), translation);
+    model = glm::translate(glm::mat4x4(1.f), translation);
 }
 
 const glm::vec3 Node3D::get_local_translation() const

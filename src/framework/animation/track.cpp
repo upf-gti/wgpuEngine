@@ -4,7 +4,7 @@
 
 // Track helpers avoid having to make specialized versions of the interpolation functions
 namespace TrackHelpers {
-   
+
     // linear interpolation for each type of track
     T interpolate(T a, T b, float t) {
         if (std::holds_alternative<float>(a))
@@ -30,7 +30,7 @@ namespace TrackHelpers {
         assert(0);
         return T();
     }
-    
+
     // When a Hermite spline is interpolated, if the input type was a quaternion, the result needs to be normalized.
     T adjustHermiteResult(const T& r) {
         if (std::holds_alternative<glm::quat>(r))
@@ -45,7 +45,7 @@ namespace TrackHelpers {
 
     // Make sure two quaternions are in the correct neighborhood
     void neighborhood(const T& a, T& b) {
-        
+
         if (std::holds_alternative<glm::quat>(a))
         {
             glm::quat qa = std::get<glm::quat>(a);
@@ -339,7 +339,7 @@ T Track::sample_cubic(float time, bool looping)
     size_t fltSize = sizeof(float);
     T point1 = keyframes[this_frame].value;
     /*T slope1 = mul_T(keyframes[this_frame].out, frame_delta);
-    
+
     T point2 =keyframes[next_frame].value;
     T slope2 = mul_T(keyframes[next_frame].in, frame_delta);*/
 

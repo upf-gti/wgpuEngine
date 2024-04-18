@@ -173,7 +173,7 @@ void AnimationPlayer::render_gui()
     if (!playing && ImGui::Button("Play")) {
         play(current_animation_name);
     }
-    else if(playing && ImGui::Button("Stop")) {
+    else if (playing && ImGui::Button("Stop")) {
         stop();
     }
 

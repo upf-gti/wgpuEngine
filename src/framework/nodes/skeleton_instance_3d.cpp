@@ -93,7 +93,7 @@ void SkeletonInstance3D::init_helper()
     add_surface(s);
 
     update_helper();
- 
+
     Material skeleton_material;
     skeleton_material.color = { 1.0f, 0.0f, 0.0f, 1.0f };
     skeleton_material.depth_read = false;
