@@ -727,7 +727,7 @@ void parse_model_nodes(tinygltf::Model& model, int parent_id, uint32_t node_id, 
     }
 };
 
-void parse_model_skins(const tinygltf::Model& model, std::map<std::string, Node3D*>& loaded_nodes, std::map<int, int>& hierarchy, std::vector<SkeletonInstance3D*>& skeleton_instances)
+void parse_model_skins(Node3D* scene_root, tinygltf::Model& model, std::map<std::string, Node3D*>& loaded_nodes, std::map<int, int>& hierarchy, std::vector<SkeletonInstance3D*>& skeleton_instances)
 {
     // Create skeleton instances first..
     {
@@ -744,25 +744,33 @@ void parse_model_skins(const tinygltf::Model& model, std::map<std::string, Node3
 
             // Insert at joint root parent..
 
-            const tinygltf::Skin& skin = model.skins[node.skin];
+            tinygltf::Skin& skin = model.skins[node.skin];
             assert(skin.joints.size() > 0);
+
+            if (skin.name == "") {
+                skin.name = "Skin_" + std::to_string(node.skin);
+            }
 
             // Assuming the first join in the array will be the root joint,
             // get the parent node from the hierarchy
 
-            uint32_t joint_root_id = skin.joints[0];
-            uint32_t joint_root_parent_id = hierarchy[joint_root_id];
-            const tinygltf::Node& parent = model.nodes[joint_root_parent_id];
+            int joint_root_id = skin.joints[0];
+            int joint_root_parent_id = hierarchy[joint_root_id];
+
+            Node3D* parent_node = scene_root;
 
             assert(loaded_nodes.contains(node.name));
-            assert(loaded_nodes.contains(parent.name));
 
             Node3D* skinned_mesh_node = loaded_nodes[node.name];
-            Node3D* parent_node = loaded_nodes[parent.name];
+
+            if (joint_root_parent_id >= 0) {
+                const tinygltf::Node& parent = model.nodes[joint_root_parent_id];
+                assert(loaded_nodes.contains(parent.name));
+                parent_node = loaded_nodes[parent.name];
+            }
 
             e->add_child(skinned_mesh_node);
             parent_node->add_child(e);
-
             skeleton_instances.push_back(e);
         }
     }
@@ -1271,7 +1279,7 @@ bool parse_gltf(const char* gltf_path, std::vector<Node3D*>& entities)
     }
 
     if (model.skins.size()) {
-        parse_model_skins(model, loaded_nodes, hierarchy, skeleton_instances);
+        parse_model_skins(scene_node, model, loaded_nodes, hierarchy, skeleton_instances);
     }
 
     if (model.animations.size()) {
