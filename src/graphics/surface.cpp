@@ -64,6 +64,15 @@ void Surface::set_material_depth_write(bool depth_write)
     material.depth_write = depth_write;
 }
 
+void Surface::update_vertex_buffer(const std::vector<InterleavedData>& _vertices)
+{
+    if (!vertex_buffer) {
+        create_from_vertices(_vertices);
+    }
+
+    webgpu_context->update_buffer(vertex_buffer, 0, _vertices.data(), get_byte_size());
+}
+
 void Surface::create_vertex_buffer()
 {
     vertex_buffer = webgpu_context->create_buffer(get_byte_size(), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Vertex, vertices.data(), "mesh_buffer");

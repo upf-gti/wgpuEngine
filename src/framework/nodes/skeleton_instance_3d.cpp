@@ -85,7 +85,7 @@ void SkeletonInstance3D::update_helper()
         vertices.push_back(data);
     }
 
-    s->create_from_vertices(vertices);
+    s->update_vertex_buffer(vertices);
 }
 
 void SkeletonInstance3D::init_helper()
