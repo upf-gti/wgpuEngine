@@ -119,10 +119,6 @@ void read_mesh(const tinygltf::Model& model, const tinygltf::Mesh& mesh, Node3D*
         return;
     }
 
-    if (mesh.name != "") {
-        entity->set_name(mesh.name);
-    }
-
     glm::vec3 min_pos = { FLT_MAX, FLT_MAX, FLT_MAX };
     glm::vec3 max_pos = { -FLT_MAX, -FLT_MAX, -FLT_MAX };
 
@@ -584,7 +580,23 @@ void create_light(const tinygltf::Light& gltf_light, Light3D* light_node)
     }
 }
 
-Node3D* create_node_entity(uint32_t node_id, tinygltf::Model& model, std::map<std::string, Node3D*>& loaded_nodes)
+void register_node(std::string& name, Node3D* node, std::map<std::string, Node3D*>& loaded_nodes, std::map<std::string, uint32_t>& name_repeats)
+{
+    if (name_repeats.contains(name)) {
+        uint32_t& count = name_repeats[name];
+        std::string count_str = std::to_string(count);
+        uint32_t num_zeros = std::min(2, 3 - (int)count_str.size());
+        name += "_" + count_str.insert(0, num_zeros, '0');
+        count++;
+    }
+    else {
+        name_repeats[name] = 1;
+    }
+
+    loaded_nodes[name] = node;
+}
+
+Node3D* create_node_entity(uint32_t node_id, tinygltf::Model& model, std::map<std::string, Node3D*>& loaded_nodes, std::map<std::string, uint32_t>& name_repeats)
 {
     tinygltf::Node& node = model.nodes[node_id];
 
@@ -621,13 +633,25 @@ Node3D* create_node_entity(uint32_t node_id, tinygltf::Model& model, std::map<st
     }
 
     if (node.name == "") {
-        node.name = "Node_" + std::to_string(node_id);
+
+        if (node.mesh >= 0) {
+
+            const tinygltf::Mesh& mesh = model.meshes[node.mesh];
+
+            if (mesh.name != "") {
+                node.name = mesh.name;
+            }
+        }
+
+        if (node.name == "") {
+            node.name = "Node_" + std::to_string(node_id);
+        }
     }
 
-    new_node->set_name(node.name);
-
     // Register to get access by gltf node name later..
-    loaded_nodes[node.name] = new_node;
+    register_node(node.name, new_node, loaded_nodes, name_repeats);
+
+    new_node->set_name(node.name);
 
     return new_node;
 };
@@ -654,25 +678,13 @@ void process_node_hierarchy(const tinygltf::Model& model, int parent_id, uint32_
     hierarchy[node_id] = parent_id;
 }
 
-void parse_model_nodes(tinygltf::Model& model, int parent_id, uint32_t node_id, Node3D* parent_node, Node3D* entity, std::map<std::string, Node3D*>& loaded_nodes,
+void parse_model_nodes(tinygltf::Model& model, int parent_id, uint32_t node_id, Node3D* parent_node, Node3D* entity, std::map<std::string, Node3D*>& loaded_nodes, std::map<std::string, uint32_t>& name_repeats,
     std::map<uint32_t, Texture*>& texture_cache, std::map<int, int>& hierarchy, std::vector<SkeletonInstance3D*>& skeleton_instances)
 {
     tinygltf::Node& node = model.nodes[node_id];
 
     if (node.mesh >= 0 && node.mesh < model.meshes.size()) {
-
         read_mesh(model, model.meshes[node.mesh], entity, texture_cache);
-
-        // Remove old name from nodes map
-        {
-            loaded_nodes.erase(node.name);
-        }
-
-        // Update node name to the mesh name
-        {
-            node.name = entity->get_name();
-            loaded_nodes[node.name] = entity;
-        }
     }
 
     // Set model matrix
@@ -707,11 +719,11 @@ void parse_model_nodes(tinygltf::Model& model, int parent_id, uint32_t node_id, 
 
         assert(child_id >= 0 && child_id < model.nodes.size());
 
-        Node3D* child_node = create_node_entity(child_id, model, loaded_nodes);
+        Node3D* child_node = create_node_entity(child_id, model, loaded_nodes, name_repeats);
 
         process_node_hierarchy(model, node_id, child_id, entity, child_node, hierarchy, skeleton_instances);
 
-        parse_model_nodes(model, node_id, child_id, entity, child_node, loaded_nodes, texture_cache, hierarchy, skeleton_instances);
+        parse_model_nodes(model, node_id, child_id, entity, child_node, loaded_nodes, name_repeats, texture_cache, hierarchy, skeleton_instances);
     }
 };
 
@@ -1231,6 +1243,7 @@ bool parse_gltf(const char* gltf_path, std::vector<Node3D*>& entities)
     }
 
     std::map<std::string, Node3D*> loaded_nodes;
+    std::map<std::string, uint32_t> name_repeats;
     std::map<uint32_t, Texture*> texture_cache;
     std::map<int, int> hierarchy;
 
@@ -1250,11 +1263,11 @@ bool parse_gltf(const char* gltf_path, std::vector<Node3D*>& entities)
 
         assert(node_id >= 0 && node_id < model.nodes.size());
 
-        Node3D* entity = create_node_entity(node_id, model, loaded_nodes);
+        Node3D* entity = create_node_entity(node_id, model, loaded_nodes, name_repeats);
 
         process_node_hierarchy(model, -1, node_id, scene_node, entity, hierarchy, skeleton_instances);
 
-        parse_model_nodes(model, -1, node_id, scene_node, entity, loaded_nodes, texture_cache, hierarchy, skeleton_instances);
+        parse_model_nodes(model, -1, node_id, scene_node, entity, loaded_nodes, name_repeats, texture_cache, hierarchy, skeleton_instances);
     }
 
     if (model.skins.size()) {
