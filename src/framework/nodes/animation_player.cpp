@@ -100,12 +100,13 @@ void AnimationPlayer::update(float delta_time)
 
     // Sample data from the animation and store it at &track_data
 
-    playback += delta_time * speed;
+    //layback += delta_time * speed;
 
-    for (uint32_t i = 0; i < current_animation->get_track_count(); ++i) {
+   /* for (uint32_t i = 0; i < current_animation->get_track_count(); ++i) {
         playback = current_animation->sample(playback, i, track_data[i]);
-    }
+    }*/
 
+    playback = blender.update(delta_time * speed, track_data);
     /*
         After sampling, we should have the skeletonInstance joint nodes with the correct
         transforms.. so use those nodes to update the pose of the skeletons

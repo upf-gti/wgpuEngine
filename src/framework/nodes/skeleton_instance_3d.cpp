@@ -2,6 +2,7 @@
 
 #include "graphics/renderer.h"
 #include "imgui.h"
+#include "spdlog/spdlog.h"
 
 SkeletonInstance3D::SkeletonInstance3D()
 {

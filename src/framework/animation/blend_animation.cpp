@@ -47,43 +47,60 @@ void BlendAnimation::fade_to(Animation* target, float fade_time)
 }
 
 // Play the active animation and blend in any other animations that are in the fade list
-float BlendAnimation::update(float dt, void* data)
+float BlendAnimation::update(float dt, std::vector<void*>& data)
 {
-    //if (!animation) {
-    //    return time;
-    //}
+    if (!animation) {
+        return time;
+    }
 
-    //// Set the current animation as the target animation and remove the fade object if an animation has finished fading
-    //unsigned int num_targets = targets.size();
-    //for (unsigned int i = 0; i < num_targets; ++i) {
-    //    float duration = targets[i].duration;
-    //    if (targets[i].elapsed >= duration) {
-    //        animation = targets[i].animation;
-    //        time = targets[i].time;
-    //        targets.erase(targets.begin() + i);
-    //        break;
-    //    }
-    //}
-    //// Blend the fade list with the current animation
-    //num_targets = targets.size();
-    //if (animation->get_type() == ANIM_TYPE_SKELETON) {      
+    float current_time = time;
+   /* for (uint32_t i = 0; i < animation->get_track_count(); ++i) {
+        time = animation->sample(current_time + dt, i, data[i]);
+    }*/
 
-    //    time = animation->sample(time + dt, data);
-    //    Pose* pose = (Pose*)(data);
-    //    Pose target_pose(pose->size());
+    // Set the current animation as the target animation and remove the fade object if an animation has finished fading
+    unsigned int num_targets = targets.size();
+    for (unsigned int i = 0; i < num_targets; ++i) {
+        float duration = targets[i].duration;
+        if (targets[i].elapsed >= duration) {
+            animation = targets[i].animation;
+            time = targets[i].time;
+            targets.erase(targets.begin() + i);
+            break;
+        }
+    }
+    // Blend the fade list with the current animation
+    num_targets = targets.size();
+    if (animation->get_type() == ANIM_TYPE_SKELETON) {
 
-    //    for (unsigned int i = 0; i < num_targets; ++i) {
-    //        BlendTarget& target = targets[i];
-    //        target.time = target.animation->sample(target.time + dt, &target_pose);
-    //        target.elapsed += dt;
-    //        float t = target.elapsed / target.duration;
-    //        if (t > 1.0f) {
-    //            t = 1.0f;
-    //        }
-    //        //if(blend_type)
-    //        blend(*pose, *pose, target_pose, t);
-    //    }
-    //}
+        //Pose* pose = (Pose*)(&data);
+
+        for (uint32_t i = 0; i < animation->get_track_count(); ++i) {
+            time = animation->sample(current_time + dt, i, data[i]);
+        }
+        Pose* pose = (Pose*)(&data);
+        Pose* target_pose = new Pose(pose->size());
+
+
+        //for (unsigned int i = 0; i < num_targets; ++i) {
+        //    BlendTarget& target = targets[i];
+        //    std::vector<void*> d(target.animation->get_track_count());
+        //    for (uint32_t j = 0; j < target.animation->get_track_count(); ++j) {
+        //       
+        //        target.time = target.animation->sample(target.time + dt, j, d[j]);
+        //    }
+        //    target.elapsed += dt;
+        //    float t = target.elapsed / target.duration;
+        //    if (t > 1.0f) {
+        //        t = 1.0f;
+        //    }
+        //    Pose* target_pose = (Pose*)(&d);
+        //    //if(blend_type)
+        //    blend(*pose, *pose, *target_pose, t);
+        //}
+
+
+    }
     return time;
 }
 

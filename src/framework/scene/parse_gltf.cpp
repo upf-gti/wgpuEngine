@@ -739,9 +739,6 @@ void parse_model_skins(Node3D* scene_root, tinygltf::Model& model, std::map<std:
                 continue;
             }
 
-            SkeletonInstance3D* e = new SkeletonInstance3D();
-            e->skin = node.skin;
-
             // Insert at joint root parent..
 
             tinygltf::Skin& skin = model.skins[node.skin];
@@ -763,19 +760,44 @@ void parse_model_skins(Node3D* scene_root, tinygltf::Model& model, std::map<std:
 
             Node3D* skinned_mesh_node = loaded_nodes[node.name];
 
+            SkeletonInstance3D* e = nullptr;
+
             if (joint_root_parent_id >= 0) {
+                    
                 const tinygltf::Node& parent = model.nodes[joint_root_parent_id];
                 assert(loaded_nodes.contains(parent.name));
                 parent_node = loaded_nodes[parent.name];
+                if (parent_node->get_type() != NodeType::JOINT_3D) {
+                    e = new SkeletonInstance3D();
+                    parent_node->add_child(e);
+                    skeleton_instances.push_back(e);
+                }
+            }
+            if (!skeleton_instances.size()) {
+                e = new SkeletonInstance3D();
+                parent_node->add_child(e);
+                skeleton_instances.push_back(e);
+            }
+            else {
+                
             }
 
+            
+            //e->skin = node.skin;
+            e = skeleton_instances[skeleton_instances.size() - 1];
             e->add_child(skinned_mesh_node);
-            parent_node->add_child(e);
-            skeleton_instances.push_back(e);
+            
         }
     }
 
     std::vector<Transform> world_bind_transforms;
+    Pose bind_pose;
+    Pose rest_pose;
+
+    std::vector<glm::mat4> inverse_bind_matrices;
+    std::vector<std::string> joint_names;
+    std::vector<uint32_t> joint_indices;
+    std::vector<Node3D*> joint_nodes;
 
     for (size_t s = 0; s < model.skins.size(); s++) {
 
@@ -785,17 +807,13 @@ void parse_model_skins(Node3D* scene_root, tinygltf::Model& model, std::map<std:
             continue;
         }
 
-        Pose bind_pose;
-        Pose rest_pose;
+
 
         size_t num_joints = skin.joints.size();
 
         if (num_joints <= 0) {
             continue;
         }
-
-        rest_pose.resize(num_joints);
-        world_bind_transforms.resize(num_joints);
 
         // read the inverse bind pose matrix into a large vector of float values
         const tinygltf::Accessor& accessor = model.accessors[skin.inverseBindMatrices];
@@ -805,10 +823,10 @@ void parse_model_skins(Node3D* scene_root, tinygltf::Model& model, std::map<std:
 
         const float* ptr = reinterpret_cast<const float*>(buffer.data.data() + accessor.byteOffset + bufferView.byteOffset);
 
-        std::vector<glm::mat4> inverse_bind_matrices(accessor.count);
-        std::vector<std::string> joint_names;
-        std::vector<uint32_t> joint_indices;
-        std::vector<Node3D*> joint_nodes;
+
+        rest_pose.resize(rest_pose.size() + num_joints);
+        world_bind_transforms.resize(rest_pose.size());
+        inverse_bind_matrices.resize(inverse_bind_matrices.size() + accessor.count);
 
         //for each joint in the skin, get the inverse bind pose matrix
         for (size_t i = 0; i < skin.joints.size(); i++) {
@@ -872,66 +890,65 @@ void parse_model_skins(Node3D* scene_root, tinygltf::Model& model, std::map<std:
             world_bind_transforms[i] = bind_transform;
         }
 
-        bind_pose = rest_pose;
+    }
+    bind_pose = rest_pose;
 
-        for (uint32_t i = 0; i < num_joints; ++i) {
+    for (uint32_t i = 0 ; i < rest_pose.size(); ++i) {
 
-            Transform current = world_bind_transforms[i];
+        Transform current = world_bind_transforms[i];
 
-            int p = bind_pose.get_parent(i);
+        int p = bind_pose.get_parent(i);
 
-            if (p >= 0) { // Bring into local space
+        if (p >= 0) { // Bring into local space
 
-                Transform parent;
+            Transform parent;
 
-                if (p < num_joints) {
-                    parent = world_bind_transforms[p];
+            if (p < rest_pose.size()) {
+                parent = world_bind_transforms[p];
+            }
+            else {
+                const tinygltf::Node& node = model.nodes[p];
+                if (!node.matrix.empty())
+                {
+                    glm::mat4x4 model_matrix;
+
+                    for (int j = 0; j < 16; ++j) {
+                        model_matrix[(j / 4) % 4][j % 4] = static_cast<float>(node.matrix[j]);
+                    }
+                    parent = mat4ToTransform(model_matrix);
                 }
                 else {
-                    const tinygltf::Node& node = model.nodes[p];
-                    if (!node.matrix.empty())
-                    {
-                        glm::mat4x4 model_matrix;
 
-                        for (int j = 0; j < 16; ++j) {
-                            model_matrix[(j / 4) % 4][j % 4] = static_cast<float>(node.matrix[j]);
-                        }
-                        parent = mat4ToTransform(model_matrix);
-                    }
-                    else {
+                    Transform transform;
 
-                        Transform transform;
+                    read_transform(node, transform);
 
-                        read_transform(node, transform);
-
-                        parent = transform;
-                    }
+                    parent = transform;
                 }
-
-                current = combine(inverse(parent), current);
             }
 
-            bind_pose.set_local_transform(i, current);
+            current = combine(inverse(parent), current);
         }
 
-        Skeleton* skeleton = new Skeleton(rest_pose, bind_pose, joint_names, joint_indices);
-        skeleton->set_name(skin.name);
+        bind_pose.set_local_transform(i, current);
+    }
+    Skeleton* skeleton = new Skeleton(rest_pose, bind_pose, joint_names, joint_indices);
+    ///skeleton->set_name(skin.name);
 
-        for (auto instance : skeleton_instances) {
+    for (auto instance : skeleton_instances) {
 
-            if (instance->skin != s) {
-                continue;
-            }
+        /*  if (instance->skin != s) {
+            continue;
+        }*/
 
-            instance->set_name(skeleton->get_name() + "_skeleton");
-            instance->set_skeleton(skeleton);
-            instance->set_joint_nodes(joint_nodes);
+        instance->set_name(skeleton->get_name() + "_skeleton");
+        instance->set_skeleton(skeleton);
+        instance->set_joint_nodes(joint_nodes);
 
-            for (auto child : instance->get_children()) {
-                MeshInstance* child_instance = dynamic_cast<MeshInstance*>(child);
-                assert(child_instance);
-                child_instance->set_skeleton(skeleton);
-            }
+        for (auto child : instance->get_children()) {
+            MeshInstance* child_instance = dynamic_cast<MeshInstance*>(child);
+            assert(child_instance);
+            child_instance->set_skeleton(skeleton);
         }
     }
 }
