@@ -75,6 +75,7 @@ public:
 
     void create_from_vertices(const std::vector<InterleavedData>& _vertices);
 
+    void update_vertex_buffer(const std::vector<InterleavedData>& _vertices);
     void create_vertex_buffer();
 
     void* data();
