@@ -869,14 +869,20 @@ void parse_model_skins(Node3D* scene_root, tinygltf::Model& model, std::map<std:
 
             int parent = -1;
 
-            for (uint32_t j = 0; j < skin.joints.size(); j++) {
-                if (skin.joints[j] != hierarchy[skin.joints[i]]) {
+            //for (uint32_t j = 0; j < skin.joints.size(); j++) {
+            //    if (skin.joints[j] != hierarchy[skin.joints[i]]) {
+            //        continue;
+            //    }
+            //    parent = j + rest_pose.size() - num_joints;
+            //    break;
+            //}
+            for (uint32_t j = 0; j < joint_indices.size(); j++) {
+                if (joint_indices[j] != hierarchy[skin.joints[i]]) {
                     continue;
                 }
                 parent = j;
                 break;
-            }
-
+                }           
             rest_pose.set_parent(id, parent);
 
             glm::highp_f32mat4 m;
