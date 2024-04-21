@@ -831,6 +831,7 @@ void parse_model_skins(Node3D* scene_root, tinygltf::Model& model, std::map<std:
         //for each joint in the skin, get the inverse bind pose matrix
         for (size_t i = 0; i < skin.joints.size(); i++) {
 
+            size_t id = i + rest_pose.size() - num_joints;
             const tinygltf::Node& node = model.nodes[skin.joints[i]];
 
             joint_names.push_back(node.name);
@@ -851,7 +852,7 @@ void parse_model_skins(Node3D* scene_root, tinygltf::Model& model, std::map<std:
                 }
 
                 Transform transform = mat4ToTransform(model_matrix);
-                rest_pose.set_local_transform(i, transform);
+                rest_pose.set_local_transform(id, transform);
 
                 joint_3d->set_model(model_matrix);
                 joint_3d->set_transform(transform);
@@ -861,7 +862,7 @@ void parse_model_skins(Node3D* scene_root, tinygltf::Model& model, std::map<std:
                 Transform transform;
                 read_transform(node, transform);
 
-                rest_pose.set_local_transform(i, transform);
+                rest_pose.set_local_transform(id, transform);
                 joint_3d->set_model(transformToMat4(transform));
                 joint_3d->set_transform(transform);
             }
@@ -876,18 +877,18 @@ void parse_model_skins(Node3D* scene_root, tinygltf::Model& model, std::map<std:
                 break;
             }
 
-            rest_pose.set_parent(i, parent);
+            rest_pose.set_parent(id, parent);
 
             glm::highp_f32mat4 m;
 
             // Get the 16 values of the inverse bind matrix and put them into a mat4
-            memcpy(&m, ptr + i * 16, 16 * sizeof(float));
-            inverse_bind_matrices[i] = m;
+            memcpy(&m, ptr + id * 16, 16 * sizeof(float));
+            inverse_bind_matrices[id] = m;
 
             // Set the transform into the array of transforms of the joints in the bind pose (world bind pose)
             glm::mat4x4 bind_matrix = inverse(m);
             Transform bind_transform = mat4ToTransform(bind_matrix);
-            world_bind_transforms[i] = bind_transform;
+            world_bind_transforms[id] = bind_transform;
         }
 
     }

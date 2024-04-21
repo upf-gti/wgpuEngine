@@ -133,6 +133,10 @@ void Node3D::set_translation(const glm::vec3& translation)
     model = glm::translate(glm::mat4x4(1.f), translation);
 }
 
+void Node3D::set_parent(Node3D* parent) {
+    this->parent = parent;
+}
+
 const glm::vec3 Node3D::get_local_translation() const
 {
     return model[3];

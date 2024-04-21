@@ -112,12 +112,35 @@ Skeleton* SkeletonInstance3D::get_skeleton()
     return skeleton;
 }
 
+
+void recursive_tree_gui(Node* node) {
+    if (ImGui::TreeNode(node->get_name().c_str())) {
+        Node3D* c = (Node3D*)node;
+        Transform t = c->get_transform();
+        ImGui::DragFloat3("Translation", &t.position[0], 0.f);
+        ImGui::DragFloat4("Rotation", &t.rotation[0], 0.f);
+        ImGui::DragFloat3("Scale", &t.scale[0], 0.f);
+        for (Node* child : node->get_children()) {
+
+            recursive_tree_gui(child);
+        }
+        ImGui::TreePop();
+    }
+}
+
 void SkeletonInstance3D::render_gui() {
 
     ImGui::Begin(name.c_str());
     if (ImGui::TreeNode(name.c_str())) {
         Pose& pose = skeleton->get_current_pose();
-        for (const Node* child : joint_nodes) {
+        for (size_t i = 0; i < joint_nodes.size(); i++) {
+            int parent = pose.get_parent(i);
+            if (parent < 0)
+                continue;
+            Node3D* node = (Node3D*)(joint_nodes[i]);
+            joint_nodes[parent]->add_child(node);
+        }
+        /*for (const Node* child : joint_nodes) {
             if (ImGui::TreeNode(child->get_name().c_str())) {
                 Node3D* c = (Node3D*)child;
                 Transform t = c->get_transform();
@@ -126,8 +149,13 @@ void SkeletonInstance3D::render_gui() {
                 ImGui::DragFloat3("Scale", &t.scale[0], 0.f);
                 ImGui::TreePop();
             }
+        }*/
+        for (Node* child : joint_nodes) {
+            if(!((Node3D*)(child))->get_parent())
+                recursive_tree_gui(child);
         }
         ImGui::TreePop();
     }
     ImGui::End();
 }
+
