@@ -99,14 +99,9 @@ void AnimationPlayer::update(float delta_time)
     }
 
     // Sample data from the animation and store it at &track_data
-
-    //layback += delta_time * speed;
-
-   /* for (uint32_t i = 0; i < current_animation->get_track_count(); ++i) {
-        playback = current_animation->sample(playback, i, track_data[i]);
-    }*/
-
+    
     playback = blender.update(delta_time * speed, track_data);
+
     /*
         After sampling, we should have the skeletonInstance joint nodes with the correct
         transforms.. so use those nodes to update the pose of the skeletons
@@ -168,7 +163,8 @@ void AnimationPlayer::render_gui()
         }
     }
 
-    ImGui::DragFloat("Blend time", &blend_time, 0.1f);
+    ImGui::DragFloat("Speed", &speed, 0.1f, -10.0f, 10.0f);
+    ImGui::DragFloat("Blend time", &blend_time, 0.1f, 0.0f);
     ImGui::LabelText(std::to_string(playback).c_str(), "Playback");
 
     if (!playing && ImGui::Button("Play")) {

@@ -18,7 +18,8 @@ void BlendAnimation::play(Animation* target)
     time = target->get_start_time();
 }
 
-void BlendAnimation::stop() {
+void BlendAnimation::stop()
+{
     animation = nullptr;
     time = 0.0f;
 }
@@ -54,13 +55,10 @@ float BlendAnimation::update(float dt, std::vector<void*>& data)
     }
 
     float current_time = time;
-   /* for (uint32_t i = 0; i < animation->get_track_count(); ++i) {
-        time = animation->sample(current_time + dt, i, data[i]);
-    }*/
 
     // Set the current animation as the target animation and remove the fade object if an animation has finished fading
-    unsigned int num_targets = targets.size();
-    for (unsigned int i = 0; i < num_targets; ++i) {
+    uint32_t num_targets = targets.size();
+    for (uint32_t i = 0; i < num_targets; ++i) {
         float duration = targets[i].duration;
         if (targets[i].elapsed >= duration) {
             animation = targets[i].animation;
@@ -69,20 +67,23 @@ float BlendAnimation::update(float dt, std::vector<void*>& data)
             break;
         }
     }
+
+    for (uint32_t i = 0; i < animation->get_track_count(); ++i) {
+        time = animation->sample(current_time + dt, i, data[i]);
+    }
+
     // Blend the fade list with the current animation
+
     num_targets = targets.size();
+
     if (animation->get_type() == ANIM_TYPE_SKELETON) {
 
         //Pose* pose = (Pose*)(&data);
-
-        for (uint32_t i = 0; i < animation->get_track_count(); ++i) {
-            time = animation->sample(current_time + dt, i, data[i]);
-        }
         Pose* pose = (Pose*)(&data);
         Pose* target_pose = new Pose(pose->size());
 
 
-        //for (unsigned int i = 0; i < num_targets; ++i) {
+        //for (uint32_t i = 0; i < num_targets; ++i) {
         //    BlendTarget& target = targets[i];
         //    std::vector<void*> d(target.animation->get_track_count());
         //    for (uint32_t j = 0; j < target.animation->get_track_count(); ++j) {
@@ -98,9 +99,8 @@ float BlendAnimation::update(float dt, std::vector<void*>& data)
         //    //if(blend_type)
         //    blend(*pose, *pose, *target_pose, t);
         //}
-
-
     }
+
     return time;
 }
 
@@ -109,15 +109,17 @@ Animation* BlendAnimation::get_current_animation()
     return animation;
 }
 
-void BlendAnimation::blend(Pose& output, Pose& a, Pose& b, float t) {
+void BlendAnimation::blend(Pose& output, Pose& a, Pose& b, float t)
+{
     size_t num_joints = output.size();
     for (size_t i = 0; i < num_joints; ++i) {        
         output.set_local_transform(i, mix(a.get_local_transform(i), b.get_local_transform(i), t));
     }
 }
 
-void BlendAnimation::add(Pose& output, Pose& in, Pose& add_pose, Pose& base_pose) {
-    unsigned int numJoints = add_pose.size();
+void BlendAnimation::add(Pose& output, Pose& in, Pose& add_pose, Pose& base_pose)
+{
+    uint32_t numJoints = add_pose.size();
     for (int i = 0; i < numJoints; ++i) {
         Transform input = in.get_local_transform(i);
         Transform additive = add_pose.get_local_transform(i);
