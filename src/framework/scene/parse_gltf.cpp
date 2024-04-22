@@ -545,13 +545,12 @@ void read_mesh(const tinygltf::Model& model, const tinygltf::Node& node, Node3D*
             material.metalness = 0.0f;
         }
 
-        material.shader = RendererStorage::get_shader("data/shaders/mesh_pbr.wgsl", material);
-
         if (entity_mesh->is_skinned) {
             material.use_skinning = true;
-            material.shader = RendererStorage::get_shader("data/shaders/mesh_pbr_skinning.wgsl", material);
-
         }
+
+        material.shader = RendererStorage::get_shader("data/shaders/mesh_pbr.wgsl", material);
+
         surface->create_vertex_buffer();
         surface->set_material_priority(1);
         surface->set_name("Surface_" + material.name);
