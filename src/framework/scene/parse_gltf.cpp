@@ -545,13 +545,12 @@ void read_mesh(const tinygltf::Model& model, const tinygltf::Node& node, Node3D*
             material.metalness = 0.0f;
         }
 
-        material.shader = RendererStorage::get_shader("data/shaders/mesh_pbr.wgsl", material);
-
         if (entity_mesh->is_skinned) {
             material.use_skinning = true;
-            material.shader = RendererStorage::get_shader("data/shaders/mesh_pbr_skinning.wgsl", material);
-
         }
+
+        material.shader = RendererStorage::get_shader("data/shaders/mesh_pbr.wgsl", material);
+
         surface->create_vertex_buffer();
         surface->set_material_priority(1);
         surface->set_name("Surface_" + material.name);
@@ -894,6 +893,7 @@ void parse_model_skins(Node3D* scene_root, tinygltf::Model& model, std::map<std:
 
             // Get the 16 values of the inverse bind matrix and put them into a mat4
             memcpy(&m, ptr + i * 16, 16 * sizeof(float));
+        
             inverse_bind_matrices[id] = m;
 
             // Set the transform into the array of transforms of the joints in the bind pose (world bind pose)

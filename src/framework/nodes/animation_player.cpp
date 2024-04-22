@@ -17,7 +17,7 @@ void AnimationPlayer::play(const std::string& animation_name, float custom_blend
     if (!root_node) {
         root_node = get_parent();
     }
-
+        
     Animation* animation = RendererStorage::get_animation(animation_name);
     if (!animation) {
         spdlog::error("No animation called {}", animation_name);
