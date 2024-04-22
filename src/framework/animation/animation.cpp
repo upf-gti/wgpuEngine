@@ -1,14 +1,16 @@
 #include "animation.h"
 
+uint32_t Animation::last_animation_id = 0;
+
 Animation::Animation()
 {
-    name = "AnimationUnnamed";
+    name = "AnimationUnnamed_" + std::to_string(last_animation_id++);
     start_time = 0.0f;
     end_time = 0.0f;
     looping = true;
 }
 
-float Animation::sample(float time)
+float Animation::sample(float time, uint32_t index, void* out)
 {
     if (get_duration() == 0.0f) {
         return 0.0f;
@@ -16,17 +18,53 @@ float Animation::sample(float time)
 
     time = adjust_time_to_fit_range(time);
 
-    size_t size = tracks.size();
+    Track* track = get_track(index);
 
-    for (size_t i = 0; i < size; ++i) {
+    track->sample(time, looping, out);
 
-        Track& track = tracks[i];
-
-        // sample the track
-        track.sample(time, looping);
+    /*if(type == ANIM_TYPE_SKELETON) {
+        sample_pose(time, data);
     }
+    else {
+        assert(0);
+    }*/
 
     return time;
+}
+
+void Animation::sample_pose(float time, void* out)
+{
+    /*Pose* pose = reinterpret_cast<Pose*>(out);
+    assert(pose);
+
+    for (size_t i = 0; i < tracks.size(); i += 3) {
+
+        Transform transform;
+        uint32_t id;
+
+        for (size_t j = i; j < i + 3; ++j) {
+
+            Track& track = tracks[j];
+            id = track.get_id();
+
+            switch (tracks[j].get_type()) {
+                case TYPE_POSITION: {
+                    transform.position = std::get<glm::vec3>(track.sample(time, looping));
+                    break;
+                }
+                case TYPE_ROTATION: {
+                    transform.rotation = std::get<glm::quat>(track.sample(time, looping));
+                    break;
+                }
+                case TYPE_SCALE: {
+                    transform.scale = std::get<glm::vec3>(track.sample(time, looping));
+                    break;
+                }
+            }
+        }
+
+        pose->set_local_transform(id, transform);
+    }*/
 }
 
 float Animation::adjust_time_to_fit_range(float time)
@@ -79,26 +117,34 @@ void Animation::recalculate_duration()
             end_set = true;
         }
     }
+
+    duration = end_time - start_time;
 }
 
-Track* Animation::add_track(uint32_t id, void* data)
+Track* Animation::add_track(int id)
 {
     Track track = {};
     track.set_id(id);
-    track.set_data(data);
 
     tracks.push_back(track);
+
     return &tracks[tracks.size() - 1];
 }
 
 // Retrieves the Track object for a specific id in the Animation
 Track* Animation::operator[](uint32_t id)
 {
-    return get_track(id);
+    return &tracks[id];
 }
 
 // Retrieves the Track object for a specific id in the Animation
-Track* Animation::get_track(uint32_t id)
+Track* Animation::get_track(uint32_t i)
+{
+    return &tracks[i];
+}
+
+// Retrieves the Track object for a specific id in the Animation
+Track* Animation::get_track_by_id(int id)
 {
     for (size_t i = 0, s = tracks.size(); i < s; ++i) {
         if (tracks[i].get_id() == id) {
@@ -115,19 +161,19 @@ std::string& Animation::get_name()
     return name;
 }
 
-uint32_t Animation::get_id_at_index(uint32_t index)
+int Animation::get_id_at_index(uint32_t index)
 {
     return tracks[index].get_id();
 }
 
-uint32_t Animation::size()
+uint32_t Animation::get_track_count()
 {
     return (uint32_t)tracks.size();
 }
 
 float Animation::get_duration()
 {
-    return end_time - start_time;
+    return duration;
 }
 
 float Animation::get_start_time()
@@ -145,6 +191,11 @@ bool Animation::get_looping()
     return looping;
 }
 
+AnimationType Animation::get_type()
+{
+    return type;
+}
+
 // setters
 
 void Animation::set_type(AnimationType new_type)
@@ -154,10 +205,12 @@ void Animation::set_type(AnimationType new_type)
 
 void Animation::set_name(const std::string& new_name)
 {
-    name = new_name;
+    if (new_name.size() > 0) {
+        name = new_name;
+    }
 }
 
-void Animation::set_id_at_index(uint32_t index, uint32_t id)
+void Animation::set_id_at_index(uint32_t index, int id)
 {
     return tracks[index].set_id(id);
 }

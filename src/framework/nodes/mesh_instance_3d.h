@@ -25,5 +25,8 @@ public:
     std::vector<glm::mat4x4> get_animated_data();
     std::vector<glm::mat4x4> get_invbind_data();
 
+    Uniform* get_animated_uniform_data() { return animated_uniform_data; }
+    Uniform* get_invbind_uniform_data() { return invbind_uniform_data; }
+
     void set_uniform_data(Uniform* animated_uniform, Uniform* invbind_uniform);
 };

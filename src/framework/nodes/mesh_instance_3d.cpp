@@ -10,7 +10,7 @@ MeshInstance3D::MeshInstance3D() : Node3D()
 
 MeshInstance3D::~MeshInstance3D()
 {
-    
+
 }
 
 void MeshInstance3D::render()
@@ -25,7 +25,6 @@ void MeshInstance3D::update(float delta_time)
     // Update GPU data
     if (is_skinned && animated_uniform_data && invbind_uniform_data)
     {
-        // This has to be optimized.. ~6 FPS!!
         const std::vector<glm::mat4x4>& animated_matrices = get_animated_data();
         const std::vector<glm::mat4x4>& inv_bind_matrices = get_invbind_data();
         auto webgpu_context = Renderer::instance->get_webgpu_context();

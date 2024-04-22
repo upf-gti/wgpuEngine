@@ -6,6 +6,7 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <unordered_map>
 #include <variant>
 #include <functional>
 
@@ -21,13 +22,16 @@ using SignalType = std::variant <FuncFloat, FuncString, FuncVec2, FuncVec3, Func
 
 enum NodeType {
     NODE_2D,
-    NODE_3D
+    NODE_3D,
+    JOINT_3D
 };
 
+class Node; 
 class Node {
 
     static std::map<std::string, std::vector<SignalType>> mapping_signals;
     static std::map<uint8_t, std::vector<FuncEmpty>> controller_signals;
+    static uint32_t last_node_id;
 
 protected:
 
@@ -39,21 +43,31 @@ protected:
 
     AABB aabb = {};
 
+    std::unordered_map<std::string, void*> properties;
+
 public:
 
-    Node() {};
+    Node();
     virtual ~Node() {};
 
     virtual void render();
     virtual void update(float delta_time);
     virtual void render_gui() {};
 
+    NodeType get_type() const { return type; }
     std::string get_name() const { return name; }
     virtual std::vector<Node*>& get_children() { return children; }
     AABB get_aabb() const;
 
-    void set_name(std::string name) { this->name = name; }
-    void set_aabb(const AABB& aabb) { this->aabb = aabb; }
+    virtual Node* get_node(std::vector<std::string>& path_tokens);
+    Node* get_node(const std::string& path);
+    std::string find_path(const std::string& node_name, const std::string& current_path = "");
+
+    void* get_property(const std::string& name);
+
+    void set_type(NodeType new_type) { type = new_type; }
+    void set_name(std::string new_name) { name = new_name; }
+    void set_aabb(const AABB& new_aabb) { aabb = new_aabb; }
 
     virtual void remove_flag(uint8_t flag);
 

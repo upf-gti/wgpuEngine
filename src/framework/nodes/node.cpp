@@ -1,11 +1,18 @@
 #include "node.h"
 
 #include "framework/input.h"
+#include "framework/utils/utils.h"
 
 #include "spdlog/spdlog.h"
 
 std::map<std::string, std::vector<SignalType>> Node::mapping_signals;
 std::map<uint8_t, std::vector<FuncEmpty>> Node::controller_signals;
+uint32_t Node::last_node_id = 0;
+
+Node::Node()
+{
+    name = "Node_" + std::to_string(last_node_id++);
+}
 
 void Node::render()
 {
@@ -40,6 +47,59 @@ AABB Node::get_aabb() const
     }
 
     return new_aabb;
+}
+
+Node* Node::get_node(std::vector<std::string>& path_tokens)
+{
+    if (!path_tokens.size() || path_tokens[0] == "") {
+        return this;
+    }
+
+    if (this->name == path_tokens[0]) {
+        path_tokens.erase(path_tokens.begin());
+        return this->get_node(path_tokens);
+    }
+
+    for (Node* child : children) {
+
+        if (child->get_name() == path_tokens[0]) {
+            path_tokens.erase(path_tokens.begin());
+            return child->get_node(path_tokens);
+        }
+    }
+
+    return nullptr;
+}
+
+Node* Node::get_node(const std::string& path)
+{
+    std::vector<std::string> path_tokens = tokenize(path, '/');
+    return get_node(path_tokens);
+}
+
+void* Node::get_property(const std::string& name)
+{
+    if (properties.contains(name)) {
+        return properties[name];
+    }
+
+    return nullptr;
+}
+
+std::string Node::find_path(const std::string& node_name, const std::string& current_path)
+{
+    if (get_name() == node_name) {
+        return current_path;
+    }
+
+    for (Node* child : children) {
+        std::string path = child->find_path(node_name, current_path + child->get_name() + "/");
+        if (!path.empty()) {
+            return path;
+        }
+    }
+
+    return ""; // Node not found
 }
 
 void Node::remove_flag(uint8_t flag)

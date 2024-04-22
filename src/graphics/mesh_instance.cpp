@@ -254,6 +254,7 @@ Material* MeshInstance::get_surface_material_override(Surface* surface)
 
 void MeshInstance::add_surface(Surface* surface)
 {
+    surface->set_index(get_surface_count());
     surfaces.push_back(surface);
 }
 
@@ -264,11 +265,15 @@ Surface* MeshInstance::get_surface(int surface_idx) const
     return surfaces[surface_idx];
 }
 
+uint32_t MeshInstance::get_surface_count() const
+{
+    return (uint32_t)surfaces.size();
+}
+
 const std::vector<Surface*>& MeshInstance::get_surfaces() const
 {
     return surfaces;
 }
-
 
 void MeshInstance::set_skeleton(Skeleton* s)
 {

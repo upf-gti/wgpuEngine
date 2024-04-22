@@ -2,8 +2,6 @@
 
 #include "framework/math.h"
 
-#include <vector>
-
 struct Transform {
 
 	glm::vec3 position;
@@ -14,9 +12,9 @@ struct Transform {
 		position(p), rotation(r), scale(s) {}
 
 	Transform() :
-		position(glm::vec3(0.0f, 0.0f, 0.0f)),
+		position(glm::vec3(0.0f)),
 		rotation(glm::quat(0.0f, 0.0f, 0.0f, 1.0f)),
-		scale(glm::vec3(1.0f, 1.0f, 1.0f))
+		scale(glm::vec3(1.0f))
 	{}
 
 }; // End of transform struct

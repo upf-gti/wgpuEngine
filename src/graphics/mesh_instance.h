@@ -51,6 +51,7 @@ public:
 	void  add_surface(Surface* surface);
     const std::vector<Surface*>& get_surfaces() const;
     Surface* get_surface(int surface_idx) const;
+    uint32_t get_surface_count() const;
 
     void set_skeleton(Skeleton* s);
     Skeleton* get_skeleton();

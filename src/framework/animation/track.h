@@ -28,17 +28,20 @@ enum TrackType {
     TYPE_VECTOR3, // Vector3 track, can be compressed.
     TYPE_QUAT, // Quaternion track, can be compressed.
     TYPE_METHOD, // Call any method on a specific node.
+    TYPE_POSITION,
+    TYPE_ROTATION,
+    TYPE_SCALE
 };
 
 // Collection of keyframes
 class Track {
 
-    uint32_t id = 0;
+    int id = 0;
     std::vector<Keyframe> keyframes;
     Interpolation interpolation; // interpolation type
     TrackType type = TrackType::TYPE_UNDEFINED;
     std::string name = "";
-    void* data = nullptr;
+    std::string path = "";
 
     // Helper functions, a sample for each type of interpolation
     T sample_constant(float time, bool looping);
@@ -60,24 +63,25 @@ public:
 
     Track();
 
-    uint32_t get_id();
+    int get_id();
     float get_end_time();
     float get_start_time();
     Interpolation get_interpolation();
     TrackType get_type() const { return type; };
-    std::string& get_name();
+    const std::string& get_name();
+    const std::string& get_path();
 
-    void set_data(void* property);
-    void set_id(uint32_t id);
+    void set_id(int id);
     void set_interpolation(Interpolation interp);
     void set_type(TrackType new_type) { type = new_type; };
-    void set_name(const std::string& name);
+    void set_name(const std::string& new_name);
+    void set_path(const std::string& new_path);
 
     uint32_t size();
     void resize(uint32_t size);
 
     // Prameters: time value, if the track is looping or not
-    T sample(float time, bool looping);
+    T sample(float time, bool looping, void* out = nullptr);
     Keyframe& operator[](uint32_t index);
 };
 

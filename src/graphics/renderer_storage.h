@@ -31,8 +31,7 @@ public:
     static std::map<std::string, std::vector<std::string>> shader_library_references;
     static std::map<std::string, Texture*> textures;
     static std::map<std::string, Surface*> surfaces;
-    static std::map<std::string, Skeleton*> skeletons;
-    static std::map<std::string, AnimationData*> animations;
+    static std::map<std::string, Animation*> animations;
 
     static Texture* current_skybox_texture;
 
@@ -96,10 +95,7 @@ public:
 
     static void reload_all_render_pipelines();
 
-    static void register_skeleton(const std::string& node_path, Skeleton* skeleton);
-    static Skeleton* get_skeleton(const std::string& node_path);
-
-    static void register_animation(const std::string& animation_path, Animation* animation, const std::string& node_path);
-    static AnimationData* get_animation(const std::string& animation_path);
+    static void register_animation(const std::string& animation_path, Animation* animation);
+    static Animation* get_animation(const std::string& animation_path);
 
 };

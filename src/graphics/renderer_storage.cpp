@@ -16,8 +16,7 @@ RendererStorage* RendererStorage::instance = nullptr;
 std::map<std::string, Surface*> RendererStorage::surfaces;
 std::map<std::string, Texture*> RendererStorage::textures;
 std::map<std::string, Shader*> RendererStorage::shaders;
-std::map<std::string, Skeleton*> RendererStorage::skeletons;
-std::map<std::string, AnimationData*> RendererStorage::animations;
+std::map<std::string, Animation*> RendererStorage::animations;
 
 Texture* RendererStorage::current_skybox_texture = nullptr;
 std::map<std::string, std::vector<std::string>> RendererStorage::shader_library_references;
@@ -141,30 +140,37 @@ void RendererStorage::register_material(WebGPUContext* webgpu_context, MeshInsta
 
     if (material.use_skinning) {
 
-        Uniform* anim_u = new Uniform();
-
         MeshInstance3D* instance_3d = static_cast<MeshInstance3D*>(mesh_instance);
 
-        // Send current animated bones matrices
-        const std::vector<glm::mat4x4>& animated_matrices = instance_3d->get_animated_data();
+        if (!instance_3d->animated_uniform_data) {
+            Uniform* anim_u = new Uniform();
 
-        anim_u->data = webgpu_context->create_buffer(sizeof(glm::mat4x4) * animated_matrices.size(), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Storage, animated_matrices.data(), "animated_buffer");
-        anim_u->binding = 10;
-        anim_u->buffer_size = sizeof(glm::mat4x4) * animated_matrices.size();
+            // Send current animated bones matrices
+            const std::vector<glm::mat4x4>& animated_matrices = instance_3d->get_animated_data();
 
-        uniforms.push_back(anim_u);
+            anim_u->data = webgpu_context->create_buffer(sizeof(glm::mat4x4) * animated_matrices.size(), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Storage, animated_matrices.data(), "animated_buffer");
+            anim_u->binding = 10;
+            anim_u->buffer_size = sizeof(glm::mat4x4) * animated_matrices.size();
 
-        Uniform* invbind_u = new Uniform();
+            uniforms.push_back(anim_u);
 
-        // Send bind bones inverse matrices
-        const std::vector<glm::mat4x4>& invbind_matrices = instance_3d->get_invbind_data();
-        invbind_u->data = webgpu_context->create_buffer(sizeof(glm::mat4x4) * invbind_matrices.size(), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Storage, invbind_matrices.data(), "invbind_buffer");
-        invbind_u->binding = 11;
-        invbind_u->buffer_size = sizeof(glm::mat4x4) * invbind_matrices.size();
+            Uniform* invbind_u = new Uniform();
 
-        uniforms.push_back(invbind_u);
+            // Send bind bones inverse matrices
+            const std::vector<glm::mat4x4>& invbind_matrices = instance_3d->get_invbind_data();
+            invbind_u->data = webgpu_context->create_buffer(sizeof(glm::mat4x4) * invbind_matrices.size(), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Storage, invbind_matrices.data(), "invbind_buffer");
+            invbind_u->binding = 11;
+            invbind_u->buffer_size = sizeof(glm::mat4x4) * invbind_matrices.size();
 
-        instance_3d->set_uniform_data(anim_u, invbind_u);
+            uniforms.push_back(invbind_u);
+
+            instance_3d->set_uniform_data(anim_u, invbind_u);
+        }
+        else {
+            uniforms.push_back(instance_3d->animated_uniform_data);
+            uniforms.push_back(instance_3d->invbind_uniform_data);
+        }
+
     }
 
     material_bind_groups[material].bind_group = webgpu_context->create_bind_group(uniforms, material.shader, 2);
@@ -349,34 +355,16 @@ Surface* RendererStorage::get_surface(const std::string& mesh_path)
     return new_surface;
 }
 
-void RendererStorage::register_skeleton(const std::string& node_path, Skeleton* skeleton) {
-    // register in map
-    skeletons[node_path] = skeleton;
-}
-
-Skeleton* RendererStorage::get_skeleton(const std::string& node_path)
-{
-    // check if already loaded
-    std::map<std::string, Skeleton*>::iterator it = skeletons.find(node_path);
-    if (it != skeletons.end())
-        return it->second;
-
-    return nullptr;
-}
-
-void RendererStorage::register_animation(const std::string& animation_path, Animation* animation, const std::string& node_path)
+void RendererStorage::register_animation(const std::string& animation_path, Animation* animation)
 {
     // register in map
-    AnimationData* data = new AnimationData();
-    data->animation = animation;
-    data->node_path = node_path;
-    animations[animation_path] = data;
+    animations[animation_path] = animation;
 }
 
-AnimationData* RendererStorage::get_animation(const std::string& animation_path)
+Animation* RendererStorage::get_animation(const std::string& animation_path)
 {
     // check if already loaded
-    std::map<std::string, AnimationData*>::iterator it = animations.find(animation_path);
+    std::map<std::string, Animation*>::iterator it = animations.find(animation_path);
     if (it != animations.end())
         return it->second;    
 

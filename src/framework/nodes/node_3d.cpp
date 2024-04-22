@@ -1,11 +1,24 @@
 #include "node_3d.h"
+
+#include "imgui.h"
+#include "framework/utils/ImGuizmo.h"
+#include "framework/camera/camera.h"
+
+#include "graphics/renderer.h"
+
 #include "spdlog/spdlog.h"
+
+Node3D::Node3D() : model(1.0f)
+{
+    properties["translation"] = &transform.position;
+    properties["rotation"] = &transform.rotation;
+    properties["scale"] = &transform.scale;
+}
 
 void Node3D::add_child(Node3D* child)
 {
     if (child->parent) {
-        spdlog::error("Child has already a parent, remove it first!");
-        return;
+        child->parent->remove_child(child);
     }
 
     // Checks if it's already a child
@@ -39,17 +52,58 @@ void Node3D::render()
 
 void Node3D::update(float delta_time)
 {
+    if (model_dirty) {
+
+        set_model(transformToMat4(transform));
+
+        model_dirty = false;
+    }
+
     Node::update(delta_time);
+}
+
+void Node3D::render_gui()
+{
+    if (ImGui::TreeNodeEx("Transform"))
+    {
+        glm::mat4x4 test_model = get_model();
+        Camera* camera = Renderer::instance->get_camera();
+
+        ImGuiIO& io = ImGui::GetIO();
+        ImGuizmo::SetRect(0, 0, io.DisplaySize.x, io.DisplaySize.y);
+
+        bool changed = ImGuizmo::Manipulate(glm::value_ptr(camera->get_view()), glm::value_ptr(camera->get_projection()),
+            ImGuizmo::OPERATION::ROTATE, ImGuizmo::MODE::WORLD, glm::value_ptr(test_model));
+
+        if (changed)
+        {
+            set_model(test_model);
+            set_transform(mat4ToTransform(test_model));
+        }
+
+        changed = false;
+
+        changed |= ImGui::DragFloat3("Translation", &transform.position[0], 0.1f);
+        changed |= ImGui::DragFloat4("Rotation", &transform.rotation[0], 0.1f);
+        changed |= ImGui::DragFloat3("Scale", &transform.scale[0], 0.1f);
+
+        if (changed)
+        {
+            set_model(transformToMat4(transform));
+        }
+
+        ImGui::TreePop();
+    }
 }
 
 void Node3D::translate(const glm::vec3& translation)
 {
-	model = glm::translate(model, translation);
+    model = glm::translate(model, translation);
 }
 
 void Node3D::rotate(float angle, const glm::vec3& axis)
 {
-	model = glm::rotate(model, angle, axis);
+    model = glm::rotate(model, angle, axis);
 }
 
 void Node3D::rotate(const glm::quat& q)
@@ -59,12 +113,24 @@ void Node3D::rotate(const glm::quat& q)
 
 void Node3D::scale(glm::vec3 scale)
 {
-	model = glm::scale(model, scale);
+    model = glm::scale(model, scale);
+}
+
+void Node3D::set_model_dirty(bool value)
+{
+    model_dirty = value;
+
+    for (Node* child : children) {
+        Node3D* node_3d = dynamic_cast<Node3D*>(child);
+        if (node_3d) {
+            node_3d->set_model_dirty(value);
+        }
+    }
 }
 
 void Node3D::set_translation(const glm::vec3& translation)
 {
-	model = glm::translate(glm::mat4x4(1.f), translation);
+    model = glm::translate(glm::mat4x4(1.f), translation);
 }
 
 const glm::vec3 Node3D::get_local_translation() const
@@ -105,3 +171,8 @@ Node3D* Node3D::get_parent() const
     return parent;
 }
 
+
+const Transform& Node3D::get_transform() const
+{
+    return transform;
+}

@@ -253,30 +253,30 @@ bool Gizmo3D::update(glm::vec3& new_position, const glm::vec3& controller_positi
 
 void Gizmo3D::render(int axis)
 {
-	if (!enabled) {
-		return;
-	}
+    if (!enabled) {
+        return;
+    }
 
     free_hand_point_mesh->set_translation(gizmo_position);
     free_hand_point_mesh->scale(glm::vec3(0.05f));
     free_hand_point_mesh->render();
 
-	if (type & POSITION_GIZMO) {
+    if (type & POSITION_GIZMO) {
 
         if (axis & GIZMO_AXIS_X)
         {
             arrow_mesh_x->set_translation(gizmo_position);
             arrow_mesh_x->scale(position_gizmo_scale);
-		    arrow_mesh_x->rotate(glm::radians(-90.f), glm::vec3(0.f, 0.f, 1.f));
-		    arrow_mesh_x->set_surface_material_override_color(0, Color(0.666f, 0.0f, 0.f, 1.f) + (position_axis_x_selected ? Color(0.5f, 0.5f, 0.5f, 0.f) : Color(0.f)));
-		    arrow_mesh_x->render();
+            arrow_mesh_x->rotate(glm::radians(-90.f), glm::vec3(0.f, 0.f, 1.f));
+            arrow_mesh_x->set_surface_material_override_color(0, Color(0.666f, 0.0f, 0.f, 1.f) + (position_axis_x_selected ? Color(0.5f, 0.5f, 0.5f, 0.f) : Color(0.f)));
+            arrow_mesh_x->render();
         }
 
         if (axis & GIZMO_AXIS_Y)
         {
-		    arrow_mesh_y->set_translation(gizmo_position);
-		    arrow_mesh_y->scale(position_gizmo_scale);
-		    arrow_mesh_y->set_surface_material_override_color(0, Color(0.f, 0.666f, 0.0f, 1.f) + (position_axis_y_selected ? Color(0.5f, 0.5f, 0.5f, 0.f) : Color(0.f)));
+            arrow_mesh_y->set_translation(gizmo_position);
+            arrow_mesh_y->scale(position_gizmo_scale);
+            arrow_mesh_y->set_surface_material_override_color(0, Color(0.f, 0.666f, 0.0f, 1.f) + (position_axis_y_selected ? Color(0.5f, 0.5f, 0.5f, 0.f) : Color(0.f)));
             arrow_mesh_y->render();
         }
 
@@ -285,11 +285,11 @@ void Gizmo3D::render(int axis)
             arrow_mesh_z->set_translation(gizmo_position);
             arrow_mesh_z->scale(position_gizmo_scale);
             arrow_mesh_z->rotate(glm::radians(90.f), glm::vec3(0.f, 0.f, 1.f));
-		    arrow_mesh_z->rotate(glm::radians(90.f), glm::vec3(1.f, 0.f, 0.f));
-		    arrow_mesh_z->set_surface_material_override_color(0, Color(0.0f, 0.f, 0.666f, 1.f) + (position_axis_z_selected ? Color(0.5f, 0.5f, 0.5f, 0.f) : Color(0.f)));
-		    arrow_mesh_z->render();
+            arrow_mesh_z->rotate(glm::radians(90.f), glm::vec3(1.f, 0.f, 0.f));
+            arrow_mesh_z->set_surface_material_override_color(0, Color(0.0f, 0.f, 0.666f, 1.f) + (position_axis_z_selected ? Color(0.5f, 0.5f, 0.5f, 0.f) : Color(0.f)));
+            arrow_mesh_z->render();
         }
-	}
+    }
 
     if (type & ROTATION_GIZMO) {
 
