@@ -283,3 +283,7 @@ void MeshInstance::set_skeleton(Skeleton* s)
 Skeleton* MeshInstance::get_skeleton() {
     return skeleton;
 }
+
+void MeshInstance::set_vertex_groups(const std::vector<int>& joints) {
+    vertex_groups = joints;
+}

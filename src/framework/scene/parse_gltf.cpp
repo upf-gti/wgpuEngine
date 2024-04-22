@@ -110,8 +110,14 @@ void read_transform(const tinygltf::Node& node, Transform& transform)
     }
 }
 
-void read_mesh(const tinygltf::Model& model, const tinygltf::Mesh& mesh, Node3D* entity, std::map<uint32_t, Texture*>& texture_cache)
+void read_mesh(const tinygltf::Model& model, const tinygltf::Node& node, Node3D* entity, std::map<uint32_t, Texture*>& texture_cache)
 {
+    const tinygltf::Mesh& mesh = model.meshes[node.mesh];
+    uint32_t joints_count = 0;
+    for (int i = 0; i < node.skin; i++) {
+        joints_count += model.skins[i].joints.size();
+    }
+
     MeshInstance3D* entity_mesh = dynamic_cast<MeshInstance3D*>(entity);
 
     if (!entity_mesh) {
@@ -372,10 +378,10 @@ void read_mesh(const tinygltf::Model& model, const tinygltf::Mesh& mesh, Node3D*
                     }
 
                     //Make sure that even the invalid nodes have a value of 0 (any negative joint indices will break the skinning implementation)
-                    joints.x = std::max(0, joints.x);
-                    joints.y = std::max(0, joints.y);
-                    joints.z = std::max(0, joints.z);
-                    joints.w = std::max(0, joints.w);
+                    joints.x = std::max(0, joints.x) + joints_count;
+                    joints.y = std::max(0, joints.y) + joints_count;
+                    joints.z = std::max(0, joints.z) + joints_count;
+                    joints.w = std::max(0, joints.w) + joints_count;
                 }
 
                 // weights (skinning)
@@ -684,7 +690,7 @@ void parse_model_nodes(tinygltf::Model& model, int parent_id, uint32_t node_id, 
     tinygltf::Node& node = model.nodes[node_id];
 
     if (node.mesh >= 0 && node.mesh < model.meshes.size()) {
-        read_mesh(model, model.meshes[node.mesh], entity, texture_cache);
+        read_mesh(model, node, entity, texture_cache);
     }
 
     // Set model matrix
@@ -759,7 +765,6 @@ void parse_model_skins(Node3D* scene_root, tinygltf::Model& model, std::map<std:
             assert(loaded_nodes.contains(node.name));
 
             Node3D* skinned_mesh_node = loaded_nodes[node.name];
-
             SkeletonInstance3D* e = nullptr;
 
             if (joint_root_parent_id >= 0) {
@@ -885,10 +890,10 @@ void parse_model_skins(Node3D* scene_root, tinygltf::Model& model, std::map<std:
                 }           
             rest_pose.set_parent(id, parent);
 
-            glm::highp_f32mat4 m;
+            glm::mat4x4 m;
 
             // Get the 16 values of the inverse bind matrix and put them into a mat4
-            memcpy(&m, ptr + id * 16, 16 * sizeof(float));
+            memcpy(&m, ptr + i * 16, 16 * sizeof(float));
             inverse_bind_matrices[id] = m;
 
             // Set the transform into the array of transforms of the joints in the bind pose (world bind pose)

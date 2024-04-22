@@ -55,5 +55,4 @@ public:
 
     void set_skeleton(Skeleton* s);
     Skeleton* get_skeleton();
-
 };

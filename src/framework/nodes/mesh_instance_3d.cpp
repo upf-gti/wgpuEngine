@@ -45,7 +45,7 @@ std::vector<glm::mat4x4> MeshInstance3D::get_animated_data()
 std::vector<glm::mat4x4> MeshInstance3D::get_invbind_data()
 {
     assert(skeleton && is_skinned);
-    return  skeleton->get_inv_bind_pose();
+    return skeleton->get_inv_bind_pose();
 }
 
 void MeshInstance3D::set_uniform_data(Uniform* animated_u, Uniform* invbind_u)
