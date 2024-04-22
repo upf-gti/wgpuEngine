@@ -710,11 +710,7 @@ void parse_model_nodes(tinygltf::Model& model, int parent_id, uint32_t node_id, 
         Transform transform;
         read_transform(node, transform);
 
-        glm::mat4x4 model = glm::toMat4(transform.rotation);
-        model = glm::scale(model, transform.scale);
-        model = glm::translate(model, transform.position);
-
-        entity->set_model(model);
+        entity->set_model(transformToMat4(transform));
         entity->set_transform(transform);
     }
 
@@ -786,12 +782,9 @@ void parse_model_skins(Node3D* scene_root, tinygltf::Model& model, std::map<std:
             else {
                 
             }
-
             
-            //e->skin = node.skin;
             e = skeleton_instances[skeleton_instances.size() - 1];
             e->add_child(skinned_mesh_node);
-            
         }
     }
 
@@ -811,8 +804,6 @@ void parse_model_skins(Node3D* scene_root, tinygltf::Model& model, std::map<std:
         if (skin.inverseBindMatrices < 0) {
             continue;
         }
-
-
 
         size_t num_joints = skin.joints.size();
 
@@ -930,11 +921,8 @@ void parse_model_skins(Node3D* scene_root, tinygltf::Model& model, std::map<std:
                     parent = mat4ToTransform(model_matrix);
                 }
                 else {
-
                     Transform transform;
-
                     read_transform(node, transform);
-
                     parent = transform;
                 }
             }
@@ -948,10 +936,6 @@ void parse_model_skins(Node3D* scene_root, tinygltf::Model& model, std::map<std:
     ///skeleton->set_name(skin.name);
 
     for (auto instance : skeleton_instances) {
-
-        /*  if (instance->skin != s) {
-            continue;
-        }*/
 
         instance->set_name(skeleton->get_name() + "_skeleton");
         instance->set_skeleton(skeleton);
