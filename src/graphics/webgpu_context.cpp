@@ -827,7 +827,7 @@ WGPURenderPipeline WebGPUContext::create_render_pipeline(WGPUShaderModule render
         .cullMode = cull_mode
     },
 
-    pipeline_descr.depthStencil = depth_read || depth_write ? &depth_state : nullptr;
+    pipeline_descr.depthStencil = (depth_read || depth_write) ? &depth_state : nullptr;
     pipeline_descr.multisample = {
             .count = sample_count,
             .mask = ~0u,

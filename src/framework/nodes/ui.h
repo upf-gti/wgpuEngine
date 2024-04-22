@@ -97,6 +97,7 @@ namespace ui {
         void update(float delta_time) override;
         void render() override;
         void remove_flag(uint8_t flag) override;
+        void set_priority(uint8_t priority) override;
     };
 
     enum eButtonParams : uint8_t {
@@ -139,6 +140,7 @@ namespace ui {
         void render() override;
         void on_pressed() override;
         bool on_input(sInputData data) override;
+        void set_priority(uint8_t priority) override;
     };
 
     class TextureButton2D : public Button2D {

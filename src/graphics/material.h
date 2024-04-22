@@ -62,7 +62,7 @@ struct Material
     eCullType cull_type = CULL_NONE;
 
     uint8_t flags = 0;
-    uint8_t priority = 0;
+    uint8_t priority = 10;
 
     std::string name = "";
 
