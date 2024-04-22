@@ -111,9 +111,7 @@ glm::quat lookRotation(const glm::vec3& direction, const glm::vec3& up)
 Transform mat4ToTransform(const glm::mat4x4& m)
 {
     Transform out;
-    glm::vec3 skew;
-    glm::vec4 perspective;
-    // glm::decompose(m, out.scale, out.rotation, out.position, skew, perspective);
+
     out.position = glm::vec3(m[3]);
     glm::vec3 up = normalize(glm::vec3(m[1]));
     glm::vec3 forward = normalize(glm::vec3(m[2]));
@@ -121,12 +119,6 @@ Transform mat4ToTransform(const glm::mat4x4& m)
     up = cross(forward, right);
 
     out.rotation = lookRotation(forward, up);//glm::toQuat(m);
-    /*glm::mat4x4 rotScaleMat(
-        m[0], m[1], m[2], 0.f,
-        m[4], m[5], m[6], 0.f,
-        m[8], m[9], m[10], 0.f,
-        0.f, 0.f, 0.f, 1.f
-    );*/
     glm::mat4x4 rotScaleMat = m;
     rotScaleMat[0][3] = 0.f;
     rotScaleMat[1][3] = 0.f;
@@ -143,7 +135,6 @@ Transform mat4ToTransform(const glm::mat4x4& m)
             f.x, f.y, f.z, 0,
             0, 0, 0, 1
         );
-    //glm::mat4x4 invRotMat = toMat4(inverse(out.rotation));
     glm::mat4x4 scaleSkewMat = rotScaleMat * invRotMat;
     out.scale = glm::vec3(scaleSkewMat[0][0], scaleSkewMat[1][1], scaleSkewMat[2][2]);
     return out;
