@@ -422,6 +422,13 @@ namespace ui {
         Node2D::remove_flag(flag);
     }
 
+    void Text2D::set_priority(uint8_t priority)
+    {
+        text_entity->set_surface_material_priority(0, priority);
+
+        Node2D::set_priority(priority);
+    }
+
     /*
     *	Buttons
     */
@@ -499,8 +506,9 @@ namespace ui {
         // Text label
         {
             float magic = 3.5f;
-            text_2d = new Text2D(signal, { size.x * 0.5f - signal.length() * magic, size.y }, 16.f, colors::PURPLE);
+            text_2d = new Text2D(signal, { size.x * 0.5f - signal.length() * magic, size.y }, 18.f, colors::BLACK);
             text_2d->set_visibility(false);
+            text_2d->set_priority(material.priority - 1);
             add_child(text_2d);
         }
     }
@@ -614,6 +622,15 @@ namespace ui {
         return true;
     }
 
+    void Button2D::set_priority(uint8_t priority)
+    {
+        Panel2D::set_priority(priority);
+
+        if (text_2d) {
+            text_2d->set_priority(priority - 1);
+        }
+    }
+
     TextureButton2D::TextureButton2D(const std::string& sg, const std::string& texture_path, uint8_t parameter_flags)
         : TextureButton2D(sg, texture_path, parameter_flags, { 0.0f, 0.0f }) { }
 
@@ -677,7 +694,7 @@ namespace ui {
 
             Material material;
             material.diffuse_texture = RendererStorage::get_texture("data/textures/submenu_mark.png");
-            material.flags |= -MATERIAL_2D;
+            material.flags |= MATERIAL_2D;
             material.color = colors::WHITE;
             material.shader = RendererStorage::get_shader("data/shaders/ui/ui_texture.wgsl", material);
 
@@ -687,8 +704,9 @@ namespace ui {
         // Text label
         {
             float magic = 3.65f;
-            text_2d = new Text2D(signal, { size.x * 0.5f - signal.length() * magic, size.y }, 16.f, colors::PURPLE);
+            text_2d = new Text2D(signal, { size.x * 0.5f - signal.length() * magic, size.y }, 18.f, colors::BLACK);
             text_2d->set_visibility(false);
+            text_2d->set_priority(material.priority - 1);
             add_child(text_2d);
         }
     }
@@ -901,7 +919,8 @@ namespace ui {
         // Text label
         {
             float magic = 3.5f;
-            text_2d = new Text2D(signal, { size.x * 0.5f - signal.length() * magic, 0.0f }, 16.f, colors::PURPLE);
+            text_2d = new Text2D(signal, { size.x * 0.5f - signal.length() * magic, 0.0f }, 18.f, colors::PURPLE);
+            text_2d->set_priority(material.priority - 1);
             add_child(text_2d);
         }
     }

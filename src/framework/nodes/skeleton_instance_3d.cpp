@@ -100,7 +100,7 @@ void SkeletonInstance3D::init_helper()
     Material skeleton_material;
     skeleton_material.color = { 1.0f, 0.0f, 0.0f, 1.0f };
     skeleton_material.depth_read = false;
-    skeleton_material.transparency_type = eTransparencyType::ALPHA_BLEND;
+    skeleton_material.priority = 0;
     skeleton_material.topology_type = eTopologyType::TOPOLOGY_LINE_LIST;
     skeleton_material.shader = RendererStorage::get_shader("data/shaders/mesh_color.wgsl", skeleton_material);
 
