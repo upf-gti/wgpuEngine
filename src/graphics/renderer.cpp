@@ -447,7 +447,11 @@ void Renderer::render_render_list(int list_index, WGPURenderPassEncoder render_p
         wgpuRenderPassEncoderSetBindGroup(render_pass, bind_group_index++, render_bind_group_camera, 0, nullptr);
 
         wgpuRenderPassEncoderSetBindGroup(render_pass, bind_group_index++, renderer_storage.get_material_bind_group(material), 0, nullptr);
-        
+
+//#ifndef NDEBUG
+//        wgpuRenderPassEncoderPushDebugGroup(render_pass, render_data.surface->get_name().c_str());
+//#endif
+
         if (material.flags & MATERIAL_UI) {
             WGPUBindGroup ui_bind_group = renderer_storage.get_ui_widget_bind_group(render_data.mesh_instance_ref);
             if (ui_bind_group) {
@@ -465,6 +469,10 @@ void Renderer::render_render_list(int list_index, WGPURenderPassEncoder render_p
         // Submit drawcall
         wgpuRenderPassEncoderDraw(render_pass, render_data.surface->get_vertex_count(), render_data.repeat, 0, i);
 
+//#ifndef NDEBUG
+//        wgpuRenderPassEncoderPopDebugGroup(render_pass);
+//#endif
+
         prev_pipeline = pipeline;
 
         i += render_data.repeat;
@@ -473,19 +481,43 @@ void Renderer::render_render_list(int list_index, WGPURenderPassEncoder render_p
 
 void Renderer::render_opaque(WGPURenderPassEncoder render_pass, const WGPUBindGroup& render_bind_group_camera)
 {
+#ifndef NDEBUG
+    wgpuRenderPassEncoderPushDebugGroup(render_pass, "Opaque");
+#endif
+
     render_render_list(RENDER_LIST_OPAQUE, render_pass, render_bind_group_camera);
+
+#ifndef NDEBUG
+    wgpuRenderPassEncoderPopDebugGroup(render_pass);
+#endif
 }
 
 void Renderer::render_transparent(WGPURenderPassEncoder render_pass, const WGPUBindGroup& render_bind_group_camera)
 {
+#ifndef NDEBUG
+    wgpuRenderPassEncoderPushDebugGroup(render_pass, "Transparent");
+#endif
+
     render_render_list(RENDER_LIST_TRANSPARENT, render_pass, render_bind_group_camera);
+
+#ifndef NDEBUG
+    wgpuRenderPassEncoderPopDebugGroup(render_pass);
+#endif
 }
 
 void Renderer::render_2D(WGPURenderPassEncoder render_pass, const WGPUBindGroup& render_bind_group_camera)
 {
+#ifndef NDEBUG
+    wgpuRenderPassEncoderPushDebugGroup(render_pass, "2D");
+#endif
+
     render_render_list(RENDER_LIST_2D, render_pass, render_bind_group_camera);
 
     render_render_list(RENDER_LIST_2D_TRANSPARENT, render_pass, render_bind_group_camera);
+
+#ifndef NDEBUG
+    wgpuRenderPassEncoderPopDebugGroup(render_pass);
+#endif
 }
 
 void Renderer::add_renderable(MeshInstance* mesh_instance, glm::mat4x4 global_matrix)
