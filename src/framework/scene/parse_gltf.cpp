@@ -19,6 +19,7 @@
 #include "framework/nodes/directional_light_3d.h"
 #include "framework/nodes/spot_light_3d.h"
 #include "framework/nodes/omni_light_3d.h"
+#include "framework/nodes/look_at_ik_3d.h"
 
 #include "graphics/texture.h"
 #include "graphics/shader.h"
@@ -937,7 +938,7 @@ void parse_model_skins(Node3D* scene_root, tinygltf::Model& model, std::map<std:
 
     for (auto instance : skeleton_instances) {
 
-        instance->set_name(skeleton->get_name() + "_skeleton");
+        instance->set_name("Skeleton3D");
         instance->set_skeleton(skeleton);
         instance->set_joint_nodes(joint_nodes);
 
@@ -946,6 +947,9 @@ void parse_model_skins(Node3D* scene_root, tinygltf::Model& model, std::map<std:
             assert(child_instance);
             child_instance->set_skeleton(skeleton);
         }
+
+        LookAtIK3D* ik_node = new LookAtIK3D(instance);
+        instance->add_child((Node3D*)ik_node);
     }
 }
 

@@ -26,3 +26,6 @@ glm::mat4x4 transformToMat4(const Transform& t);
 Transform mat4ToTransform(const glm::mat4x4& m);
 glm::vec3 transformPoint(const Transform& a, const glm::vec3& b);
 glm::vec3 transformVector(const Transform& a, const glm::vec3& b);
+glm::quat fromTo(const glm::vec3& from, const glm::vec3& to);
+float angle(const glm::vec3& l, const glm::vec3& r);
+//glm::quat angleAxis(float angle, const glm::vec3& axis);

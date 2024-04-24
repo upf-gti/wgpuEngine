@@ -140,16 +140,7 @@ void SkeletonInstance3D::render_gui() {
             Node3D* node = (Node3D*)(joint_nodes[i]);
             joint_nodes[parent]->add_child(node);
         }
-        /*for (const Node* child : joint_nodes) {
-            if (ImGui::TreeNode(child->get_name().c_str())) {
-                Node3D* c = (Node3D*)child;
-                Transform t = c->get_transform();
-                ImGui::DragFloat3("Translation", &t.position[0], 0.f);
-                ImGui::DragFloat4("Rotation", &t.rotation[0], 0.f);
-                ImGui::DragFloat3("Scale", &t.scale[0], 0.f);
-                ImGui::TreePop();
-            }
-        }*/
+
         for (Node* child : joint_nodes) {
             if(!((Node3D*)(child))->get_parent())
                 recursive_tree_gui(child);

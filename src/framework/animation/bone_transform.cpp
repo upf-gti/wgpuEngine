@@ -155,3 +155,16 @@ glm::vec3 transformVector(const Transform& t, const glm::vec3& v)
     out = t.rotation * (t.scale * v);
     return out;
 }
+
+
+// In radians
+float angle(const glm::vec3& l, const glm::vec3& r) {
+    float sqMagL = l.x * l.x + l.y * l.y + l.z * l.z;
+    float sqMagR = r.x * r.x + r.y * r.y + r.z * r.z;
+    if (sqMagL < EPSILON || sqMagR < EPSILON) {
+        return 0.0f;
+    }
+    float dot = l.x * r.x + l.y * r.y + l.z * r.z;
+    float len = sqrtf(sqMagL) * sqrtf(sqMagR);
+    return acosf(dot / len); //rad
+}
