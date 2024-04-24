@@ -1301,6 +1301,24 @@ bool parse_gltf(const char* gltf_path, std::vector<Node3D*>& entities)
         parse_model_animations(model, skeleton_instances, player);
     }
 
+    // Clean unused nodes
+
+    for (auto instance : skeleton_instances) {
+        auto& joint_names = instance->get_skeleton()->get_joint_names();
+
+        for (auto& name : joint_names) {
+
+            if (!loaded_nodes.contains(name)) {
+                continue;
+            }
+
+            delete loaded_nodes[name];
+            loaded_nodes[name] = nullptr;
+        }
+    }
+
+    name_repeats.clear();
+    loaded_nodes.clear();
     texture_cache.clear();
     skeleton_instances.clear();
     hierarchy.clear();
