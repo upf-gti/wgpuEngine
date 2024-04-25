@@ -1,5 +1,7 @@
 #include "surface.h"
 
+#include "framework/utils/math_utils.h"
+
 #include "spdlog/spdlog.h"
 
 WebGPUContext* Surface::webgpu_context = nullptr;

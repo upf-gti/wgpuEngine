@@ -1,6 +1,10 @@
 #include "input.h"
 #include "graphics/renderer.h"
 
+#ifdef XR_SUPPORT
+#include "xr/openxr_context.h"
+#endif
+
 glm::vec2 Input::mouse_position; //last mouse position
 glm::vec2 Input::mouse_delta; //mouse movement in the last frame
 float Input::mouse_wheel_delta = 0.0f;

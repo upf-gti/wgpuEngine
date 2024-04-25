@@ -1,6 +1,6 @@
 #include "parse_gltf.h"
 
-#include "framework/math.h"
+#include "glm/glm.hpp"
 
 #include "json.hpp"
 #include "stb_image.h"
@@ -11,7 +11,6 @@
 #define TINYGLTF_NO_STB_IMAGE_WRITE
 #include "tiny_gltf.h"
 
-#include "framework/utils/utils.h"
 #include "framework/nodes/camera.h"
 #include "framework/nodes/mesh_instance_3d.h"
 #include "framework/nodes/skeleton_instance_3d.h"
@@ -24,7 +23,6 @@
 #include "graphics/texture.h"
 #include "graphics/shader.h"
 #include "graphics/renderer_storage.h"
-#include "graphics/renderer.h"
 
 #include "spdlog/spdlog.h"
 
@@ -116,7 +114,7 @@ void read_mesh(const tinygltf::Model& model, const tinygltf::Node& node, Node3D*
     const tinygltf::Mesh& mesh = model.meshes[node.mesh];
     uint32_t joints_count = 0;
     for (int i = 0; i < node.skin; i++) {
-        joints_count += model.skins[i].joints.size();
+        joints_count += static_cast<uint32_t>(model.skins[i].joints.size());
     }
 
     MeshInstance3D* entity_mesh = dynamic_cast<MeshInstance3D*>(entity);
@@ -1085,15 +1083,14 @@ void track_from_channel(Track& result, const tinygltf::AnimationChannel& channel
     bool is_sampler_cubic = interpolation == Interpolation::CUBIC;
 
     // Parse the time and value arrays into frame structures
-    for (size_t i = 0; i < num_frames; ++i) {
+    for (size_t baseIndex = 0; baseIndex < num_frames; ++baseIndex) {
 
-        Keyframe& frame = result[i];
+        Keyframe& frame = result[baseIndex];
 
         // offset used to deal with cubic tracks since the input and output tangents are as large as the number of components
-        int offset = 0;
-        int baseIndex = i;
+        size_t offset = 0;
 
-        frame.time = std::get<float>(time[i]);
+        frame.time = std::get<float>(time[baseIndex]);
 
         // read input tangent (only if the sample is cubic)
         frame.in = is_sampler_cubic ? values[baseIndex + offset++] : 0.0f;
@@ -1235,14 +1232,14 @@ bool parse_gltf(const char* gltf_path, std::vector<Node3D*>& entities)
     if (path.extension() == ".gltf")
     {
         if (!loader.LoadASCIIFromFile(&model, &err, &warn, gltf_path)) {
-            spdlog::error("Could not load: {}", gltf_path);
+            spdlog::error("Could not load \"{}\": {}", gltf_path, err);
             return false;
         }
     }
     else
     {
         if (!loader.LoadBinaryFromFile(&model, &err, &warn, gltf_path)) {
-            spdlog::error("Could not load binary: {}", gltf_path);
+            spdlog::error("Could not load binary \"{}\": {}", gltf_path, err);
             return false;
         }
     }
@@ -1307,6 +1304,24 @@ bool parse_gltf(const char* gltf_path, std::vector<Node3D*>& entities)
         parse_model_animations(model, skeleton_instances, player);
     }
 
+    // Clean unused nodes
+
+    for (auto instance : skeleton_instances) {
+        auto& joint_names = instance->get_skeleton()->get_joint_names();
+
+        for (auto& name : joint_names) {
+
+            if (!loaded_nodes.contains(name)) {
+                continue;
+            }
+
+            delete loaded_nodes[name];
+            loaded_nodes[name] = nullptr;
+        }
+    }
+
+    name_repeats.clear();
+    loaded_nodes.clear();
     texture_cache.clear();
     skeleton_instances.clear();
     hierarchy.clear();

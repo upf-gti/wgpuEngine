@@ -3,10 +3,8 @@
 #include "framework/input.h"
 #include "framework/utils/utils.h"
 
-#include "spdlog/spdlog.h"
-
-std::map<std::string, std::vector<SignalType>> Node::mapping_signals;
-std::map<uint8_t, std::vector<FuncEmpty>> Node::controller_signals;
+std::unordered_map<std::string, std::vector<SignalType>> Node::mapping_signals;
+std::unordered_map<uint8_t, std::vector<FuncEmpty>> Node::controller_signals;
 uint32_t Node::last_node_id = 0;
 
 Node::Node()

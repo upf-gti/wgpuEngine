@@ -1,9 +1,9 @@
 #include "webgpu_context.h"
-#include "framework/utils/utils.h"
 
 #include "shader.h"
 #include "pipeline.h"
 #include "texture.h"
+#include "renderer_storage.h"
 
 #include "renderer.h"
 
@@ -14,8 +14,6 @@
 #endif
 
 #ifdef __EMSCRIPTEN__
-#include <emscripten/emscripten.h>
-#include <emscripten/html5_webgpu.h>
 #include <GLFW/glfw3.h>
 #else
 #include "glfw3webgpu.h"
@@ -910,8 +908,6 @@ void WebGPUContext::generate_brdf_lut_texture()
 
 void WebGPUContext::generate_prefiltered_env_texture(Texture* prefiltered_env_texture, Texture* hdr_texture)
 {
-    RenderdocCapture::start_capture_frame();
-
     WGPUQueue prefilter_queue = wgpuDeviceGetQueue(device);
 
     // temporal texture to store panorama to cubemap result and to generate mipmaps
@@ -1059,8 +1055,6 @@ void WebGPUContext::generate_prefiltered_env_texture(Texture* prefiltered_env_te
     wgpuCommandEncoderRelease(command_encoder);
 
     wgpuQueueRelease(prefilter_queue);
-
-    RenderdocCapture::end_capture_frame();
 }
 
 void WebGPUContext::update_buffer(WGPUBuffer buffer, uint64_t buffer_offset, void const* data, uint64_t size)

@@ -4,7 +4,6 @@
 #include <iostream>
 
 #include "track.h"
-#include "pose.h"
 
 enum AnimationType {
     ANIM_TYPE_UNDEFINED,
@@ -52,7 +51,7 @@ public:
     void recalculate_duration();
 
     // Adds a new track
-    Track* add_track(int id);
+    Track* add_track(int id = -1);
 
     uint32_t get_track_count();
     Track* get_track_by_id(int id);

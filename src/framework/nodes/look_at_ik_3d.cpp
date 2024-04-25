@@ -4,7 +4,10 @@
 #include "framework/utils/ImGuizmo.h"
 #include "framework/camera/camera.h"
 #include "framework/animation/bone_transform.h"
+
 #include "graphics/renderer.h"
+
+#include "glm/gtc/type_ptr.hpp"
 
 LookAtIK3D::LookAtIK3D(SkeletonInstance3D* in_skeleton_instance)
 {

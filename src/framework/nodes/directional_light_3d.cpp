@@ -1,5 +1,4 @@
 #include "directional_light_3d.h"
-#include "framework/utils/utils.h"
 
 DirectionalLight3D::DirectionalLight3D() : Light3D()
 {

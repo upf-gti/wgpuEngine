@@ -1,4 +1,5 @@
 #include "fabrik_solver.h"
+#include "glm/gtx/norm.hpp"
 
 void FABRIKSolver::resize(unsigned int new_size) {
     ik_chain.resize(new_size);

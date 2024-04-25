@@ -1,6 +1,7 @@
 #include "environment_3d.h"
 #include "framework/scene/parse_obj.h"
 #include "graphics/renderer.h"
+#include "graphics/renderer_storage.h"
 
 Environment3D::Environment3D() : MeshInstance3D()
 {
@@ -15,7 +16,7 @@ Environment3D::Environment3D() : MeshInstance3D()
     set_surface_material_diffuse(0, Renderer::instance->get_irradiance_texture());
     set_surface_material_cull_type(0, CULL_BACK);
     set_surface_material_depth_write(0, false);
-    set_surface_material_priority(0, 2);
+    set_surface_material_priority(0, 20);
 
     set_surface_material_shader(0, RendererStorage::get_shader("data/shaders/mesh_texture_cube.wgsl", surfaces[0]->get_material()));
 

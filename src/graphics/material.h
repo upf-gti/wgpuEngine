@@ -1,10 +1,9 @@
 #pragma once
 
-#include "framework/math.h"
+#include <glm/vec3.hpp>
+#include <glm/vec4.hpp>
 
-#include "glm/gtx/hash.hpp"
-
-#include "framework/utils/utils.h"
+#include <string>
 
 class Shader;
 class Texture;
@@ -59,7 +58,7 @@ struct Material
 
     eTransparencyType transparency_type = ALPHA_OPAQUE;
     eTopologyType topology_type = TOPOLOGY_TRIANGLE_LIST;
-    eCullType cull_type = CULL_NONE;
+    eCullType cull_type = CULL_BACK;
 
     uint8_t flags = 0;
     uint8_t priority = 10;
@@ -87,39 +86,5 @@ struct Material
             && depth_read == other.depth_read
             && depth_write == other.depth_write
             && use_skinning == other.use_skinning);
-    }
-};
-
-template <>
-struct std::hash<Material>
-{
-    std::size_t operator()(const Material& k) const
-    {
-        using std::size_t;
-        using std::hash;
-        using std::string;
-
-        std::size_t h1 = hash<void*>()(k.shader);
-        std::size_t h2 = hash<glm::vec4>()(k.color);
-        std::size_t h3 = hash<void*>()(k.diffuse_texture);
-        std::size_t h4 = hash<void*>()(k.normal_texture);
-        std::size_t h5 = hash<void*>()(k.metallic_roughness_texture);
-        std::size_t h6 = hash<void*>()(k.emissive_texture);
-        std::size_t h7 = hash<void*>()(k.oclussion_texture);
-        std::size_t h8 = hash<float>()(k.roughness);
-        std::size_t h9 = hash<float>()(k.metalness);
-        std::size_t h10 = hash<glm::vec3>()(k.emissive);
-        std::size_t h11 = hash<float>()(k.alpha_mask);
-        std::size_t h12 = hash<uint8_t>()(k.priority);
-        std::size_t h13 = hash<uint8_t>()(k.transparency_type);
-        std::size_t h14 = hash<uint8_t>()(k.topology_type);
-        std::size_t h15 = hash<uint8_t>()(k.cull_type);
-        std::size_t h16 = hash<uint8_t>()(k.depth_read);
-        std::size_t h17 = hash<uint8_t>()(k.depth_write);
-        std::size_t h18 = hash<uint8_t>()(k.use_skinning);
-
-        std::size_t seed = 0;
-        hash_combine(seed, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16, h17, h18);
-        return seed;
     }
 };

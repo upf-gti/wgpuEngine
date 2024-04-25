@@ -1,24 +1,19 @@
 #include "shader.h"
 
-#include "framework/utils/utils.h"
-
-#include <sstream>
-#include <filesystem>
-
 #include "pipeline.h"
 
 #define TINT_BUILD_WGSL_READER 1
-#include "tint/tint.h"
+#include "src/tint/lang/wgsl/reader/reader.h"
+#include "src/tint/lang/wgsl/inspector/inspector.h"
 
 #include "renderer_storage.h"
 #include "renderer.h"
 
+#include "framework/utils/utils.h"
+
 #include "spdlog/spdlog.h"
 
-#include <string>
-
-WebGPUContext* Shader::webgpu_context = nullptr;
-std::map<std::string, custom_define_type> Shader::custom_defines;
+std::unordered_map<std::string, custom_define_type> Shader::custom_defines;
 
 Shader::~Shader()
 {
@@ -80,7 +75,7 @@ bool Shader::parse_preprocessor(std::string &shader_content, const std::string &
     std::istringstream string_stream(shader_content);
     std::string line;
 
-    std::string _directory = std::filesystem::path(shader_path).parent_path().string();
+    std::string _directory = dirname_of_file(shader_path);
 
     std::streampos line_pos;
     while (std::getline(string_stream, line)) {
@@ -91,7 +86,7 @@ bool Shader::parse_preprocessor(std::string &shader_content, const std::string &
         if (tag == "#include")
         {
             const std::string& include_name = tokens[1];
-            const std::string& include_path = std::filesystem::relative(std::filesystem::path(_directory + "/" + include_name)).string();
+            const std::string& include_path = _directory + "/" + include_name;
             std::string new_content;
 
             if (!read_file(include_path, new_content)) {
@@ -227,6 +222,8 @@ bool Shader::load(const std::string& shader_source, const std::string& specializ
         spdlog::trace("\t{}", specialization);
     }
 
+    WebGPUContext* webgpu_context = Renderer::instance->get_webgpu_context();
+
     shader_module = webgpu_context->create_shader_module(shader_source_processed.c_str());
 
     struct UserData {
@@ -273,6 +270,8 @@ void Shader::get_reflection_data(const std::string& shader_content)
 	using ResourceBinding = tint::inspector::ResourceBinding;
 
     uint8_t max_bind_group_index = 0;
+
+    WebGPUContext* webgpu_context = Renderer::instance->get_webgpu_context();
 
 	auto get_vertex_format_offset = [](WGPUVertexFormat format, uint16_t offset) -> WGPUVertexFormat {
 		return static_cast<WGPUVertexFormat>(static_cast<int>(format + offset));

@@ -1,5 +1,5 @@
 #include "ui.h"
-#include "framework/utils/utils.h"
+
 #include "framework/utils/intersections.h"
 #include "framework/input.h"
 #include "framework/nodes/text.h"
@@ -8,6 +8,7 @@
 #include "graphics/webgpu_context.h"
 #include "spdlog/spdlog.h"
 #include "glm/gtx/easing.hpp"
+#include "glm/gtx/compatibility.hpp"
 
 namespace ui {
 
@@ -245,10 +246,6 @@ namespace ui {
         {
             Node2D* node_2d = static_cast<Node2D*>(get_children()[i]);
             glm::vec2 node_size = node_2d->get_size();
-
-            if (node_2d->get_class_type() == Node2DClassType::COLOR_PICKER) {
-                node_size.x += static_cast<Node2D*>(node_2d->get_children()[0])->get_size().x + padding.x * 0.5f;
-            }
 
             node_2d->set_translation(padding + glm::vec2(size.x + item_margin.x * static_cast<float>(i), (size.y - node_size.y) * 0.50f));
 
@@ -987,10 +984,10 @@ namespace ui {
     *	ColorPicker
     */
 
-    ColorPicker2D::ColorPicker2D(const std::string& sg, const Color& c, bool skip_intensity)
-        : ColorPicker2D(sg, { 0.0f, 0.0f }, glm::vec2(BUTTON_SIZE), c, skip_intensity) {}
+    ColorPicker2D::ColorPicker2D(const std::string& sg, const Color& c)
+        : ColorPicker2D(sg, { 0.0f, 0.0f }, glm::vec2(PICKER_SIZE), c) {}
 
-    ColorPicker2D::ColorPicker2D(const std::string& sg, const glm::vec2& pos, const glm::vec2& size, const Color& c, bool skip_intensity)
+    ColorPicker2D::ColorPicker2D(const std::string& sg, const glm::vec2& pos, const glm::vec2& size, const Color& c)
         : Panel2D(sg, pos, size, c), signal(sg)
     {
         class_type = Node2DClassType::COLOR_PICKER;
@@ -1002,27 +999,12 @@ namespace ui {
         material.priority = class_type;
         material.shader = RendererStorage::get_shader("data/shaders/ui/ui_color_picker.wgsl", material);
 
+        color = { 0.0f, 1.0f, 1.0f, 1.0f };
+
         quad_mesh.set_surface_material_override(quad_mesh.get_surface(0), material);
 
         auto webgpu_context = Renderer::instance->get_webgpu_context();
         RendererStorage::register_ui_widget(webgpu_context, material.shader, &quad_mesh, ui_data, 3);
-
-        if (!skip_intensity)
-        {
-            std::string slider_name = signal + "_intensity";
-            ui::Slider2D* intensity_slider = new ui::Slider2D(slider_name, 1.0f, { size.x + GROUP_MARGIN * 0.5f, 0.f }, size, ui::SliderMode::VERTICAL);
-
-            add_child(intensity_slider);
-
-            Node::bind(slider_name, [&, picker_sg = sg](const std::string& _sg, float value) {
-                color.a = value;
-                glm::vec3 new_color = glm::pow(glm::vec3(color) * value, glm::vec3(2.2f));
-                Node::emit_signal(picker_sg, Color(new_color, value));
-            });
-
-            // Set initial value
-            color.a = 1.0f;
-        }
     }
 
     void ColorPicker2D::update(float delta_time)
@@ -1047,6 +1029,9 @@ namespace ui {
         if (hovered) {
             Node2D::push_input(this, data);
         }
+        else {
+            changing_hue = changing_sv = false;
+        }
 
         // Update uniforms
         ui_data.is_hovered = 0.0f;
@@ -1061,20 +1046,28 @@ namespace ui {
         local_mouse_pos /= size;
         local_mouse_pos = local_mouse_pos * 2.0f - 1.0f; // -1..1
 
+        float dist = glm::distance(local_mouse_pos, glm::vec2(0.f));
+
        if (data.is_pressed)
        {
-           constexpr float pi = glm::pi<float>();
-           float r = pi / 2.f;
-           local_mouse_pos = glm::mat2x2(cos(r), -sin(r), sin(r), cos(r)) * local_mouse_pos;
-           glm::vec2 polar = glm::vec2(atan2(local_mouse_pos.y, local_mouse_pos.x), glm::length(local_mouse_pos));
-           float percent = (polar.x + pi) / (2.0f * pi);
-           glm::vec3 hsv = glm::vec3(percent, 1.0f, polar.y);
+           // Change HUE
+           if ((changing_hue && dist > 0.1f) || (dist > (1.0f - ring_thickness) && !changing_sv)) {
+               color.r = fmod(glm::degrees(atan2f(-local_mouse_pos.y, local_mouse_pos.x)), 360.f);
+               changing_hue = true;
+           }
 
-           // Store it without conversion and intensity multiplier
-           color = glm::vec4(hsv2rgb(hsv), color.a);
+           // Update Saturation, Value
+           else if(!changing_hue){
+               glm::vec2 uv = local_mouse_pos;
+               uv.y *= -1.0f;
+               glm::vec2 sv = uv_to_saturation_value(uv);
+               color = { color.r, sv.x, sv.y, 1.0f };
+               changing_sv = true;
+           }
+
            // Send the signal using the final color
-           glm::vec3 new_color = glm::pow(glm::vec3(color) * color.a, glm::vec3(2.2f));
-           Node::emit_signal(signal, glm::vec4(new_color, color.a));
+           glm::vec3 new_color = glm::pow(hsv2rgb(color), glm::vec3(2.2f));
+           Node::emit_signal(signal, glm::vec4(new_color, 1.0));
 
            on_pressed();
        }
@@ -1082,6 +1075,7 @@ namespace ui {
        if (data.was_released)
        {
            Node::emit_signal(signal + "@released", color);
+           changing_hue = changing_sv = false;
        }
 
         // Update uniforms
@@ -1090,6 +1084,32 @@ namespace ui {
         update_ui_data();
 
         return true;
+    }
+
+    glm::vec2 ColorPicker2D::uv_to_saturation_value(const glm::vec2& uvs)
+    {
+        float angle = glm::radians(color.r);
+        glm::vec2 v1 = { cos(angle), sin(angle) };
+        angle += glm::radians(120.f);
+        glm::vec2 v2 = { cos(angle), sin(angle) };
+        angle += glm::radians(120.f);
+        glm::vec2 v3 = { cos(angle), sin(angle) };
+
+        v1 *= (1.0f - ring_thickness);
+        v2 *= (1.0f - ring_thickness);
+        v3 *= (1.0f - ring_thickness);
+
+        glm::vec2 base_s = v1 - v3;
+        glm::vec2 base_v = base_s * 0.5f - (v2 - v3);
+        glm::vec2 base_o = v3 - base_v;
+        glm::vec2 p = uvs - base_o;
+        float s = dot(p, base_s) / pow(length(base_s), 2.f);
+        float v = dot(p, base_v) / pow(length(base_v), 2.f);
+        s -= 0.5f;
+        s /= v;
+        s += 0.5f;
+
+        return glm::clamp(glm::vec2(s, v), glm::vec2(0.f), glm::vec2(1.f));
     }
 
     /*

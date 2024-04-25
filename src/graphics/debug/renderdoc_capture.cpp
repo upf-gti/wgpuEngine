@@ -10,7 +10,7 @@
 
 #endif
 
-#include "spdlog/spdlog.h"
+//#include "spdlog/spdlog.h"
 
 #ifndef __EMSCRIPTEN__
 RENDERDOC_API_1_6_0* RenderdocCapture::rdoc_api = nullptr;
@@ -20,14 +20,10 @@ void RenderdocCapture::init()
 {
     bool loaded = false;
 
-    std::string library_name;
-
 #if defined(_WIN32)
 
-    library_name = "renderdoc.dll";
-
     // At init, on windows
-    if (HMODULE mod = GetModuleHandleA(library_name.c_str()))
+    if (HMODULE mod = GetModuleHandleA("renderdoc.dll"))
     {
         pRENDERDOC_GetAPI RENDERDOC_GetAPI =
             (pRENDERDOC_GetAPI)GetProcAddress(mod, "RENDERDOC_GetAPI");
@@ -36,11 +32,9 @@ void RenderdocCapture::init()
 
 #elif defined(__linux__)
 
-    library_name = "librenderdoc.so";
-
     // At init, on linux/android.
     // For android replace librenderdoc.so with libVkLayer_GLES_RenderDoc.so
-    if (void* mod = dlopen(library_name.c_str(), RTLD_NOW | RTLD_NOLOAD))
+    if (void* mod = dlopen("librenderdoc.so", RTLD_NOW | RTLD_NOLOAD))
     {
         pRENDERDOC_GetAPI RENDERDOC_GetAPI = (pRENDERDOC_GetAPI)dlsym(mod, "RENDERDOC_GetAPI");
         loaded = RENDERDOC_GetAPI(eRENDERDOC_API_Version_1_6_0, (void**)&rdoc_api) == 1;
@@ -48,12 +42,12 @@ void RenderdocCapture::init()
 
 #endif
 
-    if (!loaded) {
-        spdlog::warn("Could not initialize Renderdoc Capture. To capture, start the program from Renderdoc");
-    }
-    else {
-        spdlog::info("Renderdoc Capture initialized");
-    }
+    //if (!loaded) {
+    //    spdlog::warn("Could not initialize Renderdoc Capture. To capture, start the program from Renderdoc");
+    //}
+    //else {
+    //    spdlog::info("Renderdoc Capture initialized");
+    //}
 }
 
 void RenderdocCapture::start_capture_frame()

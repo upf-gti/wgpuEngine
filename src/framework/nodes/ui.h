@@ -12,9 +12,10 @@
 
 namespace ui {
 
+    const float PICKER_SIZE = 164.f;
     const float BUTTON_SIZE = 64.f;
-    const float GROUP_MARGIN = 8.f;
-    const float LAYER_MARGIN = 12.f;
+    const float GROUP_MARGIN = 4.f;
+    const float LAYER_MARGIN = 8.f;
 
     enum ComboIndex {
         UNIQUE,
@@ -224,14 +225,21 @@ namespace ui {
     class ColorPicker2D : public Panel2D {
     public:
 
+        float ring_thickness = 0.25f;
+
+        bool changing_hue = false;
+        bool changing_sv = false;
+
         std::string signal;
 
         ColorPicker2D() {};
-        ColorPicker2D(const std::string& sg, const Color& c, bool skip_intensity = false);
-        ColorPicker2D(const std::string& sg, const glm::vec2& p, const glm::vec2& s, const Color& c, bool skip_intensity = false);
+        ColorPicker2D(const std::string& sg, const Color& c);
+        ColorPicker2D(const std::string& sg, const glm::vec2& p, const glm::vec2& s, const Color& c);
 
         void update(float delta_time) override;
         bool on_input(sInputData data) override;
+
+        glm::vec2 uv_to_saturation_value(const glm::vec2& uvs);
     };
 
     class ImageLabel2D : public HContainer2D {

@@ -2,6 +2,7 @@
 
 #include "graphics/renderer.h"
 #include "graphics/font.h"
+#include "graphics/renderer_storage.h"
 
 #include <assert.h>
 

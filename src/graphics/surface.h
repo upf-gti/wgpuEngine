@@ -4,6 +4,12 @@
 #include "framework/aabb.h"
 #include "material.h"
 
+#include "glm/vec2.hpp"
+#include "glm/vec3.hpp"
+#include "glm/vec4.hpp"
+
+#include <string>
+
 namespace normals {
     const glm::vec3 pX = glm::vec3(1.f, 0.f, 0.0);
     const glm::vec3 nX = glm::vec3(-1.f, 0.f, 0.0);

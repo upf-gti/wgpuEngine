@@ -1,4 +1,5 @@
 #include "ccd_solver.h"
+#include "glm/gtx/norm.hpp"
 
 bool CCDSolver::solve(const Transform& target) {
     // Local variables and chain_size check

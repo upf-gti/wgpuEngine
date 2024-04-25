@@ -1,26 +1,14 @@
 #pragma once
 
-#include "includes.h"
 #include "node_3d.h"
+
+#include "graphics/uniforms_structs.h"
 
 enum LightType {
     LIGHT_UNDEFINED,
     LIGHT_DIRECTIONAL,
     LIGHT_OMNI,
     LIGHT_SPOT
-};
-
-struct sLightUniformData {
-    glm::vec3 position;
-    int type = LightType::LIGHT_UNDEFINED;
-    glm::vec3 color = { 0.0f, 0.0f, 0.0f };
-    float intensity = 0.0f;
-    glm::vec3 direction = { 0.0f, 0.0f, 0.0f };
-    float range = 0.0f;
-    glm::vec2 dummy = { 0.0f, 0.0f };
-    // spots
-    float inner_cone_cos = 0.0f;
-    float outer_cone_cos = 0.0f;
 };
 
 class Light3D : public Node3D {

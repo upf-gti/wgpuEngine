@@ -1,6 +1,9 @@
 #pragma once
 
-#include "framework/math.h"
+#include "glm/vec2.hpp"
+#include "glm/vec4.hpp"
+#include "glm/vec4.hpp"
+#include "glm/gtc/quaternion.hpp"
 
 #include <vector>
 #include <variant>
@@ -70,6 +73,7 @@ public:
     TrackType get_type() const { return type; };
     const std::string& get_name();
     const std::string& get_path();
+    Keyframe& get_keyframe(uint32_t index);
 
     void set_id(int id);
     void set_interpolation(Interpolation interp);

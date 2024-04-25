@@ -1,19 +1,33 @@
 #include "renderer.h"
 
-#ifdef XR_SUPPORT
-    #include "dawnxr/dawnxr_internal.h"
+#include "graphics/webgpu_context.h"
 
-    #if defined(BACKEND_DX12)
-    #include <dawn/native/D3D12Backend.h>
-    #elif defined(BACKEND_VULKAN)
-    #include "dawn/native/VulkanBackend.h"
-    #endif
+#ifdef XR_SUPPORT
+
+#include "xr/openxr_context.h"
+
+#include "dawnxr/dawnxr_internal.h"
+
+#if defined(BACKEND_DX12)
+#include <dawn/native/D3D12Backend.h>
+#elif defined(BACKEND_VULKAN)
+#include "dawn/native/VulkanBackend.h"
+#endif
+
 #endif
 
 #include "graphics/texture.h"
 #include "framework/camera/camera.h"
+#include "framework/nodes/light_3d.h"
+#include "graphics/mesh_instance.h"
+#include "graphics/pipeline.h"
+#include "graphics/shader.h"
+#include "graphics/debug/renderdoc_capture.h"
+#include "graphics/renderer_storage.h"
 
 #include <algorithm>
+
+#include "glm/gtx/quaternion.hpp"
 
 #include "spdlog/spdlog.h"
 
@@ -23,17 +37,30 @@ Renderer::Renderer()
 {
     instance = this;
 
+    renderer_storage = new RendererStorage();
+
 #ifdef _DEBUG
     RenderdocCapture::init();
 #endif
 
-    Shader::webgpu_context = &webgpu_context;
-    Pipeline::webgpu_context = &webgpu_context;
-    Surface::webgpu_context = &webgpu_context;
-    Texture::webgpu_context = &webgpu_context;
+    webgpu_context = new WebGPUContext();
+
+    Pipeline::webgpu_context = webgpu_context;
+    Surface::webgpu_context = webgpu_context;
+    Texture::webgpu_context = webgpu_context;
 
 #ifdef XR_SUPPORT
-    is_openxr_available = xr_context.create_instance();
+    xr_context = new OpenXRContext();
+    is_openxr_available = xr_context->create_instance();
+#endif
+}
+
+Renderer::~Renderer()
+{
+    delete webgpu_context;
+
+#ifdef XR_SUPPORT
+    delete xr_context;
 #endif
 }
 
@@ -43,7 +70,7 @@ int Renderer::initialize(GLFWwindow* window, bool use_mirror_screen)
 
     this->use_mirror_screen = use_mirror_screen;
 
-    webgpu_context.create_instance();
+    webgpu_context->create_instance();
 
     WGPURequestAdapterOptions adapter_opts = {};
 
@@ -52,8 +79,8 @@ int Renderer::initialize(GLFWwindow* window, bool use_mirror_screen)
 
 #ifdef XR_SUPPORT
 
-    xr_context.z_far = z_near;
-    xr_context.z_far = z_far;
+    xr_context->z_far = z_near;
+    xr_context->z_far = z_far;
 
 #if defined(BACKEND_DX12)
     adapter_opts.backendType = WGPUBackendType_D3D12;
@@ -66,7 +93,7 @@ int Renderer::initialize(GLFWwindow* window, bool use_mirror_screen)
     if (is_openxr_available) {
 
 #if defined(BACKEND_VULKAN)
-        dawnxr::internal::createVulkanOpenXRConfig(xr_context.instance, xr_context.system_id, (void**)&adapter_opts_xr_config.openXRConfig);
+        dawnxr::internal::createVulkanOpenXRConfig(xr_context->instance, xr_context->system_id, (void**)&adapter_opts_xr_config.openXRConfig);
         adapter_opts.nextInChain = reinterpret_cast<WGPUChainedStruct*>(&adapter_opts_xr_config);
 #endif
 
@@ -78,29 +105,29 @@ int Renderer::initialize(GLFWwindow* window, bool use_mirror_screen)
 
 #else
     // Create internal vulkan instance
-    //webgpu_context.instance->DiscoverDefaultAdapters();
+    //webgpu_context->instance->DiscoverDefaultAdapters();
 #endif
 
-    if (webgpu_context.initialize(adapter_opts, required_limits, window, create_screen_swapchain)) {
+    if (webgpu_context->initialize(adapter_opts, required_limits, window, create_screen_swapchain)) {
         spdlog::error("Could not initialize WebGPU context");
         return 1;
     }
 
 #ifdef XR_SUPPORT
-    if (is_openxr_available && !xr_context.init(&webgpu_context)) {
+    if (is_openxr_available && !xr_context->init(webgpu_context)) {
         spdlog::error("Could not initialize OpenXR context");
         is_openxr_available = false;
     }
 
     if (is_openxr_available) {
-        webgpu_context.render_width = xr_context.viewconfig_views[0].recommendedImageRectWidth;
-        webgpu_context.render_height = xr_context.viewconfig_views[0].recommendedImageRectHeight;
+        webgpu_context->render_width = xr_context->viewconfig_views[0].recommendedImageRectWidth;
+        webgpu_context->render_height = xr_context->viewconfig_views[0].recommendedImageRectHeight;
     }
 #endif
 
     if (!is_openxr_available) {
-        webgpu_context.render_width = webgpu_context.screen_width;
-        webgpu_context.render_height = webgpu_context.screen_height;
+        webgpu_context->render_width = webgpu_context->screen_width;
+        webgpu_context->render_height = webgpu_context->screen_height;
     }
 
     RendererStorage::register_basic_surfaces();
@@ -110,6 +137,14 @@ int Renderer::initialize(GLFWwindow* window, bool use_mirror_screen)
     }
 
     Shader::set_custom_define("MAX_LIGHTS", MAX_LIGHTS);
+
+    eye_depth_textures = new Texture[EYE_COUNT];
+    multisample_textures = new Texture[EYE_COUNT];
+
+#ifndef __EMSCRIPTEN__
+    renderdoc_capture = new RenderdocCapture();
+#endif
+
 
     init_depth_buffers();
 
@@ -123,7 +158,7 @@ int Renderer::initialize(GLFWwindow* window, bool use_mirror_screen)
 void Renderer::clean()
 {
 #ifdef XR_SUPPORT
-    xr_context.clean();
+    xr_context->clean();
 #endif
 
     uint8_t num_textures = is_openxr_available ? 2 : 1;
@@ -132,9 +167,15 @@ void Renderer::clean()
         wgpuTextureViewRelease(eye_depth_texture_view[i]);
     }
 
-    Pipeline::clean_registered_pipelines();
+    RendererStorage::clean_registered_pipelines();
 
-    webgpu_context.destroy();
+    webgpu_context->destroy();
+
+    delete renderer_storage;
+    delete[] eye_depth_textures;
+    delete[] multisample_textures;
+
+    delete renderdoc_capture;
 }
 
 void Renderer::init_lighting_bind_group()
@@ -147,7 +188,7 @@ void Renderer::init_lighting_bind_group()
     }
     else {
         // only created once
-        brdf_lut_uniform.data = webgpu_context.brdf_lut_texture->get_view();
+        brdf_lut_uniform.data = webgpu_context->brdf_lut_texture->get_view();
         brdf_lut_uniform.binding = 1;
     }
 
@@ -156,7 +197,7 @@ void Renderer::init_lighting_bind_group()
         irradiance_texture_uniform.data = irradiance_texture->get_view(WGPUTextureViewDimension_Cube, 0, 6, 0, 6);
         irradiance_texture_uniform.binding = 0;
 
-        ibl_sampler_uniform.data = webgpu_context.create_sampler(
+        ibl_sampler_uniform.data = webgpu_context->create_sampler(
             WGPUAddressMode_ClampToEdge,
             WGPUAddressMode_ClampToEdge,
             WGPUAddressMode_ClampToEdge,
@@ -174,16 +215,16 @@ void Renderer::init_lighting_bind_group()
         lights_buffer.data = {};
     }
 
-    lights_buffer.data = webgpu_context.create_buffer(sizeof(sLightUniformData) * MAX_LIGHTS, WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform, &lights_uniform_data[0], "lights_buffer");
+    lights_buffer.data = webgpu_context->create_buffer(sizeof(sLightUniformData) * MAX_LIGHTS, WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform, &lights_uniform_data[0], "lights_buffer");
     lights_buffer.binding = 3;
     lights_buffer.buffer_size = sizeof(sLightUniformData) * MAX_LIGHTS;
 
-    num_lights_buffer.data = webgpu_context.create_buffer(sizeof(int), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform, &num_lights, "num_lights_buffer");
+    num_lights_buffer.data = webgpu_context->create_buffer(sizeof(int), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform, &num_lights, "num_lights_buffer");
     num_lights_buffer.binding = 4;
     num_lights_buffer.buffer_size = sizeof(int);
 
     std::vector<Uniform*> uniforms = { &irradiance_texture_uniform, &brdf_lut_uniform, &ibl_sampler_uniform, &lights_buffer, &num_lights_buffer };
-    lighting_bind_group = webgpu_context.create_bind_group(uniforms, RendererStorage::get_shader("data/shaders/mesh_pbr.wgsl"), 3);
+    lighting_bind_group = webgpu_context->create_bind_group(uniforms, RendererStorage::get_shader("data/shaders/mesh_pbr.wgsl"), 3);
 }
 
 void Renderer::init_depth_buffers()
@@ -194,7 +235,7 @@ void Renderer::init_depth_buffers()
         eye_depth_textures[i].create(
             WGPUTextureDimension_2D,
             WGPUTextureFormat_Depth32Float,
-            { webgpu_context.render_width, webgpu_context.render_height, 1 },
+            { webgpu_context->render_width, webgpu_context->render_height, 1 },
             WGPUTextureUsage_RenderAttachment,
             1, msaa_count, nullptr);
 
@@ -209,14 +250,14 @@ void Renderer::init_depth_buffers()
 
 void Renderer::init_multisample_textures()
 {
-    WGPUTextureFormat swapchain_format = is_openxr_available ? webgpu_context.xr_swapchain_format : webgpu_context.swapchain_format;
+    WGPUTextureFormat swapchain_format = is_openxr_available ? webgpu_context->xr_swapchain_format : webgpu_context->swapchain_format;
 
     uint8_t num_textures = is_openxr_available ? 2 : 1;
     for (int i = 0; i < num_textures; ++i) {
         multisample_textures[i].create(
             WGPUTextureDimension_2D,
             swapchain_format,
-            { webgpu_context.render_width, webgpu_context.render_height, 1 },
+            { webgpu_context->render_width, webgpu_context->render_height, 1 },
             WGPUTextureUsage_RenderAttachment,
             1, msaa_count, nullptr);
 
@@ -271,9 +312,9 @@ void Renderer::prepare_instancing()
                 continue;
             }
 
-            RendererStorage::instance->register_material(&webgpu_context, mesh_instance, material);
+            RendererStorage::instance->register_material(webgpu_context, mesh_instance, material);
 
-            Pipeline::register_render_pipeline(material);
+            RendererStorage::register_render_pipeline(material);
 
             eRenderListType list = RENDER_LIST_OPAQUE;
 
@@ -382,7 +423,7 @@ void Renderer::prepare_instancing()
 
             //std::vector<sUniformData> default_data = { instances, { glm::mat4x4(1.0f), glm::vec4(1.0f) } };
 
-            instance_data_uniform[i].data = webgpu_context.create_buffer(sizeof(sUniformData) * instances, WGPUBufferUsage_CopyDst | WGPUBufferUsage_Storage, instance_data[i].data(), "instance_mesh_buffer");
+            instance_data_uniform[i].data = webgpu_context->create_buffer(sizeof(sUniformData) * instances, WGPUBufferUsage_CopyDst | WGPUBufferUsage_Storage, instance_data[i].data(), "instance_mesh_buffer");
             instance_data_uniform[i].binding = 0;
             instance_data_uniform[i].buffer_size = sizeof(sUniformData) * instances;
 
@@ -401,7 +442,7 @@ void Renderer::prepare_instancing()
                     wgpuBindGroupRelease(bind_groups[i]);
                 }
 
-                bind_groups[i] = webgpu_context.create_bind_group(uniforms, shader, 0);
+                bind_groups[i] = webgpu_context->create_bind_group(uniforms, shader, 0);
 
                 j += render_data.repeat;
             }
@@ -409,7 +450,7 @@ void Renderer::prepare_instancing()
         }
         else
             if (instances > 0) {
-                webgpu_context.update_buffer(std::get<WGPUBuffer>(instance_data_uniform[i].data), 0, instance_data[i].data(), sizeof(sUniformData) * instances);
+                webgpu_context->update_buffer(std::get<WGPUBuffer>(instance_data_uniform[i].data), 0, instance_data[i].data(), sizeof(sUniformData) * instances);
             }
     }
 }
@@ -446,14 +487,14 @@ void Renderer::render_render_list(int list_index, WGPURenderPassEncoder render_p
         wgpuRenderPassEncoderSetBindGroup(render_pass, bind_group_index++, bind_groups[list_index], 0, nullptr);
         wgpuRenderPassEncoderSetBindGroup(render_pass, bind_group_index++, render_bind_group_camera, 0, nullptr);
 
-        wgpuRenderPassEncoderSetBindGroup(render_pass, bind_group_index++, renderer_storage.get_material_bind_group(material), 0, nullptr);
+        wgpuRenderPassEncoderSetBindGroup(render_pass, bind_group_index++, renderer_storage->get_material_bind_group(material), 0, nullptr);
 
 //#ifndef NDEBUG
 //        wgpuRenderPassEncoderPushDebugGroup(render_pass, render_data.surface->get_name().c_str());
 //#endif
 
         if (material.flags & MATERIAL_UI) {
-            WGPUBindGroup ui_bind_group = renderer_storage.get_ui_widget_bind_group(render_data.mesh_instance_ref);
+            WGPUBindGroup ui_bind_group = renderer_storage->get_ui_widget_bind_group(render_data.mesh_instance_ref);
             if (ui_bind_group) {
                 wgpuRenderPassEncoderSetBindGroup(render_pass, bind_group_index++, ui_bind_group, 0, nullptr);
             }
@@ -546,9 +587,9 @@ void Renderer::update_lights()
 
     uint64_t buffer_size = sizeof(sLightUniformData) * num_lights;
 
-    webgpu_context.update_buffer(std::get<WGPUBuffer>(lights_buffer.data), 0, &lights_uniform_data[0], buffer_size);
+    webgpu_context->update_buffer(std::get<WGPUBuffer>(lights_buffer.data), 0, &lights_uniform_data[0], buffer_size);
 
-    webgpu_context.update_buffer(std::get<WGPUBuffer>(num_lights_buffer.data), 0, &num_lights, sizeof(int));
+    webgpu_context->update_buffer(std::get<WGPUBuffer>(num_lights_buffer.data), 0, &num_lights, sizeof(int));
 }
 
 void Renderer::add_light(Light3D* new_light)
@@ -559,14 +600,14 @@ void Renderer::add_light(Light3D* new_light)
 
 void Renderer::resize_window(int width, int height)
 {
-    webgpu_context.create_swapchain(width, height);
+    webgpu_context->create_swapchain(width, height);
 
     if (!is_openxr_available) {
-        webgpu_context.render_width = webgpu_context.screen_width;
-        webgpu_context.render_height = webgpu_context.screen_height;
+        webgpu_context->render_width = webgpu_context->screen_width;
+        webgpu_context->render_height = webgpu_context->screen_height;
 
         if (camera) {
-            camera->set_perspective(glm::radians(45.0f), webgpu_context.render_width / static_cast<float>(webgpu_context.render_height), z_near, z_far);
+            camera->set_perspective(glm::radians(45.0f), webgpu_context->render_width / static_cast<float>(webgpu_context->render_height), z_near, z_far);
         }
     }
 
@@ -585,9 +626,27 @@ glm::vec3 Renderer::get_camera_eye()
 {
 #if defined(XR_SUPPORT)
     if (is_openxr_available) {
-        return xr_context.per_view_data[0].position; // return left eye
+        return xr_context->per_view_data[0].position; // return left eye
     }
 #endif
 
     return camera->get_eye();
 }
+
+#ifdef XR_SUPPORT
+OpenXRContext* Renderer::get_openxr_context()
+{
+    return (is_openxr_available ? xr_context : nullptr);
+}
+#endif
+
+WebGPUContext* Renderer::get_webgpu_context()
+{
+    return webgpu_context;
+}
+
+GLFWwindow* Renderer::get_glfw_window()
+{
+    return webgpu_context->window;
+};
+

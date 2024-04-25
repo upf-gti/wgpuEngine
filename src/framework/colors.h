@@ -1,6 +1,6 @@
 #pragma once
 
-#include "framework/math.h"
+#include "glm/vec4.hpp"
 
 typedef glm::vec4 Color;
 

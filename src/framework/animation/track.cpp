@@ -1,6 +1,7 @@
 #include "track.h"
 
 #include <algorithm>
+#include "glm/gtx/compatibility.hpp"
 
 // Track helpers avoid having to make specialized versions of the interpolation functions
 namespace TrackHelpers {
@@ -118,6 +119,11 @@ const std::string& Track::get_path()
     return path;
 }
 
+Keyframe& Track::get_keyframe(uint32_t index)
+{
+    return keyframes[index];
+}
+
 // call sample_constant, sample_linear, or sample_cubic, depending on the track type.
 T Track::sample(float time, bool looping, void* out)
 {
@@ -154,7 +160,7 @@ T Track::sample(float time, bool looping, void* out)
 
 Keyframe& Track::operator[](uint32_t index)
 {
-    return keyframes[index];
+    return get_keyframe(index);
 }
 
 // Size of the keyframes vector

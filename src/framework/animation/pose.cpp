@@ -5,7 +5,7 @@ Pose::Pose()
 
 }
 
-Pose::Pose(uint32_t numJoints)
+Pose::Pose(size_t numJoints)
 {
     resize(numJoints);
 }
@@ -16,44 +16,44 @@ Pose::Pose(const Pose& p)
 }
 
 // resize arrays
-void Pose::resize(uint32_t size)
+void Pose::resize(size_t size)
 {
     parents.resize(size);
     joints.resize(size);
 }
 
 // get the number of joints
-uint32_t Pose::size() const
+size_t Pose::size() const
 {
-    return (uint32_t)joints.size();
+    return joints.size();
 }
 
 // set parent id
-void Pose::set_parent(uint32_t id, uint32_t parent_id)
+void Pose::set_parent(size_t id, uint32_t parent_id)
 {
     parents[id] = parent_id;
 }
 
 // get parent id
-int Pose::get_parent(uint32_t id)
+int Pose::get_parent(size_t id)
 {
     return parents[id];
 }
 
 //set local transform of the joint
-void Pose::set_local_transform(uint32_t id, const Transform& transform)
+void Pose::set_local_transform(size_t id, const Transform& transform)
 {
     joints[id] = transform;
 }
 
 // get local transform of the joint
-Transform& Pose::get_local_transform(uint32_t id)
+Transform& Pose::get_local_transform(size_t id)
 {
     return joints[id];
 }
 
 // get global (world) transform of the joint
-Transform Pose::get_global_transform(uint32_t id)
+Transform Pose::get_global_transform(size_t id)
 {
     if (id >= joints.size()) {
         assert(0);
@@ -70,7 +70,7 @@ Transform Pose::get_global_transform(uint32_t id)
     return transform;
 }
 
-Transform Pose::operator[](uint32_t index)
+Transform Pose::operator[](size_t index)
 {
     return get_global_transform(index);
 }
