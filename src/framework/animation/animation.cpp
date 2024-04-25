@@ -18,9 +18,15 @@ float Animation::sample(float time, uint32_t index, void* out)
 
     time = adjust_time_to_fit_range(time);
 
-    Track* track = get_track(index);
+    if(time >= get_duration())
+    {
+    // clamp the time in the track keyframes range
+        return time;       
+    }
 
+    Track* track = get_track(index);
     track->sample(time, looping, out);
+
 
     /*if(type == ANIM_TYPE_SKELETON) {
         sample_pose(time, data);

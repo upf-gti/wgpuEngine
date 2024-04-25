@@ -1,13 +1,5 @@
 #include "jacobian_solver.h"
 
-uint32_t JacobianSolver::size() {
-    return ik_chain.size();
-}
-
-void JacobianSolver::resize(uint32_t newSize) {
-    ik_chain.resize(newSize);
-}
-
 Transform& JacobianSolver::operator[](uint32_t index) {
     return ik_chain[index];
 }
@@ -27,6 +19,7 @@ std::vector<Transform> JacobianSolver::get_chain() {
 void JacobianSolver::set_chain(std::vector<Transform> chain) {
     ik_chain = chain;
     resize(ik_chain.size());
+    set_rotation_axis();
 }
 
 void JacobianSolver::set_rotation_axis() {
@@ -71,7 +64,7 @@ bool JacobianSolver::solve(const Transform& target) {
 
             // vector from joint to end effector and from joint to target
             glm::vec3 to_effector = effector_pos - joint_pos;
-
+         
             // compute rotation axis
             glm::vec3 joint_axis_x = local_axis_x_joint[joint_idx];
             joint_axis_x = joint_rot * joint_axis_x;
@@ -130,7 +123,7 @@ bool JacobianSolver::solve(const Transform& target) {
             glm::quat qz = angleAxis(diff_rot[(joint_idx * 3) + 2] * amount, local_axis_z_joint[joint_idx]);
 
             // combine all the rotations for each axis of the same joint
-            glm::quat q = qx * qy * qz;
+            glm::quat q = qz * qy * qx;
             Transform new_joint_transform(glm::vec3(0.0), q, glm::vec3(1.0));
             new_joint_transform = combine(joint_transform, new_joint_transform);
 

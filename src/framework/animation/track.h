@@ -54,7 +54,7 @@ class Track {
     template<typename Tn>
     T cubic_interpolation(const T& p1, const T& s1, const T& p2, const T& s2, float h1, float h2, float h3, float h4);
 
-    int frame_index(float time, bool looping);
+    int frame_index(float time);
 
     // Takes an input time that is outside the range of the track and adjusts it to be a valid time on the track
     float adjust_time_to_fit_track(float time, bool loop);

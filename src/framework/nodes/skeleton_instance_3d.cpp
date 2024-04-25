@@ -3,6 +3,7 @@
 #include "graphics/renderer.h"
 #include "imgui.h"
 #include "spdlog/spdlog.h"
+#include "framework/nodes/look_at_ik_3d.h"
 
 SkeletonInstance3D::SkeletonInstance3D()
 {
@@ -131,7 +132,18 @@ void recursive_tree_gui(Node* node) {
 void SkeletonInstance3D::render_gui() {
 
     ImGui::Begin(name.c_str());
-    if (ImGui::TreeNode(name.c_str())) {
+    //ImGui::PushID("sk");
+    if (ImGui::BeginPopupContextWindow())
+    {
+        if (ImGui::Selectable("Add SkeletonIK"))
+        {
+            LookAtIK3D* ik_node = new LookAtIK3D(this);
+            this->add_child((Node3D*)ik_node);
+        }
+        ImGui::EndPopup();
+    }
+    //ImGui::PopID();
+ /*   if (ImGui::TreeNode(name.c_str())) {
         Pose& pose = skeleton->get_current_pose();
         for (size_t i = 0; i < joint_nodes.size(); i++) {
             int parent = pose.get_parent(i);
@@ -145,8 +157,9 @@ void SkeletonInstance3D::render_gui() {
             if(!((Node3D*)(child))->get_parent())
                 recursive_tree_gui(child);
         }
+        
         ImGui::TreePop();
-    }
+    }*/
     ImGui::End();
 }
 

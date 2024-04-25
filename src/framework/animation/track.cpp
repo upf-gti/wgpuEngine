@@ -211,36 +211,13 @@ T Track::hermite(float t, const T& p1, const T& s1, const T& _p2, const T& s2)
 }
 
 // Return the frame immediately before that time (on the left)
-int Track::frame_index(float time, bool looping)
+int Track::frame_index(float time)
 {
     uint32_t size = (uint32_t)keyframes.size();
 
     if (size <= 1) {
         return -1;
     }
-
-    // If the track is sampled as looping, the input time needs to be adjusted so that it falls between the start and end keyframes.
-    //if (looping) {
-    //    float startTime = keyframes[0].time;
-    //    float endTime = keyframes[size - 1].time;
-    //    float duration = endTime - startTime;
-    //    time = fmodf(time - startTime, endTime - startTime);
-    //    // looping, time needs to be adjusted so that it is within a valid range.
-    //    if (time < 0.0f) {
-    //        time += endTime - startTime;
-    //    }
-    //    time = time + startTime;
-    //}
-    //else {
-    //    // clamp the time in the track keyframes range
-    //    if (time <= keyframes[0].time) {
-    //        return -1;
-    //    }
-    //    if (time >= keyframes[size - 2].time) {
-    //        // The Sample function always needs a current and next frame (for interpolation), so the index of the second-to-last frame is used.
-    //        return (int)size - 2;
-    //    }
-    //}
 
     for (int i = (int)size - 1; i >= 0; --i) {
         if (time >= keyframes[i].time) {
@@ -287,7 +264,7 @@ float Track::adjust_time_to_fit_track(float time, bool looping)
 // Often used for things such as visibility flags, where it makes sense for the value of a variable to change from one frame to the next without any real interpolation
 T Track::sample_constant(float t, bool loop)
 {
-    int frame = frame_index(t, loop);
+    int frame = frame_index(t);
     if (frame < 0 || frame >= (int)keyframes.size()) {
         return T();
     }
@@ -297,7 +274,7 @@ T Track::sample_constant(float t, bool loop)
 // Applications provide an option to approximate animation curves by sampling them at set intervals
 T Track::sample_linear(float time, bool looping)
 {
-    int this_frame = frame_index(time, looping);
+    int this_frame = frame_index(time);
     if (this_frame < 0 || this_frame >= keyframes.size() - 1) {
         return T();
     }
@@ -317,7 +294,7 @@ T Track::sample_linear(float time, bool looping)
 
 T Track::sample_cubic(float time, bool looping)
 {
-    int this_frame = frame_index(time, looping);
+    int this_frame = frame_index(time);
     if (this_frame < 0 || this_frame >= keyframes.size() - 1) {
         return T();
     }

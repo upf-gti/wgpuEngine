@@ -39,7 +39,7 @@ void FABRIKSolver::world_to_ik_chain() {
         to_desired = inverse(rotation) * to_desired;
 
         glm::quat delta = fromTo(to_next, to_desired);
-        ik_chain[i].rotation = delta * ik_chain[i].rotation;
+        ik_chain[i].rotation = ik_chain[i].rotation * delta;
     }
 }
 

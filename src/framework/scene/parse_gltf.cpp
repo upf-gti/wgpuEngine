@@ -947,9 +947,6 @@ void parse_model_skins(Node3D* scene_root, tinygltf::Model& model, std::map<std:
             assert(child_instance);
             child_instance->set_skeleton(skeleton);
         }
-
-        LookAtIK3D* ik_node = new LookAtIK3D(instance);
-        instance->add_child((Node3D*)ik_node);
     }
 }
 
@@ -1220,9 +1217,9 @@ void parse_model_animations(const tinygltf::Model& model, std::vector<SkeletonIn
 
         RendererStorage::register_animation(new_animation->get_name(), new_animation);
 
-        if (i == 0) {
+        /*if (i == 0) {
             player->play(new_animation->get_name());
-        }
+        }*/
     }
 }
 

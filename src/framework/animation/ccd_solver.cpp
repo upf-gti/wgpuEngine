@@ -2,16 +2,16 @@
 
 bool CCDSolver::solve(const Transform& target) {
     // Local variables and chain_size check
-    unsigned int chain_size = size();
+    size_t chain_size = size();
 
     if (chain_size == 0)
         return false;
 
-    unsigned int last = chain_size - 1; // end effector
+    size_t last = chain_size - 1; // end effector
     float threshold_sq = threshold * threshold;
     glm::vec3 goal = target.position;
 
-    for (unsigned int i = 0; i < num_steps; ++i) {
+    for (size_t i = 0; i < num_steps; ++i) {
         // Check if we've reached the goal
         glm::vec3 effector = get_global_transform(last).position;
         if (glm::length2(goal - effector) < threshold_sq) {
@@ -32,8 +32,8 @@ bool CCDSolver::solve(const Transform& target) {
                 effector_to_goal = fromTo(to_effector, to_goal);
             }
 
-            glm::quat world_rotated = rotation * effector_to_goal;
-            glm::quat local_rotate = world_rotated * inverse(rotation);
+            glm::quat world_rotated = effector_to_goal * rotation;
+            glm::quat local_rotate = inverse(rotation) * world_rotated;
             ik_chain[j].rotation = local_rotate * ik_chain[j].rotation;
 
             // -> APPLY CONSTRAINTS HERE!
@@ -67,7 +67,7 @@ void CCDSolver::apply_ball_socket_constraint(int i, float limit) {
             ik_chain[i].rotation = world_space_rotation;
         }
         else {
-            ik_chain[i].rotation = world_space_rotation * inverse(parent_rot);
+            ik_chain[i].rotation = inverse(parent_rot) * world_space_rotation;
         }
     }
 }
@@ -79,5 +79,5 @@ void CCDSolver::apply_hinge_socket_constraint(int i, glm::vec3 axis) {
     glm::vec3 desired_hinge = joint.rotation * axis;
     glm::vec3 current_hinge = child.rotation * axis;
 
-    ik_chain[i + 1].rotation = ik_chain[i + 1].rotation * fromTo(current_hinge, desired_hinge);
+    ik_chain[i + 1].rotation = fromTo(current_hinge, desired_hinge) * ik_chain[i + 1].rotation;
 }

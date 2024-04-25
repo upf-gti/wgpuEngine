@@ -96,6 +96,7 @@ void AnimationPlayer::update(float delta_time)
 
     if (!current_animation->get_looping() && playback >= current_animation->get_duration()) {
         playing = false;
+        return;
     }
 
     // Sample data from the animation and store it at &track_data

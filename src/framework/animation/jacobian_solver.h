@@ -6,15 +6,12 @@
 
 class JacobianSolver : public IKSolver {
 protected:
-    Transform aux_parent; // in global
     std::vector<glm::vec3> local_axis_x_joint;
     std::vector<glm::vec3> local_axis_y_joint;
     std::vector<glm::vec3> local_axis_z_joint;
 
 public:
     float amount = 0.05;
-    uint32_t size();
-    void resize(uint32_t newSize);
     Transform& operator[](uint32_t index);
 
     void add_revolute_joint(Transform T);
