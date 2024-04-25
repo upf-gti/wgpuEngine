@@ -57,7 +57,6 @@ bool read_file(const std::string& filename, std::string& content)
 	return true;
 }
 
-
 std::string delete_until_tags(std::istringstream& stream, std::string& text, std::streampos& current_pos, std::string& current_line, const std::vector<std::string>& tags)
 {
     std::string current_tag;

@@ -17,7 +17,6 @@ struct sLightUniformData {
     float outer_cone_cos = 0.0f;
 };
 
-
 struct sUIData {
     // Common
     float is_hovered = 0.f;
@@ -28,7 +27,8 @@ struct sUIData {
     float is_color_button = 0.f;
 
     // Color Picker
-    glm::vec4 picker_color = glm::vec4(1.f);
+    glm::vec3 picker_color = glm::vec3(1.f);
+    float dummy = 0.f;
 
     // To keep rgb if icon has colors...
     float keep_rgb = 0.f;

@@ -73,12 +73,10 @@ uint32_t next_power_of_two(uint32_t value)
 
 glm::vec3 hsv2rgb(glm::vec3 c)
 {
-    glm::vec3 m = mod_vec3(c.x * 6.f + glm::vec3(0.f, 4.f, 2.f), 6.f);
-    glm::vec3 rgb = glm::clamp(abs(m - 3.f) - 1.f, glm::vec3(0.f), glm::vec3(1.f));
-
-    rgb = rgb * rgb * (3.f - 2.f * rgb); // cubic smoothing	
-
-    return mix(glm::vec3(1.f), mix(glm::vec3(1.f), rgb, c.y), c.z);
+    c.x /= 360.f;
+    glm::vec4 K = { 1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0 };
+    glm::vec3 p = glm::abs(glm::fract(glm::vec3(c.x) + glm::vec3(K.x, K.y, K.z)) * 6.0f - glm::vec3(K.w));
+    return c.z * mix(glm::vec3(K.x), clamp(p - glm::vec3(K.x), glm::vec3(0.0), glm::vec3(1.0)), c.y);
 }
 
 glm::vec3 rotate_point_by_quat(const glm::vec3& v, const glm::vec4& q) {
