@@ -1,7 +1,5 @@
 #pragma once
 
-#include "framework/math.h"
-#include "framework/utils/utils.h"
 #include "camera.h"
 
 class Node3D;

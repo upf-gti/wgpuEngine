@@ -1,6 +1,7 @@
 #pragma once
 
 #include "animation.h"
+#include "pose.h"
 
 struct BlendTarget {
     Animation* animation = nullptr;

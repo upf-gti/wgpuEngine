@@ -1,6 +1,7 @@
 #pragma once
 
-#include "framework/math.h"
+#include "glm/vec3.hpp"
+#include "glm/gtc/quaternion.hpp"
 
 enum eGizmoAxis : uint8_t {
     GIZMO_AXIS_X = 1 << 0,

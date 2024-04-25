@@ -4,7 +4,6 @@
 #include <iostream>
 
 #include "track.h"
-#include "pose.h"
 
 enum AnimationType {
     ANIM_TYPE_UNDEFINED,

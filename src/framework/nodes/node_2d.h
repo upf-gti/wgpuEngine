@@ -1,7 +1,7 @@
 #pragma once
 
 #include "framework/nodes/node.h"
-#include "framework/math.h"
+#include "glm/glm.hpp"
 #include "graphics/renderer_storage.h"
 
 #include <string>
@@ -58,7 +58,7 @@ protected:
 
 public:
 
-    RendererStorage::sUIData ui_data;
+    sUIData ui_data;
 
     Node2D() : Node2D("unnamed", { 0.0f, 0.0f }, { 0.0f, 0.0f }) {};
     Node2D(const std::string& name, const glm::vec2& p, const glm::vec2& s);

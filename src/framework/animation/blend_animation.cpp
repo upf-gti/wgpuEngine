@@ -57,8 +57,8 @@ float BlendAnimation::update(float dt, std::vector<void*>& data)
     float current_time = time;
 
     // Set the current animation as the target animation and remove the fade object if an animation has finished fading
-    uint32_t num_targets = targets.size();
-    for (uint32_t i = 0; i < num_targets; ++i) {
+    size_t num_targets = targets.size();
+    for (size_t i = 0; i < num_targets; ++i) {
         float duration = targets[i].duration;
         if (targets[i].elapsed >= duration) {
             animation = targets[i].animation;
@@ -119,8 +119,8 @@ void BlendAnimation::blend(Pose& output, Pose& a, Pose& b, float t)
 
 void BlendAnimation::add(Pose& output, Pose& in, Pose& add_pose, Pose& base_pose)
 {
-    uint32_t numJoints = add_pose.size();
-    for (int i = 0; i < numJoints; ++i) {
+    size_t numJoints = add_pose.size();
+    for (size_t i = 0; i < numJoints; ++i) {
         Transform input = in.get_local_transform(i);
         Transform additive = add_pose.get_local_transform(i);
         Transform additiveBase = base_pose.get_local_transform(i);

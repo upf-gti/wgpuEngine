@@ -1,52 +1,50 @@
 #pragma once
 
-#include "framework/utils/utils.h"
+#include "includes.h"
+#include "graphics/uniforms_structs.h"
+#include "graphics/uniform.h"
 
-#include "graphics/shader.h"
-#include "graphics/pipeline.h"
-#include "graphics/webgpu_context.h"
-#include "graphics/renderer_storage.h"
-#include "graphics/surface.h"
-#include "texture.h"
-
-#ifdef XR_SUPPORT
-#include "xr/openxr_context.h"
-#endif
-
-#include "graphics/mesh_instance.h"
-#include "framework/nodes/light_3d.h"
-
-#include "graphics/debug/renderdoc_capture.h"
+#include "glm/mat4x4.hpp"
 
 #define MAX_LIGHTS 8
 
 class Camera;
+class Texture;
+class Surface;
+class Light3D;
+class RenderdocCapture;
+class RendererStorage;
+class MeshInstance;
+struct GLFWwindow;
+struct WebGPUContext;
+struct OpenXRContext;
+struct sLightUniformData;
 
 class Renderer {
 
 protected:
 #ifdef XR_SUPPORT
-    OpenXRContext   xr_context;
+    OpenXRContext*  xr_context;
 #endif
 
-    WebGPUContext   webgpu_context;
+    WebGPUContext*  webgpu_context;
 
     Camera* camera = nullptr;
     Camera* camera_2d = nullptr;
 
     Texture* irradiance_texture = nullptr;
 
-    Texture         eye_depth_textures[EYE_COUNT] = {};
+    Texture*         eye_depth_textures;
     WGPUTextureView eye_depth_texture_view[EYE_COUNT] = {};
 
     uint8_t msaa_count = 1;
-    Texture multisample_textures[EYE_COUNT];
+    Texture* multisample_textures;
     WGPUTextureView multisample_textures_views[EYE_COUNT] = {};
 
-    RendererStorage renderer_storage;
+    RendererStorage* renderer_storage;
 
 #ifndef __EMSCRIPTEN__
-    RenderdocCapture renderdoc_capture;
+    RenderdocCapture* renderdoc_capture;
 #endif
 
     bool is_openxr_available    = false;
@@ -90,7 +88,7 @@ protected:
     std::vector<sUniformData> instance_data[RENDER_LIST_SIZE];
     Uniform	instance_data_uniform[RENDER_LIST_SIZE];
 
-    std::vector<RendererStorage::sUIData> instance_ui_data;
+    std::vector<sUIData> instance_ui_data;
     Uniform	instance_ui_data_uniform;
 
     // Entities to be rendered this frame
@@ -125,6 +123,7 @@ public:
     static Renderer* instance;
 
     Renderer();
+    virtual ~Renderer();
 
     virtual int initialize(GLFWwindow* window, bool use_mirror_screen = false);
     virtual void clean();
@@ -152,9 +151,9 @@ public:
     glm::vec4 get_clear_color() { return clear_color; }
 
 #ifdef XR_SUPPORT
-    OpenXRContext* get_openxr_context() { return (is_openxr_available ? &xr_context : nullptr); }
+    OpenXRContext* get_openxr_context();
 #endif
-    WebGPUContext* get_webgpu_context() { return &webgpu_context; }
+    WebGPUContext* get_webgpu_context();
 
     void set_required_limits(const WGPURequiredLimits& required_limits) { this->required_limits = required_limits; }
 
@@ -166,7 +165,7 @@ public:
 
     virtual void resize_window(int width, int height);
 
-    GLFWwindow* get_glfw_window() { return webgpu_context.window; };
+    GLFWwindow* get_glfw_window();
 
     void set_irradiance_texture(Texture* texture);
     Texture* get_irradiance_texture() { return irradiance_texture; }

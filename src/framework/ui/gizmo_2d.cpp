@@ -4,6 +4,7 @@
 
 #include "framework/input.h"
 #include "framework/camera/camera.h"
+#include <glm/gtc/type_ptr.hpp>
 
 void Gizmo2D::set_mode(ImGuizmo::MODE new_mode)
 {

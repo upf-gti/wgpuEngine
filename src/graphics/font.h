@@ -2,12 +2,15 @@
 
 #include "includes.h"
 #include "framework/utils/json_utils.h"
-#include "framework/math.h"
+
 #include "font_common.h"
 
 #include <map>
 #include <string>
 #include <vector>
+
+#include "glm/vec2.hpp"
+#include "glm/vec4.hpp"
 
 class Texture;
 

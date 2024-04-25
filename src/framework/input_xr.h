@@ -5,7 +5,8 @@
 #include <dawnxr/dawnxr.h>
 #endif
 
-#include "framework/math.h"
+#include "glm/vec3.hpp"
+#include "glm/gtc/quaternion.hpp"
 
 #include <array>
 #include <string>

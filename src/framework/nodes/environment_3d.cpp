@@ -1,6 +1,7 @@
 #include "environment_3d.h"
 #include "framework/scene/parse_obj.h"
 #include "graphics/renderer.h"
+#include "graphics/renderer_storage.h"
 
 Environment3D::Environment3D() : MeshInstance3D()
 {

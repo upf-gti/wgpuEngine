@@ -2,6 +2,8 @@
 
 #define EPSILON 0.0001f
 
+#include "glm/gtx/compatibility.hpp"
+
 // Transforms can be combined in the same way as matrices and quaternions and the effects of two transforms can be combined into one transform
 // To keep things consistent, combining transforms should maintain a right-to-left combination order
 Transform combine(const Transform& t1, const Transform& t2)

@@ -9,13 +9,14 @@
 
 #include "webgpu_context.h"
 #include "material.h"
-#include "graphics/mesh_instance.h"
-#include "framework/animation/skeleton.h"
-#include "framework/animation/animation.h"
+#include "graphics/uniforms_structs.h"
+#include "framework/utils/hash.h"
 
 class Surface;
 class Texture;
 class Shader;
+class MeshInstance;
+class Animation;
 struct Uniform;
 
 class RendererStorage {
@@ -33,34 +34,15 @@ public:
     static std::map<std::string, Surface*> surfaces;
     static std::map<std::string, Animation*> animations;
 
+    static std::unordered_map<RenderPipelineKey, Pipeline*> registered_render_pipelines;
+    static std::unordered_map<Shader*, Pipeline*> registered_compute_pipelines;
+
     static Texture* current_skybox_texture;
-
-    struct sUIData {
-        // Common
-        float is_hovered = 0.f;
-        // Groups
-        float num_group_items = 2; // combo buttons use this prop by now to the index in combo
-        // Buttons
-        float is_selected = 0.f;
-        float is_color_button = 0.f;
-
-        // Color Picker
-        glm::vec4 picker_color = glm::vec4(1.f);
-
-        // To keep rgb if icon has colors...
-        float keep_rgb = 0.f;
-        // Slider
-        float slider_value = 0.f;
-        float slider_max = 1.0f;
-        // Disable buttons to use them as group icons
-        float is_button_disabled = 0.f;
-    };
 
     struct sBindingData {
         std::vector<Uniform*> uniforms;
         WGPUBindGroup bind_group;
     };
-
 
     static std::unordered_map<Material, sBindingData> material_bind_groups;
     static std::unordered_map<const void*, sBindingData> ui_widget_bind_groups;
@@ -97,5 +79,9 @@ public:
 
     static void register_animation(const std::string& animation_path, Animation* animation);
     static Animation* get_animation(const std::string& animation_path);
+
+    static void register_render_pipeline(Material& material);
+    static void register_compute_pipeline(Shader* shader, WGPUPipelineLayout pipeline_layout);
+    static void clean_registered_pipelines();
 
 };

@@ -4,6 +4,11 @@
 #include "framework/utils/intersections.h"
 #include "graphics/renderer.h"
 
+#include "glm/gtc/matrix_transform.hpp"
+#include "glm/gtx/matrix_transform_2d.hpp"
+#include "glm/gtx/quaternion.hpp"
+#include <glm/gtc/type_ptr.hpp>
+
 #include "spdlog/spdlog.h"
 
 #include <algorithm>

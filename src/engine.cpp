@@ -6,8 +6,6 @@
 
 #include "graphics/renderer.h"
 
-#include "spdlog/spdlog.h"
-
 #include "imgui.h"
 #include "backends/imgui_impl_wgpu.h"
 #include "backends/imgui_impl_glfw.h"

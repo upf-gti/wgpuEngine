@@ -1,6 +1,7 @@
 #include "camera.h"
 #include "framework/input.h"
 #include "graphics/renderer.h"
+#include "graphics/webgpu_context.h"
 
 void Camera::set_perspective(float fov, float aspect, float z_near, float z_far)
 {

@@ -1,6 +1,7 @@
 #include "track.h"
 
 #include <algorithm>
+#include "glm/gtx/compatibility.hpp"
 
 // Track helpers avoid having to make specialized versions of the interpolation functions
 namespace TrackHelpers {

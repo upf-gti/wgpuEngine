@@ -6,6 +6,9 @@
 
 #include "graphics/renderer.h"
 
+#include <glm/gtc/type_ptr.hpp>
+#include "glm/gtx/quaternion.hpp"
+
 #include "spdlog/spdlog.h"
 
 Node3D::Node3D() : model(1.0f)

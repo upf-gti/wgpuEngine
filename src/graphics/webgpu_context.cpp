@@ -1,9 +1,9 @@
 #include "webgpu_context.h"
-#include "framework/utils/utils.h"
 
 #include "shader.h"
 #include "pipeline.h"
 #include "texture.h"
+#include "renderer_storage.h"
 
 #include "renderer.h"
 
@@ -14,8 +14,6 @@
 #endif
 
 #ifdef __EMSCRIPTEN__
-#include <emscripten/emscripten.h>
-#include <emscripten/html5_webgpu.h>
 #include <GLFW/glfw3.h>
 #else
 #include "glfw3webgpu.h"

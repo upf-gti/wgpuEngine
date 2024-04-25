@@ -1,6 +1,5 @@
 #include "spot_light_3d.h"
-#include "graphics/renderer.h"
-#include "framework/utils/utils.h"
+
 #include "imgui.h"
 
 SpotLight3D::SpotLight3D() : Light3D()

@@ -1,6 +1,6 @@
 #include "parse_gltf.h"
 
-#include "framework/math.h"
+#include "glm/glm.hpp"
 
 #include "json.hpp"
 #include "stb_image.h"
@@ -11,7 +11,6 @@
 #define TINYGLTF_NO_STB_IMAGE_WRITE
 #include "tiny_gltf.h"
 
-#include "framework/utils/utils.h"
 #include "framework/nodes/camera.h"
 #include "framework/nodes/mesh_instance_3d.h"
 #include "framework/nodes/skeleton_instance_3d.h"
@@ -23,7 +22,6 @@
 #include "graphics/texture.h"
 #include "graphics/shader.h"
 #include "graphics/renderer_storage.h"
-#include "graphics/renderer.h"
 
 #include "spdlog/spdlog.h"
 
@@ -115,7 +113,7 @@ void read_mesh(const tinygltf::Model& model, const tinygltf::Node& node, Node3D*
     const tinygltf::Mesh& mesh = model.meshes[node.mesh];
     uint32_t joints_count = 0;
     for (int i = 0; i < node.skin; i++) {
-        joints_count += model.skins[i].joints.size();
+        joints_count += static_cast<uint32_t>(model.skins[i].joints.size());
     }
 
     MeshInstance3D* entity_mesh = dynamic_cast<MeshInstance3D*>(entity);
@@ -1083,15 +1081,14 @@ void track_from_channel(Track& result, const tinygltf::AnimationChannel& channel
     bool is_sampler_cubic = interpolation == Interpolation::CUBIC;
 
     // Parse the time and value arrays into frame structures
-    for (size_t i = 0; i < num_frames; ++i) {
+    for (size_t baseIndex = 0; baseIndex < num_frames; ++baseIndex) {
 
-        Keyframe& frame = result[i];
+        Keyframe& frame = result[baseIndex];
 
         // offset used to deal with cubic tracks since the input and output tangents are as large as the number of components
-        int offset = 0;
-        int baseIndex = i;
+        size_t offset = 0;
 
-        frame.time = std::get<float>(time[i]);
+        frame.time = std::get<float>(time[baseIndex]);
 
         // read input tangent (only if the sample is cubic)
         frame.in = is_sampler_cubic ? values[baseIndex + offset++] : 0.0f;

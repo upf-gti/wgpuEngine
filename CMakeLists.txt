@@ -1,10 +1,15 @@
-cmake_minimum_required(VERSION 3.13)
+cmake_minimum_required(VERSION 3.16)
 
 set(WGPU_DIR_ROOT     ${CMAKE_CURRENT_SOURCE_DIR})
 set(WGPU_DIR_SOURCES "${WGPU_DIR_ROOT}/src")
 set(WGPU_DIR_LIBS    "${WGPU_DIR_ROOT}/libraries")
 
 project(webgpuEngine LANGUAGES C CXX)
+
+# Enable multicore compile on VS solution
+if(MSVC)
+  add_definitions(/MP)
+endif()
 
 if (WIN32)
     set(DAWN_BUILD "STATIC" CACHE STRING "Choose between SRC or STATIC to build from source (slower, better debugging) or download an static library (faster)")
@@ -197,6 +202,7 @@ target_include_directories(${PROJECT_NAME} PUBLIC ${WGPU_DIR_LIBS}/nlohmann_json
 target_include_directories(${PROJECT_NAME} PUBLIC ${WGPU_DIR_LIBS}/tiny_gltf)
 
 # spdlog
+SET(SPDLOG_ENABLE_PCH ON CACHE BOOL "BUILD PRECOMPILED HEADER IN SPDLOG")
 add_subdirectory(libraries/spdlog)
 target_link_libraries(${PROJECT_NAME} PUBLIC spdlog::spdlog)
 set_property(TARGET spdlog PROPERTY FOLDER "External/spdlog")

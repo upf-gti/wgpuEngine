@@ -1,14 +1,16 @@
 #pragma once
 
-#include "framework/math.h"
 #include "framework/aabb.h"
 
 #include <string>
 #include <vector>
-#include <map>
 #include <unordered_map>
 #include <variant>
 #include <functional>
+
+#include "glm/vec2.hpp"
+#include "glm/vec3.hpp"
+#include "glm/vec4.hpp"
 
 using FuncEmpty = std::function<void()>;
 using FuncVoid = std::function<void(const std::string&, void*)>;
@@ -29,8 +31,8 @@ enum NodeType {
 class Node; 
 class Node {
 
-    static std::map<std::string, std::vector<SignalType>> mapping_signals;
-    static std::map<uint8_t, std::vector<FuncEmpty>> controller_signals;
+    static std::unordered_map<std::string, std::vector<SignalType>> mapping_signals;
+    static std::unordered_map<uint8_t, std::vector<FuncEmpty>> controller_signals;
     static uint32_t last_node_id;
 
 protected:

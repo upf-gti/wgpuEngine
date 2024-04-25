@@ -6,8 +6,10 @@
 #include "uniform.h"
 #include "pipeline.h"
 #include "renderer.h"
+#include "mesh_instance.h"
 
 #include "framework/nodes/mesh_instance_3d.h"
+#include "framework/animation/animation.h"
 
 #include <filesystem>
 
@@ -22,6 +24,9 @@ Texture* RendererStorage::current_skybox_texture = nullptr;
 std::map<std::string, std::vector<std::string>> RendererStorage::shader_library_references;
 std::unordered_map<Material, RendererStorage::sBindingData> RendererStorage::material_bind_groups;
 std::unordered_map<const void*, RendererStorage::sBindingData> RendererStorage::ui_widget_bind_groups;
+
+std::unordered_map<RenderPipelineKey, Pipeline*> RendererStorage::registered_render_pipelines;
+std::unordered_map<Shader*, Pipeline*> RendererStorage::registered_compute_pipelines;
 
 RendererStorage::RendererStorage()
 {
@@ -518,4 +523,126 @@ void RendererStorage::reload_all_render_pipelines()
             shader->reload();
         }
     }
+}
+
+void RendererStorage::register_render_pipeline(Material& material)
+{
+    if (material.shader && material.shader->get_pipeline()) {
+        return;
+    }
+
+    WebGPUContext* webgpu_context = Renderer::instance->get_webgpu_context();
+
+    PipelineDescription description = {};
+
+    switch (material.topology_type) {
+    case TOPOLOGY_TRIANGLE_LIST:
+        description.topology = WGPUPrimitiveTopology_TriangleList;
+        break;
+    case TOPOLOGY_TRIANGLE_STRIP:
+        description.topology = WGPUPrimitiveTopology_TriangleStrip;
+        break;
+    case TOPOLOGY_LINE_LIST:
+        description.topology = WGPUPrimitiveTopology_LineList;
+        break;
+    case TOPOLOGY_LINE_STRIP:
+        description.topology = WGPUPrimitiveTopology_LineStrip;
+        break;
+    case TOPOLOGY_POINT_LIST:
+        description.topology = WGPUPrimitiveTopology_PointList;
+        break;
+    default:
+        assert(0);
+    }
+
+    if (material.flags & MATERIAL_2D) {
+        description.depth_write = false;
+    }
+    else {
+        description.depth_write = material.depth_write;
+    }
+
+    switch (material.cull_type) {
+    case CULL_NONE:
+        description.cull_mode = WGPUCullMode_None;
+        break;
+    case CULL_BACK:
+        description.cull_mode = WGPUCullMode_Back;
+        break;
+    case CULL_FRONT:
+        description.cull_mode = WGPUCullMode_Front;
+        break;
+    default:
+        assert(0);
+    }
+
+    bool is_openxr_available = Renderer::instance->get_openxr_available();
+    WGPUTextureFormat swapchain_format = is_openxr_available ? webgpu_context->xr_swapchain_format : webgpu_context->swapchain_format;
+
+    WGPUColorTargetState color_target = {};
+    color_target.format = swapchain_format;
+    color_target.writeMask = WGPUColorWriteMask_All;
+
+    switch (material.transparency_type) {
+    case ALPHA_OPAQUE:
+        break;
+    case ALPHA_BLEND: {
+        WGPUBlendState* blend_state = new WGPUBlendState;
+        blend_state->color = {
+                .operation = WGPUBlendOperation_Add,
+                .srcFactor = WGPUBlendFactor_SrcAlpha,
+                .dstFactor = WGPUBlendFactor_OneMinusSrcAlpha,
+        };
+        blend_state->alpha = {
+                .operation = WGPUBlendOperation_Add,
+                .srcFactor = WGPUBlendFactor_Zero,
+                .dstFactor = WGPUBlendFactor_One,
+        };
+
+        color_target.blend = blend_state;
+
+        description.depth_write = false;
+        description.blending_enabled = true;
+        break;
+    }
+    case ALPHA_MASK:
+        break;
+    case ALPHA_HASH:
+        break;
+    }
+
+    description.depth_read = material.depth_read;
+    description.sample_count = Renderer::instance->get_msaa_count();
+
+    RenderPipelineKey key = { material.shader, color_target, description };
+
+    if (registered_render_pipelines.contains(key)) {
+        material.shader->set_pipeline(registered_render_pipelines[key]);
+        return;
+    }
+
+    Pipeline* render_pipeline = new Pipeline();
+    render_pipeline->create_render(material.shader, color_target, description);
+    registered_render_pipelines[key] = render_pipeline;
+}
+
+void RendererStorage::register_compute_pipeline(Shader* shader, WGPUPipelineLayout pipeline_layout)
+{
+    Pipeline* compute_pipeline = new Pipeline();
+    compute_pipeline->create_compute(shader, pipeline_layout);
+    registered_compute_pipelines[shader] = compute_pipeline;
+}
+
+void RendererStorage::clean_registered_pipelines()
+{
+    for (auto [key, pipeline] : registered_render_pipelines) {
+        delete pipeline;
+    }
+
+    for (auto [shader, pipeline] : registered_compute_pipelines) {
+        delete pipeline;
+    }
+
+    registered_render_pipelines.clear();
+    registered_compute_pipelines.clear();
 }

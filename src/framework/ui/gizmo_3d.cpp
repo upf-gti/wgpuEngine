@@ -5,7 +5,7 @@
 #include <framework/input.h>
 #include <framework/utils/intersections.h>
 #include <framework/colors.h>
-#include <framework/utils/utils.h>
+#include <framework/utils/math_utils.h>
 
 #include "framework/scene/parse_scene.h"
 #include "graphics/renderer_storage.h"

@@ -1,6 +1,7 @@
 #include "skeleton_instance_3d.h"
 
 #include "graphics/renderer.h"
+#include "graphics/renderer_storage.h"
 #include "imgui.h"
 #include "spdlog/spdlog.h"
 
@@ -70,12 +71,12 @@ void SkeletonInstance3D::update_helper()
     vertices.clear();
     vertices.resize(0);
 
-    unsigned int numJoints = skeleton->get_current_pose().size();
+    size_t numJoints = skeleton->get_current_pose().size();
     Pose pose = skeleton->get_current_pose();
 
     glm::mat4x4 global_model = get_global_model();
 
-    for (unsigned int i = 0; i < numJoints; ++i) {
+    for (size_t i = 0; i < numJoints; ++i) {
         InterleavedData data;
 
         data.position = pose.get_global_transform(i).position;

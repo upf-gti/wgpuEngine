@@ -1,6 +1,9 @@
 #pragma once
 
-#include "framework/math.h"
+#include "glm/vec2.hpp"
+#include "glm/vec4.hpp"
+#include "glm/vec4.hpp"
+#include "glm/gtc/quaternion.hpp"
 
 struct Transform {
 

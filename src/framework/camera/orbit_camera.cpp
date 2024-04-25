@@ -1,11 +1,8 @@
 #include "orbit_camera.h"
 
 #include "framework/input.h"
-#include "framework/utils/utils.h"
 
-#include "glm/gtx/rotate_vector.hpp"
 #include "glm/gtx/norm.hpp"
-#include "spdlog/spdlog.h"
 
 OrbitCamera::OrbitCamera() : Camera3D()
 {

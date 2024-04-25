@@ -1,6 +1,7 @@
 #pragma once
 
-#include "framework/math.h"
+#include "glm/vec2.hpp"
+#include "glm/vec3.hpp"
 
 struct CKerning {
     int first;

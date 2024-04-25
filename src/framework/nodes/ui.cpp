@@ -1,5 +1,5 @@
 #include "ui.h"
-#include "framework/utils/utils.h"
+
 #include "framework/utils/intersections.h"
 #include "framework/input.h"
 #include "framework/nodes/text.h"
@@ -8,6 +8,7 @@
 #include "graphics/webgpu_context.h"
 #include "spdlog/spdlog.h"
 #include "glm/gtx/easing.hpp"
+#include "glm/gtx/compatibility.hpp"
 
 namespace ui {
 

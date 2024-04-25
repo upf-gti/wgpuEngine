@@ -14,26 +14,26 @@ public:
 	// Initialize the pose given another pose
 	Pose(const Pose& p);
 	// Initialize the pose given the number of joints of the pose
-	Pose(uint32_t numJoints);
+	Pose(size_t numJoints);
 
 	// Resize the array of joints and of parents id
-	void resize(uint32_t size);
-	uint32_t size() const;
+	void resize(size_t size);
+    size_t size() const;
 
-	void set_parent(uint32_t id, uint32_t parent_id);
+	void set_parent(size_t id, uint32_t parent_id);
     void set_joints(std::vector<Transform> new_joints) { joints = new_joints; };
 
-	int get_parent(uint32_t id);
+	int get_parent(size_t id);
     const std::vector<Transform>& get_joints() const { return joints; };
 
 	// Set the transformation for the joint given its id
-	void set_local_transform(uint32_t id, const Transform& transform);
+	void set_local_transform(size_t id, const Transform& transform);
 	// Get the transformation of the joint given its id
-	Transform& get_local_transform(uint32_t id);
+	Transform& get_local_transform(size_t id);
 	// Get the global transformation (world space) of the joint 
-	Transform get_global_transform(uint32_t id);
+	Transform get_global_transform(size_t id);
 	// Get the global transformation matrix (world space) of all the joints
 	std::vector<glm::mat4> get_global_matrices();
-	Transform operator[](uint32_t index);
+	Transform operator[](size_t index);
     Pose& operator=(const Pose& p);
 };
