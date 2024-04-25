@@ -29,6 +29,16 @@ void SkeletonInstance3D::update(float dt)
     }
 
     Node3D::update(dt);
+    // Update GPU data
+    if (animated_uniform_data && invbind_uniform_data)
+    {
+        const std::vector<glm::mat4x4>& animated_matrices = get_animated_data();
+        const std::vector<glm::mat4x4>& inv_bind_matrices = get_invbind_data();
+        auto webgpu_context = Renderer::instance->get_webgpu_context();
+        webgpu_context->update_buffer(std::get<WGPUBuffer>(animated_uniform_data->data), 0, animated_matrices.data(), sizeof(glm::mat4x4) * animated_matrices.size());
+        webgpu_context->update_buffer(std::get<WGPUBuffer>(invbind_uniform_data->data), 0, inv_bind_matrices.data(), sizeof(glm::mat4x4) * inv_bind_matrices.size());
+    }
+
 }
 
 void SkeletonInstance3D::update_pose_from_joints()
@@ -113,6 +123,25 @@ Skeleton* SkeletonInstance3D::get_skeleton()
     return skeleton;
 }
 
+std::vector<glm::mat4x4> SkeletonInstance3D::get_animated_data()
+{
+    assert(skeleton);
+    Pose& current_pose = skeleton->get_current_pose();
+    return current_pose.get_global_matrices();
+}
+
+std::vector<glm::mat4x4> SkeletonInstance3D::get_invbind_data()
+{
+    assert(skeleton);
+    return skeleton->get_inv_bind_pose();
+}
+
+void SkeletonInstance3D::set_uniform_data(Uniform* animated_u, Uniform* invbind_u)
+{
+    animated_uniform_data = animated_u;
+    invbind_uniform_data = invbind_u;
+}
+
 
 void recursive_tree_gui(Node* node) {
     if (ImGui::TreeNode(node->get_name().c_str())) {
@@ -143,7 +172,7 @@ void SkeletonInstance3D::render_gui() {
         ImGui::EndPopup();
     }
     //ImGui::PopID();
- /*   if (ImGui::TreeNode(name.c_str())) {
+    if (ImGui::TreeNode(name.c_str())) {
         Pose& pose = skeleton->get_current_pose();
         for (size_t i = 0; i < joint_nodes.size(); i++) {
             int parent = pose.get_parent(i);
@@ -159,7 +188,7 @@ void SkeletonInstance3D::render_gui() {
         }
         
         ImGui::TreePop();
-    }*/
+    }
     ImGui::End();
 }
 

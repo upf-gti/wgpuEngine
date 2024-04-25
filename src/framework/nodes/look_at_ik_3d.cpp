@@ -162,22 +162,22 @@ void LookAtIK3D::update(float delta_time)
     Transform world_child = ik_solver->get_local_transform(0); // Get root transform from IK chain (in global space) --> root is always in global space
     Transform local_child = combine(inverse(global_transform), world_child); // Convert root transform in pose space
     local_child = combine(inverse(world_parent), local_child); // Convert root transform in local space
-    pose.set_local_transform(jointIdx[0], local_child);
-    
-    //add(local_child, out_pose.get_local_transform(jointIdx[0]), local_child, pose.get_local_transform(jointIdx[0]));
+   
+    add(local_child, out_pose.get_local_transform(jointIdx[0]), local_child, pose.get_local_transform(jointIdx[0]));
+    out_pose.set_local_transform(jointIdx[0], local_child);
 
-    skeleton_instance->joint_nodes[jointIdx[0]]->set_transform(local_child);
+    //skeleton_instance->joint_nodes[jointIdx[0]]->set_transform(local_child);
     for (size_t i = 1; i < jointIdx.size(); i++)
     {
         local_child = ik_solver->get_local_transform(i);
-        pose.set_local_transform(jointIdx[i], ik_solver->get_local_transform(i));
-        //add(local_child, out_pose.get_local_transform(jointIdx[i]), local_child, pose.get_local_transform(jointIdx[i]));
-        skeleton_instance->joint_nodes[jointIdx[i]]->set_transform(local_child);
+        add(local_child, out_pose.get_local_transform(jointIdx[i]), local_child, pose.get_local_transform(jointIdx[i]));
+        out_pose.set_local_transform(jointIdx[i], local_child);
+        //skeleton_instance->joint_nodes[jointIdx[i]]->set_transform(local_child);
     }
-    skeleton_instance->set_model_dirty(true);
+    //skeleton_instance->update_pose_from_joints();
 
    //add(out_pose, out_pose, pose, skeleton->get_rest_pose());
-   // out_pose = pose;
+    //out_pose = pose;
    
 }
 

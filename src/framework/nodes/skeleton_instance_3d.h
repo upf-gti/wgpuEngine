@@ -7,6 +7,10 @@
 
 class SkeletonInstance3D : public MeshInstance3D {
 
+
+    Uniform* animated_uniform_data = nullptr;
+    Uniform* invbind_uniform_data = nullptr;
+
     void init_helper();
     void update_helper();
 
@@ -26,6 +30,13 @@ public:
     void set_joint_nodes(const std::vector<Node3D*>& new_joint_nodes);
 
     Skeleton* get_skeleton();
+    std::vector<glm::mat4x4> get_animated_data();
+    std::vector<glm::mat4x4> get_invbind_data();
+    void set_uniform_data(Uniform* animated_u, Uniform* invbind_u);
+
+    Uniform* get_animated_uniform_data() { return animated_uniform_data; }
+    Uniform* get_invbind_uniform_data() { return invbind_uniform_data; }
+
     void render_gui();
 };
 

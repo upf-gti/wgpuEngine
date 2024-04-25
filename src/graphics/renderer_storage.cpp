@@ -8,6 +8,7 @@
 #include "renderer.h"
 
 #include "framework/nodes/mesh_instance_3d.h"
+#include "framework/nodes/skeleton_instance_3d.h"
 
 #include <filesystem>
 
@@ -141,12 +142,14 @@ void RendererStorage::register_material(WebGPUContext* webgpu_context, MeshInsta
     if (material.use_skinning) {
 
         MeshInstance3D* instance_3d = static_cast<MeshInstance3D*>(mesh_instance);
+        SkeletonInstance3D* skeleton_instance = dynamic_cast<SkeletonInstance3D*>(instance_3d->get_parent());
+        assert(skeleton_instance);
 
-        if (!instance_3d->animated_uniform_data) {
+        if (!skeleton_instance->get_animated_uniform_data()) {
             Uniform* anim_u = new Uniform();
 
             // Send current animated bones matrices
-            const std::vector<glm::mat4x4>& animated_matrices = instance_3d->get_animated_data();
+            const std::vector<glm::mat4x4>& animated_matrices = skeleton_instance->get_animated_data();
 
             anim_u->data = webgpu_context->create_buffer(sizeof(glm::mat4x4) * animated_matrices.size(), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Storage, animated_matrices.data(), "animated_buffer");
             anim_u->binding = 10;
@@ -157,18 +160,18 @@ void RendererStorage::register_material(WebGPUContext* webgpu_context, MeshInsta
             Uniform* invbind_u = new Uniform();
 
             // Send bind bones inverse matrices
-            const std::vector<glm::mat4x4>& invbind_matrices = instance_3d->get_invbind_data();
+            const std::vector<glm::mat4x4>& invbind_matrices = skeleton_instance->get_invbind_data();
             invbind_u->data = webgpu_context->create_buffer(sizeof(glm::mat4x4) * invbind_matrices.size(), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Storage, invbind_matrices.data(), "invbind_buffer");
             invbind_u->binding = 11;
             invbind_u->buffer_size = sizeof(glm::mat4x4) * invbind_matrices.size();
 
             uniforms.push_back(invbind_u);
 
-            instance_3d->set_uniform_data(anim_u, invbind_u);
+            skeleton_instance->set_uniform_data(anim_u, invbind_u);
         }
         else {
-            uniforms.push_back(instance_3d->animated_uniform_data);
-            uniforms.push_back(instance_3d->invbind_uniform_data);
+            uniforms.push_back(skeleton_instance->get_animated_uniform_data());
+            uniforms.push_back(skeleton_instance->get_invbind_uniform_data());
         }
 
     }

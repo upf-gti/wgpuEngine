@@ -1299,7 +1299,11 @@ bool parse_gltf(const char* gltf_path, std::vector<Node3D*>& entities)
     if (model.animations.size()) {
         AnimationPlayer* player = new AnimationPlayer("Animation Player");
         Node3D* gltf_root = entities.back();
-        gltf_root->add_child(player);
+        //gltf_root->add_child(player);
+        std::vector<Node*>& nodes = gltf_root->get_children();
+        player->set_parent(gltf_root);
+        nodes.insert(nodes.begin(), player);
+
         parse_model_animations(model, skeleton_instances, player);
     }
 
