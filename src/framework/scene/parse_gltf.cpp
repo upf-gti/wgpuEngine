@@ -1233,14 +1233,14 @@ bool parse_gltf(const char* gltf_path, std::vector<Node3D*>& entities)
     if (path.extension() == ".gltf")
     {
         if (!loader.LoadASCIIFromFile(&model, &err, &warn, gltf_path)) {
-            spdlog::error("Could not load: {}", gltf_path);
+            spdlog::error("Could not load \"{}\": {}", gltf_path, err);
             return false;
         }
     }
     else
     {
         if (!loader.LoadBinaryFromFile(&model, &err, &warn, gltf_path)) {
-            spdlog::error("Could not load binary: {}", gltf_path);
+            spdlog::error("Could not load binary \"{}\": {}", gltf_path, err);
             return false;
         }
     }

@@ -59,7 +59,7 @@ struct Material
 
     eTransparencyType transparency_type = ALPHA_OPAQUE;
     eTopologyType topology_type = TOPOLOGY_TRIANGLE_LIST;
-    eCullType cull_type = CULL_NONE;
+    eCullType cull_type = CULL_BACK;
 
     uint8_t flags = 0;
     uint8_t priority = 10;
