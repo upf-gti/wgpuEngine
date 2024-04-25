@@ -910,8 +910,6 @@ void WebGPUContext::generate_brdf_lut_texture()
 
 void WebGPUContext::generate_prefiltered_env_texture(Texture* prefiltered_env_texture, Texture* hdr_texture)
 {
-    RenderdocCapture::start_capture_frame();
-
     WGPUQueue prefilter_queue = wgpuDeviceGetQueue(device);
 
     // temporal texture to store panorama to cubemap result and to generate mipmaps
@@ -1059,8 +1057,6 @@ void WebGPUContext::generate_prefiltered_env_texture(Texture* prefiltered_env_te
     wgpuCommandEncoderRelease(command_encoder);
 
     wgpuQueueRelease(prefilter_queue);
-
-    RenderdocCapture::end_capture_frame();
 }
 
 void WebGPUContext::update_buffer(WGPUBuffer buffer, uint64_t buffer_offset, void const* data, uint64_t size)
