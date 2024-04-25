@@ -984,7 +984,7 @@ namespace ui {
     */
 
     ColorPicker2D::ColorPicker2D(const std::string& sg, const Color& c)
-        : ColorPicker2D(sg, { 0.0f, 0.0f }, glm::vec2(BUTTON_SIZE), c) {}
+        : ColorPicker2D(sg, { 0.0f, 0.0f }, glm::vec2(PICKER_SIZE), c) {}
 
     ColorPicker2D::ColorPicker2D(const std::string& sg, const glm::vec2& pos, const glm::vec2& size, const Color& c)
         : Panel2D(sg, pos, size, c), signal(sg)

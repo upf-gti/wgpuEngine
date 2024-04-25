@@ -12,9 +12,10 @@
 
 namespace ui {
 
+    const float PICKER_SIZE = 164.f;
     const float BUTTON_SIZE = 64.f;
-    const float GROUP_MARGIN = 8.f;
-    const float LAYER_MARGIN = 12.f;
+    const float GROUP_MARGIN = 4.f;
+    const float LAYER_MARGIN = 8.f;
 
     enum ComboIndex {
         UNIQUE,
