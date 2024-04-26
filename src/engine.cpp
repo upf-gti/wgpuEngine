@@ -133,6 +133,7 @@ void Engine::on_frame()
     render();
 
     Input::set_mouse_wheel(0.0f, 0.0f);
+    Input::set_prev_state();
 }
 
 void Engine::update(float delta_time)

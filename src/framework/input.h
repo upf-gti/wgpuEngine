@@ -61,6 +61,8 @@ public:
 	static void update(float delta_time);
 	static void center_mouse();
 
+    static void set_prev_state();
+
 	// https://www.glfw.org/docs/3.3/group__keys.html
 	static bool is_key_pressed(int key) { return keystate[key] == GLFW_PRESS; }
 	static bool was_key_pressed(int key) { return prev_keystate[key] == GLFW_RELEASE && keystate[key] == GLFW_PRESS; }

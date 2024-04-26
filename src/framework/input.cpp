@@ -112,9 +112,6 @@ bool Input::init_xr(OpenXRContext* context)
 
 void Input::update(float delta_time)
 {
-    memcpy((void*)&Input::prev_keystate, Input::keystate, GLFW_KEY_LAST);
-    memcpy((void*)&Input::prev_buttons, Input::buttons, GLFW_MOUSE_BUTTON_LAST);
-
     glfwPollEvents();
 
 	// Mouse  state
@@ -164,6 +161,12 @@ void Input::center_mouse()
 	glfwSetCursorPos(window, center_x, center_y);
 	Input::mouse_position.x = (float)center_x;
 	Input::mouse_position.y = (float)center_y;
+}
+
+void Input::set_prev_state()
+{
+    memcpy((void*)&Input::prev_keystate, Input::keystate, GLFW_KEY_LAST);
+    memcpy((void*)&Input::prev_buttons, Input::buttons, GLFW_MOUSE_BUTTON_LAST);
 }
 
 void Input::set_key_state(int key, uint8_t value)
