@@ -207,8 +207,8 @@ namespace ui {
 
         quad_mesh.set_surface_material_override(quad_mesh.get_surface(0), material);
 
-        padding = glm::vec2(GROUP_MARGIN);
-        item_margin = glm::vec2(GROUP_MARGIN);
+        padding = glm::vec2(2.0f);
+        item_margin = glm::vec2(2.0f);
 
         render_background = false;
     }
@@ -515,20 +515,6 @@ namespace ui {
             set_selected(allow_toggle ? !last_value : true);
         });
 
-        // Submenu icon..
-        {
-            /*Button2D* submenu_mark = new Button2D(sg + "@mark", {0.f, 0.f}, {0.f, 0.f}, colors::WHITE);
-            submenu_mark->add_surface(RendererStorage::get_surface("quad"));
-
-            Material material;
-            material.diffuse_texture = RendererStorage::get_texture("data/textures/submenu_mark.png");
-            material.flags |= MATERIAL_2D;
-            material.color = colors::WHITE;
-            material.shader = RendererStorage::get_shader("data/shaders/ui/ui_texture.wgsl", material);
-
-            submenu_mark->set_surface_material_override(mark->get_surface(0), material);*/
-        }
-
         // Text label
         {
             float magic = 3.5f;
@@ -572,13 +558,6 @@ namespace ui {
         is_unique_selection = value;
     }
 
-    void Button2D::render()
-    {
-        Panel2D::render();
-
-        /*if (mark) mark->render();*/
-    }
-
     void Button2D::update(float delta_time)
     {
         // Set new size
@@ -597,13 +576,6 @@ namespace ui {
 
         if (!visibility)
             return;
-
-        /*if (mark)
-        {
-            mark->set_model(get_model());
-            mark->translate(glm::vec3(0.7f, 0.7f, -1e-3f));
-            mark->scale(glm::vec3(0.35f, 0.35f, 1.0f));
-        }*/
 
         if (ui_data.is_button_disabled)
             return;
@@ -713,20 +685,6 @@ namespace ui {
             set_selected(allow_toggle ? !last_value : true);
         });
 
-        // Submenu icon..
-        {
-            /*Button2D* submenu_mark = new Button2D(sg + "@mark", {0.f, 0.f}, {0.f, 0.f}, colors::WHITE);
-            submenu_mark->add_surface(RendererStorage::get_surface("quad"));
-
-            Material material;
-            material.diffuse_texture = RendererStorage::get_texture("data/textures/submenu_mark.png");
-            material.flags |= MATERIAL_2D;
-            material.color = colors::WHITE;
-            material.shader = RendererStorage::get_shader("data/shaders/ui/ui_texture.wgsl", material);
-
-            submenu_mark->set_surface_material_override(mark->get_surface(0), material);*/
-        }
-
         // Text label
         {
             float magic = 3.65f;
@@ -760,6 +718,9 @@ namespace ui {
 
         auto webgpu_context = Renderer::instance->get_webgpu_context();
         RendererStorage::register_ui_widget(webgpu_context, material.shader, &quad_mesh, ui_data, 3);
+
+        padding = glm::vec2(GROUP_MARGIN);
+        item_margin = glm::vec2(GROUP_MARGIN * 0.5f);
 
         render_background = true;
     }
@@ -797,7 +758,7 @@ namespace ui {
     */
 
     ComboButtons2D::ComboButtons2D(const std::string& name, const glm::vec2& pos, const Color& color)
-        : ItemGroup2D(name, pos, color) {
+        : HContainer2D(name, pos, color) {
 
         class_type = Node2DClassType::COMBO;
 
@@ -827,7 +788,7 @@ namespace ui {
             node_2d->update_ui_data();
         }
 
-        ItemGroup2D::on_children_changed();
+        HContainer2D::on_children_changed();
     }
 
     /*
@@ -867,6 +828,33 @@ namespace ui {
 
             box->set_visibility(!last_value);
         });
+
+        // Submenu icon..
+        {
+            submenu_mark = new TextureButton2D(sg + "@mark", "data/textures/more.png");
+            submenu_mark->set_priority(BUTTON_MARK);
+        }
+    }
+
+    void ButtonSubmenu2D::render()
+    {
+        TextureButton2D::render();
+
+        if (submenu_mark) {
+            submenu_mark->render();
+        }
+    }
+
+    void ButtonSubmenu2D::update(float delta_time)
+    {
+        TextureButton2D::update(delta_time);
+
+        if (submenu_mark)
+        {
+            submenu_mark->set_model(get_global_model());
+            submenu_mark->scale(glm::vec3(0.6f, 0.6f, 1.0f));
+            submenu_mark->translate(glm::vec3(get_size().x * 0.85f, -get_size().y * 0.2f, -1e-3f));
+        }
     }
 
     void ButtonSubmenu2D::add_child(Node2D* child)
@@ -904,6 +892,11 @@ namespace ui {
 
     void ButtonSelector2D::add_child(Node2D* child)
     {
+        Button2D* node_2d = static_cast<Button2D*>(child);
+        assert(node_2d);
+
+        node_2d->set_is_unique_selection(true);
+
         box->add_child(child);
     }
 
@@ -912,9 +905,12 @@ namespace ui {
     */
 
     Slider2D::Slider2D(const std::string& sg, float v, int mode, float min, float max, float step)
-        : Slider2D(sg, v, { 0.0f, 0.0f }, glm::vec2(BUTTON_SIZE), mode, min, max, step) {}
+        : Slider2D(sg, "", v, {0.0f, 0.0f}, glm::vec2(BUTTON_SIZE), mode, min, max, step) {}
 
-    Slider2D::Slider2D(const std::string& sg, float value, const glm::vec2& pos, const glm::vec2& size, int mode, float min, float max, float step)
+    Slider2D::Slider2D(const std::string& sg, const std::string& texture_path, float v, int mode, float min, float max, float step)
+        : Slider2D(sg, texture_path, v, { 0.0f, 0.0f }, glm::vec2(BUTTON_SIZE), mode, min, max, step) {}
+
+    Slider2D::Slider2D(const std::string& sg, const std::string& texture_path, float value, const glm::vec2& pos, const glm::vec2& size, int mode, float min, float max, float step)
         : Panel2D(sg, pos, size), signal(sg), current_value(value), min_value(min), max_value(max), step_value(step) {
 
         this->class_type = Node2DClassType::SLIDER;
@@ -924,10 +920,12 @@ namespace ui {
         this->size = glm::vec2(size.x * ui_data.num_group_items, size.y);
 
         Material material;
+        material.color = colors::WHITE;
         material.flags = MATERIAL_2D | MATERIAL_UI;
         material.cull_type = CULL_BACK;
         material.transparency_type = ALPHA_BLEND;
         material.priority = class_type;
+        material.diffuse_texture = texture_path.size() > 0 ? RendererStorage::get_texture(texture_path, true) : nullptr;
         material.shader = RendererStorage::get_shader("data/shaders/ui/ui_slider.wgsl", material);
 
         Surface* quad_surface = quad_mesh.get_surface(0);
@@ -942,12 +940,17 @@ namespace ui {
             set_value(value);
         });
 
-        // Text label
+        // Text labels
         {
             float magic = 3.5f;
-            text_2d = new Text2D(signal, { size.x * 0.5f - signal.length() * magic, 0.0f }, 18.f, colors::PURPLE);
+            text_2d = new Text2D(signal, { size.x * 0.5f - signal.length() * magic, size.y }, 18.f, colors::BLACK);
             text_2d->set_priority(material.priority - 1);
             add_child(text_2d);
+
+            std::string value_as_string = std::to_string(std::ceil(current_value * 100.f) / 100.f);
+            text_2d_value = new Text2D(value_as_string.substr(0, 4), {size.x * 0.5f - value_as_string.length() * 2.25f, 0.0f}, 18.f, colors::PURPLE);
+            text_2d_value->set_priority(material.priority - 1);
+            add_child(text_2d_value);
         }
     }
 
@@ -970,11 +973,15 @@ namespace ui {
         ui_data.slider_value = current_value;
         ui_data.slider_max = max_value;
 
+        text_2d->set_visibility(false);
+
         update_ui_data();
     }
 
     bool Slider2D::on_input(sInputData data)
     {
+        text_2d->set_visibility(true);
+
         if (data.is_pressed)
         {
             float range = (mode == HORIZONTAL ? size.x : size.y);
@@ -988,7 +995,7 @@ namespace ui {
             if (step_value == 1.0f) current_value = std::roundf(current_value);
             Node::emit_signal(signal, current_value);
             std::string value_as_string = std::to_string(std::ceil(current_value * 100.f) / 100.f);
-            text_2d->text_entity->set_text(value_as_string.substr(0, 4));
+            text_2d_value->text_entity->set_text(value_as_string.substr(0, 4));
 
             on_pressed();
         }
@@ -1006,7 +1013,7 @@ namespace ui {
         current_value = glm::clamp(new_value, min_value, max_value);
         if (step_value == 1.0f) current_value = std::roundf(current_value);
         std::string value_as_string = std::to_string(std::ceil(current_value * 100.f) / 100.f);
-        text_2d->text_entity->set_text(value_as_string.substr(0, 4));
+        text_2d_value->text_entity->set_text(value_as_string.substr(0, 4));
     }
 
     /*
