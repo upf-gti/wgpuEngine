@@ -1,4 +1,5 @@
 #include "jacobian_solver.h"
+#include "glm/gtx/norm.hpp"
 
 Transform& JacobianSolver::operator[](uint32_t index) {
     return ik_chain[index];
@@ -24,22 +25,21 @@ void JacobianSolver::set_chain(std::vector<Transform> chain) {
 
 void JacobianSolver::set_rotation_axis() {
 
-    glm::vec3 local_axis = glm::vec3(0.0);
+    glm::vec3 local_axis = glm::vec3(0.f);
     for (int i = 0; i < ik_chain.size(); i++) {
 
         Transform t = get_global_transform(i);
         glm::quat inv_rot = inverse(t.rotation);
 
-        local_axis = inv_rot * glm::vec3(1, 0, 0);
+        local_axis = inv_rot * glm::vec3(1.f, 0.f, 0.f);
         local_axis_x_joint.push_back(local_axis);
 
-        local_axis = inv_rot * glm::vec3(0, 1, 0);
+        local_axis = inv_rot * glm::vec3(0.f, 1.f, 0.f);
         local_axis_y_joint.push_back(local_axis);
 
-        local_axis = inv_rot * glm::vec3(0, 0, 1);
+        local_axis = inv_rot * glm::vec3(0.f, 0.f, 1.f);
         local_axis_z_joint.push_back(local_axis);
     }
-
 }
 
 bool JacobianSolver::solve(const Transform& target) {
@@ -55,6 +55,12 @@ bool JacobianSolver::solve(const Transform& target) {
         // get end effector position
         glm::vec3 effector_pos = get_global_transform(num_joints).position;
 
+        // get the differential translation
+        glm::vec3 diff_pos = goal_pos - effector_pos;
+
+        if (glm::length2(diff_pos) <= threshold * threshold) {
+            return true;
+        }
         // build jacobi matrix as an array
         for (uint32_t joint_idx = 0; joint_idx < num_joints; joint_idx++) {
             // position of current joint in global
@@ -64,7 +70,7 @@ bool JacobianSolver::solve(const Transform& target) {
 
             // vector from joint to end effector and from joint to target
             glm::vec3 to_effector = effector_pos - joint_pos;
-         
+            
             // compute rotation axis
             glm::vec3 joint_axis_x = local_axis_x_joint[joint_idx];
             joint_axis_x = joint_rot * joint_axis_x;
@@ -105,9 +111,6 @@ bool JacobianSolver::solve(const Transform& target) {
             }
         }
 
-        // get the differential translation
-        glm::vec3 diff_pos = goal_pos - effector_pos;
-
         // find the differential rotation using: J^-1 * diff(pos) = diff(rot)
         std::vector<float> diff_rot(num_joints * 3);
         for (uint32_t i = 0; i < diff_rot.size(); i++) {
@@ -124,9 +127,11 @@ bool JacobianSolver::solve(const Transform& target) {
 
             // combine all the rotations for each axis of the same joint
             glm::quat q = qz * qy * qx;
-            Transform new_joint_transform(glm::vec3(0.0), q, glm::vec3(1.0));
-            new_joint_transform = combine(joint_transform, new_joint_transform);
-
+            /*Transform new_joint_transform(glm::vec3(0.f), q, glm::vec3(1.f));
+            new_joint_transform = combine(joint_transform, new_joint_transform);*/
+            Transform new_joint_transform = joint_transform;
+            new_joint_transform.rotation *= q;
+           
             set_global_transform(joint_idx, new_joint_transform);
         }
     }

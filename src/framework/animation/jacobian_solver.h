@@ -11,7 +11,7 @@ protected:
     std::vector<glm::vec3> local_axis_z_joint;
 
 public:
-    float amount = 0.05;
+    float amount = 0.05f;
     Transform& operator[](uint32_t index);
 
     void add_revolute_joint(Transform T);

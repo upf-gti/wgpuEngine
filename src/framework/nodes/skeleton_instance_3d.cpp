@@ -5,6 +5,7 @@
 #include "imgui.h"
 #include "spdlog/spdlog.h"
 #include "framework/nodes/look_at_ik_3d.h"
+#include "iostream"
 
 SkeletonInstance3D::SkeletonInstance3D()
 {
@@ -20,8 +21,6 @@ void SkeletonInstance3D::set_skeleton(Skeleton* s)
 
 void SkeletonInstance3D::update(float dt)
 {
-    update_helper();
-
     if (model_dirty) {
 
         update_pose_from_joints();
@@ -29,10 +28,16 @@ void SkeletonInstance3D::update(float dt)
         model_dirty = false;
     }
 
+    // Update child dones (i.e IK)
     Node3D::update(dt);
+
+    // Update skeleton mesh helper
+    update_helper();
+
     // Update GPU data
     if (animated_uniform_data && invbind_uniform_data)
     {
+        
         const std::vector<glm::mat4x4>& animated_matrices = get_animated_data();
         const std::vector<glm::mat4x4>& inv_bind_matrices = get_invbind_data();
         auto webgpu_context = Renderer::instance->get_webgpu_context();

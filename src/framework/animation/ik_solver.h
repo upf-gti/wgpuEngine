@@ -20,7 +20,7 @@ public:
     virtual void resize(uint32_t new_size);
     Transform& operator[](uint32_t index);
 
-    std::vector<Transform> get_chain();
+    std::vector<Transform>& get_chain();
     std::vector<uint32_t> get_joint_indices();
     void set_chain(std::vector<Transform> chain);
     void set_joint_indices(std::vector<uint32_t> indices);

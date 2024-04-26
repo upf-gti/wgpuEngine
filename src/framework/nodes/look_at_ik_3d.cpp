@@ -22,7 +22,7 @@ void LookAtIK3D::set_iterations(uint32_t iterations)
     ik_solver->set_num_steps(max_iterations);
 }
 
-void LookAtIK3D::set_distance(uint32_t distance)
+void LookAtIK3D::set_distance(float& distance)
 {
     min_distance = distance;
     ik_solver->set_threshold(min_distance);
@@ -43,7 +43,7 @@ void LookAtIK3D::set_target(Transform transform)
     target = transform;
 }
 
-void LookAtIK3D::set_solver(int solver_type)
+void LookAtIK3D::set_solver(uint32_t solver_type)
 {
     if (solver == solver_type)
         return;
@@ -89,7 +89,7 @@ uint32_t LookAtIK3D::get_iterations()
     return max_iterations;
 }
 
-uint32_t LookAtIK3D::get_distance()
+float LookAtIK3D::get_distance()
 {
     return min_distance;
 }
@@ -109,79 +109,54 @@ const Transform& LookAtIK3D::get_target()
     return target;
 }
 
-int LookAtIK3D::get_solver()
+uint32_t LookAtIK3D::get_solver()
 {
     return solver;
 }
 
-
-void add(Pose& output, Pose& inPose, Pose& addPose, Pose& basePose) {
-    unsigned int numJoints = addPose.size();
-    for (int i = 0; i < numJoints; ++i) {
-        Transform input = inPose.get_local_transform(i);
-        Transform additive = addPose.get_local_transform(i);
-        Transform additiveBase = basePose.get_local_transform(i);
-
-        // outPose = inPose + (addPose - basePose)
-        Transform result(input.position + (additive.position - additiveBase.position),
-            normalize(input.rotation * (inverse(additiveBase.rotation) * additive.rotation)), input.scale + (additive.scale - additiveBase.scale));
-        output.set_local_transform(i, result);
-    }
-}
-
-void add(Transform& output, Transform& input, Transform& additive, Transform& additiveBase) {
-    glm::quat q = additive.rotation * inverse(additiveBase.rotation);
-
-    Transform result(input.position + (additive.position - additiveBase.position),
-        normalize((additive.rotation * inverse(additiveBase.rotation) * input.rotation)),
-        input.scale + (additive.scale - additiveBase.scale));
-    output = result;
-}
-
 void LookAtIK3D::update(float delta_time)
 {
-
-    std::vector<Transform> chain = ik_solver->get_chain();
+    std::vector<Transform>& chain = ik_solver->get_chain();
     if (!chain.size())
         return;
 
-    // Update IK solver
-    Transform global_transform = mat4ToTransform(skeleton_instance->get_global_model());
-    ik_solver->solve(target);
+    std::vector<uint32_t> joints_ids = ik_solver->get_joint_indices();
 
     Skeleton* skeleton = skeleton_instance->get_skeleton();
     std::vector<std::string> joint_names = skeleton->get_joint_names();
-    Pose& out_pose = skeleton->get_current_pose();
-    Pose pose = skeleton->get_rest_pose();
+    Pose& current_pose = skeleton->get_current_pose();
 
-    std::vector<uint32_t> jointIdx = ik_solver->get_joint_indices();
+    Transform global_transform = mat4ToTransform(skeleton_instance->get_global_model());
+
+    // Convert root joint transform from pose space to global space
+    chain[0] = combine(global_transform, current_pose.get_global_transform(joints_ids[0]));
+
+    for (size_t i = 1; i < joints_ids.size(); i++) {
+        chain[i] = current_pose.get_local_transform(joints_ids[i]);
+    }
+
+    // Update IK solver
+    ik_solver->solve(target);
 
     // Convert chain root transform from global scene space to local joint space
     Transform world_parent;
  
-    if(pose.get_parent(jointIdx[0]) > -1)
-        world_parent = pose.get_global_transform(pose.get_parent(jointIdx[0])); // Get joint's parent transform in pose space
+    if(current_pose.get_parent(joints_ids[0]) > -1)
+        world_parent = current_pose.get_global_transform(current_pose.get_parent(joints_ids[0])); // Get joint's parent transform in pose space
 
     Transform world_child = ik_solver->get_local_transform(0); // Get root transform from IK chain (in global space) --> root is always in global space
     Transform local_child = combine(inverse(global_transform), world_child); // Convert root transform in pose space
     local_child = combine(inverse(world_parent), local_child); // Convert root transform in local space
    
-    add(local_child, out_pose.get_local_transform(jointIdx[0]), local_child, pose.get_local_transform(jointIdx[0]));
-    out_pose.set_local_transform(jointIdx[0], local_child);
+    current_pose.set_local_transform(joints_ids[0], local_child);
 
-    //skeleton_instance->joint_nodes[jointIdx[0]]->set_transform(local_child);
-    for (size_t i = 1; i < jointIdx.size(); i++)
+    //skeleton_instance->joint_nodes[joints_ids[0]]->set_transform(local_child);
+    for (uint32_t i = 1; i < joints_ids.size(); i++)
     {
         local_child = ik_solver->get_local_transform(i);
-        add(local_child, out_pose.get_local_transform(jointIdx[i]), local_child, pose.get_local_transform(jointIdx[i]));
-        out_pose.set_local_transform(jointIdx[i], local_child);
-        //skeleton_instance->joint_nodes[jointIdx[i]]->set_transform(local_child);
+        current_pose.set_local_transform(joints_ids[i], local_child);
     }
-    //skeleton_instance->update_pose_from_joints();
 
-   //add(out_pose, out_pose, pose, skeleton->get_rest_pose());
-    //out_pose = pose;
-   
 }
 
 void LookAtIK3D::render_gui()
@@ -190,7 +165,7 @@ void LookAtIK3D::render_gui()
 
     std::vector<std::string> names = { "FABRIK", "CCD", "JACOBIAN" };
     if (ImGui::BeginCombo("Method", names[solver].c_str())) {
-        for (size_t i = 0; i < names.size(); i++)
+        for (uint32_t i = 0; i < names.size(); i++)
         {
             bool is_selected = (solver == i);
             if (ImGui::Selectable(names[i].c_str(), is_selected)) {
@@ -259,12 +234,14 @@ void LookAtIK3D::render_gui()
     changed |= ImGui::DragFloat4("Rotation", &target.rotation[0], 0.1f);
     changed |= ImGui::DragFloat3("Scale", &target.scale[0], 0.1f);
 
-    if (ImGui::DragFloat("Min distance", &min_distance, 0.1f))
+    if (ImGui::DragFloat("Min distance", &min_distance, 0.001f, 0.01f, 5.f, "%.4f", ImGuiSliderFlags_AlwaysClamp))
     {
         set_distance(min_distance);
     }
-    if (ImGui::DragInt("Max iterations", &max_iterations, 1.f, 0))
+    int iterations = max_iterations;
+    if (ImGui::DragInt("Max iterations", &iterations, 1, 1, 300))
     {
+        max_iterations = iterations;
         set_iterations(max_iterations);
     }
 
@@ -281,7 +258,7 @@ void LookAtIK3D::create_chain()
         std::vector<uint32_t> indices;
 
         int end_effector_id = -1;
-        for (size_t i = 0; i < joint_names.size(); i++) {
+        for (uint32_t i = 0; i < joint_names.size(); i++) {
             if (joint_names[i] == end_effector) {
                 end_effector_id = i;
                 break;
@@ -289,7 +266,7 @@ void LookAtIK3D::create_chain()
         }
 
         Pose current_pose = skeleton->get_rest_pose();
-        size_t i = end_effector_id;
+        uint32_t i = end_effector_id;
         while(joint_names[i] != root) {
             chain.push_back(current_pose.get_local_transform(i));
             indices.push_back(i);

@@ -20,7 +20,7 @@ Transform& IKSolver::operator[](uint32_t index) {
     return ik_chain[index];
 }
 
-std::vector<Transform> IKSolver::get_chain() {
+std::vector<Transform>& IKSolver::get_chain() {
     return ik_chain;
 }
 

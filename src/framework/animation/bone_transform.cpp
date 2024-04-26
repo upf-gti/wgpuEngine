@@ -72,15 +72,15 @@ glm::quat fromTo(const glm::vec3& from, const glm::vec3& to)
         return glm::quat(0.f, 0.f, 0.f, 1.f);
     }
     else if (f == t * -1.0f) { 	// check whether the two vectors are opposites of each other
-        glm::vec3 ortho = glm::vec3(1, 0, 0);
+        glm::vec3 ortho = glm::vec3(1.f, 0.f, 0.f);
         if (fabsf(f.y) < fabsf(f.x)) {
-            ortho = glm::vec3(0, 1, 0);
+            ortho = glm::vec3(0.f, 1.f, 0.f);
         }
         if (fabsf(f.z) < fabs(f.y) && fabs(f.z) < fabsf(f.x)) {
-            ortho = glm::vec3(0, 0, 1);
+            ortho = glm::vec3(0.f, 0.f, 1.f);
         }
         glm::vec3 axis = normalize(cross(f, ortho));
-        return glm::quat(axis.x, axis.y, axis.z, 0);
+        return glm::quat(axis.x, axis.y, axis.z, 0.f);
     }
     // half vector between the from and to vectors
     glm::vec3 half = normalize(f + t);
@@ -96,9 +96,9 @@ glm::quat lookRotation(const glm::vec3& direction, const glm::vec3& up)
     glm::vec3 r = cross(u, f); // Object Right
     u = cross(f, r); // Object Up
     // From world forward to object forward
-    glm::quat worldToObject = fromTo(glm::vec3(0, 0, 1), f);
+    glm::quat worldToObject = fromTo(glm::vec3(0.f, 0.f, 1.f), f);
     // what direction is the new object up?
-    glm::vec3 objectUp = worldToObject * glm::vec3(0, 1, 0);
+    glm::vec3 objectUp = worldToObject * glm::vec3(0.f, 1.f, 0.f);
     // From object up to desired up
     glm::quat u2u = fromTo(objectUp, u);
     // Rotate to forward direction first
@@ -128,14 +128,14 @@ Transform mat4ToTransform(const glm::mat4x4& m)
     rotScaleMat[3][3] = 1.f;
 
     glm::quat inv_rot = inverse(out.rotation);
-    glm::vec3 r = inv_rot * glm::vec3(1, 0, 0);
-    glm::vec3 u = inv_rot * glm::vec3(0, 1, 0);
-    glm::vec3 f = inv_rot * glm::vec3(0, 0, 1);
+    glm::vec3 r = inv_rot * glm::vec3(1.f, 0.f, 0.f);
+    glm::vec3 u = inv_rot * glm::vec3(0.f, 1.f, 0.f);
+    glm::vec3 f = inv_rot * glm::vec3(0.f, 0.f, 1.f);
     glm::mat4x4 invRotMat =
-        glm::mat4x4(r.x, r.y, r.z, 0,
-            u.x, u.y, u.z, 0,
-            f.x, f.y, f.z, 0,
-            0, 0, 0, 1
+        glm::mat4x4(r.x, r.y, r.z, 0.f,
+            u.x, u.y, u.z, 0.f,
+            f.x, f.y, f.z, 0.f,
+            0.f, 0.f, 0.f, 1.f
         );
     glm::mat4x4 scaleSkewMat = rotScaleMat * invRotMat;
     out.scale = glm::vec3(scaleSkewMat[0][0], scaleSkewMat[1][1], scaleSkewMat[2][2]);
