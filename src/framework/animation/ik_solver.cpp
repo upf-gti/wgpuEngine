@@ -5,11 +5,11 @@ IKSolver::IKSolver() {
     threshold = 0.00001f;
 }
 
-uint32_t IKSolver::size() {
+size_t IKSolver::size() {
     return ik_chain.size();
 }
 
-void IKSolver::resize(uint32_t newSize) {
+void IKSolver::resize(size_t newSize) {
     ik_chain.resize(newSize);
     joint_indices.resize(newSize);
     joint_constraint_type.resize(newSize);

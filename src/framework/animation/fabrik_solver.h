@@ -12,6 +12,6 @@ protected:
     void iterate_backward(const glm::vec3& base);
     void world_to_ik_chain();
 public:
-    void resize(unsigned int new_size);
+    void resize(size_t new_size);
     bool solve(const Transform& target);
 };

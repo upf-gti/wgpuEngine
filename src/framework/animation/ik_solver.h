@@ -16,8 +16,8 @@ protected:
 public:
     IKSolver();
     enum constraints { BALL = 1, HINGE };
-    uint32_t size();
-    virtual void resize(uint32_t new_size);
+    size_t size();
+    virtual void resize(size_t new_size);
     Transform& operator[](uint32_t index);
 
     std::vector<Transform>& get_chain();

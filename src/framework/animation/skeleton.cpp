@@ -86,7 +86,7 @@ uint32_t Skeleton::get_joints_count()
 
 void Skeleton::update_inv_bind_pose()
 {
-    uint32_t size = bind_pose.size();
+    uint32_t size = (uint32_t)bind_pose.size();
     inv_bind_pose.resize(size);
 
     for (uint32_t i = 0; i < size; ++i) {

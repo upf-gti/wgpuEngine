@@ -1,7 +1,7 @@
 #include "fabrik_solver.h"
 #include "glm/gtx/norm.hpp"
 
-void FABRIKSolver::resize(unsigned int new_size) {
+void FABRIKSolver::resize(size_t new_size) {
     ik_chain.resize(new_size);
     world_chain.resize(new_size);
     lengths.resize(new_size);
@@ -11,8 +11,8 @@ void FABRIKSolver::resize(unsigned int new_size) {
 }
 
 void FABRIKSolver::ik_chain_to_world() {
-    unsigned int chain_size = size();
-    for (unsigned int i = 0; i < chain_size; ++i) {
+    uint32_t chain_size = size();
+    for (uint32_t i = 0; i < (uint32_t)chain_size; ++i) {
         Transform world = get_global_transform(i);
         world_chain[i] = world.position;
         if (i >= 1) {
@@ -26,9 +26,9 @@ void FABRIKSolver::ik_chain_to_world() {
 }
 
 void FABRIKSolver::world_to_ik_chain() {
-    unsigned int chain_size = size();
+    uint32_t chain_size = (uint32_t)size();
     if (chain_size == 0) { return; }
-    for (unsigned int i = 0; i < chain_size - 1; ++i) {
+    for (uint32_t i = 0; i < chain_size - 1; ++i) {
         Transform world = get_global_transform(i);
         Transform next = get_global_transform(i + 1);
         glm::vec3 position = world.position;
@@ -45,11 +45,11 @@ void FABRIKSolver::world_to_ik_chain() {
 }
 
 void FABRIKSolver::iterate_backward(const glm::vec3& goal) {
-    int chain_size = (int)size();
+    uint32_t chain_size = (int)size();
     if (chain_size > 0) {
         world_chain[chain_size - 1] = goal;
     }
-    for (int i = chain_size - 2; i >= 0; --i) {
+    for (uint32_t i = chain_size - 2; i >= 0; --i) {
         glm::vec3 direction = normalize(world_chain[i] - world_chain[i + 1]);
         glm::vec3 offset = direction * lengths[i + 1];
         world_chain[i] = world_chain[i + 1] + offset;
@@ -57,11 +57,11 @@ void FABRIKSolver::iterate_backward(const glm::vec3& goal) {
 }
 
 void FABRIKSolver::iterate_forward(const glm::vec3& base) {
-    unsigned int chain_size = size();
+    uint32_t chain_size = (uint32_t)size();
     if (chain_size > 0) {
         world_chain[0] = base;
     }
-    for (int i = 1; i < chain_size; ++i) {
+    for (uint32_t i = 1; i < chain_size; ++i) {
         glm::vec3 direction = normalize(world_chain[i] - world_chain[i - 1]);
         glm::vec3 offset = direction * lengths[i];
         world_chain[i] = world_chain[i - 1] + offset;
@@ -70,9 +70,9 @@ void FABRIKSolver::iterate_forward(const glm::vec3& base) {
 
 bool FABRIKSolver::solve(const Transform& target) {
     // Local variables and size check
-    unsigned int chain_size = size();
+    uint32_t chain_size = (uint32_t)size();
     if (chain_size == 0) { return false; }
-    unsigned int last = chain_size - 1;
+    uint32_t last = chain_size - 1;
     float thresholdSq = threshold * threshold;
 
     ik_chain_to_world();
@@ -81,7 +81,7 @@ bool FABRIKSolver::solve(const Transform& target) {
 
     // [CA] To do:
     // For each iteration of the algorithm:
-    for (unsigned int i = 0; i < num_steps; i++) {
+    for (uint32_t i = 0; i < num_steps; i++) {
         // 1. Check if the end-effector has reached the goal
         if (glm::length2(world_chain[last] - goal) <= thresholdSq) {
             world_to_ik_chain();

@@ -8,17 +8,17 @@ bool CCDSolver::solve(const Transform& target) {
     if (chain_size == 0)
         return false;
 
-    size_t last = chain_size - 1; // end effector
+    uint32_t last = chain_size - 1; // end effector
     float threshold_sq = threshold * threshold;
     glm::vec3 goal = target.position;
 
-    for (size_t i = 0; i < num_steps; ++i) {
+    for (uint32_t i = 0; i < num_steps; ++i) {
         // Check if we've reached the goal
         glm::vec3 effector = get_global_transform(last).position;
         if (glm::length2(goal - effector) < threshold_sq) {
             return true;
         }
-        for (int j = (int)chain_size - 2; j >= 0; --j) {
+        for (uint32_t j = (uint32_t)chain_size - 2; j >= 0; --j) {
             effector = get_global_transform(last).position;
 
             Transform world = get_global_transform(j);
