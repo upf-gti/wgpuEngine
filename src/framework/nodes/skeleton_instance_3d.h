@@ -17,7 +17,8 @@ public:
     SkeletonInstance3D();
 
     void set_skeleton(Skeleton* skeleton);
-    void update(float dt);
+    void update(float dt) override;
+    void render_gui() override;
 
     void update_pose_from_joints();
 
@@ -26,6 +27,5 @@ public:
     void set_joint_nodes(const std::vector<Node3D*>& new_joint_nodes);
 
     Skeleton* get_skeleton();
-    void render_gui();
 };
 

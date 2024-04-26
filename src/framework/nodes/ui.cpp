@@ -319,7 +319,7 @@ namespace ui {
     void CircleContainer2D::on_children_changed()
     {
         size_t child_count = get_children().size();
-        float radius = BUTTON_SIZE + child_count * 2.5f;
+        float radius = BUTTON_SIZE + child_count * 3.0f;
 
         size = glm::vec2(radius * 2.f + BUTTON_SIZE) * 1.05f;
 
@@ -351,6 +351,35 @@ namespace ui {
             return;
 
         sInputData data = get_input_data();
+
+        glm::vec2 axis_value = Input::get_thumbstick_value(HAND_LEFT);
+
+        // Use this to render triangle marker or not
+        ui_data.is_selected = 0.0f;
+
+        if (glm::length(axis_value) > 0.1f)
+        {
+            ui_data.is_selected = 1.0f;
+            ui_data.picker_color.r = fmod(glm::degrees(atan2f(axis_value.y, axis_value.x)), 360.f);
+
+            if (Input::was_button_pressed(XR_BUTTON_A)) {
+
+                auto& childs = get_children();
+                size_t child_count = childs.size();
+                float angle = ui_data.picker_color.r - 65.f;
+                if (angle < 0.0f) angle += 360.f;
+                size_t index = angle / 360.f * child_count;
+                assert(index >= 0 && index < child_count);
+
+                Node2D* element = static_cast<Node2D*>(childs[index]);
+
+                sInputData new_data;
+                new_data.was_pressed = true;
+                element->on_input(new_data);
+            }
+        }
+
+        update_ui_data();
 
         if (data.is_hovered)
         {

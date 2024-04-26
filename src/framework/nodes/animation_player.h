@@ -39,7 +39,7 @@ public:
     void pause();
     void stop(bool keep_state = false);
 
-    void update(float delta_time);
+    void update(float delta_time) override;
     void render_gui() override;
 
     void set_speed(float time);
