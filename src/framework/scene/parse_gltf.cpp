@@ -370,7 +370,7 @@ void read_mesh(const tinygltf::Model& model, const tinygltf::Node& node, Node3D*
                         joints.x = *(uint16_t*)&buffer.data[buffer_idx + 0];
                         joints.y = *(uint16_t*)&buffer.data[buffer_idx + 2];
                         joints.z = *(uint16_t*)&buffer.data[buffer_idx + 4];
-                        joints.w = *(uint16_t*)&buffer.data[buffer_idx + 8];
+                        joints.w = *(uint16_t*)&buffer.data[buffer_idx + 6];
                         break;
                     default:
                         assert(0);
@@ -404,14 +404,17 @@ void read_mesh(const tinygltf::Model& model, const tinygltf::Node& node, Node3D*
                         weights.x = *(uint16_t*)&buffer.data[buffer_idx + 0];
                         weights.y = *(uint16_t*)&buffer.data[buffer_idx + 2];
                         weights.z = *(uint16_t*)&buffer.data[buffer_idx + 4];
-                        weights.w = *(uint16_t*)&buffer.data[buffer_idx + 8];
+                        weights.w = *(uint16_t*)&buffer.data[buffer_idx + 6];
                         break;
                     default:
                         assert(0);
                     }
 
                     //Make sure that even the invalid nodes have a value of 0 (any negative joint indices will break the skinning implementation)
+                    float sum = weights.x + weights.y + weights.z + weights.w;
                     weights = glm::clamp(weights, 0.0f, 1.0f);
+                    weights /= sum;
+                    //weights.w = 0;
                 }
 
                 if (attrib.first == std::string("JOINTS_1") || attrib.first == std::string("WEIGHTS_1")) {
