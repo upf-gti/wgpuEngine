@@ -14,7 +14,7 @@ namespace ui {
 
     const float PICKER_SIZE = 164.f;
     const float BUTTON_SIZE = 64.f;
-    const float GROUP_MARGIN = 4.f;
+    const float GROUP_MARGIN = 12.f;
     const float LAYER_MARGIN = 8.f;
 
     enum ComboIndex {
@@ -120,8 +120,6 @@ namespace ui {
         float target_scale = 1.0f;
         float timer = 0.0f;
 
-        // ButtonWidget* mark = nullptr;
-
         bool is_unique_selection    = false;
         bool allow_toggle           = false;
         bool selected               = false;
@@ -138,7 +136,6 @@ namespace ui {
         void set_is_unique_selection(bool value);
 
         void update(float delta_time) override;
-        void render() override;
         void on_pressed() override;
         bool on_input(sInputData data) override;
         void set_priority(uint8_t priority) override;
@@ -162,7 +159,7 @@ namespace ui {
         void on_children_changed() override;
     };
 
-    class ComboButtons2D : public ItemGroup2D {
+    class ComboButtons2D : public HContainer2D {
     public:
 
         ComboButtons2D(const std::string& name, const glm::vec2& pos = { 0.0f, 0.0f }, const Color& color = colors::GRAY);
@@ -175,8 +172,12 @@ namespace ui {
 
         HContainer2D* box = nullptr;
 
+        TextureButton2D* submenu_mark = nullptr;
+
         ButtonSubmenu2D(const std::string& sg, const std::string& texture_path, uint8_t parameter_flags = 0, const glm::vec2& pos = { 0.0f, 0.0f }, const glm::vec2& size = glm::vec2(BUTTON_SIZE));
 
+        void render() override;
+        void update(float delta_time) override;
         void add_child(Node2D* child) override;
     };
 
@@ -199,9 +200,9 @@ namespace ui {
     class Slider2D : public Panel2D {
     public:
 
-        /*TextWidget* label = nullptr;*/
-
         Text2D* text_2d = nullptr;
+
+        Text2D* text_2d_value = nullptr;
 
         std::string signal;
 
@@ -214,7 +215,8 @@ namespace ui {
 
         Slider2D() {};
         Slider2D(const std::string& sg, float v, int mode = SliderMode::VERTICAL, float min = 0.0f, float max = 1.0f, float step = 0.0f);
-        Slider2D(const std::string& sg, float v, const glm::vec2& pos, const glm::vec2& size = glm::vec2(BUTTON_SIZE), int mode = SliderMode::VERTICAL, float min = 0.0f, float max = 1.0f, float step = 0.0f);
+        Slider2D(const std::string& sg, const std::string& texture_path, float v, int mode = SliderMode::VERTICAL, float min = 0.0f, float max = 1.0f, float step = 0.0f);
+        Slider2D(const std::string& sg, const std::string& texture_path, float v, const glm::vec2& pos, const glm::vec2& size = glm::vec2(BUTTON_SIZE), int mode = SliderMode::VERTICAL, float min = 0.0f, float max = 1.0f, float step = 0.0f);
 
         void update(float delta_time) override;
         bool on_input(sInputData data) override;

@@ -175,7 +175,10 @@ void Renderer::clean()
     delete[] eye_depth_textures;
     delete[] multisample_textures;
 
+#ifndef __EMSCRIPTEN__
     delete renderdoc_capture;
+#endif
+
 }
 
 void Renderer::init_lighting_bind_group()

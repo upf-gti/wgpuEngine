@@ -1000,21 +1000,29 @@ void get_scalar_values(std::vector<T>& out, uint32_t component_size, const tinyg
     for (size_t i = buffer_start; i < buffer_end; i += final_stride) {
         switch (accessor.componentType) {
         case TINYGLTF_COMPONENT_TYPE_FLOAT:
+        {
             switch (component_size)
             {
             case 1:
+            {
                 out[id] = *(float*)&buffer.data[i];
                 break;
+            }
             case 3: // translate/scale
+            {
                 glm::vec3 v = { *(float*)&buffer.data[i] , *(float*)&buffer.data[i + 4] , *(float*)&buffer.data[i + 8] };
                 out[id] = v;
                 break;
+            }
             case 4: // rotation (quat)
+            {
                 glm::quat q = { *(float*)&buffer.data[i] , *(float*)&buffer.data[i + 4] , *(float*)&buffer.data[i + 8], *(float*)&buffer.data[i + 12] };
                 out[id] = q;
                 break;
             }
+            }
             break;
+        }
             //case TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE:
             //    switch (component_size)
             //    {
