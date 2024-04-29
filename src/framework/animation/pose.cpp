@@ -60,7 +60,6 @@ Transform Pose::get_global_transform(size_t id)
     }
 
     Transform transform = joints[id];
-
     for (int i = parents[id]; i >= 0; i = parents[i]) {
         if (i >= joints.size()) {
             break;

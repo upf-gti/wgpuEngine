@@ -3,6 +3,7 @@
 #define EPSILON 0.0001f
 
 #include "glm/gtx/compatibility.hpp"
+#include "glm/gtx/norm.hpp"
 
 // Transforms can be combined in the same way as matrices and quaternions and the effects of two transforms can be combined into one transform
 // To keep things consistent, combining transforms should maintain a right-to-left combination order
@@ -63,15 +64,20 @@ glm::mat4x4 transformToMat4(const Transform& t)
     );
 }
 
+bool is_equal(const glm::vec3& a, const glm::vec3& b) {
+    glm::vec3 diff(a - b);
+    return glm::length2(diff) < EPSILON;
+}
+
 glm::quat fromTo(const glm::vec3& from, const glm::vec3& to)
 {
     glm::vec3 f = normalize(from);
     glm::vec3 t = normalize(to);
 
-    if (f == t) { // parallel vectors 
+    if (is_equal(f,t)) { // parallel vectors 
         return glm::quat(0.f, 0.f, 0.f, 1.f);
     }
-    else if (f == t * -1.0f) { 	// check whether the two vectors are opposites of each other
+    else if (is_equal(f, t * -1.0f)) { 	// check whether the two vectors are opposites of each other
         glm::vec3 ortho = glm::vec3(1.f, 0.f, 0.f);
         if (fabsf(f.y) < fabsf(f.x)) {
             ortho = glm::vec3(0.f, 1.f, 0.f);

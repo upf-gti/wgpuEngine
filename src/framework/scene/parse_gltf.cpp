@@ -106,6 +106,10 @@ void read_transform(const tinygltf::Node& node, Transform& transform)
     }
     if (!node.scale.empty()) {
         transform.scale = { static_cast<float>(node.scale[0]), static_cast<float>(node.scale[1]), static_cast<float>(node.scale[2]) };
+       /* transform.scale.x = transform.scale.x >= 0.99999f ? 1.f : transform.scale.x;
+        transform.scale.y = transform.scale.y >= 0.99999f ? 1.f : transform.scale.y;
+        transform.scale.z = transform.scale.z >= 0.99999f ? 1.f : transform.scale.z;*/
+
     }
 }
 
