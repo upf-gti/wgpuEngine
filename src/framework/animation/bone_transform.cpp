@@ -1,6 +1,6 @@
 #include "bone_transform.h"
 
-#define EPSILON 0.0001f
+#define EPSILON 0.000001f
 
 #include "glm/gtx/compatibility.hpp"
 #include "glm/gtx/norm.hpp"
@@ -69,10 +69,17 @@ bool is_equal(const glm::vec3& a, const glm::vec3& b) {
     return glm::length2(diff) < EPSILON;
 }
 
+glm::vec3 normalized(const glm::vec3& v) {
+    float len = v.x * v.x + v.y * v.y + v.z * v.z;
+    if (len < EPSILON)
+        return v;
+    return normalize(v);
+}
+
 glm::quat fromTo(const glm::vec3& from, const glm::vec3& to)
 {
-    glm::vec3 f = normalize(from);
-    glm::vec3 t = normalize(to);
+    glm::vec3 f = normalized(from);
+    glm::vec3 t = normalized(to);
 
     if (is_equal(f,t)) { // parallel vectors 
         return glm::quat(0.f, 0.f, 0.f, 1.f);
@@ -85,11 +92,12 @@ glm::quat fromTo(const glm::vec3& from, const glm::vec3& to)
         if (fabsf(f.z) < fabs(f.y) && fabs(f.z) < fabsf(f.x)) {
             ortho = glm::vec3(0.f, 0.f, 1.f);
         }
-        glm::vec3 axis = normalize(cross(f, ortho));
+        glm::vec3 axis = normalized(cross(f, ortho));
         return glm::quat(axis.x, axis.y, axis.z, 0.f);
     }
+
     // half vector between the from and to vectors
-    glm::vec3 half = normalize(f + t);
+    glm::vec3 half = normalized(f + t);
     glm::vec3 axis = cross(f, half);
     return glm::quat(axis.x, axis.y, axis.z, dot(f, half));
 }
@@ -97,8 +105,8 @@ glm::quat fromTo(const glm::vec3& from, const glm::vec3& to)
 glm::quat lookRotation(const glm::vec3& direction, const glm::vec3& up)
 {
     // Find orthonormal basis vectors
-    glm::vec3 f = normalize(direction); // Object Forward
-    glm::vec3 u = normalize(up); // Desired Up
+    glm::vec3 f = normalized(direction); // Object Forward
+    glm::vec3 u = normalized(up); // Desired Up
     glm::vec3 r = cross(u, f); // Object Right
     u = cross(f, r); // Object Up
     // From world forward to object forward
@@ -121,8 +129,8 @@ Transform mat4ToTransform(const glm::mat4x4& m)
     Transform out;
 
     out.position = glm::vec3(m[3]);
-    glm::vec3 up = normalize(glm::vec3(m[1]));
-    glm::vec3 forward = normalize(glm::vec3(m[2]));
+    glm::vec3 up = normalized(glm::vec3(m[1]));
+    glm::vec3 forward = normalized(glm::vec3(m[2]));
     glm::vec3 right = cross(up, forward);
     up = cross(forward, right);
 
@@ -143,7 +151,7 @@ Transform mat4ToTransform(const glm::mat4x4& m)
             f.x, f.y, f.z, 0.f,
             0.f, 0.f, 0.f, 1.f
         );
-    glm::mat4x4 scaleSkewMat = rotScaleMat * invRotMat;
+    glm::mat4x4 scaleSkewMat = invRotMat * rotScaleMat;
     out.scale = glm::vec3(scaleSkewMat[0][0], scaleSkewMat[1][1], scaleSkewMat[2][2]);
     return out;
 }

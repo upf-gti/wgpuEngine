@@ -131,7 +131,6 @@ bool JacobianSolver::solve(const Transform& target) {
             new_joint_transform = combine(joint_transform, new_joint_transform);*/
             Transform new_joint_transform = joint_transform;
             new_joint_transform.rotation *= q;
-           
             set_global_transform(joint_idx, new_joint_transform);
         }
     }

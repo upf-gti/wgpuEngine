@@ -147,7 +147,6 @@ void LookAtIK3D::update(float delta_time)
     Transform world_child = ik_solver->get_local_transform(0); // Get root transform from IK chain (in global space) --> root is always in global space
     Transform local_child = combine(inverse(global_transform), world_child); // Convert root transform in pose space
     local_child = combine(inverse(world_parent), local_child); // Convert root transform in local space
-   
     current_pose.set_local_transform(joints_ids[0], local_child);
 
     //skeleton_instance->joint_nodes[joints_ids[0]]->set_transform(local_child);
