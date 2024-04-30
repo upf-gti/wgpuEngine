@@ -458,7 +458,7 @@ void Renderer::prepare_instancing()
     }
 }
 
-void Renderer::render_render_list(int list_index, WGPURenderPassEncoder render_pass, const WGPUBindGroup& render_bind_group_camera)
+void Renderer::render_render_list(int list_index, WGPURenderPassEncoder render_pass, const WGPUBindGroup& render_bind_group_camera, uint32_t camera_buffer_stride)
 {
     Pipeline* prev_pipeline = nullptr;
 
@@ -488,7 +488,7 @@ void Renderer::render_render_list(int list_index, WGPURenderPassEncoder render_p
 
         // Set bind groups
         wgpuRenderPassEncoderSetBindGroup(render_pass, bind_group_index++, bind_groups[list_index], 0, nullptr);
-        wgpuRenderPassEncoderSetBindGroup(render_pass, bind_group_index++, render_bind_group_camera, 0, nullptr);
+        wgpuRenderPassEncoderSetBindGroup(render_pass, bind_group_index++, render_bind_group_camera, 1, &camera_buffer_stride);
 
         wgpuRenderPassEncoderSetBindGroup(render_pass, bind_group_index++, renderer_storage->get_material_bind_group(material), 0, nullptr);
 
@@ -523,26 +523,26 @@ void Renderer::render_render_list(int list_index, WGPURenderPassEncoder render_p
     }
 }
 
-void Renderer::render_opaque(WGPURenderPassEncoder render_pass, const WGPUBindGroup& render_bind_group_camera)
+void Renderer::render_opaque(WGPURenderPassEncoder render_pass, const WGPUBindGroup& render_bind_group_camera, uint32_t camera_buffer_stride)
 {
 #ifndef NDEBUG
     wgpuRenderPassEncoderPushDebugGroup(render_pass, "Opaque");
 #endif
 
-    render_render_list(RENDER_LIST_OPAQUE, render_pass, render_bind_group_camera);
+    render_render_list(RENDER_LIST_OPAQUE, render_pass, render_bind_group_camera, camera_buffer_stride);
 
 #ifndef NDEBUG
     wgpuRenderPassEncoderPopDebugGroup(render_pass);
 #endif
 }
 
-void Renderer::render_transparent(WGPURenderPassEncoder render_pass, const WGPUBindGroup& render_bind_group_camera)
+void Renderer::render_transparent(WGPURenderPassEncoder render_pass, const WGPUBindGroup& render_bind_group_camera, uint32_t camera_buffer_stride)
 {
 #ifndef NDEBUG
     wgpuRenderPassEncoderPushDebugGroup(render_pass, "Transparent");
 #endif
 
-    render_render_list(RENDER_LIST_TRANSPARENT, render_pass, render_bind_group_camera);
+    render_render_list(RENDER_LIST_TRANSPARENT, render_pass, render_bind_group_camera, camera_buffer_stride);
 
 #ifndef NDEBUG
     wgpuRenderPassEncoderPopDebugGroup(render_pass);
