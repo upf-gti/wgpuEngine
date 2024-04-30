@@ -132,6 +132,7 @@ namespace ui {
         Button2D(const std::string& sg, uint8_t parameter_flags, const glm::vec2& pos, const glm::vec2& size = glm::vec2(BUTTON_SIZE));
         Button2D(const std::string& sg, const Color& color, uint8_t parameter_flags, const glm::vec2& pos, const glm::vec2& size = glm::vec2(BUTTON_SIZE));
 
+        void set_disabled(bool value);
         void set_selected(bool value);
         void set_is_unique_selection(bool value);
 

@@ -479,7 +479,7 @@ namespace ui {
         ui_data.keep_rgb = keep_rgb;
         ui_data.is_color_button = is_color_button;
         ui_data.is_button_disabled = disabled;
-        ui_data.is_selected= selected;
+        ui_data.is_selected = selected;
         ui_data.num_group_items = ComboIndex::UNIQUE;
 
         Material material;
@@ -534,6 +534,12 @@ namespace ui {
             CircleContainer2D* selector = static_cast<CircleContainer2D*>(get_parent());
             selector->set_visibility(false);
         }
+    }
+
+    void Button2D::set_disabled(bool value)
+    {
+        disabled = value;
+        ui_data.is_button_disabled = disabled;
     }
 
     void Button2D::set_selected(bool value)
@@ -919,6 +925,9 @@ namespace ui {
         ui_data.num_group_items = mode == SliderMode::HORIZONTAL ? 2.f : 1.f;
         this->size = glm::vec2(size.x * ui_data.num_group_items, size.y);
 
+        ui_data.slider_max = max_value;
+        ui_data.slider_min = min_value;
+
         Material material;
         material.color = colors::WHITE;
         material.flags = MATERIAL_2D | MATERIAL_UI;
@@ -971,7 +980,6 @@ namespace ui {
         // Update uniforms
         ui_data.is_hovered = 0.0f;
         ui_data.slider_value = current_value;
-        ui_data.slider_max = max_value;
 
         text_2d->set_visibility(false);
 
@@ -1041,6 +1049,13 @@ namespace ui {
 
         auto webgpu_context = Renderer::instance->get_webgpu_context();
         RendererStorage::register_ui_widget(webgpu_context, material.shader, &quad_mesh, ui_data, 3);
+
+        Node::bind(signal + "@changed", [&](const std::string& signal, Color color) {
+
+            glm::vec3 new_color = rgb2hsv(glm::pow(glm::vec3(color), glm::vec3(1.0f / 2.2f)));
+
+            this->color = glm::vec4(new_color, 1.0f);
+        });
     }
 
     void ColorPicker2D::update(float delta_time)
