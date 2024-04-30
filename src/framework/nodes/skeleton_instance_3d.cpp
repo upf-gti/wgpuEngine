@@ -2,10 +2,14 @@
 
 #include "graphics/renderer.h"
 #include "graphics/renderer_storage.h"
+
 #include "imgui.h"
-#include "spdlog/spdlog.h"
+#include "framework/utils/ImGuizmo.h"
+#include "framework/camera/camera.h"
 #include "framework/nodes/look_at_ik_3d.h"
-#include "iostream"
+
+#include <glm/gtc/type_ptr.hpp>
+#include "spdlog/spdlog.h"
 
 SkeletonInstance3D::SkeletonInstance3D()
 {
@@ -149,13 +153,51 @@ void SkeletonInstance3D::set_uniform_data(Uniform* animated_u, Uniform* invbind_
 }
 
 
-void recursive_tree_gui(Node* node) {
+void SkeletonInstance3D::recursive_tree_gui(Node* node) {
+
     if (ImGui::TreeNode(node->get_name().c_str())) {
-        Node3D* c = (Node3D*)node;
-        Transform t = c->get_transform();
-        ImGui::DragFloat3("Translation", &t.position[0], 0.f);
-        ImGui::DragFloat4("Rotation", &t.rotation[0], 0.f);
-        ImGui::DragFloat3("Scale", &t.scale[0], 0.f);
+
+        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(ImColor(230, 150, 50)));
+        bool is_open = ImGui::TreeNodeEx("Transform");
+        ImGui::PopStyleColor();
+
+        if (is_open)
+        {
+            Node3D* c = (Node3D*)node;
+            Transform transform = c->get_transform();
+
+            glm::mat4x4 global_model = get_global_model() * c->get_global_model();
+            Camera* camera = Renderer::instance->get_camera();
+
+            ImGuiIO& io = ImGui::GetIO();
+            ImGuizmo::SetRect(0, 0, io.DisplaySize.x, io.DisplaySize.y);
+
+            bool changed = ImGuizmo::Manipulate(glm::value_ptr(camera->get_view()), glm::value_ptr(camera->get_projection()),
+                ImGuizmo::OPERATION::ROTATE, ImGuizmo::MODE::WORLD, glm::value_ptr(global_model));
+
+            if (changed)
+            {
+                glm::mat4 parent = c->get_parent() ? c->get_parent()->get_global_model() : glm::mat4(1.f);
+                glm::mat4 local_model = inverse(get_global_model() * parent) * global_model;
+                c->set_model(local_model);
+                c->set_transform(mat4ToTransform(local_model));
+                set_model_dirty(true);
+            }
+
+            changed = false;
+
+            changed |= ImGui::DragFloat3("Translation", &transform.position[0], 0.1f);
+            changed |= ImGui::DragFloat4("Rotation", &transform.rotation[0], 0.1f);
+            changed |= ImGui::DragFloat3("Scale", &transform.scale[0], 0.1f);
+
+            if (changed)
+            {
+                c->set_model(transformToMat4(transform));
+                set_model_dirty(true);
+            }
+            ImGui::TreePop();
+        }
+
         for (Node* child : node->get_children()) {
 
             recursive_tree_gui(child);
@@ -166,35 +208,36 @@ void recursive_tree_gui(Node* node) {
 
 void SkeletonInstance3D::render_gui() {
 
-    ImGui::Begin(name.c_str());
-    //ImGui::PushID("sk");
-    if (ImGui::BeginPopupContextWindow())
-    {
-        if (ImGui::Selectable("Add SkeletonIK"))
+    if (ImGui::Begin(name.c_str())) {
+
+        if (ImGui::TreeNodeEx("Bones", ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_Framed)) {
+            ImGui::SetWindowSize(ImVec2(0, 0));
+            Pose& pose = skeleton->get_current_pose();
+            for (size_t i = 0; i < joint_nodes.size(); i++) {
+                int parent = pose.get_parent(i);
+                if (parent < 0)
+                    continue;
+                Node3D* node = (Node3D*)(joint_nodes[i]);
+                joint_nodes[parent]->add_child(node);
+            }
+
+            for (Node* child : joint_nodes) {
+                if(!((Node3D*)(child))->get_parent())
+                    recursive_tree_gui(child);
+            }
+        
+        ImGui::TreePop();
+        }
+
+        ImGui::Separator();
+
+        if(ImGui::Button("Add SkeletonIK"))
         {
             LookAtIK3D* ik_node = new LookAtIK3D(this);
             this->add_child((Node3D*)ik_node);
         }
-        ImGui::EndPopup();
-    }
-    //ImGui::PopID();
-    if (ImGui::TreeNode(name.c_str())) {
-        Pose& pose = skeleton->get_current_pose();
-        for (size_t i = 0; i < joint_nodes.size(); i++) {
-            int parent = pose.get_parent(i);
-            if (parent < 0)
-                continue;
-            Node3D* node = (Node3D*)(joint_nodes[i]);
-            joint_nodes[parent]->add_child(node);
-        }
 
-        for (Node* child : joint_nodes) {
-            if(!((Node3D*)(child))->get_parent())
-                recursive_tree_gui(child);
-        }
-        
-        ImGui::TreePop();
+        ImGui::End();
     }
-    ImGui::End();
 }
 

@@ -14,6 +14,7 @@ LookAtIK3D::LookAtIK3D(SkeletonInstance3D* in_skeleton_instance)
     skeleton_instance = in_skeleton_instance;
     ik_solver->set_num_steps(max_iterations);
     ik_solver->set_threshold(min_distance);
+    set_name(name);
 };
 
 void LookAtIK3D::set_iterations(uint32_t iterations)
@@ -160,91 +161,102 @@ void LookAtIK3D::update(float delta_time)
 
 void LookAtIK3D::render_gui()
 {
-    ImGui::Begin("Skeleton3DIK");
-
-    std::vector<std::string> names = { "FABRIK", "CCD", "JACOBIAN" };
-    if (ImGui::BeginCombo("Method", names[solver].c_str())) {
-        for (uint32_t i = 0; i < names.size(); i++)
-        {
-            bool is_selected = (solver == i);
-            if (ImGui::Selectable(names[i].c_str(), is_selected)) {
-                set_solver(i);
-                solver = i;
-            }
-            if (is_selected) {
-                ImGui::SetItemDefaultFocus();
-            }
-        }
-        ImGui::EndCombo();
-    }
-
-    if (skeleton_instance) {
-        Skeleton* skeleton = skeleton_instance->get_skeleton();
-        std::vector<std::string> joint_names = skeleton->get_joint_names();
-        if (ImGui::BeginCombo("Root", root.c_str()))
-        {
-            for (auto& name : joint_names)
-            {
-                bool is_selected = (root == name);
-                if (ImGui::Selectable(name.c_str(), is_selected)) {
-                    root = name;
-                    end_effector = "";
-                }
-                if (is_selected) {
-                    ImGui::SetItemDefaultFocus();
-                }
-            }
-            ImGui::EndCombo();
-        }
-
-        if (ImGui::BeginCombo("End effector", end_effector.c_str()))
-        {
-            for (auto& name : joint_names)
-            {
-                bool is_selected = (end_effector == name);
-                if (ImGui::Selectable(name.c_str(), is_selected)) {
-                    end_effector = name;
-                    if (root != "") {
-                        create_chain();
+    if (ImGui::Begin("Skeleton3D")) {
+        if (ImGui::TreeNodeEx(name.c_str(), ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_DefaultOpen)) {
+            std::vector<std::string> names = { "FABRIK", "CCD", "JACOBIAN" };
+            if (ImGui::BeginCombo("Method", names[solver].c_str())) {
+                for (uint32_t i = 0; i < names.size(); i++)
+                {
+                    bool is_selected = (solver == i);
+                    if (ImGui::Selectable(names[i].c_str(), is_selected)) {
+                        set_solver(i);
+                        solver = i;
+                    }
+                    if (is_selected) {
+                        ImGui::SetItemDefaultFocus();
                     }
                 }
-                if (is_selected) {
-                    ImGui::SetItemDefaultFocus();
+                ImGui::EndCombo();
+            }
+
+            if (skeleton_instance) {
+                Skeleton* skeleton = skeleton_instance->get_skeleton();
+                std::vector<std::string> joint_names = skeleton->get_joint_names();
+                if (ImGui::BeginCombo("Root", root.c_str()))
+                {
+                    for (auto& name : joint_names)
+                    {
+                        bool is_selected = (root == name);
+                        if (ImGui::Selectable(name.c_str(), is_selected)) {
+                            root = name;
+                            end_effector = "";
+                        }
+                        if (is_selected) {
+                            ImGui::SetItemDefaultFocus();
+                        }
+                    }
+                    ImGui::EndCombo();
+                }
+
+                if (ImGui::BeginCombo("End effector", end_effector.c_str()))
+                {
+                    for (auto& name : joint_names)
+                    {
+                        bool is_selected = (end_effector == name);
+                        if (ImGui::Selectable(name.c_str(), is_selected)) {
+                            end_effector = name;
+                            if (root != "") {
+                                create_chain();
+                            }
+                        }
+                        if (is_selected) {
+                            ImGui::SetItemDefaultFocus();
+                        }
+                    }
+                    ImGui::EndCombo();
                 }
             }
-            ImGui::EndCombo();
-        }
-    }
     
-    Camera* camera = Renderer::instance->get_camera();
-    glm::mat4x4 test_model = transformToMat4(target);
+            Camera* camera = Renderer::instance->get_camera();
+            glm::mat4x4 test_model = transformToMat4(target);
 
-    ImGuiIO& io = ImGui::GetIO();
-    ImGuizmo::SetRect(0, 0, io.DisplaySize.x, io.DisplaySize.y);
+            ImGuiIO& io = ImGui::GetIO();
+            ImGuizmo::SetRect(0, 0, io.DisplaySize.x, io.DisplaySize.y);
 
-    bool changed = ImGuizmo::Manipulate(glm::value_ptr(camera->get_view()), glm::value_ptr(camera->get_projection()),
-        ImGuizmo::OPERATION::TRANSLATE, ImGuizmo::MODE::WORLD, glm::value_ptr(test_model));
-    if (changed) {
-        target = mat4ToTransform(test_model);
+            bool changed = ImGuizmo::Manipulate(glm::value_ptr(camera->get_view()), glm::value_ptr(camera->get_projection()),
+                ImGuizmo::OPERATION::TRANSLATE, ImGuizmo::MODE::WORLD, glm::value_ptr(test_model));
+            if (changed) {
+                target = mat4ToTransform(test_model);
+            }
+            changed = false;
+
+            changed |= ImGui::DragFloat3("Translation", &target.position[0], 0.1f);
+            changed |= ImGui::DragFloat4("Rotation", &target.rotation[0], 0.1f);
+            changed |= ImGui::DragFloat3("Scale", &target.scale[0], 0.1f);
+
+            if (ImGui::DragFloat("Min distance", &min_distance, 0.001f, 0.01f, 5.f, "%.4f", ImGuiSliderFlags_AlwaysClamp))
+            {
+                set_distance(min_distance);
+            }
+            int iterations = max_iterations;
+            if (ImGui::DragInt("Max iterations", &iterations, 1, 1, 300))
+            {
+                max_iterations = iterations;
+                set_iterations(max_iterations);
+            }
+
+            if (ImGui::Button("Remove")) {
+                ImGui::TreePop();
+                ImGui::End();
+                if (skeleton_instance) {
+                    skeleton_instance->remove_child((Node3D*)this);                    
+                }
+                return;
+            }
+            ImGui::TreePop();
+        }
+        ImGui::End();
     }
-    changed = false;
-
-    changed |= ImGui::DragFloat3("Translation", &target.position[0], 0.1f);
-    changed |= ImGui::DragFloat4("Rotation", &target.rotation[0], 0.1f);
-    changed |= ImGui::DragFloat3("Scale", &target.scale[0], 0.1f);
-
-    if (ImGui::DragFloat("Min distance", &min_distance, 0.001f, 0.01f, 5.f, "%.4f", ImGuiSliderFlags_AlwaysClamp))
-    {
-        set_distance(min_distance);
-    }
-    int iterations = max_iterations;
-    if (ImGui::DragInt("Max iterations", &iterations, 1, 1, 300))
-    {
-        max_iterations = iterations;
-        set_iterations(max_iterations);
-    }
-
-    ImGui::End();
 }
 
 void LookAtIK3D::create_chain()

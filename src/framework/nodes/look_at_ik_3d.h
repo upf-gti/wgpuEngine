@@ -13,6 +13,8 @@
 
 class LookAtIK3D : public Node
 {
+    std::string name = "Skeleton3DIK";
+
     uint32_t max_iterations = 15;
     float min_distance = 0.1f;
 
@@ -31,6 +33,7 @@ public:
     LookAtIK3D() {
         ik_solver->set_num_steps(max_iterations);
         ik_solver->set_threshold(min_distance);
+        set_name(name);
     };
     LookAtIK3D(SkeletonInstance3D* in_skeleton_instance);
 

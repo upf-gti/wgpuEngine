@@ -14,6 +14,8 @@ class SkeletonInstance3D : public MeshInstance3D {
     void init_helper();
     void update_helper();
 
+    void recursive_tree_gui(Node* node);
+
 public:
     int skin = -1;
     std::vector<Node3D*> joint_nodes;

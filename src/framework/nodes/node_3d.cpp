@@ -67,7 +67,11 @@ void Node3D::update(float delta_time)
 
 void Node3D::render_gui()
 {
-    if (ImGui::TreeNodeEx("Transform"))
+    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(ImColor(230, 150, 50)));
+    bool is_open = ImGui::TreeNodeEx("Transform");
+    ImGui::PopStyleColor();
+
+    if (is_open)
     {
         glm::mat4x4 test_model = get_model();
         Camera* camera = Renderer::instance->get_camera();

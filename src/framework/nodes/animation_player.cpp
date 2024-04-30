@@ -174,7 +174,7 @@ void AnimationPlayer::render_gui()
     else if (playing && ImGui::Button("Stop")) {
         stop();
     }
-
+    ImGui::SameLine(0, 10);
     if (ImGui::Button("Pause")) {
         pause();
     }
