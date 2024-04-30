@@ -207,8 +207,8 @@ namespace ui {
 
         quad_mesh.set_surface_material_override(quad_mesh.get_surface(0), material);
 
-        padding = glm::vec2(2.0f);
-        item_margin = glm::vec2(2.0f);
+        padding = glm::vec2(4.0f);
+        item_margin = glm::vec2(4.0f);
 
         render_background = false;
     }
@@ -254,6 +254,11 @@ namespace ui {
 
         size += padding * 2.0f;
         size.x += item_margin.x * static_cast<float>(child_count - 1);
+
+        if (centered) {
+            const glm::vec2& pos = get_translation();
+            set_translation({ (-size.x + BUTTON_SIZE) * 0.50f, pos.y });
+        }
 
         Container2D::on_children_changed();
     }
@@ -512,6 +517,7 @@ namespace ui {
                     }
                 }
             }
+
             set_selected(allow_toggle ? !last_value : true);
         });
 
@@ -540,6 +546,13 @@ namespace ui {
     {
         disabled = value;
         ui_data.is_button_disabled = disabled;
+        update_ui_data();
+
+        if (class_type == Node2DClassType::SUBMENU) {
+
+            ButtonSubmenu2D* submenu = static_cast<ButtonSubmenu2D*>(this);
+            submenu->box->set_visibility(false);
+        }
     }
 
     void Button2D::set_selected(bool value)
@@ -580,10 +593,7 @@ namespace ui {
 
         Panel2D::update(delta_time);
 
-        if (!visibility)
-            return;
-
-        if (ui_data.is_button_disabled)
+        if (!visibility || ui_data.is_button_disabled)
             return;
 
         sInputData data = get_input_data();
@@ -808,8 +818,7 @@ namespace ui {
 
         box = new ui::HContainer2D("h_container", glm::vec2(0.0f, size.y + GROUP_MARGIN));
         box->set_visibility(false);
-
-        // box->centered = true;
+        box->centered = true;
 
         Node2D::add_child(box);
 

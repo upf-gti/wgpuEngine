@@ -50,6 +50,8 @@ namespace ui {
     class Container2D : public Panel2D {
     public:
 
+        bool centered = false;
+
         glm::vec2 padding = { 0.0f, 0.0f };
         glm::vec2 item_margin = { 0.0f, 0.0f };
 
