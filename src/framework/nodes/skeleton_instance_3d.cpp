@@ -224,9 +224,8 @@ void SkeletonInstance3D::render_gui() {
             for (Node* child : joint_nodes) {
                 if(!((Node3D*)(child))->get_parent())
                     recursive_tree_gui(child);
-            }
-        
-        ImGui::TreePop();
+            }     
+            ImGui::TreePop();
         }
 
         ImGui::Separator();
