@@ -51,9 +51,9 @@ void AnimationPlayer::generate_track_data()
     Animation* animation = RendererStorage::get_animation(current_animation_name);
     uint32_t num_tracks = animation->get_track_count();
     track_data.resize(num_tracks);
+    timeline.tracks.clear();
 
     // Generate data from tracks
-
     for (uint32_t i = 0; i < num_tracks; ++i) {
 
         const std::string& track_path = animation->get_track(i)->get_path();
@@ -66,38 +66,63 @@ void AnimationPlayer::generate_track_data()
         // it will use hierarchical search or linear search in joints array
         Node* node = root_node->get_node(node_path);
 
-        timeline.rampEdit.SetCountPoints(animation->get_track(i)->size());
-        int type = -1;
-        if (animation->get_track(i)->get_type() == TrackType::TYPE_POSITION)
-            type = 0;
-        else if (animation->get_track(i)->get_type() == TrackType::TYPE_ROTATION)
-            type = 1;
-        else if (animation->get_track(i)->get_type() == TrackType::TYPE_SCALE)
-            type = 2;
-        for (uint32_t j = 0; j < animation->get_track(i)->size(); j++) {
-            if (type == 0 || type == 2) {           
-                glm::vec3 p = std::get<glm::vec3>(animation->get_track(i)->get_keyframe(j).value);
-                timeline.rampEdit.AddPoint(0, ImVec2(j, p.x));
-                timeline.rampEdit.AddPoint(1, ImVec2(j, p.y));
-                timeline.rampEdit.AddPoint(2, ImVec2(j, p.z));
-            }
-            else if (type == 1) {
-                glm::quat p = std::get<glm::quat>(animation->get_track(i)->get_keyframe(j).value);
-                timeline.rampEdit.AddPoint(0, ImVec2(j, p.x));
-                timeline.rampEdit.AddPoint(1, ImVec2(j, p.y));
-                timeline.rampEdit.AddPoint(2, ImVec2(j, p.z));
-                timeline.rampEdit.AddPoint(3, ImVec2(j, p.w));
-            }
-        }
-
         if (node) {
             track_data[i] = node->get_property(property_name);
         }
         else {
             spdlog::warn("{} node not found", track_path);
         }
+       
+        int count = 1;
+        int type = -1;
+        if (animation->get_track(i)->get_type() == TrackType::TYPE_POSITION) {
+            type = 0;
+            count = 3;
+        }
+        else if (animation->get_track(i)->get_type() == TrackType::TYPE_ROTATION) {
+            type = 1;
+            count = 4;
+        }
+        else if (animation->get_track(i)->get_type() == TrackType::TYPE_SCALE) {
+            type = 2;
+            count = 3;
+        }
+        const int c = count;
+
+        std::vector<ImVec2> points[4];
+        timeline.curve_editor.SetPointsCount(animation->get_track(i)->size());
         
-        timeline.tracks.push_back(Timeline::TimelineTrack{ animation->get_track(i)->get_type(), 0, (int)animation->get_track(i)->size(), true, track_path });
+        for (uint32_t j = 0; j < animation->get_track(i)->size(); j++) {
+            if (type == 0 || type == 2) {
+                glm::vec3 p = std::get<glm::vec3>(animation->get_track(i)->get_keyframe(j).value);
+
+                points[0].push_back(ImVec2(j, p.x));
+                points[1].push_back(ImVec2(j, p.y));
+                points[2].push_back(ImVec2(j, p.z));
+
+                timeline.curve_editor.point_count[0] = points[0].size();
+                timeline.curve_editor.point_count[1] = points[1].size();
+                timeline.curve_editor.point_count[2] = points[2].size();
+            }
+            else if (type == 1) {
+                glm::quat p = std::get<glm::quat>(animation->get_track(i)->get_keyframe(j).value);
+                points[0].push_back(ImVec2(j, p.x));
+                points[1].push_back(ImVec2(j, p.y));
+                points[2].push_back(ImVec2(j, p.z));
+                points[3].push_back(ImVec2(j, p.w));
+
+                timeline.curve_editor.point_count[0] = points[0].size();
+                timeline.curve_editor.point_count[1] = points[1].size();
+                timeline.curve_editor.point_count[2] = points[2].size();
+                timeline.curve_editor.point_count[3] = points[3].size();
+                /*timeline.curve_editor.AddPoint(0, ImVec2(j, p.x));
+                timeline.curve_editor.AddPoint(1, ImVec2(j, p.y));
+                timeline.curve_editor.AddPoint(2, ImVec2(j, p.z));
+                timeline.curve_editor.AddPoint(3, ImVec2(j, p.w));*/
+            }
+        }
+        timeline.tracks.push_back(Timeline::TimelineTrack{ animation->get_track(i)->get_type(), 0, (int)animation->get_track(i)->size(), false, track_path, points });
+
     }
 }
 
@@ -219,9 +244,7 @@ void AnimationPlayer::render_gui()
         ImGui::SetWindowSize(ImVec2(io.DisplaySize.x, io.DisplaySize.y / 3));
         ImGui::SetWindowPos(ImVec2(0, io.DisplaySize.y - io.DisplaySize.y / 3));
 
-        
-      
-
+     
         // let's create the sequencer
         static int selected_entry = -1;
         static int first_frame = 0;
@@ -240,7 +263,7 @@ void AnimationPlayer::render_gui()
         if (selected_entry != -1)
         {
             const Timeline::TimelineTrack item = timeline.tracks[selected_entry];
-            ImGui::Text("I am a %s, please edit me", SequencerItemTypeNames[item.type]);
+            ImGui::Text("I am a %s, please edit me", TrackTypes[item.type]);
             // switch (type) ....
         }
         ImGui::End();
