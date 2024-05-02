@@ -207,8 +207,8 @@ namespace ui {
 
         quad_mesh.set_surface_material_override(quad_mesh.get_surface(0), material);
 
-        padding = glm::vec2(2.0f);
-        item_margin = glm::vec2(2.0f);
+        padding = glm::vec2(4.0f);
+        item_margin = glm::vec2(4.0f);
 
         render_background = false;
     }
@@ -254,6 +254,11 @@ namespace ui {
 
         size += padding * 2.0f;
         size.x += item_margin.x * static_cast<float>(child_count - 1);
+
+        if (centered) {
+            const glm::vec2& pos = get_translation();
+            set_translation({ (-size.x + BUTTON_SIZE) * 0.50f, pos.y });
+        }
 
         Container2D::on_children_changed();
     }
@@ -479,7 +484,7 @@ namespace ui {
         ui_data.keep_rgb = keep_rgb;
         ui_data.is_color_button = is_color_button;
         ui_data.is_button_disabled = disabled;
-        ui_data.is_selected= selected;
+        ui_data.is_selected = selected;
         ui_data.num_group_items = ComboIndex::UNIQUE;
 
         Material material;
@@ -512,6 +517,7 @@ namespace ui {
                     }
                 }
             }
+
             set_selected(allow_toggle ? !last_value : true);
         });
 
@@ -533,6 +539,19 @@ namespace ui {
 
             CircleContainer2D* selector = static_cast<CircleContainer2D*>(get_parent());
             selector->set_visibility(false);
+        }
+    }
+
+    void Button2D::set_disabled(bool value)
+    {
+        disabled = value;
+        ui_data.is_button_disabled = disabled;
+        update_ui_data();
+
+        if (class_type == Node2DClassType::SUBMENU) {
+
+            ButtonSubmenu2D* submenu = static_cast<ButtonSubmenu2D*>(this);
+            submenu->box->set_visibility(false);
         }
     }
 
@@ -574,10 +593,7 @@ namespace ui {
 
         Panel2D::update(delta_time);
 
-        if (!visibility)
-            return;
-
-        if (ui_data.is_button_disabled)
+        if (!visibility || ui_data.is_button_disabled)
             return;
 
         sInputData data = get_input_data();
@@ -802,8 +818,7 @@ namespace ui {
 
         box = new ui::HContainer2D("h_container", glm::vec2(0.0f, size.y + GROUP_MARGIN));
         box->set_visibility(false);
-
-        // box->centered = true;
+        box->centered = true;
 
         Node2D::add_child(box);
 
@@ -919,6 +934,9 @@ namespace ui {
         ui_data.num_group_items = mode == SliderMode::HORIZONTAL ? 2.f : 1.f;
         this->size = glm::vec2(size.x * ui_data.num_group_items, size.y);
 
+        ui_data.slider_max = max_value;
+        ui_data.slider_min = min_value;
+
         Material material;
         material.color = colors::WHITE;
         material.flags = MATERIAL_2D | MATERIAL_UI;
@@ -971,7 +989,6 @@ namespace ui {
         // Update uniforms
         ui_data.is_hovered = 0.0f;
         ui_data.slider_value = current_value;
-        ui_data.slider_max = max_value;
 
         text_2d->set_visibility(false);
 
@@ -1041,6 +1058,13 @@ namespace ui {
 
         auto webgpu_context = Renderer::instance->get_webgpu_context();
         RendererStorage::register_ui_widget(webgpu_context, material.shader, &quad_mesh, ui_data, 3);
+
+        Node::bind(signal + "@changed", [&](const std::string& signal, Color color) {
+
+            glm::vec3 new_color = rgb2hsv(glm::pow(glm::vec3(color), glm::vec3(1.0f / 2.2f)));
+
+            this->color = glm::vec4(new_color, 1.0f);
+        });
     }
 
     void ColorPicker2D::update(float delta_time)

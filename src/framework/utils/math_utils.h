@@ -9,6 +9,7 @@
 
 constexpr float pi = glm::pi<float>();
 constexpr float pi_2 = 0.5f * pi;
+constexpr float pi_4 = 0.5f * pi_2;
 
 void quat_swing_twist_decomposition(const glm::vec3& dir, const glm::quat& rotation, glm::quat& swing, glm::quat& twist);
 
@@ -20,6 +21,7 @@ glm::vec3 mod_vec3(glm::vec3 v, float m);
 uint32_t next_power_of_two(uint32_t value);
 glm::quat get_quat_between_vec3(const glm::vec3& p1, const glm::vec3& p2);
 
+glm::vec3 rgb2hsv(glm::vec3 rgb);
 glm::vec3 hsv2rgb(glm::vec3 c);
 
 float random_f(float range = 1.0f, int offset = 0);

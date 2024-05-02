@@ -79,6 +79,37 @@ glm::vec3 hsv2rgb(glm::vec3 c)
     return c.z * mix(glm::vec3(K.x), clamp(p - glm::vec3(K.x), glm::vec3(0.0), glm::vec3(1.0)), c.y);
 }
 
+glm::vec3 rgb2hsv(glm::vec3 rgb)
+{
+    float h_scale = 60.f;
+    float Cmax = std::max(std::max(rgb.x, rgb.y), rgb.z);
+    float Cmin = std::min(std::min(rgb.x, rgb.y), rgb.z);
+    float delta = Cmax - Cmin;
+
+    float H = 0.0f;
+    float S = 0.0f;
+
+    if (delta != 0.0f) {
+        if (Cmax == rgb.r) {
+            H = (rgb.g - rgb.b) / delta;
+        }
+        else if (Cmax == rgb.g) {
+            H = (rgb.b - rgb.r) / delta + 2.0f;
+        }
+        else if (Cmax == rgb.b) {
+            H = (rgb.r - rgb.g) / delta + 4.0f;
+        }
+    }
+
+    if (Cmax != 0.0f) {
+        S = delta / Cmax;
+    }
+
+    H *= h_scale;
+
+    return glm::vec3(H, S, Cmax);
+}
+
 glm::vec3 rotate_point_by_quat(const glm::vec3& v, const glm::vec4& q) {
     const glm::vec3 q_vect = glm::vec3(q.x, q.y, q.z);
     return v + 2.0f * glm::cross(q_vect, glm::cross(q_vect, v) + q.w * v);
