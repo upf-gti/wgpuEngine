@@ -38,8 +38,7 @@ void AnimationPlayer::play(const std::string& animation_name, float custom_blend
     current_animation_name = animation_name;
 
     // sequence with default values
-    timeline.frame_min = -100;
-    timeline.frame_max = 1000;
+    timeline.frame_max = animation->get_track(0)->size();;
 
     generate_track_data();
 }

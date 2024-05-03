@@ -163,8 +163,10 @@ struct Timeline : public ImSequencer::SequenceInterface
     virtual size_t GetCustomHeight(int index) { return tracks[index].expanded ? 300 : 0; }
 
     // my datas
-    Timeline() : frame_min(0), frame_max(0) {}
+    Timeline() : frame_min(0), frame_max(1000) {}
     int frame_min, frame_max;
+    ImVec2 selected_point = { -1, -1 };
+
     struct TimelineTrack
     {
         int type;
@@ -202,7 +204,7 @@ struct Timeline : public ImSequencer::SequenceInterface
         tracks[index].expanded = !tracks[index].expanded;
     }
 
-    int DrawPoint(ImDrawList* draw_list, ImVec2 pos, const ImVec2 size, const ImVec2 offset, bool edited)
+    int DrawPoint(ImDrawList* draw_list, ImVec2 pos, const ImVec2 size, const ImVec2 offset, int type, bool edited, bool selected)
     {
         int ret = 0;
         ImGuiIO& io = ImGui::GetIO();
@@ -217,26 +219,40 @@ struct Timeline : public ImSequencer::SequenceInterface
 
         const ImVec2 center = ImVec2(pos.x * size.x + offset.x, pos.y * size.y + offset.y);
         const ImRect anchor(ImVec2(center.x - 5, center.y - 5), ImVec2(center.x + 5, center.y + 5));
-        draw_list->AddConvexPolyFilled(offsets, 4, 0xAA000000);
+        switch (type) {
+        case TrackType::TYPE_POSITION:
+            draw_list->AddTriangleFilled(ImVec2(center.x - size.x* 2.5f, center.y + size.y * 2.5f/2), ImVec2(center.x + size.x * 2.5f, center.y + size.y * 2.5f/2), ImVec2(center.x, center.y - size.y * 2.5f/2), 0xAA000000);
+            break;
+
+        case TrackType::TYPE_ROTATION:
+            draw_list->AddCircleFilled(center, size.x* 2.5f, 0xAA000000);
+            break;
+        case TrackType::TYPE_SCALE:
+            draw_list->AddRectFilled(ImVec2(pos.x + offset.x, pos.y + offset.y), ImVec2(pos.x + size.x * 4.5f + offset.x, pos.y + size.y * 4.5f + offset.y), 0xAA000000);
+            break;
+        }
+       
+        //draw_list->AddConvexPolyFilled(offsets, 4, 0xAA000000);
         if (anchor.Contains(io.MousePos))
         {
             ret = 1;
-            if (io.MouseDown[0])
+            if (io.MouseDown[0]) {
                 ret = 2;
+            }
         }
         if (edited)
             draw_list->AddPolyline(offsets, 4, 0xFFFFFFFF, true, 3.0f);
-        else if (ret)
-            draw_list->AddPolyline(offsets, 4, 0xFF80B0FF, true, 2.0f);
+        else if (ret || selected)
+            draw_list->AddPolyline(offsets, 4, 0x8080B0FF, true, 2.0f);
         else
-            draw_list->AddPolyline(offsets, 4, 0xFF0080FF, true, 2.0f);
+            draw_list->AddPolyline(offsets, 4, 0x00008080, true, 2.0f);
 
         return ret;
     }
     virtual void CustomDraw(int index, ImDrawList* draw_list, const ImRect& rc, const ImRect& legendRect, const ImRect& clippingRect, const ImRect& legendClippingRect)
     {
         for (int j = tracks[index].frame_start; j < tracks[index].frame_end; j++) {
-            const int drawState = DrawPoint(draw_list, ImVec2(j, rc.Min.y ), ImVec2(5, 5), ImVec2(5, 5), false);
+            //const int drawState = DrawPoint(draw_list, ImVec2(j, rc.Min.y ), ImVec2(5, 5), ImVec2(5, 5), false);
         }
         /*static const char* labels[] = { "x", "y" , "z", "w"};
 
@@ -274,8 +290,15 @@ struct Timeline : public ImSequencer::SequenceInterface
         for (int j = tracks[index].frame_start; j < tracks[index].frame_end; j++) {
             float r = (j - frame_min) / float(frame_max - frame_min);
             float x = ImLerp(rc.Min.x, rc.Max.x, r);
+            bool selected = false;
+            if (selected_point.x == index && selected_point.y == j) {
+                selected = true;
+            }
             //draw_list->AddLine(ImVec2(x, rc.Min.y + 6), ImVec2(x, rc.Max.y - 4), 0xAA000000, 4.f);
-            const int drawState = DrawPoint(draw_list, ImVec2(x, rc.Min.y ), ImVec2(1,1), ImVec2(0, 10), false);
+            const int drawState = DrawPoint(draw_list, ImVec2(x, rc.Min.y), ImVec2(1,1), ImVec2(0, 10), tracks[index].type, false, selected);
+            if (drawState == 2) {
+                selected_point = ImVec2(index, j);
+            }
         }
         draw_list->PopClipRect(); 
         /*curve_editor.max = ImVec2(float(frame_max), 1.f);
