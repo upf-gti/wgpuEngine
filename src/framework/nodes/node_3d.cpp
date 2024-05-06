@@ -105,3 +105,8 @@ Node3D* Node3D::get_parent() const
     return parent;
 }
 
+AABB Node3D::get_aabb() const
+{
+    return this->aabb;
+}
+

@@ -37,8 +37,6 @@ protected:
 
 	std::vector<Node*> children;
 
-    AABB aabb = {};
-
 public:
 
     Node() {};
@@ -49,10 +47,8 @@ public:
 
     std::string get_name() const { return name; }
     virtual std::vector<Node*>& get_children() { return children; }
-    AABB get_aabb() const;
 
     void set_name(std::string name) { this->name = name; }
-    void set_aabb(const AABB& aabb) { this->aabb = aabb; }
 
     virtual void remove_flag(uint8_t flag);
 

@@ -13,6 +13,8 @@ public:
     MeshInstance3D();
 	virtual ~MeshInstance3D();
 
+    AABB get_surface_world_aabb(int surface_idx);
+
 	virtual void render() override;
 	virtual void update(float delta_time) override;
 };

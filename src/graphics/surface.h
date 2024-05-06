@@ -72,4 +72,7 @@ public:
     void* data();
     uint32_t get_vertex_count() const;
     uint64_t get_byte_size() const;
+
+    AABB get_aabb();
+    void set_aabb(AABB aabb);
 };

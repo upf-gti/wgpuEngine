@@ -15,6 +15,8 @@ protected:
 
     Node3D* parent = nullptr;
 
+    AABB aabb = {};
+
 public:
 
     Node3D() : model(1.0f) {};
@@ -37,6 +39,7 @@ public:
     glm::mat4x4 get_model()  const;
     glm::mat4x4 get_rotation() const;
     Node3D* get_parent() const;
+    AABB get_aabb() const;
 
     void set_translation(const glm::vec3& translation);
     void set_model(const glm::mat4x4& _model) { model = _model; }
