@@ -27,7 +27,7 @@ void SkeletonInstance3D::update(float dt)
 {
     if (model_dirty) {
 
-        update_pose_from_joints();
+        update_pose_from_joints(dt);
 
         model_dirty = false;
     }
@@ -51,12 +51,14 @@ void SkeletonInstance3D::update(float dt)
 
 }
 
-void SkeletonInstance3D::update_pose_from_joints()
+void SkeletonInstance3D::update_pose_from_joints(float dt)
 {
     Pose& pose = skeleton->get_current_pose();
     const std::vector<uint32_t>& indices = skeleton->get_joint_indices();
 
     for (size_t i = 0; i < joint_nodes.size(); ++i) {
+        joint_nodes[i]->set_model_dirty(true);
+        joint_nodes[i]->update(dt);
         pose.set_local_transform(i, joint_nodes[i]->get_transform());
     }
 }
@@ -155,26 +157,34 @@ void SkeletonInstance3D::set_uniform_data(Uniform* animated_u, Uniform* invbind_
 
 void SkeletonInstance3D::recursive_tree_gui(Node* node) {
 
-    if (ImGui::TreeNode(node->get_name().c_str())) {
+    ImGuiTreeNodeFlags flags = {};
+
+    bool selected = ((Node3D*)node)->is_selected();
+    bool child_selected = ((Node3D*)node)->is_child_selected();
+
+    if (selected || child_selected)
+    {
+        flags = { ImGuiTreeNodeFlags_DefaultOpen };
+    } 
+
+    if (ImGui::TreeNodeEx(node->get_name().c_str(), flags)) {
 
         ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(ImColor(230, 150, 50)));
-        bool is_open = ImGui::TreeNodeEx("Transform");
+        bool is_open = ImGui::TreeNodeEx("Transform", selected ? ImGuiTreeNodeFlags{ ImGuiTreeNodeFlags_DefaultOpen} : ImGuiTreeNodeFlags{});
         ImGui::PopStyleColor();
 
-        if (is_open)
-        {
-            Node3D* c = (Node3D*)node;
-            Transform transform = c->get_transform();
+        bool changed = false;
+        Node3D* c = (Node3D*)node;
+        Transform transform = c->get_transform();
 
-            glm::mat4x4 global_model = get_global_model() * c->get_global_model();
+        if (selected || is_open) {
             Camera* camera = Renderer::instance->get_camera();
 
             ImGuiIO& io = ImGui::GetIO();
             ImGuizmo::SetRect(0, 0, io.DisplaySize.x, io.DisplaySize.y);
-
-            bool changed = ImGuizmo::Manipulate(glm::value_ptr(camera->get_view()), glm::value_ptr(camera->get_projection()),
-                ImGuizmo::OPERATION::ROTATE, ImGuizmo::MODE::WORLD, glm::value_ptr(global_model));
-
+            glm::mat4x4 global_model = get_global_model() * c->get_global_model();
+            changed = ImGuizmo::Manipulate(glm::value_ptr(camera->get_view()), glm::value_ptr(camera->get_projection()),
+                ImGuizmo::OPERATION::ROTATE, ImGuizmo::MODE::LOCAL, glm::value_ptr(global_model));
             if (changed)
             {
                 glm::mat4 parent = c->get_parent() ? c->get_parent()->get_global_model() : glm::mat4(1.f);
@@ -183,7 +193,10 @@ void SkeletonInstance3D::recursive_tree_gui(Node* node) {
                 c->set_transform(mat4ToTransform(local_model));
                 set_model_dirty(true);
             }
+        }
 
+        if (is_open)
+        {            
             changed = false;
 
             changed |= ImGui::DragFloat3("Translation", &transform.position[0], 0.1f);

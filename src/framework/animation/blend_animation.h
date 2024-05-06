@@ -26,7 +26,7 @@ public:
     void play(Animation* target);
     void stop();
     void fade_to(Animation* target, float fade_time);
-    float update(float dt, std::vector<void*>& data);
+    float update(float current_time, std::vector<void*>& data);
 
     void blend(Pose& output, Pose& a, Pose& b, float t);
     void add(Pose& output, Pose& in, Pose& add_pose, Pose& base);

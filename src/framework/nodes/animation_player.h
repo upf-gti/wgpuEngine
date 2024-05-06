@@ -31,7 +31,7 @@ class AnimationPlayer : public Node3D
     Timeline timeline;
 
     std::vector<void*> track_data;
-
+    int selected_track = -1;
     void generate_track_data();
 
 public:

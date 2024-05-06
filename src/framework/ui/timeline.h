@@ -148,7 +148,7 @@ struct Timeline : public ImSequencer::SequenceInterface
     {
         TimelineTrack& item = tracks[index];
         if (color)
-            *color = 0xFFAA8080; // same color for everyone, return color based on type
+            *color = 0xAA1A1A1A;//0xAAAA8080; // same color for everyone, return color based on type
         if (start)
             *start = &item.frame_start;
         if (end)
@@ -219,20 +219,21 @@ struct Timeline : public ImSequencer::SequenceInterface
 
         const ImVec2 center = ImVec2(pos.x * size.x + offset.x, pos.y * size.y + offset.y);
         const ImRect anchor(ImVec2(center.x - 5, center.y - 5), ImVec2(center.x + 5, center.y + 5));
+        ImColor fill_color = 0xAA000000;
         switch (type) {
         case TrackType::TYPE_POSITION:
-            draw_list->AddTriangleFilled(ImVec2(center.x - size.x* 2.5f, center.y + size.y * 2.5f/2), ImVec2(center.x + size.x * 2.5f, center.y + size.y * 2.5f/2), ImVec2(center.x, center.y - size.y * 2.5f/2), 0xAA000000);
+            fill_color = ImGui::GetColorU32(ImVec4(0.30f, 0.8f, 0.64f, 1.f));//0xE94560DD;//0xFFE94560;
             break;
 
         case TrackType::TYPE_ROTATION:
-            draw_list->AddCircleFilled(center, size.x* 2.5f, 0xAA000000);
+            fill_color = ImGui::GetColorU32(ImVec4(0.97f, 0.27f, 0.37f, 1.f));//0xAAFFD700;
             break;
         case TrackType::TYPE_SCALE:
-            draw_list->AddRectFilled(ImVec2(pos.x + offset.x, pos.y + offset.y), ImVec2(pos.x + size.x * 4.5f + offset.x, pos.y + size.y * 4.5f + offset.y), 0xAA000000);
+            fill_color = ImGui::GetColorU32(ImVec4(1.f, 0.84f, 0.f, 1.f));// 0xFFD700AA;// 0xFFFF5ADD;
             break;
         }
        
-        //draw_list->AddConvexPolyFilled(offsets, 4, 0xAA000000);
+        draw_list->AddConvexPolyFilled(offsets, 4, fill_color);
         if (anchor.Contains(io.MousePos))
         {
             ret = 1;
@@ -298,6 +299,7 @@ struct Timeline : public ImSequencer::SequenceInterface
             const int drawState = DrawPoint(draw_list, ImVec2(x, rc.Min.y), ImVec2(1,1), ImVec2(0, 10), tracks[index].type, false, selected);
             if (drawState == 2) {
                 selected_point = ImVec2(index, j);
+                std::cout << "Frame " << j << "selected: " << tracks[index].name << std::endl;
             }
         }
         draw_list->PopClipRect(); 

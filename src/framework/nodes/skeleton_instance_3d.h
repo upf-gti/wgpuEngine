@@ -26,7 +26,7 @@ public:
     void update(float dt) override;
     void render_gui() override;
 
-    void update_pose_from_joints();
+    void update_pose_from_joints(float dt);
 
     Node* get_node(std::vector<std::string>& path_tokens) override;
 

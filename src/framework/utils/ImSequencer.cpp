@@ -63,7 +63,7 @@ namespace ImSequencer
         int cy = (int)(io.MousePos.y);
         static float framePixelWidth = 10.f;
         static float framePixelWidthTarget = 10.f;
-        int legendWidth = 200;
+        int legendWidth = 300; //200
 
         static int movingEntry = -1;
         static int movingPos = -1;
@@ -298,7 +298,7 @@ namespace ImSequencer
             customHeight = 0;
             for (int i = 0; i < sequenceCount; i++)
             {
-                unsigned int col = (i & 1) ? 0xFF3A3636 : 0xFF413D3D;
+                unsigned int col = (i & 1) ? 0xAA303030 : 0xAA202020; //0xFF3A3636 : 0xFF413D3D;
 
                 size_t localCustomHeight = sequence->GetCustomHeight(i);
                 ImVec2 pos = ImVec2(contentMin.x + legendWidth, contentMin.y + ItemHeight * i + 1 + customHeight);
@@ -469,7 +469,7 @@ namespace ImSequencer
             // cursor
             if (currentFrame && firstFrame && *currentFrame >= *firstFrame && *currentFrame <= sequence->GetFrameMax())
             {
-                static const float cursorWidth = 6.f;
+                static const float cursorWidth = 2.f;
                 float cursorOffset = contentMin.x + legendWidth + (*currentFrame - firstFrameUsed) * framePixelWidth + framePixelWidth / 2 - cursorWidth * 0.5f;
                 draw_list->AddLine(ImVec2(cursorOffset, canvas_pos.y), ImVec2(cursorOffset, contentMax.y), ImGui::GetColorU32(ImGuiCol_HeaderActive), cursorWidth);
                 char tmps[512];

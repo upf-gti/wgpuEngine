@@ -48,13 +48,11 @@ void BlendAnimation::fade_to(Animation* target, float fade_time)
 }
 
 // Play the active animation and blend in any other animations that are in the fade list
-float BlendAnimation::update(float dt, std::vector<void*>& data)
+float BlendAnimation::update(float current_time, std::vector<void*>& data)
 {
     if (!animation) {
         return time;
     }
-
-    float current_time = time;
 
     // Set the current animation as the target animation and remove the fade object if an animation has finished fading
     size_t num_targets = targets.size();
@@ -69,7 +67,7 @@ float BlendAnimation::update(float dt, std::vector<void*>& data)
     }
 
     for (uint32_t i = 0; i < animation->get_track_count(); ++i) {
-        time = animation->sample(current_time + dt, i, data[i]);
+        time = animation->sample(current_time, i, data[i]);
     }
 
     // Blend the fade list with the current animation

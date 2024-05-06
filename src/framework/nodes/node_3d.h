@@ -18,6 +18,8 @@ protected:
 
     bool model_dirty = false;
 
+    bool selected = false;
+
 public:
 
     Node3D();
@@ -48,4 +50,10 @@ public:
     void set_model(const glm::mat4x4& new_model) { model = new_model; }
     void set_transform(const Transform& new_transform) { transform = new_transform; }
     void set_parent(Node3D* node);
+
+    void select();
+    void unselect();
+
+    bool is_selected();
+    bool is_child_selected();
 };

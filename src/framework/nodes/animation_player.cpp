@@ -39,6 +39,7 @@ void AnimationPlayer::play(const std::string& animation_name, float custom_blend
 
     // sequence with default values
     timeline.frame_max = animation->get_track(0)->size();;
+    selected_track = -1;
 
     generate_track_data();
 }
@@ -121,7 +122,6 @@ void AnimationPlayer::generate_track_data()
             }
         }
         timeline.tracks.push_back(Timeline::TimelineTrack{ animation->get_track(i)->get_type(), 0, (int)animation->get_track(i)->size(), false, track_path, points });
-
     }
 }
 
@@ -137,25 +137,24 @@ void AnimationPlayer::stop(bool keep_state)
 }
 
 void AnimationPlayer::update(float delta_time)
-{
+{ 
+    float current_time = playback + delta_time * speed;
+    Animation* current_animation = blender.get_current_animation();
+    if (current_animation == nullptr)
+        return;
+
     if (!playing) {
-
+        //current_time = playback;
         Node::update(delta_time);
-
         return;
     }
-
-    Animation* current_animation = blender.get_current_animation();
-    assert(current_animation);
-
     if (!current_animation->get_looping() && playback >= current_animation->get_duration()) {
         playing = false;
         return;
     }
 
-    // Sample data from the animation and store it at &track_data
-    
-    playback = blender.update(delta_time * speed, track_data);
+    // Sample data from the animation and store it at &track_data   
+    playback = blender.update(current_time, track_data);
 
     /*
         After sampling, we should have the skeletonInstance joint nodes with the correct
@@ -211,59 +210,96 @@ void AnimationPlayer::render_gui()
         ImGui::EndCombo();
     }
 
+    Animation* current_animation = blender.get_current_animation();
+    if (current_animation == nullptr)
+        return;
+
     if (ImGui::Checkbox("Loop", &looping)) {
-        Animation* current_animation = blender.get_current_animation();
         if (current_animation) {
             current_animation->set_looping(looping);
         }
     }
 
-    ImGui::DragFloat("Speed", &speed, 0.1f, -10.0f, 10.0f);
     ImGui::DragFloat("Blend time", &blend_time, 0.1f, 0.0f);
-    ImGui::LabelText(std::to_string(playback).c_str(), "Playback");
-
-    // Control buttons
-    if (!playing && ImGui::Button("Play")) {
-        play(current_animation_name);
-    }
-    else if (playing && ImGui::Button("Stop")) {
-        stop();
-    }
-    ImGui::SameLine(0, 10);
-
-    if (ImGui::Button("Pause")) {
-        pause();
-    }
 
     // Timeline
-
     if (ImGui::Begin("Timeline")) {
         ImGuiIO& io = ImGui::GetIO();
         
         ImGui::SetWindowSize(ImVec2(io.DisplaySize.x, io.DisplaySize.y / 3));
         ImGui::SetWindowPos(ImVec2(0, io.DisplaySize.y - io.DisplaySize.y / 3));
 
-     
         // let's create the sequencer
-        static int selected_entry = -1;
+        static int selected_entry = selected_track;
         static int first_frame = 0;
         static bool expanded = true;
-        static int current_frame = 100;
+        int current_frame = playback * (timeline.frame_max - timeline.frame_min) / current_animation->get_duration();
+        int new_current_frame = current_frame;
+        // Control buttons
+        ImGui::PushItemWidth(180);
+        /*ImGui::InputInt("Frame Min", &timeline.frame_min);
+        ImGui::SameLine();*/
+        if (ImGui::InputInt("Frame ", &new_current_frame)) {
+        }
+        ImGui::SameLine();
+        /*ImGui::InputInt("Frame Max", &timeline.frame_max);
+        ImGui::SameLine();*/
+        ImGui::InputFloat("Current time", &playback);
+        ImGui::SameLine();
+        ImGui::DragFloat("Speed", &speed, 0.1f, -10.0f, 10.0f);
+        ImGui::SameLine();
 
-        ImGui::PushItemWidth(130);
-        ImGui::InputInt("Frame Min", &timeline.frame_min);
+        if (!playing && ImGui::Button("Play")) {
+            play(current_animation_name);
+        }
+        else if (playing && ImGui::Button("Stop")) {
+            stop();
+        }
         ImGui::SameLine();
-        ImGui::InputInt("Frame ", &current_frame);
-        ImGui::SameLine();
-        ImGui::InputInt("Frame Max", &timeline.frame_max);
+
+        if (ImGui::Button("Pause")) {
+            pause();
+        }
+
         ImGui::PopItemWidth();
-        Sequencer(&timeline, &current_frame, &expanded, &selected_entry, &first_frame, ImSequencer::SEQUENCER_EDIT_STARTEND | ImSequencer::SEQUENCER_ADD | ImSequencer::SEQUENCER_DEL | ImSequencer::SEQUENCER_COPYPASTE | ImSequencer::SEQUENCER_CHANGE_FRAME);
+
+        Sequencer(&timeline, &new_current_frame, &expanded, &selected_entry, &first_frame, ImSequencer::SEQUENCER_EDIT_STARTEND | ImSequencer::SEQUENCER_ADD | ImSequencer::SEQUENCER_DEL | ImSequencer::SEQUENCER_COPYPASTE | ImSequencer::SEQUENCER_CHANGE_FRAME);
+        if (new_current_frame != current_frame) {
+            playback = new_current_frame * current_animation->get_duration() / (timeline.frame_max - timeline.frame_min);
+            blender.update(playback, track_data);
+            root_node->set_model_dirty(true);
+        }
+
         // add a UI to edit that particular item
         if (selected_entry != -1)
-        {
+        {            
             const Timeline::TimelineTrack item = timeline.tracks[selected_entry];
             ImGui::Text("I am a %s, please edit me", TrackTypes[item.type]);
-            // switch (type) ....
+            std::cout << "I am a %s, please edit me ( " << TrackTypes[item.type] << " )" << std::endl;
+            size_t last_idx = item.name.find_last_of('/');
+            std::string node_path = item.name.substr(0, last_idx);
+
+            Node3D* node = (Node3D*)root_node->get_node(node_path);
+            if (!node->is_selected() && !playing) {
+                node->select();
+            }
+
+            if (selected_entry != selected_track)
+            {
+                if (selected_track != -1)
+                {
+
+                    node_path = timeline.tracks[selected_track].name;
+                    last_idx = node_path.find_last_of('/');
+                    node_path = node_path.substr(0, last_idx);
+
+                    node = (Node3D*)root_node->get_node(node_path);
+                    node->unselect();
+                }
+
+                selected_track = selected_entry;
+            }
+
         }
         ImGui::End();
     }

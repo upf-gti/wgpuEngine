@@ -71,7 +71,7 @@ void Node3D::render_gui()
     bool is_open = ImGui::TreeNodeEx("Transform");
     ImGui::PopStyleColor();
 
-    if (is_open)
+    if (is_open || selected)
     {
         glm::mat4x4 test_model = get_model();
         Camera* camera = Renderer::instance->get_camera();
@@ -186,4 +186,32 @@ Node3D* Node3D::get_parent() const
 const Transform& Node3D::get_transform() const
 {
     return transform;
+}
+
+
+void Node3D::select()
+{
+    selected = true;
+}
+
+void Node3D::unselect()
+{
+    selected = false;
+}
+
+bool Node3D::is_selected()
+{
+    return selected;
+}
+
+bool Node3D::is_child_selected()
+{
+    if (selected)
+        return selected;
+
+    for (auto& child : children) {
+        if (((Node3D*)child)->is_child_selected())
+            return true;
+    }
+    return false;
 }
