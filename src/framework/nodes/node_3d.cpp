@@ -182,7 +182,6 @@ Node3D* Node3D::get_parent() const
     return parent;
 }
 
-
 const Transform& Node3D::get_transform() const
 {
     return transform;

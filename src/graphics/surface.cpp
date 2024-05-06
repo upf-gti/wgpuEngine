@@ -866,3 +866,13 @@ uint64_t Surface::get_byte_size() const
 {
     return get_vertex_count() * sizeof(InterleavedData);
 }
+
+AABB Surface::get_aabb()
+{
+    return this->aabb;
+}
+
+void Surface::set_aabb(AABB aabb)
+{
+    this->aabb = aabb;
+}
