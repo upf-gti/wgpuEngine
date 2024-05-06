@@ -13,6 +13,13 @@ MeshInstance3D::~MeshInstance3D()
 
 }
 
+AABB MeshInstance3D::get_surface_world_aabb(int surface_idx)
+{
+    assert(surface_idx >= 0 && surface_idx < surfaces.size());
+
+    return AABB();
+}
+
 void MeshInstance3D::render()
 {
     Renderer::instance->add_renderable(this, get_global_model());

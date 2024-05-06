@@ -88,4 +88,7 @@ public:
     uint32_t get_vertex_count() const;
     uint64_t get_byte_size() const;
     const std::string& get_name() { return name; };
+
+    AABB get_aabb();
+    void set_aabb(AABB aabb);
 };

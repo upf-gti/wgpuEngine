@@ -132,6 +132,7 @@ void parse_obj(const char* obj_path, MeshInstance3D* entity)
     aabb.center = max_pos - aabb.half_size;
 
     entity->set_aabb(aabb);
+    new_surface->set_aabb(aabb);
 
     new_surface->create_vertex_buffer();
 }
