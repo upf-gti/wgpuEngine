@@ -68,10 +68,10 @@ void Node3D::update(float delta_time)
 void Node3D::render_gui()
 {
     ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(ImColor(230, 150, 50)));
-    bool is_open = ImGui::TreeNodeEx("Transform");
+    bool is_open = ImGui::TreeNodeEx("Transform", selected ? ImGuiTreeNodeFlags{ ImGuiTreeNodeFlags_DefaultOpen } : ImGuiTreeNodeFlags{});
     ImGui::PopStyleColor();
 
-    if (is_open || selected)
+    if (is_open)
     {
         glm::mat4x4 test_model = get_model();
         Camera* camera = Renderer::instance->get_camera();
@@ -79,13 +79,41 @@ void Node3D::render_gui()
         ImGuiIO& io = ImGui::GetIO();
         ImGuizmo::SetRect(0, 0, io.DisplaySize.x, io.DisplaySize.y);
 
+        ImGuizmo::OPERATION mode = ImGuizmo::OPERATION::ROTATE;
+
+        switch (edit_mode)
+        {
+        case EditModes::TRANSLATE:
+            mode = ImGuizmo::OPERATION::TRANSLATE;
+            break;
+        case EditModes::ROTATE:
+            mode = ImGuizmo::OPERATION::ROTATE;
+            break;
+        case EditModes::SCALE:
+            mode = ImGuizmo::OPERATION::SCALE;
+            break;       
+        }
+
         bool changed = ImGuizmo::Manipulate(glm::value_ptr(camera->get_view()), glm::value_ptr(camera->get_projection()),
-            ImGuizmo::OPERATION::ROTATE, ImGuizmo::MODE::WORLD, glm::value_ptr(test_model));
+            mode, ImGuizmo::MODE::WORLD, glm::value_ptr(test_model));
 
         if (changed)
         {
             set_model(test_model);
             set_transform(mat4ToTransform(test_model));
+
+            switch (get_edit_mode())
+            {
+            case EditModes::TRANSLATE:
+                emit_signal("translation@changed", transform.position);
+                break;
+            case EditModes::ROTATE:
+                emit_signal("rotation@changed", transform.rotation);
+                break;
+            case EditModes::SCALE:
+                emit_signal("scale@changed", transform.scale);
+                break;
+            }
         }
 
         changed = false;
@@ -140,8 +168,14 @@ void Node3D::set_translation(const glm::vec3& translation)
     model = glm::translate(glm::mat4x4(1.f), translation);
 }
 
-void Node3D::set_parent(Node3D* parent) {
+void Node3D::set_parent(Node3D* parent)
+{
     this->parent = parent;
+}
+
+void Node3D::set_edit_mode(int mode)
+{
+    edit_mode = mode;
 }
 
 const glm::vec3 Node3D::get_local_translation() const
@@ -187,6 +221,10 @@ const Transform& Node3D::get_transform() const
     return transform;
 }
 
+int Node3D::get_edit_mode()
+{
+    return edit_mode;
+}
 
 void Node3D::select()
 {

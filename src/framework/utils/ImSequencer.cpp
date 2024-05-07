@@ -465,25 +465,28 @@ namespace ImSequencer
                     sequence->EndEdit();
                 }
             }
-
+            draw_list->PopClipRect();
+            draw_list->PopClipRect();
             // cursor
             if (currentFrame && firstFrame && *currentFrame >= *firstFrame && *currentFrame <= sequence->GetFrameMax())
             {
                 static const float cursorWidth = 2.f;
                 float cursorOffset = contentMin.x + legendWidth + (*currentFrame - firstFrameUsed) * framePixelWidth + framePixelWidth / 2 - cursorWidth * 0.5f;
                 draw_list->AddLine(ImVec2(cursorOffset, canvas_pos.y), ImVec2(cursorOffset, contentMax.y), ImGui::GetColorU32(ImGuiCol_HeaderActive), cursorWidth);
+                draw_list->AddRectFilled(ImVec2(cursorOffset - 10.f, canvas_pos.y), ImVec2(cursorOffset + 10.f, canvas_pos.y + ItemHeight), ImGui::GetColorU32(ImGuiCol_HeaderActive), cursorWidth);
                 char tmps[512];
                 ImFormatString(tmps, IM_ARRAYSIZE(tmps), "%d", *currentFrame);
-                draw_list->AddText(ImVec2(cursorOffset + 10, canvas_pos.y + 2), 0xFF2A2AFF, tmps);
+                draw_list->AddText(ImVec2(cursorOffset - 5.f, canvas_pos.y ), 0xFFFFFFFF, tmps);
             }
 
-            draw_list->PopClipRect();
-            draw_list->PopClipRect();
+            draw_list->PushClipRect(childFramePos, childFramePos + childFrameSize, true);
+
 
             for (auto& customDraw : customDraws)
                 sequence->CustomDraw(customDraw.index, draw_list, customDraw.customRect, customDraw.legendRect, customDraw.clippingRect, customDraw.legendClippingRect);
             for (auto& customDraw : compactCustomDraws)
                 sequence->CustomDrawCompact(customDraw.index, draw_list, customDraw.customRect, customDraw.clippingRect);
+            draw_list->PopClipRect();
 
             // copy paste
             if (sequenceOptions & SEQUENCER_COPYPASTE)

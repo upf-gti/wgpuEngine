@@ -11,16 +11,18 @@
 #include "glm/vec2.hpp"
 #include "glm/vec3.hpp"
 #include "glm/vec4.hpp"
+#include "glm/gtc/quaternion.hpp"
 
 using FuncEmpty = std::function<void()>;
-using FuncVoid = std::function<void(const std::string&, void*)>;
 using FuncFloat = std::function<void(const std::string&, float)>;
 using FuncString = std::function<void(const std::string&, std::string)>;
 using FuncVec2 = std::function<void(const std::string&, glm::vec2)>;
 using FuncVec3 = std::function<void(const std::string&, glm::vec3)>;
 using FuncVec4 = std::function<void(const std::string&, glm::vec4)>;
+using FuncQuat = std::function<void(const std::string&, glm::quat)>;
+using FuncVoid = std::function<void(const std::string&, void*)>;
 
-using SignalType = std::variant <FuncFloat, FuncString, FuncVec2, FuncVec3, FuncVec4, FuncVoid>;
+using SignalType = std::variant <FuncFloat, FuncString, FuncVec2, FuncVec3, FuncVec4, FuncQuat, FuncVoid>;
 
 enum NodeType {
     NODE_2D,

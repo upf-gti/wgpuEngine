@@ -48,7 +48,6 @@ void SkeletonInstance3D::update(float dt)
         webgpu_context->update_buffer(std::get<WGPUBuffer>(animated_uniform_data->data), 0, animated_matrices.data(), sizeof(glm::mat4x4) * animated_matrices.size());
         webgpu_context->update_buffer(std::get<WGPUBuffer>(invbind_uniform_data->data), 0, inv_bind_matrices.data(), sizeof(glm::mat4x4) * inv_bind_matrices.size());
     }
-
 }
 
 void SkeletonInstance3D::update_pose_from_joints(float dt)
@@ -154,7 +153,6 @@ void SkeletonInstance3D::set_uniform_data(Uniform* animated_u, Uniform* invbind_
     invbind_uniform_data = invbind_u;
 }
 
-
 void SkeletonInstance3D::recursive_tree_gui(Node* node) {
 
     ImGuiTreeNodeFlags flags = {};
@@ -183,8 +181,25 @@ void SkeletonInstance3D::recursive_tree_gui(Node* node) {
             ImGuiIO& io = ImGui::GetIO();
             ImGuizmo::SetRect(0, 0, io.DisplaySize.x, io.DisplaySize.y);
             glm::mat4x4 global_model = get_global_model() * c->get_global_model();
+
+            ImGuizmo::OPERATION mode = ImGuizmo::OPERATION::ROTATE;
+
+            switch (c->get_edit_mode())
+            {
+            case EditModes::TRANSLATE:
+                mode = ImGuizmo::OPERATION::TRANSLATE;
+                break;
+            case EditModes::ROTATE:
+                mode = ImGuizmo::OPERATION::ROTATE;
+                break;
+            case EditModes::SCALE:
+                mode = ImGuizmo::OPERATION::SCALE;
+                break;
+            }
+
             changed = ImGuizmo::Manipulate(glm::value_ptr(camera->get_view()), glm::value_ptr(camera->get_projection()),
-                ImGuizmo::OPERATION::ROTATE, ImGuizmo::MODE::LOCAL, glm::value_ptr(global_model));
+                mode, ImGuizmo::MODE::LOCAL, glm::value_ptr(global_model));
+
             if (changed)
             {
                 glm::mat4 parent = c->get_parent() ? c->get_parent()->get_global_model() : glm::mat4(1.f);
@@ -192,6 +207,21 @@ void SkeletonInstance3D::recursive_tree_gui(Node* node) {
                 c->set_model(local_model);
                 c->set_transform(mat4ToTransform(local_model));
                 set_model_dirty(true);
+
+                transform = c->get_transform();
+
+                switch (c->get_edit_mode())
+                {
+                case EditModes::TRANSLATE:
+                    c->emit_signal("translation@changed", transform.position);                    
+                    break;
+                case EditModes::ROTATE:
+                    c->emit_signal("rotation@changed", transform.rotation);
+                    break;
+                case EditModes::SCALE:
+                    c->emit_signal("scale@changed", transform.scale);
+                    break;
+                }
             }
         }
 
@@ -225,6 +255,7 @@ void SkeletonInstance3D::render_gui() {
 
         if (ImGui::TreeNodeEx("Bones", ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_Framed)) {
             ImGui::SetWindowSize(ImVec2(0, 0));
+
             Pose& pose = skeleton->get_current_pose();
             for (size_t i = 0; i < joint_nodes.size(); i++) {
                 int parent = pose.get_parent(i);

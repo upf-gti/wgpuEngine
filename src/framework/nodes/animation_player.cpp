@@ -10,6 +10,42 @@
 AnimationPlayer::AnimationPlayer(const std::string& n)
 {
     name = n;
+
+    Node::bind("rotation@changed", (FuncQuat)[&](const std::string& signal, glm::quat rotation) {
+        if (current_animation_name != "") {
+            Animation* animation = RendererStorage::get_animation(current_animation_name);
+            int frame_idx = timeline.selected_point.y;
+            int track_idx = timeline.selected_point.x;
+            timeline.tracks[track_idx].edited_points[frame_idx] = true;
+
+            animation->get_track(track_idx)->get_keyframe(frame_idx).value = rotation;
+        }
+       
+    });
+
+    Node::bind("translation@changed", (FuncVec3)[&](const std::string& signal, glm::vec3 position) {
+        if (current_animation_name != "") {
+            Animation* animation = RendererStorage::get_animation(current_animation_name);
+            int frame_idx = timeline.selected_point.y;
+            int track_idx = timeline.selected_point.x;
+            timeline.tracks[track_idx].edited_points[frame_idx] = true;
+
+            animation->get_track(track_idx)->get_keyframe(frame_idx).value = position;
+        }
+
+    });
+
+    Node::bind("scale@changed", (FuncVec3)[&](const std::string& signal, glm::vec3 scale) {
+        if (current_animation_name != "") {
+            Animation* animation = RendererStorage::get_animation(current_animation_name);
+            int frame_idx = timeline.selected_point.y;
+            int track_idx = timeline.selected_point.x;
+            timeline.tracks[track_idx].edited_points[frame_idx] = true;
+
+            animation->get_track(track_idx)->get_keyframe(frame_idx).value = scale;
+        }
+
+    });
 }
 
 void AnimationPlayer::play(const std::string& animation_name, float custom_blend, float custom_speed, bool from_end)
@@ -90,7 +126,8 @@ void AnimationPlayer::generate_track_data()
         const int c = count;
 
         std::vector<ImVec2> points[4];
-        timeline.curve_editor.SetPointsCount(animation->get_track(i)->size());
+        std::vector<bool> edited_points;
+        //timeline.curve_editor.SetPointsCount(animation->get_track(i)->size());
         
         for (uint32_t j = 0; j < animation->get_track(i)->size(); j++) {
             if (type == 0 || type == 2) {
@@ -100,9 +137,9 @@ void AnimationPlayer::generate_track_data()
                 points[1].push_back(ImVec2(j, p.y));
                 points[2].push_back(ImVec2(j, p.z));
 
-                timeline.curve_editor.point_count[0] = points[0].size();
+                /*timeline.curve_editor.point_count[0] = points[0].size();
                 timeline.curve_editor.point_count[1] = points[1].size();
-                timeline.curve_editor.point_count[2] = points[2].size();
+                timeline.curve_editor.point_count[2] = points[2].size();*/
             }
             else if (type == 1) {
                 glm::quat p = std::get<glm::quat>(animation->get_track(i)->get_keyframe(j).value);
@@ -111,17 +148,18 @@ void AnimationPlayer::generate_track_data()
                 points[2].push_back(ImVec2(j, p.z));
                 points[3].push_back(ImVec2(j, p.w));
 
-                timeline.curve_editor.point_count[0] = points[0].size();
+                /*timeline.curve_editor.point_count[0] = points[0].size();
                 timeline.curve_editor.point_count[1] = points[1].size();
                 timeline.curve_editor.point_count[2] = points[2].size();
-                timeline.curve_editor.point_count[3] = points[3].size();
+                timeline.curve_editor.point_count[3] = points[3].size();*/
                 /*timeline.curve_editor.AddPoint(0, ImVec2(j, p.x));
                 timeline.curve_editor.AddPoint(1, ImVec2(j, p.y));
                 timeline.curve_editor.AddPoint(2, ImVec2(j, p.z));
                 timeline.curve_editor.AddPoint(3, ImVec2(j, p.w));*/
             }
+            edited_points.push_back(false);
         }
-        timeline.tracks.push_back(Timeline::TimelineTrack{ animation->get_track(i)->get_type(), 0, (int)animation->get_track(i)->size(), false, track_path, points });
+        timeline.tracks.push_back(Timeline::TimelineTrack{ animation->get_track(i)->get_type(), 0, (int)animation->get_track(i)->size(), false, track_path, points, edited_points });
     }
 }
 
@@ -242,8 +280,10 @@ void AnimationPlayer::render_gui()
         if (ImGui::InputInt("Frame ", &new_current_frame)) {
         }
         ImGui::SameLine();
-        /*ImGui::InputInt("Frame Max", &timeline.frame_max);
-        ImGui::SameLine();*/
+        ImGui::BeginDisabled();
+        ImGui::InputInt("Frame Max", &timeline.frame_max,0, 0);
+        ImGui::EndDisabled();
+        ImGui::SameLine();
         ImGui::InputFloat("Current time", &playback);
         ImGui::SameLine();
         ImGui::DragFloat("Speed", &speed, 0.1f, -10.0f, 10.0f);
@@ -262,33 +302,43 @@ void AnimationPlayer::render_gui()
         }
 
         ImGui::PopItemWidth();
+        int selected_frame = timeline.selected_point.y;
 
-        Sequencer(&timeline, &new_current_frame, &expanded, &selected_entry, &first_frame, ImSequencer::SEQUENCER_EDIT_STARTEND | ImSequencer::SEQUENCER_ADD | ImSequencer::SEQUENCER_DEL | ImSequencer::SEQUENCER_COPYPASTE | ImSequencer::SEQUENCER_CHANGE_FRAME);
-        if (new_current_frame != current_frame) {
-            playback = new_current_frame * current_animation->get_duration() / (timeline.frame_max - timeline.frame_min);
-            blender.update(playback, track_data);
-            root_node->set_model_dirty(true);
-        }
+        Sequencer(&timeline, &new_current_frame, &expanded, &selected_entry, &first_frame, ImSequencer::SEQUENCER_EDIT_STARTEND | ImSequencer::SEQUENCER_ADD | ImSequencer::SEQUENCER_DEL | ImSequencer::SEQUENCER_COPYPASTE | ImSequencer::SEQUENCER_CHANGE_FRAME);     
 
         // add a UI to edit that particular item
         if (selected_entry != -1)
         {            
             const Timeline::TimelineTrack item = timeline.tracks[selected_entry];
-            ImGui::Text("I am a %s, please edit me", TrackTypes[item.type]);
-            std::cout << "I am a %s, please edit me ( " << TrackTypes[item.type] << " )" << std::endl;
+ 
             size_t last_idx = item.name.find_last_of('/');
             std::string node_path = item.name.substr(0, last_idx);
+            const std::string& property_name = item.name.substr(last_idx + 1);
 
             Node3D* node = (Node3D*)root_node->get_node(node_path);
+
+            //select gizmo mode based on track's type
+            if (property_name == "translation")
+                node->set_edit_mode(EditModes::TRANSLATE);
+            else if (property_name == "rotation")
+                node->set_edit_mode(EditModes::ROTATE);
+            else if (property_name == "scale")
+                node->set_edit_mode(EditModes::SCALE);
+
+            //select the node only if the animation is not running
             if (!node->is_selected() && !playing) {
                 node->select();
             }
 
+            // update current frame on select frame
+            if(selected_frame != timeline.selected_point.y)
+                new_current_frame = timeline.selected_point.y;
+
+            // unselect node if other is selected
             if (selected_entry != selected_track)
             {
                 if (selected_track != -1)
                 {
-
                     node_path = timeline.tracks[selected_track].name;
                     last_idx = node_path.find_last_of('/');
                     node_path = node_path.substr(0, last_idx);
@@ -296,10 +346,15 @@ void AnimationPlayer::render_gui()
                     node = (Node3D*)root_node->get_node(node_path);
                     node->unselect();
                 }
-
                 selected_track = selected_entry;
             }
+        }
 
+        //update animation on change current frame manyally
+        if (new_current_frame != current_frame) {
+            playback = new_current_frame * current_animation->get_duration() / (timeline.frame_max - timeline.frame_min);
+            blender.update(playback, track_data);
+            root_node->set_model_dirty(true);
         }
         ImGui::End();
     }

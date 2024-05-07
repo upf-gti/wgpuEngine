@@ -6,6 +6,8 @@
 #include <string>
 #include <vector>
 
+enum EditModes { TRANSLATE, ROTATE, SCALE };
+
 class Node3D : public Node {
 
 protected:
@@ -19,6 +21,8 @@ protected:
     bool model_dirty = false;
 
     bool selected = false;
+
+    int edit_mode = EditModes::ROTATE;
 
 public:
 
@@ -44,12 +48,14 @@ public:
     glm::mat4x4 get_rotation() const;
     Node3D* get_parent() const;
     const Transform& get_transform() const;
+    int get_edit_mode();
 
     void set_translation(const glm::vec3& translation);
     void set_model_dirty(bool value);
     void set_model(const glm::mat4x4& new_model) { model = new_model; }
     void set_transform(const Transform& new_transform) { transform = new_transform; }
     void set_parent(Node3D* node);
+    void set_edit_mode(int mode);
 
     void select();
     void unselect();
