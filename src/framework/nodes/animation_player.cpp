@@ -316,18 +316,19 @@ void AnimationPlayer::render_gui()
             const std::string& property_name = item.name.substr(last_idx + 1);
 
             Node3D* node = (Node3D*)root_node->get_node(node_path);
+            if (node != nullptr) {
+                //select gizmo mode based on track's type
+                if (property_name == "translation")
+                    node->set_edit_mode(EditModes::TRANSLATE);
+                else if (property_name == "rotation")
+                    node->set_edit_mode(EditModes::ROTATE);
+                else if (property_name == "scale")
+                    node->set_edit_mode(EditModes::SCALE);
 
-            //select gizmo mode based on track's type
-            if (property_name == "translation")
-                node->set_edit_mode(EditModes::TRANSLATE);
-            else if (property_name == "rotation")
-                node->set_edit_mode(EditModes::ROTATE);
-            else if (property_name == "scale")
-                node->set_edit_mode(EditModes::SCALE);
-
-            //select the node only if the animation is not running
-            if (!node->is_selected() && !playing) {
-                node->select();
+                //select the node only if the animation is not running
+                if (!node->is_selected() && !playing) {
+                    node->select();
+                }
             }
 
             // update current frame on select frame
@@ -344,7 +345,9 @@ void AnimationPlayer::render_gui()
                     node_path = node_path.substr(0, last_idx);
 
                     node = (Node3D*)root_node->get_node(node_path);
-                    node->unselect();
+                    if (node != nullptr) {
+                        node->unselect();
+                    }
                 }
                 selected_track = selected_entry;
             }
