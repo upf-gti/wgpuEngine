@@ -10,6 +10,13 @@
 #include "glm/gtx/easing.hpp"
 #include "glm/gtx/compatibility.hpp"
 
+#include "shaders/mesh_color.wgsl.gen.h"
+#include "shaders/ui/ui_color_picker.wgsl.gen.h"
+#include "shaders/ui/ui_slider.wgsl.gen.h"
+#include "shaders/ui/ui_selector.wgsl.gen.h"
+#include "shaders/ui/ui_group.wgsl.gen.h"
+#include "shaders/ui/ui_button.wgsl.gen.h"
+
 namespace ui {
 
     /*
@@ -25,7 +32,7 @@ namespace ui {
         material.color = color;
         material.flags = MATERIAL_2D;
         material.priority = class_type;
-        material.shader = RendererStorage::get_shader("data/shaders/mesh_color.wgsl", material);
+        material.shader = RendererStorage::get_shader_from_source(Shaders::mesh_color::source, Shaders::mesh_color::path, material);
 
         Surface* quad_surface = new Surface();
         quad_surface->create_quad(size.x, size.y);
@@ -203,7 +210,7 @@ namespace ui {
         material.flags = MATERIAL_2D;
         material.priority = class_type;
         material.cull_type = CULL_BACK;
-        material.shader = RendererStorage::get_shader("data/shaders/mesh_color.wgsl", material);
+        material.shader = RendererStorage::get_shader_from_source(Shaders::mesh_color::source, Shaders::mesh_color::path, material);
 
         quad_mesh.set_surface_material_override(quad_mesh.get_surface(0), material);
 
@@ -311,7 +318,7 @@ namespace ui {
         material.cull_type = CULL_BACK;
         material.priority = class_type;
         material.transparency_type = ALPHA_BLEND;
-        material.shader = RendererStorage::get_shader("data/shaders/ui/ui_selector.wgsl", material);
+        material.shader = RendererStorage::get_shader_from_source(Shaders::ui_selector::source, Shaders::ui_selector::path, material);
 
         quad_mesh.set_surface_material_override(quad_mesh.get_surface(0), material);
 
@@ -493,7 +500,7 @@ namespace ui {
         material.cull_type = CULL_BACK;
         material.transparency_type = ALPHA_BLEND;
         material.priority = class_type;
-        material.shader = RendererStorage::get_shader("data/shaders/ui/ui_button.wgsl", material);
+        material.shader = RendererStorage::get_shader_from_source(Shaders::ui_button::source, Shaders::ui_button::path, material);
 
         quad_mesh.set_surface_material_override(quad_mesh.get_surface(0), material);
 
@@ -674,7 +681,7 @@ namespace ui {
         material.transparency_type = ALPHA_BLEND;
         material.priority = class_type;
         material.diffuse_texture = RendererStorage::get_texture(texture_path, true);
-        material.shader = RendererStorage::get_shader("data/shaders/ui/ui_button.wgsl", material);
+        material.shader = RendererStorage::get_shader_from_source(Shaders::ui_button::source, Shaders::ui_button::path, material);
 
         quad_mesh.set_surface_material_override(quad_mesh.get_surface(0), material);
 
@@ -728,7 +735,7 @@ namespace ui {
         material.cull_type = CULL_BACK;
         material.priority = class_type;
         material.transparency_type = ALPHA_BLEND;
-        material.shader = RendererStorage::get_shader("data/shaders/ui/ui_group.wgsl", material);
+        material.shader = RendererStorage::get_shader_from_source(Shaders::ui_group::source, Shaders::ui_group::path, material);
 
         quad_mesh.set_surface_material_override(quad_mesh.get_surface(0), material);
 
@@ -944,7 +951,7 @@ namespace ui {
         material.transparency_type = ALPHA_BLEND;
         material.priority = class_type;
         material.diffuse_texture = texture_path.size() > 0 ? RendererStorage::get_texture(texture_path, true) : nullptr;
-        material.shader = RendererStorage::get_shader("data/shaders/ui/ui_slider.wgsl", material);
+        material.shader = RendererStorage::get_shader_from_source(Shaders::ui_slider::source, Shaders::ui_slider::path, material);
 
         Surface* quad_surface = quad_mesh.get_surface(0);
         quad_surface->create_quad(this->size.x, this->size.y);
@@ -1050,7 +1057,7 @@ namespace ui {
         material.cull_type = CULL_BACK;
         material.transparency_type = ALPHA_BLEND;
         material.priority = class_type;
-        material.shader = RendererStorage::get_shader("data/shaders/ui/ui_color_picker.wgsl", material);
+        material.shader = RendererStorage::get_shader_from_source(Shaders::ui_color_picker::source, Shaders::ui_color_picker::path, material);
 
         color = { 0.0f, 1.0f, 1.0f, 1.0f };
 

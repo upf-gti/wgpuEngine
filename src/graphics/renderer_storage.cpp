@@ -271,12 +271,36 @@ Shader* RendererStorage::get_shader(const std::string& shader_path, const std::v
 
 Shader* RendererStorage::get_shader_from_source(const std::string& source, const std::string& name, const Material& material, const std::vector<std::string>& custom_define_specializations)
 {
-    return nullptr;
+    std::vector<std::string> define_specializations = get_common_define_specializations(material);
+
+    // concatenate
+    define_specializations.insert(define_specializations.end(), custom_define_specializations.begin(), custom_define_specializations.end());
+
+    return get_shader_from_source(source, name, define_specializations);
 }
 
 Shader* RendererStorage::get_shader_from_source(const std::string& source, const std::string& name, const std::vector<std::string>& custom_define_specializations)
 {
-    return nullptr;
+    std::string specialized_name = name;
+    for (const std::string& specialization : custom_define_specializations) {
+        specialized_name += "_" + specialization;
+    }
+
+    // check if already loaded
+    std::map<std::string, Shader*>::iterator it = shaders.find(specialized_name);
+    if (it != shaders.end())
+        return it->second;
+
+    Shader* sh = new Shader();
+
+    if (!sh->load_from_source(source, name, specialized_name, custom_define_specializations)) {
+        return nullptr;
+    }
+
+    // register in map
+    shaders[specialized_name] = sh;
+
+    return sh;
 }
 
 void RendererStorage::reload_shader(const std::string& shader_path)

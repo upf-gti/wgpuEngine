@@ -24,6 +24,8 @@
 #include "graphics/shader.h"
 #include "graphics/renderer_storage.h"
 
+#include "shaders/mesh_pbr.wgsl.gen.h"
+
 #include "spdlog/spdlog.h"
 
 void create_material_texture(const tinygltf::Model& model, int tex_index, Texture** texture, bool is_srgb = false)
@@ -555,7 +557,7 @@ void read_mesh(const tinygltf::Model& model, const tinygltf::Node& node, Node3D*
             material.use_skinning = true;
         }
 
-        material.shader = RendererStorage::get_shader("data/shaders/mesh_pbr.wgsl", material);
+        material.shader = RendererStorage::get_shader_from_source(Shaders::mesh_pbr::source, Shaders::mesh_pbr::path, material);
 
         surface->create_vertex_buffer();
         surface->set_material_priority(1);

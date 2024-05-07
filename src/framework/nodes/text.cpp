@@ -4,6 +4,8 @@
 #include "graphics/font.h"
 #include "graphics/renderer_storage.h"
 
+#include "shaders/sdf_fonts.wgsl.gen.h"
+
 #include <assert.h>
 
 TextEntity::TextEntity(const std::string& _text, glm::vec2 _box_size, bool _wrap) : MeshInstance3D()
@@ -120,7 +122,7 @@ void TextEntity::generate_mesh(const Color& color, eMaterialFlags flags)
     set_surface_material_flag(0, this->flags);
     set_surface_material_transparency_type(0, ALPHA_BLEND);
 
-    surface->set_material_shader((RendererStorage::get_shader("data/shaders/sdf_fonts.wgsl", surface->get_material())));
+    surface->set_material_shader((RendererStorage::get_shader_from_source(Shaders::sdf_fonts::source, Shaders::sdf_fonts::path, surface->get_material())));
 }
 
 int TextEntity::get_text_width(const std::string& text)

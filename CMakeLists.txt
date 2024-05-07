@@ -120,13 +120,31 @@ file(GLOB_RECURSE
 message(STATUS "Processing shaders...")
 
 FOREACH(SHADER ${SHADERS})
-    execute_process (
+    add_custom_command (
+        OUTPUT ${SHADER}.gen.h
 	    COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/glsl_builder.py ${SHADER}
+        DEPENDS ${SHADER}
 	    WORKING_DIRECTORY ${WGPU_DIR_SOURCES}/shaders
+        VERBATIM
     )
 ENDFOREACH()
 
 WGPU_SOURCES_APPEND(${WGPU_DIR_SOURCES}/shaders)
+
+file(GLOB_RECURSE
+    SHADERS_GEN
+    CONFIGURE_DEPENDS
+    RELATIVE ${WGPU_DIR_SOURCES}/shaders
+    ${WGPU_DIR_SOURCES}/shaders/**.wgsl.gen.h
+)
+
+add_custom_target(
+  ShaderGen ALL
+  COMMENT "Regenerate when necessary"
+  DEPENDS SHADERS_GEN
+)
+
+message(STATUS ${SHADERS_GEN})
 
 add_library(${PROJECT_NAME} ${WGPU_SOURCES} ${WGPU_HEADERS})
 

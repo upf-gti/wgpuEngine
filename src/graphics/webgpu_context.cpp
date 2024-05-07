@@ -5,6 +5,12 @@
 #include "texture.h"
 #include "renderer_storage.h"
 
+#include "shaders/mipmaps.wgsl.gen.h"
+#include "shaders/cubemap_downsampler.wgsl.gen.h"
+#include "shaders/panorama_to_cubemap.wgsl.gen.h"
+#include "shaders/prefilter_env.wgsl.gen.h"
+#include "shaders/brdf_lut_gen.wgsl.gen.h"
+
 #include "renderer.h"
 
 #include "spdlog/spdlog.h"
@@ -209,27 +215,27 @@ int WebGPUContext::initialize(WGPURequestAdapterOptions adapter_opts, WGPURequir
     device_queue = wgpuDeviceGetQueue(device);
 
     {
-        cubemap_mipmap_pipeline.mipmap_shader = RendererStorage::get_shader("data/shaders/cubemap_downsampler.wgsl");
+        cubemap_mipmap_pipeline.mipmap_shader = RendererStorage::get_shader_from_source(Shaders::cubemap_downsampler::source, Shaders::cubemap_downsampler::path);
         cubemap_mipmap_pipeline.mipmap_pipeline = new Pipeline();
         cubemap_mipmap_pipeline.mipmap_pipeline->create_compute(cubemap_mipmap_pipeline.mipmap_shader);
     }
 
     {
-        panorama_to_cubemap_shader = RendererStorage::get_shader("data/shaders/panorama_to_cubemap.wgsl");
+        panorama_to_cubemap_shader = RendererStorage::get_shader_from_source(Shaders::panorama_to_cubemap::source, Shaders::panorama_to_cubemap::path);
 
         panorama_to_cubemap_pipeline = new Pipeline();
         panorama_to_cubemap_pipeline->create_compute(panorama_to_cubemap_shader);
     }
 
     {
-        prefiltered_env_shader = RendererStorage::get_shader("data/shaders/prefilter_env.wgsl");
+        prefiltered_env_shader = RendererStorage::get_shader_from_source(Shaders::prefilter_env::source, Shaders::prefilter_env::path);
 
         prefiltered_env_pipeline = new Pipeline();
         prefiltered_env_pipeline->create_compute(prefiltered_env_shader);
     }
 
     {
-        brdf_lut_shader = RendererStorage::get_shader("data/shaders/brdf_lut_gen.wgsl");
+        brdf_lut_shader = RendererStorage::get_shader_from_source(Shaders::brdf_lut_gen::source, Shaders::brdf_lut_gen::path);
 
         brdf_lut_pipeline = new Pipeline();
         brdf_lut_pipeline->create_compute(brdf_lut_shader);
@@ -713,7 +719,7 @@ WebGPUContext::sMipmapPipeline WebGPUContext::get_mipmap_pipeline(WGPUTextureFor
         assert(false);
     }
 
-    Shader* shader = RendererStorage::get_shader("data/shaders/mipmaps.wgsl", { custom_define });
+    Shader* shader = RendererStorage::get_shader_from_source(Shaders::mipmaps::source, Shaders::mipmaps::path, { custom_define });
 
     Pipeline* pipeline = new Pipeline();
     pipeline->create_compute(shader);

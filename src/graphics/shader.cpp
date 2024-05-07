@@ -13,7 +13,21 @@
 
 #include "spdlog/spdlog.h"
 
+#include "shaders/math.wgsl.gen.h"
+#include "shaders/tonemappers.wgsl.gen.h"
+#include "shaders/pbr_functions.wgsl.gen.h"
+#include "shaders/pbr_light.wgsl.gen.h"
+
 std::unordered_map<std::string, custom_define_type> Shader::custom_defines;
+std::unordered_map<std::string, const char*> Shader::engine_libraries;
+
+Shader::Shader()
+{
+    engine_libraries[Shaders::math::path] = Shaders::math::source;
+    engine_libraries[Shaders::tonemappers::path] = Shaders::tonemappers::source;
+    engine_libraries[Shaders::pbr_functions::path] = Shaders::pbr_functions::source;
+    engine_libraries[Shaders::pbr_light::path] = Shaders::pbr_light::source;
+}
 
 Shader::~Shader()
 {
@@ -52,7 +66,7 @@ bool Shader::load_from_file(const std::string& shader_path, const std::string& s
 	return load(shader_content, specialized_path, define_specializations);
 }
 
-bool Shader::load_from_source(const std::string& shader_source, const std::string& name, const std::string& specialized_name, std::vector<std::string> define_specializations)
+bool Shader::load_from_source(const std::string& shader_source, const std::string& name, const std::string& specialized_path, std::vector<std::string> define_specializations)
 {
     path = name;
 
@@ -86,12 +100,20 @@ bool Shader::parse_preprocessor(std::string &shader_content, const std::string &
         if (tag == "#include")
         {
             const std::string& include_name = tokens[1];
-            const std::string& include_path = _directory + "/" + include_name;
+            std::string include_path;
             std::string new_content;
 
-            if (!read_file(include_path, new_content)) {
-                spdlog::error("\tCould not load shader include: {}", include_path);
-                return false;
+            if (!engine_libraries.contains(include_name)) {
+                include_path = _directory + "/" + include_name;
+
+                if (!read_file(include_path, new_content)) {
+                    spdlog::error("\tCould not load shader include: {}", include_path);
+                    return false;
+                }
+            }
+            else {
+                new_content = engine_libraries[include_name];
+                include_path = include_name;
             }
 
             if (!parse_preprocessor(new_content, include_path)) {
