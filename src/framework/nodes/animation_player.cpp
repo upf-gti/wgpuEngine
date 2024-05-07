@@ -16,6 +16,10 @@ AnimationPlayer::AnimationPlayer(const std::string& n)
             Animation* animation = RendererStorage::get_animation(current_animation_name);
             int frame_idx = timeline.selected_point.y;
             int track_idx = timeline.selected_point.x;
+
+            if (frame_idx == -1 || track_idx == -1)
+                return;
+
             timeline.tracks[track_idx].edited_points[frame_idx] = true;
 
             animation->get_track(track_idx)->get_keyframe(frame_idx).value = rotation;
@@ -28,6 +32,10 @@ AnimationPlayer::AnimationPlayer(const std::string& n)
             Animation* animation = RendererStorage::get_animation(current_animation_name);
             int frame_idx = timeline.selected_point.y;
             int track_idx = timeline.selected_point.x;
+
+            if (frame_idx == -1 || track_idx == -1)
+                return;
+
             timeline.tracks[track_idx].edited_points[frame_idx] = true;
 
             animation->get_track(track_idx)->get_keyframe(frame_idx).value = position;
@@ -40,6 +48,10 @@ AnimationPlayer::AnimationPlayer(const std::string& n)
             Animation* animation = RendererStorage::get_animation(current_animation_name);
             int frame_idx = timeline.selected_point.y;
             int track_idx = timeline.selected_point.x;
+
+            if (frame_idx == -1 || track_idx == -1)
+                return;
+
             timeline.tracks[track_idx].edited_points[frame_idx] = true;
 
             animation->get_track(track_idx)->get_keyframe(frame_idx).value = scale;

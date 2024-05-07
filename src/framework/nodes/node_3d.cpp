@@ -95,7 +95,7 @@ void Node3D::render_gui()
         }
 
         bool changed = ImGuizmo::Manipulate(glm::value_ptr(camera->get_view()), glm::value_ptr(camera->get_projection()),
-            mode, ImGuizmo::MODE::WORLD, glm::value_ptr(test_model));
+            mode, ImGuizmo::MODE::LOCAL, glm::value_ptr(test_model));
 
         if (changed)
         {
