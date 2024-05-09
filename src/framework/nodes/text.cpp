@@ -122,7 +122,7 @@ void TextEntity::generate_mesh(const Color& color, eMaterialFlags flags)
     set_surface_material_flag(0, this->flags);
     set_surface_material_transparency_type(0, ALPHA_BLEND);
 
-    surface->set_material_shader((RendererStorage::get_shader_from_source(Shaders::sdf_fonts::source, Shaders::sdf_fonts::path, surface->get_material())));
+    surface->set_material_shader((RendererStorage::get_shader_from_source(shaders::sdf_fonts::source, shaders::sdf_fonts::path, surface->get_material())));
 }
 
 int TextEntity::get_text_width(const std::string& text)

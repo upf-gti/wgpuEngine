@@ -5,9 +5,7 @@
 
 #dynamic @group(1) @binding(0) var<uniform> camera_data : CameraData;
 
-@group(2) @binding(0) var albedo_texture: texture_2d<f32>;
 @group(2) @binding(1) var<uniform> albedo: vec4f;
-@group(2) @binding(7) var texture_sampler : sampler;
 
 @vertex
 fn vs_main(in: VertexInput) -> VertexOutput {
@@ -33,13 +31,10 @@ fn fs_main(in: VertexOutput) -> FragmentOutput {
 
     var dummy = camera_data.eye;
 
-     var color : vec4f = textureSample(albedo_texture, texture_sampler, in.uv);
-
-    var final_color = in.color.rgb * color.rgb * albedo.xyz;
-
+    var final_color = in.color.rgb * albedo.xyz;
 
     if ( in.uv.x < 0.015 || in.uv.y > 0.985 || in.uv.x > 0.985 || in.uv.y < 0.015 )  {
-        out.color = vec4f(0.0, 0.0, 0.0, 1.0);
+        out.color = vec4(final_color, 1.0);
     } else {
         discard;
     }  

@@ -23,10 +23,10 @@ std::unordered_map<std::string, const char*> Shader::engine_libraries;
 
 Shader::Shader()
 {
-    engine_libraries[Shaders::math::path] = Shaders::math::source;
-    engine_libraries[Shaders::tonemappers::path] = Shaders::tonemappers::source;
-    engine_libraries[Shaders::pbr_functions::path] = Shaders::pbr_functions::source;
-    engine_libraries[Shaders::pbr_light::path] = Shaders::pbr_light::source;
+    engine_libraries[shaders::math::path] = shaders::math::source;
+    engine_libraries[shaders::tonemappers::path] = shaders::tonemappers::source;
+    engine_libraries[shaders::pbr_functions::path] = shaders::pbr_functions::source;
+    engine_libraries[shaders::pbr_light::path] = shaders::pbr_light::source;
 }
 
 Shader::~Shader()

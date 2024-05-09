@@ -20,7 +20,7 @@ void Gizmo3D::initialize(const eGizmoType& gizmo_type, const glm::vec3& position
     this->axis = axis;
 
     Material m;
-    m.shader = RendererStorage::get_shader_from_source(Shaders::mesh_color::source, Shaders::mesh_color::path);
+    m.shader = RendererStorage::get_shader_from_source(shaders::mesh_color::source, shaders::mesh_color::path);
 
     free_hand_point_mesh = parse_mesh("data/meshes/sphere.obj");
     free_hand_point_mesh->set_surface_material_override(free_hand_point_mesh->get_surface(0), m);
@@ -45,17 +45,17 @@ void Gizmo3D::init_arrow_meshes()
 
     arrow_mesh_x = parse_mesh("data/meshes/arrow.obj");
     m.color = colors::RED;
-    m.shader = RendererStorage::get_shader_from_source(Shaders::mesh_color::source, Shaders::mesh_color::path, m);
+    m.shader = RendererStorage::get_shader_from_source(shaders::mesh_color::source, shaders::mesh_color::path, m);
     arrow_mesh_x->set_surface_material_override(arrow_mesh_x->get_surface(0), m);
 
     arrow_mesh_y = parse_mesh("data/meshes/arrow.obj");
     m.color = colors::GREEN;
-    m.shader = RendererStorage::get_shader_from_source(Shaders::mesh_color::source, Shaders::mesh_color::path, m);
+    m.shader = RendererStorage::get_shader_from_source(shaders::mesh_color::source, shaders::mesh_color::path, m);
     arrow_mesh_y->set_surface_material_override(arrow_mesh_y->get_surface(0), m);
 
     arrow_mesh_z = parse_mesh("data/meshes/arrow.obj");
     m.color = colors::BLUE;
-    m.shader = RendererStorage::get_shader_from_source(Shaders::mesh_color::source, Shaders::mesh_color::path, m);
+    m.shader = RendererStorage::get_shader_from_source(shaders::mesh_color::source, shaders::mesh_color::path, m);
     arrow_mesh_z->set_surface_material_override(arrow_mesh_z->get_surface(0), m);
 }
 
@@ -65,17 +65,17 @@ void Gizmo3D::init_circle_meshes()
 
     wire_circle_mesh_x = parse_mesh("data/meshes/wired_circle.obj");
     m.color = colors::RED;
-    m.shader = RendererStorage::get_shader_from_source(Shaders::mesh_color::source, Shaders::mesh_color::path, m);
+    m.shader = RendererStorage::get_shader_from_source(shaders::mesh_color::source, shaders::mesh_color::path, m);
     wire_circle_mesh_x->set_surface_material_override(wire_circle_mesh_x->get_surface(0), m);
 
     wire_circle_mesh_y = parse_mesh("data/meshes/wired_circle.obj");
     m.color = colors::GREEN;
-    m.shader = RendererStorage::get_shader_from_source(Shaders::mesh_color::source, Shaders::mesh_color::path, m);
+    m.shader = RendererStorage::get_shader_from_source(shaders::mesh_color::source, shaders::mesh_color::path, m);
     wire_circle_mesh_y->set_surface_material_override(wire_circle_mesh_y->get_surface(0), m);
 
     wire_circle_mesh_z = parse_mesh("data/meshes/wired_circle.obj");
     m.color = colors::BLUE;
-    m.shader = RendererStorage::get_shader_from_source(Shaders::mesh_color::source, Shaders::mesh_color::path, m);
+    m.shader = RendererStorage::get_shader_from_source(shaders::mesh_color::source, shaders::mesh_color::path, m);
     wire_circle_mesh_z->set_surface_material_override(wire_circle_mesh_z->get_surface(0), m);
 }
 

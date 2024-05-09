@@ -119,6 +119,8 @@ file(GLOB_RECURSE
 
 message(STATUS "Processing shaders...")
 
+list(APPEND WGPU_SHADER_LIBS ${WGPU_DIR_ROOT}/glsl_builder.py)
+list(APPEND WGPU_SHADER_LIBS ${WGPU_DIR_SOURCES}/shaders/math.wgsl)
 list(APPEND WGPU_SHADER_LIBS ${WGPU_DIR_SOURCES}/shaders/math.wgsl)
 list(APPEND WGPU_SHADER_LIBS ${WGPU_DIR_SOURCES}/shaders/mesh_includes.wgsl)
 list(APPEND WGPU_SHADER_LIBS ${WGPU_DIR_SOURCES}/shaders/pbr_functions.wgsl)

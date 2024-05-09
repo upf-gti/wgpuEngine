@@ -229,7 +229,7 @@ void Renderer::init_lighting_bind_group()
     num_lights_buffer.buffer_size = sizeof(int);
 
     std::vector<Uniform*> uniforms = { &irradiance_texture_uniform, &brdf_lut_uniform, &ibl_sampler_uniform, &lights_buffer, &num_lights_buffer };
-    lighting_bind_group = webgpu_context->create_bind_group(uniforms, RendererStorage::get_shader_from_source(Shaders::mesh_pbr::source, Shaders::mesh_pbr::path), 3);
+    lighting_bind_group = webgpu_context->create_bind_group(uniforms, RendererStorage::get_shader_from_source(shaders::mesh_pbr::source, shaders::mesh_pbr::path), 3);
 }
 
 void Renderer::init_depth_buffers()

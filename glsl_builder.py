@@ -42,7 +42,7 @@ def main(argv):
 
     generated_content = "//Generated file, do not modify!\n"
     generated_content += "#pragma once\n\n"
-    generated_content += "namespace Shaders {\n\n"
+    generated_content += "namespace shaders {\n\n"
     generated_content += "struct " + shader_name + " {\n\n"
     generated_content += "inline static const char path[] = \"" + original_shader_path + "\";\n"
     generated_content += "inline static const char source[] = " 

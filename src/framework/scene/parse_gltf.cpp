@@ -557,7 +557,7 @@ void read_mesh(const tinygltf::Model& model, const tinygltf::Node& node, Node3D*
             material.use_skinning = true;
         }
 
-        material.shader = RendererStorage::get_shader_from_source(Shaders::mesh_pbr::source, Shaders::mesh_pbr::path, material);
+        material.shader = RendererStorage::get_shader_from_source(shaders::mesh_pbr::source, shaders::mesh_pbr::path, material);
 
         surface->create_vertex_buffer();
         surface->set_material_priority(1);
