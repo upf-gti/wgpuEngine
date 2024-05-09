@@ -1,6 +1,9 @@
 #include "viewport_3d.h"
 
 #include "graphics/renderer.h"
+
+#include "shaders/ui/ui_ray_pointer.wgsl.gen.h"
+
 #include "framework/scene/parse_scene.h"
 #include "framework/input.h"
 
@@ -11,7 +14,7 @@ Viewport3D::Viewport3D(Node2D* root_2d) : Node3D(), root(root_2d)
     raycast_pointer = parse_mesh("data/meshes/raycast.obj");
 
     Material pointer_material;
-    pointer_material.shader = RendererStorage::get_shader("data/shaders/ui/ui_ray_pointer.wgsl", pointer_material);
+    pointer_material.shader = RendererStorage::get_shader_from_source(shaders::ui_ray_pointer::source, shaders::ui_ray_pointer::path, pointer_material);
 
     raycast_pointer->set_surface_material_override(raycast_pointer->get_surface(0), pointer_material);
 }
