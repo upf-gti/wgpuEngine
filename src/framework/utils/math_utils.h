@@ -39,6 +39,8 @@ float clamp_rotation(float angle);
 glm::vec3 yaw_pitch_to_vector(float yaw, float pitch);
 void vector_to_yaw_pitch(const glm::vec3& front, float* yaw, float* pitch);
 
+glm::quat get_rotation_to_face(const glm::vec3& position, const glm::vec3& target, const glm::vec3& up);
+
 template<typename T>
 struct LerpedValue {
     T value = {};

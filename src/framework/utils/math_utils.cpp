@@ -196,10 +196,22 @@ glm::vec3 yaw_pitch_to_vector(float yaw, float pitch) {
     );
 }
 
-void vector_to_yaw_pitch(const glm::vec3& front, float* yaw, float* pitch) {
+void vector_to_yaw_pitch(const glm::vec3& front, float* yaw, float* pitch)
+{
     *yaw = atan2f(front.x, front.z);
     float mdo = sqrtf(front.x * front.x + front.z * front.z);
     *pitch = atan2f(-front.y, mdo);
+}
+
+// Function to compute rotation quaternion to face the camera
+glm::quat get_rotation_to_face(const glm::vec3& position, const glm::vec3& target, const glm::vec3& up) {
+    // Compute direction from object to camera
+    glm::vec3 direction = glm::normalize(position - target);
+
+    // Compute rotation quaternion to face the camera
+    glm::quat rotation = glm::quatLookAt(direction, up);
+
+    return rotation;
 }
 
 // https://graemepottsfolio.wordpress.com/tag/damped-spring/

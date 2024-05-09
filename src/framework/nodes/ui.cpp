@@ -234,6 +234,10 @@ namespace ui {
     {
         // Recreate quad using new size and reposition accordingly
 
+        if (!quad_mesh.get_surface_count()) {
+            return;
+        }
+
         Surface* quad_surface = quad_mesh.get_surface(0);
         quad_surface->create_quad(size.x, size.y);
 
@@ -936,23 +940,26 @@ namespace ui {
     *	Slider
     */
 
-    Slider2D::Slider2D(const std::string& sg, float v, int mode, float min, float max, float step)
-        : Slider2D(sg, "", v, {0.0f, 0.0f}, glm::vec2(BUTTON_SIZE), mode, min, max, step) {}
+    Slider2D::Slider2D(const std::string& sg, float v, int mode, uint8_t parameter_flags, float min, float max, float step)
+        : Slider2D(sg, "", v, {0.0f, 0.0f}, glm::vec2(BUTTON_SIZE), mode, parameter_flags, min, max, step) {}
 
-    Slider2D::Slider2D(const std::string& sg, const std::string& texture_path, float v, int mode, float min, float max, float step)
-        : Slider2D(sg, texture_path, v, { 0.0f, 0.0f }, glm::vec2(BUTTON_SIZE), mode, min, max, step) {}
+    Slider2D::Slider2D(const std::string& sg, const std::string& texture_path, float v, int mode, uint8_t parameter_flags, float min, float max, float step)
+        : Slider2D(sg, texture_path, v, { 0.0f, 0.0f }, glm::vec2(BUTTON_SIZE), mode, parameter_flags, min, max, step) {}
 
-    Slider2D::Slider2D(const std::string& sg, const std::string& texture_path, float value, const glm::vec2& pos, const glm::vec2& size, int mode, float min, float max, float step)
+    Slider2D::Slider2D(const std::string& sg, const std::string& texture_path, float value, const glm::vec2& pos, const glm::vec2& size, int mode, uint8_t parameter_flags, float min, float max, float step)
         : Panel2D(sg, pos, size), signal(sg), current_value(value), min_value(min), max_value(max), step_value(step) {
 
         this->class_type = Node2DClassType::SLIDER;
         this->mode = mode;
+
+        disabled = parameter_flags & DISABLED;
 
         ui_data.num_group_items = mode == SliderMode::HORIZONTAL ? 2.f : 1.f;
         this->size = glm::vec2(size.x * ui_data.num_group_items, size.y);
 
         ui_data.slider_max = max_value;
         ui_data.slider_min = min_value;
+        ui_data.is_button_disabled = disabled;
 
         Material material;
         material.color = colors::WHITE;
@@ -975,18 +982,25 @@ namespace ui {
             set_value(value);
         });
 
-        // Text labels
+        // Text labels (only if slider is enabled)
         {
             float magic = 3.5f;
             text_2d = new Text2D(signal, { size.x * 0.5f - signal.length() * magic, size.y }, 18.f, colors::BLACK);
             text_2d->set_priority(material.priority - 1);
             add_child(text_2d);
 
-            std::string value_as_string = std::to_string(std::ceil(current_value * 100.f) / 100.f);
-            text_2d_value = new Text2D(value_as_string.substr(0, 4), {size.x * 0.5f - value_as_string.length() * 2.25f, 0.0f}, 18.f, colors::PURPLE);
-            text_2d_value->set_priority(material.priority - 1);
-            add_child(text_2d_value);
+            if (!disabled) {
+                std::string value_as_string = std::to_string(std::ceil(current_value * 100.f) / 100.f);
+                text_2d_value = new Text2D(value_as_string.substr(0, 4), {size.x * 0.5f - value_as_string.length() * 2.25f, 0.0f}, 18.f, colors::PURPLE);
+                text_2d_value->set_priority(material.priority - 1);
+                add_child(text_2d_value);
+            }
         }
+    }
+
+    void Slider2D::render()
+    {
+        Panel2D::render();
     }
 
     void Slider2D::update(float delta_time)
@@ -998,7 +1012,7 @@ namespace ui {
 
         sInputData data = get_input_data();
 
-        if (data.is_hovered)
+        if (!disabled && data.is_hovered)
         {
             Node2D::push_input(this, data);
         }
@@ -1007,7 +1021,10 @@ namespace ui {
         ui_data.is_hovered = 0.0f;
         ui_data.slider_value = current_value;
 
-        text_2d->set_visibility(false);
+        // Only appear on hover if slider is enabled..
+        if (!disabled) {
+            text_2d->set_visibility(false);
+        }
 
         update_ui_data();
     }
@@ -1047,7 +1064,9 @@ namespace ui {
         current_value = glm::clamp(new_value, min_value, max_value);
         if (step_value == 1.0f) current_value = std::roundf(current_value);
         std::string value_as_string = std::to_string(std::ceil(current_value * 100.f) / 100.f);
-        text_2d_value->text_entity->set_text(value_as_string.substr(0, 4));
+        if (text_2d_value) {
+            text_2d_value->text_entity->set_text(value_as_string.substr(0, 4));
+        }
     }
 
     /*
