@@ -125,6 +125,18 @@ void Node3D::render_gui()
         if (changed)
         {
             set_model(transformToMat4(transform));
+            switch (get_edit_mode())
+            {
+            case EditModes::TRANSLATE:
+                emit_signal("translation@changed", transform.position);
+                break;
+            case EditModes::ROTATE:
+                emit_signal("rotation@changed", transform.rotation);
+                break;
+            case EditModes::SCALE:
+                emit_signal("scale@changed", transform.scale);
+                break;
+            }
         }
 
         ImGui::TreePop();

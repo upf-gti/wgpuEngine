@@ -29,7 +29,7 @@
         if (type)
             *type = item.type;
     }
-    void Timeline::Add(int type) { tracks.push_back(TimelineTrack{ type, 0, 10, false, "no-name" }); };
+    void Timeline::Add(int type) { tracks.push_back(TimelineTrack{ (uint32_t)tracks.size(), type, 0, 10, false, "no-name" }); };
     void Timeline::Del(int index) { tracks.erase(tracks.begin() + index); }
     void Timeline::Duplicate(int index) { tracks.push_back(tracks[index]); }
 
@@ -105,20 +105,28 @@
     void Timeline::CustomDrawCompact(int index, ImDrawList* draw_list, const ImRect& rc, const ImRect& clippingRect)
     {
         draw_list->PushClipRect(clippingRect.Min, clippingRect.Max, true);
-        for (int j = tracks[index].frame_start; j < tracks[index].frame_end; j++) {
+        int count = 3;
+        if (TrackTypes[tracks[index].type] == "ROTATION")
+            count = 4;
+        else if (TrackTypes[tracks[index].type] == "FLOAT")
+            count = 1;
 
+        //for (int j = tracks[index].frame_start; j < tracks[index].frame_end; j++) {
+        for (int p = 0; p < tracks[index].points->size(); p++) {
+            int j = tracks[index].points[0][p].x;
             float r = (j - frame_min) / float(frame_max - frame_min);
             float x = ImLerp(rc.Min.x, rc.Max.x, r);
             bool selected = false;
 
-            if (selected_point.x == index && selected_point.y == j) {
+            if (selected_point.x == index && selected_point.y == p) {
                 selected = true;
             }
-            const int drawState = DrawPoint(draw_list, ImVec2(x, rc.Min.y), ImVec2(1, 1), ImVec2(0, 10), tracks[index].type, tracks[index].edited_points[j], selected);
+            const int drawState = DrawPoint(draw_list, ImVec2(x, rc.Min.y), ImVec2(1, 1), ImVec2(0, 10), tracks[index].type, tracks[index].edited_points[p], selected);
 
             if (drawState == 2) {
-                selected_point = ImVec2(index, j);
-                std::cout << "Frame " << j << "selected: " << tracks[index].name << std::endl;
+                selected_point = ImVec2(index, p);
+                keyframe_selection_changed = true;
+                std::cout << "Frame " << p << "selected: " << tracks[index].name << std::endl;
             }
         }
         draw_list->PopClipRect();       

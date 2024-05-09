@@ -17,6 +17,7 @@ class AnimationPlayer : public Node3D
     Node3D* root_node = nullptr;
 
     std::string current_animation_name;
+    Animation* current_animation = nullptr;
 
     bool autoplay   = false;
     bool playing    = false;
@@ -33,6 +34,7 @@ class AnimationPlayer : public Node3D
     std::vector<void*> track_data;
     int selected_track = -1;
     void generate_track_data();
+    void generate_track_timeline_data(uint32_t track_idx, const std::string& track_path);
 
 public:
 

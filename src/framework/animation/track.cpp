@@ -3,6 +3,8 @@
 #include <algorithm>
 #include "glm/gtx/compatibility.hpp"
 
+#include <random>
+
 // Track helpers avoid having to make specialized versions of the interpolation functions
 namespace TrackHelpers {
 
@@ -99,6 +101,12 @@ void Track::set_path(const std::string& new_path)
     path = new_path;
 }
 
+void Track::set_keyframes(const std::vector<Keyframe>& new_keyframes)
+{
+    keyframes = new_keyframes;
+}
+
+
 float Track::get_start_time()
 {
     return keyframes[0].time;
@@ -122,6 +130,21 @@ const std::string& Track::get_path()
 Keyframe& Track::get_keyframe(uint32_t index)
 {
     return keyframes[index];
+}
+
+std::vector<Keyframe>& Track::get_keyframes()
+{
+    return keyframes;
+}
+
+const std::vector<float> Track::get_times()
+{
+    std::vector<float> times;
+    for (auto& keyframe : keyframes)
+    {
+        times.push_back(keyframe.time);
+    }
+    return times;
 }
 
 // call sample_constant, sample_linear, or sample_cubic, depending on the track type.
@@ -331,3 +354,43 @@ T Track::sample_cubic(float time, bool looping)
 
     return point1;// hermite(t, point1, slope1, point2, slope2);
 }
+
+void Track::add_keyframe(Keyframe& keyframe)
+{
+    keyframes.push_back(keyframe);
+}
+
+void Track::remove_keyframe(uint32_t index)
+{
+    keyframes.erase(keyframes.begin() + index);
+}
+
+void Track::remove_all_keyframes()
+{
+    keyframes.resize(0);
+}
+
+// Function to calculate the weight using Gaussian distribution
+float gaussian_pdf(int frame, int peakFrame, float sigma) {
+    float exponent = -0.5 * pow((frame - peakFrame) / sigma, 2);
+    return exp(exponent);
+}
+
+
+void Track::update_value(uint32_t index, const T& value, const glm::vec2& propagate_frames)
+{
+    keyframes[index].value = value;
+
+    for (size_t i = propagate_frames.x; i < propagate_frames.y; i++)
+    {
+        float weight = gaussian_pdf(i, index, 1);
+    
+        if (std::holds_alternative<glm::vec3>(value)) {
+            keyframes[i].value = glm::lerp(std::get<glm::vec3>(keyframes[i].value),std::get<glm::vec3>(value), weight);
+        }
+        else if (std::holds_alternative<glm::quat>(value)) {
+            keyframes[i].value = glm::slerp( std::get<glm::quat>(keyframes[i].value), std::get<glm::quat>(value), weight);
+        }
+    }   
+}
+

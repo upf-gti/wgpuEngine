@@ -149,14 +149,16 @@ void LookAtIK3D::update(float delta_time)
     Transform local_child = combine(inverse(global_transform), world_child); // Convert root transform in pose space
     local_child = combine(inverse(world_parent), local_child); // Convert root transform in local space
     current_pose.set_local_transform(joints_ids[0], local_child);
-
+    emit_signal("transform@changed", local_child);
     //skeleton_instance->joint_nodes[joints_ids[0]]->set_transform(local_child);
     for (uint32_t i = 1; i < joints_ids.size(); i++)
     {
         local_child = ik_solver->get_local_transform(i);
-        current_pose.set_local_transform(joints_ids[i], local_child);
-    }
+        current_pose.set_local_transform(joints_ids[i], local_child);      
+        
+        emit_signal("transform@changed", local_child);
 
+    }
 }
 
 void LookAtIK3D::render_gui()

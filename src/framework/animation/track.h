@@ -74,12 +74,15 @@ public:
     const std::string& get_name();
     const std::string& get_path();
     Keyframe& get_keyframe(uint32_t index);
+    std::vector<Keyframe>& get_keyframes();
+    const std::vector<float> get_times();
 
     void set_id(int id);
     void set_interpolation(Interpolation interp);
     void set_type(TrackType new_type) { type = new_type; };
     void set_name(const std::string& new_name);
     void set_path(const std::string& new_path);
+    void set_keyframes(const std::vector<Keyframe>& keyframes);
 
     uint32_t size();
     void resize(uint32_t size);
@@ -87,6 +90,14 @@ public:
     // Prameters: time value, if the track is looping or not
     T sample(float time, bool looping, void* out = nullptr);
     Keyframe& operator[](uint32_t index);
+
+    void add_keyframe(Keyframe& keyframe);
+
+    // Remove keyframe given the frame index
+    void remove_keyframe(uint32_t index);
+    void remove_all_keyframes();
+
+    void update_value(uint32_t index, const T& value, const glm::vec2& propagate_frames = glm::vec2(-1));
 };
 
 namespace TrackHelpers {

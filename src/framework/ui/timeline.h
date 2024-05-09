@@ -145,9 +145,11 @@ struct Timeline : public ImSequencer::SequenceInterface
     Timeline() : frame_min(0), frame_max(1000) {}
     int frame_min, frame_max;
     ImVec2 selected_point = { -1, -1 };
-   
+    bool keyframe_selection_changed = false;
+
     struct TimelineTrack
     {
+        uint32_t id;
         int type;
         int frame_start, frame_end;
         bool expanded;
