@@ -23,6 +23,8 @@ namespace ui {
     *	Panel
     */
 
+    Node2D* Panel2D::focused = nullptr;
+
     Panel2D::Panel2D(const std::string& name, const glm::vec2& pos, const glm::vec2& size, const Color& col)
         : Node2D(name, pos, size), color(col)
     {
@@ -172,6 +174,14 @@ namespace ui {
             glm::vec2 local_pos = glm::vec2(intersection_point) / get_scale();
             data.local_position = glm::vec2(local_pos.x, size.y - local_pos.y);
         }
+
+        // Few logic for managing focus
+
+        if (data.was_pressed) {
+            focused = this;
+        }
+
+        data.is_pressed &= (focused == this);
 
         return data;
     }

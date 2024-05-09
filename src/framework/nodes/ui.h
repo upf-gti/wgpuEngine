@@ -27,6 +27,8 @@ namespace ui {
     class Panel2D : public Node2D {
     public:
 
+        static Node2D* focused;
+
         Color color = glm::vec4(0.0f);
 
         bool render_background  = true;
