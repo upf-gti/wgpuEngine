@@ -28,7 +28,7 @@ def main(argv):
         print("Missing filename parameter")
         exit()
 
-    original_shader_path = sys.argv[1]
+    original_shader_path = sys.argv[1]    
     original_shader_file = open(original_shader_path, "r")
 
     shader_directory = os.path.dirname(os.path.realpath(original_shader_path))

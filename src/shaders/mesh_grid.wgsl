@@ -72,5 +72,5 @@ fn fs_main(in: VertexOutput) -> FragmentOutput {
 
     out.color.a *= (1.0 - 2.0 * distance(vec2f(0.5), in.uv.xy));
 
-    return vec4f(1.0);
+    return out;
 }
