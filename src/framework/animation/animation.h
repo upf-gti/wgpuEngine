@@ -57,12 +57,14 @@ public:
     Track* add_track(int id = -1);
 
     // Compute Joint Trajectory in a specific time given its position track, the direction of the tunnel and a degree of stretchiness
-    std::vector<glm::vec3> compute_trajectory(Track& track, const glm::vec3& axis, float stretchiness, float t);
-    std::map < std::string, std::vector<glm::vec3>> compute_smoothed_trajectory(std::map<std::string, std::vector<glm::vec3>>& trajectories, std::map<std::string, std::vector<glm::vec3>>& smoothed_trajectories, float window, float current_t);
+    glm::vec3 compute_trajectory(Track& track, const glm::vec3& axis, float stretchiness, uint32_t current_frame, uint32_t frame);
+    glm::vec3 compute_smoothed_trajectory(glm::vec3& trajectory, glm::vec3& smoothed_trajectory, float window, uint32_t current_frame, uint32_t frame);
+    std::vector<glm::vec3> compute_gaussian_smoothed_trajectory(std::vector<glm::vec3>& trajectory, float sigma);
+
+    const std::vector<uint32_t>& get_keyposes();
 
     // Extract KeyPoses
-    void compute_keyposes();
-    const std::vector<uint32_t>& get_keyposes();
+    void compute_keyposes(uint32_t current_frame, float stretchiness = 5.f, float window_constant = 0.2f, int min_f = 10, float sigma = 1.f, glm::vec3 direction = glm::vec3(1.f, 0.f, 0.f));
 
     uint32_t get_track_count();
     Track* get_track_by_id(int id);

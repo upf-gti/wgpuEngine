@@ -373,6 +373,12 @@ void AnimationPlayer::update(float delta_time)
     Node::update(delta_time);
 }
 
+float stretch = 5.f;
+float window = 2.f;
+float sigma = 0.5f;
+int min_f = 10;
+glm::vec3 direction(1.f, 0.f, 0.f);
+
 void AnimationPlayer::render_gui()
 {
     if (ImGui::BeginCombo("##current", current_animation_name.c_str()))
@@ -402,11 +408,22 @@ void AnimationPlayer::render_gui()
 
     ImGui::DragFloat("Blend time", &blend_time, 0.1f, 0.0f);
 
+    int current_frame = playback * (timeline.frame_max - timeline.frame_min) / current_animation->get_duration();
+ 
+    ImGui::DragFloat("Stretchiness", &stretch, 0.1f, 0.f, 100.f);
+    ImGui::DragFloat("Window frames", &window, 1.f, 1.f, 100.f);
+    ImGui::DragFloat("Sigma", &sigma, 0.1f, 0.f, 100.f);
+    ImGui::DragInt("Min frames", &min_f, 1, 0, current_animation->get_track(0)->size() - 1);
+    int v[3] = { direction.x, direction.y, direction.z };
+    if (ImGui::InputInt3("Direction", v))
+    {
+        direction = glm::vec3(v[0], v[1], v[2]);
+    }
     if (current_animation->get_type() == ANIM_TYPE_SKELETON)
     {
-        if (ImGui::Button("Generate keyposes"))
+        if (ImGui::Button("Generate keyposes") && !playing)
         {
-            current_animation->compute_keyposes();
+            current_animation->compute_keyposes(current_frame, stretch, window, min_f, sigma, direction);
             timeline.tracks.clear();
             for (size_t i = 0; i < current_animation->get_track_count(); i++)
             {
@@ -427,7 +444,6 @@ void AnimationPlayer::render_gui()
         static int selected_entry = selected_track;
         static int first_frame = 0;
         static bool expanded = true;
-        int current_frame = playback * (timeline.frame_max - timeline.frame_min) / current_animation->get_duration();
         int new_current_frame = current_frame;
         // Control buttons
         ImGui::PushItemWidth(180);

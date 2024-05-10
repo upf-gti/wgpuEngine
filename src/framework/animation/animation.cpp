@@ -138,37 +138,55 @@ Track* Animation::add_track(int id)
     return &tracks[tracks.size() - 1];
 }
 
-std::vector<glm::vec3> Animation::compute_trajectory(Track& track, const glm::vec3& axis, float stretchiness, float current_t)
+glm::vec3 Animation::compute_trajectory(Track& track, const glm::vec3& axis, float stretchiness, uint32_t current_frame, uint32_t frame)
 {
     std::vector<glm::vec3> trajectory;
 
     if (track.get_type() == TrackType::TYPE_POSITION)
-    {
-        for (size_t t = 0; t < track.size(); t++)
-        {
-            glm::vec3 position = std::get<glm::vec3>(track[current_t].value);
-            // trajectory(t) = original_position(t) + stretchiness * (t - evaluated_time) * tunnel_direction
-            position = position + stretchiness * (t - current_t) * axis;
-            trajectory.push_back(position);
-        }
+    {        
+        glm::vec3 position = std::get<glm::vec3>(track[frame].value);
+        // trajectory(t) = original_position(t) + stretchiness * (t - evaluated_time) * tunnel_direction
+        glm::vec3 a = stretchiness * ((float)frame - (float)current_frame) * axis;
+        position = position + a;
+        return position;
+        
     }
-    return trajectory;
+    return glm::vec3();
 }
 
-std::map < std::string, std::vector<glm::vec3>> Animation::compute_smoothed_trajectory(std::map<std::string, std::vector<glm::vec3>>& trajectories, std::map<std::string, std::vector<glm::vec3>>& smoothed_trajectories, float window, float current_t)
+glm::vec3 Animation::compute_smoothed_trajectory(glm::vec3& trajectory, glm::vec3& smoothed_trajectory, float window, uint32_t current_frame, uint32_t frame)
+{                      
+    float p = -glm::pow((frame - current_frame), 2) / glm::pow(window, 2);
+    float alpha = glm::exp(p);
+            
+    smoothed_trajectory = alpha * trajectory + (1 - alpha) * smoothed_trajectory;
+     
+    return smoothed_trajectory;
+}
+
+std::vector<glm::vec3> Animation::compute_gaussian_smoothed_trajectory(std::vector<glm::vec3>& trajectory, float sigma)
 {
-    for (auto& trajectory : trajectories)
-    {
-        for (size_t t = 0; t < trajectory.second.size(); t++)
-        {
-            float p = -glm::pow((t - current_t), 2) / glm::pow(window, 2);
-            float alpha = glm::exp(p);
-            smoothed_trajectories[trajectory.first][t] = alpha * trajectory.second[t] + (1 - alpha) * smoothed_trajectories[trajectory.first][t];
-        }
-    }
-    return smoothed_trajectories;
-}
+    std::vector<glm::vec3> smoothed_trajectory;
+    // Iterate over each point in the trajectory
+    for (size_t i = 0; i < trajectory.size(); ++i) {
+        float sum_weights = 0.f;
+        glm::vec3 smoothed_point(0.0f);
 
+        // Apply Gaussian smoothing to neighboring points within a certain window
+        for (size_t j = 0; j < trajectory.size(); ++j) {
+            float weight = gaussian_filter(fabs((float)(i) - (float)(j)), sigma);
+            sum_weights += weight;
+            smoothed_point += trajectory[j] * weight;           
+        }
+
+        // Normalize the smoothed point
+        smoothed_point /= sum_weights;
+        
+        // Add the smoothed point to the output trajectory
+        smoothed_trajectory.push_back(smoothed_point);
+    }
+    return smoothed_trajectory;
+}
 //float Animation::compute_difference(uint32_t joint_idx, float t, std::map<std::string, glm::vec3>& joint_tracks)
 //{
 //    glm::vec3 direction(1, 0, 0);
@@ -188,11 +206,12 @@ std::map < std::string, std::vector<glm::vec3>> Animation::compute_smoothed_traj
 //
 //}
 
-void Animation::compute_keyposes()
+void Animation::compute_keyposes(uint32_t current_frame, float stretchiness, float window_constant, int min_f, float sigma, glm::vec3 direction)
 {
     if (type != ANIM_TYPE_SKELETON)
         return;
 
+    keyposes.clear();
     std::map<std::string, glm::vec3> joint_tracks;
 
     for (size_t i = 0; i < tracks.size(); i++)
@@ -221,64 +240,136 @@ void Animation::compute_keyposes()
         }
         joint_tracks[joint_name] = indices;
     }
-    
+
     // Assume all tracks have same number of frames
     const std::vector<float> computed_times = get_track(0)->get_times();
     uint32_t lastIndex = computed_times.size() - 1;
 
-    glm::vec3 direction(1, 0, 0);
-    float stretchiness = 1.f;
-    std::map<std::string, std::vector<glm::vec3>> joints_trajectories;
-    std::map<std::string, std::vector<glm::vec3>> joints_smoothed_trajectories;
-    std::vector<float> joints_magnitudes;
-
-    // Init trajectoryes and magnitudes
-    for (size_t t = 0; t < computed_times.size(); t++)
-    {
-        float joints_magnitude = 0;
-
-        for (auto& joint : joint_tracks)
-        {
-            joints_trajectories[joint.first] = compute_trajectory(tracks[joint.second.x], direction, stretchiness, t);
-            joints_smoothed_trajectories[joint.first] = joints_trajectories[joint.first];
-            compute_smoothed_trajectory(joints_trajectories, joints_smoothed_trajectories, 5, 0);
-            joints_magnitude += glm::length(joints_trajectories[joint.first][t]);
-        }
-        joints_magnitudes.push_back(joints_magnitude);
-    }
 
     // Compute differences for all active joints for all frames
     float max_diff = -1;
-    uint32_t selected = -1;
-    while(keyposes.size() < 10)
+    int selected = current_frame;
+    keyposes.push_back(selected);
+
+
+    std::vector<std::vector<glm::vec3>> joints_trajectories(computed_times.size());
+    std::vector<std::vector<glm::vec3>> joints_smoothed_trajectories(computed_times.size());
+    std::vector< std::vector<float>> joints_magnitudes(computed_times.size());
+    std::vector<float> weights(computed_times.size());
+    std::vector<float> sum_joints_magnitude(computed_times.size());
+
+    ////Init trajectoryes and magnitudes
+    for (size_t t = 0; t < computed_times.size(); t++)
     {
-        max_diff = -1;
+        sum_joints_magnitude[t] = 0;
+        joints_trajectories[t].resize(joint_tracks.size());
+        joints_magnitudes[t].resize(joint_tracks.size());
+
+        int i = 0;
+        for (auto& joint : joint_tracks)
+        {
+            // Compute trajectory position in frame t centered on current frame
+            joints_trajectories[t][i] = compute_trajectory(tracks[joint.second.x], direction, stretchiness, current_frame, t);
+
+            // Compute magnitue from joint trajectory position
+            float magnitude = glm::length(joints_trajectories[t][i]);
+            joints_magnitudes[t][i] = magnitude;
+            // Compute sum of magnitudes from all joints
+            sum_joints_magnitude[t] += magnitude;
+
+            i++;
+        }
+        
+        // Compute smooth trajectory positions using a gaussian filter
+        joints_smoothed_trajectories[t] = compute_gaussian_smoothed_trajectory(joints_trajectories[t], sigma);       
+    }
+
+    while (keyposes.size() < min_f)
+    {
+        float max_diff = -1;
         float total_diff = 0;
+        std::vector<float> d;
+
+        ////Init trajectoryes and magnitudes
+        //for (size_t t = 0; t < computed_times.size(); t++)
+        //{
+        //    sum_joints_magnitude[t] = 0;
+        //    joints_trajectories[t].clear();
+        //    joints_magnitudes[t].clear();
+        //    joints_trajectories[t].resize(joint_tracks.size());
+        //    joints_magnitudes[t].resize(joint_tracks.size());
+
+        //    int i = 0;
+        //    for (auto& joint : joint_tracks)
+        //    {
+        //        // Compute trajectory position in frame t centered on current frame
+        //        joints_trajectories[t][i] = compute_trajectory(tracks[joint.second.x], direction, stretchiness, selected, t);
+
+        //        // Compute magnitue from joint trajectory position
+        //        float magnitude = glm::length(joints_trajectories[t][i]);
+        //        joints_magnitudes[t][i] = magnitude;
+        //        // Compute sum of magnitudes from all joints
+        //        sum_joints_magnitude[t] += magnitude;
+
+        //        i++;
+        //    }
+
+        //    // Compute smooth trajectory positions using a gaussian filter
+        //    joints_smoothed_trajectories[t] = compute_gaussian_smoothed_trajectory(joints_trajectories[t], sigma);
+        //}
+
         for (size_t t = 0; t < computed_times.size(); t++)
         {
+            total_diff = 0;
             // Sum for all joints: d(t) += wk * ||Tk(t) - sTk(t)||
-            for (auto& trajectory : joints_trajectories)
+            for (size_t i = 0; i < joints_trajectories[t].size(); i++)
             {
-                glm::vec3 joint_position = trajectory.second[t];
-                glm::vec3 joint_smoothed_position = joints_smoothed_trajectories[trajectory.first][t];
-                float w = glm::length(joint_position) / joints_magnitudes[t];
-                total_diff += w * glm::length(joint_position - joint_smoothed_position);                
+                glm::vec3 joint_trajectory_position = joints_trajectories[t][i];
+                glm::vec3 joint_trajectory_smoothed_position = joints_smoothed_trajectories[t][i];
+                float w = joints_magnitudes[t][i] / sum_joints_magnitude[t];
+                glm::vec3 diff = joint_trajectory_position - joint_trajectory_smoothed_position;
+                total_diff += w * glm::length(diff);
             }
-            if (total_diff > max_diff)
+            d.push_back(total_diff);
+
+        }
+        // select the time with the largest difference among all the frames        
+        for(size_t i = 0; i < d.size(); i++)
+        {
+            if (d[i] > max_diff && std::find(keyposes.begin(), keyposes.end(), i) == keyposes.end())
             {
-                // select the time with the largest difference among all the frames
-                max_diff = total_diff;
-                selected = t;
+                max_diff = d[i];
+                selected = i;
             }
         }
-
-        // update smoothed trajectory
-        if (!keyposes.size() || std::find(keyposes.begin(), keyposes.end(), selected) == keyposes.end())
+        if (selected > -1)
         {
             keyposes.push_back(selected);
-            compute_smoothed_trajectory(joints_trajectories, joints_smoothed_trajectories, 5, selected);
+            for (size_t t = 0; t < computed_times.size(); t++)
+            {
+                // Compute smooth trajectory positions using a gaussian filter
+                joints_smoothed_trajectories[t] = compute_gaussian_smoothed_trajectory(joints_trajectories[t], sigma);
+
+                for (size_t i = 0; i < joints_trajectories[t].size(); i++)
+                {
+                    // Compute smooth trajectory position in frame t centered on current frame
+                    joints_smoothed_trajectories[t][i] = compute_smoothed_trajectory(joints_trajectories[t][i], joints_smoothed_trajectories[t][i], window_constant, t, selected);
+                }
+            }
         }
-        if (max_diff < 0.00005 && max_diff > 0)
+        //if (total_diff > max_diff && std::find(keyposes.begin(), keyposes.end(), t) == keyposes.end())
+        //{
+        //    max_diff = total_diff;
+        //    selected = t;
+        //}
+
+        //// update smoothed trajectory
+        //if (!keyposes.size() || std::find(keyposes.begin(), keyposes.end(), selected) == keyposes.end())
+        //{
+        //    keyposes.push_back(selected);
+        //    //compute_smoothed_trajectory(joints_trajectories, joints_smoothed_trajectories, 5, selected);
+        //}
+        if (max_diff < 0.0005 && max_diff > 0)
             break;
     }
 

@@ -9,6 +9,8 @@
 #include <variant>
 #include <string>
 
+#include "math_utils.h"
+
 enum class Interpolation {
     CONSTANT,
     LINEAR,

@@ -370,13 +370,6 @@ void Track::remove_all_keyframes()
     keyframes.resize(0);
 }
 
-// Function to calculate the weight using Gaussian distribution
-float gaussian_pdf(int frame, int peakFrame, float sigma) {
-    float exponent = -0.5 * pow((frame - peakFrame) / sigma, 2);
-    return exp(exponent);
-}
-
-
 void Track::update_value(uint32_t index, const T& value, const glm::vec2& propagate_frames)
 {
     keyframes[index].value = value;
