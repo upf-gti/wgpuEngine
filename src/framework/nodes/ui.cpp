@@ -16,6 +16,7 @@
 #include "shaders/ui/ui_selector.wgsl.gen.h"
 #include "shaders/ui/ui_group.wgsl.gen.h"
 #include "shaders/ui/ui_button.wgsl.gen.h"
+#include "shaders/ui/ui_text_shadow.wgsl.gen.h"
 
 namespace ui {
 
@@ -244,6 +245,11 @@ namespace ui {
         Node2D::on_children_changed();
     }
 
+    void Container2D::set_centered(bool value)
+    {
+        centered = value;
+    }
+
     HContainer2D::HContainer2D(const std::string& name, const glm::vec2& pos, const Color& col)
         : Container2D(name, pos, col)
     {
@@ -317,6 +323,11 @@ namespace ui {
 
         size.x += padding.x * 2.0f;
         size.y = rect_height;
+
+        if (centered) {
+            const glm::vec2& pos = get_translation();
+            set_translation({ (-size.x + BUTTON_SIZE) * 0.50f, pos.y });
+        }
 
         Container2D::on_children_changed();
     }
@@ -425,17 +436,47 @@ namespace ui {
     *   Text
     */
 
+
+    Text2D::Text2D(const std::string& _text, float scale)
+        : Text2D(_text, { 0.0f, 0.0f }, scale, colors::WHITE)
+    {
+        glm::vec2 centered_position = { -size.x * 0.5f + BUTTON_SIZE * 0.5f, -size.y * 2.f };
+        set_translation(centered_position);
+    }
+
     Text2D::Text2D(const std::string& _text, const glm::vec2& pos, float scale, const Color& color)
-        : Panel2D(_text + "@text", pos, { 1.0f, 1.0f }) {
+        : Panel2D(_text + "@text", pos, {1.0f, 1.0f}) {
 
-        class_type = Node2DClassType::TEXT;
+        text_string = _text;
+        text_scale = scale;
 
-        text_entity = new TextEntity(_text);
-        text_entity->set_scale(scale);
+        class_type = Node2DClassType::TEXT_SHADOW;
+
+        text_entity = new TextEntity(text_string);
+        text_entity->set_scale(text_scale);
         text_entity->generate_mesh(color, MATERIAL_2D);
+        text_entity->set_surface_material_priority(0, Node2DClassType::TEXT);
 
-        size.x = text_entity->get_text_width(_text) * 6.0f / scale;
-        size.y = scale * 0.5f;
+        size.x = text_entity->get_text_width(text_string);
+        size.y = text_scale * 0.5f;
+
+        ui_data.num_group_items = size.x;
+
+        Material material;
+        material.color = colors::RED;
+        material.flags = MATERIAL_2D | MATERIAL_UI;
+        material.cull_type = CULL_BACK;
+        material.transparency_type = ALPHA_BLEND;
+        material.priority = class_type;
+        material.shader = RendererStorage::get_shader_from_source(shaders::ui_text_shadow::source, shaders::ui_text_shadow::path, material);
+
+        Surface* quad_surface = quad_mesh.get_surface(0);
+        quad_surface->create_quad(this->size.x + TEXT_SHADOW_MARGIN * text_scale, this->size.y + TEXT_SHADOW_MARGIN * text_scale);
+
+        quad_mesh.set_surface_material_override(quad_mesh.get_surface(0), material);
+
+        auto webgpu_context = Renderer::instance->get_webgpu_context();
+        RendererStorage::register_ui_widget(webgpu_context, material.shader, &quad_mesh, ui_data, 3);
     }
 
     void Text2D::update(float delta_time)
@@ -451,7 +492,7 @@ namespace ui {
 
         text_entity->set_model(model);
 
-        Node2D::update(delta_time);
+        Panel2D::update(delta_time);
     }
 
     void Text2D::render()
@@ -459,9 +500,9 @@ namespace ui {
         if (!visibility)
             return;
 
-        text_entity->render();
+        Panel2D::render();
 
-        Node2D::render();
+        text_entity->render();
     }
 
     void Text2D::remove_flag(uint8_t flag)
@@ -471,14 +512,14 @@ namespace ui {
 
         text_entity->generate_mesh(color, (eMaterialFlags)flags);
 
-        Node2D::remove_flag(flag);
+        Panel2D::remove_flag(flag);
     }
 
     void Text2D::set_priority(uint8_t priority)
     {
         text_entity->set_surface_material_priority(0, priority);
 
-        Node2D::set_priority(priority);
+        Panel2D::set_priority(priority);
     }
 
     /*
@@ -544,10 +585,8 @@ namespace ui {
 
         // Text label
         {
-            float magic = 3.5f;
-            text_2d = new Text2D(signal, { size.x * 0.5f - signal.length() * magic, size.y }, 18.f, colors::BLACK);
+            text_2d = new Text2D(signal, 18.f);
             text_2d->set_visibility(false);
-            text_2d->set_priority(material.priority - 1);
             add_child(text_2d);
         }
     }
@@ -660,10 +699,6 @@ namespace ui {
     void Button2D::set_priority(uint8_t priority)
     {
         Panel2D::set_priority(priority);
-
-        if (text_2d) {
-            text_2d->set_priority(priority - 1);
-        }
     }
 
     TextureButton2D::TextureButton2D(const std::string& sg, const std::string& texture_path, uint8_t parameter_flags)
@@ -724,10 +759,8 @@ namespace ui {
 
         // Text label
         {
-            float magic = 3.65f;
-            text_2d = new Text2D(signal, { size.x * 0.5f - signal.length() * magic, size.y }, 18.f, colors::BLACK);
+            text_2d = new Text2D(signal, 18.f);
             text_2d->set_visibility(false);
-            text_2d->set_priority(material.priority - 1);
             add_child(text_2d);
         }
     }
@@ -889,7 +922,7 @@ namespace ui {
         {
             submenu_mark->set_model(get_global_model());
             submenu_mark->scale(glm::vec3(0.6f, 0.6f, 1.0f));
-            submenu_mark->translate(glm::vec3(get_size().x * 0.85f, -get_size().y * 0.2f, -1e-3f));
+            submenu_mark->translate(glm::vec3(get_size().x * 0.9f, get_size().y * 0.8f, -1e-3f));
         }
     }
 
@@ -984,15 +1017,12 @@ namespace ui {
 
         // Text labels (only if slider is enabled)
         {
-            float magic = 3.5f;
-            text_2d = new Text2D(signal, { size.x * 0.5f - signal.length() * magic, size.y }, 18.f, colors::BLACK);
-            text_2d->set_priority(material.priority - 1);
+            text_2d = new Text2D(signal, 18.f);
             add_child(text_2d);
 
             if (!disabled) {
                 std::string value_as_string = std::to_string(std::ceil(current_value * 100.f) / 100.f);
-                text_2d_value = new Text2D(value_as_string.substr(0, 4), {size.x * 0.5f - value_as_string.length() * 2.25f, 0.0f}, 18.f, colors::PURPLE);
-                text_2d_value->set_priority(material.priority - 1);
+                text_2d_value = new Text2D(value_as_string.substr(0, 4), {size.x * 0.5f - value_as_string.length() * 2.25f, size.y * 1.1f}, 18.f);
                 add_child(text_2d_value);
             }
         }

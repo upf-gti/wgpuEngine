@@ -12,10 +12,11 @@
 
 namespace ui {
 
-    const float PICKER_SIZE = 164.f;
-    const float BUTTON_SIZE = 64.f;
-    const float GROUP_MARGIN = 12.f;
-    const float LAYER_MARGIN = 8.f;
+    const float PICKER_SIZE         = 164.f;
+    const float BUTTON_SIZE         = 64.f;
+    const float GROUP_MARGIN        = 12.f;
+    const float LAYER_MARGIN        = 8.f;
+    const float TEXT_SHADOW_MARGIN  = 1.f;
 
     enum ComboIndex {
         UNIQUE,
@@ -61,6 +62,8 @@ namespace ui {
         Container2D(const std::string& name, const glm::vec2& p, const Color& c = colors::WHITE);
 
         void on_children_changed() override;
+
+        void set_centered(bool value);
     };
 
     class HContainer2D : public Container2D {
@@ -90,12 +93,17 @@ namespace ui {
     };
 
     class Text2D : public Panel2D {
+
+        float text_scale = 1.0f;
+        std::string text_string = "";
+
     public:
 
         TextEntity* text_entity = nullptr;
 
         Text2D() {};
         Text2D(const std::string& _text, const glm::vec2& pos, float scale = 16.f, const Color& color = colors::WHITE);
+        Text2D(const std::string& _text, float scale = 16.f);
 
         void set_text(const std::string& text) { text_entity->set_text(text); };
 

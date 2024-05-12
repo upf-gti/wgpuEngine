@@ -8,9 +8,10 @@
 #include <vector>
 
 enum Node2DClassType {
-    SELECTOR_BUTTON = 10,
+    TEXT = 10,
+    TEXT_SHADOW,
+    SELECTOR_BUTTON,
     SELECTOR,
-    TEXT,
     LABEL,
     BUTTON_MARK,
     BUTTON,

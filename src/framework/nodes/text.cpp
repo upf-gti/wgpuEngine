@@ -18,30 +18,31 @@ TextEntity::TextEntity(const std::string& _text, glm::vec2 _box_size, bool _wrap
 
 void TextEntity::update(float delta_time)
 {
-    
+
 }
 
 void TextEntity::append_char(glm::vec3 pos, Character& ch)
 {
-	float size = (float)font_scale / font->size;
-	for (int k = 0; k < 6; ++k) {
+    float size = (float)font_scale / font->size;
+    int height = get_text_height(text);
+    for (int k = 0; k < 6; ++k) {
 
         InterleavedData vertex = {
-            .position = (pos + glm::vec3(ch.vertices[k].x, -ch.vertices[k].y + font_scale * 2.0f, ch.vertices[k].z)) * size,
+            .position = (pos + glm::vec3(ch.vertices[k].x, (height / size) - ch.vertices[k].y, ch.vertices[k].z)) * size,
             .uv = ch.uvs[k] / glm::vec2(font->scaleW, font->scaleH),
             .normal = glm::vec3(0.f, 1.f, 0.f),
             .color = { 1.0f, 1.0f, 1.0f }
         };
 
         vertices.push_back(vertex);
-	}
+    }
 }
 
 void TextEntity::generate_mesh(const Color& color, eMaterialFlags flags)
 {
     assert(font || "No font set prior to draw!");
 
-    if (text.empty() || !font) 
+    if (text.empty() || !font)
         return;
 
     // Clear previous mesh
@@ -69,7 +70,7 @@ void TextEntity::generate_mesh(const Color& color, eMaterialFlags flags)
             float word_size = get_text_width(word) * size;
             if (wrap && word_count > 0
                 // So the ammount of space already traversed + the width of the word fits on the line?
-                && (pos.x - initial_pos.x + word_size > box_size.x) )
+                && (pos.x - initial_pos.x + word_size > box_size.x))
             {
                 // Move to the start of the next line
                 pos.x = initial_pos.x;
@@ -127,15 +128,30 @@ void TextEntity::generate_mesh(const Color& color, eMaterialFlags flags)
 
 int TextEntity::get_text_width(const std::string& text)
 {
-	int size = 0;
-	int textsize = (int)text.size();
+    int size = 0;
+    int textsize = (int)text.size();
+    float font_size = (float)font_scale / font->size;
 
     for (int i = 0; i < textsize; ++i) {
-		unsigned char c = text[i];
-		Character& ch = font->characters[c];
-		int kern = (i + 1 < textsize) ? (int)font->adjust_kerning_pairs(c, text[i + 1]) : 0;
-		size += ch.xadvance + kern;
-	}
+        unsigned char c = text[i];
+        Character& ch = font->characters[c];
+        int kern = (i + 1 < textsize) ? (int)font->adjust_kerning_pairs(c, text[i + 1]) : 0;
+        size += ch.xadvance + kern;
+    }
 
-	return size;
+    return size * font_size;
+}
+
+int TextEntity::get_text_height(const std::string& text)
+{
+    float size = 0;
+    float font_size = (float)font_scale / font->size;
+
+    for (int i = 0; i < (int)text.size(); ++i) {
+        unsigned char c = text[i];
+        Character& ch = font->characters[c];
+        size = std::max(ch.size.y, size);
+    }
+
+    return size * font_size;
 }
