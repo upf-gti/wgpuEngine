@@ -11,6 +11,11 @@ MeshInstance3D::MeshInstance3D() : Node3D()
 MeshInstance3D::~MeshInstance3D()
 {
 
+    for (Surface* surface : surfaces) {
+        delete surface;
+    }
+
+    surfaces.clear();
 }
 
 AABB MeshInstance3D::get_surface_world_aabb(int surface_idx)

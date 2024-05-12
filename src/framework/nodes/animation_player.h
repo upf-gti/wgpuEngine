@@ -4,6 +4,7 @@
 #include "framework/animation/blend_animation.h"
 
 #include "framework/ui/timeline.h"
+#include "framework/animation/time_tunnel.h"
 
 class MeshInstance3D;
 
@@ -30,11 +31,17 @@ class AnimationPlayer : public Node3D
 
     BlendAnimation blender;
     Timeline timeline;
+    TimeTunnel time_tunnel;
 
     std::vector<void*> track_data;
     int selected_track = -1;
+    std::vector<MeshInstance3D*> keyposes_helper;
+    std::vector<MeshInstance3D*> trajectories_helper;
     void generate_track_data();
     void generate_track_timeline_data(uint32_t track_idx, const std::string& track_path);
+    void update_trajectories();
+
+    void compute_keyframes();
 
 public:
 
@@ -46,6 +53,7 @@ public:
 
     void update(float delta_time) override;
     void render_gui() override;
+    void render() override;
 
     void set_speed(float time);
     void set_blend_time(float time);

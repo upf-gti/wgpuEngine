@@ -7,11 +7,11 @@ MeshInstance::MeshInstance()
 
 MeshInstance::~MeshInstance()
 {
-    //for (Surface* surface : surfaces) {
-    //    delete surface;
-    //}
+    for (Surface* surface : surfaces) {
+        delete surface;
+    }
 
-    //surfaces.clear();
+    surfaces.clear();
 }
 
 void MeshInstance::set_surface_material_color(int surface_idx, const glm::vec4& color)

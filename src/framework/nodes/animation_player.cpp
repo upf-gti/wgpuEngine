@@ -23,7 +23,7 @@ AnimationPlayer::AnimationPlayer(const std::string& n)
             timeline.tracks[track_idx].edited_points[timeline.selected_point.y] = true;
 
             //animation->get_track(track_idx)->get_keyframe(frame_idx).value = rotation;
-            std::vector<uint32_t> keyposes = animation->get_keyposes();
+            std::vector<uint32_t> keyposes = time_tunnel.get_keyframes();
             if(keyposes.size())
             {
                 int prev = timeline.selected_point.y - 1 >= 0 ? timeline.selected_point.y - 1 : 0;
@@ -51,7 +51,7 @@ AnimationPlayer::AnimationPlayer(const std::string& n)
 
             Animation* animation = RendererStorage::get_animation(current_animation_name);
 
-            std::vector<uint32_t> keyposes = animation->get_keyposes();
+            std::vector<uint32_t> keyposes = time_tunnel.get_keyframes();
             if (keyposes.size())
             {
                 int prev = timeline.selected_point.y - 1 >= 0 ? timeline.selected_point.y - 1 : 0;
@@ -79,7 +79,7 @@ AnimationPlayer::AnimationPlayer(const std::string& n)
 
             Animation* animation = RendererStorage::get_animation(current_animation_name);
 
-            std::vector<uint32_t> keyposes = animation->get_keyposes();
+            std::vector<uint32_t> keyposes = time_tunnel.get_keyframes();
             if (keyposes.size())
             {
                 int prev = timeline.selected_point.y - 1 >= 0 ? timeline.selected_point.y - 1 : 0;
@@ -208,6 +208,90 @@ void AnimationPlayer::generate_track_data()
     }
 }
 
+void AnimationPlayer::update_trajectories()
+{
+    for (auto& trajectory : trajectories_helper)
+    {
+        delete trajectory;
+    }
+    trajectories_helper.clear();
+
+    for (auto& keyposes : keyposes_helper)
+    {
+        delete keyposes;
+    }
+    keyposes_helper.clear();
+
+    std::vector<uint32_t> keyframes = time_tunnel.get_keyframes();
+
+    // Generate time tunnel trajectories for each selected position track
+    std::vector<std::vector<glm::vec3>> trajectories = time_tunnel.get_trajectories();
+    for (auto& trajectory : trajectories)
+    {
+        MeshInstance3D* mesh = new MeshInstance3D();
+        Surface* s = new Surface();
+        std::vector<InterleavedData>& vertices = s->get_vertices();
+        
+        mesh->add_surface(s);
+        glm::mat4x4 parent_model;
+        for (auto& instance : root_node->get_children())
+        {
+            if (instance != this)
+            {
+                parent_model = ((Node3D*)instance)->get_global_model();
+                break;
+            }
+        }
+
+        for (size_t t = 0; t < trajectory.size(); t++)
+        {
+            InterleavedData data;
+
+            data.position = parent_model * glm::vec4(trajectory[t], 1.0f);
+            vertices.push_back(data);
+
+            if (std::find(keyframes.begin(), keyframes.end(), (uint32_t)t) != keyframes.end() || t == time_tunnel.get_current_frame())
+            {
+                // Generate time tunnel keyposes points for each selected position track
+                MeshInstance3D* point = new MeshInstance3D();
+                Surface* s_point = new Surface();
+                s_point->create_sphere(0.10f);
+                point->add_surface(s_point);
+                point->translate(data.position);
+                Material mat;
+                mat.color = { 0.0f, 0.50f, 1.0f, 1.0f };
+                if (t == time_tunnel.get_current_frame())
+                {
+                    mat.color = { 0.5f, 0.50f, 0.0f, 1.0f };
+
+                }
+                mat.depth_read = false;
+                mat.priority = 0;
+                mat.shader = RendererStorage::get_shader("data/shaders/mesh_color.wgsl", mat);
+
+                point->set_surface_material_override(s_point, mat);
+                keyposes_helper.push_back(point);
+            }
+
+            if (t > 0) {
+                data.position = parent_model * glm::vec4(trajectory[t - 1], 1.0f);
+            }
+            vertices.push_back(data); 
+        }
+        s->update_vertex_buffer(vertices);
+
+        Material mat;
+        mat.color = { 0.0f, 1.0f, 1.0f, 1.0f };
+        mat.depth_read = false;
+        mat.priority = 0;
+        mat.topology_type = eTopologyType::TOPOLOGY_LINE_LIST;
+        mat.shader = RendererStorage::get_shader("data/shaders/mesh_color.wgsl", mat);
+       
+        mesh->set_surface_material_override(s, mat);
+        trajectories_helper.push_back(mesh);
+    }
+}
+
 void AnimationPlayer::generate_track_timeline_data(uint32_t track_idx, const std::string& track_path)
 {
     int count = 1;
@@ -219,6 +303,7 @@ void AnimationPlayer::generate_track_timeline_data(uint32_t track_idx, const std
         type = 0;
         count = 3;
     }
+
     else if (track->get_type() == TrackType::TYPE_ROTATION) {
         type = 1;
         count = 4;
@@ -232,7 +317,7 @@ void AnimationPlayer::generate_track_timeline_data(uint32_t track_idx, const std
     std::vector<ImVec2>* points = new std::vector<ImVec2>[count];
     std::vector<bool> edited_points;
     //timeline.curve_editor.SetPointsCount(animation->get_track(i)->size());
-    std::vector<uint32_t> keyposes = current_animation->get_keyposes();
+    std::vector<uint32_t> keyposes = time_tunnel.get_keyframes();
     if (keyposes.size())
     {
         for (uint32_t j = 0; j < keyposes.size(); j++)
@@ -305,6 +390,42 @@ void AnimationPlayer::generate_track_timeline_data(uint32_t track_idx, const std
     timeline.tracks[timeline.tracks.size() - 1].points = points;
 }
 
+void AnimationPlayer::compute_keyframes()
+{
+    if (current_animation->get_type() != ANIM_TYPE_SKELETON)
+        return;
+
+    std::map<std::string, glm::vec3> joint_tracks;
+    std::vector<Track*> selected_tracks;
+    
+    for (size_t i = 0; i < current_animation->get_track_count(); i++)
+    {
+        Track* track = current_animation->get_track(i);
+
+        const std::string& name = track->get_name();
+        size_t last_idx = name.find_last_of('/');
+        const std::string& joint_name = name.substr(0, last_idx);
+        const std::string& property_name = name.substr(last_idx + 1);
+
+        if (property_name == "translation" || property_name == "translate" || property_name == "position" || track->get_type() == TrackType::TYPE_POSITION) {
+            selected_tracks.push_back(track);
+        }
+    }
+    int current_frame = playback * (timeline.frame_max - timeline.frame_min) / current_animation->get_duration();
+    time_tunnel.set_current_frame(current_frame);
+    time_tunnel.extract_keyframes(selected_tracks);
+
+    timeline.tracks.clear();
+    for (size_t i = 0; i < current_animation->get_track_count(); i++)
+    {
+        const std::string& track_path = current_animation->get_track(i)->get_path();
+        generate_track_timeline_data(i, track_path);
+    }
+
+    update_trajectories();
+}
+
+
 void AnimationPlayer::pause()
 {
     playing = !playing;
@@ -373,11 +494,19 @@ void AnimationPlayer::update(float delta_time)
     Node::update(delta_time);
 }
 
-float stretch = 5.f;
-float window = 2.f;
-float sigma = 0.5f;
-int min_f = 10;
-glm::vec3 direction(1.f, 0.f, 0.f);
+
+void AnimationPlayer::render()
+{
+    for (auto& t : trajectories_helper)
+    {
+        t->render();
+    }
+    for (auto& k : keyposes_helper)
+    {
+        k->render();
+    }
+}
+
 
 void AnimationPlayer::render_gui()
 {
@@ -409,27 +538,37 @@ void AnimationPlayer::render_gui()
     ImGui::DragFloat("Blend time", &blend_time, 0.1f, 0.0f);
 
     int current_frame = playback * (timeline.frame_max - timeline.frame_min) / current_animation->get_duration();
- 
-    ImGui::DragFloat("Stretchiness", &stretch, 0.1f, 0.f, 100.f);
-    ImGui::DragFloat("Window frames", &window, 1.f, 1.f, 100.f);
-    ImGui::DragFloat("Sigma", &sigma, 0.1f, 0.f, 100.f);
-    ImGui::DragInt("Min frames", &min_f, 1, 0, current_animation->get_track(0)->size() - 1);
+    float stretch = time_tunnel.get_stretchiness();
+    if (ImGui::DragFloat("Stretchiness", &stretch, 0.1f, 0.f, 100.f))
+    {
+        time_tunnel.set_stretchiness(stretch);
+    }
+   /* if (ImGui::DragFloat("Window frames", &window, 1.f, 1.f, 100.f))
+    {
+        time_tunnel.set_window(window);
+    }*/
+    float sigma = time_tunnel.get_gaussian_sigma();
+    if (ImGui::DragFloat("Sigma", &sigma, 0.1f, 0.f, 100.f))
+    {
+        time_tunnel.set_gaussian_sigma(sigma);
+    }
+    int min_f = time_tunnel.get_number_frames();
+    if (ImGui::DragInt("Min frames", &min_f, 1, 0, current_animation->get_track(0)->size() - 1))
+    {
+        time_tunnel.set_number_frames(min_f);
+    }
+    glm::vec3 direction = time_tunnel.get_axis();
     int v[3] = { direction.x, direction.y, direction.z };
     if (ImGui::InputInt3("Direction", v))
     {
-        direction = glm::vec3(v[0], v[1], v[2]);
+        time_tunnel.set_axis(glm::vec3(v[0], v[1], v[2]));
     }
     if (current_animation->get_type() == ANIM_TYPE_SKELETON)
     {
         if (ImGui::Button("Generate keyposes") && !playing)
         {
-            current_animation->compute_keyposes(current_frame, stretch, window, min_f, sigma, direction);
-            timeline.tracks.clear();
-            for (size_t i = 0; i < current_animation->get_track_count(); i++)
-            {
-                const std::string& track_path = current_animation->get_track(i)->get_path();
-                generate_track_timeline_data(i, track_path);
-            }
+            //current_animation->compute_keyposes(current_frame, stretch, window, min_f, sigma, direction);
+            compute_keyframes();
         }
     }
 
