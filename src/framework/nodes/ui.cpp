@@ -1,9 +1,13 @@
 #include "ui.h"
 
+#include <cctype>
+
 #include "framework/utils/intersections.h"
 #include "framework/input.h"
 #include "framework/nodes/text.h"
 #include "framework/camera/camera.h"
+#include "framework/utils/utils.h"
+
 #include "graphics/renderer.h"
 #include "graphics/webgpu_context.h"
 #include "spdlog/spdlog.h"
@@ -437,10 +441,10 @@ namespace ui {
     */
 
 
-    Text2D::Text2D(const std::string& _text, float scale)
+    Text2D::Text2D(const std::string& _text, float scale, bool center_big)
         : Text2D(_text, { 0.0f, 0.0f }, scale, colors::WHITE)
     {
-        glm::vec2 centered_position = { -size.x * 0.5f + BUTTON_SIZE * 0.5f, -size.y * 2.f };
+        glm::vec2 centered_position = { -size.x * 0.5f + BUTTON_SIZE * (center_big ? 1.0f : 0.5f), -size.y * 2.f };
         set_translation(centered_position);
     }
 
@@ -582,13 +586,6 @@ namespace ui {
 
             set_selected(allow_toggle ? !last_value : true);
         });
-
-        // Text label
-        {
-            text_2d = new Text2D(signal, 18.f);
-            text_2d->set_visibility(false);
-            add_child(text_2d);
-        }
     }
 
     void Button2D::on_pressed()
@@ -666,7 +663,10 @@ namespace ui {
         // reset event stuff..
         ui_data.is_hovered = 0.0f;
         ui_data.is_selected = selected ? 1.f : 0.f;
-        text_2d->set_visibility(false);
+
+        if (text_2d) {
+            text_2d->set_visibility(false);
+        }
 
         target_scale = 1.0f;
 
@@ -675,7 +675,9 @@ namespace ui {
 
     bool Button2D::on_input(sInputData data)
     {
-        text_2d->set_visibility(true);
+        if (text_2d) {
+            text_2d->set_visibility(true);
+        }
 
         if (data.was_pressed)
         {
@@ -759,7 +761,12 @@ namespace ui {
 
         // Text label
         {
-            text_2d = new Text2D(signal, 18.f);
+            assert(signal.size() > 0 && "Please use signals with any letter..");
+
+            // Use a prettified text..
+            std::string pretty_name = signal;
+            to_camel_case(pretty_name);
+            text_2d = new Text2D(pretty_name, 18.f);
             text_2d->set_visibility(false);
             add_child(text_2d);
         }
@@ -1017,7 +1024,9 @@ namespace ui {
 
         // Text labels (only if slider is enabled)
         {
-            text_2d = new Text2D(signal, 18.f);
+            std::string pretty_name = signal;
+            to_camel_case(pretty_name);
+            text_2d = new Text2D(pretty_name, 18.f, mode == SliderMode::HORIZONTAL);
             add_child(text_2d);
 
             if (!disabled) {
@@ -1246,6 +1255,9 @@ namespace ui {
         : HContainer2D(p_text + "@box", p) {
 
         class_type = Node2DClassType::LABEL;
+
+        padding = glm::vec2(2.0f);
+        item_margin = glm::vec2(12.0f, 0.0f);
 
         TextureButton2D* image = new TextureButton2D(p_text + "@image", image_path, DISABLED, {0.0f, 0.0f}, glm::vec2(24.0f));
         add_child(image);

@@ -64,7 +64,7 @@ void TextEntity::generate_mesh(const Color& color, eMaterialFlags flags)
 
     for (int i = 0; i <= text.size(); ++i) {
         int c = text[i];
-        if (c == ' ' || i == text.size()) { // End of word or text. Push the word to our buffer.
+        if (i == text.size()) { // End of word or text. Push the word to our buffer.
 
             // We must decide prior to draw the word if it fits on this line or has to go on the next one.
             float word_size = get_text_width(word) * size;
@@ -90,14 +90,20 @@ void TextEntity::generate_mesh(const Color& color, eMaterialFlags flags)
                 if (wrap && pos.y + (float)font->lineHeight > box_size.y) continue;
 
                 c = word[j];
-                Character& ch = font->characters[c];
-                append_char(pos, ch);
-                pos.x += (float)ch.xadvance;
 
-                //Adjust next leter position depending on the kerning
-                if (j + 1 < word.size()) {
-                    float amount = font->adjust_kerning_pairs(c, text[j + 1]);
-                    pos.x += (float)amount;
+                if (c == ' ') {
+                    pos.x += 16.0f;
+                }
+                else {
+                    Character& ch = font->characters[c];
+                    append_char(pos, ch);
+                    pos.x += (float)ch.xadvance;
+
+                    //Adjust next leter position depending on the kerning
+                    if (j + 1 < word.size()) {
+                        float amount = font->adjust_kerning_pairs(c, text[j + 1]);
+                        pos.x += (float)amount;
+                    }
                 }
             }
 
@@ -136,7 +142,7 @@ int TextEntity::get_text_width(const std::string& text)
         unsigned char c = text[i];
         Character& ch = font->characters[c];
         int kern = (i + 1 < textsize) ? (int)font->adjust_kerning_pairs(c, text[i + 1]) : 0;
-        size += ch.xadvance + kern;
+        size += c == ' ' ? 16 : (ch.xadvance + kern);
     }
 
     return size * font_size;
