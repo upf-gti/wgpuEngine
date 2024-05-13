@@ -47,7 +47,7 @@ private:
 	std::string path;
 	std::string specialized_path;
 
-	WGPUShaderModule shader_module;
+	WGPUShaderModule shader_module = nullptr;
 
 	std::vector<WGPUBindGroupLayout> bind_group_layouts;
 

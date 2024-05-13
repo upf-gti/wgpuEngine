@@ -1,5 +1,7 @@
 #include "shader.h"
 
+#include <filesystem>
+
 #include "pipeline.h"
 
 #define TINT_BUILD_WGSL_READER 1
@@ -89,7 +91,7 @@ bool Shader::parse_preprocessor(std::string &shader_content, const std::string &
     std::istringstream string_stream(shader_content);
     std::string line;
 
-    std::string _directory = dirname_of_file(shader_path);
+    std::string _directory = std::filesystem::path(shader_path).parent_path().string();
 
     std::streampos line_pos;
     while (std::getline(string_stream, line)) {
@@ -104,7 +106,7 @@ bool Shader::parse_preprocessor(std::string &shader_content, const std::string &
             std::string new_content;
 
             if (!engine_libraries.contains(include_name)) {
-                include_path = _directory + "/" + include_name;
+                include_path = std::filesystem::relative(std::filesystem::path(_directory + "/" + include_name)).string();
 
                 if (!read_file(include_path, new_content)) {
                     spdlog::error("\tCould not load shader include: {}", include_path);
