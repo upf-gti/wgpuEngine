@@ -65,6 +65,15 @@ void SkeletonInstance3D::update_pose_from_joints(float dt)
 void SkeletonInstance3D::set_joint_nodes(const std::vector<Node3D*>& new_joint_nodes)
 {
     joint_nodes = new_joint_nodes;
+
+    Pose& pose = skeleton->get_current_pose();
+    for (size_t i = 0; i < joint_nodes.size(); i++) {
+        int parent = pose.get_parent(i);
+        if (parent < 0)
+            continue;
+        Node3D* node = (Node3D*)(joint_nodes[i]);
+        joint_nodes[parent]->add_child(node);
+    }
 }
 
 Node* SkeletonInstance3D::get_node(std::vector<std::string>& path_tokens)
@@ -268,15 +277,6 @@ void SkeletonInstance3D::render_gui() {
 
         if (ImGui::TreeNodeEx("Bones", ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_Framed)) {
             ImGui::SetWindowSize(ImVec2(0, 0));
-
-            Pose& pose = skeleton->get_current_pose();
-            for (size_t i = 0; i < joint_nodes.size(); i++) {
-                int parent = pose.get_parent(i);
-                if (parent < 0)
-                    continue;
-                Node3D* node = (Node3D*)(joint_nodes[i]);
-                joint_nodes[parent]->add_child(node);
-            }
 
             for (Node* child : joint_nodes) {
                 if(!((Node3D*)(child))->get_parent())

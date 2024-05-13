@@ -32,13 +32,16 @@ class AnimationPlayer : public Node3D
     BlendAnimation blender;
     Timeline timeline;
     TimeTunnel time_tunnel;
+    std::vector<Pose> keyposes;
 
     std::vector<void*> track_data;
     int selected_track = -1;
     std::vector<MeshInstance3D*> keyposes_helper;
     std::vector<MeshInstance3D*> trajectories_helper;
+    std::vector<MeshInstance3D*> smoothed_trajectories_helper;
     void generate_track_data();
     void generate_track_timeline_data(uint32_t track_idx, const std::string& track_path);
+    void generate_keyposes();
     void update_trajectories();
 
     void compute_keyframes();

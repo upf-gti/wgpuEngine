@@ -99,7 +99,7 @@ public:
     void remove_keyframe(uint32_t index);
     void remove_all_keyframes();
 
-    void update_value(uint32_t index, const T& value, const glm::vec2& propagate_frames = glm::vec2(-1));
+    void update_value(uint32_t index, const T& value, const glm::vec2& propagate_frames = glm::vec2(-1), float weight = 1.0f);
 };
 
 namespace TrackHelpers {

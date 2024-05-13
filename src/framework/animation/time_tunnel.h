@@ -1,12 +1,13 @@
 #pragma once
 
 #include <vector>
-
+#include <algorithm>
 #include "track.h"
 
 class TimeTunnel
 {
     std::vector<std::vector<glm::vec3>> trajectories;
+    std::vector<std::vector<glm::vec3>> smoothed_trajectories;
     std::vector<uint32_t> keyframes;
     std::vector<std::vector<float>> magnitudes;
     std::vector<float> total_magnitudes;
@@ -16,7 +17,7 @@ class TimeTunnel
     uint32_t current_frame;
     uint32_t number_frames = 10;
     float threshold = 0.00001f;
-    float gaussian_sigma = 1.0f;
+    float gaussian_sigma = 5.0f;
 
     glm::vec3 compute_smoothed_trajectory_position(float t, float max_diff_t, std::vector<glm::vec3>& trajectory, std::vector<glm::vec3>& smoothed_trajectory);
     std::vector<glm::vec3> compute_gaussian_smoothed_trajectory(std::vector<glm::vec3>& trajectory);
@@ -38,11 +39,13 @@ public:
     float get_gaussian_sigma();
     std::vector<uint32_t> get_keyframes();
     std::vector<std::vector<glm::vec3>> get_trajectories();
+    std::vector<std::vector<glm::vec3>> get_smoothed_trajectories();
 
     glm::vec3 compute_trajectory_position(float t, const glm::vec3& position);
     std::vector<std::vector<glm::vec3>> compute_trajectories(std::vector<Track*>& tracks);
 
     std::vector<uint32_t> extract_keyframes(std::vector<Track*>& tracks);
+    void clear();
 };
 
 
