@@ -101,6 +101,10 @@ glm::vec3 TimeTunnel::compute_smoothed_trajectory_position(float t, float max_di
     float p = -glm::pow((t - max_diff_t), 2.0f) / glm::pow(gaussian_sigma, 2.0f);
     float alpha = glm::exp(p);
 
+    if (trajectory.size() <= t)
+    {
+        trajectory.push_back(trajectory[t-1]);
+    }
     smoothed_trajectory[t] = alpha * trajectory[t] + (1 - alpha) * smoothed_trajectory[t];
     
     return smoothed_trajectory[t];
