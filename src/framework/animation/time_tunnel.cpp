@@ -113,6 +113,8 @@ glm::vec3 TimeTunnel::compute_trajectory_position(float t, const glm::vec3& posi
 
 std::vector<std::vector<glm::vec3>> TimeTunnel::compute_trajectories(std::vector<Track*>& tracks)
 {
+    trajectories.clear();
+    magnitudes.clear();
     for (auto& track : tracks)
     {
         std::vector<glm::vec3> trajectory;
@@ -143,7 +145,7 @@ std::vector<std::vector<glm::vec3>> TimeTunnel::compute_trajectories(std::vector
         float sum_magnitudes = 0;
         for (size_t k = 0; k < magnitudes.size(); k++)
         {
-            sum_magnitudes += magnitudes[k][t];
+            sum_magnitudes += magnitudes[k].size() <= t ? magnitudes[k][magnitudes[k].size() - 1] : magnitudes[k][t];
         }
         total_magnitudes.push_back(sum_magnitudes);
     }
@@ -161,13 +163,13 @@ std::vector<uint32_t> TimeTunnel::extract_keyframes(std::vector<Track*>& tracks)
     size_t count = tracks.size();
     std::vector<std::vector<glm::vec3>> sT_k(count);
 
-    int t_m = -1; // selected keyframe
+    int t_m = current_frame; // selected keyframe
+    keyframes.push_back(t_m);
 
     while (keyframes.size() < number_frames)
     {
         float max_diff = -1.f;
         std::vector<float> d;
-
         for (size_t t = 0; t < frames; t++) // frames
         {
             float total_diff = 0.0f;
@@ -181,9 +183,9 @@ std::vector<uint32_t> TimeTunnel::extract_keyframes(std::vector<Track*>& tracks)
                     // Compute smooth trajectory positions using a gaussian filter
                     sT_k[k] = compute_gaussian_smoothed_trajectory(trajectories[k]);
                 }
-                else {
+                //else if(keyframes.size()>1){
                     sT_k[k][t] = compute_smoothed_trajectory_position(t, t_m, trajectories[k], sT_k[k]);
-                }
+                //}
 
                 glm::vec3 T_k_position = trajectories[k][t];
                 glm::vec3 sT_k_position = sT_k[k][t];

@@ -406,7 +406,7 @@ void AnimationPlayer::compute_keyframes()
         size_t last_idx = name.find_last_of('/');
         const std::string& joint_name = name.substr(0, last_idx);
         const std::string& property_name = name.substr(last_idx + 1);
-
+       
         if (property_name == "translation" || property_name == "translate" || property_name == "position" || track->get_type() == TrackType::TYPE_POSITION) {
             selected_tracks.push_back(track);
         }
