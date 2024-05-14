@@ -12,12 +12,12 @@ class TimeTunnel
     std::vector<std::vector<float>> magnitudes;
     std::vector<float> total_magnitudes;
 
-    glm::vec3 axis = glm::vec3(1.0f, 0.0f, 0.0f);
+    glm::vec3 axis = glm::vec3(0.0f, 0.0f, 1.0f);
     float stretchiness = 5.0f;
     uint32_t current_frame;
     uint32_t number_frames = 10;
     float threshold = 0.00001f;
-    float gaussian_sigma = 5.0f;
+    float gaussian_sigma = 10.0f;
 
     glm::vec3 compute_smoothed_trajectory_position(float t, float max_diff_t, std::vector<glm::vec3>& trajectory, std::vector<glm::vec3>& smoothed_trajectory);
     std::vector<glm::vec3> compute_gaussian_smoothed_trajectory(std::vector<glm::vec3>& trajectory);

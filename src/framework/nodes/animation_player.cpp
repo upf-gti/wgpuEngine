@@ -30,6 +30,7 @@ AnimationPlayer::AnimationPlayer(const std::string& n)
                 int next = timeline.selected_point.y + 1 < keyposes.size() ? timeline.selected_point.y + 1 : keyposes.size() - 1;
                 
                 animation->get_track(track_idx)->update_value(frame_idx, (T)rotation, glm::vec2(keyposes[prev], keyposes[next]));
+                update_trajectories(active_tracks);
             }
             else {
                 animation->get_track(track_idx)->get_keyframe(frame_idx).value = rotation;
@@ -59,6 +60,7 @@ AnimationPlayer::AnimationPlayer(const std::string& n)
                 int next = timeline.selected_point.y + 1 < keyposes.size() ? timeline.selected_point.y + 1 : keyposes.size() - 1;
 
                 animation->get_track(track_idx)->update_value(frame_idx, (T)position, glm::vec2(keyposes[prev], keyposes[next]), time_tunnel.get_gaussian_sigma()/(next-prev));
+                update_trajectories(active_tracks);
             }
             else {
                 animation->get_track(track_idx)->get_keyframe(frame_idx).value = position;
@@ -87,6 +89,7 @@ AnimationPlayer::AnimationPlayer(const std::string& n)
                 int next = timeline.selected_point.y + 1 < keyposes.size() ? timeline.selected_point.y + 1 : keyposes.size() - 1;
 
                 animation->get_track(track_idx)->update_value(frame_idx, (T)scale, glm::vec2(keyposes[prev], keyposes[next]));
+                update_trajectories(active_tracks);
             }
             else {
                 animation->get_track(track_idx)->get_keyframe(frame_idx).value = scale;
@@ -264,8 +267,9 @@ void AnimationPlayer::generate_keyposes()
     Node::update(0);
 }
 
-void AnimationPlayer::update_trajectories()
+void AnimationPlayer::update_trajectories(std::vector<uint32_t>& tracks_to_update)
 {
+    //clear and update only the Tracks_to_Update
     for (auto& trajectory : trajectories_helper)
     {
         delete trajectory;
@@ -283,7 +287,12 @@ void AnimationPlayer::update_trajectories()
         delete poses;
     }
     keyposes_helper.clear();
-
+    std::vector<Track*> selected_tracks;
+    for (size_t i = 0; i < tracks_to_update.size(); i++)
+    {
+        selected_tracks.push_back(current_animation->get_track(tracks_to_update[i]));
+    }
+    time_tunnel.compute_trajectories(selected_tracks);
     std::vector<uint32_t> keyframes = time_tunnel.get_keyframes();
 
     // Generate time tunnel trajectories for each selected position track
@@ -321,11 +330,10 @@ void AnimationPlayer::update_trajectories()
                 point->add_surface(s_point);
                 point->translate(data.position);
                 Material mat;
-                mat.color = { 0.0f, 0.50f, 1.0f, 1.0f };
+                mat.color = { 0.26f, 0.59f, 0.98f, 1.00f };
                 if (t == time_tunnel.get_current_frame())
                 {
-                    mat.color = { 0.5f, 0.50f, 0.0f, 1.0f };
-
+                    mat.color = { 0.9f, 0.58f, 0.19f, 1.0f };
                 }
                 mat.depth_read = false;
                 mat.priority = 0;
@@ -343,7 +351,7 @@ void AnimationPlayer::update_trajectories()
         s->update_vertex_buffer(vertices);
 
         Material mat;
-        mat.color = { 0.0f, 1.0f, 1.0f, 1.0f };
+        mat.color = { 0.26f, 0.59f, 0.98f, 1.00f };
         mat.depth_read = false;
         mat.priority = 0;
         mat.topology_type = eTopologyType::TOPOLOGY_LINE_LIST;
@@ -501,7 +509,7 @@ void AnimationPlayer::compute_keyframes()
     if (current_animation->get_type() != ANIM_TYPE_SKELETON)
         return;
 
-    std::vector<Track*> selected_tracks;
+    std::vector<Track*> time_tunnel_tracks;
 
     for (size_t i = 0; i < current_animation->get_track_count(); i++)
     {
@@ -517,13 +525,14 @@ void AnimationPlayer::compute_keyframes()
         //    continue;
 
         if (property_name == "translation" || property_name == "translate" || property_name == "position" || track->get_type() == TrackType::TYPE_POSITION) {
-            selected_tracks.push_back(track);
+            active_tracks.push_back(i);
+            time_tunnel_tracks.push_back(track);
         }
     }
    
     int current_frame = playback * (timeline.frame_max - timeline.frame_min) / current_animation->get_duration();
     time_tunnel.set_current_frame(current_frame);
-    time_tunnel.extract_keyframes(selected_tracks);
+    time_tunnel.extract_keyframes(time_tunnel_tracks);
 
     timeline.tracks.clear();
     for (size_t i = 0; i < current_animation->get_track_count(); i++)
@@ -532,7 +541,7 @@ void AnimationPlayer::compute_keyframes()
         generate_track_timeline_data(i, track_path);
     }
 
-    update_trajectories();
+    update_trajectories(active_tracks);
 }
 
 
@@ -602,6 +611,10 @@ void AnimationPlayer::update(float delta_time)
     //}
 
     Node::update(delta_time);
+
+    current_frame = playback * (timeline.frame_max - timeline.frame_min) / current_animation->get_duration();
+    time_tunnel.set_current_frame(current_frame);
+    update_trajectories(active_tracks);
 }
 
 
@@ -611,10 +624,10 @@ void AnimationPlayer::render()
     {
         t->render();
     }
-    for (auto& t : smoothed_trajectories_helper)
+    /*for (auto& t : smoothed_trajectories_helper)
     {
         t->render();
-    }
+    }*/
     for (auto& k : keyposes_helper)
     {
         k->render();
@@ -651,23 +664,21 @@ void AnimationPlayer::render_gui()
 
     ImGui::DragFloat("Blend time", &blend_time, 0.1f, 0.0f);
 
-    int current_frame = playback * (timeline.frame_max - timeline.frame_min) / current_animation->get_duration();
     float stretch = time_tunnel.get_stretchiness();
     if (ImGui::DragFloat("Stretchiness", &stretch, 0.1f, 0.f, 100.f))
     {
         time_tunnel.set_stretchiness(stretch);
+        
+        update_trajectories(active_tracks);
     }
-   /* if (ImGui::DragFloat("Window frames", &window, 1.f, 1.f, 100.f))
-    {
-        time_tunnel.set_window(window);
-    }*/
+
     float sigma = time_tunnel.get_gaussian_sigma();
-    if (ImGui::DragFloat("Sigma", &sigma, 0.1f, 0.f, 100.f))
+    if (ImGui::DragFloat("Window", &sigma, 0.1f, 0.f, 100.f))
     {
         time_tunnel.set_gaussian_sigma(sigma);
     }
     int min_f = time_tunnel.get_number_frames();
-    if (ImGui::DragInt("Min frames", &min_f, 1, 0, current_animation->get_track(0)->size() - 1))
+    if (ImGui::DragInt("Min frames", &min_f, 1, 1, current_animation->get_track(0)->size() - 1))
     {
         time_tunnel.set_number_frames(min_f);
     }
@@ -681,7 +692,6 @@ void AnimationPlayer::render_gui()
     {
         if (ImGui::Button("Generate keyposes") && !playing)
         {
-            //current_animation->compute_keyposes(current_frame, stretch, window, min_f, sigma, direction);
             compute_keyframes();
         }
     }
@@ -730,7 +740,12 @@ void AnimationPlayer::render_gui()
         int selected_frame = timeline.selected_point.y;
 
         Sequencer(&timeline, &new_current_frame, &expanded, &selected_entry, &first_frame, ImSequencer::SEQUENCER_EDIT_STARTEND | ImSequencer::SEQUENCER_ADD | ImSequencer::SEQUENCER_DEL | ImSequencer::SEQUENCER_COPYPASTE | ImSequencer::SEQUENCER_CHANGE_FRAME);     
-
+        if (new_current_frame != current_frame)
+        {
+            timeline.selected_point.x = -1;
+            timeline.selected_point.y = -1;
+            selected_entry = -1;
+        }
         // add a UI to edit that particular item
         if (selected_entry != -1 && timeline.keyframe_selection_changed)
         {            
@@ -738,7 +753,7 @@ void AnimationPlayer::render_gui()
             const Timeline::TimelineTrack item = timeline.tracks[timeline.selected_point.x];
 
             // update current frame on select frame
-            if (selected_frame != timeline.selected_point.y)
+            if (new_current_frame != item.points[0][timeline.selected_point.y].x)
             {
                 new_current_frame = item.points[0][timeline.selected_point.y].x;
                 timeline.keyframe_selection_changed = false;
@@ -763,7 +778,6 @@ void AnimationPlayer::render_gui()
                     node->select();
                 }
             }
-
            
             // unselect node if other is selected
             if (selected_entry != selected_track)
@@ -785,9 +799,14 @@ void AnimationPlayer::render_gui()
 
         //update animation on change current frame manyally
         if (new_current_frame != current_frame) {
-            playback = new_current_frame * current_animation->get_duration() / (timeline.frame_max - timeline.frame_min);
+            current_frame = new_current_frame;
+            playback = (float)new_current_frame * current_animation->get_duration() / (float)(timeline.frame_max - timeline.frame_min);
             blender.update(playback, track_data);
             root_node->set_model_dirty(true);
+            
+            time_tunnel.set_current_frame(new_current_frame);
+            update_trajectories(active_tracks);
+
             //timeline.selected_point.y = -1;
         }
         ImGui::End();

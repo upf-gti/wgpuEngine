@@ -28,11 +28,13 @@ class AnimationPlayer : public Node3D
     float playback   = 0.f;
     float speed      = 1.f;
     float blend_time = 0.f;
+    uint32_t current_frame = 0;
 
     BlendAnimation blender;
     Timeline timeline;
     TimeTunnel time_tunnel;
     std::vector<Pose> keyposes;
+    std::vector<uint32_t> active_tracks;
 
     std::vector<void*> track_data;
     int selected_track = -1;
@@ -42,7 +44,7 @@ class AnimationPlayer : public Node3D
     void generate_track_data();
     void generate_track_timeline_data(uint32_t track_idx, const std::string& track_path);
     void generate_keyposes();
-    void update_trajectories();
+    void update_trajectories(std::vector<uint32_t>& tracks);
 
     void compute_keyframes();
 

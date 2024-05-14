@@ -373,17 +373,19 @@ void Track::remove_all_keyframes()
 void Track::update_value(uint32_t index, const T& value, const glm::vec2& propagate_frames, float weight)
 {
     keyframes[index].value = value;
-
+       
     for (size_t i = propagate_frames.x; i <= propagate_frames.y; i++)
-    {
-        float w = gaussian_pdf(i, index, weight);
-    
+    {               
+        float alpha = i <= index ? index - propagate_frames.x : propagate_frames.y - index;
+        float keyframe = i <= index ? propagate_frames.x : propagate_frames.y;
+        float w = gaussian_pdf((float)i, index, alpha/3.5f);
+
         if (std::holds_alternative<glm::vec3>(value)) {
-            keyframes[i].value = glm::lerp(std::get<glm::vec3>(keyframes[i].value),std::get<glm::vec3>(value), w);
+            keyframes[i].value = glm::lerp(std::get<glm::vec3>(keyframes[keyframe].value),std::get<glm::vec3>(value), w);
         }
         else if (std::holds_alternative<glm::quat>(value)) {
-            keyframes[i].value = glm::slerp( std::get<glm::quat>(keyframes[i].value), std::get<glm::quat>(value), w);
-        }
+            keyframes[i].value = glm::slerp( std::get<glm::quat>(keyframes[keyframe].value), std::get<glm::quat>(value), w);
+        }    
     }   
 }
 

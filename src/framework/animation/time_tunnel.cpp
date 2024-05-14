@@ -77,7 +77,7 @@ std::vector<std::vector<glm::vec3>> TimeTunnel::get_smoothed_trajectories()
 
 std::vector<glm::vec3> TimeTunnel::compute_gaussian_smoothed_trajectory(std::vector<glm::vec3>& trajectory)
 {
-    float sigma = gaussian_sigma / (2 * PI);
+    float sigma = 0.2f;
     std::vector<glm::vec3> smoothed_trajectory;
     // Iterate over each point in the trajectory
     for (size_t i = 0; i < trajectory.size(); ++i) {
@@ -86,7 +86,9 @@ std::vector<glm::vec3> TimeTunnel::compute_gaussian_smoothed_trajectory(std::vec
 
         // Apply Gaussian smoothing to neighboring points within a certain window
         for (size_t j = 0; j < trajectory.size(); ++j) {
-            float weight = gaussian_filter(fabs((float)(i)-(float)(j)), sigma);
+            //float weight = gaussian_filter(fabs((float)(i)-(float)(j)), sigma);
+            float p = -glm::pow((float)(j)-(float)(i), 2.0f) / glm::pow(gaussian_sigma, 2.0f);
+            float weight = glm::exp(p);
             sum_weights += weight;
             smoothed_point += trajectory[j] * weight;
         }
@@ -208,7 +210,10 @@ std::vector<uint32_t> TimeTunnel::extract_keyframes(std::vector<Track*>& tracks)
         // select the time with the largest difference among all the frames        
         for (size_t i = 0; i < d.size(); i++)
         {
-            if (d[i] > max_diff )
+            if (keyframes.size() && keyframes[keyframes.size() - 1] == i)
+                continue;
+
+            if (d[i] > max_diff)
             {
                 max_diff = d[i];
                 t_m = i;
@@ -218,6 +223,7 @@ std::vector<uint32_t> TimeTunnel::extract_keyframes(std::vector<Track*>& tracks)
         if (t_m > -1)
         {
             keyframes.push_back(t_m);
+            std::sort(keyframes.begin(), keyframes.end());    
         }
 
         if (max_diff < threshold)
@@ -226,7 +232,6 @@ std::vector<uint32_t> TimeTunnel::extract_keyframes(std::vector<Track*>& tracks)
         }
     }
     smoothed_trajectories = sT_k;
-    std::sort(keyframes.begin(), keyframes.end());    
     return keyframes;
 }
 
