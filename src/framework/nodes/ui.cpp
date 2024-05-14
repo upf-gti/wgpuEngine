@@ -567,7 +567,7 @@ namespace ui {
         RendererStorage::register_ui_widget(webgpu_context, material.shader, &quad_mesh, ui_data, 3);
 
         // Selection styling visibility callback..
-        Node::bind(signal, [&](const std::string& signal, void* button) {
+        Node::bind(signal + "@pressed", [&](const std::string& signal, void* button) {
 
             if (disabled)
                 return;
@@ -681,7 +681,10 @@ namespace ui {
 
         if (data.was_pressed)
         {
-            Node::emit_signal(signal, (void*)this);
+            // Trigger callback
+            Node::emit_signal(signal, (void*)nullptr);
+            // Visibility stuff..
+            Node::emit_signal(signal + "@pressed", (void*)nullptr);
 
             on_pressed();
         }
@@ -740,7 +743,7 @@ namespace ui {
         RendererStorage::register_ui_widget(webgpu_context, material.shader, &quad_mesh, ui_data, 3);
 
         // Selection styling visibility callback..
-        Node::bind(signal, [&](const std::string& signal, void* button) {
+        Node::bind(signal + "@pressed", [&](const std::string& signal, void* button) {
 
             if (disabled || (!is_unique_selection && !allow_toggle))
                 return;
@@ -883,6 +886,7 @@ namespace ui {
 
         Node2D::add_child(box);
 
+        // use data with something to force visibility
         Node::bind(sg, [&, box = box](const std::string& sg, void* data) {
 
             const bool last_value = box->get_visibility();
@@ -902,7 +906,7 @@ namespace ui {
                 submenu->box->set_visibility(false);
             }
 
-            box->set_visibility(!last_value);
+            box->set_visibility(data ? true : !last_value);
         });
 
         // Submenu icon..

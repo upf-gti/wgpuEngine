@@ -262,16 +262,6 @@ bool Input::was_button_touched(uint8_t button)
 #endif
 }
 
-float Input::get_grab_value(uint8_t controller)
-{ 
-#ifdef XR_SUPPORT
-	if (!openxr_context) return 0.0f;
-	return xr_data.grabState[controller].currentState;
-#else
-	return false;
-#endif
-}
-
 /*
 *	Triggers
 */
@@ -299,33 +289,54 @@ bool Input::was_trigger_pressed(uint8_t controller)
 #endif
 }
 
-bool Input::was_grab_pressed(uint8_t controller)
+bool Input::is_trigger_touched(uint8_t controller)
 {
 #ifdef XR_SUPPORT
-
-    bool value = openxr_context && grab_released[controller] && (xr_data.grabState[controller].currentState > 0.5f);
-    if (value) grab_released[controller] = false;
-    return value;
-
+    return openxr_context && XrBool32_to_bool(xr_data.triggerTouchState[controller].currentState);
 #else
     return false;
 #endif
 }
 
-bool Input::is_trigger_touched(uint8_t controller)
-{ 
+bool Input::was_trigger_touched(uint8_t controller) {
 #ifdef XR_SUPPORT
-	return openxr_context && XrBool32_to_bool(xr_data.triggerTouchState[controller].currentState);
+    return openxr_context && (XrBool32_to_bool(xr_data.triggerTouchState[controller].currentState) && XrBool32_to_bool(xr_data.triggerTouchState[controller].changedSinceLastSync));
 #else
-	return false;
+    return false;
 #endif
 }
 
-bool Input::was_trigger_touched(uint8_t controller) {
+/*
+*	Grabs
+*/
+
+bool Input::is_grab_pressed(uint8_t controller)
+{
 #ifdef XR_SUPPORT
-	return openxr_context && (XrBool32_to_bool(xr_data.triggerTouchState[controller].currentState) && XrBool32_to_bool(xr_data.triggerTouchState[controller].changedSinceLastSync));
+    return openxr_context && (xr_data.grabState[controller].currentState > 0.5f);
 #else
-	return false;
+    return false;
+#endif
+}
+
+bool Input::was_grab_pressed(uint8_t controller)
+{
+#ifdef XR_SUPPORT
+    bool value = openxr_context && grab_released[controller] && (xr_data.grabState[controller].currentState > 0.5f);
+    if (value) grab_released[controller] = false;
+    return value;
+#else
+    return false;
+#endif
+}
+
+float Input::get_grab_value(uint8_t controller)
+{
+#ifdef XR_SUPPORT
+    if (!openxr_context) return 0.0f;
+    return xr_data.grabState[controller].currentState;
+#else
+    return false;
 #endif
 }
 

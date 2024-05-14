@@ -105,8 +105,9 @@ public:
 	*	Grabs
 	*/
 
-	static float get_grab_value(uint8_t controller);
+    static bool is_grab_pressed(uint8_t controller);
     static bool was_grab_pressed(uint8_t controller);
+	static float get_grab_value(uint8_t controller);
 
 	/*
 	*	Triggers
