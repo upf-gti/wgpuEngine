@@ -466,7 +466,7 @@ namespace ui {
         set_translation(centered_position);
     }
 
-    Text2D::Text2D(const std::string& _text, const glm::vec2& pos, float scale, const Color& color)
+    Text2D::Text2D(const std::string& _text, const glm::vec2& pos, float scale, const Color& color, bool center_big)
         : Panel2D(_text + "@text", pos, {1.0f, 1.0f}) {
 
         text_string = _text;
@@ -501,7 +501,7 @@ namespace ui {
         auto webgpu_context = Renderer::instance->get_webgpu_context();
         RendererStorage::register_ui_widget(webgpu_context, material.shader, &quad_mesh, ui_data, 3);
 
-        glm::vec2 centered_position = { -size.x * 0.5f + BUTTON_SIZE * 0.5f, pos.y };
+        glm::vec2 centered_position = { -size.x * 0.5f + BUTTON_SIZE * (center_big ? 1.0f : 0.5f), pos.y };
         set_translation(centered_position);
     }
 
@@ -869,11 +869,18 @@ namespace ui {
 
         size_t child_count = get_children().size();
 
-        Node2D* last_child = static_cast<Node2D*>(get_children().back());
+        for (size_t i = 0; i < get_children().size(); ++i)
+        {
+            Node2D* node_2d = static_cast<Node2D*>(get_children()[i]);
 
-        // case to support color picker intensity slider..
-        if (last_child->get_class_type() == Node2DClassType::COLOR_PICKER) {
-            child_count += last_child->get_children().size();
+            if (node_2d->get_class_type() != Node2DClassType::SLIDER) {
+                continue;
+            }
+
+            Slider2D* slider = static_cast<Slider2D*>(node_2d);
+            if (slider->mode == HORIZONTAL) {
+                child_count++;
+            }
         }
 
         set_number_of_items(static_cast<float>(child_count));
@@ -933,7 +940,7 @@ namespace ui {
         Node2D::add_child(box);
 
         // use data with something to force visibility
-        Node::bind(sg, [&, box = box](const std::string& sg, void* data) {
+        Node::bind(sg + "@pressed", [&, box = box](const std::string& sg, void* data) {
 
             const bool last_value = box->get_visibility();
 
@@ -1042,9 +1049,11 @@ namespace ui {
         this->class_type = Node2DClassType::SLIDER;
         this->mode = mode;
 
+        bool is_horizontal = (mode == SliderMode::HORIZONTAL);
+
         disabled = parameter_flags & DISABLED;
 
-        ui_data.num_group_items = mode == SliderMode::HORIZONTAL ? 2.f : 1.f;
+        ui_data.num_group_items = is_horizontal ? 2.f : 1.f;
         this->size = glm::vec2(size.x * ui_data.num_group_items, size.y);
 
         ui_data.slider_max = max_value;
@@ -1078,12 +1087,12 @@ namespace ui {
         {
             std::string pretty_name = signal;
             to_camel_case(pretty_name);
-            text_2d = new Text2D(pretty_name, 18.f, mode == SliderMode::HORIZONTAL);
+            text_2d = new Text2D(pretty_name, 18.f, is_horizontal);
             add_child(text_2d);
 
             if (!disabled) {
                 std::string value_as_string = value_to_string();
-                text_2d_value = new Text2D(value_as_string, {size.x * 0.5f - value_as_string.length() * 2.25f, size.y * 1.1f}, 18.f);
+                text_2d_value = new Text2D(value_as_string, {0.0f, size.y * 1.2f}, 18.f, colors::WHITE, is_horizontal);
                 add_child(text_2d_value);
             }
         }
