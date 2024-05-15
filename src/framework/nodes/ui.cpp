@@ -724,7 +724,7 @@ namespace ui {
         if (data.was_pressed)
         {
             // Trigger callback
-            Node::emit_signal(signal, (void*)nullptr);
+            Node::emit_signal(signal, (void*)this);
             // Visibility stuff..
             Node::emit_signal(signal + "@pressed", (void*)nullptr);
 
