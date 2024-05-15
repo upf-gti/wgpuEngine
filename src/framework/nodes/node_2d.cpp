@@ -116,9 +116,13 @@ void Node2D::set_model(const glm::mat3x3& _model)
     model = _model;
 }
 
-void Node2D::set_visibility(bool value)
+bool Node2D::set_visibility(bool value)
 {
+    bool last = visibility;
+
     visibility = value;
+
+    return last != value;
 }
 
 void Node2D::set_viewport_model(glm::mat4x4 model)

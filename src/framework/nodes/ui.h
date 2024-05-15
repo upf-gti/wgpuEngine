@@ -113,6 +113,11 @@ namespace ui {
         void set_priority(uint8_t priority) override;
     };
 
+    class Texture2D : public Panel2D {
+    public:
+        Texture2D(const std::string& name, const std::string& texture_path, const glm::vec2& size, const glm::vec2& pos = { 0.0f, 0.0f });
+    };
+
     enum eButtonParams : uint8_t {
         SELECTED = 1 << 0,
         DISABLED = 1 << 1,
@@ -261,12 +266,17 @@ namespace ui {
     };
 
     class ImageLabel2D : public HContainer2D {
-        Text2D* text = nullptr;
-    public:
-        void set_text(const std::string& p_text) {
-            text->set_text(p_text);
-        }
 
-        ImageLabel2D(const std::string& p_text, const std::string& image_path, float text_scale = 16.0f, const glm::vec2& p = { 0.f, 0.f });
+        uint8_t mask = 0;
+
+    public:
+
+        Text2D* text = nullptr;
+
+        ImageLabel2D(const std::string& p_text, const std::string& image_path, uint8_t mask = 0, const glm::vec2& scale = { 1.f, 1.f }, float text_scale = 16.0f, const glm::vec2& p = { 0.f, 0.f });
+
+        void set_text(const std::string& p_text) { text->set_text(p_text); }
+
+        uint8_t get_mask() { return mask; }
     };
 }

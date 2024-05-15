@@ -20,6 +20,7 @@
 #include "shaders/ui/ui_selector.wgsl.gen.h"
 #include "shaders/ui/ui_group.wgsl.gen.h"
 #include "shaders/ui/ui_button.wgsl.gen.h"
+#include "shaders/ui/ui_texture.wgsl.gen.h"
 #include "shaders/ui/ui_text_shadow.wgsl.gen.h"
 
 namespace ui {
@@ -262,24 +263,32 @@ namespace ui {
 
     void HContainer2D::on_children_changed()
     {
-        size_t child_count = get_children().size();
         size = glm::vec2(0.0f);
+
+        size_t child_count = get_children().size();
 
         // Get HEIGHT in first pass..
         for (size_t i = 0; i < child_count; ++i)
         {
             Node2D* node_2d = static_cast<Node2D*>(get_children()[i]);
+            if (!node_2d->get_visibility()) {
+                continue;
+            }
             size.y = glm::max(size.y, node_2d->get_size().y);
         }
 
         // Reorder in WIDTH..
-        for (size_t i = 0; i < child_count; ++i)
+        size_t child_idx = 0;
+        for (size_t i = 0; i < get_children().size(); ++i)
         {
             Node2D* node_2d = static_cast<Node2D*>(get_children()[i]);
+            if (!node_2d->get_visibility()) {
+                child_count--;
+                continue;
+            }
             glm::vec2 node_size = node_2d->get_size();
-
-            node_2d->set_translation(padding + glm::vec2(size.x + item_margin.x * static_cast<float>(i), (size.y - node_size.y) * 0.50f));
-
+            node_2d->set_translation(padding + glm::vec2(size.x + item_margin.x * static_cast<float>(child_idx), (size.y - node_size.y) * 0.50f));
+            child_idx++;
             size.x += node_size.x;
         }
 
@@ -307,19 +316,28 @@ namespace ui {
         size = glm::vec2(0.0f);
 
         // Get HEIGHT in first pass..
-        for (size_t i = 0; i < child_count; ++i)
+        for (size_t i = 0; i < get_children().size(); ++i)
         {
             Node2D* node_2d = static_cast<Node2D*>(get_children()[i]);
+            if (!node_2d->get_visibility()) {
+                child_count--;
+                continue;
+            }
             rect_height += node_2d->get_size().y;
         }
 
         rect_height += padding.y * 2.0f + item_margin.y * static_cast<float>(child_count - 1);
 
-        for (size_t i = 0; i < child_count; ++i)
+        size_t child_idx = 0;
+        for (size_t i = 0; i < get_children().size(); ++i)
         {
             Node2D* node_2d = static_cast<Node2D*>(get_children()[i]);
+            if (!node_2d->get_visibility()) {
+                continue;
+            }
             glm::vec2 node_size = node_2d->get_size();
-            node_2d->set_translation(glm::vec2(padding.x, rect_height - (size.y + node_size.y) - padding.y - item_margin.y * static_cast<float>(i)));
+            node_2d->set_translation(glm::vec2(padding.x, rect_height - (size.y + node_size.y) - padding.y - item_margin.y * static_cast<float>(child_idx)));
+            child_idx++;
 
             size.x = glm::max(size.x, node_size.x);
             size.y += node_size.y;
@@ -524,6 +542,30 @@ namespace ui {
         text_entity->set_surface_material_priority(0, priority);
 
         Panel2D::set_priority(priority);
+    }
+
+    /*
+    *	Texture (Image)
+    */
+
+    Texture2D::Texture2D(const std::string& name, const std::string& texture_path, const glm::vec2& size, const glm::vec2& pos)
+        : Panel2D(name, pos, size, colors::WHITE)
+    {
+        class_type = Node2DClassType::TEXTURE;
+
+        Material material;
+        material.color = color;
+        material.flags = MATERIAL_2D | MATERIAL_UI;
+        material.cull_type = CULL_BACK;
+        material.transparency_type = ALPHA_BLEND;
+        material.priority = class_type;
+        material.diffuse_texture = RendererStorage::get_texture(texture_path, true);
+        material.shader = RendererStorage::get_shader_from_source(shaders::ui_texture::source, shaders::ui_texture::path, material);
+
+        quad_mesh.set_surface_material_override(quad_mesh.get_surface(0), material);
+
+        auto webgpu_context = Renderer::instance->get_webgpu_context();
+        RendererStorage::register_ui_widget(webgpu_context, material.shader, &quad_mesh, ui_data, 3);
     }
 
     /*
@@ -933,7 +975,7 @@ namespace ui {
         {
             submenu_mark->set_model(get_global_model());
             submenu_mark->scale(glm::vec3(0.6f, 0.6f, 1.0f));
-            submenu_mark->translate(glm::vec3(get_size().x * 0.9f, get_size().y * 0.8f, -1e-3f));
+            submenu_mark->translate(glm::vec3(get_size().x * 0.92f, get_size().y * 0.8f, -1e-3f));
         }
     }
 
@@ -1255,18 +1297,18 @@ namespace ui {
     *   Label
     */
 
-    ImageLabel2D::ImageLabel2D(const std::string& p_text, const std::string& image_path, float text_scale, const glm::vec2& p)
-        : HContainer2D(p_text + "@box", p) {
+    ImageLabel2D::ImageLabel2D(const std::string& p_text, const std::string& image_path, uint8_t mask, const glm::vec2& scale, float text_scale, const glm::vec2& p)
+        : HContainer2D(p_text + "@box", p), mask(mask) {
 
         class_type = Node2DClassType::LABEL;
 
         padding = glm::vec2(2.0f);
         item_margin = glm::vec2(12.0f, 0.0f);
 
-        TextureButton2D* image = new TextureButton2D(p_text + "@image", image_path, DISABLED, {0.0f, 0.0f}, glm::vec2(24.0f));
+        Texture2D* image = new Texture2D(p_text + "_" + image_path, image_path, glm::vec2(32.0f) * scale);
         add_child(image);
 
-        text = new Text2D(p_text, { 0.0f, 0.0f });
+        text = new Text2D(p_text, glm::vec2(0.0f), text_scale);
         add_child(text);
     }
 }

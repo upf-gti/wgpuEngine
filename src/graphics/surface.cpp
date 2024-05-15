@@ -95,6 +95,18 @@ const WGPUBuffer& Surface::get_vertex_buffer() const
     return vertex_buffer;
 }
 
+void Surface::create_axis(float s)
+{
+    vertices.push_back({ glm::vec3(-1.0f,  0.0f,  0.0f) * s });
+    vertices.push_back({ glm::vec3( 1.0f,  0.0f,  0.0f) * s });
+    vertices.push_back({ glm::vec3( 0.0f, -1.0f,  0.0f) * s });
+    vertices.push_back({ glm::vec3( 0.0f,  1.0f,  0.0f) * s });
+    vertices.push_back({ glm::vec3( 0.0f,  0.0f, -1.0f) * s });
+    vertices.push_back({ glm::vec3( 0.0f,  0.0f,  1.0f) * s });
+
+    create_vertex_buffer();
+}
+
 std::vector<InterleavedData> Surface::generate_quad(float w, float h, const glm::vec3& position, const glm::vec3& normal, const glm::vec3& color)
 {
     InterleavedData points[4];
