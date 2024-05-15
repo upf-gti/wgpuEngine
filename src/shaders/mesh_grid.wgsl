@@ -52,7 +52,7 @@ fn pristine_grid(uv : vec2f, lineWidth : vec2f) -> f32
 }
 
 const GRID_AREA_SIZE : f32 = 10.0;
-const GRID_QUAD_SIZE :f32 = 0.5;
+const GRID_QUAD_SIZE :f32 = 1.0;
 const LINE_WIDTH : f32 = 0.02;
 
 @fragment

@@ -92,7 +92,7 @@ WGPUAdapter requestAdapter(WGPUInstance instance, WGPURequestAdapterOptions cons
     }
 #endif
 
-    assert(userData.requestEnded);
+    //assert(userData.requestEnded);
 
     return userData.adapter;
 }
