@@ -479,7 +479,8 @@ namespace ui {
         text_entity->generate_mesh(color, MATERIAL_2D);
         text_entity->set_surface_material_priority(0, Node2DClassType::TEXT);
 
-        size.x = text_entity->get_text_width(text_string);
+        float text_width = (float)text_entity->get_text_width(text_string);
+        size.x = std::max(text_width, 24.0f);
         size.y = text_scale * 0.5f;
 
         ui_data.num_group_items = size.x;
@@ -499,6 +500,9 @@ namespace ui {
 
         auto webgpu_context = Renderer::instance->get_webgpu_context();
         RendererStorage::register_ui_widget(webgpu_context, material.shader, &quad_mesh, ui_data, 3);
+
+        glm::vec2 centered_position = { -size.x * 0.5f + BUTTON_SIZE * 0.5f, pos.y };
+        set_translation(centered_position);
     }
 
     void Text2D::update(float delta_time)
@@ -1026,14 +1030,14 @@ namespace ui {
     *	Slider
     */
 
-    Slider2D::Slider2D(const std::string& sg, float v, int mode, uint8_t parameter_flags, float min, float max, float step)
-        : Slider2D(sg, "", v, {0.0f, 0.0f}, glm::vec2(BUTTON_SIZE), mode, parameter_flags, min, max, step) {}
+    Slider2D::Slider2D(const std::string& sg, float v, int mode, uint8_t parameter_flags, float min, float max, int precision)
+        : Slider2D(sg, "", v, {0.0f, 0.0f}, glm::vec2(BUTTON_SIZE), mode, parameter_flags, min, max, precision) {}
 
-    Slider2D::Slider2D(const std::string& sg, const std::string& texture_path, float v, int mode, uint8_t parameter_flags, float min, float max, float step)
-        : Slider2D(sg, texture_path, v, { 0.0f, 0.0f }, glm::vec2(BUTTON_SIZE), mode, parameter_flags, min, max, step) {}
+    Slider2D::Slider2D(const std::string& sg, const std::string& texture_path, float v, int mode, uint8_t parameter_flags, float min, float max, int precision)
+        : Slider2D(sg, texture_path, v, { 0.0f, 0.0f }, glm::vec2(BUTTON_SIZE), mode, parameter_flags, min, max, precision) {}
 
-    Slider2D::Slider2D(const std::string& sg, const std::string& texture_path, float value, const glm::vec2& pos, const glm::vec2& size, int mode, uint8_t parameter_flags, float min, float max, float step)
-        : Panel2D(sg, pos, size), signal(sg), current_value(value), min_value(min), max_value(max), step_value(step) {
+    Slider2D::Slider2D(const std::string& sg, const std::string& texture_path, float value, const glm::vec2& pos, const glm::vec2& size, int mode, uint8_t parameter_flags, float min, float max, int precision)
+        : Panel2D(sg, pos, size), signal(sg), current_value(value), min_value(min), max_value(max), precision(precision) {
 
         this->class_type = Node2DClassType::SLIDER;
         this->mode = mode;
@@ -1046,6 +1050,8 @@ namespace ui {
         ui_data.slider_max = max_value;
         ui_data.slider_min = min_value;
         ui_data.is_button_disabled = disabled;
+
+        current_value = glm::clamp(current_value, min_value, max_value);
 
         Material material;
         material.color = colors::WHITE;
@@ -1076,8 +1082,8 @@ namespace ui {
             add_child(text_2d);
 
             if (!disabled) {
-                std::string value_as_string = std::to_string(std::ceil(current_value * 100.f) / 100.f);
-                text_2d_value = new Text2D(value_as_string.substr(0, 4), {size.x * 0.5f - value_as_string.length() * 2.25f, size.y * 1.1f}, 18.f);
+                std::string value_as_string = value_to_string();
+                text_2d_value = new Text2D(value_as_string, {size.x * 0.5f - value_as_string.length() * 2.25f, size.y * 1.1f}, 18.f);
                 add_child(text_2d_value);
             }
         }
@@ -1128,10 +1134,8 @@ namespace ui {
             current_value = glm::clamp(local_point / bounds, 0.f, 1.f);
             // set in range min-max
             current_value = current_value * (max_value - min_value) + min_value;
-            if (step_value == 1.0f) current_value = std::roundf(current_value);
             Node::emit_signal(signal, current_value);
-            std::string value_as_string = std::to_string(std::ceil(current_value * 100.f) / 100.f);
-            text_2d_value->text_entity->set_text(value_as_string.substr(0, 4));
+            text_2d_value->text_entity->set_text(value_to_string());
 
             on_pressed();
         }
@@ -1147,11 +1151,17 @@ namespace ui {
     void Slider2D::set_value(float new_value)
     {
         current_value = glm::clamp(new_value, min_value, max_value);
-        if (step_value == 1.0f) current_value = std::roundf(current_value);
-        std::string value_as_string = std::to_string(std::ceil(current_value * 100.f) / 100.f);
         if (text_2d_value) {
-            text_2d_value->text_entity->set_text(value_as_string.substr(0, 4));
+            text_2d_value->text_entity->set_text(value_to_string());
         }
+    }
+
+    std::string Slider2D::value_to_string()
+    {
+        float fprecision = 1.0f / glm::pow(10.0f, precision);
+        std::string s = std::to_string(std::roundf(current_value / fprecision) * fprecision);
+        size_t idx = s.find('.') + (precision > 0 ? 1 : 0);
+        return s.substr(0, idx + precision);
     }
 
     /*

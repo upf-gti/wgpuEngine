@@ -216,6 +216,9 @@ namespace ui {
     };
 
     class Slider2D : public Panel2D {
+
+        std::string value_to_string();
+
     public:
 
         Text2D* text_2d = nullptr;
@@ -231,12 +234,12 @@ namespace ui {
         float current_value = 0.0f;
         float min_value = 0.0f;
         float max_value = 1.0f;
-        float step_value = 0.0f;
+        int   precision = 1;
 
         Slider2D() {};
-        Slider2D(const std::string& sg, float v, int mode = SliderMode::VERTICAL, uint8_t parameter_flags = 0, float min = 0.0f, float max = 1.0f, float step = 0.0f);
-        Slider2D(const std::string& sg, const std::string& texture_path, float v, int mode = SliderMode::VERTICAL, uint8_t parameter_flags = 0, float min = 0.0f, float max = 1.0f, float step = 0.0f);
-        Slider2D(const std::string& sg, const std::string& texture_path, float v, const glm::vec2& pos, const glm::vec2& size = glm::vec2(BUTTON_SIZE), int mode = SliderMode::VERTICAL, uint8_t parameter_flags = 0, float min = 0.0f, float max = 1.0f, float step = 0.0f);
+        Slider2D(const std::string& sg, float v, int mode = SliderMode::VERTICAL, uint8_t parameter_flags = 0, float min = 0.0f, float max = 1.0f, int precision = 1);
+        Slider2D(const std::string& sg, const std::string& texture_path, float v, int mode = SliderMode::VERTICAL, uint8_t parameter_flags = 0, float min = 0.0f, float max = 1.0f, int precision = 1);
+        Slider2D(const std::string& sg, const std::string& texture_path, float v, const glm::vec2& pos, const glm::vec2& size = glm::vec2(BUTTON_SIZE), int mode = SliderMode::VERTICAL, uint8_t parameter_flags = 0, float min = 0.0f, float max = 1.0f, int precision = 1);
 
         void render() override;
         void update(float delta_time) override;

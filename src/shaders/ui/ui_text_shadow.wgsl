@@ -39,7 +39,7 @@ fn fs_main(in: VertexOutput) -> FragmentOutput {
 
     var text_size = ui_data.num_group_items;
     var uvs = in.uv;
-    var divisions = text_size / 18.0;
+    var divisions = text_size / 16.0;
     uvs.x *= divisions;
     var p = vec2f(clamp(uvs.x, 0.5, divisions - 0.5), 0.5);
     var dist = distance(uvs, p);
