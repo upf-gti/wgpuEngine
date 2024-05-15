@@ -246,6 +246,7 @@ namespace ui {
         bool on_input(sInputData data) override;
 
         void set_value(float new_value);
+        void set_disabled(bool new_disabled);
     };
 
     class ColorPicker2D : public Panel2D {

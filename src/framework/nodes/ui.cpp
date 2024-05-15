@@ -1144,7 +1144,10 @@ namespace ui {
             // set in range min-max
             current_value = current_value * (max_value - min_value) + min_value;
             Node::emit_signal(signal, current_value);
-            text_2d_value->text_entity->set_text(value_to_string());
+
+            if (text_2d_value) {
+                text_2d_value->text_entity->set_text(value_to_string());
+            }
 
             on_pressed();
         }
@@ -1163,6 +1166,13 @@ namespace ui {
         if (text_2d_value) {
             text_2d_value->text_entity->set_text(value_to_string());
         }
+    }
+
+    void Slider2D::set_disabled(bool new_disabled)
+    {
+        disabled = new_disabled;
+        ui_data.is_button_disabled = disabled;
+        update_ui_data();
     }
 
     std::string Slider2D::value_to_string()
