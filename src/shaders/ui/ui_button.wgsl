@@ -85,8 +85,7 @@ fn fs_main(in: VertexOutput) -> FragmentOutput {
     var gradient_factor : f32 = pow(uvs.y, 2.5);
 
     if(is_disabled) {
-        icon_color = vec3f(0.22, 0.12, 0.08);
-        back_color = vec3f(0.1);
+        back_color = vec3f(0.15);
     }
 
     // Assign basic color
