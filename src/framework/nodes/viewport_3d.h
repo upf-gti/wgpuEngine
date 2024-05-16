@@ -15,8 +15,6 @@ class Viewport3D : public Node3D {
 
     Node2D* root = nullptr;
 
-    MeshInstance3D* raycast_pointer = nullptr;
-
     glm::vec2 viewport_size = glm::vec2(0.0f);
 
 public:

@@ -2,21 +2,12 @@
 
 #include "graphics/renderer.h"
 
-#include "shaders/ui/ui_ray_pointer.wgsl.gen.h"
-
 #include "framework/scene/parse_scene.h"
 #include "framework/input.h"
 
 Viewport3D::Viewport3D(Node2D* root_2d) : Node3D(), root(root_2d)
 {
     root->remove_flag(MATERIAL_2D);
-
-    raycast_pointer = parse_mesh("data/meshes/raycast.obj");
-
-    Material pointer_material;
-    pointer_material.shader = RendererStorage::get_shader_from_source(shaders::ui_ray_pointer::source, shaders::ui_ray_pointer::path, pointer_material);
-
-    raycast_pointer->set_surface_material_override(raycast_pointer->get_surface(0), pointer_material);
 }
 
 Viewport3D::~Viewport3D()
@@ -36,29 +27,12 @@ void Viewport3D::render()
     }
 
     root->render();
-
-    if (Renderer::instance->get_openxr_available())
-    {
-        raycast_pointer->render();
-    }
 }
 
 void Viewport3D::update(float delta_time)
 {
     if (!active) {
         return;
-    }
-
-    if(Renderer::instance->get_openxr_available())
-    {
-        // TODO: Move this out of here so we can set any transform
-        glm::mat4x4 raycast_transform = Input::get_controller_pose(HAND_RIGHT, POSE_AIM);
-        raycast_pointer->set_model(raycast_transform);
-
-        sInputData data = root->get_input_data();
-        if (data.is_hovered) {
-            raycast_pointer->scale(glm::vec3(1.0f, 1.0f, data.ray_distance * 2.5f));
-        }
     }
 
     // Manage 3d transform data
