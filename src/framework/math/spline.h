@@ -43,11 +43,13 @@ public:
 
 struct BezierSpline : public Spline {
 
+    std::vector<Knot> control_points;
+
     Knot evaluate_quadratic(float t, const Knot& p0, const Knot& p1, const Knot& p2) const;
 
     Knot evaluate_cubic(float t, const Knot& p0, const Knot& p1, const Knot& p2, const Knot& p3) const;
 
-    std::vector<Knot> compute_control_points(uint32_t segments);
+    void compute_control_points(uint32_t segments);
 
     std::vector<Knot> construct_target_vector(uint32_t n);
     std::vector<float> construct_lower_diagonal_vector(uint32_t length);
@@ -61,7 +63,7 @@ public:
         density = 24;
 
         knots = {
-            Knot({ 0.0f, 0.404f, 0.0f }, 2.0f) * 0.5f,
+            Knot({ 0.0f, 0.7f, 0.0f }, 2.0f) * 0.5f,
             Knot({ 0.0f, -0.068f, 0.0f }) * 0.5f,
             Knot({ 0.205f, 0.344f, 0.0f }) * 0.5f,
             Knot({ 0.324f, 0.074f, 0.0f }, 2.0f) * 0.5f,
@@ -71,6 +73,8 @@ public:
             Knot({ 0.682f, 0.121f, 0.0f }, 2.0) * 0.5f
         };
     }
+
+    void add_knot(const Knot& new_knot) override;
 
     void for_each(std::function<void(const Knot&)> fn) override;
 };

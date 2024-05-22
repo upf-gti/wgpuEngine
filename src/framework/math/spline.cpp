@@ -79,15 +79,16 @@ std::vector<float> BezierSpline::construct_upper_diagonal_vector(uint32_t length
     return result;
 }
 
-std::vector<Knot> BezierSpline::compute_control_points(uint32_t segments)
+void BezierSpline::compute_control_points(uint32_t segments)
 {
-    std::vector<Knot> result;
+    std::vector<Knot>& result = control_points;
+    result.clear();
     result.resize(2 * segments);
 
     std::vector<Knot> target = construct_target_vector(segments);
-    std::vector<float> lowerDiag = construct_lower_diagonal_vector(segments - 1);
-    std::vector<float> mainDiag = construct_main_diagonal_vector(segments);
-    std::vector<float> upperDiag = construct_upper_diagonal_vector(segments - 1);
+    std::vector<float> lower_diag = construct_lower_diagonal_vector(segments - 1);
+    std::vector<float> main_diag = construct_main_diagonal_vector(segments);
+    std::vector<float> upper_diag = construct_upper_diagonal_vector(segments - 1);
 
     std::vector<Knot> new_target;
     new_target.resize(segments);
@@ -95,16 +96,16 @@ std::vector<Knot> BezierSpline::compute_control_points(uint32_t segments)
     new_upper_diag.resize(segments - 1u);
 
     // forward sweep for control points c_i,0:
-    new_upper_diag[0] = upperDiag[0] / mainDiag[0];
-    new_target[0] = target[0] * (1.0f / mainDiag[0]);
+    new_upper_diag[0] = upper_diag[0] / main_diag[0];
+    new_target[0] = target[0] * (1.0f / main_diag[0]);
 
     for (uint32_t i = 1; i < segments - 1u; i++) {
-        new_upper_diag[i] = upperDiag[i] / (mainDiag[i] - lowerDiag[i - 1] * new_upper_diag[i - 1]);
+        new_upper_diag[i] = upper_diag[i] / (main_diag[i] - lower_diag[i - 1] * new_upper_diag[i - 1]);
     }
 
     for (uint32_t i = 1; i < segments; i++) {
-        float targetScale = 1.0f / (mainDiag[i] - lowerDiag[i - 1] * new_upper_diag[i - 1]);
-        new_target[i] = (target[i] - new_target[i - 1] * lowerDiag[i - 1]) * targetScale;
+        float targetScale = 1.0f / (main_diag[i] - lower_diag[i - 1] * new_upper_diag[i - 1]);
+        new_target[i] = (target[i] - new_target[i - 1] * lower_diag[i - 1]) * targetScale;
     }
 
     // backward sweep for control points c_i,0:
@@ -120,8 +121,17 @@ std::vector<Knot> BezierSpline::compute_control_points(uint32_t segments)
     }
 
     result[2u * segments - 1u] = (knots[segments] + result[segments - 1u]) * 0.5f;
+}
 
-    return result;
+void BezierSpline::add_knot(const Knot& new_knot)
+{
+    knots.push_back(new_knot);
+
+    uint32_t segments = knots.size() - 1;
+
+    if (segments > 1u) {
+        compute_control_points(segments);
+    }
 }
 
 void BezierSpline::for_each(std::function<void(const Knot&)> fn)
@@ -150,7 +160,10 @@ void BezierSpline::for_each(std::function<void(const Knot&)> fn)
 
     // Smooth path using bezier segments
     else {
-        const std::vector<Knot>& control_points = compute_control_points(segments);
+
+        if (!control_points.size()) {
+            compute_control_points(segments);
+        }
 
         for (uint32_t i = 0; i < segments; i++) {
             const Knot& end_point = knots.at(i + 1);
