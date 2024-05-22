@@ -22,7 +22,7 @@ class Spline {
 
 protected:
 
-    uint32_t density = 48;
+    uint32_t density = 32;
 
     std::vector<Knot> knots;
 
@@ -43,12 +43,16 @@ public:
 
 struct BezierSpline : public Spline {
 
+    float knot_distance = 0.01f;
+
+    std::vector<std::vector<float>> luts;
+
     std::vector<Knot> control_points;
 
     Knot evaluate_quadratic(float t, const Knot& p0, const Knot& p1, const Knot& p2) const;
-
     Knot evaluate_cubic(float t, const Knot& p0, const Knot& p1, const Knot& p2, const Knot& p3) const;
 
+    void compute_luts(uint32_t segments);
     void compute_control_points(uint32_t segments);
 
     std::vector<Knot> construct_target_vector(uint32_t n);
@@ -56,11 +60,13 @@ struct BezierSpline : public Spline {
     std::vector<float> construct_main_diagonal_vector(uint32_t n);
     std::vector<float> construct_upper_diagonal_vector(uint32_t length);
 
+    void fill_lut(uint32_t idx, uint32_t segments, Knot& start_point);
+
+    float sample_lut(uint32_t idx, float f);
+
 public:
 
     BezierSpline() {
-
-        density = 24;
 
         knots = {
             Knot({ 0.0f, 0.7f, 0.0f }, 2.0f) * 0.5f,
@@ -69,8 +75,8 @@ public:
             Knot({ 0.324f, 0.074f, 0.0f }, 2.0f) * 0.5f,
             Knot({ 0.43f, 0.2f, 0.0f }) * 0.5f,
             Knot({ 0.58f, 0.467f, 0.0f }) * 0.5f,
-            Knot({ 0.882f, 0.31f, 0.0f }, 2.0) * 0.5f,
-            Knot({ 0.682f, 0.121f, 0.0f }, 2.0) * 0.5f
+            Knot({ 0.882f, 0.31f, 0.0f }, 3.0f) * 0.5f,
+            Knot({ 0.682f, 0.121f, 0.0f }, 3.0f) * 0.5f
         };
     }
 

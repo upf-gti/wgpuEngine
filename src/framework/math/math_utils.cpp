@@ -188,7 +188,13 @@ float clamp_rotation(float angle)
     return angle - pi2 * turns;
 }
 
-glm::vec3 yaw_pitch_to_vector(float yaw, float pitch) {
+float remap_range(float old_value, float old_min, float old_max, float new_min, float new_max)
+{
+    return (((old_value - old_min) * (new_max - new_min)) / (old_max - old_min)) + new_min;
+}
+
+glm::vec3 yaw_pitch_to_vector(float yaw, float pitch)
+{
     return glm::vec3(
         sinf(yaw) * cosf(-pitch),
         sinf(-pitch),

@@ -36,6 +36,8 @@ unsigned short bytes_to_ushort(unsigned char b0, unsigned char b1);
 
 float clamp_rotation(float angle);
 
+float remap_range(float old_value, float old_min, float old_max, float new_min, float new_max);
+
 glm::vec3 yaw_pitch_to_vector(float yaw, float pitch);
 void vector_to_yaw_pitch(const glm::vec3& front, float* yaw, float* pitch);
 
