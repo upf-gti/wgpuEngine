@@ -296,7 +296,7 @@ namespace ui {
         size.x += item_margin.x * static_cast<float>(child_count - 1);
 
         if (centered) {
-            const glm::vec2& pos = get_translation();
+            const glm::vec2& pos = get_local_translation();
             set_translation({ (-size.x + BUTTON_SIZE) * 0.50f, pos.y });
         }
 
@@ -347,7 +347,7 @@ namespace ui {
         size.y = rect_height;
 
         if (centered) {
-            const glm::vec2& pos = get_translation();
+            const glm::vec2& pos = get_local_translation();
             set_translation({ (-size.x + BUTTON_SIZE) * 0.50f, pos.y });
         }
 
@@ -933,7 +933,7 @@ namespace ui {
 
         class_type = Node2DClassType::SUBMENU;
 
-        box = new ui::HContainer2D("h_container", glm::vec2(0.0f, size.y + GROUP_MARGIN));
+        box = new ui::HContainer2D("submenu_h_box_" + sg, glm::vec2(0.0f, size.y + GROUP_MARGIN));
         box->set_visibility(false);
         box->centered = true;
 
