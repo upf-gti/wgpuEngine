@@ -1,7 +1,7 @@
 #include "node_2d.h"
 
 #include "framework/input.h"
-#include "framework/utils/intersections.h"
+#include "framework/math/intersections.h"
 #include "graphics/renderer.h"
 
 #include "glm/gtc/matrix_transform.hpp"

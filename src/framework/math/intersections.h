@@ -2,7 +2,7 @@
 
 #include "includes.h"
 
-#include "framework/aabb.h"
+#include "aabb.h"
 
 #define EPSILON 0.0001f
 

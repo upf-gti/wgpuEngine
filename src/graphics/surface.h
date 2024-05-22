@@ -1,7 +1,7 @@
 #pragma once
 
 #include "graphics/webgpu_context.h"
-#include "framework/aabb.h"
+#include "framework/math/aabb.h"
 #include "material.h"
 
 #include "glm/vec2.hpp"

@@ -2,7 +2,7 @@
 
 #include <cctype>
 
-#include "framework/utils/intersections.h"
+#include "framework/math/intersections.h"
 #include "framework/input.h"
 #include "framework/nodes/text.h"
 #include "framework/camera/camera.h"

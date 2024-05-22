@@ -1,6 +1,6 @@
 #pragma once
 
-#include "framework/aabb.h"
+#include "framework/math/aabb.h"
 
 #include <string>
 #include <vector>

@@ -3,9 +3,9 @@
 #include <graphics/shader.h>
 #include <framework/nodes/mesh_instance_3d.h>
 #include <framework/input.h>
-#include <framework/utils/intersections.h>
 #include <framework/colors.h>
-#include <framework/utils/math_utils.h>
+#include <framework/math/intersections.h>
+#include <framework/math/math_utils.h>
 
 #include "framework/scene/parse_scene.h"
 #include "graphics/renderer_storage.h"
