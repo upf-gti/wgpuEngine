@@ -52,7 +52,7 @@ protected:
 
     glm::vec4 clear_color = { 0.0f, 0.0f, 0.0f, 1.0f };
 
-    float z_near = 0.01f;
+    float z_near = 0.001f;
     float z_far = 1000.0f;
 
     // Required device limits

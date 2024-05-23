@@ -81,7 +81,7 @@ int Renderer::initialize(GLFWwindow* window, bool use_mirror_screen)
 
 #ifdef XR_SUPPORT
 
-    xr_context->z_far = z_near;
+    xr_context->z_near = z_near;
     xr_context->z_far = z_far;
 
 #if defined(BACKEND_DX12)
