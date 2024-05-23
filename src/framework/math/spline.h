@@ -36,6 +36,8 @@ public:
 
     virtual void for_each(std::function<void(const Knot&)> fn) {}
 
+    virtual void clear();
+
     uint32_t count() const { return knots.size(); }
 
     void set_density(uint32_t new_density) { density = new_density; }
@@ -44,6 +46,8 @@ public:
 struct BezierSpline : public Spline {
 
     float knot_distance = 0.01f;
+
+    bool dirty = true;
 
     std::vector<std::vector<float>> luts;
 
@@ -83,6 +87,8 @@ public:
     void add_knot(const Knot& new_knot) override;
 
     void for_each(std::function<void(const Knot&)> fn) override;
+
+    void clear() override;
 };
 
 //class BSpline : public Spline {

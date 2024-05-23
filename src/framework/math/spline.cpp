@@ -7,6 +7,11 @@ void Spline::add_knot(const Knot& new_knot)
     knots.push_back(new_knot);
 }
 
+void Spline::clear()
+{
+    knots.clear();
+}
+
 // Bezier splines
 
 Knot BezierSpline::evaluate_quadratic(float t, const Knot& p0, const Knot& p1, const Knot& p2) const
@@ -185,13 +190,15 @@ void BezierSpline::compute_control_points(uint32_t segments)
 void BezierSpline::add_knot(const Knot& new_knot)
 {
     knots.push_back(new_knot);
+    dirty = true;
+}
 
-    uint32_t segments = knots.size() - 1;
+void BezierSpline::clear()
+{
+    Spline::clear();
 
-    if (segments > 1u) {
-        compute_control_points(segments);
-        compute_luts(segments);
-    }
+    control_points.clear();
+    luts.clear();
 }
 
 void BezierSpline::for_each(std::function<void(const Knot&)> fn)
@@ -211,33 +218,30 @@ void BezierSpline::for_each(std::function<void(const Knot&)> fn)
 
     else if (segments == 1u) {
 
-        //std::vector<float>& lut = luts[0];
-        //uint32_t number_of_edits = (uint32_t)glm::ceil(lut.back() / knot_distance);
-        //number_of_edits += (number_of_edits % 2u != 0u) ? 1u : 0u; // Always a even number
+        const Knot& end_point = knots[1];
+        float distance = glm::distance(start_point.position, end_point.position);
+        uint32_t number_of_edits = (uint32_t)glm::ceil(distance / knot_distance);
 
-        //for (int j = 0; j < number_of_edits; ++j) {
-        //    float t = static_cast<float>(j) / number_of_edits;
-        //    const Knot& end_point = knots[1];
-        //    const Knot& point = start_point * (1.0f - t) + end_point * t;
-        //    fn(point);
-        //}
-
-        return;
+        for (int j = 0; j < number_of_edits; ++j) {
+            float t = static_cast<float>(j) / number_of_edits;
+            const Knot& point = start_point * (1.0f - t) + end_point * t;
+            fn(point);
+        }
     }
 
     // Smooth path using bezier segments
     else {
 
-        if (!control_points.size()) {
+        if (dirty) {
             compute_control_points(segments);
             compute_luts(segments);
+            dirty = false;
         }
 
         for (uint32_t i = 0; i < segments; i++) {
 
-            std::vector<float>& lut = luts[i];
+            const std::vector<float>& lut = luts[i];
             uint32_t number_of_edits = (uint32_t)glm::ceil(lut.back() / knot_distance);
-            number_of_edits += (number_of_edits % 2u != 0u) ? 1u : 0u; // Always a even number
 
             const Knot& end_point = knots.at(i + 1u);
 
