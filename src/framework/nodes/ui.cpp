@@ -576,22 +576,24 @@ namespace ui {
     *	Buttons
     */
 
-    Button2D::Button2D(const std::string& sg, const Color& col, uint8_t parameter_flags)
-        : Button2D(sg, col, parameter_flags, { 0.0f, 0.0f }, glm::vec2(BUTTON_SIZE)) { }
+    Button2D::Button2D(const std::string& sg, const Color& col, uint8_t flags)
+        : Button2D(sg, col, flags, { 0.0f, 0.0f }, glm::vec2(BUTTON_SIZE)) { }
 
-    Button2D::Button2D(const std::string& sg, uint8_t parameter_flags, const glm::vec2& pos, const glm::vec2& size)
+    Button2D::Button2D(const std::string& sg, uint8_t flags, const glm::vec2& pos, const glm::vec2& size)
         : Panel2D(sg, pos, size), signal(sg) { }
 
-    Button2D::Button2D(const std::string& sg, const Color& col, uint8_t parameter_flags, const glm::vec2& pos, const glm::vec2& size)
+    Button2D::Button2D(const std::string& sg, const Color& col, uint8_t flags, const glm::vec2& pos, const glm::vec2& size)
         : Panel2D(sg, pos, size, col), signal(sg) {
 
         class_type = Node2DClassType::BUTTON;
 
-        selected = parameter_flags & SELECTED;
-        disabled = parameter_flags & DISABLED;
-        is_unique_selection = parameter_flags & UNIQUE_SELECTION;
-        allow_toggle = parameter_flags & ALLOW_TOGGLE;
-        keep_rgb = parameter_flags & KEEP_RGB;
+        selected = flags & SELECTED;
+        disabled = flags & DISABLED;
+        is_unique_selection = flags & UNIQUE_SELECTION;
+        allow_toggle = flags & ALLOW_TOGGLE;
+        keep_rgb = flags & KEEP_RGB;
+
+        parameter_flags = flags;
 
         ui_data.keep_rgb = keep_rgb;
         ui_data.is_color_button = is_color_button;
@@ -752,21 +754,23 @@ namespace ui {
         Panel2D::set_priority(priority);
     }
 
-    TextureButton2D::TextureButton2D(const std::string& sg, const std::string& texture_path, uint8_t parameter_flags)
-        : TextureButton2D(sg, texture_path, parameter_flags, { 0.0f, 0.0f }) { }
+    TextureButton2D::TextureButton2D(const std::string& sg, const std::string& texture_path, uint8_t flags)
+        : TextureButton2D(sg, texture_path, flags, { 0.0f, 0.0f }) { }
 
-    TextureButton2D::TextureButton2D(const std::string& sg, const std::string& texture_path, uint8_t parameter_flags, const glm::vec2& pos, const glm::vec2& size)
-        : Button2D(sg, parameter_flags, pos, size) {
+    TextureButton2D::TextureButton2D(const std::string& sg, const std::string& texture_path, uint8_t flags, const glm::vec2& pos, const glm::vec2& size)
+        : Button2D(sg, flags, pos, size) {
 
         class_type = Node2DClassType::TEXTURE_BUTTON;
 
         is_color_button = false;
 
-        selected = parameter_flags & SELECTED;
-        disabled = parameter_flags & DISABLED;
-        is_unique_selection = parameter_flags & UNIQUE_SELECTION;
-        allow_toggle = parameter_flags & ALLOW_TOGGLE;
-        keep_rgb = parameter_flags & KEEP_RGB;
+        selected = flags & SELECTED;
+        disabled = flags & DISABLED;
+        is_unique_selection = flags & UNIQUE_SELECTION;
+        allow_toggle = flags & ALLOW_TOGGLE;
+        keep_rgb = flags & KEEP_RGB;
+
+        parameter_flags = flags;
 
         ui_data.is_selected = selected;
         ui_data.keep_rgb = keep_rgb;
@@ -928,8 +932,8 @@ namespace ui {
     *   Widget Submenus
     */
 
-    ButtonSubmenu2D::ButtonSubmenu2D(const std::string& sg, const std::string& texture_path, uint8_t parameter_flags, const glm::vec2& pos, const glm::vec2& size)
-        : TextureButton2D(sg, texture_path, parameter_flags, pos, size) {
+    ButtonSubmenu2D::ButtonSubmenu2D(const std::string& sg, const std::string& texture_path, uint8_t flags, const glm::vec2& pos, const glm::vec2& size)
+        : TextureButton2D(sg, texture_path, flags, pos, size) {
 
         class_type = Node2DClassType::SUBMENU;
 
@@ -995,8 +999,8 @@ namespace ui {
         box->add_child(child);
     }
 
-    ButtonSelector2D::ButtonSelector2D(const std::string& sg, const std::string& texture_path, uint8_t parameter_flags, const glm::vec2& pos, const glm::vec2& size)
-        : TextureButton2D(sg, texture_path, parameter_flags, pos, size) {
+    ButtonSelector2D::ButtonSelector2D(const std::string& sg, const std::string& texture_path, uint8_t flags, const glm::vec2& pos, const glm::vec2& size)
+        : TextureButton2D(sg, texture_path, flags, pos, size) {
 
         class_type = Node2DClassType::SELECTOR;
 
@@ -1037,28 +1041,29 @@ namespace ui {
     *	Slider
     */
 
-    Slider2D::Slider2D(const std::string& sg, float v, int mode, uint8_t parameter_flags, float min, float max, int precision)
-        : Slider2D(sg, "", v, {0.0f, 0.0f}, glm::vec2(BUTTON_SIZE), mode, parameter_flags, min, max, precision) {}
+    Slider2D::Slider2D(const std::string& sg, float v, int mode, uint8_t flags, float min, float max, int precision)
+        : Slider2D(sg, "", v, {0.0f, 0.0f}, glm::vec2(BUTTON_SIZE), mode, flags, min, max, precision) {}
 
-    Slider2D::Slider2D(const std::string& sg, const std::string& texture_path, float v, int mode, uint8_t parameter_flags, float min, float max, int precision)
-        : Slider2D(sg, texture_path, v, { 0.0f, 0.0f }, glm::vec2(BUTTON_SIZE), mode, parameter_flags, min, max, precision) {}
+    Slider2D::Slider2D(const std::string& sg, const std::string& texture_path, float v, int mode, uint8_t flags, float min, float max, int precision)
+        : Slider2D(sg, texture_path, v, { 0.0f, 0.0f }, glm::vec2(BUTTON_SIZE), mode, flags, min, max, precision) {}
 
-    Slider2D::Slider2D(const std::string& sg, const std::string& texture_path, float value, const glm::vec2& pos, const glm::vec2& size, int mode, uint8_t parameter_flags, float min, float max, int precision)
+    Slider2D::Slider2D(const std::string& sg, const std::string& texture_path, float value, const glm::vec2& pos, const glm::vec2& size, int mode, uint8_t flags, float min, float max, int precision)
         : Panel2D(sg, pos, size), signal(sg), current_value(value), min_value(min), max_value(max), precision(precision) {
 
         this->class_type = Node2DClassType::SLIDER;
         this->mode = mode;
 
+        disabled = flags & DISABLED;
+
         bool is_horizontal = (mode == SliderMode::HORIZONTAL);
-
-        disabled = parameter_flags & DISABLED;
-
         ui_data.num_group_items = is_horizontal ? 2.f : 1.f;
-        this->size = glm::vec2(size.x * ui_data.num_group_items, size.y);
-
         ui_data.slider_max = max_value;
         ui_data.slider_min = min_value;
         ui_data.is_button_disabled = disabled;
+
+        parameter_flags = flags;
+
+        this->size = glm::vec2(size.x * ui_data.num_group_items, size.y);
 
         current_value = glm::clamp(current_value, min_value, max_value);
 
@@ -1081,7 +1086,7 @@ namespace ui {
 
         Node::bind(signal + "@changed", [&](const std::string& signal, float value) {
             set_value(value);
-        });
+            });
 
         // Text labels (only if slider is enabled)
         {
@@ -1090,9 +1095,9 @@ namespace ui {
             text_2d = new Text2D(pretty_name, 18.f, is_horizontal);
             add_child(text_2d);
 
-            if (!disabled) {
+            if (!disabled && !(flags & SKIP_VALUE)) {
                 std::string value_as_string = value_to_string();
-                text_2d_value = new Text2D(value_as_string, {0.0f, size.y * 1.2f}, 18.f, colors::WHITE, is_horizontal);
+                text_2d_value = new Text2D(value_as_string, {0.0f, size.y * 1.2f}, 17.f, colors::WHITE, is_horizontal);
                 add_child(text_2d_value);
             }
         }
@@ -1135,14 +1140,17 @@ namespace ui {
 
         if (data.is_pressed)
         {
-            float range = (mode == HORIZONTAL ? size.x : size.y);
-            float bounds = range * 0.975f;
+            float bounds = (mode == HORIZONTAL ? size.x : size.y) * 0.975f;
             // -scale..scale -> 0..1
             float local_point = (mode == HORIZONTAL ? data.local_position.x : size.y - data.local_position.y);
             // this is at range 0..1
             current_value = glm::clamp(local_point / bounds, 0.f, 1.f);
             // set in range min-max
-            current_value = current_value * (max_value - min_value) + min_value;
+            current_value = remap_range(current_value, 0.0f, 1.0f, min_value, max_value);
+            // make sure it reaches min, max values
+            if (fabsf(current_value - min_value) < 1e-3f) current_value = min_value;
+            else if (fabsf(current_value - max_value) < 1e-3f) current_value = max_value;
+            // emit signal to use new value
             Node::emit_signal(signal, current_value);
 
             if (text_2d_value) {
@@ -1177,8 +1185,15 @@ namespace ui {
 
     std::string Slider2D::value_to_string()
     {
-        float fprecision = 1.0f / glm::pow(10.0f, precision);
-        std::string s = std::to_string(std::roundf(current_value / fprecision) * fprecision);
+        // Use default 0..1 range for showing the user
+        float value = remap_range(current_value, min_value, max_value, 0.0f, 1.0f);
+
+        if (parameter_flags & USER_RANGE) {
+            float fprecision = 1.0f / glm::pow(10.0f, precision);
+            value = std::roundf(current_value / fprecision) * fprecision;
+        }
+
+        std::string s = std::to_string(value);
         size_t idx = s.find('.') + (precision > 0 ? 1 : 0);
         return s.substr(0, idx + precision);
     }

@@ -25,6 +25,16 @@ namespace ui {
         LAST
     };
 
+    enum Node2DParameters : uint8_t {
+        SELECTED = 1 << 0,
+        DISABLED = 1 << 1,
+        UNIQUE_SELECTION = 1 << 2,
+        ALLOW_TOGGLE = 1 << 3,
+        KEEP_RGB = 1 << 4,
+        SKIP_VALUE = 1 << 5,
+        USER_RANGE = 1 << 6,
+    };
+
     class Panel2D : public Node2D {
     public:
 
@@ -34,6 +44,8 @@ namespace ui {
 
         bool render_background  = true;
         bool pressed_inside     = false;
+
+        uint8_t parameter_flags = 0;
 
         MeshInstance quad_mesh;
 
@@ -116,14 +128,6 @@ namespace ui {
     class Texture2D : public Panel2D {
     public:
         Texture2D(const std::string& name, const std::string& texture_path, const glm::vec2& size, const glm::vec2& pos = { 0.0f, 0.0f });
-    };
-
-    enum eButtonParams : uint8_t {
-        SELECTED = 1 << 0,
-        DISABLED = 1 << 1,
-        UNIQUE_SELECTION = 1 << 2,
-        ALLOW_TOGGLE = 1 << 3,
-        KEEP_RGB = 1 << 4
     };
 
     class Button2D : public Panel2D {
