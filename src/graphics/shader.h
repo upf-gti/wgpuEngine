@@ -59,6 +59,8 @@ private:
 
     static std::unordered_map<std::string, const char*> engine_libraries;
 
+    bool loaded_from_file = false;
+
     static std::unordered_map<std::string, custom_define_type> custom_defines;
     std::unordered_map<uint8_t, uint8_t> dynamic_bindings;
     std::vector<std::string> define_specializations;

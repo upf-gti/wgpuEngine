@@ -19,6 +19,7 @@ RendererStorage* RendererStorage::instance = nullptr;
 std::map<std::string, Surface*> RendererStorage::surfaces;
 std::map<std::string, Texture*> RendererStorage::textures;
 std::map<std::string, Shader*> RendererStorage::shaders;
+std::map<std::string, const char*> RendererStorage::engine_shaders_refs;
 std::map<std::string, Animation*> RendererStorage::animations;
 
 Texture* RendererStorage::current_skybox_texture = nullptr;
@@ -269,7 +270,7 @@ Shader* RendererStorage::get_shader(const std::string& shader_path, const std::v
     return sh;
 }
 
-Shader* RendererStorage::get_shader_from_source(const std::string& source, const std::string& name, const Material& material, const std::vector<std::string>& custom_define_specializations)
+Shader* RendererStorage::get_shader_from_source(const char* source, const std::string& name, const Material& material, const std::vector<std::string>& custom_define_specializations)
 {
     std::vector<std::string> define_specializations = get_common_define_specializations(material);
 
@@ -279,7 +280,7 @@ Shader* RendererStorage::get_shader_from_source(const std::string& source, const
     return get_shader_from_source(source, name, define_specializations);
 }
 
-Shader* RendererStorage::get_shader_from_source(const std::string& source, const std::string& name, const std::vector<std::string>& custom_define_specializations)
+Shader* RendererStorage::get_shader_from_source(const char* source, const std::string& name, const std::vector<std::string>& custom_define_specializations)
 {
     std::string specialized_name = name;
     for (const std::string& specialization : custom_define_specializations) {
@@ -299,6 +300,7 @@ Shader* RendererStorage::get_shader_from_source(const std::string& source, const
 
     // register in map
     shaders[specialized_name] = sh;
+    engine_shaders_refs[name] = source;
 
     return sh;
 }

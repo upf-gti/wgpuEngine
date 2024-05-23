@@ -29,6 +29,7 @@ public:
     static RendererStorage* instance;
 
     static std::map<std::string, Shader*> shaders;
+    static std::map<std::string, const char*> engine_shaders_refs;
     static std::map<std::string, std::vector<std::string>> shader_library_references;
     static std::map<std::string, Texture*> textures;
     static std::map<std::string, Surface*> surfaces;
@@ -59,10 +60,10 @@ public:
 
     static Shader* get_shader(const std::string& shader_path, const std::vector<std::string>& custom_define_specializations);
 
-    static Shader* get_shader_from_source(const std::string& source, const std::string& name, const Material& material = {},
+    static Shader* get_shader_from_source(const char* source, const std::string& name, const Material& material = {},
         const std::vector<std::string>& custom_define_specializations = {});
 
-    static Shader* get_shader_from_source(const std::string& source, const std::string& name,
+    static Shader* get_shader_from_source(const char* source, const std::string& name,
         const std::vector<std::string>& custom_define_specializations);
 
     static void reload_shader(const std::string& shader_path);

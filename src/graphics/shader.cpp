@@ -44,6 +44,8 @@ Shader::~Shader()
 
 bool Shader::load_from_file(const std::string& shader_path, const std::string& specialized_path, std::vector<std::string> define_specializations)
 {
+    loaded_from_file = true;
+
 	path = shader_path;
 
     if (!specialized_path.empty()) {
@@ -550,11 +552,18 @@ void Shader::reload()
 {
 	wgpuShaderModuleRelease(shader_module);
 
+    shader_module = nullptr;
+
 	bind_group_layouts.clear();
 	vertex_attributes.clear();
 	vertex_buffer_layouts.clear();
 
-	load_from_file(path, specialized_path, define_specializations);
+    if (loaded_from_file) {
+        load_from_file(path, specialized_path, define_specializations);
+    } else
+    if (RendererStorage::engine_shaders_refs.contains(path)) {
+        load_from_source(RendererStorage::engine_shaders_refs[path], path, specialized_path, define_specializations);
+    }
 
 	if (pipeline_ref) {
 		pipeline_ref->reload(this);
