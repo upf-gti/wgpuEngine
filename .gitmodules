@@ -4,9 +4,6 @@
 [submodule "libraries/webgpu"]
 	path = libraries/webgpu
 	url = https://github.com/upf-gti/WebGPU-distribution
-[submodule "src/dawnxr"]
-	path = src/dawnxr
-	url = https://github.com/upf-gti/dawnxr
 [submodule "libraries/glm"]
 	path = libraries/glm
 	url = https://github.com/g-truc/glm.git
@@ -19,3 +16,6 @@
 [submodule "libraries/glfw"]
 	path = libraries/glfw
 	url = https://github.com/glfw/glfw.git
+[submodule "src/xr/dawnxr"]
+	path = src/xr/dawnxr
+	url = https://github.com/upf-gti/dawnxr

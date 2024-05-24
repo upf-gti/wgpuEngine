@@ -56,6 +56,8 @@ public:
     virtual void update(float delta_time);
     virtual void render_gui() {};
 
+    virtual void serialize() {};
+
     NodeType get_type() const { return type; }
     std::string get_name() const { return name; }
     virtual std::vector<Node*>& get_children() { return children; }

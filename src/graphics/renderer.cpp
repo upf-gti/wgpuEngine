@@ -6,7 +6,7 @@
 
 #include "xr/openxr_context.h"
 
-#include "dawnxr/dawnxr_internal.h"
+#include "xr/dawnxr/dawnxr_internal.h"
 
 #if defined(BACKEND_DX12)
 #include <dawn/native/D3D12Backend.h>

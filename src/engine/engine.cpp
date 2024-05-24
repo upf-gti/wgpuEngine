@@ -109,6 +109,11 @@ bool Engine::get_use_mirror_window()
 #endif
 }
 
+Scene* Engine::get_main_scene()
+{
+    return main_scene;
+}
+
 void Engine::on_frame()
 {
     Input::update(delta_time);

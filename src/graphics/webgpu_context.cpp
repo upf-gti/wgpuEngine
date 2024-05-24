@@ -16,7 +16,7 @@
 #include "spdlog/spdlog.h"
 
 #ifdef XR_SUPPORT
-#include <dawnxr/dawnxr.h>
+#include "xr/dawnxr/dawnxr.h"
 #endif
 
 #ifdef __EMSCRIPTEN__

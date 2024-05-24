@@ -2,7 +2,7 @@
 
 #include "includes.h"
 #ifdef XR_SUPPORT
-#include <dawnxr/dawnxr.h>
+#include "xr/dawnxr/dawnxr.h"
 #endif
 
 #include "glm/vec3.hpp"

@@ -2,8 +2,8 @@
 
 #include <vector>
 
-class Node3D;
+class Node;
 class MeshInstance3D;
 
-bool parse_scene(const char* scene_path, std::vector<Node3D*> &entities);
+bool parse_scene(const char* scene_path, std::vector<Node*> &entities);
 MeshInstance3D* parse_mesh(const char* mesh_path);
