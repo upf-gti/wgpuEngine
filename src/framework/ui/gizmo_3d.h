@@ -2,6 +2,7 @@
 
 #include "glm/vec3.hpp"
 #include "glm/gtc/quaternion.hpp"
+#include "framework/colors.h"
 
 enum eGizmoAxis : uint8_t {
     GIZMO_AXIS_X = 1 << 0,
@@ -24,6 +25,12 @@ class MeshInstance3D;
 */
 
 class Gizmo3D {
+
+    static Color X_AXIS_COLOR;
+    static Color Y_AXIS_COLOR;
+    static Color Z_AXIS_COLOR;
+
+    static Color AXIS_SELECTED_OFFSET_COLOR;
 
 	eGizmoType type;
     eGizmoAxis axis;
