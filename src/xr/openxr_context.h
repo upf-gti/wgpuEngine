@@ -6,7 +6,7 @@
 
 #ifdef XR_SUPPORT
 
-#include <dawnxr/dawnxr.h>
+#include "dawnxr/dawnxr.h"
 #include "framework/input_xr.h"
 
 #if defined(BACKEND_VULKAN)

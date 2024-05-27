@@ -7,7 +7,7 @@
 
 #include "spdlog/spdlog.h"
 
-bool parse_scene(const char* scene_path, std::vector<Node3D*>& entities)
+bool parse_scene(const char* scene_path, std::vector<Node*>& entities)
 {
     std::string scene_path_str = std::string(scene_path);
     std::string extension = scene_path_str.substr(scene_path_str.find_last_of(".") + 1);

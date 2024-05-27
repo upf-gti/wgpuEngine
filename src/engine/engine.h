@@ -3,6 +3,7 @@
 struct GLFWwindow;
 class FileWatcher;
 class Renderer;
+class Scene;
 
 class Engine {
 
@@ -10,6 +11,7 @@ protected:
 
     Renderer* renderer = nullptr;
     FileWatcher* shader_reload_watcher = nullptr;
+    Scene* main_scene;
 
     bool use_glfw;
     float delta_time = 0.0f;
@@ -26,6 +28,8 @@ public:
 
     bool get_openxr_available();
     bool get_use_mirror_window();
+
+    Scene* get_main_scene();
 
     virtual void on_frame();
 

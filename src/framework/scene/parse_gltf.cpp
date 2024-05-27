@@ -24,6 +24,8 @@
 #include "graphics/shader.h"
 #include "graphics/renderer_storage.h"
 
+#include "engine/scene.h"
+
 #include "shaders/mesh_pbr.wgsl.gen.h"
 
 #include "spdlog/spdlog.h"
@@ -1237,7 +1239,7 @@ void parse_model_animations(const tinygltf::Model& model, std::vector<SkeletonIn
     }
 }
 
-bool parse_gltf(const char* gltf_path, std::vector<Node3D*>& entities)
+bool parse_gltf(const char* gltf_path, std::vector<Node*>& entities)
 {
     tinygltf::TinyGLTF loader;
     tinygltf::Model model;
@@ -1269,13 +1271,13 @@ bool parse_gltf(const char* gltf_path, std::vector<Node3D*>& entities)
         spdlog::error(err);
     }
 
-    const tinygltf::Scene* scene = nullptr;
+    const tinygltf::Scene* gltf_scene = nullptr;
 
     if (model.defaultScene >= 0) {
-        scene = &model.scenes[model.defaultScene];
+        gltf_scene = &model.scenes[model.defaultScene];
     }
     else {
-        scene = &model.scenes[0];
+        gltf_scene = &model.scenes[0];
     }
 
     std::map<std::string, Node3D*> loaded_nodes;
@@ -1289,33 +1291,32 @@ bool parse_gltf(const char* gltf_path, std::vector<Node3D*>& entities)
 
     std::filesystem::path path_filename = path.replace_extension().filename();
 
-    Node3D* scene_node = new Node3D();
-    scene_node->set_name(path_filename.string() + "_root");
-    entities.push_back(scene_node);
+    Node3D* scene_root = new Node3D();
+    scene_root->set_name(path_filename.string() + "_root");
+    entities.push_back(scene_root);
 
-    for (size_t i = 0; i < scene->nodes.size(); ++i)
+    for (size_t i = 0; i < gltf_scene->nodes.size(); ++i)
     {
-        uint32_t node_id = scene->nodes[i];
+        uint32_t node_id = gltf_scene->nodes[i];
 
         assert(node_id >= 0 && node_id < model.nodes.size());
 
         Node3D* entity = create_node_entity(node_id, model, loaded_nodes, name_repeats);
 
-        process_node_hierarchy(model, -1, node_id, scene_node, entity, hierarchy, skeleton_instances);
+        process_node_hierarchy(model, -1, node_id, scene_root, entity, hierarchy, skeleton_instances);
 
-        parse_model_nodes(model, -1, node_id, scene_node, entity, loaded_nodes, name_repeats, texture_cache, hierarchy, skeleton_instances);
+        parse_model_nodes(model, -1, node_id, scene_root, entity, loaded_nodes, name_repeats, texture_cache, hierarchy, skeleton_instances);
     }
 
     if (model.skins.size()) {
-        parse_model_skins(scene_node, model, loaded_nodes, hierarchy, skeleton_instances);
+        parse_model_skins(scene_root, model, loaded_nodes, hierarchy, skeleton_instances);
     }
 
     if (model.animations.size()) {
         AnimationPlayer* player = new AnimationPlayer("Animation Player");
-        Node3D* gltf_root = entities.back();
         //gltf_root->add_child(player);
-        std::vector<Node*>& nodes = gltf_root->get_children();
-        player->set_parent(gltf_root);
+        std::vector<Node*>& nodes = scene_root->get_children();
+        player->set_parent(scene_root);
         nodes.insert(nodes.begin(), player);
 
         parse_model_animations(model, skeleton_instances, player);

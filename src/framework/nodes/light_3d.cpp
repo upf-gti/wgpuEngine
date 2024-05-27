@@ -1,6 +1,7 @@
 #include "light_3d.h"
 #include "graphics/renderer.h"
 #include "imgui.h"
+#include "graphics/renderer.h"
 
 Light3D::Light3D()
 {
@@ -9,6 +10,22 @@ Light3D::Light3D()
 Light3D::~Light3D()
 {
     
+}
+
+void Light3D::render()
+{
+    if (intensity < 0.001f)
+    {
+        return;
+    }
+    if (type != LIGHT_DIRECTIONAL && range == 0.0f)
+    {
+        return;
+    }
+
+    Renderer::instance->add_light(this);
+
+    Node3D::render();
 }
 
 void Light3D::render_gui()
