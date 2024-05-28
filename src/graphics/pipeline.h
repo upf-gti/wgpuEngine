@@ -13,8 +13,10 @@ struct PipelineDescription {
     WGPUCullMode cull_mode = WGPUCullMode_None;
     WGPUPrimitiveTopology topology = WGPUPrimitiveTopology_TriangleList;
 
+    bool use_depth          = true;
     bool depth_read         = true;
     bool depth_write        = true;
+
     bool blending_enabled   = false;
     uint8_t sample_count    = 1;
 };
