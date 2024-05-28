@@ -45,6 +45,7 @@ void Gizmo3D::initialize(const eGizmoType& new_type, const glm::vec3& position, 
         init_rotation_meshes();
     }
 
+    mesh_size = glm::vec3(0.3f, 1.8f, 0.3f);
     arrow_gizmo_scale = glm::vec3(0.05f);
     circle_gizmo_scale = glm::vec3(0.05f);
     gizmo_position = position;
@@ -161,25 +162,36 @@ void Gizmo3D::set_mode(const eGizmoType& gizmo_type, const eGizmoAxis& axis)
     }
 }
 
-bool Gizmo3D::update(glm::vec3& new_position, glm::vec3& scale, const glm::vec3& controller_position, float delta)
+bool Gizmo3D::update(glm::vec3& new_position, glm::vec3& scale, glm::quat& rotation, const glm::vec3& controller_position, float delta_time)
 {
-    bool result = update(new_position, controller_position, delta);
+    bool result = update(new_position, controller_position, delta_time);
 
     scale = gizmo_scale;
-
-    return result;
-}
-
-bool Gizmo3D::update(glm::vec3& new_position, glm::quat& rotation, const glm::vec3& controller_position, float delta)
-{
-    bool result = update(new_position, controller_position, delta);
 
     rotation = current_rotation;
 
     return result;
 }
 
-bool Gizmo3D::update(glm::vec3& new_position, const glm::vec3& controller_position, float delta)
+bool Gizmo3D::update(glm::vec3& new_position, glm::vec3& scale, const glm::vec3& controller_position, float delta_time)
+{
+    bool result = update(new_position, controller_position, delta_time);
+
+    scale = gizmo_scale;
+
+    return result;
+}
+
+bool Gizmo3D::update(glm::vec3& new_position, glm::quat& rotation, const glm::vec3& controller_position, float delta_time)
+{
+    bool result = update(new_position, controller_position, delta_time);
+
+    rotation = current_rotation;
+
+    return result;
+}
+
+bool Gizmo3D::update(glm::vec3& new_position, const glm::vec3& controller_position, float delta_time)
 {
     if (!enabled) {
         return false;
@@ -190,7 +202,7 @@ bool Gizmo3D::update(glm::vec3& new_position, const glm::vec3& controller_positi
     if (!has_graved) {
 
         // The center of the gizmo servers as a free hand mode
-        free_hand_selected = intersection::point_sphere(controller_position, gizmo_position, 0.05f);
+        free_hand_selected = intersection::point_sphere(controller_position, gizmo_position, 0.01f);
 
         /*
             POSITION GIZMO TESTS
@@ -205,7 +217,7 @@ bool Gizmo3D::update(glm::vec3& new_position, const glm::vec3& controller_positi
 
                 if (axis & GIZMO_AXIS_X) {
                     glm::vec3 size = arrow_gizmo_scale * glm::vec3(mesh_size.y, mesh_size.x, mesh_size.z);
-                    glm::vec3 box_center = gizmo_position + glm::vec3(size.x / 2.0f - 0.01f, 0.0f, 0.0f);
+                    glm::vec3 box_center = gizmo_position + glm::vec3(size.x / 2.0f, 0.0f, 0.0f);
                     position_axis_x_selected = intersection::point_AABB(controller_position, box_center, size);
                 }
 
@@ -311,7 +323,7 @@ bool Gizmo3D::update(glm::vec3& new_position, const glm::vec3& controller_positi
             if (type & SCALE_GIZMO) {
 
                 glm::vec3 constraint = { scale_axis_x_selected ? 1.0f : 0.0f, scale_axis_y_selected ? 1.0f : 0.0f, scale_axis_z_selected ? 1.0f : 0.0f };
-                gizmo_scale += controller_delta * constraint;
+                gizmo_scale += controller_delta * constraint * delta_time * 1e3f;
             }
 
             if (type & ROTATION_GIZMO) {

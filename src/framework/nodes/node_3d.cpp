@@ -140,7 +140,15 @@ void Node3D::set_translation(const glm::vec3& translation)
     model = glm::translate(glm::mat4x4(1.f), translation);
 }
 
-void Node3D::set_parent(Node3D* parent) {
+void Node3D::set_transform(const Transform& new_transform)
+{
+    transform = new_transform;
+
+    set_model_dirty(true);
+}
+
+void Node3D::set_parent(Node3D* parent)
+{
     this->parent = parent;
 }
 
@@ -186,7 +194,6 @@ const Transform& Node3D::get_transform() const
 {
     return transform;
 }
-
 
 void Node3D::select()
 {

@@ -16,6 +16,7 @@ enum eGizmoType : uint8_t {
     POSITION_GIZMO = 1 << 0,
     SCALE_GIZMO = 1 << 1,
     ROTATION_GIZMO = 1 << 2,
+    SCALE_ROTATION_GIZMO = SCALE_GIZMO | ROTATION_GIZMO,
     POSITION_ROTATION_GIZMO = POSITION_GIZMO | ROTATION_GIZMO,
     POSITION_SCALE_ROTATION_GIZMO = POSITION_ROTATION_GIZMO | SCALE_GIZMO
 };
@@ -34,8 +35,8 @@ class Gizmo3D {
 
     static Color AXIS_SELECTED_OFFSET_COLOR;
 
-	eGizmoType type;
-    eGizmoAxis axis;
+    eGizmoType type = POSITION_GIZMO;
+    eGizmoAxis axis = GIZMO_ALL_AXIS;
 
 	bool enabled = true;
 	bool has_graved = false;
@@ -60,11 +61,11 @@ class Gizmo3D {
     void init_rotation_meshes();
 
 	glm::vec3 prev_controller_position;
-	glm::vec3 gizmo_position = {};
-    glm::vec3 gizmo_scale = {};
+	glm::vec3 gizmo_position = { 0.0f, 0.0f, 0.0f };
+    glm::vec3 gizmo_scale = { 1.0f, 1.0f, 1.0f };
 
     glm::vec3 arrow_gizmo_scale = {};
-	glm::vec3 mesh_size = { 0.300f, 1.7f, 0.300f };
+	glm::vec3 mesh_size = {};
 
     glm::vec3 circle_gizmo_scale = {};
     glm::vec3 reference_rotation_pose;
@@ -96,9 +97,10 @@ public:
 
     void set_mode(const eGizmoType& gizmo_use, const eGizmoAxis& axis = GIZMO_ALL_AXIS);
 
-	bool update(glm::vec3& new_position, const glm::vec3& controller_position, float delta);
-    bool update(glm::vec3& new_position, glm::quat& rotation, const glm::vec3& controller_position, float delta);
-    bool update(glm::vec3& new_position, glm::vec3& scale, const glm::vec3& controller_position, float delta);
+	bool update(glm::vec3& new_position, const glm::vec3& controller_position, float delta_time);
+    bool update(glm::vec3& new_position, glm::quat& rotation, const glm::vec3& controller_position, float delta_time);
+    bool update(glm::vec3& new_position, glm::vec3& scale, const glm::vec3& controller_position, float delta_time);
+    bool update(glm::vec3& new_position, glm::vec3& scale, glm::quat& rotation, const glm::vec3& controller_position, float delta_time);
 
     void render(int axis = GIZMO_ALL_AXIS);
 
