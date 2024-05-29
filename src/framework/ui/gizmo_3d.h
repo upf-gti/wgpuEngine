@@ -2,7 +2,9 @@
 
 #include "glm/vec3.hpp"
 #include "glm/gtc/quaternion.hpp"
+
 #include "framework/colors.h"
+#include "framework/animation/bone_transform.h"
 
 enum eGizmoAxis : uint8_t {
     GIZMO_AXIS_X = 1 << 0,
@@ -67,24 +69,16 @@ class Gizmo3D {
     glm::vec3 arrow_gizmo_scale = {};
 	glm::vec3 mesh_size = {};
 
-    glm::vec3 circle_gizmo_scale = {};
+    float circle_gizmo_scale = 0.0f;
     glm::vec3 reference_rotation_pose;
     glm::quat current_rotation = { 0.0f, 0.0f, 0.0f, 1.0f };
     glm::quat rotation_diff = { 0.0f, 0.0f, 0.0f, 1.0f };
 
     bool free_hand_selected = false;
 
-	bool position_axis_x_selected = false;
-	bool position_axis_y_selected = false;
-	bool position_axis_z_selected = false;
-
-    bool scale_axis_x_selected = false;
-    bool scale_axis_y_selected = false;
-    bool scale_axis_z_selected = false;
-
-    bool rotation_axis_x_selected = false;
-    bool rotation_axis_y_selected = false;
-    bool rotation_axis_z_selected = false;
+    glm::bvec3 position_axis_selected = glm::bvec3(false);
+    glm::bvec3 scale_axis_selected = glm::bvec3(false);
+    glm::bvec3 rotation_axis_selected = glm::bvec3(false);
 
     float x_angle = 0.0f;
     float y_angle = 0.0f;
@@ -100,11 +94,11 @@ public:
 	bool update(glm::vec3& new_position, const glm::vec3& controller_position, float delta_time);
     bool update(glm::vec3& new_position, glm::quat& rotation, const glm::vec3& controller_position, float delta_time);
     bool update(glm::vec3& new_position, glm::vec3& scale, const glm::vec3& controller_position, float delta_time);
-    bool update(glm::vec3& new_position, glm::vec3& scale, glm::quat& rotation, const glm::vec3& controller_position, float delta_time);
+    bool update(Transform& t, const glm::vec3& controller_position, float delta_time);
 
     void render(int axis = GIZMO_ALL_AXIS);
 
-    inline glm::quat  get_rotation() const {
+    inline glm::quat get_rotation() const {
         return current_rotation;
     }
 
