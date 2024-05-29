@@ -154,6 +154,8 @@ int Renderer::initialize(GLFWwindow* window, bool use_mirror_screen)
 
     init_multisample_textures();
 
+    init_timestamp_queries();
+
     return 0;
 }
 
@@ -271,6 +273,36 @@ void Renderer::init_multisample_textures()
         }
 
         multisample_textures_views[i] = multisample_textures[i].get_view();
+    }
+}
+
+void Renderer::init_timestamp_queries()
+{
+    timestamp_query_set = webgpu_context->create_query_set(maximum_query_sets);
+    timestamp_query_buffer = webgpu_context->create_buffer(sizeof(uint64_t) * maximum_query_sets, WGPUBufferUsage_QueryResolve | WGPUBufferUsage_Storage | WGPUBufferUsage_CopySrc | WGPUBufferUsage_CopyDst, nullptr);
+}
+
+void Renderer::resolve_query_set(WGPUCommandEncoder encoder, uint8_t first_query)
+{
+    wgpuCommandEncoderResolveQuerySet(encoder, timestamp_query_set, first_query, query_index, timestamp_query_buffer, 0);
+}
+
+void Renderer::print_timestamps()
+{
+    uint64_t* buffer_data = reinterpret_cast<uint64_t*>(webgpu_context->read_buffer(timestamp_query_buffer, sizeof(uint64_t) * maximum_query_sets));
+
+    std::vector<uint64_t> time_diffs;
+    for (int i = 1; i < query_index; ++i) {
+        uint64_t diff = buffer_data[i] - buffer_data[i - 1];
+        diff /= 100000000; // nanoseconds to milliseconds
+        time_diffs.push_back(diff);
+    }
+
+    for (int i = 0; i < time_diffs.size(); ++i) {
+        uint64_t time = time_diffs[i];
+        std::string& label = query_label_map[i + 1];
+
+        spdlog::info("{} lasted: {} ms", label, time);
     }
 }
 
@@ -566,6 +598,16 @@ void Renderer::render_2D(WGPURenderPassEncoder render_pass, const WGPUBindGroup&
 #endif
 }
 
+void Renderer::timestamp(WGPUCommandEncoder encoder, const char* label)
+{
+    wgpuCommandEncoderWriteTimestamp(encoder, timestamp_query_set, query_index);
+    query_label_map[query_index] = std::string(label);
+
+    query_index++;
+
+    assert(query_index < maximum_query_sets);
+}
+
 void Renderer::add_renderable(MeshInstance* mesh_instance, glm::mat4x4 global_matrix)
 {
     render_entity_list.push_back({ mesh_instance, global_matrix });
@@ -584,6 +626,8 @@ void Renderer::clear_renderables()
     }
 
     num_lights = 0;
+
+    query_index = 0;
 }
 
 void Renderer::update_lights()

@@ -93,11 +93,15 @@ struct WebGPUContext {
 
     WGPUVertexBufferLayout create_vertex_buffer_layout(const std::vector<WGPUVertexAttribute>& vertex_attributes, uint64_t stride, WGPUVertexStepMode step_mode);
 
+    WGPUQuerySet           create_query_set(uint8_t maximum_query_sets);
+
     void                   generate_brdf_lut_texture();
     void                   generate_prefiltered_env_texture(Texture* prefiltered_env_texture, Texture* hdr_texture);
 
     void                   update_buffer(WGPUBuffer buffer, uint64_t buffer_offset, void const* data, uint64_t size);
     void                   update_texture(WGPUTexture buffer, void const* data, uint64_t size);
+
+    void*                  read_buffer(WGPUBuffer buffer, size_t size);
 
     sMipmapPipeline        get_mipmap_pipeline(WGPUTextureFormat texture_format);
 

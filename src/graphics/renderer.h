@@ -6,6 +6,9 @@
 
 #include "glm/mat4x4.hpp"
 
+#include <map>
+#include <string>
+
 #define MAX_LIGHTS 8
 
 class Camera;
@@ -117,6 +120,13 @@ protected:
     Uniform lights_buffer;
     Uniform num_lights_buffer;
 
+
+    WGPUQuerySet timestamp_query_set;
+    uint8_t maximum_query_sets = 16;
+    WGPUBuffer timestamp_query_buffer;
+    uint8_t query_index = 0;
+    std::map<uint8_t, std::string> query_label_map;
+
 public:
 
     // Singleton
@@ -136,6 +146,10 @@ public:
 
     void init_depth_buffers();
     void init_multisample_textures();
+    void init_timestamp_queries();
+
+    void resolve_query_set(WGPUCommandEncoder encoder, uint8_t first_query);
+    void print_timestamps();
 
     void set_msaa_count(uint8_t msaa_count);
     uint8_t get_msaa_count();
@@ -147,6 +161,8 @@ public:
 
     bool get_openxr_available() { return is_openxr_available; }
     bool get_use_mirror_screen() { return use_mirror_screen; }
+
+    void timestamp(WGPUCommandEncoder encoder, const char* label = "");
 
     glm::vec4 get_clear_color() { return clear_color; }
 

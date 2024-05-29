@@ -143,10 +143,13 @@ int WebGPUContext::initialize(WGPURequestAdapterOptions adapter_opts, WGPURequir
 
     this->required_limits = required_limits;
 
-    WGPUFeatureName required_features[1] = { WGPUFeatureName_Float32Filterable };
+    std::vector<WGPUFeatureName> required_features;
 
-    device_desc.requiredFeatureCount = 1;
-    device_desc.requiredFeatures = required_features;
+    required_features.push_back(WGPUFeatureName_Float32Filterable);
+    required_features.push_back(WGPUFeatureName_TimestampQuery);
+
+    device_desc.requiredFeatureCount = required_features.size();
+    device_desc.requiredFeatures = required_features.data();
 
     device_desc.requiredLimits = &required_limits;
     device_desc.defaultQueue.label = "The default queue";
@@ -699,6 +702,49 @@ WGPUBindGroup WebGPUContext::create_bind_group(const std::vector<Uniform*>& unif
     return wgpuDeviceCreateBindGroup(device, &bindGroupDesc);
 }
 
+void* WebGPUContext::read_buffer(WGPUBuffer buffer, size_t size)
+{
+    WGPUBuffer output_buffer = create_buffer(size, WGPUBufferUsage_CopyDst | WGPUBufferUsage_MapRead, nullptr, "read_buffer");
+
+    WGPUCommandEncoder encoder = wgpuDeviceCreateCommandEncoder(device, {});
+
+    wgpuCommandEncoderCopyBufferToBuffer(encoder, buffer, 0, output_buffer, 0, size);
+
+    WGPUCommandBufferDescriptor cmd_buff_descriptor = {};
+    cmd_buff_descriptor.nextInChain = NULL;
+    cmd_buff_descriptor.label = "read buffer command";
+
+    WGPUCommandBuffer commands = wgpuCommandEncoderFinish(encoder, &cmd_buff_descriptor);
+
+    wgpuQueueSubmit(device_queue, 1, &commands);
+
+    struct BufferData {
+        bool finished = false;
+        WGPUBuffer output_buffer;
+        size_t buffer_size;
+        void* data;
+    } userdata;
+
+    userdata.output_buffer = output_buffer;
+    userdata.buffer_size = size;
+
+    bool finished = false;
+    wgpuBufferMapAsync(output_buffer, WGPUMapMode_Read, 0, size, [](WGPUBufferMapAsyncStatus status, void* userdata) {
+
+        BufferData* buffer_data = reinterpret_cast<BufferData*>(userdata);
+
+        if (status == WGPUBufferMapAsyncStatus_Success) {
+            memcpy(buffer_data->data, wgpuBufferGetConstMappedRange(buffer_data->output_buffer, 0, buffer_data->buffer_size), buffer_data->buffer_size);
+            wgpuBufferUnmap(buffer_data->output_buffer);
+        }
+
+        buffer_data->finished = true;
+
+    }, &userdata);
+
+    return userdata.data;
+}
+
 WebGPUContext::sMipmapPipeline WebGPUContext::get_mipmap_pipeline(WGPUTextureFormat texture_format)
 {
     if (mipmap_pipelines.contains(texture_format)) {
@@ -866,6 +912,16 @@ WGPUVertexBufferLayout WebGPUContext::create_vertex_buffer_layout(const std::vec
     vertexBufferLayout.stepMode = step_mode;
 
     return vertexBufferLayout;
+}
+
+WGPUQuerySet WebGPUContext::create_query_set(uint8_t maximum_query_sets)
+{
+    WGPUQuerySetDescriptor query_set_descriptor = {};
+    query_set_descriptor.count = maximum_query_sets;
+    query_set_descriptor.type = WGPUQueryType_Timestamp;
+    query_set_descriptor.label = "timestamp_query";
+
+    return wgpuDeviceCreateQuerySet(device, &query_set_descriptor);
 }
 
 void WebGPUContext::generate_brdf_lut_texture()
