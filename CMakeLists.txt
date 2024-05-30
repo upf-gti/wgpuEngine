@@ -126,7 +126,6 @@ list(APPEND WGPU_SHADER_LIBS ${WGPU_DIR_SOURCES}/shaders/math.wgsl)
 list(APPEND WGPU_SHADER_LIBS ${WGPU_DIR_SOURCES}/shaders/mesh_includes.wgsl)
 list(APPEND WGPU_SHADER_LIBS ${WGPU_DIR_SOURCES}/shaders/pbr_functions.wgsl)
 list(APPEND WGPU_SHADER_LIBS ${WGPU_DIR_SOURCES}/shaders/tonemappers.wgsl)
-list(APPEND WGPU_SHADER_LIBS ${WGPU_DIR_SOURCES}/shaders/ui/ui_utils.wgsl)
 list(APPEND WGPU_SHADER_LIBS ${WGPU_DIR_SOURCES}/shaders/ui/ui_includes.wgsl)
 
 FOREACH(SHADER ${SHADERS})
