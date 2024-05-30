@@ -22,7 +22,7 @@ struct sUIData {
     glm::vec2 hover_info = { 0.f, 0.0f };
     glm::vec2 dummy0 = { 0.f, 0.0f };
 
-    float dummy1 = 0.f;
+    float aspect_ratio = 1.f;
 
     // Groups
     float num_group_items = 2; // combo buttons use this prop by now to the index in combo

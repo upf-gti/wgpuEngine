@@ -52,7 +52,8 @@ fn fs_main(in: VertexOutput) -> FragmentOutput {
     var out: FragmentOutput;
 
 #ifdef ALBEDO_TEXTURE
-    var color : vec4f = textureSample(albedo_texture, texture_sampler, in.uv);
+    let corrected_uv : vec2f = vec2f(in.uv.x * ui_data.aspect_ratio - (ui_data.aspect_ratio - 1.0) * 0.5, in.uv.y);
+    var color : vec4f = textureSample(albedo_texture, texture_sampler, corrected_uv);
 #else
     var color : vec4f = vec4f(in.color.rgb, 1.0);
 #endif
@@ -78,8 +79,8 @@ fn fs_main(in: VertexOutput) -> FragmentOutput {
         ra = vec4f(si.x);
     }
 
-    var pos : vec2f = in.uv * 2.0 - 1.0;
-    pos.y *= -1.0;
+    var uvs = vec2f(in.uv.x, 1.0 - in.uv.y);
+    var pos : vec2f = vec2(uvs * 2.0 - 1.0);
 
     let d : f32 = sdRoundedBox(pos, si, ra);
     let center_dist = distance(in.uv, vec2f(0.5));

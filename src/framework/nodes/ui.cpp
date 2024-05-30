@@ -66,7 +66,7 @@ namespace ui {
             uint8_t priority = class_type;
             glm::vec2 position = get_translation() + size * 0.5f * get_scale();
             // Don't apply the scaling to combo buttons.. 
-            glm::vec2 scale = get_scale() * (class_type != Node2DClassType::COMBO_BUTTON ? scaling : glm::vec2(1.0f));
+            glm::vec2 scale = get_scale() * (class_type != Node2DClassType::COMBO_BUTTON ? scaling : glm::vec2(scaling.x, 1.0f));
             glm::mat4x4 model = glm::translate(glm::mat4x4(1.0f), glm::vec3(position, -priority * 1e-4));
             model = glm::scale(model, glm::vec3(scale, 1.0f));
             model = get_global_viewport_model() * model;
@@ -719,6 +719,9 @@ namespace ui {
         ui_data.hover_info.y = glm::clamp(timer, 0.0f, 1.0f);
         ui_data.is_selected = selected ? 1.f : 0.f;
 
+        glm::vec2 scale = get_scale() * (class_type != Node2DClassType::COMBO_BUTTON ? scaling : glm::vec2(scaling.x, 1.0f));
+        ui_data.aspect_ratio = scale.x / scale.y;
+
         if (text_2d) {
             text_2d->set_visibility(false);
         }
@@ -873,6 +876,7 @@ namespace ui {
     void ItemGroup2D::set_number_of_items(float number)
     {
         ui_data.num_group_items = number;
+        ui_data.aspect_ratio = number;
 
         update_ui_data();
     }
@@ -1138,6 +1142,7 @@ namespace ui {
         ui_data.hover_info.x = 0.0f;
         ui_data.hover_info.y = 0.0f;
         ui_data.slider_value = current_value;
+        ui_data.aspect_ratio = (mode == HORIZONTAL ? 2.0f : 1.0f);
 
         // Only appear on hover if slider is enabled..
         if (!disabled) {
@@ -1185,7 +1190,6 @@ namespace ui {
         // Update uniforms
         ui_data.hover_info.x = 1.0f;
         ui_data.hover_info.y = glm::clamp(hover_factor, 0.0f, 1.0f);
-        spdlog::info("HOVER FAC: {}", ui_data.hover_info.y);
 
         update_ui_data();
 

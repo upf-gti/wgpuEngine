@@ -44,7 +44,7 @@ fn fs_main(in: VertexOutput) -> FragmentOutput {
 
     var uvs = vec2f(in.uv.x, 1.0 - in.uv.y);
     var pos : vec2f = vec2(uvs * 2.0 - 1.0);
-    pos.x *= ui_data.num_group_items;
+    pos.x *= ui_data.aspect_ratio;
 
     let d : f32 = sdRoundedBox(pos, si, ra);
     
