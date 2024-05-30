@@ -88,6 +88,8 @@ protected:
 
     void render_render_list(int list_index, WGPURenderPassEncoder render_pass, const WGPUBindGroup& render_bind_group_camera, uint32_t camera_buffer_stride = 0);
 
+    std::vector<float> get_timestamps();
+
     std::vector<sUniformData> instance_data[RENDER_LIST_SIZE];
     Uniform	instance_data_uniform[RENDER_LIST_SIZE];
 
@@ -125,7 +127,8 @@ protected:
     uint8_t maximum_query_sets = 16;
     WGPUBuffer timestamp_query_buffer;
     uint8_t query_index = 0;
-    std::map<uint8_t, std::string> query_label_map;
+    std::map<uint8_t, std::string> queries_label_map;
+    std::vector<float> last_frame_timestamps;
 
 public:
 
@@ -149,7 +152,7 @@ public:
     void init_timestamp_queries();
 
     void resolve_query_set(WGPUCommandEncoder encoder, uint8_t first_query);
-    void print_timestamps();
+    std::vector<float>& get_last_frame_timestamps() { return last_frame_timestamps; }
 
     void set_msaa_count(uint8_t msaa_count);
     uint8_t get_msaa_count();
@@ -162,7 +165,10 @@ public:
     bool get_openxr_available() { return is_openxr_available; }
     bool get_use_mirror_screen() { return use_mirror_screen; }
 
-    void timestamp(WGPUCommandEncoder encoder, const char* label = "");
+    uint8_t timestamp(WGPUCommandEncoder encoder, const char* label = "");
+
+    WGPUQuerySet get_query_set() { return timestamp_query_set; }
+    std::map<uint8_t, std::string>& get_queries_label_map() { return queries_label_map; }
 
     glm::vec4 get_clear_color() { return clear_color; }
 

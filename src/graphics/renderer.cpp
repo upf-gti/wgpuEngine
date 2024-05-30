@@ -287,23 +287,27 @@ void Renderer::resolve_query_set(WGPUCommandEncoder encoder, uint8_t first_query
     wgpuCommandEncoderResolveQuerySet(encoder, timestamp_query_set, first_query, query_index, timestamp_query_buffer, 0);
 }
 
-void Renderer::print_timestamps()
+std::vector<float> Renderer::get_timestamps()
 {
     uint64_t* buffer_data = reinterpret_cast<uint64_t*>(webgpu_context->read_buffer(timestamp_query_buffer, sizeof(uint64_t) * maximum_query_sets));
 
-    std::vector<uint64_t> time_diffs;
-    for (int i = 1; i < query_index; ++i) {
-        uint64_t diff = buffer_data[i] - buffer_data[i - 1];
-        diff /= 100000000; // nanoseconds to milliseconds
-        time_diffs.push_back(diff);
+    std::vector<float> time_diffs;
+    for (int i = 0; i < query_index; i += 2) {
+        uint64_t diff = buffer_data[i + 1] - buffer_data[i];
+        float milliseconds = (float)diff * 1e-6;
+        time_diffs.push_back(milliseconds);
     }
 
     for (int i = 0; i < time_diffs.size(); ++i) {
-        uint64_t time = time_diffs[i];
-        std::string& label = query_label_map[i + 1];
+        float time = time_diffs[i];
+        std::string& label = queries_label_map[i * 2 + 1];
 
         spdlog::info("{} lasted: {} ms", label, time);
     }
+
+    delete[] buffer_data;
+
+    return time_diffs;
 }
 
 void Renderer::set_msaa_count(uint8_t msaa_count)
@@ -598,14 +602,14 @@ void Renderer::render_2D(WGPURenderPassEncoder render_pass, const WGPUBindGroup&
 #endif
 }
 
-void Renderer::timestamp(WGPUCommandEncoder encoder, const char* label)
+uint8_t Renderer::timestamp(WGPUCommandEncoder encoder, const char* label)
 {
-    wgpuCommandEncoderWriteTimestamp(encoder, timestamp_query_set, query_index);
-    query_label_map[query_index] = std::string(label);
+    //wgpuCommandEncoderWriteTimestamp(encoder, timestamp_query_set, query_index);
+    queries_label_map[query_index] = std::string(label);
 
-    query_index++;
+    assert(query_index + 1 < maximum_query_sets);
 
-    assert(query_index < maximum_query_sets);
+    return query_index++;
 }
 
 void Renderer::add_renderable(MeshInstance* mesh_instance, glm::mat4x4 global_matrix)

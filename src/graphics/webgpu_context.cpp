@@ -727,6 +727,7 @@ void* WebGPUContext::read_buffer(WGPUBuffer buffer, size_t size)
 
     userdata.output_buffer = output_buffer;
     userdata.buffer_size = size;
+    userdata.data = malloc(size);
 
     bool finished = false;
     wgpuBufferMapAsync(output_buffer, WGPUMapMode_Read, 0, size, [](WGPUBufferMapAsyncStatus status, void* userdata) {
@@ -735,12 +736,17 @@ void* WebGPUContext::read_buffer(WGPUBuffer buffer, size_t size)
 
         if (status == WGPUBufferMapAsyncStatus_Success) {
             memcpy(buffer_data->data, wgpuBufferGetConstMappedRange(buffer_data->output_buffer, 0, buffer_data->buffer_size), buffer_data->buffer_size);
+            int i = 0;
             wgpuBufferUnmap(buffer_data->output_buffer);
         }
 
         buffer_data->finished = true;
 
     }, &userdata);
+
+    while (!userdata.finished) {
+        process_events();
+    }
 
     return userdata.data;
 }
