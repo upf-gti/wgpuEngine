@@ -1,4 +1,3 @@
-#include ui_utils.wgsl
 #include ../mesh_includes.wgsl
 
 #define GAMMA_CORRECTION
@@ -27,6 +26,9 @@ fn vs_main(in: VertexInput) -> VertexOutput {
 struct FragmentOutput {
     @location(0) color: vec4f
 }
+
+const COLOR_TERCIARY        = pow(vec3f(1.0, 0.404, 0.0), vec3f(2.2));
+const COLOR_HIGHLIGHT_LIGHT = pow(vec3f(0.467, 0.333, 0.933), vec3f(2.2));
 
 @fragment
 fn fs_main(in: VertexOutput) -> FragmentOutput {

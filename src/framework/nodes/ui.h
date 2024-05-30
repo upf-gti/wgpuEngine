@@ -15,7 +15,6 @@ namespace ui {
     const float PICKER_SIZE         = 164.f;
     const float BUTTON_SIZE         = 64.f;
     const float GROUP_MARGIN        = 12.f;
-    const float LAYER_MARGIN        = 8.f;
     const float TEXT_SHADOW_MARGIN  = 1.f;
 
     enum ComboIndex {
@@ -44,6 +43,7 @@ namespace ui {
 
         bool render_background  = true;
         bool pressed_inside     = false;
+        bool on_hover           = false;
 
         uint8_t parameter_flags = 0;
 
@@ -234,6 +234,10 @@ namespace ui {
         int mode = SliderMode::VERTICAL;
 
         bool disabled = false;
+
+        float hover_factor          = 0.0f;
+        float target_hover_factor   = 0.0f;
+        float timer                 = 0.0f;
 
         float current_value = 0.0f;
         float min_value = 0.0f;

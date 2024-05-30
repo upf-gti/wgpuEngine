@@ -33,6 +33,7 @@ enum Node2DClassType {
 struct sInputData {
     bool is_hovered = false;
     bool is_pressed = false;
+    bool was_hovered = false;
     bool was_pressed = false;
     bool was_released = false;
     glm::vec2 local_position = glm::vec2(0.0f);

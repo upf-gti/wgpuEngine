@@ -65,7 +65,8 @@ namespace ui {
             // Convert the mat3x3 to mat4x4
             uint8_t priority = class_type;
             glm::vec2 position = get_translation() + size * 0.5f * get_scale();
-            glm::vec2 scale = get_scale() * scaling;
+            // Don't apply the scaling to combo buttons.. 
+            glm::vec2 scale = get_scale() * (class_type != Node2DClassType::COMBO_BUTTON ? scaling : glm::vec2(1.0f));
             glm::mat4x4 model = glm::translate(glm::mat4x4(1.0f), glm::vec3(position, -priority * 1e-4));
             model = glm::scale(model, glm::vec3(scale, 1.0f));
             model = get_global_viewport_model() * model;
@@ -181,6 +182,10 @@ namespace ui {
             data.local_position = glm::vec2(local_pos.x, size.y - local_pos.y);
         }
 
+        if (!on_hover && data.is_hovered) {
+            data.was_hovered = true;
+        }
+
         // Few logic for managing focus
 
         if (data.was_pressed) {
@@ -230,8 +235,8 @@ namespace ui {
 
         quad_mesh.set_surface_material_override(quad_mesh.get_surface(0), material);
 
-        padding = glm::vec2(4.0f);
-        item_margin = glm::vec2(4.0f);
+        padding = glm::vec2(2.0f);
+        item_margin = glm::vec2(6.0f);
 
         render_background = false;
     }
@@ -687,10 +692,11 @@ namespace ui {
         // Set new size
 
         float current_scale = scaling.x;
+        float f = glm::elasticEaseOut(glm::clamp(timer, 0.0f, 1.0f));
 
         if (current_scale != target_scale) {
             timer += delta_time;
-            scaling = glm::vec2(glm::lerp(current_scale, target_scale, glm::quadraticEaseOut(glm::clamp(timer / 1.5f, 0.0f, 1.0f))));
+            scaling = glm::vec2(glm::lerp(1.0f, target_scale, f));
         }
         else {
             timer = 0.0f;
@@ -709,7 +715,8 @@ namespace ui {
         }
 
         // reset event stuff..
-        ui_data.is_hovered = 0.0f;
+        ui_data.hover_info.x = 0.0f;
+        ui_data.hover_info.y = glm::clamp(timer, 0.0f, 1.0f);
         ui_data.is_selected = selected ? 1.f : 0.f;
 
         if (text_2d) {
@@ -717,6 +724,8 @@ namespace ui {
         }
 
         target_scale = 1.0f;
+
+        on_hover = false;
 
         update_ui_data();
     }
@@ -737,12 +746,13 @@ namespace ui {
             on_pressed();
         }
 
-        if (class_type != Node2DClassType::COMBO_BUTTON) {
-            target_scale = 1.1f;
-        }
+        target_scale = 1.1f;
 
         // Update uniforms
-        ui_data.is_hovered = 1.0f;
+        ui_data.hover_info.x = 1.0f;
+        ui_data.hover_info.y = glm::lerp(0.0f, 1.0f, glm::clamp(scaling.x / target_scale, 0.0f, 1.0f));
+
+        on_hover = true;
 
         update_ui_data();
 
@@ -899,7 +909,7 @@ namespace ui {
 
         class_type = Node2DClassType::COMBO;
 
-        item_margin = glm::vec2(0.0f);
+        item_margin = glm::vec2(-6.0f);
     }
 
     void ComboButtons2D::on_children_changed()
@@ -990,7 +1000,7 @@ namespace ui {
         {
             submenu_mark->set_model(get_global_model());
             submenu_mark->scale(glm::vec3(0.6f, 0.6f, 1.0f));
-            submenu_mark->translate(glm::vec3(get_size().x * 0.92f, get_size().y * 0.8f, -1e-3f));
+            submenu_mark->translate(glm::vec3(get_size().x * 0.85f, get_size().y * 0.85f, -1e-3f));
         }
     }
 
@@ -1112,6 +1122,8 @@ namespace ui {
     {
         Panel2D::update(delta_time);
 
+        timer += delta_time;
+
         if (!visibility)
             return;
 
@@ -1123,13 +1135,16 @@ namespace ui {
         }
 
         // Update uniforms
-        ui_data.is_hovered = 0.0f;
+        ui_data.hover_info.x = 0.0f;
+        ui_data.hover_info.y = 0.0f;
         ui_data.slider_value = current_value;
 
         // Only appear on hover if slider is enabled..
         if (!disabled) {
             text_2d->set_visibility(false);
         }
+
+        on_hover = false;
 
         update_ui_data();
     }
@@ -1140,16 +1155,15 @@ namespace ui {
 
         if (data.is_pressed)
         {
-            float bounds = (mode == HORIZONTAL ? size.x : size.y) * 0.975f;
-            // -scale..scale -> 0..1
+            float real_size = (mode == HORIZONTAL ? size.x : size.y);
             float local_point = (mode == HORIZONTAL ? data.local_position.x : size.y - data.local_position.y);
             // this is at range 0..1
-            current_value = glm::clamp(local_point / bounds, 0.f, 1.f);
+            current_value = glm::clamp(local_point / real_size, 0.f, 1.f);
             // set in range min-max
             current_value = remap_range(current_value, 0.0f, 1.0f, min_value, max_value);
             // make sure it reaches min, max values
-            if (fabsf(current_value - min_value) < 1e-3f) current_value = min_value;
-            else if (fabsf(current_value - max_value) < 1e-3f) current_value = max_value;
+            if (fabsf(current_value - min_value) < 1e-4f) current_value = min_value;
+            else if (fabsf(current_value - max_value) < 1e-4f) current_value = max_value;
             // emit signal to use new value
             Node::emit_signal(signal, current_value);
 
@@ -1160,8 +1174,18 @@ namespace ui {
             on_pressed();
         }
 
+        if (data.was_hovered) {
+            timer = 0.f;
+        }
+
+        on_hover = true;
+
+        hover_factor = glm::cubicEaseOut(glm::clamp(timer / 0.2f, 0.0f, 1.0f));
+
         // Update uniforms
-        ui_data.is_hovered = 1.0f;
+        ui_data.hover_info.x = 1.0f;
+        ui_data.hover_info.y = glm::clamp(hover_factor, 0.0f, 1.0f);
+        spdlog::info("HOVER FAC: {}", ui_data.hover_info.y);
 
         update_ui_data();
 
@@ -1259,7 +1283,7 @@ namespace ui {
         }
 
         // Update uniforms
-        ui_data.is_hovered = 0.0f;
+        ui_data.hover_info.x = 0.0f;
         ui_data.picker_color = color;
 
         update_ui_data();
@@ -1304,7 +1328,7 @@ namespace ui {
        }
 
         // Update uniforms
-        ui_data.is_hovered = 1.0f;
+        ui_data.hover_info.x = 1.0f;
 
         update_ui_data();
 

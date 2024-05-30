@@ -1,5 +1,4 @@
 #include ui_includes.wgsl
-#include ui_utils.wgsl
 #include ../mesh_includes.wgsl
 
 #define GAMMA_CORRECTION
@@ -39,66 +38,66 @@ struct FragmentOutput {
     @location(0) color: vec4f
 }
 
-fn remap_range(oldValue : f32, oldMin: f32, oldMax : f32, newMin : f32, newMax : f32) -> f32 {
-    return (((oldValue - oldMin) * (newMax - newMin)) / (oldMax - oldMin)) + newMin;
-}
-
 @fragment
 fn fs_main(in: VertexOutput) -> FragmentOutput {
 
     var dummy = camera_data.eye;
 
-    // Alpha mask
-    var uvs_mask = in.uv;
-    var tx = max(UI_BUTTON_SIZE, UI_BUTTON_SIZE * ui_data.num_group_items);
-    var divisions = tx / UI_BUTTON_SIZE;
-    uvs_mask.x *= divisions;
-    uvs_mask.y = 1.0 - uvs_mask.y;
-    var sd = vec2f(clamp(uvs_mask.x, 0.5, divisions - 0.5), 0.5);
-    var dist = distance(uvs_mask, sd);
-    var button_radius : f32 = 0.42;
+    let hover_transition : f32 = pow(ui_data.hover_info.y, 3.0);
     
+    var out: FragmentOutput;
+
 #ifdef ALBEDO_TEXTURE
     var tex_color : vec4f = textureSample(albedo_texture, texture_sampler, in.uv);
 #else
     var tex_color : vec4f = vec4f(0.0);
 #endif
 
-    var out: FragmentOutput;
+                         // tr   br   tl   bl
+    var ra : vec4f = vec4f(0.98);
+    var si : vec2f = vec2f(0.98 * ui_data.num_group_items, 0.98);
+    ra = min(ra, min(vec4f(si.x), vec4f(si.y)));
+    ra = mix(ra, ra * 0.5, hover_transition);
+
+    var uvs = vec2f(in.uv.x, 1.0 - in.uv.y);
+    var pos : vec2f = vec2(uvs * 2.0 - 1.0);
+    pos.x *= ui_data.num_group_items;
+
+    let d : f32 = sdRoundedBox(pos, si, ra);
 
     let value = ui_data.slider_value;
     let max_value = ui_data.slider_max;
     let min_value = ui_data.slider_min;
 
     // add gradient at the end to simulate the slider thumb
-    var axis = select( in.uv.x, uvs_mask.y, ui_data.num_group_items == 1.0 );
+    var axis = select( uvs.x, uvs.y, ui_data.num_group_items == 1.0 );
 
-    var mesh_color = mix( COLOR_HIGHLIGHT_LIGHT, COLOR_TERCIARY, pow(axis, 1.5));
+    var mesh_color : vec3f = mix( COLOR_HIGHLIGHT_LIGHT, COLOR_TERCIARY, pow(axis, 1.5));
+    mesh_color = mix(mesh_color, COLOR_PRIMARY, max(uvs.y - 0.65, 0.0));
 
-    if(ui_data.is_hovered > 0.0) {
+    if(ui_data.hover_info.x > 0.0) {
         mesh_color *= 1.5;
     }
 
-    let percent : f32 = remap_range(value, min_value, max_value, 0.0, 1.0);
-
-    // texture
-    let alpha : f32 = 1.0 - smoothstep(0.95, tex_color.a, 0.0);
+    let percent : f32 = remap_range(value, min_value, max_value, 0.035, 1.0);
 
     var grad = smoothstep(percent - 0.05, percent, axis);
     grad -= smoothstep(percent, percent + 0.05, axis);
     mesh_color += grad;
-    mesh_color = mix(mesh_color, tex_color.rgb, alpha);
+    mesh_color = mix(mesh_color, tex_color.rgb, tex_color.a);
 
-    let back_color = vec3f(0.02);
-    var final_color : vec3f = select( mesh_color, back_color + tex_color.rgb * 0.3 * alpha, axis > percent );
-    
-    var shadow : f32 = smoothstep(button_radius, 0.5, dist);
+    var final_color : vec3f = select( mesh_color, COLOR_DARK + tex_color.rgb * 0.3 * tex_color.a, axis > percent );
     
     if (GAMMA_CORRECTION == 1) {
         final_color = pow(final_color, vec3f(1.0 / 2.2));
     }
 
-    out.color = vec4f(final_color, 1.0 - shadow);
+    final_color = mix( final_color, vec3f(0.3), 1.0 - smoothstep(0.08, 0.16, abs(d)) );
+
+    var alpha : f32 = select(0.0, 1.0, d > 0.0);
+    alpha = smoothstep(0.0, 0.04, d);
+
+    out.color = vec4f(final_color, 1.0 - alpha);
 
     return out;
 }

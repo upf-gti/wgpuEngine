@@ -1,5 +1,4 @@
 #include ui_includes.wgsl
-#include ui_utils.wgsl
 #include ../mesh_includes.wgsl
 
 #define GAMMA_CORRECTION
@@ -43,100 +42,73 @@ struct FragmentOutput {
 fn fs_main(in: VertexOutput) -> FragmentOutput {
 
     var dummy = camera_data.eye;
-    let combo_index = ui_data.num_group_items;
 
-    // Mask button shape
-    var uvs = in.uv;
-    var button_radius : f32 = 0.42;
-    if(combo_index == 1.0) {
-        if(uvs.x > 0.5) {
-            uvs.x = 0.5;
-        }
-    }
-    else if(combo_index == 2.0) {
-        uvs.x = 0.5;
-    }
-    else if(combo_index == 3.0) {
-        if(uvs.x < 0.5) {
-            uvs.x = 0.5;
-        }
-    }
-    var dist : f32 = distance(uvs, vec2f(0.5));
-    var max_radius : f32 = 0.5;
+    let combo_index = ui_data.num_group_items;
+    let is_disabled : bool = ui_data.is_button_disabled > 0.0;
+    let is_selected : bool = ui_data.is_selected > 0.0;
+    let keep_colors : bool = (ui_data.keep_rgb + ui_data.is_color_button) > 0.0;
+    let hover_transition : f32 = pow(ui_data.hover_info.y, 3.0);
 
     var out: FragmentOutput;
 
 #ifdef ALBEDO_TEXTURE
     var color : vec4f = textureSample(albedo_texture, texture_sampler, in.uv);
 #else
-    var color : vec4f = vec4f(1.0);
+    var color : vec4f = vec4f(in.color.rgb, 1.0);
 #endif
 
-    var is_disabled : bool = ui_data.is_button_disabled > 0.0;
-    var is_color_button : bool = ui_data.is_color_button > 0.0;
-    var keep_colors : bool = (ui_data.keep_rgb + ui_data.is_color_button) > 0.0;
-    var is_selected : bool = ui_data.is_selected > 0.0;
-    var is_hovered : bool = ui_data.is_hovered > 0.0;
+    let bra : f32 = mix(0.98, 0.6, hover_transition);
+                         // tr   br   tl   bl
+    var ra : vec4f = vec4f(bra);
+    var si : vec2f = vec2f(0.98, 0.98);
 
-    var selected_color : vec3f = COLOR_HIGHLIGHT_DARK;
-    var highlight_color : vec3f = COLOR_SECONDARY;
-    var back_color : vec3f = vec3f(0.02);
-    var icon_color : vec3f = back_color;
-    var gradient_factor : f32 = pow(uvs.y, 2.5);
-
-    if(is_disabled) {
-        back_color = vec3f(0.15);
+    if(combo_index == 1.0) {
+        ra.x = 0.0;
+        ra.y = 0.0;
     }
-
-    // Assign basic color
-    var lum = color.r * 0.3 + color.g * 0.59 + color.b * 0.11;
-    var final_color = vec3f( 1.0 - smoothstep(0.15, 0.4, lum) );
-    final_color = max(final_color, icon_color);
+    else if(combo_index == 2.0) {
+        ra = vec4f(0.0);
+    }
+    else if(combo_index == 3.0) {
+        ra.z = 0.0;
+        ra.w = 0.0;
+    }
 
     if(keep_colors) {
-        final_color = color.rgb * in.color.rgb;
-        final_color = pow(final_color, vec3f(1.0/2.2));
-        highlight_color = vec3f(1.0);
+        ra = vec4f(si.x);
     }
 
-    if(is_selected) {
-        if( !keep_colors ) {
-            var sel_color = mix( COLOR_HIGHLIGHT_LIGHT, COLOR_TERCIARY, uvs.x * uvs.y );
-            icon_color = select( sel_color, sel_color + COLOR_TERCIARY * 0.2, is_hovered );
-            final_color = smoothstep(vec3f(0.25), vec3f(0.45), color.rgb) * 0.5;
-        }
-    } 
-    // not selected but hovered
-    else if(is_hovered && !keep_colors) {
-        highlight_color = mix( COLOR_TERCIARY, COLOR_HIGHLIGHT_LIGHT, gradient_factor );
-    }
-    else if(is_hovered) {
-        icon_color = vec3f(0.15);
-        final_color += vec3f(0.1);
-    }
+    var pos : vec2f = in.uv * 2.0 - 1.0;
+    pos.y *= -1.0;
 
-    final_color = mix(back_color, icon_color + final_color * highlight_color, color.a);
+    let d : f32 = sdRoundedBox(pos, si, ra);
+    let center_dist = distance(in.uv, vec2f(0.5));
 
-    var shadow : f32 = smoothstep(button_radius, max_radius, dist);
-    
-    if(is_color_button) {
-        final_color = mix(final_color, OUTLINECOLOR.rgb, smoothstep(button_radius - 0.04, button_radius, dist));
+    var final_color : vec3f = color.rgb;
 
-        final_color = mix(final_color, OUTLINECOLOR.rgb, (uvs.x * uvs.y) * 0.5);
+    if(!is_disabled) {
+        let no_hover_color = COLOR_DARK;
+        let hover_color = mix(COLOR_TERCIARY, mix( COLOR_HIGHLIGHT_LIGHT, COLOR_TERCIARY, in.uv.x * in.uv.y ), in.uv.x );
+        final_color = mix( mix(no_hover_color, hover_color, hover_transition), final_color, color.a );
 
-        final_color = pow(final_color, vec3f(2.2));
-        shadow = smoothstep(max_radius - 0.04, max_radius, dist);
-    }
+        if(is_selected) {
+            final_color = mix( mix( COLOR_HIGHLIGHT_LIGHT, COLOR_TERCIARY, in.uv.x * in.uv.y ), final_color, color.a );
+        } 
 
-    if(dist > button_radius && !is_color_button) {
-        final_color = back_color;
+    } else {
+        final_color = mix( COLOR_SECONDARY, final_color , color.a ) * 0.5;
     }
 
     if (GAMMA_CORRECTION == 1) {
         final_color = pow(final_color, vec3f(1.0 / 2.2));
     }
 
-    out.color = vec4f(final_color, 1.0 - shadow);
+    final_color = mix( final_color, vec3f(0.3), 1.0 - smoothstep(0.08, 0.16, abs(d)) );
+
+    var alpha : f32 = select(0.0, 1.0, d < 0.0);
+    alpha = smoothstep(0.0, 0.04, d);
+
+    out.color = vec4f(final_color, 1.0 - alpha);
 
     return out;
 }
