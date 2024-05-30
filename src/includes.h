@@ -1,7 +1,7 @@
 #pragma once
 
 #if !defined(__EMSCRIPTEN__)
-//#define XR_SUPPORT
+#define XR_SUPPORT
 #define USE_MIRROR_WINDOW
 #endif
 

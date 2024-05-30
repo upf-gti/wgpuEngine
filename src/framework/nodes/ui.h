@@ -12,7 +12,7 @@
 
 namespace ui {
 
-    const float PICKER_SIZE         = 164.f;
+    const float PICKER_SIZE         = 154.f;
     const float BUTTON_SIZE         = 64.f;
     const float GROUP_MARGIN        = 12.f;
     const float TEXT_SHADOW_MARGIN  = 1.f;
