@@ -97,7 +97,7 @@ fn fs_main(in: VertexOutput) -> FragmentOutput {
         } 
 
     } else {
-        final_color = mix( COLOR_SECONDARY, final_color , color.a ) * 0.5;
+        final_color = mix( COLOR_SECONDARY, final_color , color.a ) * 0.3;
     }
 
     if (GAMMA_CORRECTION == 1) {
