@@ -1004,7 +1004,7 @@ namespace ui {
         {
             submenu_mark->set_model(get_global_model());
             submenu_mark->scale(glm::vec3(0.6f, 0.6f, 1.0f));
-            submenu_mark->translate(glm::vec3(get_size().x * 0.85f, get_size().y * 0.85f, -1e-3f));
+            submenu_mark->translate(glm::vec3(-get_size().x * 0.15f, get_size().y * 0.85f, -1e-3f));
         }
     }
 
