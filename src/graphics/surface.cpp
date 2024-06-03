@@ -159,14 +159,58 @@ void Surface::create_quad(float w, float h, bool centered, const glm::vec3& colo
 
     glm::vec3 origin(0.0f);
 
-    if (!centered)
-    {
+    if (!centered) {
         origin += glm::vec3(w * 0.5f, h * 0.5f, 0.0f);
     }
 
     vertices = generate_quad(w, h, origin, normals::pZ, color);
 
     spdlog::trace("Quad mesh created ({} vertices)", vertices.size());
+
+    create_vertex_buffer();
+}
+
+void Surface::create_subvidided_quad(float w, float h, uint32_t subdivisions, bool centered, const glm::vec3& color)
+{
+    // Mesh has vertex data...
+    if (vertex_buffer)
+    {
+        vertices.clear();
+        wgpuBufferDestroy(vertex_buffer);
+    }
+
+    float step_x = w / subdivisions;
+    float step_y = h / subdivisions;
+
+    glm::vec3 origin = { -w * 0.5f, -h * 0.5f, 0.0f };
+
+    if (!centered) {
+        origin += glm::vec3(w * 0.5f, h * 0.5f, 0.0f);
+    }
+
+    // Generate vertices with positions and UVs
+    for (int i = 0; i < subdivisions; ++i) {
+        for (int j = 0; j < subdivisions; ++j) {
+
+            const glm::vec3& new_origin = origin + glm::vec3(j * step_x, i * step_y, 0.0f) + glm::vec3(step_x * 0.5f, step_y * 0.5f, 0.0f);
+            std::vector<InterleavedData> vtxs = generate_quad(step_x, step_y, new_origin, normals::pZ, color);
+
+            const glm::vec2& uv0 = { static_cast<float>(j) / subdivisions, 1.0f - static_cast<float>(i) / subdivisions };
+            const glm::vec2& uv1 = { static_cast<float>(j + 1u) / subdivisions, 1.0f - static_cast<float>(i + 1u) / subdivisions };
+
+            vtxs[0].uv = uv0;
+            vtxs[1].uv = glm::vec2(uv1.x, uv0.y);
+            vtxs[2].uv = uv1;
+
+            vtxs[3].uv = uv0;
+            vtxs[4].uv = uv1;
+            vtxs[5].uv = glm::vec2(uv0.x, uv1.y);
+
+            vertices.insert(vertices.end(), vtxs.begin(), vtxs.end());
+        }
+    }
+
+    spdlog::trace("Subvidided Quad mesh created ({} vertices)", vertices.size());
 
     create_vertex_buffer();
 }
