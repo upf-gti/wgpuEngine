@@ -62,6 +62,12 @@ namespace ui {
         void set_color(const Color& c);
     };
 
+    class Image2D : public Panel2D {
+    public:
+
+        Image2D(const std::string& name, const std::string& image_path, const glm::vec2& p, const glm::vec2& s);
+    };
+
     class Container2D : public Panel2D {
     public:
 

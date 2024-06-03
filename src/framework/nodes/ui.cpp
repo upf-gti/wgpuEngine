@@ -15,6 +15,7 @@
 #include "glm/gtx/compatibility.hpp"
 
 #include "shaders/mesh_color.wgsl.gen.h"
+#include "shaders/mesh_texture.wgsl.gen.h"
 #include "shaders/ui/ui_color_picker.wgsl.gen.h"
 #include "shaders/ui/ui_slider.wgsl.gen.h"
 #include "shaders/ui/ui_selector.wgsl.gen.h"
@@ -141,6 +142,7 @@ namespace ui {
 
             float collision_dist;
             glm::vec3 intersection_point;
+            glm::vec3 local_intersection_point;
 
             data.is_hovered = intersection::ray_quad(
                 ray_origin,
@@ -149,6 +151,7 @@ namespace ui {
                 quad_size,
                 quad_rotation,
                 intersection_point,
+                local_intersection_point,
                 collision_dist,
                 false
             );
@@ -178,7 +181,7 @@ namespace ui {
 
             data.ray_distance = collision_dist;
 
-            glm::vec2 local_pos = glm::vec2(intersection_point) / get_scale();
+            glm::vec2 local_pos = glm::vec2(local_intersection_point) / get_scale();
             data.local_position = glm::vec2(local_pos.x, size.y - local_pos.y);
         }
 
@@ -217,6 +220,30 @@ namespace ui {
     {
         auto webgpu_context = Renderer::instance->get_webgpu_context();
         RendererStorage::update_ui_widget(webgpu_context, &quad_mesh, ui_data);
+    }
+
+    /*
+    *   Image
+    */
+
+    Image2D::Image2D(const std::string& name, const std::string& image_path, const glm::vec2& p, const glm::vec2& s)
+        : Panel2D(name, p, s, colors::WHITE)
+    {
+        class_type = Node2DClassType::IMAGE;
+
+        Material material;
+        material.color = color;
+        material.flags = MATERIAL_2D | MATERIAL_UI;
+        material.cull_type = CULL_BACK;
+        material.transparency_type = ALPHA_BLEND;
+        material.priority = class_type;
+        material.diffuse_texture = RendererStorage::get_texture(image_path, true);
+        material.shader = RendererStorage::get_shader_from_source(shaders::mesh_texture::source, shaders::mesh_texture::path, material);
+
+        quad_mesh.set_surface_material_override(quad_mesh.get_surface(0), material);
+
+        //auto webgpu_context = Renderer::instance->get_webgpu_context();
+        //RendererStorage::register_ui_widget(webgpu_context, material.shader, &quad_mesh, ui_data, 3);
     }
 
     /*
