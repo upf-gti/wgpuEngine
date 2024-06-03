@@ -718,6 +718,9 @@ void* WebGPUContext::read_buffer(WGPUBuffer buffer, size_t size)
 
     wgpuQueueSubmit(device_queue, 1, &commands);
 
+    wgpuCommandBufferRelease(commands);
+    wgpuCommandEncoderRelease(encoder);
+
     struct BufferData {
         bool finished = false;
         WGPUBuffer output_buffer;
@@ -747,6 +750,8 @@ void* WebGPUContext::read_buffer(WGPUBuffer buffer, size_t size)
     while (!userdata.finished) {
         process_events();
     }
+
+    wgpuBufferRelease(output_buffer);
 
     return userdata.data;
 }

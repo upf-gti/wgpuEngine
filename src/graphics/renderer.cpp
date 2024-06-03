@@ -298,12 +298,6 @@ std::vector<float> Renderer::get_timestamps()
         time_diffs.push_back(milliseconds);
     }
 
-    for (int i = 0; i < time_diffs.size(); ++i) {
-        float time = time_diffs[i];
-        std::string& label = queries_label_map[i * 2 + 1];
-        // spdlog::trace("{} lasted: {} ms", label, time);
-    }
-
     delete[] buffer_data;
 
     return time_diffs;
