@@ -1,6 +1,7 @@
 struct UIData {
     hover_info: vec2f,
-    dummy0: vec2f,
+    dummy: vec2f,
+    xr_info: vec4f,
     aspect_ratio : f32,
     num_group_items : f32,
     is_selected : f32,

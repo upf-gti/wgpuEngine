@@ -51,6 +51,7 @@ namespace ui {
 
         Panel2D() {};
         Panel2D(const std::string& name, const glm::vec2& p, const glm::vec2& s, const Color& c = colors::WHITE);
+        Panel2D(const std::string& name, const std::string& image_path, const glm::vec2& p, const glm::vec2& s, const Color& c = colors::WHITE);
 
         sInputData get_input_data() override;
 
@@ -62,10 +63,14 @@ namespace ui {
         void set_color(const Color& c);
     };
 
-    class Image2D : public Panel2D {
+    class XRPanel : public Panel2D {
     public:
 
-        Image2D(const std::string& name, const std::string& image_path, const glm::vec2& p, const glm::vec2& s);
+        XRPanel(const std::string& name, const std::string& image_path, const glm::vec2& p, const glm::vec2& s);
+
+        void update(float delta_time) override;
+
+        void add_button(const glm::vec2& p, const glm::vec2& s, const Color& c = colors::WHITE);
     };
 
     class Container2D : public Panel2D {

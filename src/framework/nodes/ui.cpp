@@ -16,6 +16,7 @@
 
 #include "shaders/mesh_color.wgsl.gen.h"
 #include "shaders/mesh_texture.wgsl.gen.h"
+#include "shaders/ui/ui_xr_panel.wgsl.gen.h"
 #include "shaders/ui/ui_color_picker.wgsl.gen.h"
 #include "shaders/ui/ui_slider.wgsl.gen.h"
 #include "shaders/ui/ui_selector.wgsl.gen.h"
@@ -33,15 +34,26 @@ namespace ui {
     Node2D* Panel2D::focused = nullptr;
 
     Panel2D::Panel2D(const std::string& name, const glm::vec2& pos, const glm::vec2& size, const Color& col)
-        : Node2D(name, pos, size), color(col)
+        : Panel2D(name, "", pos, size, col) { }
+
+    Panel2D::Panel2D(const std::string& name, const std::string& image_path, const glm::vec2& p, const glm::vec2& s, const Color& c)
+        : Node2D(name, p, s), color(c)
     {
         class_type = Node2DClassType::PANEL;
 
         Material material;
         material.color = color;
         material.flags = MATERIAL_2D;
+        material.cull_type = CULL_BACK;
+        material.transparency_type = ALPHA_BLEND;
         material.priority = class_type;
-        material.shader = RendererStorage::get_shader_from_source(shaders::mesh_color::source, shaders::mesh_color::path, material);
+        if (image_path.size()) {
+            material.diffuse_texture = RendererStorage::get_texture(image_path, true);
+            material.shader = RendererStorage::get_shader_from_source(shaders::mesh_texture::source, shaders::mesh_texture::path, material);
+        }
+        else {
+            material.shader = RendererStorage::get_shader_from_source(shaders::mesh_color::source, shaders::mesh_color::path, material);
+        }
 
         Surface* quad_surface = new Surface();
         quad_surface->create_quad(size.x, size.y);
@@ -61,6 +73,10 @@ namespace ui {
     {
         if (!visibility)
             return;
+
+        if (class_type == PANEL) {
+            int a = 1;
+        }
 
         if (render_background) {
             // Convert the mat3x3 to mat4x4
@@ -226,24 +242,50 @@ namespace ui {
     *   Image
     */
 
-    Image2D::Image2D(const std::string& name, const std::string& image_path, const glm::vec2& p, const glm::vec2& s)
-        : Panel2D(name, p, s, colors::WHITE)
+    XRPanel::XRPanel(const std::string& name, const std::string& image_path, const glm::vec2& p, const glm::vec2& s)
+        : Panel2D(name, image_path, p, s, colors::WHITE)
     {
-        class_type = Node2DClassType::IMAGE;
+        Surface* quad_surface = quad_mesh.get_surface(0);
+        quad_surface->create_subvidided_quad(size.x, size.y);
 
-        Material material;
-        material.color = color;
-        material.flags = MATERIAL_2D | MATERIAL_UI;
-        material.cull_type = CULL_BACK;
-        material.transparency_type = ALPHA_BLEND;
-        material.priority = class_type;
-        material.diffuse_texture = RendererStorage::get_texture(image_path, true);
-        material.shader = RendererStorage::get_shader_from_source(shaders::mesh_texture::source, shaders::mesh_texture::path, material);
+        Material* material = quad_mesh.get_surface_material_override(quad_surface);
+        material->flags |= MATERIAL_UI;
+        // material->shader = RendererStorage::get_shader_from_source(shaders::ui_xr_panel::source, shaders::ui_xr_panel::path, *material);
+        material->shader = RendererStorage::get_shader("data/shaders/ui_xr_panel.wgsl", *material);
 
-        quad_mesh.set_surface_material_override(quad_mesh.get_surface(0), material);
+        ui_data.xr_info = glm::vec4(1.0f, 1.0f, 0.5f, 0.5f);
 
-        //auto webgpu_context = Renderer::instance->get_webgpu_context();
-        //RendererStorage::register_ui_widget(webgpu_context, material.shader, &quad_mesh, ui_data, 3);
+        auto webgpu_context = Renderer::instance->get_webgpu_context();
+        RendererStorage::register_ui_widget(webgpu_context, material->shader, &quad_mesh, ui_data, 3);
+    }
+
+    void XRPanel::update(float delta_time)
+    {
+        Node2D::update(delta_time);
+
+        if (!visibility)
+            return;
+
+        sInputData data = get_input_data();
+
+        quad_mesh.set_surface_material_override_color(0, data.is_hovered ? colors::RED : colors::WHITE);
+
+        ui_data.aspect_ratio = size.x / size.y;
+
+        update_ui_data();
+    }
+
+    void XRPanel::add_button(const glm::vec2& p, const glm::vec2& s, const Color& c)
+    {
+        XRPanel* new_button = new XRPanel("xr_button", "data/textures/menu_buttons/skip.png", { 0.0f, 0.0f }, size);
+        add_child(new_button);
+
+        new_button->set_priority(PANEL - 1u);
+
+        new_button->ui_data.xr_info = glm::clamp(glm::vec4(s / size, p / size), 0.0f, 1.0f);
+        new_button->ui_data.picker_color = c;
+
+        new_button->update_ui_data();
     }
 
     /*

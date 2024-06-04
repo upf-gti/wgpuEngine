@@ -1,4 +1,5 @@
-#include mesh_includes.wgsl
+#include ui_includes.wgsl
+#include ../mesh_includes.wgsl
 
 #define GAMMA_CORRECTION
 
@@ -6,17 +7,17 @@
 
 #dynamic @group(1) @binding(0) var<uniform> camera_data : CameraData;
 
+#ifdef ALBEDO_TEXTURE
 @group(2) @binding(0) var albedo_texture: texture_2d<f32>;
-@group(2) @binding(1) var<uniform> albedo: vec4f;
-@group(2) @binding(7) var texture_sampler : sampler;
+#endif
 
-fn sdRoundedBox( p : vec2f, b : vec2f, cr : vec4f ) -> f32
-{
-    var r : vec2f = select(cr.zw, cr.xy, p.x > 0.0);
-    r.x = select(r.y, r.x, p.y > 0.0);
-    var q : vec2f = abs(p) - b + r.x;
-    return min(max(q.x,q.y),0.0) + length(max(q,vec2f(0.0))) - r.x;
-}
+@group(2) @binding(1) var<uniform> albedo: vec4f;
+
+#ifdef USE_SAMPLER
+@group(2) @binding(7) var texture_sampler : sampler;
+#endif
+
+@group(3) @binding(0) var<uniform> ui_data : UIData;
 
 @vertex
 fn vs_main(in: VertexInput) -> VertexOutput {
@@ -24,7 +25,7 @@ fn vs_main(in: VertexInput) -> VertexOutput {
     let instance_data : RenderMeshData = mesh_data.data[in.instance_id];
     var out: VertexOutput;
 
-    let curvature : f32 = 0.35;
+    let curvature : f32 = 0.25;
 
     let uv_centered : vec2f = in.uv * vec2f(2.0) - vec2f(1.0);
     let curve_factor : f32 = 1.0 - (abs(uv_centered.x * uv_centered.x) * 0.5 + 0.5);
@@ -48,15 +49,22 @@ struct FragmentOutput {
 fn fs_main(in: VertexOutput) -> FragmentOutput {
     
     var dummy = camera_data.eye;
+    let dummy1 = ui_data.num_group_items;
 
     var out: FragmentOutput;
-    var color : vec4f = textureSample(albedo_texture, texture_sampler, in.uv);
 
-    var final_color = in.color.rgb * color.rgb;
+#ifdef ALBEDO_TEXTURE
+    // let corrected_uv : vec2f = vec2f(in.uv.x * ui_data.aspect_ratio - (ui_data.aspect_ratio - 1.0) * 0.5, in.uv.y);
+    var color : vec4f = textureSample(albedo_texture, texture_sampler, in.uv);
+#else
+    var color : vec4f = vec4f(in.color.rgb, 1.0);
+#endif
+
+    var final_color = color.rgb * color.rgb;
 
     var ra : vec4f = vec4f(0.15);
-    var si : vec2f = vec2f(0.98 * 2.0, 0.98);
-    var uvs = vec2f(in.uv.x, 1.0 - in.uv.y);
+    var si : vec2f = vec2f(0.98 * 2.0, 0.98) * ui_data.inner_scale;
+    var uvs = vec2f(in.uv.x, 1.0 - in.uv.y) + vec2f(0.2);
     var pos : vec2f = vec2(uvs * 2.0 - 1.0);
     pos.x *= 2.0;
 
