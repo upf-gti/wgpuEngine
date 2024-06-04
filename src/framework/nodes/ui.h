@@ -53,7 +53,7 @@ namespace ui {
         Panel2D(const std::string& name, const glm::vec2& p, const glm::vec2& s, const Color& c = colors::WHITE);
         Panel2D(const std::string& name, const std::string& image_path, const glm::vec2& p, const glm::vec2& s, const Color& c = colors::WHITE);
 
-        sInputData get_input_data() override;
+        sInputData get_input_data(bool ignore_focus = false) override;
 
         void render() override;
 
@@ -64,13 +64,23 @@ namespace ui {
     };
 
     class XRPanel : public Panel2D {
+
+        bool is_button = false;
+
+        glm::vec2 button_position;
+        glm::vec2 button_size;
+
     public:
 
         XRPanel(const std::string& name, const std::string& image_path, const glm::vec2& p, const glm::vec2& s);
 
+        bool on_input(sInputData data) override;
+
         void update(float delta_time) override;
 
-        void add_button(const glm::vec2& p, const glm::vec2& s, const Color& c = colors::WHITE);
+        void add_button(const std::string& signal, const std::string& texture_path, const glm::vec2& p, const glm::vec2& s, const Color& c = colors::WHITE);
+
+        void make_as_button(const glm::vec2& bs, const glm::vec2& bp) { is_button = true; button_position = bp; button_size = bs; };
     };
 
     class Container2D : public Panel2D {

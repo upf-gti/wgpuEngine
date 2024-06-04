@@ -49,32 +49,61 @@ struct FragmentOutput {
 fn fs_main(in: VertexOutput) -> FragmentOutput {
     
     var dummy = camera_data.eye;
-    let dummy1 = ui_data.num_group_items;
+
+    let is_hovered : bool = ui_data.hover_info.x > 0.0;
+    let is_selected : bool = ui_data.is_selected > 0.0;
 
     var out: FragmentOutput;
 
+    let global_scale : f32 = 0.95;
+    let size : vec2f = ui_data.xr_info.xy;
+    let is_button : bool = size.x != 1.0;
+    
+    var position : vec2f = ui_data.xr_info.zw;
+
 #ifdef ALBEDO_TEXTURE
-    // let corrected_uv : vec2f = vec2f(in.uv.x * ui_data.aspect_ratio - (ui_data.aspect_ratio - 1.0) * 0.5, in.uv.y);
-    var color : vec4f = textureSample(albedo_texture, texture_sampler, in.uv);
+    var corrected_uv : vec2f = vec2f(in.uv.x, 1.0 - in.uv.y);
+    corrected_uv = corrected_uv / size;
+    corrected_uv = corrected_uv - (position / size) + 0.5;
+    // corrected_uv = corrected_uv + (size * 0.5);
+    corrected_uv.y = 1.0 - corrected_uv.y;
+    var color : vec4f = textureSample(albedo_texture, texture_sampler, corrected_uv);
 #else
-    var color : vec4f = vec4f(in.color.rgb, 1.0);
+    var color : vec4f = vec4f(ui_data.picker_color, 1.0);
 #endif
 
-    var final_color = color.rgb * color.rgb;
+    var final_color = select(color.rgb, COLOR_SECONDARY, is_button);
 
-    var ra : vec4f = vec4f(0.15);
-    var si : vec2f = vec2f(0.98 * 2.0, 0.98) * ui_data.inner_scale;
-    var uvs = vec2f(in.uv.x, 1.0 - in.uv.y) + vec2f(0.2);
+    // center stuff
+    position -= vec2f(0.5);
+    
+    var ra : vec4f = vec4f(0.125);
+    var si : vec2f = vec2f(ui_data.aspect_ratio, 1.0) * size * global_scale;
+    ra = min(ra, min(vec4f(si.x), vec4f(si.y)));
+    var uvs = vec2f(in.uv.x, 1.0 - in.uv.y) - position;
     var pos : vec2f = vec2(uvs * 2.0 - 1.0);
-    pos.x *= 2.0;
+    pos.x *= ui_data.aspect_ratio;
 
     let d : f32 = sdRoundedBox(pos, si, ra);
+
+    if(is_hovered) {
+        final_color = mix(COLOR_TERCIARY, COLOR_HIGHLIGHT_LIGHT, pow(corrected_uv.y, 2.0));
+    }
+
+    if(is_selected) {
+        final_color = COLOR_PRIMARY;
+    }
 
     if (GAMMA_CORRECTION == 1) {
         final_color = pow(final_color, vec3f(1.0 / 2.2));
     }
 
     var alpha : f32 = (1.0 - smoothstep(0.0, 0.04, d)) * color.a;
+
+    if(is_button) {
+        alpha += (1.0 - smoothstep(0.0, 0.015, abs(d)));
+        final_color = mix( final_color, vec3f(0.5), 1.0 - smoothstep(0.0, 0.015, abs(d)) );
+    }
 
     out.color = vec4f(final_color, alpha);
 

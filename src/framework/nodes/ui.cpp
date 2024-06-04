@@ -47,6 +47,7 @@ namespace ui {
         material.cull_type = CULL_BACK;
         material.transparency_type = ALPHA_BLEND;
         material.priority = class_type;
+
         if (image_path.size()) {
             material.diffuse_texture = RendererStorage::get_texture(image_path, true);
             material.shader = RendererStorage::get_shader_from_source(shaders::mesh_texture::source, shaders::mesh_texture::path, material);
@@ -74,10 +75,6 @@ namespace ui {
         if (!visibility)
             return;
 
-        if (class_type == PANEL) {
-            int a = 1;
-        }
-
         if (render_background) {
             // Convert the mat3x3 to mat4x4
             uint8_t priority = class_type;
@@ -93,7 +90,7 @@ namespace ui {
         Node2D::render();
     }
 
-    sInputData Panel2D::get_input_data()
+    sInputData Panel2D::get_input_data(bool ignore_focus)
     {
         sInputData data;
 
@@ -207,11 +204,14 @@ namespace ui {
 
         // Few logic for managing focus
 
-        if (data.was_pressed) {
-            focused = this;
-        }
+        if (!ignore_focus) {
 
-        data.is_pressed &= (focused == this);
+            if (data.was_pressed) {
+                focused = this;
+            }
+
+            data.is_pressed &= (focused == this);
+        }
 
         return data;
     }
@@ -250,10 +250,11 @@ namespace ui {
 
         Material* material = quad_mesh.get_surface_material_override(quad_surface);
         material->flags |= MATERIAL_UI;
-        // material->shader = RendererStorage::get_shader_from_source(shaders::ui_xr_panel::source, shaders::ui_xr_panel::path, *material);
-        material->shader = RendererStorage::get_shader("data/shaders/ui_xr_panel.wgsl", *material);
+        material->shader = RendererStorage::get_shader_from_source(shaders::ui_xr_panel::source, shaders::ui_xr_panel::path, *material);
+        //material->shader = RendererStorage::get_shader("data/shaders/ui_xr_panel.wgsl", *material);
 
         ui_data.xr_info = glm::vec4(1.0f, 1.0f, 0.5f, 0.5f);
+        ui_data.aspect_ratio = size.x / size.y;
 
         auto webgpu_context = Renderer::instance->get_webgpu_context();
         RendererStorage::register_ui_widget(webgpu_context, material->shader, &quad_mesh, ui_data, 3);
@@ -263,29 +264,79 @@ namespace ui {
     {
         Node2D::update(delta_time);
 
-        if (!visibility)
+        if (!visibility || !is_button)
             return;
 
-        sInputData data = get_input_data();
+        // reset event stuff..
+        ui_data.hover_info.x = 0.0f;
+        ui_data.hover_info.y = 0.0f;
+        ui_data.is_selected = 0.0f;
 
-        quad_mesh.set_surface_material_override_color(0, data.is_hovered ? colors::RED : colors::WHITE);
+        // ignore focus process, doing it manually per button
+        sInputData data = get_input_data(true);
+
+        XRPanel* xr_parent = static_cast<XRPanel*>(get_parent());
+
+        if (data.is_hovered) {
+
+            auto local_pos = data.local_position;
+            local_pos.y = xr_parent->get_size().y - local_pos.y;
+
+            data.is_hovered &= local_pos.x > (button_position.x - button_size.x * 0.5f) && local_pos.x < (button_position.x + button_size.x * 0.5f);
+            data.is_hovered &= local_pos.y > (button_position.y - button_size.y * 0.5f) && local_pos.y < (button_position.y + button_size.y * 0.5f);
+
+            // it's inside the button
+            if (data.is_hovered) {
+
+                if (data.was_pressed) {
+                    focused = this;
+                }
+
+                data.is_pressed &= (focused == this);
+
+                on_input(data);
+            }
+        }
 
         ui_data.aspect_ratio = size.x / size.y;
 
         update_ui_data();
     }
 
-    void XRPanel::add_button(const glm::vec2& p, const glm::vec2& s, const Color& c)
+    bool XRPanel::on_input(sInputData data)
     {
-        XRPanel* new_button = new XRPanel("xr_button", "data/textures/menu_buttons/skip.png", { 0.0f, 0.0f }, size);
+        if (data.was_pressed)
+        {
+            // Trigger callback
+            Node::emit_signal(name, (void*)this);
+
+            on_pressed();
+        }
+
+        // Update uniforms
+        ui_data.hover_info.x = 1.0f;
+        ui_data.hover_info.y = 1.0f;
+        ui_data.is_selected = data.is_pressed ? 1.0f : 0.0f;
+
+        update_ui_data();
+
+        return true;
+    }
+
+    void XRPanel::add_button(const std::string& signal, const std::string& texture_path, const glm::vec2& p, const glm::vec2& s, const Color& c)
+    {
+        XRPanel* new_button = new XRPanel(signal, texture_path, { 0.0f, 0.0f }, size);
         add_child(new_button);
 
         new_button->set_priority(PANEL - 1u);
 
+        new_button->ui_data.aspect_ratio = s.x / s.y;
         new_button->ui_data.xr_info = glm::clamp(glm::vec4(s / size, p / size), 0.0f, 1.0f);
         new_button->ui_data.picker_color = c;
 
         new_button->update_ui_data();
+
+        new_button->make_as_button(s, p);
     }
 
     /*
