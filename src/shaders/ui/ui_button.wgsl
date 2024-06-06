@@ -46,6 +46,7 @@ fn fs_main(in: VertexOutput) -> FragmentOutput {
     let combo_index = ui_data.num_group_items;
     let is_disabled : bool = ui_data.is_button_disabled > 0.0;
     let is_selected : bool = ui_data.is_selected > 0.0;
+    let is_pressed : bool = ui_data.press_info.x > 0.0;
     let keep_colors : bool = (ui_data.keep_rgb + ui_data.is_color_button) > 0.0;
     let hover_transition : f32 = pow(ui_data.hover_info.y, 3.0);
 
@@ -83,18 +84,23 @@ fn fs_main(in: VertexOutput) -> FragmentOutput {
     var pos : vec2f = vec2(uvs * 2.0 - 1.0);
 
     let d : f32 = sdRoundedBox(pos, si, ra);
-    let center_dist = distance(in.uv, vec2f(0.5));
+    let center_dist : f32 = distance(in.uv, vec2f(0.5));
 
     var final_color : vec3f = color.rgb;
 
     if(!is_disabled) {
-        let no_hover_color = COLOR_DARK;
-        let hover_color = mix(COLOR_TERCIARY, mix( COLOR_HIGHLIGHT_LIGHT, COLOR_TERCIARY, in.uv.x * in.uv.y ), in.uv.x );
+        let no_hover_color : vec3f = COLOR_DARK;
+        var hover_color : vec3f = mix(COLOR_TERCIARY, mix( COLOR_HIGHLIGHT_LIGHT, COLOR_TERCIARY, in.uv.x * in.uv.y ), in.uv.x );
+
+        if(is_pressed) {
+            hover_color += vec3f(0.1);
+        }
+
         final_color = mix( mix(no_hover_color, hover_color, hover_transition), final_color, color.a );
 
         if(is_selected) {
             final_color = mix( mix( COLOR_HIGHLIGHT_LIGHT, COLOR_TERCIARY, in.uv.x * in.uv.y ), final_color, color.a );
-        } 
+        }
 
     } else {
         final_color = mix( COLOR_SECONDARY, final_color , color.a ) * 0.3;

@@ -20,7 +20,7 @@ struct sLightUniformData {
 struct sUIData {
     // is_hovered / hover transition
     glm::vec2 hover_info = { 0.f, 0.0f };
-    glm::vec2 dummy = { 0.0f, 0.0f };
+    glm::vec2 press_info = { 0.0f, 0.0f };
 
     glm::vec4 xr_info = { 0.0f, 0.0f, 0.0f, 0.0f };
 

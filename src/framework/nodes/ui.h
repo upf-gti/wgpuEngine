@@ -65,8 +65,8 @@ namespace ui {
     public:
 
         Image2D() {};
-        Image2D(const std::string& name, const std::string& image_path, const glm::vec2& s);
-        Image2D(const std::string& name, const std::string& image_path, const glm::vec2& p, const glm::vec2& s);
+        Image2D(const std::string& name, const std::string& image_path, const glm::vec2& s, uint8_t priority = IMAGE);
+        Image2D(const std::string& name, const std::string& image_path, const glm::vec2& p, const glm::vec2& s, uint8_t priority = IMAGE);
     };
 
     class XRPanel : public Panel2D {

@@ -241,13 +241,13 @@ namespace ui {
     *	Image
     */
 
-    Image2D::Image2D(const std::string& name, const std::string& image_path, const glm::vec2& s)
-        : Image2D(name, image_path, { 0.0f, 0.0f }, s) {}
+    Image2D::Image2D(const std::string& name, const std::string& image_path, const glm::vec2& s, uint8_t priority)
+        : Image2D(name, image_path, { 0.0f, 0.0f }, s, priority) {}
 
-    Image2D::Image2D(const std::string& name, const std::string& image_path, const glm::vec2& p, const glm::vec2& s)
+    Image2D::Image2D(const std::string& name, const std::string& image_path, const glm::vec2& p, const glm::vec2& s, uint8_t priority)
         : Panel2D(name, p, s)
     {
-        class_type = Node2DClassType::IMAGE;
+        class_type = priority;
 
         Material material;
         material.color = color;
@@ -892,7 +892,8 @@ namespace ui {
             text_2d->set_visibility(true);
         }
 
-        if (data.was_pressed)
+        // Internally, use on release mouse, not on press..
+        if (data.was_released)
         {
             // Trigger callback
             Node::emit_signal(signal, (void*)this);
@@ -907,6 +908,7 @@ namespace ui {
         // Update uniforms
         ui_data.hover_info.x = 1.0f;
         ui_data.hover_info.y = glm::lerp(0.0f, 1.0f, glm::clamp(scaling.x / target_scale, 0.0f, 1.0f));
+        ui_data.press_info.x = data.is_pressed ? 1.0f : 0.0f;
 
         on_hover = true;
 
