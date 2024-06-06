@@ -337,6 +337,11 @@ namespace ui {
 
     sInputData XRPanel::get_input_data(bool ignore_focus)
     {
+        // Use flat panel quad for flat screen..
+        if (!Renderer::instance->get_openxr_available()) {
+            return Panel2D::get_input_data(ignore_focus);
+        }
+
         sInputData data;
 
         // Ray
