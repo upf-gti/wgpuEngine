@@ -8,6 +8,7 @@ namespace ui {
     Node2D* Context2D::hovered = nullptr;
 
     glm::vec2 Context2D::xr_position = { 0.0f, 0.0f };
+    glm::vec3 Context2D::xr_world_position = { 0.0f, 0.0f, 0.0f };
 
     void Context2D::set_focus(Node2D* node)
     {
@@ -18,7 +19,7 @@ namespace ui {
     {
         hovered = node;
 
-        // set_xr_position(p);
+        set_xr_position(p);
     }
 
     bool Context2D::is_hover_disabled()

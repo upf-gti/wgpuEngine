@@ -3,6 +3,7 @@
 #include "includes.h"
 
 #include "glm/vec2.hpp"
+#include "glm/vec3.hpp"
 
 class Node2D;
 
@@ -14,10 +15,12 @@ namespace ui {
         static Node2D* hovered;
 
         static glm::vec2 xr_position;
+        static glm::vec3 xr_world_position;
 
     public:
 
         static void set_xr_position(const glm::vec2& p) { xr_position = p; };
+        static void set_xr_world_position(const glm::vec3& p) { xr_world_position = p; };
 
         static void set_focus(Node2D* node);
         static void set_hover(Node2D* node, const glm::vec2& p);
@@ -39,5 +42,6 @@ namespace ui {
         static Node2D* get_hover() { return hovered; }
 
         static const glm::vec2& get_xr_position() { return xr_position; }
+        static const glm::vec3& get_xr_world_position() { return xr_world_position; }
     };
 }

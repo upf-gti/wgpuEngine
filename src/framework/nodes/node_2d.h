@@ -42,6 +42,7 @@ struct sInputData {
     bool was_pressed = false;
     bool was_released = false;
     glm::vec2 local_position = glm::vec2(0.0f);
+    glm::vec3 ray_intersection = glm::vec3(0.0f);
     float ray_distance = 0.0f;
 };
 

@@ -178,6 +178,10 @@ namespace ui {
                     pressed_inside = false;
                 }
                 data.is_pressed = pressed_inside && Input::is_button_pressed(XR_BUTTON_A);
+
+                data.ray_intersection = intersection_point;
+                data.ray_distance = collision_dist;
+                Context2D::set_xr_world_position(intersection_point);
             }
             else {
                 data.was_pressed = data.is_hovered && Input::was_mouse_pressed(GLFW_MOUSE_BUTTON_LEFT);
@@ -190,8 +194,6 @@ namespace ui {
                 }
                 data.is_pressed = pressed_inside && Input::is_mouse_pressed(GLFW_MOUSE_BUTTON_LEFT);
             }
-
-            data.ray_distance = collision_dist;
 
             glm::vec2 local_pos = glm::vec2(local_intersection_point) / get_scale();
             data.local_position = glm::vec2(local_pos.x, size.y - local_pos.y);
@@ -291,7 +293,7 @@ namespace ui {
     {
         Node2D::update(delta_time);
 
-        if (!visibility || !is_button)
+        if (!visibility)
             return;
 
         // reset event stuff..
@@ -306,11 +308,14 @@ namespace ui {
 
         if (data.is_hovered) {
 
-            auto local_pos = data.local_position;
-            local_pos.y = xr_parent->get_size().y - local_pos.y;
+            if (is_button) {
 
-            data.is_hovered &= local_pos.x > (button_position.x - button_size.x * 0.5f) && local_pos.x < (button_position.x + button_size.x * 0.5f);
-            data.is_hovered &= local_pos.y > (button_position.y - button_size.y * 0.5f) && local_pos.y < (button_position.y + button_size.y * 0.5f);
+                auto local_pos = data.local_position;
+                local_pos.y = xr_parent->get_size().y - local_pos.y;
+
+                data.is_hovered &= local_pos.x > (button_position.x - button_size.x * 0.5f) && local_pos.x < (button_position.x + button_size.x * 0.5f);
+                data.is_hovered &= local_pos.y > (button_position.y - button_size.y * 0.5f) && local_pos.y < (button_position.y + button_size.y * 0.5f);
+            }
 
             // it's inside the button
             if (data.is_hovered) {
@@ -321,7 +326,7 @@ namespace ui {
 
                 data.is_pressed &= Context2D::equals_focus(this);
 
-                on_input(data);
+                Node2D::push_input(this, data);
             }
         }
 
@@ -330,8 +335,86 @@ namespace ui {
         update_ui_data();
     }
 
+    sInputData XRPanel::get_input_data(bool ignore_focus)
+    {
+        sInputData data;
+
+        // Ray
+        glm::vec3 ray_origin = Input::get_controller_position(HAND_RIGHT, POSE_AIM);
+        glm::mat4x4 select_hand_pose = Input::get_controller_pose(HAND_RIGHT, POSE_AIM);
+        glm::vec3 ray_direction = get_front(select_hand_pose);
+
+        // Quad
+        uint8_t priority = class_type;
+        glm::mat4x4 model = glm::translate(glm::mat4x4(1.0f), glm::vec3(get_translation(), -priority * 1e-4));
+        model = get_global_viewport_model() * model;
+
+        glm::vec3 quad_position = model[3];
+        glm::quat quad_rotation = glm::quat_cast(model);
+        glm::vec2 quad_size = size * get_scale();
+
+        float collision_dist;
+        glm::vec3 intersection_point;
+        glm::vec3 local_intersection_point;
+
+        data.is_hovered = intersection::ray_quad(
+            ray_origin,
+            ray_direction,
+            quad_position,
+            quad_size,
+            quad_rotation,
+            intersection_point,
+            local_intersection_point,
+            collision_dist,
+            false
+        );
+
+        if (data.is_hovered) {
+
+            glm::vec2 uv = glm::vec2(local_intersection_point) * 2.0f - 1.0f;
+
+            float z0 = 0.25f * (1.0f - (fabsf(uv.x * uv.x) * 0.5f + 0.5f));
+
+            intersection_point += ray_direction * z0;
+        }
+
+        data.was_pressed = data.is_hovered && Input::was_button_pressed(XR_BUTTON_A);
+
+        if (data.was_pressed) {
+            pressed_inside = true;
+        }
+        data.was_released = Input::was_button_released(XR_BUTTON_A);
+
+        if (data.was_released) {
+            pressed_inside = false;
+        }
+
+        data.is_pressed = pressed_inside && Input::is_button_pressed(XR_BUTTON_A);
+
+        data.ray_intersection = intersection_point;
+        data.ray_distance = collision_dist;
+
+        Context2D::set_xr_world_position(intersection_point);
+
+        glm::vec2 local_pos = glm::vec2(local_intersection_point) / get_scale();
+        data.local_position = glm::vec2(local_pos.x, size.y - local_pos.y);
+
+        if (!on_hover && data.is_hovered) {
+            data.was_hovered = true;
+        }
+
+        return data;
+    }
+
     bool XRPanel::on_input(sInputData data)
     {
+        Context2D::set_hover(this, data.local_position);
+
+        // Don't do anything more on background xr panels..
+        if (!is_button) {
+            return true;
+        }
+
         if (data.was_pressed)
         {
             // Trigger callback
