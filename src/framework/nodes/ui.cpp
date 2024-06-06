@@ -7,6 +7,7 @@
 #include "framework/nodes/text.h"
 #include "framework/camera/camera.h"
 #include "framework/utils/utils.h"
+#include "framework/ui/context_2d.h"
 
 #include "graphics/renderer.h"
 #include "graphics/webgpu_context.h"
@@ -30,8 +31,6 @@ namespace ui {
     /*
     *	Panel
     */
-
-    Node2D* Panel2D::focused = nullptr;
 
     Panel2D::Panel2D(const std::string& name, const glm::vec2& pos, const glm::vec2& size, const Color& col)
         : Panel2D(name, "", pos, size, col) { }
@@ -207,10 +206,10 @@ namespace ui {
         if (!ignore_focus) {
 
             if (data.was_pressed) {
-                focused = this;
+                Context2D::set_focus(this);
             }
 
-            data.is_pressed &= (focused == this);
+            data.is_pressed &= Context2D::equals_focus(this);
         }
 
         return data;
@@ -239,7 +238,35 @@ namespace ui {
     }
 
     /*
-    *   Image
+    *	Image
+    */
+
+    Image2D::Image2D(const std::string& name, const std::string& image_path, const glm::vec2& s)
+        : Image2D(name, image_path, { 0.0f, 0.0f }, s) {}
+
+    Image2D::Image2D(const std::string& name, const std::string& image_path, const glm::vec2& p, const glm::vec2& s)
+        : Panel2D(name, p, s)
+    {
+        class_type = Node2DClassType::IMAGE;
+
+        Material material;
+        material.color = color;
+        material.flags = MATERIAL_2D;
+        material.cull_type = CULL_BACK;
+        material.transparency_type = ALPHA_BLEND;
+        material.priority = class_type;
+        material.diffuse_texture = RendererStorage::get_texture(image_path, true);
+        material.shader = RendererStorage::get_shader_from_source(shaders::mesh_texture::source, shaders::mesh_texture::path, material);
+
+        Surface* quad_surface = new Surface();
+        quad_surface->create_quad(size.x, size.y);
+
+        quad_mesh.add_surface(quad_surface);
+        quad_mesh.set_surface_material_override(quad_mesh.get_surface(0), material);
+    }
+
+    /*
+    *   XRPanel
     */
 
     XRPanel::XRPanel(const std::string& name, const std::string& image_path, const glm::vec2& p, const glm::vec2& s)
@@ -289,10 +316,10 @@ namespace ui {
             if (data.is_hovered) {
 
                 if (data.was_pressed) {
-                    focused = this;
+                    Context2D::set_focus(this);
                 }
 
-                data.is_pressed &= (focused == this);
+                data.is_pressed &= Context2D::equals_focus(this);
 
                 on_input(data);
             }
@@ -824,7 +851,7 @@ namespace ui {
 
         Panel2D::update(delta_time);
 
-        if (!visibility || ui_data.is_button_disabled)
+        if (!visibility)
             return;
 
         sInputData data = get_input_data();
@@ -855,6 +882,12 @@ namespace ui {
 
     bool Button2D::on_input(sInputData data)
     {
+        Context2D::set_hover(this, data.local_position);
+
+        if (ui_data.is_button_disabled) {
+            return true;
+        }
+
         if (text_2d) {
             text_2d->set_visibility(true);
         }
@@ -1011,12 +1044,7 @@ namespace ui {
         {
             Node2D* node_2d = static_cast<Node2D*>(get_children()[i]);
 
-            if (node_2d->get_class_type() != Node2DClassType::SLIDER) {
-                continue;
-            }
-
-            Slider2D* slider = static_cast<Slider2D*>(node_2d);
-            if (slider->mode == HORIZONTAL) {
+            if (node_2d->get_class_type() == Node2DClassType::HSLIDER) {
                 child_count++;
             }
         }
@@ -1184,12 +1212,13 @@ namespace ui {
     Slider2D::Slider2D(const std::string& sg, const std::string& texture_path, float value, const glm::vec2& pos, const glm::vec2& size, int mode, uint8_t flags, float min, float max, int precision)
         : Panel2D(sg, pos, size), signal(sg), current_value(value), min_value(min), max_value(max), precision(precision) {
 
-        this->class_type = Node2DClassType::SLIDER;
+        bool is_horizontal = (mode == SliderMode::HORIZONTAL);
+
+        this->class_type = is_horizontal ? Node2DClassType::HSLIDER : Node2DClassType::VSLIDER;
         this->mode = mode;
 
         disabled = flags & DISABLED;
 
-        bool is_horizontal = (mode == SliderMode::HORIZONTAL);
         ui_data.num_group_items = is_horizontal ? 2.f : 1.f;
         ui_data.slider_max = max_value;
         ui_data.slider_min = min_value;
@@ -1276,6 +1305,8 @@ namespace ui {
 
     bool Slider2D::on_input(sInputData data)
     {
+        Context2D::set_hover(this, data.local_position);
+
         text_2d->set_visibility(true);
 
         if (data.is_pressed)
@@ -1415,6 +1446,8 @@ namespace ui {
 
     bool ColorPicker2D::on_input(sInputData data)
     {
+        Context2D::set_hover(this, data.local_position);
+
         glm::vec2 local_mouse_pos = data.local_position;
         local_mouse_pos /= size;
         local_mouse_pos = local_mouse_pos * 2.0f - 1.0f; // -1..1

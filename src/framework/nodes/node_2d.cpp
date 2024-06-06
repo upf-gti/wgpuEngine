@@ -2,6 +2,8 @@
 
 #include "framework/input.h"
 #include "framework/math/intersections.h"
+#include "framework/ui/context_2d.h"
+
 #include "graphics/renderer.h"
 
 #include "glm/gtc/matrix_transform.hpp"
@@ -14,7 +16,6 @@
 #include <algorithm>
 
 unsigned int Node2D::last_uid = 0;
-bool Node2D::propagate_event = true;
 
 std::map<std::string, Node2D*> Node2D::all_widgets;
 std::vector<std::pair<Node2D*, sInputData>> Node2D::frame_inputs;
@@ -226,14 +227,18 @@ void Node2D::push_input(Node2D* node, sInputData data)
 
 void Node2D::process_input()
 {
+    if (!frame_inputs.size()) {
+
+        ui::Context2D::blur();
+        return;
+    }
+
     // sort inputs by priority..
 
     std::sort(frame_inputs.begin(), frame_inputs.end(), [](auto& lhs, auto& rhs) {
 
         Node2D* lhs_node = lhs.first;
         Node2D* rhs_node = rhs.first;
-
-        // bool equal_priority = lhs_node->get_class_type() == rhs_node->get_class_type();
 
         if (lhs_node->get_class_type() < rhs_node->get_class_type()) return true;
 
@@ -242,8 +247,8 @@ void Node2D::process_input()
 
     // call on_input functions..
 
-    for (const auto& i : frame_inputs)
-    {
+    for (const auto& i : frame_inputs) {
+
         bool event_processed = i.first->on_input(i.second);
         if (event_processed) {
             break;

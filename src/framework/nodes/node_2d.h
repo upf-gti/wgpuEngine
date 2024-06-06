@@ -1,14 +1,17 @@
 #pragma once
 
 #include "framework/nodes/node.h"
-#include "glm/glm.hpp"
+
 #include "graphics/renderer_storage.h"
+
+#include "glm/glm.hpp"
 
 #include <string>
 #include <vector>
 
 enum Node2DClassType {
-    TEXT = 10,
+    CURSOR = 10,
+    TEXT,
     TEXT_SHADOW,
     SELECTOR_BUTTON,
     SELECTOR,
@@ -19,12 +22,14 @@ enum Node2DClassType {
     TEXTURE,
     COMBO_BUTTON,
     SUBMENU,
-    SLIDER,
+    HSLIDER,
+    VSLIDER,
     COLOR_PICKER,
     GROUP,
     COMBO,
     HCONTAINER,
     VCONTAINER,
+    IMAGE,
     PANEL,
     UNDEFINED,
     NUM_2D_TYPES
@@ -47,7 +52,6 @@ protected:
     static std::vector<std::pair<Node2D*, sInputData>> frame_inputs;
 
     static unsigned int last_uid;
-    static bool propagate_event;
 
     uint32_t    uid = 0;
     uint8_t     class_type = Node2DClassType::UNDEFINED;
@@ -107,6 +111,10 @@ public:
 
     static Node2D* get_widget_from_name(const std::string& name);
     static void clean();
+
+    /*
+    *   Input management
+    */
 
     static void push_input(Node2D* node, sInputData data);
     static void process_input();

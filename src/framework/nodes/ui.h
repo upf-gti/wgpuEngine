@@ -37,8 +37,6 @@ namespace ui {
     class Panel2D : public Node2D {
     public:
 
-        static Node2D* focused;
-
         Color color = glm::vec4(0.0f);
 
         bool render_background  = true;
@@ -61,6 +59,14 @@ namespace ui {
         void set_priority(uint8_t priority) override;
         void update_ui_data() override;
         void set_color(const Color& c);
+    };
+
+    class Image2D : public Panel2D {
+    public:
+
+        Image2D() {};
+        Image2D(const std::string& name, const std::string& image_path, const glm::vec2& s);
+        Image2D(const std::string& name, const std::string& image_path, const glm::vec2& p, const glm::vec2& s);
     };
 
     class XRPanel : public Panel2D {
