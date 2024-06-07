@@ -32,13 +32,14 @@ class AnimationPlayer : public Node3D
 
     std::vector<void*> track_data;
     int selected_track = -1;
+
     void generate_track_data();
 
 public:
 
     AnimationPlayer(const std::string& name);
 
-    void play(const std::string& animation_name = "", float custom_blend = -1, float custom_speed = 1.0, bool from_end = false);
+    void play(const std::string& animation_name = "", float custom_blend = -1.0f, float custom_speed = 1.0f, bool from_end = false);
     void pause();
     void stop(bool keep_state = false);
 

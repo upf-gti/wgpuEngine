@@ -1,14 +1,17 @@
 #include "ccd_solver.h"
+
 #include "glm/gtx/norm.hpp"
 
-bool CCDSolver::solve(const Transform& target) {
+bool CCDSolver::solve(const Transform& target)
+{
     // Local variables and chain_size check
     size_t chain_size = size();
 
-    if (chain_size == 0)
+    if (chain_size == 0u) {
         return false;
+    }
 
-    uint32_t last = chain_size - 1; // end effector
+    uint32_t last = chain_size - 1u; // end effector
     float threshold_sq = threshold * threshold;
     glm::vec3 goal = target.position;
 
@@ -18,7 +21,7 @@ bool CCDSolver::solve(const Transform& target) {
         if (glm::length2(goal - effector) < threshold_sq) {
             return true;
         }
-        for (uint32_t j = (uint32_t)chain_size - 2; j >= 0; --j) {
+        for (uint32_t j = (uint32_t)chain_size - 2u; j >= 0u; --j) {
             effector = get_global_transform(last).position;
 
             Transform world = get_global_transform(j);
@@ -44,21 +47,25 @@ bool CCDSolver::solve(const Transform& target) {
             else if (joint_constraint_type[j] == HINGE) {
                 apply_hinge_socket_constraint(j, joint_constraint_value[j]);
             }
+
             effector = get_global_transform(last).position;
+
             if (glm::length2(goal - effector) < threshold_sq) {
                 return true;
             }
         }
     }
-    return false;
-} // End CCDSolver::Solve function
 
-void CCDSolver::apply_ball_socket_constraint(int i, float limit) {
+    return false;
+}
+
+void CCDSolver::apply_ball_socket_constraint(int i, float limit)
+{
     glm::quat parent_rot = i == 0 ? aux_parent.rotation : get_global_transform(i - 1).rotation;
     glm::quat this_rot = get_global_transform(i).rotation;
 
-    glm::vec3 parent_dir = parent_rot * glm::vec3(0, 0, 1);
-    glm::vec3 this_dir = this_rot * glm::vec3(0, 0, 1);
+    glm::vec3 parent_dir = parent_rot * glm::vec3(0.0f, 0.0f, 1.0f);
+    glm::vec3 this_dir = this_rot * glm::vec3(0.0f, 0.0f, 1.0f);
     float angle = ::angle(parent_dir, this_dir);
 
     if (angle > glm::radians(limit)) {
@@ -73,7 +80,8 @@ void CCDSolver::apply_ball_socket_constraint(int i, float limit) {
     }
 }
 
-void CCDSolver::apply_hinge_socket_constraint(int i, glm::vec3 axis) {
+void CCDSolver::apply_hinge_socket_constraint(int i, const glm::vec3& axis)
+{
     // apply constraint to the joint (rotate the child)
     Transform joint = get_global_transform(i);
     Transform child = get_global_transform(i + 1);

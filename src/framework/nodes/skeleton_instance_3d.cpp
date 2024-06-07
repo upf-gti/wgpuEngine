@@ -3,10 +3,12 @@
 #include "graphics/renderer.h"
 #include "graphics/renderer_storage.h"
 
-#include "imgui.h"
-#include "framework/utils/ImGuizmo.h"
 #include "framework/camera/camera.h"
 #include "framework/nodes/look_at_ik_3d.h"
+#include "framework/animation/skeleton.h"
+
+#include "imgui.h"
+#include "framework/utils/ImGuizmo.h"
 
 #include <glm/gtc/type_ptr.hpp>
 #include "spdlog/spdlog.h"

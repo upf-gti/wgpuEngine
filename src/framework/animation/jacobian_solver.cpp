@@ -1,31 +1,33 @@
 #include "jacobian_solver.h"
+
 #include "glm/gtx/norm.hpp"
 
-Transform& JacobianSolver::operator[](uint32_t index) {
+Transform& JacobianSolver::operator[](uint32_t index)
+{
     return ik_chain[index];
 }
 
-void JacobianSolver::add_revolute_joint(Transform T) {
+void JacobianSolver::add_revolute_joint(Transform T)
+{
     ik_chain.push_back(T);
 }
 
-Transform JacobianSolver::get_joint(uint32_t idx) {
+Transform JacobianSolver::get_joint(uint32_t idx)
+{
     return ik_chain[idx];
 }
 
-std::vector<Transform> JacobianSolver::get_chain() {
-    return ik_chain;
-}
-
-void JacobianSolver::set_chain(std::vector<Transform> chain) {
+void JacobianSolver::set_chain(const std::vector<Transform>& chain)
+{
     ik_chain = chain;
     resize(ik_chain.size());
     set_rotation_axis();
 }
 
-void JacobianSolver::set_rotation_axis() {
-
+void JacobianSolver::set_rotation_axis()
+{
     glm::vec3 local_axis = glm::vec3(0.f);
+
     for (int i = 0; i < ik_chain.size(); i++) {
 
         Transform t = get_global_transform(i);
@@ -42,8 +44,8 @@ void JacobianSolver::set_rotation_axis() {
     }
 }
 
-bool JacobianSolver::solve(const Transform& target) {
-
+bool JacobianSolver::solve(const Transform& target)
+{
     uint32_t num_joints = ik_chain.size() - 1; // we don't need to compute the rotations for the end effector jont
     glm::vec3 goal_pos = target.position;
 

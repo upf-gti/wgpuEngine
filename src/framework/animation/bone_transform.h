@@ -1,7 +1,6 @@
 #pragma once
 
-#include "glm/vec2.hpp"
-#include "glm/vec4.hpp"
+#include "glm/vec3.hpp"
 #include "glm/vec4.hpp"
 #include "glm/gtc/quaternion.hpp"
 
@@ -17,10 +16,8 @@ struct Transform {
 	Transform() :
 		position(glm::vec3(0.0f)),
 		rotation(glm::quat(0.0f, 0.0f, 0.0f, 1.0f)),
-		scale(glm::vec3(1.0f))
-	{}
-
-}; // End of transform struct
+		scale(glm::vec3(1.0f)) {}
+};
 
 Transform combine(const Transform& a, const Transform& b);
 Transform inverse(const Transform& t);
@@ -31,4 +28,3 @@ glm::vec3 transformPoint(const Transform& a, const glm::vec3& b);
 glm::vec3 transformVector(const Transform& a, const glm::vec3& b);
 glm::quat fromTo(const glm::vec3& from, const glm::vec3& to);
 float angle(const glm::vec3& l, const glm::vec3& r);
-//glm::quat angleAxis(float angle, const glm::vec3& axis);

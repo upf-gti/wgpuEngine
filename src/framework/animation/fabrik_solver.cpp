@@ -1,7 +1,9 @@
 #include "fabrik_solver.h"
+
 #include "glm/gtx/norm.hpp"
 
-void FABRIKSolver::resize(size_t new_size) {
+void FABRIKSolver::resize(size_t new_size)
+{
     ik_chain.resize(new_size);
     world_chain.resize(new_size);
     lengths.resize(new_size);
@@ -10,7 +12,8 @@ void FABRIKSolver::resize(size_t new_size) {
     joint_constraint_value.resize(new_size);
 }
 
-void FABRIKSolver::ik_chain_to_world() {
+void FABRIKSolver::ik_chain_to_world()
+{
     size_t chain_size = size();
     for (size_t i = 0; i < chain_size; ++i) {
         Transform world = get_global_transform(i);
@@ -25,7 +28,8 @@ void FABRIKSolver::ik_chain_to_world() {
     }
 }
 
-void FABRIKSolver::world_to_ik_chain() {
+void FABRIKSolver::world_to_ik_chain()
+{
     size_t chain_size = size();
     if (chain_size == 0) { return; }
     for (int i = 0; i < chain_size - 1; ++i) {
@@ -44,7 +48,8 @@ void FABRIKSolver::world_to_ik_chain() {
     }
 }
 
-void FABRIKSolver::iterate_backward(const glm::vec3& goal) {
+void FABRIKSolver::iterate_backward(const glm::vec3& goal)
+{
     size_t chain_size = size();
     if (chain_size > 0) {
         world_chain[chain_size - 1] = goal;
@@ -56,7 +61,8 @@ void FABRIKSolver::iterate_backward(const glm::vec3& goal) {
     }
 }
 
-void FABRIKSolver::iterate_forward(const glm::vec3& base) {
+void FABRIKSolver::iterate_forward(const glm::vec3& base)
+{
     size_t chain_size = size();
     if (chain_size > 0) {
         world_chain[0] = base;
@@ -68,7 +74,8 @@ void FABRIKSolver::iterate_forward(const glm::vec3& base) {
     }
 }
 
-bool FABRIKSolver::solve(const Transform& target) {
+bool FABRIKSolver::solve(const Transform& target)
+{
     // Local variables and size check
     size_t chain_size = size();
     if (chain_size == 0) { return false; }
@@ -76,6 +83,7 @@ bool FABRIKSolver::solve(const Transform& target) {
     float thresholdSq = threshold * threshold;
 
     ik_chain_to_world();
+
     glm::vec3 goal = target.position;
     glm::vec3 base = world_chain[0];
 
@@ -99,11 +107,14 @@ bool FABRIKSolver::solve(const Transform& target) {
         // 4.3. Convert the chain in global space again
         //ik_chain_to_world();
     }
+
     // Convert the chain in local space again
     world_to_ik_chain();
+
     // Last check if end-effector has reached the goal
     if (glm::length2(world_chain[last] - goal) <= thresholdSq) {
         return true;
     }
+
     return false;
 }

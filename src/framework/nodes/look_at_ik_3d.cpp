@@ -1,19 +1,36 @@
 #include "look_at_ik_3d.h"
 
-#include "imgui.h"
-#include "framework/utils/ImGuizmo.h"
 #include "framework/camera/camera.h"
+#include "framework/nodes/skeleton_instance_3d.h"
 #include "framework/animation/bone_transform.h"
+#include "framework/animation/fabrik_solver.h"
+#include "framework/animation/ccd_solver.h"
+#include "framework/animation/jacobian_solver.h"
 
 #include "graphics/renderer.h"
 
+#include "imgui.h"
+#include "framework/utils/ImGuizmo.h"
+
 #include "glm/gtc/type_ptr.hpp"
+
+LookAtIK3D::LookAtIK3D()
+{
+    ik_solver = new FABRIKSolver();
+    ik_solver->set_num_steps(max_iterations);
+    ik_solver->set_threshold(min_distance);
+
+    set_name(name);
+}
 
 LookAtIK3D::LookAtIK3D(SkeletonInstance3D* in_skeleton_instance)
 {
     skeleton_instance = in_skeleton_instance;
+
+    ik_solver = new FABRIKSolver();
     ik_solver->set_num_steps(max_iterations);
     ik_solver->set_threshold(min_distance);
+
     set_name(name);
 };
 
