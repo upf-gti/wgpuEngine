@@ -25,12 +25,12 @@ fn vs_main(in: VertexInput) -> VertexOutput {
     let instance_data : RenderMeshData = mesh_data.data[in.instance_id];
     var out: VertexOutput;
 
-    let curvature : f32 = 0.25;
+    let curvature : f32 = 0.15;
 
     let uv_centered : vec2f = in.uv * vec2f(2.0) - vec2f(1.0);
     let curve_factor : f32 = 1.0 - (abs(uv_centered.x * uv_centered.x) * 0.5 + 0.5);
     var curved_pos : vec3f = in.position;
-    curved_pos.z -= curvature * curve_factor;
+    // curved_pos.z -= curvature * curve_factor;
 
     var world_position : vec4f = instance_data.model * vec4f(curved_pos, 1.0);
     out.world_position = world_position.xyz;
@@ -51,7 +51,7 @@ fn fs_main(in: VertexOutput) -> FragmentOutput {
     var dummy = camera_data.eye;
 
     let is_hovered : bool = ui_data.hover_info.x > 0.0;
-    let is_selected : bool = ui_data.is_selected > 0.0;
+    let is_pressed : bool = ui_data.press_info.x > 0.0;
 
     var out: FragmentOutput;
 
@@ -65,7 +65,6 @@ fn fs_main(in: VertexOutput) -> FragmentOutput {
     var corrected_uv : vec2f = vec2f(in.uv.x, 1.0 - in.uv.y);
     corrected_uv = corrected_uv / size;
     corrected_uv = corrected_uv - (position / size) + 0.5;
-    // corrected_uv = corrected_uv + (size * 0.5);
     corrected_uv.y = 1.0 - corrected_uv.y;
     var color : vec4f = textureSample(albedo_texture, texture_sampler, corrected_uv);
 #else
@@ -90,7 +89,7 @@ fn fs_main(in: VertexOutput) -> FragmentOutput {
         final_color = mix(COLOR_TERCIARY, COLOR_HIGHLIGHT_LIGHT, pow(corrected_uv.y, 2.0));
     }
 
-    if(is_selected) {
+    if(is_pressed) {
         final_color = COLOR_PRIMARY;
     }
 

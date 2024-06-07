@@ -7,7 +7,7 @@
 #include "framework/nodes/text.h"
 #include "framework/camera/camera.h"
 #include "framework/utils/utils.h"
-#include "framework/ui/context_2d.h"
+#include "framework/ui/io.h"
 
 #include "graphics/renderer.h"
 #include "graphics/webgpu_context.h"
@@ -181,7 +181,7 @@ namespace ui {
 
                 data.ray_intersection = intersection_point;
                 data.ray_distance = collision_dist;
-                Context2D::set_xr_world_position(intersection_point);
+                IO::set_xr_world_position(intersection_point);
             }
             else {
                 data.was_pressed = data.is_hovered && Input::was_mouse_pressed(GLFW_MOUSE_BUTTON_LEFT);
@@ -208,10 +208,10 @@ namespace ui {
         if (!ignore_focus) {
 
             if (data.was_pressed) {
-                Context2D::set_focus(this);
+                IO::set_focus(this);
             }
 
-            data.is_pressed &= Context2D::equals_focus(this);
+            data.is_pressed &= IO::equals_focus(this);
         }
 
         return data;
@@ -289,52 +289,6 @@ namespace ui {
         RendererStorage::register_ui_widget(webgpu_context, material->shader, &quad_mesh, ui_data, 3);
     }
 
-    void XRPanel::update(float delta_time)
-    {
-        Node2D::update(delta_time);
-
-        if (!visibility)
-            return;
-
-        // reset event stuff..
-        ui_data.hover_info.x = 0.0f;
-        ui_data.hover_info.y = 0.0f;
-        ui_data.is_selected = 0.0f;
-
-        // ignore focus process, doing it manually per button
-        sInputData data = get_input_data(true);
-
-        XRPanel* xr_parent = static_cast<XRPanel*>(get_parent());
-
-        if (data.is_hovered) {
-
-            if (is_button) {
-
-                auto local_pos = data.local_position;
-                local_pos.y = xr_parent->get_size().y - local_pos.y;
-
-                data.is_hovered &= local_pos.x > (button_position.x - button_size.x * 0.5f) && local_pos.x < (button_position.x + button_size.x * 0.5f);
-                data.is_hovered &= local_pos.y > (button_position.y - button_size.y * 0.5f) && local_pos.y < (button_position.y + button_size.y * 0.5f);
-            }
-
-            // it's inside the button
-            if (data.is_hovered) {
-
-                if (data.was_pressed) {
-                    Context2D::set_focus(this);
-                }
-
-                data.is_pressed &= Context2D::equals_focus(this);
-
-                Node2D::push_input(this, data);
-            }
-        }
-
-        ui_data.aspect_ratio = size.x / size.y;
-
-        update_ui_data();
-    }
-
     sInputData XRPanel::get_input_data(bool ignore_focus)
     {
         // Use flat panel quad for flat screen..
@@ -374,14 +328,15 @@ namespace ui {
             false
         );
 
-        if (data.is_hovered) {
+        // ray_curved_quad it's not working well.. by nos using flat panels..
+        /*if (data.is_hovered) {
 
             glm::vec2 uv = glm::vec2(local_intersection_point) * 2.0f - 1.0f;
 
-            float z0 = 0.25f * (1.0f - (fabsf(uv.x * uv.x) * 0.5f + 0.5f));
+            float z_offset = 0.15f * (1.0f - (fabsf(uv.x * uv.x) * 0.5f + 0.5f));
 
-            intersection_point += ray_direction * z0;
-        }
+            intersection_point += ray_direction * z_offset;
+        }*/
 
         data.was_pressed = data.is_hovered && Input::was_button_pressed(XR_BUTTON_A);
 
@@ -393,13 +348,12 @@ namespace ui {
         if (data.was_released) {
             pressed_inside = false;
         }
-
         data.is_pressed = pressed_inside && Input::is_button_pressed(XR_BUTTON_A);
 
         data.ray_intersection = intersection_point;
         data.ray_distance = collision_dist;
 
-        Context2D::set_xr_world_position(intersection_point);
+        IO::set_xr_world_position(intersection_point);
 
         glm::vec2 local_pos = glm::vec2(local_intersection_point) / get_scale();
         data.local_position = glm::vec2(local_pos.x, size.y - local_pos.y);
@@ -411,16 +365,62 @@ namespace ui {
         return data;
     }
 
+    void XRPanel::update(float delta_time)
+    {
+        Node2D::update(delta_time);
+
+        if (!visibility)
+            return;
+
+        // reset event stuff..
+        ui_data.hover_info.x = 0.0f;
+        ui_data.hover_info.y = 0.0f;
+        ui_data.press_info.x = 0.0f;
+
+        // ignore focus process, doing it manually per button
+        sInputData data = get_input_data(true);
+
+        XRPanel* xr_parent = static_cast<XRPanel*>(get_parent());
+
+        if (data.is_hovered) {
+
+            if (is_button) {
+
+                auto local_pos = data.local_position;
+                local_pos.y = xr_parent->get_size().y - local_pos.y;
+
+                data.is_hovered &= local_pos.x > (button_position.x - button_size.x * 0.5f) && local_pos.x < (button_position.x + button_size.x * 0.5f);
+                data.is_hovered &= local_pos.y > (button_position.y - button_size.y * 0.5f) && local_pos.y < (button_position.y + button_size.y * 0.5f);
+            }
+
+            // it's inside the button
+            if (data.is_hovered) {
+
+                if (is_button && data.was_pressed) {
+                    IO::set_focus(this);
+                }
+
+                data.is_pressed &= IO::equals_focus(this);
+
+                Node2D::push_input(this, data);
+            }
+        }
+
+        ui_data.aspect_ratio = size.x / size.y;
+
+        update_ui_data();
+    }
+
     bool XRPanel::on_input(sInputData data)
     {
-        Context2D::set_hover(this, data.local_position);
+        IO::set_hover(this, data.local_position, data.ray_distance);
 
         // Don't do anything more on background xr panels..
         if (!is_button) {
             return true;
         }
 
-        if (data.was_pressed)
+        if (data.was_released)
         {
             // Trigger callback
             Node::emit_signal(name, (void*)this);
@@ -431,7 +431,7 @@ namespace ui {
         // Update uniforms
         ui_data.hover_info.x = 1.0f;
         ui_data.hover_info.y = 1.0f;
-        ui_data.is_selected = data.is_pressed ? 1.0f : 0.0f;
+        ui_data.press_info.x = data.is_pressed ? 1.0f : 0.0f;
 
         update_ui_data();
 
@@ -953,6 +953,7 @@ namespace ui {
         ui_data.hover_info.x = 0.0f;
         ui_data.hover_info.y = glm::clamp(timer, 0.0f, 1.0f);
         ui_data.is_selected = selected ? 1.f : 0.f;
+        ui_data.press_info.x = 0.0f;
 
         glm::vec2 scale = get_scale() * (class_type != Node2DClassType::COMBO_BUTTON ? scaling : glm::vec2(scaling.x, 1.0f));
         ui_data.aspect_ratio = scale.x / scale.y;
@@ -970,7 +971,7 @@ namespace ui {
 
     bool Button2D::on_input(sInputData data)
     {
-        Context2D::set_hover(this, data.local_position);
+        IO::set_hover(this, data.local_position, data.ray_distance);
 
         if (ui_data.is_button_disabled) {
             return true;
@@ -1395,7 +1396,7 @@ namespace ui {
 
     bool Slider2D::on_input(sInputData data)
     {
-        Context2D::set_hover(this, data.local_position);
+        IO::set_hover(this, data.local_position, data.ray_distance);
 
         text_2d->set_visibility(true);
 
@@ -1536,7 +1537,7 @@ namespace ui {
 
     bool ColorPicker2D::on_input(sInputData data)
     {
-        Context2D::set_hover(this, data.local_position);
+        IO::set_hover(this, data.local_position, data.ray_distance);
 
         glm::vec2 local_mouse_pos = data.local_position;
         local_mouse_pos /= size;

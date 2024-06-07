@@ -2,7 +2,7 @@
 
 #include "framework/input.h"
 #include "framework/math/intersections.h"
-#include "framework/ui/context_2d.h"
+#include "framework/ui/io.h"
 
 #include "graphics/renderer.h"
 
@@ -229,7 +229,7 @@ void Node2D::process_input()
 {
     if (!frame_inputs.size()) {
 
-        ui::Context2D::blur();
+        IO::blur();
         return;
     }
 

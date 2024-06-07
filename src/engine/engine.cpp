@@ -2,8 +2,9 @@
 
 #include "framework/input.h"
 #include "framework/utils/file_watcher.h"
-#include "framework/nodes/node_2d.h"
+#include "framework/ui/io.h"
 
+#include "graphics/renderer_storage.h"
 #include "graphics/renderer.h"
 
 #include "imgui.h"
@@ -64,6 +65,8 @@ int Engine::initialize(Renderer* renderer, GLFWwindow* window, bool use_glfw, bo
 
     Input::init(window, renderer, use_glfw);
 
+    IO::initialize();
+
     glfwSetWindowUserPointer(window, this);
 
     glfwSetFramebufferSizeCallback(window, resize_callback);
@@ -116,18 +119,22 @@ Scene* Engine::get_main_scene()
 
 void Engine::on_frame()
 {
+    // Update stuff
+
     Input::update(delta_time);
 
     double last_time = current_time;
     current_time = glfwGetTime();
-
     delta_time = static_cast<float>((current_time - last_time));
+
+    IO::start_frame();
 
     update(delta_time);
 
-    Node2D::process_input();
+    IO::end_frame();
 
-    // Start the Dear ImGui frame
+    // Render stuff
+
     ImGui_ImplWGPU_NewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
