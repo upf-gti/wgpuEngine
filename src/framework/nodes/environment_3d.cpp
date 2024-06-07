@@ -6,6 +6,8 @@
 
 Environment3D::Environment3D() : MeshInstance3D()
 {
+    node_type = "Environment3D";
+
     name = "Environment3D";
 
     Surface* surface = new Surface;

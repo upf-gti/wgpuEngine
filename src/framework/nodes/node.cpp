@@ -3,12 +3,20 @@
 #include "framework/input.h"
 #include "framework/utils/utils.h"
 
+#include "node_binary_format.h"
+
+#include "engine/engine.h"
+
+#include <fstream>
+
 std::unordered_map<std::string, std::vector<SignalType>> Node::mapping_signals;
 std::unordered_map<uint8_t, std::vector<FuncEmpty>> Node::controller_signals;
 uint32_t Node::last_node_id = 0;
 
 Node::Node()
 {
+    node_type = "Node";
+
     name = "Node_" + std::to_string(last_node_id++);
 }
 
@@ -23,6 +31,56 @@ void Node::update(float delta_time)
 {
     for (Node* child : children) {
         child->update(delta_time);
+    }
+}
+
+void Node::serialize(std::ofstream& binary_scene_file)
+{
+    sNodeBinaryHeader header = {
+        .children_count = children.size(),
+    };
+
+    size_t node_type_size = node_type.size();
+    binary_scene_file.write(reinterpret_cast<char*>(&node_type_size), sizeof(size_t));
+    binary_scene_file.write(node_type.c_str(), node_type_size);
+
+    binary_scene_file.write(reinterpret_cast<char*>(&header), sizeof(sNodeBinaryHeader));
+
+    size_t name_size = name.size();
+    binary_scene_file.write(reinterpret_cast<char*>(&name_size), sizeof(size_t));
+    binary_scene_file.write(name.c_str(), name_size);
+
+    for (auto child : children) {
+        child->serialize(binary_scene_file);
+    }
+}
+
+void Node::parse(std::ifstream& binary_scene_file)
+{
+    sNodeBinaryHeader header;
+
+    binary_scene_file.read(reinterpret_cast<char*>(&header), sizeof(sNodeBinaryHeader));
+
+    size_t name_size = 0;
+    binary_scene_file.read(reinterpret_cast<char*>(&name_size), sizeof(size_t));
+    name.resize(name_size);
+    binary_scene_file.read(&name[0], name_size);
+
+    Engine* engine = Engine::instance;
+
+    std::string child_node_type;
+
+    for (int i = 0; i < header.children_count; ++i) {
+
+        // parse node type
+        size_t node_type_size = 0;
+        binary_scene_file.read(reinterpret_cast<char*>(&node_type_size), sizeof(size_t));
+        child_node_type.resize(node_type_size);
+        binary_scene_file.read(&child_node_type[0], node_type_size);
+
+        Node* child = engine->node_factory(node_type);
+        child->parse(binary_scene_file);
+        children.push_back(child);
     }
 }
 
