@@ -1549,6 +1549,8 @@ namespace ui {
         ui_data.hover_info.x = 0.0f;
         ui_data.picker_color = color;
 
+        on_hover = false;
+
         update_ui_data();
     }
 
@@ -1562,38 +1564,43 @@ namespace ui {
 
         float dist = glm::distance(local_mouse_pos, glm::vec2(0.f));
 
-       if (data.is_pressed)
-       {
-           // Change HUE
-           if ((changing_hue && dist > 0.1f) || (dist > (1.0f - ring_thickness) && !changing_sv)) {
-               color.r = fmod(glm::degrees(atan2f(-local_mouse_pos.y, local_mouse_pos.x)), 360.f);
-               changing_hue = true;
-           }
+        if (data.is_pressed) {
 
-           // Update Saturation, Value
-           else if(!changing_hue){
-               glm::vec2 uv = local_mouse_pos;
-               uv.y *= -1.0f;
-               glm::vec2 sv = uv_to_saturation_value(uv);
-               color = { color.r, sv.x, sv.y, 1.0f };
-               changing_sv = true;
-           }
+            // Change HUE
+            if ((changing_hue && dist > 0.1f) || (dist > (1.0f - ring_thickness) && !changing_sv)) {
+                color.r = fmod(glm::degrees(atan2f(-local_mouse_pos.y, local_mouse_pos.x)), 360.f);
+                changing_hue = true;
+            }
 
-           // Send the signal using the final color
-           glm::vec3 new_color = glm::pow(hsv2rgb(color), glm::vec3(2.2f));
-           Node::emit_signal(signal, glm::vec4(new_color, 1.0));
+            // Update Saturation, Value
+            else if(!changing_hue){
+                glm::vec2 uv = local_mouse_pos;
+                uv.y *= -1.0f;
+                glm::vec2 sv = uv_to_saturation_value(uv);
+                color = { color.r, sv.x, sv.y, 1.0f };
+                changing_sv = true;
+            }
 
-           on_pressed();
-       }
+            // Send the signal using the final color
+            glm::vec3 new_color = glm::pow(hsv2rgb(color), glm::vec3(2.2f));
+            Node::emit_signal(signal, glm::vec4(new_color, 1.0));
 
-       if (data.was_released)
-       {
-           Node::emit_signal(signal + "@released", color);
-           changing_hue = changing_sv = false;
-       }
+            on_pressed();
+        }
+
+        if (data.was_released) {
+            Node::emit_signal(signal + "@released", color);
+            changing_hue = changing_sv = false;
+        }
+
+        if (data.was_hovered) {
+            Engine::instance->vibrate_hand(HAND_RIGHT, HOVER_HAPTIC_AMPLITUDE, HOVER_HAPTIC_DURATION);
+        }
 
         // Update uniforms
         ui_data.hover_info.x = 1.0f;
+
+        on_hover = true;
 
         update_ui_data();
 
