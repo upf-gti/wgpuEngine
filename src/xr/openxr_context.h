@@ -43,6 +43,9 @@ struct OpenXRContext {
     void init_actions(XrInputData& data);
     void poll_actions(XrInputData& data);
 
+    void apply_haptics(uint8_t controller, float amplitude, float duration);
+    void stop_haptics(uint8_t controller);
+
     /*
     * XR Session
     */
@@ -104,10 +107,10 @@ private:
         XrActionType type,
         XrAction& action);
 
-    XrActionStatePose get_action_pose_state(XrAction targetAction, int controller);
-    XrActionStateBoolean get_action_boolean_state(XrAction targetAction, int controller);
-    XrActionStateFloat get_action_float_state(XrAction targetAction, int controller);
-    XrActionStateVector2f get_action_vector2f_State(XrAction targetAction, int controller);
+    XrActionStatePose get_action_pose_state(XrAction targetAction, uint8_t controller);
+    XrActionStateBoolean get_action_boolean_state(XrAction targetAction, uint8_t controller);
+    XrActionStateFloat get_action_float_state(XrAction targetAction, uint8_t controller);
+    XrActionStateVector2f get_action_vector2f_State(XrAction targetAction, uint8_t controller);
 };
 
 #endif

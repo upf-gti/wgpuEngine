@@ -7,6 +7,8 @@
 #include "graphics/renderer_storage.h"
 #include "graphics/renderer.h"
 
+#include "xr/openxr_context.h"
+
 #include "imgui.h"
 #include "backends/imgui_impl_wgpu.h"
 #include "backends/imgui_impl_glfw.h"
@@ -169,4 +171,12 @@ void Engine::resize_window(int width, int height)
     } else {
         renderer->resize_window(width, height);
     }
+}
+
+void Engine::vibrate_hand(int controller, float amplitude, float duration)
+{
+#ifdef XR_SUPPORT
+    auto openxr_context = renderer->get_openxr_context();
+    openxr_context->apply_haptics(controller, amplitude, duration);
+#endif
 }

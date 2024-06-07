@@ -547,7 +547,7 @@ void OpenXRContext::init_actions(XrInputData& data)
 
         // Create output actions for vibrating the left and right controller.
         is_ok &= create_action(input_state.actionSet, input_state.handSubactionPath, HAND_COUNT,
-            "vibrate_hand", "Vibrate Hand", XR_ACTION_TYPE_VIBRATION_OUTPUT, input_state.vibrateAction);
+            "haptic_action", "Haptic Action", XR_ACTION_TYPE_VIBRATION_OUTPUT, input_state.vibrateAction);
 
         // Create an input action for grabbing objects with the left and right hands.
         is_ok &= create_action(input_state.actionSet, input_state.handSubactionPath, HAND_COUNT,
@@ -913,6 +913,30 @@ void OpenXRContext::poll_actions(XrInputData& data)
     }
 }
 
+
+void OpenXRContext::apply_haptics(uint8_t controller, float amplitude, float duration)
+{
+    XrHapticVibration vibration = { XR_TYPE_HAPTIC_VIBRATION };
+    vibration.amplitude = amplitude;
+    vibration.duration = duration * 1e9; // Convert duration to nanoseconds
+    vibration.frequency = XR_FREQUENCY_UNSPECIFIED;
+
+    XrHapticActionInfo hapticActionInfo = { XR_TYPE_HAPTIC_ACTION_INFO };
+    hapticActionInfo.action = input_state.vibrateAction;
+    hapticActionInfo.subactionPath = input_state.handSubactionPath[controller];
+
+    xrApplyHapticFeedback(session, &hapticActionInfo, reinterpret_cast<XrHapticBaseHeader*>(&vibration));
+}
+
+void OpenXRContext::stop_haptics(uint8_t controller)
+{
+    XrHapticActionInfo hapticActionInfo = { XR_TYPE_HAPTIC_ACTION_INFO };
+    hapticActionInfo.action = input_state.vibrateAction;
+    hapticActionInfo.subactionPath = input_state.handSubactionPath[controller];
+
+    xrStopHapticFeedback(session, &hapticActionInfo);
+}
+
 void OpenXRContext::init_frame()
 {
     XrResult result;
@@ -1127,7 +1151,7 @@ bool OpenXRContext::create_action(XrActionSet actionSet,
     return true;
 }
 
-XrActionStatePose OpenXRContext::get_action_pose_state(XrAction targetAction, int controller)
+XrActionStatePose OpenXRContext::get_action_pose_state(XrAction targetAction, uint8_t controller)
 {
     XrPath path = XR_NULL_PATH;// Wildcard for all
     if (controller != HAND_COUNT) {
@@ -1148,7 +1172,7 @@ XrActionStatePose OpenXRContext::get_action_pose_state(XrAction targetAction, in
     return poseState;
 }
 
-XrActionStateBoolean OpenXRContext::get_action_boolean_state(XrAction targetAction, int controller)
+XrActionStateBoolean OpenXRContext::get_action_boolean_state(XrAction targetAction, uint8_t controller)
 {
     XrPath path = XR_NULL_PATH;// Wildcard for all
     if (controller != HAND_COUNT) {
@@ -1169,7 +1193,7 @@ XrActionStateBoolean OpenXRContext::get_action_boolean_state(XrAction targetActi
     return poseState;
 }
 
-XrActionStateFloat OpenXRContext::get_action_float_state(XrAction targetAction, int controller)
+XrActionStateFloat OpenXRContext::get_action_float_state(XrAction targetAction, uint8_t controller)
 {
     XrPath path = XR_NULL_PATH;// Wildcard for all
     if (controller != HAND_COUNT) {
@@ -1190,7 +1214,7 @@ XrActionStateFloat OpenXRContext::get_action_float_state(XrAction targetAction, 
     return poseState;
 }
 
-XrActionStateVector2f OpenXRContext::get_action_vector2f_State(XrAction targetAction, int controller)
+XrActionStateVector2f OpenXRContext::get_action_vector2f_State(XrAction targetAction, uint8_t controller)
 {
     XrPath path = XR_NULL_PATH;// Wildcard for all
     if (controller != HAND_COUNT) {

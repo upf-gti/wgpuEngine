@@ -2,6 +2,8 @@
 
 #include <cctype>
 
+#include "engine/engine.h"
+
 #include "framework/math/intersections.h"
 #include "framework/input.h"
 #include "framework/nodes/text.h"
@@ -11,7 +13,9 @@
 
 #include "graphics/renderer.h"
 #include "graphics/webgpu_context.h"
+
 #include "spdlog/spdlog.h"
+
 #include "glm/gtx/easing.hpp"
 #include "glm/gtx/compatibility.hpp"
 
@@ -408,6 +412,8 @@ namespace ui {
 
         ui_data.aspect_ratio = size.x / size.y;
 
+        on_hover = false;
+
         update_ui_data();
     }
 
@@ -428,10 +434,16 @@ namespace ui {
             on_pressed();
         }
 
+        if (data.was_hovered) {
+            Engine::instance->vibrate_hand(HAND_RIGHT, HOVER_HAPTIC_AMPLITUDE, HOVER_HAPTIC_DURATION);
+        }
+
         // Update uniforms
         ui_data.hover_info.x = 1.0f;
         ui_data.hover_info.y = 1.0f;
         ui_data.press_info.x = data.is_pressed ? 1.0f : 0.0f;
+
+        on_hover = true;
 
         update_ui_data();
 
@@ -992,6 +1004,10 @@ namespace ui {
             on_pressed();
         }
 
+        if (data.was_hovered) {
+            Engine::instance->vibrate_hand(HAND_RIGHT, HOVER_HAPTIC_AMPLITUDE, HOVER_HAPTIC_DURATION);
+        }
+
         target_scale = 1.1f;
 
         // Update uniforms
@@ -1423,6 +1439,7 @@ namespace ui {
 
         if (data.was_hovered) {
             timer = 0.f;
+            Engine::instance->vibrate_hand(HAND_RIGHT, HOVER_HAPTIC_AMPLITUDE, HOVER_HAPTIC_DURATION);
         }
 
         on_hover = true;

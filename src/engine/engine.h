@@ -39,4 +39,6 @@ public:
     float get_delta_time() { return delta_time; }
 
     void resize_window(int width, int height);
+
+    void vibrate_hand(int controller, float amplitude, float duration);
 };

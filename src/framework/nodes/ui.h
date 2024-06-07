@@ -17,6 +17,9 @@ namespace ui {
     const float GROUP_MARGIN        = 12.f;
     const float TEXT_SHADOW_MARGIN  = 1.f;
 
+    const float HOVER_HAPTIC_AMPLITUDE  = 0.01f;
+    const float HOVER_HAPTIC_DURATION   = 0.05f;
+
     enum ComboIndex {
         UNIQUE,
         FIRST,
