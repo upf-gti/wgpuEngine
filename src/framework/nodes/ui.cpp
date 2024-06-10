@@ -93,6 +93,57 @@ namespace ui {
         Node2D::render();
     }
 
+    bool Panel2D::was_input_pressed()
+    {
+        Material* material = quad_mesh.get_surface_material_override(quad_mesh.get_surface(0));
+
+        bool is_2d = material->flags & MATERIAL_2D;
+        is_2d |= (!Renderer::instance->get_openxr_available());
+
+        if (is_2d) {
+            return Input::was_mouse_pressed(GLFW_MOUSE_BUTTON_LEFT);
+        }
+        else {
+            return Input::was_button_pressed(XR_BUTTON_A) || Input::was_trigger_pressed(HAND_RIGHT);
+        }
+
+        return false;
+    }
+
+    bool Panel2D::was_input_released()
+    {
+        Material* material = quad_mesh.get_surface_material_override(quad_mesh.get_surface(0));
+
+        bool is_2d = material->flags & MATERIAL_2D;
+        is_2d |= (!Renderer::instance->get_openxr_available());
+
+        if (is_2d) {
+            return Input::was_mouse_released(GLFW_MOUSE_BUTTON_LEFT);
+        }
+        else {
+            return Input::was_button_released(XR_BUTTON_A) || Input::was_trigger_released(HAND_RIGHT);
+        }
+
+        return false;
+    }
+
+    bool Panel2D::is_input_pressed()
+    {
+        Material* material = quad_mesh.get_surface_material_override(quad_mesh.get_surface(0));
+
+        bool is_2d = material->flags & MATERIAL_2D;
+        is_2d |= (!Renderer::instance->get_openxr_available());
+
+        if (is_2d) {
+            return Input::is_mouse_pressed(GLFW_MOUSE_BUTTON_LEFT);
+        }
+        else {
+            return Input::is_button_pressed(XR_BUTTON_A) || Input::is_trigger_pressed(HAND_RIGHT);
+        }
+
+        return false;
+    }
+
     sInputData Panel2D::get_input_data(bool ignore_focus)
     {
         sInputData data;
@@ -110,15 +161,6 @@ namespace ui {
             glm::vec2 max = min + size;
 
             data.is_hovered = mouse_pos.x >= min.x && mouse_pos.y >= min.y && mouse_pos.x <= max.x && mouse_pos.y <= max.y;
-            data.was_pressed = data.is_hovered && Input::was_mouse_pressed(GLFW_MOUSE_BUTTON_LEFT);
-            if (data.was_pressed) {
-                pressed_inside = true;
-            }
-            data.was_released = Input::was_mouse_released(GLFW_MOUSE_BUTTON_LEFT);
-            if (data.was_released) {
-                pressed_inside = false;
-            }
-            data.is_pressed = pressed_inside && Input::is_mouse_pressed(GLFW_MOUSE_BUTTON_LEFT);
 
             glm::vec2 local_mouse_pos = mouse_pos - get_translation();
             data.local_position = glm::vec2(local_mouse_pos.x, size.y - local_mouse_pos.y);
@@ -129,16 +171,14 @@ namespace ui {
             glm::vec3 ray_direction;
 
             // Handle ray using VR controller
-            if (Renderer::instance->get_openxr_available())
-            {
+            if (Renderer::instance->get_openxr_available()) {
                 // Ray
                 ray_origin = Input::get_controller_position(HAND_RIGHT, POSE_AIM);
                 glm::mat4x4 select_hand_pose = Input::get_controller_pose(HAND_RIGHT, POSE_AIM);
                 ray_direction = get_front(select_hand_pose);
             }
             // Handle ray using mouse position
-            else
-            {
+            else {
                 Camera* camera = Renderer::instance->get_camera();
                 glm::vec3 ray_dir = camera->screen_to_ray(Input::get_mouse_position());
 
@@ -173,35 +213,28 @@ namespace ui {
             );
 
             if (Renderer::instance->get_openxr_available()) {
-                data.was_pressed = data.is_hovered && Input::was_button_pressed(XR_BUTTON_A);
-                if (data.was_pressed) {
-                    pressed_inside = true;
-                }
-                data.was_released = Input::was_button_released(XR_BUTTON_A);
-                if (data.was_released) {
-                    pressed_inside = false;
-                }
-                data.is_pressed = pressed_inside && Input::is_button_pressed(XR_BUTTON_A);
-
                 data.ray_intersection = intersection_point;
                 data.ray_distance = collision_dist;
                 IO::set_xr_world_position(intersection_point);
-            }
-            else {
-                data.was_pressed = data.is_hovered && Input::was_mouse_pressed(GLFW_MOUSE_BUTTON_LEFT);
-                if (data.was_pressed) {
-                    pressed_inside = true;
-                }
-                data.was_released = Input::was_mouse_released(GLFW_MOUSE_BUTTON_LEFT);
-                if (data.was_released) {
-                    pressed_inside = false;
-                }
-                data.is_pressed = pressed_inside && Input::is_mouse_pressed(GLFW_MOUSE_BUTTON_LEFT);
             }
 
             glm::vec2 local_pos = glm::vec2(local_intersection_point) / get_scale();
             data.local_position = glm::vec2(local_pos.x, size.y - local_pos.y);
         }
+
+        data.was_pressed = data.is_hovered && was_input_pressed();
+
+        if (data.was_pressed) {
+            pressed_inside = true;
+        }
+
+        data.was_released = was_input_released();
+
+        if (data.was_released) {
+            pressed_inside = false;
+        }
+
+        data.is_pressed = pressed_inside && is_input_pressed();
 
         if (!on_hover && data.is_hovered) {
             data.was_hovered = true;
@@ -342,17 +375,17 @@ namespace ui {
             intersection_point += ray_direction * z_offset;
         }*/
 
-        data.was_pressed = data.is_hovered && Input::was_button_pressed(XR_BUTTON_A);
+        data.was_pressed = data.is_hovered && was_input_pressed();
 
         if (data.was_pressed) {
             pressed_inside = true;
         }
-        data.was_released = Input::was_button_released(XR_BUTTON_A);
+        data.was_released = was_input_released();
 
         if (data.was_released) {
             pressed_inside = false;
         }
-        data.is_pressed = pressed_inside && Input::is_button_pressed(XR_BUTTON_A);
+        data.is_pressed = pressed_inside && is_input_pressed();
 
         data.ray_intersection = intersection_point;
         data.ray_distance = collision_dist;
@@ -673,7 +706,7 @@ namespace ui {
             ui_data.is_selected = 1.0f;
             ui_data.picker_color.r = fmod(glm::degrees(atan2f(axis_value.y, axis_value.x)), 360.f);
 
-            if (Input::was_button_pressed(XR_BUTTON_A)) {
+            if (was_input_pressed()) {
 
                 auto& childs = get_children();
                 size_t child_count = childs.size();

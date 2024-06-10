@@ -17,10 +17,8 @@ uint8_t Input::prev_keystate[GLFW_KEY_LAST];
 bool Input::use_glfw = false;
 
 #ifdef XR_SUPPORT
-
-bool Input::trigger_released[HAND_COUNT] = {true, true};
-bool Input::grab_released[HAND_COUNT] = {true, true};
-
+bool Input::prev_trigger_state[HAND_COUNT] = { false, false };
+bool Input::prev_grab_state[HAND_COUNT] = { false, false };
 #endif
 
 GLFWwindow* Input::window = nullptr;
@@ -110,6 +108,8 @@ bool Input::init_xr(OpenXRContext* context)
 }
 #endif
 
+#include "spdlog/spdlog.h"
+
 void Input::update(float delta_time)
 {
     glfwPollEvents();
@@ -119,32 +119,19 @@ void Input::update(float delta_time)
 
 		double x, y;
 		glfwGetCursorPos(window, &x, &y);
-		Input::mouse_delta.x = Input::mouse_position.x - static_cast<float>(x);
-		Input::mouse_delta.y = Input::mouse_position.y - static_cast<float>(y);
+		mouse_delta.x = mouse_position.x - static_cast<float>(x);
+		mouse_delta.y = mouse_position.y - static_cast<float>(y);
 
-		Input::mouse_position.x = static_cast<float>(x);
-		Input::mouse_position.y = static_cast<float>(y);
+		mouse_position.x = static_cast<float>(x);
+		mouse_position.y = static_cast<float>(y);
 	}
 	
 #ifdef XR_SUPPORT
-
 	// Sync XR Controllers
 	if (!openxr_context)
 		return;
 
 	openxr_context->poll_actions(xr_data);
-
-    for (int i = 0; i < HAND_COUNT; ++i)
-    {
-        if (get_trigger_value(i) == 0.f) {
-            trigger_released[i] = true;
-        }
-
-        if (get_grab_value(i) == 0.f) {
-            grab_released[i] = true;
-        }
-    }
-
 #endif
 }
 
@@ -159,14 +146,19 @@ void Input::center_mouse()
 	int center_x = (int)floor(screen_width * 0.5f);
 	int center_y = (int)floor(screen_height * 0.5f);
 	glfwSetCursorPos(window, center_x, center_y);
-	Input::mouse_position.x = (float)center_x;
-	Input::mouse_position.y = (float)center_y;
+	mouse_position.x = (float)center_x;
+	mouse_position.y = (float)center_y;
 }
 
 void Input::set_prev_state()
 {
-    memcpy((void*)&Input::prev_keystate, Input::keystate, GLFW_KEY_LAST);
-    memcpy((void*)&Input::prev_buttons, Input::buttons, GLFW_MOUSE_BUTTON_LAST);
+    memcpy((void*)&prev_keystate, keystate, GLFW_KEY_LAST);
+    memcpy((void*)&prev_buttons, buttons, GLFW_MOUSE_BUTTON_LAST);
+
+    for (int i = 0; i < HAND_COUNT; ++i) {
+        prev_trigger_state[i] = is_trigger_pressed(i);
+        prev_grab_state[i] = is_grab_pressed(i);
+    }
 }
 
 void Input::set_key_state(int key, uint8_t value)
@@ -279,11 +271,25 @@ float Input::get_trigger_value(uint8_t controller)
 bool Input::was_trigger_pressed(uint8_t controller)
 {
 #ifdef XR_SUPPORT
+    return openxr_context && !prev_trigger_state[controller] && (xr_data.triggerValueState[controller].currentState > 0.5f);
+#else
+    return false;
+#endif
+}
 
-    bool value = openxr_context && trigger_released[controller] && (xr_data.triggerValueState[controller].currentState > 0.5f);
-    if (value) trigger_released[controller] = false;
-    return value;
+bool Input::was_trigger_released(uint8_t controller)
+{
+#ifdef XR_SUPPORT
+    return openxr_context && prev_trigger_state[controller] && (xr_data.triggerValueState[controller].currentState < 0.5f);
+#else
+    return false;
+#endif
+}
 
+bool Input::is_trigger_pressed(uint8_t controller)
+{
+#ifdef XR_SUPPORT
+    return openxr_context && (xr_data.triggerValueState[controller].currentState > 0.5f);
 #else
     return false;
 #endif
@@ -322,9 +328,7 @@ bool Input::is_grab_pressed(uint8_t controller)
 bool Input::was_grab_pressed(uint8_t controller)
 {
 #ifdef XR_SUPPORT
-    bool value = openxr_context && grab_released[controller] && (xr_data.grabState[controller].currentState > 0.5f);
-    if (value) grab_released[controller] = false;
-    return value;
+    return openxr_context && !prev_grab_state[controller] && (xr_data.grabState[controller].currentState > 0.5f);
 #else
     return false;
 #endif
@@ -347,7 +351,7 @@ float Input::get_grab_value(uint8_t controller)
 glm::vec2 Input::get_thumbstick_value(uint8_t controller)
 {
 #ifdef XR_SUPPORT
-	if (!openxr_context) return {};
+	if (!openxr_context) return { 0.0f, 0.0f };
 	return XrVector2f_to_glm(xr_data.thumbStickValueState[controller].currentState);
 #else
 	return {};

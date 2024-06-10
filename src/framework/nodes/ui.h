@@ -57,6 +57,10 @@ namespace ui {
 
         sInputData get_input_data(bool ignore_focus = false) override;
 
+        bool was_input_pressed();
+        bool was_input_released();
+        bool is_input_pressed();
+
         void render() override;
 
         void remove_flag(uint8_t flag) override;
