@@ -20,9 +20,6 @@ class IO {
 
 public:
 
-    // move to private later
-    static MeshInstance3D* ray_pointer;
-
     static void initialize();
     static void start_frame();
     static void end_frame();
