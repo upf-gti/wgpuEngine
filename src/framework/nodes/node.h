@@ -38,6 +38,7 @@ class Node {
 protected:
 
     std::string name;
+    std::string node_type;
 
     NodeType type;
 
@@ -56,7 +57,8 @@ public:
     virtual void update(float delta_time);
     virtual void render_gui() {};
 
-    virtual void serialize() {};
+    virtual void serialize(std::ofstream& binary_scene_file);
+    virtual void parse(std::ifstream& binary_scene_file);
 
     NodeType get_type() const { return type; }
     std::string get_name() const { return name; }

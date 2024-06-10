@@ -11,8 +11,12 @@
 
 #include "spdlog/spdlog.h"
 
+#include <fstream>
+
 Node3D::Node3D() : model(1.0f)
 {
+    node_type = "Node3D";
+
     properties["translation"] = &transform.position;
     properties["rotation"] = &transform.rotation;
     properties["scale"] = &transform.scale;
@@ -121,6 +125,20 @@ void Node3D::rotate(const glm::quat& q)
 void Node3D::scale(glm::vec3 scale)
 {
     model = glm::scale(model, scale);
+}
+
+void Node3D::serialize(std::ofstream& binary_scene_file)
+{
+    Node::serialize(binary_scene_file);
+
+    binary_scene_file.write(reinterpret_cast<char*>(&model), sizeof(glm::mat4x4));
+}
+
+void Node3D::parse(std::ifstream& binary_scene_file)
+{
+    Node::parse(binary_scene_file);
+
+    binary_scene_file.read(reinterpret_cast<char*>(&model), sizeof(glm::mat4x4));
 }
 
 void Node3D::set_model_dirty(bool value)

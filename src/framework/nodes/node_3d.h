@@ -37,6 +37,9 @@ public:
     void rotate(const glm::quat& q);
     void scale(glm::vec3 scale);
 
+    virtual void serialize(std::ofstream& binary_scene_file);
+    virtual void parse(std::ifstream& binary_scene_file);
+
     const glm::vec3 get_local_translation() const;
     const glm::vec3 get_translation() const;
     virtual glm::mat4x4 get_global_model() const;

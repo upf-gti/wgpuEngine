@@ -14,6 +14,10 @@
 #include "backends/imgui_impl_glfw.h"
 #include "framework/utils/ImGuizmo.h"
 
+#include "engine/scene.h"
+
+#include "framework/nodes/default_node_factory.h"
+
 #include <GLFW/glfw3.h>
 
 Engine* Engine::instance = nullptr;
@@ -35,6 +39,8 @@ void resize_callback(GLFWwindow* window, int width, int height)
 Engine::Engine()
 {
     instance = this;
+
+    node_factory = default_node_factory;
 }
 
 int Engine::initialize(Renderer* renderer, GLFWwindow* window, bool use_glfw, bool use_mirror_screen)
@@ -98,6 +104,11 @@ int Engine::initialize(Renderer* renderer, GLFWwindow* window, bool use_glfw, bo
 void Engine::clean()
 {
     renderer->clean();
+}
+
+void Engine::add_node(Node* node)
+{
+    main_scene->add_node(node);
 }
 
 bool Engine::get_openxr_available()

@@ -1,9 +1,12 @@
 #pragma once
 
+#include <string>
+
 struct GLFWwindow;
 class FileWatcher;
 class Renderer;
 class Scene;
+class Node;
 
 class Engine {
 
@@ -25,6 +28,10 @@ public:
 
     virtual int initialize(Renderer* renderer, GLFWwindow *window, bool use_glfw, bool use_mirror_screen);
     virtual void clean();
+
+    Node* (*node_factory)(const std::string& node_type);
+
+    void add_node(Node* node);
 
     bool get_openxr_available();
     bool get_use_mirror_window();

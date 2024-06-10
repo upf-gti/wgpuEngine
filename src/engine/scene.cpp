@@ -1,10 +1,15 @@
 #include "scene.h"
 
 #include "framework/nodes/node.h"
+#include "scene_binary_format.h"
 
-Scene::Scene()
+#include "engine/engine.h"
+
+#include <fstream>
+
+Scene::Scene(const std::string& name)
 {
-
+    this->name = name;
 }
 
 Scene::~Scene()
@@ -32,6 +37,11 @@ void Scene::add_nodes(const std::vector<Node*>& nodes_to_add, int idx)
     }
 }
 
+void Scene::set_name(const std::string& name)
+{
+    this->name = name;
+}
+
 std::vector<Node*>& Scene::get_nodes()
 {
     return nodes;
@@ -46,9 +56,58 @@ void Scene::delete_all()
     nodes.clear();
 }
 
-void Scene::serialize_scene()
+void Scene::serialize(const std::string& path)
 {
+    std::ofstream binary_scene_file(path, std::ios::out | std::ios::binary);
 
+    sSceneBinaryHeader header = {
+        .version = 1,
+        .node_count = nodes.size(),
+    };
+
+    binary_scene_file.write(reinterpret_cast<char*>(&header), sizeof(sSceneBinaryHeader));
+
+    size_t name_size = name.size();
+    binary_scene_file.write(reinterpret_cast<char*>(&name_size), sizeof(size_t));
+    binary_scene_file.write(name.c_str(), name_size);
+
+    for (auto node : nodes) {
+        node->serialize(binary_scene_file);
+    }
+
+    binary_scene_file.close();
+}
+
+void Scene::parse(const std::string& path)
+{
+    std::ifstream binary_scene_file(path, std::ios::in | std::ios::binary);
+
+    sSceneBinaryHeader header;
+
+    binary_scene_file.read(reinterpret_cast<char*>(&header), sizeof(sSceneBinaryHeader));
+
+    size_t name_size = 0;
+    binary_scene_file.read(reinterpret_cast<char*>(&name_size), sizeof(size_t));
+    name.resize(name_size);
+    binary_scene_file.read(&name[0], name_size);
+
+    Engine* engine = Engine::instance;
+
+    std::string node_type;
+
+    for (int i = 0; i < header.node_count; ++i) {
+        // parse node type
+        size_t node_type_size = 0;
+        binary_scene_file.read(reinterpret_cast<char*>(&node_type_size), sizeof(size_t));
+        node_type.resize(node_type_size);
+        binary_scene_file.read(&node_type[0], node_type_size);
+
+        Node* node = engine->node_factory(node_type);
+        node->parse(binary_scene_file);
+        nodes.push_back(node);
+    }
+
+    binary_scene_file.close();
 }
 
 void Scene::update(float delta_time)
