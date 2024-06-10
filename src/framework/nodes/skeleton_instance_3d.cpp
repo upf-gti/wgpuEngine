@@ -10,6 +10,8 @@
 #include "imgui.h"
 #include "framework/utils/ImGuizmo.h"
 
+#include "shaders/mesh_color.wgsl.gen.h"
+
 #include <glm/gtc/type_ptr.hpp>
 #include "spdlog/spdlog.h"
 
@@ -93,7 +95,7 @@ void SkeletonInstance3D::update_helper()
 
     std::vector<InterleavedData>& vertices = s->get_vertices();
     vertices.clear();
-    vertices.resize(0);
+    /*vertices.resize(0);*/
 
     size_t numJoints = skeleton->get_current_pose().size();
     Pose pose = skeleton->get_current_pose();
@@ -127,7 +129,7 @@ void SkeletonInstance3D::init_helper()
     skeleton_material.depth_read = false;
     skeleton_material.priority = 0;
     skeleton_material.topology_type = eTopologyType::TOPOLOGY_LINE_LIST;
-    skeleton_material.shader = RendererStorage::get_shader("data/shaders/mesh_color.wgsl", skeleton_material);
+    skeleton_material.shader = RendererStorage::get_shader_from_source(shaders::mesh_color::source, shaders::mesh_color::path, skeleton_material);
 
     set_surface_material_override(s, skeleton_material);
 }
