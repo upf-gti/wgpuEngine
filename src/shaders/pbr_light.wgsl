@@ -163,7 +163,7 @@ fn get_indirect_light( m : LitMaterial ) -> vec3f
     let brdf_coords : vec2f = clamp(vec2f(n_dot_v, m.roughness), vec2f(0.0, 0.0), vec2f(1.0, 1.0));
     let brdf_lut : vec2f = textureSampleLevel(brdf_lut_texture, sampler_clamp, brdf_coords, 0.0).rg;
     
-    let specular_sample : vec3f = textureSampleLevel(irradiance_texture, sampler_clamp, m.reflected_dir, lod).rgb;
+    let specular_sample : vec3f = textureSampleLevel(irradiance_texture, sampler_clamp, m.reflected_dir, lod).rgb * camera_data.ibl_intensity;
 
     let k_s : vec3f = FresnelSchlickRoughness(n_dot_v, m.f0, m.roughness);
     let fss_ess : vec3f = (k_s * brdf_lut.x + brdf_lut.y);
@@ -171,7 +171,7 @@ fn get_indirect_light( m : LitMaterial ) -> vec3f
     let specular : vec3f = specular_sample * fss_ess;
 
     // Diffuse sample: get last prefiltered mipmap
-    let irradiance : vec3f = textureSampleLevel(irradiance_texture, sampler_clamp, m.normal, max_mipmap).rgb;
+    let irradiance : vec3f = textureSampleLevel(irradiance_texture, sampler_clamp, m.normal, max_mipmap).rgb * camera_data.ibl_intensity;
 
     // Diffuse color
     let ems : f32 = (1.0 - (brdf_lut.x + brdf_lut.y));

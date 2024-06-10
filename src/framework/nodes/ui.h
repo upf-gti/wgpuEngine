@@ -35,6 +35,7 @@ namespace ui {
         KEEP_RGB = 1 << 4,
         SKIP_VALUE = 1 << 5,
         USER_RANGE = 1 << 6,
+        CURVE_INV_POW = 1 << 7,
     };
 
     class Panel2D : public Node2D {

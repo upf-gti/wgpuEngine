@@ -1,6 +1,5 @@
 #include mesh_includes.wgsl
 #include pbr_functions.wgsl
-#include pbr_light.wgsl
 #include tonemappers.wgsl
 
 #define GAMMA_CORRECTION
@@ -53,6 +52,8 @@
 @group(3) @binding(2) var sampler_clamp: sampler;
 @group(3) @binding(3) var<uniform> lights : array<Light, MAX_LIGHTS>;
 @group(3) @binding(4) var<uniform> num_lights : u32;
+
+#include pbr_light.wgsl
 
 @vertex
 fn vs_main(in: VertexInput) -> VertexOutput {
@@ -161,6 +162,7 @@ fn fs_main(in: VertexOutput) -> FragmentOutput {
     final_color += get_direct_light(m);
     final_color += m.emissive;
 
+    final_color *= camera_data.exposure;
     final_color = tonemap_khronos_pbr_neutral(final_color);
 
     if (GAMMA_CORRECTION == 1) {

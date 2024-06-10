@@ -1329,6 +1329,12 @@ namespace ui {
         ui_data.num_group_items = is_horizontal ? 2.f : 1.f;
         ui_data.slider_max = max_value;
         ui_data.slider_min = min_value;
+
+        if (flags & CURVE_INV_POW) {
+            ui_data.slider_max = 1.0f / glm::pow(2.0f, max_value);
+            ui_data.slider_min = 1.0f / glm::pow(2.0f, min_value);
+        }
+
         ui_data.is_button_disabled = disabled;
 
         parameter_flags = flags;
@@ -1420,19 +1426,25 @@ namespace ui {
         {
             float real_size = (mode == HORIZONTAL ? size.x : size.y);
             float local_point = (mode == HORIZONTAL ? data.local_position.x : size.y - data.local_position.y);
-            // this is at range 0..1
+            // This is at range 0..1
             current_value = glm::clamp(local_point / real_size, 0.f, 1.f);
-            // set in range min-max
+            // Set in range min-max
             current_value = remap_range(current_value, 0.0f, 1.0f, min_value, max_value);
-            // make sure it reaches min, max values
+            // Make sure it reaches min, max values
             if (fabsf(current_value - min_value) < 1e-4f) current_value = min_value;
             else if (fabsf(current_value - max_value) < 1e-4f) current_value = max_value;
-            // emit signal to use new value
-            Node::emit_signal(signal, current_value);
 
             if (text_2d_value) {
                 text_2d_value->text_entity->set_text(value_to_string());
             }
+
+            // Use curve if needed
+            if (parameter_flags & CURVE_INV_POW) {
+                current_value = 1.0f / glm::pow(2.0f, current_value);
+            }
+
+            // Emit signal to use new value
+            Node::emit_signal(signal, current_value);
 
             on_pressed();
         }
@@ -1449,6 +1461,7 @@ namespace ui {
         // Update uniforms
         ui_data.hover_info.x = 1.0f;
         ui_data.hover_info.y = glm::clamp(hover_factor, 0.0f, 1.0f);
+        ui_data.slider_value = current_value;
 
         update_ui_data();
 
