@@ -224,22 +224,25 @@ void Surface::create_box(float w, float h, float d, const glm::vec3& color)
         wgpuBufferDestroy(vertex_buffer);
     }
 
-    w *= 2.0f;
-    h *= 2.0f;
+    float dir_offset = 0.0035f;
 
-    auto pos_x = generate_quad(w, h, d * normals::pX, normals::pX, color);
+    float w2 = w * 2.0f - dir_offset;
+    float h2 = h * 2.0f - dir_offset;
+    float d2 = d * 2.0f - dir_offset;
+
+    auto pos_x = generate_quad(h2, w2, d * normals::pX, normals::pX, color);
     vertices.insert(vertices.end(), pos_x.begin(), pos_x.end());
-    auto neg_x = generate_quad(w, h, d * normals::nX, normals::nX, color);
+    auto neg_x = generate_quad(h2, w2, d * normals::nX, normals::nX, color);
     vertices.insert(vertices.end(), neg_x.begin(), neg_x.end());
 
-    auto pos_y = generate_quad(w, h, d * normals::pY, normals::pY, color);
+    auto pos_y = generate_quad(w2, d2, h * normals::pY, normals::pY, color);
     vertices.insert(vertices.end(), pos_y.begin(), pos_y.end());
-    auto neg_y = generate_quad(w, h, d * normals::nY, normals::nY, color);
+    auto neg_y = generate_quad(w2, d2, h * normals::nY, normals::nY, color);
     vertices.insert(vertices.end(), neg_y.begin(), neg_y.end());
 
-    auto pos_z = generate_quad(w, h, d * normals::pZ, normals::pZ, color);
+    auto pos_z = generate_quad(w2, h2, d * normals::pZ, normals::pZ, color);
     vertices.insert(vertices.end(), pos_z.begin(), pos_z.end());
-    auto neg_z = generate_quad(w, h, d * normals::nZ, normals::nZ, color);
+    auto neg_z = generate_quad(w2, h2, d * normals::nZ, normals::nZ, color);
     vertices.insert(vertices.end(), neg_z.begin(), neg_z.end());
 
     spdlog::trace("Box mesh created ({} vertices)", vertices.size());
@@ -259,20 +262,27 @@ void Surface::create_rounded_box(float w, float h, float d, float c, const glm::
     w -= c;
     h -= c;
 
+    float w2 = w * 2.0f;
+    float h2 = h * 2.0f;
+    float d2 = (d-c) * 2.0f;
+
+    float dir_offset = 0.0035f;
+
     // Add side vertices adding the chamfer translation
-    auto pos_x = generate_quad(w, h, d * normals::pX, normals::pX, color);
+
+    auto pos_x = generate_quad(h2, w2, (d + dir_offset) * normals::pX, normals::pX, color);
     vertices.insert(vertices.end(), pos_x.begin(), pos_x.end());
-    auto neg_x = generate_quad(w, h, d * normals::nX, normals::nX, color);
+    auto neg_x = generate_quad(h2, w2, (d + dir_offset) * normals::nX, normals::nX, color);
     vertices.insert(vertices.end(), neg_x.begin(), neg_x.end());
 
-    auto pos_y = generate_quad(w, h, d * normals::pY, normals::pY, color);
+    auto pos_y = generate_quad(w2, d2, ((h + c) + dir_offset) * normals::pY, normals::pY, color);
     vertices.insert(vertices.end(), pos_y.begin(), pos_y.end());
-    auto neg_y = generate_quad(w, h, d * normals::nY, normals::nY, color);
+    auto neg_y = generate_quad(w2, d2, ((h + c) + dir_offset) * normals::nY, normals::nY, color);
     vertices.insert(vertices.end(), neg_y.begin(), neg_y.end());
 
-    auto pos_z = generate_quad(w, h, d * normals::pZ, normals::pZ, color);
+    auto pos_z = generate_quad(w2, h2, (d + dir_offset) * normals::pZ, normals::pZ, color);
     vertices.insert(vertices.end(), pos_z.begin(), pos_z.end());
-    auto neg_z = generate_quad(w, h, d * normals::nZ, normals::nZ, color);
+    auto neg_z = generate_quad(w2, h2, (d + dir_offset) * normals::nZ, normals::nZ, color);
     vertices.insert(vertices.end(), neg_z.begin(), neg_z.end());
 
     constexpr float     pi = glm::pi<float>();
@@ -300,7 +310,7 @@ void Surface::create_rounded_box(float w, float h, float d, float c, const glm::
         float offsetRingAngle = isYPositive ? 0.f : half_pi;
         float offsetSegAngle;
 
-        if (isXPositive && isZPositive) offsetSegAngle = 0;
+        if (isXPositive && isZPositive) offsetSegAngle = 0.0f;
         if ((!isXPositive) && isZPositive) offsetSegAngle = 1.5f * pi;
         if (isXPositive && (!isZPositive)) offsetSegAngle = half_pi;
         if ((!isXPositive) && (!isZPositive)) offsetSegAngle = pi;
