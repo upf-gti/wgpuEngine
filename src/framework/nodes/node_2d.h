@@ -19,7 +19,6 @@ enum Node2DClassType {
     BUTTON_MARK,
     BUTTON,
     TEXTURE_BUTTON,
-    TEXTURE,
     COMBO_BUTTON,
     SUBMENU,
     HSLIDER,
@@ -30,6 +29,7 @@ enum Node2DClassType {
     HCONTAINER,
     VCONTAINER,
     IMAGE,
+    PANEL_BUTTON,
     PANEL,
     UNDEFINED,
     NUM_2D_TYPES

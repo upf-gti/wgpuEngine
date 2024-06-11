@@ -488,7 +488,7 @@ namespace ui {
         XRPanel* new_button = new XRPanel(signal, texture_path, { 0.0f, 0.0f }, size);
         add_child(new_button);
 
-        new_button->set_priority(PANEL - 1u);
+        new_button->set_priority(PANEL_BUTTON);
 
         new_button->ui_data.aspect_ratio = s.x / s.y;
         new_button->ui_data.xr_info = glm::clamp(glm::vec4(s / size, p / size), 0.0f, 1.0f);
@@ -831,30 +831,6 @@ namespace ui {
         text_entity->set_surface_material_priority(0, priority);
 
         Panel2D::set_priority(priority);
-    }
-
-    /*
-    *	Texture (Image)
-    */
-
-    Texture2D::Texture2D(const std::string& name, const std::string& texture_path, const glm::vec2& size, const glm::vec2& pos)
-        : Panel2D(name, pos, size, colors::WHITE)
-    {
-        class_type = Node2DClassType::TEXTURE;
-
-        Material material;
-        material.color = color;
-        material.flags = MATERIAL_2D | MATERIAL_UI;
-        material.cull_type = CULL_BACK;
-        material.transparency_type = ALPHA_BLEND;
-        material.priority = class_type;
-        material.diffuse_texture = RendererStorage::get_texture(texture_path, true);
-        material.shader = RendererStorage::get_shader_from_source(shaders::ui_texture::source, shaders::ui_texture::path, material);
-
-        quad_mesh.set_surface_material_override(quad_mesh.get_surface(0), material);
-
-        auto webgpu_context = Renderer::instance->get_webgpu_context();
-        RendererStorage::register_ui_widget(webgpu_context, material.shader, &quad_mesh, ui_data, 3);
     }
 
     /*
@@ -1691,7 +1667,7 @@ namespace ui {
         padding = glm::vec2(2.0f);
         item_margin = glm::vec2(12.0f, 0.0f);
 
-        Texture2D* image = new Texture2D(p_text + "_" + image_path, image_path, glm::vec2(32.0f) * scale);
+        Image2D* image = new Image2D(p_text + "_" + image_path, image_path, glm::vec2(32.0f) * scale);
         add_child(image);
 
         text = new Text2D(p_text, glm::vec2(0.0f), text_scale);

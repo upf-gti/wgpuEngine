@@ -160,11 +160,6 @@ namespace ui {
         void set_priority(uint8_t priority) override;
     };
 
-    class Texture2D : public Panel2D {
-    public:
-        Texture2D(const std::string& name, const std::string& texture_path, const glm::vec2& size, const glm::vec2& pos = { 0.0f, 0.0f });
-    };
-
     class Button2D : public Panel2D {
     public:
 

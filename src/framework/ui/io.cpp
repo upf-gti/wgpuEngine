@@ -75,6 +75,30 @@ bool IO::any_focus()
     return (focused != nullptr);
 }
 
+bool IO::is_hover_type(uint32_t type)
+{
+    if (!any_hover()) {
+        return false;
+    }
+
+    return (hovered->get_class_type() == type);
+}
+
+bool IO::is_any_hover_type(const std::vector<uint32_t>& types)
+{
+    if (!any_hover()) {
+        return false;
+    }
+
+    for (uint32_t type : types) {
+        if (hovered->get_class_type() == type) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 bool IO::any_hover()
 {
     return (hovered != nullptr);

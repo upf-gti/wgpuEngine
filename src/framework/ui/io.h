@@ -5,6 +5,8 @@
 #include "glm/vec2.hpp"
 #include "glm/vec3.hpp"
 
+#include <vector>
+
 class Node2D;
 class MeshInstance3D;
 
@@ -42,6 +44,8 @@ public:
     static bool equals_focus(Node2D* node);
     static bool any_focus();
 
+    static bool is_hover_type(uint32_t type);
+    static bool is_any_hover_type(const std::vector<uint32_t>& types);
     static bool any_hover();
 
     static Node2D* get_focus() { return focused; }
