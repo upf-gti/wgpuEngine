@@ -37,7 +37,7 @@ namespace ui {
         USER_RANGE = 1 << 6,
         CURVE_INV_POW = 1 << 7,
         TEXT_CENTERED = 1 << 8,
-        SCROLLABLE = 1 << 9
+        SCROLLABLE = 1 << 9,
     };
 
     class Panel2D : public Node2D {
@@ -108,6 +108,7 @@ namespace ui {
         bool use_fixed_size = false;
 
         bool centered = false;
+        bool can_hover = false;
 
         glm::vec2 padding = { 0.0f, 0.0f };
         glm::vec2 item_margin = { 0.0f, 0.0f };
@@ -119,6 +120,7 @@ namespace ui {
         bool on_input(sInputData data) override;
         void on_children_changed() override;
 
+        void set_hoverable(bool value);
         void set_centered(bool value);
         void set_fixed_size(const glm::vec2& new_size);
     };

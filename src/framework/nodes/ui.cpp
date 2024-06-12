@@ -567,7 +567,7 @@ namespace ui {
     {
         Panel2D::update(delta_time);
 
-        if (!visibility)
+        if (!visibility || !can_hover)
             return;
 
         sInputData data = get_input_data();
@@ -596,6 +596,11 @@ namespace ui {
         quad_surface->create_quad(size.x, size.y);
 
         Node2D::on_children_changed();
+    }
+
+    void Container2D::set_hoverable(bool value)
+    {
+        can_hover = value;
     }
 
     void Container2D::set_centered(bool value)
@@ -887,7 +892,7 @@ namespace ui {
 
         // Convert the mat3x3 to mat4x4
         uint8_t priority = class_type;
-        glm::vec2 position = get_translation() + glm::vec2(TEXT_SHADOW_MARGIN * text_scale, TEXT_SHADOW_MARGIN * text_scale * 0.5f) * 0.5f;
+        glm::vec2 position = get_translation() + glm::vec2(TEXT_SHADOW_MARGIN * text_scale, TEXT_SHADOW_MARGIN * text_scale * 0.5f) * 0.5f * get_scale();
         glm::mat4x4 model = glm::translate(glm::mat4x4(1.0f), glm::vec3(position, -priority * 3e-5));
         model = glm::scale(model, glm::vec3(get_scale(), 1.0f));
         model = get_global_viewport_model() * model;
