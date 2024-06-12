@@ -26,6 +26,7 @@ enum Node2DClassType {
     COLOR_PICKER,
     GROUP,
     COMBO,
+    CONTAINER,
     HCONTAINER,
     VCONTAINER,
     IMAGE,

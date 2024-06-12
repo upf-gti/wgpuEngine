@@ -308,8 +308,12 @@ namespace ui {
     *   XRPanel
     */
 
-    XRPanel::XRPanel(const std::string& name, const std::string& image_path, const glm::vec2& p, const glm::vec2& s)
-        : Panel2D(name, image_path, p, s, colors::WHITE)
+    XRPanel::XRPanel(const std::string& name, const Color& c, const glm::vec2& p, const glm::vec2& s)
+        : XRPanel(name, "", p, s, c)
+    { }
+
+    XRPanel::XRPanel(const std::string& name, const std::string& image_path, const glm::vec2& p, const glm::vec2& s, const Color& c)
+        : Panel2D(name, image_path, p, s, c)
     {
         Surface* quad_surface = quad_mesh.get_surface(0);
         quad_surface->create_subvidided_quad(size.x, size.y);
@@ -317,7 +321,6 @@ namespace ui {
         Material* material = quad_mesh.get_surface_material_override(quad_surface);
         material->flags |= MATERIAL_UI;
         material->shader = RendererStorage::get_shader_from_source(shaders::ui_xr_panel::source, shaders::ui_xr_panel::path, *material);
-        //material->shader = RendererStorage::get_shader("data/shaders/ui_xr_panel.wgsl", *material);
 
         ui_data.xr_info = glm::vec4(1.0f, 1.0f, 0.5f, 0.5f);
         ui_data.aspect_ratio = size.x / size.y;
@@ -492,7 +495,6 @@ namespace ui {
 
         new_button->ui_data.aspect_ratio = s.x / s.y;
         new_button->ui_data.xr_info = glm::clamp(glm::vec4(s / size, p / size), 0.0f, 1.0f);
-        new_button->ui_data.picker_color = c;
 
         new_button->update_ui_data();
 
@@ -503,9 +505,11 @@ namespace ui {
     *	Containers
     */
 
-    Container2D::Container2D(const std::string& name, const glm::vec2& pos, const Color& col)
-        : Panel2D(name, pos, { 0.0f, 0.0f }, col)
+    Container2D::Container2D(const std::string& name, const glm::vec2& pos, const glm::vec2& s, const Color& col)
+        : Panel2D(name, pos, s, col)
     {
+        class_type = CONTAINER;
+
         Material material;
         material.color = color;
         material.flags = MATERIAL_2D;
@@ -518,7 +522,7 @@ namespace ui {
         padding = glm::vec2(2.0f);
         item_margin = glm::vec2(6.0f);
 
-        render_background = false;
+        render_background = true;
     }
 
     void Container2D::on_children_changed()
@@ -540,8 +544,14 @@ namespace ui {
         centered = value;
     }
 
+    void Container2D::set_fixed_size(const glm::vec2& new_size)
+    {
+        use_fixed_size = true;
+        fixed_size = new_size;
+    }
+
     HContainer2D::HContainer2D(const std::string& name, const glm::vec2& pos, const Color& col)
-        : Container2D(name, pos, col)
+        : Container2D(name, pos, { 0.0f, 0.0f }, col)
     {
         class_type = Node2DClassType::HCONTAINER;
     }
@@ -571,14 +581,26 @@ namespace ui {
                 child_count--;
                 continue;
             }
+
             glm::vec2 node_size = node_2d->get_size();
-            node_2d->set_translation(padding + glm::vec2(size.x + item_margin.x * static_cast<float>(child_idx), (size.y - node_size.y) * 0.50f));
+            float offset = 0.0f;
+
+            if (node_2d->get_class_type() == TEXT_SHADOW) {
+                node_size.x += 16.0f;
+                offset = 8.0f;
+            }
+
+            node_2d->set_translation(padding + glm::vec2(size.x + item_margin.x * static_cast<float>(child_idx) + offset, (size.y - node_size.y) * 0.50f));
             child_idx++;
             size.x += node_size.x;
         }
 
         size += padding * 2.0f;
         size.x += item_margin.x * static_cast<float>(child_count - 1);
+
+        if (use_fixed_size) {
+            size.y = fixed_size.y;
+        }
 
         if (centered) {
             const glm::vec2& pos = get_local_translation();
@@ -589,9 +611,11 @@ namespace ui {
     }
 
     VContainer2D::VContainer2D(const std::string& name, const glm::vec2& pos, const Color& col)
-        : Container2D(name, pos, col)
+        : Container2D(name, pos, { 0.0f, 0.0f }, col)
     {
         class_type = Node2DClassType::VCONTAINER;
+
+        render_background = true;
     }
 
     void VContainer2D::on_children_changed()
@@ -630,6 +654,10 @@ namespace ui {
 
         size.x += padding.x * 2.0f;
         size.y = rect_height;
+
+        if (use_fixed_size) {
+            size.x = fixed_size.x;
+        }
 
         if (centered) {
             const glm::vec2& pos = get_local_translation();
@@ -743,21 +771,18 @@ namespace ui {
     *   Text
     */
 
+    Text2D::Text2D(const std::string& _text, float scale, uint32_t flags)
+        : Text2D(_text, { 0.0f, 0.0f }, scale, flags, colors::WHITE)
+    { }
 
-    Text2D::Text2D(const std::string& _text, float scale, bool center_big)
-        : Text2D(_text, { 0.0f, 0.0f }, scale, colors::WHITE)
-    {
-        glm::vec2 centered_position = { -size.x * 0.5f + BUTTON_SIZE * (center_big ? 1.0f : 0.5f), -size.y * 2.f };
-        set_translation(centered_position);
-    }
-
-    Text2D::Text2D(const std::string& _text, const glm::vec2& pos, float scale, const Color& color, bool center_big)
-        : Panel2D(_text + "@text", pos, {1.0f, 1.0f}) {
+    Text2D::Text2D(const std::string& _text, const glm::vec2& pos, float scale, uint32_t flags, const Color& color)
+        : Panel2D(_text + "@text", pos, { 1.0f, 1.0f }) {
 
         text_string = _text;
         text_scale = scale;
 
         class_type = Node2DClassType::TEXT_SHADOW;
+        parameter_flags = flags;
 
         text_entity = new TextEntity(text_string);
         text_entity->set_scale(text_scale);
@@ -785,15 +810,20 @@ namespace ui {
 
         auto webgpu_context = Renderer::instance->get_webgpu_context();
         RendererStorage::register_ui_widget(webgpu_context, material.shader, &quad_mesh, ui_data, 3);
-
-        glm::vec2 centered_position = { -size.x * 0.5f + BUTTON_SIZE * (center_big ? 1.0f : 0.5f), pos.y };
-        set_translation(centered_position);
     }
 
     void Text2D::update(float delta_time)
     {
         if (!visibility)
             return;
+
+        Node2D* parent = get_parent();
+
+        if ((parameter_flags & TEXT_CENTERED) && parent) {
+            const glm::vec2& par_size = parent->get_size();
+            const glm::vec2& centered_position = { -size.x * 0.5f + par_size.x * 0.5f, get_local_translation().y };
+            set_translation(centered_position);
+        }
 
         // Convert the mat3x3 to mat4x4
         uint8_t priority = class_type;
@@ -818,7 +848,7 @@ namespace ui {
 
     void Text2D::remove_flag(uint8_t flag)
     {
-        uint8_t flags = text_entity->get_flags();
+        uint32_t flags = text_entity->get_flags();
         flags ^= MATERIAL_2D;
 
         text_entity->generate_mesh(color, (eMaterialFlags)flags);
@@ -837,13 +867,13 @@ namespace ui {
     *	Buttons
     */
 
-    Button2D::Button2D(const std::string& sg, const Color& col, uint8_t flags)
+    Button2D::Button2D(const std::string& sg, const Color& col, uint32_t flags)
         : Button2D(sg, col, flags, { 0.0f, 0.0f }, glm::vec2(BUTTON_SIZE)) { }
 
-    Button2D::Button2D(const std::string& sg, uint8_t flags, const glm::vec2& pos, const glm::vec2& size)
+    Button2D::Button2D(const std::string& sg, uint32_t flags, const glm::vec2& pos, const glm::vec2& size)
         : Panel2D(sg, pos, size), signal(sg) { }
 
-    Button2D::Button2D(const std::string& sg, const Color& col, uint8_t flags, const glm::vec2& pos, const glm::vec2& size)
+    Button2D::Button2D(const std::string& sg, const Color& col, uint32_t flags, const glm::vec2& pos, const glm::vec2& size)
         : Panel2D(sg, pos, size, col), signal(sg) {
 
         class_type = Node2DClassType::BUTTON;
@@ -1036,10 +1066,10 @@ namespace ui {
         Panel2D::set_priority(priority);
     }
 
-    TextureButton2D::TextureButton2D(const std::string& sg, const std::string& texture_path, uint8_t flags)
+    TextureButton2D::TextureButton2D(const std::string& sg, const std::string& texture_path, uint32_t flags)
         : TextureButton2D(sg, texture_path, flags, { 0.0f, 0.0f }) { }
 
-    TextureButton2D::TextureButton2D(const std::string& sg, const std::string& texture_path, uint8_t flags, const glm::vec2& pos, const glm::vec2& size)
+    TextureButton2D::TextureButton2D(const std::string& sg, const std::string& texture_path, uint32_t flags, const glm::vec2& pos, const glm::vec2& size)
         : Button2D(sg, flags, pos, size) {
 
         class_type = Node2DClassType::TEXTURE_BUTTON;
@@ -1095,13 +1125,13 @@ namespace ui {
         });
 
         // Text label
-        {
-            assert(signal.size() > 0 && "Please use signals with any letter..");
+        if (!(flags & SKIP_NAME)) {
+            assert(signal.size() > 0 && "No signal name size!");
 
             // Use a prettified text..
             std::string pretty_name = signal;
             to_camel_case(pretty_name);
-            text_2d = new Text2D(pretty_name, 18.f);
+            text_2d = new Text2D(pretty_name, { 0.f, -18.f }, 18.f, TEXT_CENTERED);
             text_2d->set_visibility(false);
             add_child(text_2d);
         }
@@ -1210,7 +1240,7 @@ namespace ui {
     *   Widget Submenus
     */
 
-    ButtonSubmenu2D::ButtonSubmenu2D(const std::string& sg, const std::string& texture_path, uint8_t flags, const glm::vec2& pos, const glm::vec2& size)
+    ButtonSubmenu2D::ButtonSubmenu2D(const std::string& sg, const std::string& texture_path, uint32_t flags, const glm::vec2& pos, const glm::vec2& size)
         : TextureButton2D(sg, texture_path, flags, pos, size) {
 
         class_type = Node2DClassType::SUBMENU;
@@ -1277,7 +1307,7 @@ namespace ui {
         box->add_child(child);
     }
 
-    ButtonSelector2D::ButtonSelector2D(const std::string& sg, const std::string& texture_path, uint8_t flags, const glm::vec2& pos, const glm::vec2& size)
+    ButtonSelector2D::ButtonSelector2D(const std::string& sg, const std::string& texture_path, uint32_t flags, const glm::vec2& pos, const glm::vec2& size)
         : TextureButton2D(sg, texture_path, flags, pos, size) {
 
         class_type = Node2DClassType::SELECTOR;
@@ -1319,13 +1349,13 @@ namespace ui {
     *	Slider
     */
 
-    Slider2D::Slider2D(const std::string& sg, float v, int mode, uint8_t flags, float min, float max, int precision)
+    Slider2D::Slider2D(const std::string& sg, float v, int mode, uint32_t flags, float min, float max, int precision)
         : Slider2D(sg, "", v, {0.0f, 0.0f}, glm::vec2(BUTTON_SIZE), mode, flags, min, max, precision) {}
 
-    Slider2D::Slider2D(const std::string& sg, const std::string& texture_path, float v, int mode, uint8_t flags, float min, float max, int precision)
+    Slider2D::Slider2D(const std::string& sg, const std::string& texture_path, float v, int mode, uint32_t flags, float min, float max, int precision)
         : Slider2D(sg, texture_path, v, { 0.0f, 0.0f }, glm::vec2(BUTTON_SIZE), mode, flags, min, max, precision) {}
 
-    Slider2D::Slider2D(const std::string& sg, const std::string& texture_path, float value, const glm::vec2& pos, const glm::vec2& size, int mode, uint8_t flags, float min, float max, int precision)
+    Slider2D::Slider2D(const std::string& sg, const std::string& texture_path, float value, const glm::vec2& pos, const glm::vec2& size, int mode, uint32_t flags, float min, float max, int precision)
         : Panel2D(sg, pos, size), signal(sg), current_value(value), min_value(min), max_value(max), precision(precision) {
 
         bool is_horizontal = (mode == SliderMode::HORIZONTAL);
@@ -1350,6 +1380,8 @@ namespace ui {
 
         this->size = glm::vec2(size.x * ui_data.num_group_items, size.y);
 
+        ui_data.aspect_ratio = this->size.x / this->size.y;
+
         current_value = glm::clamp(current_value, min_value, max_value);
 
         Material material;
@@ -1371,18 +1403,20 @@ namespace ui {
 
         Node::bind(signal + "@changed", [&](const std::string& signal, float value) {
             set_value(value);
-            });
+        });
 
         // Text labels (only if slider is enabled)
         {
-            std::string pretty_name = signal;
-            to_camel_case(pretty_name);
-            text_2d = new Text2D(pretty_name, 18.f, is_horizontal);
-            add_child(text_2d);
+            if (!(flags & SKIP_NAME)) {
+                std::string pretty_name = signal;
+                to_camel_case(pretty_name);
+                text_2d = new Text2D(pretty_name, { 0.f, -18.f }, 18.f, TEXT_CENTERED);
+                add_child(text_2d);
+            }
 
             if (!disabled && !(flags & SKIP_VALUE)) {
                 std::string value_as_string = value_to_string();
-                text_2d_value = new Text2D(value_as_string, {0.0f, size.y * 1.2f}, 17.f, colors::WHITE, is_horizontal);
+                text_2d_value = new Text2D(value_as_string, { 0.0f, size.y + 8.5f }, 17.f, TEXT_CENTERED);
                 add_child(text_2d_value);
             }
         }
@@ -1413,10 +1447,9 @@ namespace ui {
         ui_data.hover_info.x = 0.0f;
         ui_data.hover_info.y = 0.0f;
         ui_data.slider_value = current_value;
-        ui_data.aspect_ratio = (mode == HORIZONTAL ? 2.0f : 1.0f);
 
         // Only appear on hover if slider is enabled..
-        if (!disabled) {
+        if (!disabled && text_2d) {
             text_2d->set_visibility(false);
         }
 
@@ -1429,7 +1462,9 @@ namespace ui {
     {
         IO::set_hover(this, data.local_position, data.ray_distance);
 
-        text_2d->set_visibility(true);
+        if (text_2d) {
+            text_2d->set_visibility(true);
+        }
 
         if (data.is_pressed)
         {
@@ -1660,8 +1695,8 @@ namespace ui {
     */
 
     ImageLabel2D::ImageLabel2D(const std::string& p_text, const std::string& image_path, uint8_t mask, const glm::vec2& scale, float text_scale, const glm::vec2& p)
-        : HContainer2D(p_text + "@box", p), mask(mask) {
-
+        : HContainer2D(p_text + "@box", p), mask(mask)
+    {
         class_type = Node2DClassType::LABEL;
 
         padding = glm::vec2(2.0f);

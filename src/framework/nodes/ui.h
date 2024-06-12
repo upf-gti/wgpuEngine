@@ -27,15 +27,17 @@ namespace ui {
         LAST
     };
 
-    enum Node2DParameters : uint8_t {
+    enum Node2DFlags : uint32_t {
         SELECTED = 1 << 0,
         DISABLED = 1 << 1,
         UNIQUE_SELECTION = 1 << 2,
         ALLOW_TOGGLE = 1 << 3,
         KEEP_RGB = 1 << 4,
-        SKIP_VALUE = 1 << 5,
-        USER_RANGE = 1 << 6,
-        CURVE_INV_POW = 1 << 7,
+        SKIP_NAME = 1 << 5,
+        SKIP_VALUE = 1 << 6,
+        USER_RANGE = 1 << 7,
+        CURVE_INV_POW = 1 << 8,
+        TEXT_CENTERED = 1 << 9
     };
 
     class Panel2D : public Node2D {
@@ -47,7 +49,7 @@ namespace ui {
         bool pressed_inside     = false;
         bool on_hover           = false;
 
-        uint8_t parameter_flags = 0;
+        uint32_t parameter_flags = 0;
 
         MeshInstance quad_mesh;
 
@@ -86,7 +88,8 @@ namespace ui {
 
     public:
 
-        XRPanel(const std::string& name, const std::string& image_path, const glm::vec2& p, const glm::vec2& s);
+        XRPanel(const std::string& name, const Color& c, const glm::vec2& p, const glm::vec2& s);
+        XRPanel(const std::string& name, const std::string& image_path, const glm::vec2& p, const glm::vec2& s, const Color& c = colors::WHITE);
 
         void update(float delta_time) override;
 
@@ -100,17 +103,22 @@ namespace ui {
     class Container2D : public Panel2D {
     public:
 
+        glm::vec2 fixed_size = {};
+        bool use_fixed_size = false;
+
         bool centered = false;
 
         glm::vec2 padding = { 0.0f, 0.0f };
         glm::vec2 item_margin = { 0.0f, 0.0f };
 
         Container2D() {};
-        Container2D(const std::string& name, const glm::vec2& p, const Color& c = colors::WHITE);
+        Container2D(const std::string& name, const glm::vec2& p, const glm::vec2& s = { 0.0f, 0.0f }, const Color& c = colors::WHITE);
 
         void on_children_changed() override;
 
         void set_centered(bool value);
+
+        void set_fixed_size(const glm::vec2& new_size);
     };
 
     class HContainer2D : public Container2D {
@@ -122,6 +130,7 @@ namespace ui {
     };
 
     class VContainer2D : public Container2D {
+
     public:
         VContainer2D() {};
         VContainer2D(const std::string& name, const glm::vec2& p, const Color& c = colors::WHITE);
@@ -149,8 +158,8 @@ namespace ui {
         TextEntity* text_entity = nullptr;
 
         Text2D() {};
-        Text2D(const std::string& _text, const glm::vec2& pos, float scale = 16.f, const Color& color = colors::WHITE, bool center_big = false);
-        Text2D(const std::string& _text, float scale = 16.f, bool center_big = false);
+        Text2D(const std::string& _text, const glm::vec2& pos, float scale = 16.f, uint32_t parameter_flags = 0, const Color& color = colors::WHITE);
+        Text2D(const std::string& _text, float scale = 16.f, uint32_t parameter_flags = 0);
 
         void set_text(const std::string& text) { text_entity->set_text(text); };
 
@@ -179,9 +188,9 @@ namespace ui {
         bool is_color_button        = true;
 
         Button2D() {};
-        Button2D(const std::string& sg, const Color& color = colors::WHITE, uint8_t parameter_flags = 0);
-        Button2D(const std::string& sg, uint8_t parameter_flags, const glm::vec2& pos, const glm::vec2& size = glm::vec2(BUTTON_SIZE));
-        Button2D(const std::string& sg, const Color& color, uint8_t parameter_flags, const glm::vec2& pos, const glm::vec2& size = glm::vec2(BUTTON_SIZE));
+        Button2D(const std::string& sg, const Color& color = colors::WHITE, uint32_t parameter_flags = 0);
+        Button2D(const std::string& sg, uint32_t parameter_flags, const glm::vec2& pos, const glm::vec2& size = glm::vec2(BUTTON_SIZE));
+        Button2D(const std::string& sg, const Color& color, uint32_t parameter_flags, const glm::vec2& pos, const glm::vec2& size = glm::vec2(BUTTON_SIZE));
 
         void set_disabled(bool value);
         void set_selected(bool value);
@@ -196,14 +205,14 @@ namespace ui {
     class TextureButton2D : public Button2D {
     public:
 
-        TextureButton2D(const std::string& sg, const std::string& texture_path, uint8_t parameter_flags = 0);
-        TextureButton2D(const std::string& sg, const std::string& texture_path, uint8_t parameter_flags, const glm::vec2& pos, const glm::vec2& size = glm::vec2(BUTTON_SIZE));
+        TextureButton2D(const std::string& sg, const std::string& texture_path, uint32_t parameter_flags = 0);
+        TextureButton2D(const std::string& sg, const std::string& texture_path, uint32_t parameter_flags, const glm::vec2& pos, const glm::vec2& size = glm::vec2(BUTTON_SIZE));
     };
 
     class ItemGroup2D : public HContainer2D {
     public:
 
-        ItemGroup2D(const std::string& name, const glm::vec2& pos = {0.0f, 0.0f}, const Color& color = colors::GRAY);
+        ItemGroup2D(const std::string& name, const glm::vec2& pos = { 0.0f, 0.0f }, const Color& color = colors::GRAY);
 
         float get_number_of_items();
         void set_number_of_items(float number);
@@ -226,7 +235,7 @@ namespace ui {
 
         TextureButton2D* submenu_mark = nullptr;
 
-        ButtonSubmenu2D(const std::string& sg, const std::string& texture_path, uint8_t parameter_flags = 0, const glm::vec2& pos = { 0.0f, 0.0f }, const glm::vec2& size = glm::vec2(BUTTON_SIZE));
+        ButtonSubmenu2D(const std::string& sg, const std::string& texture_path, uint32_t parameter_flags = 0, const glm::vec2& pos = { 0.0f, 0.0f }, const glm::vec2& size = glm::vec2(BUTTON_SIZE));
 
         void render() override;
         void update(float delta_time) override;
@@ -238,7 +247,7 @@ namespace ui {
 
         CircleContainer2D* box = nullptr;
 
-        ButtonSelector2D(const std::string& sg, const std::string& texture_path, uint8_t parameter_flags = 0, const glm::vec2& pos = { 0.0f, 0.0f }, const glm::vec2& size = glm::vec2(BUTTON_SIZE));
+        ButtonSelector2D(const std::string& sg, const std::string& texture_path, uint32_t parameter_flags = 0, const glm::vec2& pos = { 0.0f, 0.0f }, const glm::vec2& size = glm::vec2(BUTTON_SIZE));
 
         void add_child(Node2D* child) override;
         std::vector<Node*>& get_children() override { return box->get_children(); }
@@ -265,9 +274,9 @@ namespace ui {
 
         bool disabled = false;
 
-        float hover_factor          = 0.0f;
-        float target_hover_factor   = 0.0f;
-        float timer                 = 0.0f;
+        float hover_factor = 0.0f;
+        float target_hover_factor = 0.0f;
+        float timer = 0.0f;
 
         float current_value = 0.0f;
         float min_value = 0.0f;
@@ -275,9 +284,9 @@ namespace ui {
         int   precision = 1;
 
         Slider2D() {};
-        Slider2D(const std::string& sg, float v, int mode = SliderMode::VERTICAL, uint8_t parameter_flags = 0, float min = 0.0f, float max = 1.0f, int precision = 1);
-        Slider2D(const std::string& sg, const std::string& texture_path, float v, int mode = SliderMode::VERTICAL, uint8_t parameter_flags = 0, float min = 0.0f, float max = 1.0f, int precision = 1);
-        Slider2D(const std::string& sg, const std::string& texture_path, float v, const glm::vec2& pos, const glm::vec2& size = glm::vec2(BUTTON_SIZE), int mode = SliderMode::VERTICAL, uint8_t parameter_flags = 0, float min = 0.0f, float max = 1.0f, int precision = 1);
+        Slider2D(const std::string& sg, float v, int mode = SliderMode::VERTICAL, uint32_t parameter_flags = 0, float min = 0.0f, float max = 1.0f, int precision = 1);
+        Slider2D(const std::string& sg, const std::string& texture_path, float v, int mode = SliderMode::VERTICAL, uint32_t parameter_flags = 0, float min = 0.0f, float max = 1.0f, int precision = 1);
+        Slider2D(const std::string& sg, const std::string& texture_path, float v, const glm::vec2& pos, const glm::vec2& size = glm::vec2(BUTTON_SIZE), int mode = SliderMode::VERTICAL, uint32_t parameter_flags = 0, float min = 0.0f, float max = 1.0f, int precision = 1);
 
         void render() override;
         void update(float delta_time) override;

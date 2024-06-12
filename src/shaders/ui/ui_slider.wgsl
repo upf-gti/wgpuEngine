@@ -55,7 +55,7 @@ fn fs_main(in: VertexOutput) -> FragmentOutput {
 
                          // tr   br   tl   bl
     var ra : vec4f = vec4f(0.98);
-    var si : vec2f = vec2f(0.98 * ui_data.num_group_items, 0.98);
+    var si : vec2f = vec2f(0.98 * ui_data.aspect_ratio, 0.98);
     ra = min(ra, min(vec4f(si.x), vec4f(si.y)));
     ra = mix(ra, ra * 0.5, hover_transition);
 

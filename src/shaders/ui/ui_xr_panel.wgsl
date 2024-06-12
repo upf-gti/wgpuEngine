@@ -61,14 +61,15 @@ fn fs_main(in: VertexOutput) -> FragmentOutput {
     
     var position : vec2f = ui_data.xr_info.zw;
 
-#ifdef ALBEDO_TEXTURE
     var corrected_uv : vec2f = vec2f(in.uv.x, 1.0 - in.uv.y);
     corrected_uv = corrected_uv / size;
     corrected_uv = corrected_uv - (position / size) + 0.5;
     corrected_uv.y = 1.0 - corrected_uv.y;
+
+#ifdef ALBEDO_TEXTURE
     var color : vec4f = textureSample(albedo_texture, texture_sampler, corrected_uv);
 #else
-    var color : vec4f = vec4f(ui_data.picker_color, 1.0);
+    var color : vec4f = in.color;
 #endif
 
     var final_color = select(color.rgb, COLOR_SECONDARY, is_button);
