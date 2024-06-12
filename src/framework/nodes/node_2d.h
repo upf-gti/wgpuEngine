@@ -32,8 +32,7 @@ enum Node2DClassType {
     IMAGE,
     PANEL_BUTTON,
     PANEL,
-    UNDEFINED,
-    NUM_2D_TYPES
+    UNDEFINED
 };
 
 struct sInputData {

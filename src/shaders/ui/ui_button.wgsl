@@ -43,11 +43,18 @@ fn fs_main(in: VertexOutput) -> FragmentOutput {
 
     var dummy = camera_data.eye;
 
+    if(ui_data.range < 0.0 && in.uv.y < abs(ui_data.range) ) {
+        discard;
+    }
+    else if(ui_data.range > 0.0 && in.uv.y > ui_data.range ) {
+        discard;
+    }
+
     let combo_index = ui_data.num_group_items;
     let is_disabled : bool = ui_data.is_button_disabled > 0.0;
     let is_selected : bool = ui_data.is_selected > 0.0;
     let is_pressed : bool = ui_data.press_info.x > 0.0;
-    let keep_colors : bool = (ui_data.keep_rgb + ui_data.is_color_button) > 0.0;
+    let is_color_button : bool = ui_data.is_color_button > 0.0;
     let hover_transition : f32 = pow(ui_data.hover_info.y, 3.0);
 
     var out: FragmentOutput;
@@ -76,7 +83,7 @@ fn fs_main(in: VertexOutput) -> FragmentOutput {
         ra.w = 0.0;
     }
 
-    if(keep_colors) {
+    if(is_color_button) {
         ra = vec4f(si.x);
     }
 

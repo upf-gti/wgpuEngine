@@ -283,7 +283,7 @@ bool Gizmo3D::update(glm::vec3& new_position, const glm::vec3& controller_positi
     const bool is_active = free_hand_selected || glm::any(position_axis_selected) || glm::any(scale_axis_selected) || glm::any(rotation_axis_selected);
 
     // Calculate the movement vector for the gizmo
-    if (Input::get_trigger_value(HAND_RIGHT) > 0.3f) {
+    if (Input::get_trigger_value(HAND_RIGHT) > 0.5f) {
 
         if (!has_graved) {
             reference_rotation_pose = controller_position;

@@ -24,11 +24,10 @@ void TextEntity::update(float delta_time)
 void TextEntity::append_char(glm::vec3 pos, Character& ch)
 {
     float size = (float)font_scale / font->size;
-    int height = get_text_height(text);
     for (int k = 0; k < 6; ++k) {
 
         InterleavedData vertex = {
-            .position = (pos + glm::vec3(ch.vertices[k].x, (height / size) - ch.vertices[k].y, ch.vertices[k].z)) * size,
+            .position = (pos + glm::vec3(ch.vertices[k].x, ch.vertices[k].y, ch.vertices[k].z)) * size,
             .uv = ch.uvs[k] / glm::vec2(font->scaleW, font->scaleH),
             .normal = glm::vec3(0.f, 1.f, 0.f),
             .color = { 1.0f, 1.0f, 1.0f }

@@ -43,6 +43,13 @@ fn fs_main(in: VertexOutput) -> FragmentOutput {
 
     var dummy = camera_data.eye;
 
+    if(ui_data.range < 0.0 && in.uv.y < abs(ui_data.range) ) {
+        discard;
+    }
+    else if(ui_data.range > 0.0 && in.uv.y > ui_data.range ) {
+        discard;
+    }
+
     let hover_transition : f32 = pow(ui_data.hover_info.y, 3.0);
     
     var out: FragmentOutput;

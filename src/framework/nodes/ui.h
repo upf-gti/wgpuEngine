@@ -32,12 +32,12 @@ namespace ui {
         DISABLED = 1 << 1,
         UNIQUE_SELECTION = 1 << 2,
         ALLOW_TOGGLE = 1 << 3,
-        KEEP_RGB = 1 << 4,
-        SKIP_NAME = 1 << 5,
-        SKIP_VALUE = 1 << 6,
-        USER_RANGE = 1 << 7,
-        CURVE_INV_POW = 1 << 8,
-        TEXT_CENTERED = 1 << 9
+        SKIP_NAME = 1 << 4,
+        SKIP_VALUE = 1 << 5,
+        USER_RANGE = 1 << 6,
+        CURVE_INV_POW = 1 << 7,
+        TEXT_CENTERED = 1 << 8,
+        SCROLLABLE = 1 << 9
     };
 
     class Panel2D : public Node2D {
@@ -65,6 +65,7 @@ namespace ui {
 
         void render() override;
 
+        void update_scroll_view();
         void remove_flag(uint8_t flag) override;
         void set_priority(uint8_t priority) override;
         void update_ui_data() override;
@@ -114,10 +115,11 @@ namespace ui {
         Container2D() {};
         Container2D(const std::string& name, const glm::vec2& p, const glm::vec2& s = { 0.0f, 0.0f }, const Color& c = colors::WHITE);
 
+        void update(float delta_time) override;
+        bool on_input(sInputData data) override;
         void on_children_changed() override;
 
         void set_centered(bool value);
-
         void set_fixed_size(const glm::vec2& new_size);
     };
 
@@ -183,7 +185,6 @@ namespace ui {
         bool is_unique_selection    = false;
         bool allow_toggle           = false;
         bool selected               = false;
-        bool keep_rgb               = false;
         bool disabled               = false;
         bool is_color_button        = true;
 

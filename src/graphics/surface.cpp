@@ -118,7 +118,7 @@ std::vector<InterleavedData> Surface::generate_quad(float w, float h, const glm:
     glm::vec3 delta2 = h * vY;
 
     // Build one corner of the square
-    glm::vec3 orig = -0.5f * w * vX + 0.5f * h * vY;
+    glm::vec3 orig = -0.5f * w * vX - 0.5f * h * vY;
     uint32_t counter = 0;
 
     for (unsigned short i1 = 0; i1 <= 1; i1++)
@@ -126,7 +126,7 @@ std::vector<InterleavedData> Surface::generate_quad(float w, float h, const glm:
         for (unsigned short i2 = 0; i2 <= 1; i2++)
         {
             auto vtx = &points[counter++];
-            vtx->position = position + (orig + float(i1) * delta1 - float(i2) * delta2);
+            vtx->position = position + (orig + float(i1) * delta1 + float(i2) * delta2);
             vtx->normal = n;
             vtx->uv = glm::vec2(1.0f - i1, 1.0f - i2);
         }
@@ -182,7 +182,7 @@ void Surface::create_subvidided_quad(float w, float h, uint32_t subdivisions, bo
     float step_x = w / subdivisions;
     float step_y = h / subdivisions;
 
-    glm::vec3 origin = { -w * 0.5f, -h * 0.5f, 0.0f };
+    glm::vec3 origin = { -w * 0.5f, h * 0.5f, 0.0f };
 
     if (!centered) {
         origin += glm::vec3(w * 0.5f, h * 0.5f, 0.0f);
@@ -192,11 +192,11 @@ void Surface::create_subvidided_quad(float w, float h, uint32_t subdivisions, bo
     for (int i = 0; i < subdivisions; ++i) {
         for (int j = 0; j < subdivisions; ++j) {
 
-            const glm::vec3& new_origin = origin + glm::vec3(j * step_x, i * step_y, 0.0f) + glm::vec3(step_x * 0.5f, step_y * 0.5f, 0.0f);
+            const glm::vec3& new_origin = origin + glm::vec3(j * step_x, -i * step_y, 0.0f) + glm::vec3(step_x * 0.5f, -step_y * 0.5f, 0.0f);
             std::vector<InterleavedData> vtxs = generate_quad(step_x, step_y, new_origin, normals::pZ, color);
 
-            const glm::vec2& uv0 = { static_cast<float>(j) / subdivisions, 1.0f - static_cast<float>(i) / subdivisions };
-            const glm::vec2& uv1 = { static_cast<float>(j + 1u) / subdivisions, 1.0f - static_cast<float>(i + 1u) / subdivisions };
+            const glm::vec2& uv0 = { static_cast<float>(j) / subdivisions, static_cast<float>(i) / subdivisions };
+            const glm::vec2& uv1 = { static_cast<float>(j + 1u) / subdivisions, static_cast<float>(i + 1u) / subdivisions };
 
             vtxs[0].uv = uv0;
             vtxs[1].uv = glm::vec2(uv1.x, uv0.y);

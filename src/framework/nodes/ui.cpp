@@ -84,7 +84,7 @@ namespace ui {
             glm::vec2 position = get_translation() + size * 0.5f * get_scale();
             // Don't apply the scaling to combo buttons.. 
             glm::vec2 scale = get_scale() * (class_type != Node2DClassType::COMBO_BUTTON ? scaling : glm::vec2(scaling.x, 1.0f));
-            glm::mat4x4 model = glm::translate(glm::mat4x4(1.0f), glm::vec3(position, -priority * 1e-4));
+            glm::mat4x4 model = glm::translate(glm::mat4x4(1.0f), glm::vec3(position, -priority * 3e-5));
             model = glm::scale(model, glm::vec3(scale, 1.0f));
             model = get_global_viewport_model() * model;
             Renderer::instance->add_renderable(&quad_mesh, model);
@@ -148,21 +148,17 @@ namespace ui {
     {
         sInputData data;
 
-        WebGPUContext* webgpu_context = Renderer::instance->get_webgpu_context();
-
         Material* material = quad_mesh.get_surface_material_override(quad_mesh.get_surface(0));
 
         if (material->flags & MATERIAL_2D)
         {
-            glm::vec2 mouse_pos = Input::get_mouse_position();
-            mouse_pos.y = webgpu_context->render_height - mouse_pos.y;
-
-            glm::vec2 min = get_translation();
-            glm::vec2 max = min + size;
+            const glm::vec2& mouse_pos = Input::get_mouse_position();
+            const glm::vec2& min = get_translation();
+            const glm::vec2& max = min + size;
 
             data.is_hovered = mouse_pos.x >= min.x && mouse_pos.y >= min.y && mouse_pos.x <= max.x && mouse_pos.y <= max.y;
 
-            glm::vec2 local_mouse_pos = mouse_pos - get_translation();
+            const glm::vec2& local_mouse_pos = mouse_pos - get_translation();
             data.local_position = glm::vec2(local_mouse_pos.x, size.y - local_mouse_pos.y);
         }
         else {
@@ -174,13 +170,13 @@ namespace ui {
             if (Renderer::instance->get_openxr_available()) {
                 // Ray
                 ray_origin = Input::get_controller_position(HAND_RIGHT, POSE_AIM);
-                glm::mat4x4 select_hand_pose = Input::get_controller_pose(HAND_RIGHT, POSE_AIM);
+                const glm::mat4x4& select_hand_pose = Input::get_controller_pose(HAND_RIGHT, POSE_AIM);
                 ray_direction = get_front(select_hand_pose);
             }
             // Handle ray using mouse position
             else {
                 Camera* camera = Renderer::instance->get_camera();
-                glm::vec3 ray_dir = camera->screen_to_ray(Input::get_mouse_position());
+                const glm::vec3& ray_dir = camera->screen_to_ray(Input::get_mouse_position());
 
                 // Ray
                 ray_origin = camera->get_eye();
@@ -254,6 +250,51 @@ namespace ui {
         return data;
     }
 
+    void Panel2D::update_scroll_view()
+    {
+        auto parent = get_parent();
+
+        if (!(parameter_flags & SCROLLABLE) || !parent) {
+            return;
+        }
+
+        ui_data.range = 1.0f;
+
+        if (class_type == TEXT_SHADOW) {
+            set_visibility(true);
+        }
+
+        // Last chance..
+        parent = parent->get_parent();
+
+        if (parent && parent->get_class_type() == VCONTAINER) {
+            float size_y = get_size().y;
+            float parent_size_y = parent->get_size().y;
+            float y = get_translation().y;
+            float parent_y = parent->get_translation().y;
+            float y_min = parent_y;
+            float y_max = parent_y + parent_size_y - 24.0f;
+            // exceeds at the top
+            if (y < y_min) {
+
+                ui_data.range = glm::clamp((y - y_min) / size_y, -1.0f, -0.01f);
+
+                if (class_type == TEXT_SHADOW) {
+                    set_visibility(false);
+                }
+            }
+            // exceeds at the bottom
+            else if (y > y_max) {
+
+                ui_data.range = 1.0f - glm::clamp((y - y_max) / size_y, 0.0f, 0.99f);
+
+                if (class_type == TEXT_SHADOW) {
+                    set_visibility(false);
+                }
+            }
+        }
+    }
+
     void Panel2D::remove_flag(uint8_t flag)
     {
         Material* material = quad_mesh.get_surface_material_override(quad_mesh.get_surface(0));
@@ -321,6 +362,7 @@ namespace ui {
         Material* material = quad_mesh.get_surface_material_override(quad_surface);
         material->flags |= MATERIAL_UI;
         material->shader = RendererStorage::get_shader_from_source(shaders::ui_xr_panel::source, shaders::ui_xr_panel::path, *material);
+        // material->shader = RendererStorage::get_shader("data/shaders/ui_xr_panel.wgsl", *material);
 
         ui_data.xr_info = glm::vec4(1.0f, 1.0f, 0.5f, 0.5f);
         ui_data.aspect_ratio = size.x / size.y;
@@ -420,15 +462,11 @@ namespace ui {
         // ignore focus process, doing it manually per button
         sInputData data = get_input_data(true);
 
-        XRPanel* xr_parent = static_cast<XRPanel*>(get_parent());
-
         if (data.is_hovered) {
 
             if (is_button) {
 
                 auto local_pos = data.local_position;
-                local_pos.y = xr_parent->get_size().y - local_pos.y;
-
                 data.is_hovered &= local_pos.x > (button_position.x - button_size.x * 0.5f) && local_pos.x < (button_position.x + button_size.x * 0.5f);
                 data.is_hovered &= local_pos.y > (button_position.y - button_size.y * 0.5f) && local_pos.y < (button_position.y + button_size.y * 0.5f);
             }
@@ -522,7 +560,28 @@ namespace ui {
         padding = glm::vec2(2.0f);
         item_margin = glm::vec2(6.0f);
 
-        render_background = true;
+        render_background = false;
+    }
+
+    void Container2D::update(float delta_time)
+    {
+        Panel2D::update(delta_time);
+
+        if (!visibility)
+            return;
+
+        sInputData data = get_input_data();
+
+        if (data.is_hovered) {
+            Node2D::push_input(this, data);
+        }
+    }
+
+    bool Container2D::on_input(sInputData data)
+    {
+        IO::set_hover(this, data.local_position, data.ray_distance);
+
+        return true;
     }
 
     void Container2D::on_children_changed()
@@ -604,7 +663,7 @@ namespace ui {
 
         if (centered) {
             const glm::vec2& pos = get_local_translation();
-            set_translation({ (-size.x + BUTTON_SIZE) * 0.50f, pos.y });
+            set_translation({ (-size.x + BUTTON_SIZE) * 2.0f, pos.y });
         }
 
         Container2D::on_children_changed();
@@ -615,7 +674,7 @@ namespace ui {
     {
         class_type = Node2DClassType::VCONTAINER;
 
-        render_background = true;
+        // render_background = false;
     }
 
     void VContainer2D::on_children_changed()
@@ -645,7 +704,7 @@ namespace ui {
                 continue;
             }
             glm::vec2 node_size = node_2d->get_size();
-            node_2d->set_translation(glm::vec2(padding.x, rect_height - (size.y + node_size.y) - padding.y - item_margin.y * static_cast<float>(child_idx)));
+            node_2d->set_translation(glm::vec2(padding.x, size.y + padding.y + item_margin.y * static_cast<float>(child_idx)));
             child_idx++;
 
             size.x = glm::max(size.x, node_size.x);
@@ -656,7 +715,7 @@ namespace ui {
         size.y = rect_height;
 
         if (use_fixed_size) {
-            size.x = fixed_size.x;
+            size = fixed_size;
         }
 
         if (centered) {
@@ -704,7 +763,7 @@ namespace ui {
 
         for (size_t i = 0; i < child_count; ++i)
         {
-            double angle = (m_pi / 2.0f) + 2.0f * m_pi * i / (float)child_count;
+            double angle = -(m_pi / 2.0f) - 2.0f * m_pi * i / (float)child_count;
             glm::vec2 translation = glm::vec2(radius * cos(angle), radius * sin(angle)) - center;
 
             Node2D* node_2d = static_cast<Node2D*>(get_children()[i]);
@@ -753,8 +812,7 @@ namespace ui {
 
         update_ui_data();
 
-        if (data.is_hovered)
-        {
+        if (data.is_hovered) {
             Node2D::push_input(this, data);
         }
     }
@@ -790,8 +848,8 @@ namespace ui {
         text_entity->set_surface_material_priority(0, Node2DClassType::TEXT);
 
         float text_width = (float)text_entity->get_text_width(text_string);
-        size.x = std::max(text_width, 24.0f);
-        size.y = text_scale * 0.5f;
+        size.x = std::max(text_width, 24.0f) + TEXT_SHADOW_MARGIN * text_scale;
+        size.y = text_scale + TEXT_SHADOW_MARGIN * text_scale * 0.5f;
 
         ui_data.num_group_items = size.x;
 
@@ -804,7 +862,7 @@ namespace ui {
         material.shader = RendererStorage::get_shader_from_source(shaders::ui_text_shadow::source, shaders::ui_text_shadow::path, material);
 
         Surface* quad_surface = quad_mesh.get_surface(0);
-        quad_surface->create_quad(this->size.x + TEXT_SHADOW_MARGIN * text_scale, this->size.y + TEXT_SHADOW_MARGIN * text_scale);
+        quad_surface->create_quad(size.x, size.y);
 
         quad_mesh.set_surface_material_override(quad_mesh.get_surface(0), material);
 
@@ -814,6 +872,8 @@ namespace ui {
 
     void Text2D::update(float delta_time)
     {
+        update_scroll_view();
+
         if (!visibility)
             return;
 
@@ -827,11 +887,14 @@ namespace ui {
 
         // Convert the mat3x3 to mat4x4
         uint8_t priority = class_type;
-        glm::mat4x4 model = glm::translate(glm::mat4x4(1.0f), glm::vec3(get_translation(), -priority * 1e-4));
+        glm::vec2 position = get_translation() + glm::vec2(TEXT_SHADOW_MARGIN * text_scale, TEXT_SHADOW_MARGIN * text_scale * 0.5f) * 0.5f;
+        glm::mat4x4 model = glm::translate(glm::mat4x4(1.0f), glm::vec3(position, -priority * 3e-5));
         model = glm::scale(model, glm::vec3(get_scale(), 1.0f));
         model = get_global_viewport_model() * model;
 
         text_entity->set_model(model);
+
+        update_ui_data();
 
         Panel2D::update(delta_time);
     }
@@ -882,11 +945,9 @@ namespace ui {
         disabled = flags & DISABLED;
         is_unique_selection = flags & UNIQUE_SELECTION;
         allow_toggle = flags & ALLOW_TOGGLE;
-        keep_rgb = flags & KEEP_RGB;
 
         parameter_flags = flags;
 
-        ui_data.keep_rgb = keep_rgb;
         ui_data.is_color_button = is_color_button;
         ui_data.is_button_disabled = disabled;
         ui_data.is_selected = selected;
@@ -990,13 +1051,14 @@ namespace ui {
 
         Panel2D::update(delta_time);
 
+        update_scroll_view();
+
         if (!visibility)
             return;
 
         sInputData data = get_input_data();
 
-        if(data.is_hovered)
-        {
+        if(data.is_hovered) {
             Node2D::push_input(this, data);
         }
 
@@ -1080,12 +1142,10 @@ namespace ui {
         disabled = flags & DISABLED;
         is_unique_selection = flags & UNIQUE_SELECTION;
         allow_toggle = flags & ALLOW_TOGGLE;
-        keep_rgb = flags & KEEP_RGB;
 
         parameter_flags = flags;
 
         ui_data.is_selected = selected;
-        ui_data.keep_rgb = keep_rgb;
         ui_data.is_color_button = is_color_button;
         ui_data.is_button_disabled = disabled;
         ui_data.num_group_items = ComboIndex::UNIQUE;
@@ -1131,7 +1191,7 @@ namespace ui {
             // Use a prettified text..
             std::string pretty_name = signal;
             to_camel_case(pretty_name);
-            text_2d = new Text2D(pretty_name, { 0.f, -18.f }, 18.f, TEXT_CENTERED);
+            text_2d = new Text2D(pretty_name, { 0.f, size.y }, 18.f, TEXT_CENTERED);
             text_2d->set_visibility(false);
             add_child(text_2d);
         }
@@ -1245,7 +1305,7 @@ namespace ui {
 
         class_type = Node2DClassType::SUBMENU;
 
-        box = new ui::HContainer2D("submenu_h_box_" + sg, glm::vec2(0.0f, size.y + GROUP_MARGIN));
+        box = new ui::HContainer2D("submenu_h_box_" + sg, { 0.0f, 0.0f });
         box->set_visibility(false);
         box->centered = true;
 
@@ -1263,7 +1323,7 @@ namespace ui {
                 if (!submenu)
                     continue;
 
-                bool lower_layer = submenu->get_translation().y < get_translation().y;
+                bool lower_layer = submenu->get_translation().y > get_translation().y;
 
                 if (lower_layer)
                     continue;
@@ -1272,6 +1332,7 @@ namespace ui {
             }
 
             box->set_visibility(data ? true : !last_value);
+            box->set_translation({ (-box->get_size().x + BUTTON_SIZE) * 0.5f, -(size.y + box->get_size().y + GROUP_MARGIN)});
         });
 
         // Submenu icon..
@@ -1294,11 +1355,10 @@ namespace ui {
     {
         TextureButton2D::update(delta_time);
 
-        if (submenu_mark)
-        {
+        if (submenu_mark) {
             submenu_mark->set_model(get_global_model());
             submenu_mark->scale(glm::vec3(0.6f, 0.6f, 1.0f));
-            submenu_mark->translate(glm::vec3(-get_size().x * 0.15f, get_size().y * 0.85f, -1e-3f));
+            submenu_mark->translate(glm::vec3(-get_size() * 0.15f, -1e-3f));
         }
     }
 
@@ -1407,16 +1467,18 @@ namespace ui {
 
         // Text labels (only if slider is enabled)
         {
+            float text_scale = 18.0f;
+
             if (!(flags & SKIP_NAME)) {
                 std::string pretty_name = signal;
                 to_camel_case(pretty_name);
-                text_2d = new Text2D(pretty_name, { 0.f, -18.f }, 18.f, TEXT_CENTERED);
+                text_2d = new Text2D(pretty_name, { 0.f, size.y }, text_scale, TEXT_CENTERED);
                 add_child(text_2d);
             }
 
             if (!disabled && !(flags & SKIP_VALUE)) {
                 std::string value_as_string = value_to_string();
-                text_2d_value = new Text2D(value_as_string, { 0.0f, size.y + 8.5f }, 17.f, TEXT_CENTERED);
+                text_2d_value = new Text2D(value_as_string, { 0.0f, -text_scale }, text_scale, TEXT_CENTERED);
                 add_child(text_2d_value);
             }
         }
@@ -1433,13 +1495,14 @@ namespace ui {
 
         timer += delta_time;
 
+        update_scroll_view();
+
         if (!visibility)
             return;
 
         sInputData data = get_input_data();
 
-        if (!disabled && data.is_hovered)
-        {
+        if (!disabled && data.is_hovered) {
             Node2D::push_input(this, data);
         }
 
@@ -1469,7 +1532,7 @@ namespace ui {
         if (data.is_pressed)
         {
             float real_size = (mode == HORIZONTAL ? size.x : size.y);
-            float local_point = (mode == HORIZONTAL ? data.local_position.x : size.y - data.local_position.y);
+            float local_point = (mode == HORIZONTAL ? data.local_position.x : data.local_position.y);
             // This is at range 0..1
             current_value = glm::clamp(local_point / real_size, 0.f, 1.f);
             // Set in range min-max
@@ -1625,14 +1688,13 @@ namespace ui {
 
             // Change HUE
             if ((changing_hue && dist > 0.1f) || (dist > (1.0f - ring_thickness) && !changing_sv)) {
-                color.r = fmod(glm::degrees(atan2f(-local_mouse_pos.y, local_mouse_pos.x)), 360.f);
+                color.r = fmod(glm::degrees(atan2f(local_mouse_pos.y, local_mouse_pos.x)), 360.f);
                 changing_hue = true;
             }
 
             // Update Saturation, Value
             else if(!changing_hue){
                 glm::vec2 uv = local_mouse_pos;
-                uv.y *= -1.0f;
                 glm::vec2 sv = uv_to_saturation_value(uv);
                 color = { color.r, sv.x, sv.y, 1.0f };
                 changing_sv = true;

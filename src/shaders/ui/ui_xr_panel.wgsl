@@ -61,7 +61,7 @@ fn fs_main(in: VertexOutput) -> FragmentOutput {
     
     var position : vec2f = ui_data.xr_info.zw;
 
-    var corrected_uv : vec2f = vec2f(in.uv.x, 1.0 - in.uv.y);
+    var corrected_uv : vec2f = vec2f(in.uv.x, in.uv.y);
     corrected_uv = corrected_uv / size;
     corrected_uv = corrected_uv - (position / size) + 0.5;
     corrected_uv.y = 1.0 - corrected_uv.y;
@@ -80,7 +80,7 @@ fn fs_main(in: VertexOutput) -> FragmentOutput {
     var ra : vec4f = vec4f(0.125);
     var si : vec2f = vec2f(ui_data.aspect_ratio, 1.0) * size * global_scale;
     ra = min(ra, min(vec4f(si.x), vec4f(si.y)));
-    var uvs = vec2f(in.uv.x, 1.0 - in.uv.y) - position;
+    var uvs = vec2f(in.uv.x, in.uv.y) - position;
     var pos : vec2f = vec2(uvs * 2.0 - 1.0);
     pos.x *= ui_data.aspect_ratio;
 

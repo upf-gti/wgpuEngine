@@ -34,8 +34,8 @@ struct sUIData {
 
     // Color Picker
     glm::vec3 picker_color = glm::vec3(1.f);
-    // To keep rgb if icon has colors...
-    float keep_rgb = 0.f;
+    // inside/outside the node parent.. -1..1
+    float range = 0.f;
 
     // Slider
     float slider_value = 0.f;

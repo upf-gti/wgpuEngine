@@ -35,18 +35,25 @@ fn fs_main(in: VertexOutput) -> FragmentOutput {
 
     var dummy = camera_data.eye;
 
+    var uvs : vec2f = vec2f(in.uv.x, in.uv.y);
+
+    if(ui_data.range < 0.0 && uvs.y < abs(ui_data.range) ) {
+        discard;
+    }
+    else if(ui_data.range > 0.0 && uvs.y > ui_data.range ) {
+        discard;
+    }
+
     var out: FragmentOutput;
 
-    var text_size = ui_data.num_group_items;
-    var uvs = in.uv;
-    var divisions = text_size / 16.0;
+    let text_size : f32 = ui_data.num_group_items;
+    let divisions : f32 = text_size / 16.0;
     uvs.x *= divisions;
-    var p = vec2f(clamp(uvs.x, 0.5, divisions - 0.5), 0.5);
-    var dist = distance(uvs, p);
+    let p : vec2f = vec2f(clamp(uvs.x, 0.5, divisions - 0.5), 0.5);
+    let dist : f32 = distance(uvs, p);
+    let s : f32 = smoothstep(dist - 0.05, dist + 0.05, 0.5);
 
-    var s = smoothstep(dist - 0.05, dist + 0.05, 0.5);
-
-    out.color = vec4f(0.0, 0.0, 0.0, 0.6 * s);
+    out.color = vec4f(vec3f(0.0), 0.6 * s);
     
     return out;
 }
