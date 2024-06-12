@@ -95,6 +95,12 @@ fn fs_main(in: VertexOutput) -> FragmentOutput {
 
     var final_color : vec3f = color.rgb;
 
+#ifdef ALBEDO_TEXTURE
+        let mask : f32 = color.a;
+#else
+        let mask : f32 = 0.0;
+#endif
+
     if(!is_disabled) {
         let no_hover_color : vec3f = COLOR_DARK;
         var hover_color : vec3f = mix(COLOR_TERCIARY, mix( COLOR_HIGHLIGHT_LIGHT, COLOR_TERCIARY, in.uv.x * in.uv.y ), in.uv.x );
@@ -103,14 +109,14 @@ fn fs_main(in: VertexOutput) -> FragmentOutput {
             hover_color += vec3f(0.1);
         }
 
-        final_color = mix( mix(no_hover_color, hover_color, hover_transition), final_color, color.a );
+        final_color = mix( mix(no_hover_color, hover_color, hover_transition), final_color, mask );
 
         if(is_selected) {
-            final_color = mix( mix( COLOR_HIGHLIGHT_LIGHT, COLOR_TERCIARY, in.uv.x * in.uv.y ), final_color, color.a );
+            final_color = mix( mix( COLOR_HIGHLIGHT_LIGHT, COLOR_TERCIARY, in.uv.x * in.uv.y ), final_color, mask );
         }
 
     } else {
-        final_color = mix( COLOR_SECONDARY, final_color , color.a ) * 0.3;
+        final_color = mix( COLOR_SECONDARY, final_color, mask ) * 0.3;
     }
 
     if (GAMMA_CORRECTION == 1) {

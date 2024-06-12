@@ -858,6 +858,8 @@ namespace ui {
 
         ui_data.num_group_items = size.x;
 
+        render_background = !(flags & SKIP_TEXT_SHADOW);
+
         Material material;
         material.color = colors::RED;
         material.flags = MATERIAL_2D | MATERIAL_UI;
@@ -892,7 +894,7 @@ namespace ui {
 
         // Convert the mat3x3 to mat4x4
         uint8_t priority = class_type;
-        glm::vec2 position = get_translation() + glm::vec2(TEXT_SHADOW_MARGIN * text_scale, TEXT_SHADOW_MARGIN * text_scale * 0.5f) * 0.5f * get_scale();
+        glm::vec2 position = get_translation() + (render_background ? glm::vec2(TEXT_SHADOW_MARGIN * text_scale, TEXT_SHADOW_MARGIN * text_scale * 0.5f) * 0.5f * get_scale() : glm::vec2(0.0f));
         glm::mat4x4 model = glm::translate(glm::mat4x4(1.0f), glm::vec3(position, -priority * 3e-5));
         model = glm::scale(model, glm::vec3(get_scale(), 1.0f));
         model = get_global_viewport_model() * model;
@@ -1077,7 +1079,7 @@ namespace ui {
         ui_data.aspect_ratio = scale.x / scale.y;
 
         if (text_2d) {
-            text_2d->set_visibility(false);
+            text_2d->set_visibility(false || label_as_background);
         }
 
         target_scale = 1.0f;
@@ -1156,12 +1158,12 @@ namespace ui {
         ui_data.num_group_items = ComboIndex::UNIQUE;
 
         Material material;
-        material.color = color;
+        material.color = Color(0.02f, 0.02f, 0.02f, 1.0f);
         material.flags = MATERIAL_2D | MATERIAL_UI;
         material.cull_type = CULL_BACK;
         material.transparency_type = ALPHA_BLEND;
         material.priority = class_type;
-        material.diffuse_texture = RendererStorage::get_texture(texture_path, true);
+        material.diffuse_texture = texture_path.size() ? RendererStorage::get_texture(texture_path, true) : nullptr;
         material.shader = RendererStorage::get_shader_from_source(shaders::ui_button::source, shaders::ui_button::path, material);
 
         quad_mesh.set_surface_material_override(quad_mesh.get_surface(0), material);
@@ -1188,6 +1190,16 @@ namespace ui {
             }
             set_selected(allow_toggle ? !last_value : true);
         });
+
+        // Use label as background
+        if (!texture_path.size()) {
+            label_as_background = true;
+            std::string char_string = std::string(1, std::toupper(signal[0]));
+            text_2d = new Text2D(char_string, {0.0f, size.y * 0.5f - 9.0f}, 18.f, SKIP_TEXT_SHADOW);
+            float w = text_2d->text_entity->get_text_width(char_string);
+            text_2d->translate({ size.x * 0.5f - w * 0.5f, 0.0f });
+            add_child(text_2d);
+        }
 
         // Text label
         if (!(flags & SKIP_NAME)) {

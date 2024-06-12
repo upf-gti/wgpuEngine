@@ -37,7 +37,8 @@ namespace ui {
         USER_RANGE = 1 << 6,
         CURVE_INV_POW = 1 << 7,
         TEXT_CENTERED = 1 << 8,
-        SCROLLABLE = 1 << 9,
+        SKIP_TEXT_SHADOW = 1 << 9,
+        SCROLLABLE = 1 << 10,
     };
 
     class Panel2D : public Node2D {
@@ -188,6 +189,7 @@ namespace ui {
         bool allow_toggle           = false;
         bool selected               = false;
         bool disabled               = false;
+        bool label_as_background    = false;
         bool is_color_button        = true;
 
         Button2D() {};

@@ -144,7 +144,8 @@ void Engine::on_frame()
 
     update(delta_time);
 
-    IO::end_frame();
+    // Update IO after updating the engine
+    IO::update(delta_time);
 
     // Render stuff
 
@@ -154,6 +155,8 @@ void Engine::on_frame()
 
     ImGuizmo::SetOrthographic(false);
     ImGuizmo::BeginFrame();
+
+    IO::render();
 
     render();
 

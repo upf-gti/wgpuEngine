@@ -5,12 +5,26 @@
 #include "glm/vec2.hpp"
 #include "glm/vec3.hpp"
 
+#include <string>
 #include <vector>
 
 class Node2D;
 class MeshInstance3D;
+class Viewport3D;
 
 class IO {
+
+    struct XrKey {
+        std::string label = "";
+        glm::vec2 position = {};
+        uint32_t flags = 0;
+    };
+
+    struct XrKeyboardState {
+        bool caps = false;
+    };
+
+    static XrKeyboardState xr_keyboard_state;
 
     static float xr_ray_distance;
 
@@ -20,11 +34,18 @@ class IO {
     static glm::vec2 xr_position;
     static glm::vec3 xr_world_position;
 
+    static Node2D* keyboard_2d;
+    static Viewport3D* xr_keyboard;
+    static bool keyboard_active;
+
+    static std::vector<XrKey> create_keyboard_layout(float start_x, float start_y, float spacing);
+
 public:
 
     static void initialize();
     static void start_frame();
-    static void end_frame();
+    static void render();
+    static void update(float delta_time);
 
     static void set_xr_ray_distance(float d) { xr_ray_distance = d; };
     static void set_xr_position(const glm::vec2& p) { xr_position = p; };
@@ -54,4 +75,7 @@ public:
     static const glm::vec2& get_xr_position() { return xr_position; }
     static const glm::vec3& get_xr_world_position() { return xr_world_position; }
     static const float get_xr_ray_distance() { return xr_ray_distance; }
+
+    static void request_keyboard() { keyboard_active = true; };
+    static void close_keyboard() { keyboard_active = false; };
 };
