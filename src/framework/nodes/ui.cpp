@@ -959,6 +959,7 @@ namespace ui {
         ui_data.is_button_disabled = disabled;
         ui_data.is_selected = selected;
         ui_data.num_group_items = ComboIndex::UNIQUE;
+        ui_data.aspect_ratio = size.x / size.y;
 
         Material material;
         material.color = color;
@@ -997,6 +998,15 @@ namespace ui {
 
     void Button2D::on_pressed()
     {
+        float now = glfwGetTime();
+
+        if ((parameter_flags & DBL_CLICK) && (now - last_press_time) < 0.6f) {
+            Node::emit_signal(signal + "@dbl_click", (void*)nullptr);
+            is_dbl_click = true;
+        }
+
+        last_press_time = now;
+
         // on press, close button selector..
 
         if (class_type == Node2DClassType::SELECTOR_BUTTON) {
@@ -1075,7 +1085,8 @@ namespace ui {
         ui_data.is_selected = selected ? 1.f : 0.f;
         ui_data.press_info.x = 0.0f;
 
-        glm::vec2 scale = get_scale() * (class_type != Node2DClassType::COMBO_BUTTON ? scaling : glm::vec2(scaling.x, 1.0f));
+        glm::vec2 scale = size * get_scale() * (class_type != Node2DClassType::COMBO_BUTTON ? scaling : glm::vec2(scaling.x, 1.0f));
+
         ui_data.aspect_ratio = scale.x / scale.y;
 
         if (text_2d) {
@@ -1104,12 +1115,16 @@ namespace ui {
         // Internally, use on release mouse, not on press..
         if (data.was_released)
         {
-            // Trigger callback
-            Node::emit_signal(signal, (void*)this);
-            // Visibility stuff..
-            Node::emit_signal(signal + "@pressed", (void*)nullptr);
-
             on_pressed();
+
+            if (!is_dbl_click) {
+                // Trigger callback
+                Node::emit_signal(signal, (void*)this);
+                // Visibility stuff..
+                Node::emit_signal(signal + "@pressed", (void*)nullptr);
+            }
+
+            is_dbl_click = false;
         }
 
         if (data.was_hovered) {
@@ -1156,6 +1171,7 @@ namespace ui {
         ui_data.is_color_button = is_color_button;
         ui_data.is_button_disabled = disabled;
         ui_data.num_group_items = ComboIndex::UNIQUE;
+        ui_data.aspect_ratio = size.x / size.y;
 
         Material material;
         material.color = Color(0.02f, 0.02f, 0.02f, 1.0f);
@@ -1194,9 +1210,13 @@ namespace ui {
         // Use label as background
         if (!texture_path.size()) {
             label_as_background = true;
-            std::string char_string = std::string(1, std::toupper(signal[0]));
-            text_2d = new Text2D(char_string, {0.0f, size.y * 0.5f - 9.0f}, 18.f, SKIP_TEXT_SHADOW);
-            float w = text_2d->text_entity->get_text_width(char_string);
+            std::string label = signal;
+            // Make upper case only if 1 char
+            if (label.size() == 1u) {
+                label = std::string(1, std::toupper(label[0]));
+            }
+            text_2d = new Text2D(label, {0.0f, size.y * 0.5f - 9.0f}, 18.f, SKIP_TEXT_SHADOW);
+            float w = text_2d->text_entity->get_text_width(label);
             text_2d->translate({ size.x * 0.5f - w * 0.5f, 0.0f });
             add_child(text_2d);
         }

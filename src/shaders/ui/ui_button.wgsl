@@ -69,7 +69,8 @@ fn fs_main(in: VertexOutput) -> FragmentOutput {
     let bra : f32 = mix(0.98, 0.6, hover_transition);
                          // tr   br   tl   bl
     var ra : vec4f = vec4f(bra);
-    var si : vec2f = vec2f(0.98, 0.98);
+    var si : vec2f = vec2f(0.98 * ui_data.aspect_ratio, 0.98);
+    ra = min(ra, min(vec4f(si.x), vec4f(si.y)));
 
     if(combo_index == 1.0) {
         ra.x = 0.0;
@@ -89,6 +90,7 @@ fn fs_main(in: VertexOutput) -> FragmentOutput {
 
     var uvs = vec2f(in.uv.x, 1.0 - in.uv.y);
     var pos : vec2f = vec2(uvs * 2.0 - 1.0);
+    pos.x *= ui_data.aspect_ratio;
 
     let d : f32 = sdRoundedBox(pos, si, ra);
     let center_dist : f32 = distance(in.uv, vec2f(0.5));

@@ -39,6 +39,7 @@ namespace ui {
         TEXT_CENTERED = 1 << 8,
         SKIP_TEXT_SHADOW = 1 << 9,
         SCROLLABLE = 1 << 10,
+        DBL_CLICK = 1 << 11,
     };
 
     class Panel2D : public Node2D {
@@ -180,8 +181,10 @@ namespace ui {
         Text2D* text_2d = nullptr;
         std::string signal;
 
-        // Animations
+        float last_press_time = 0.0f;
+        bool is_dbl_click = false;
 
+        // Animations
         float target_scale = 1.0f;
         float timer = 0.0f;
 
