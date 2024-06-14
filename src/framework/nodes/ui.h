@@ -37,19 +37,25 @@ namespace ui {
         USER_RANGE = 1 << 6,
         CURVE_INV_POW = 1 << 7,
         TEXT_CENTERED = 1 << 8,
-        SKIP_TEXT_SHADOW = 1 << 9,
-        SCROLLABLE = 1 << 10,
-        DBL_CLICK = 1 << 11,
+        TEXT_EVENTS = 1 << 9,
+        SKIP_TEXT_SHADOW = 1 << 10,
+        SCROLLABLE = 1 << 11,
+        DBL_CLICK = 1 << 12,
     };
 
     class Panel2D : public Node2D {
     public:
+
+        std::string signal = "";
 
         Color color = glm::vec4(0.0f);
 
         bool render_background  = true;
         bool pressed_inside     = false;
         bool on_hover           = false;
+        bool is_dbl_click       = false;
+
+        float last_press_time = 0.0f;
 
         uint32_t parameter_flags = 0;
 
@@ -65,21 +71,27 @@ namespace ui {
         bool was_input_released();
         bool is_input_pressed();
 
+        void update_scroll_view();
+        void on_pressed() override;
+
         void render() override;
 
-        void update_scroll_view();
         void remove_flag(uint8_t flag) override;
         void set_priority(uint8_t priority) override;
         void update_ui_data() override;
         void set_color(const Color& c);
+        void set_signal(const std::string& new_signal) { signal = new_signal; };
     };
 
     class Image2D : public Panel2D {
     public:
 
         Image2D() {};
+        Image2D(const std::string& image_path, const glm::vec2& s, uint32_t flags = 0);
         Image2D(const std::string& name, const std::string& image_path, const glm::vec2& s, uint8_t priority = IMAGE);
-        Image2D(const std::string& name, const std::string& image_path, const glm::vec2& p, const glm::vec2& s, uint8_t priority = IMAGE);
+        Image2D(const std::string& name, const std::string& image_path, const glm::vec2& p, const glm::vec2& s, uint8_t priority = IMAGE, uint32_t flags = 0);
+
+        void update(float delta_time) override;
     };
 
     class XRPanel : public Panel2D {
@@ -169,8 +181,10 @@ namespace ui {
 
         void set_text(const std::string& text) { text_entity->set_text(text); };
 
-        void update(float delta_time) override;
         void render() override;
+        void update(float delta_time) override;
+        bool on_input(sInputData data) override;
+
         void remove_flag(uint8_t flag) override;
         void set_priority(uint8_t priority) override;
     };
@@ -179,10 +193,6 @@ namespace ui {
     public:
 
         Text2D* text_2d = nullptr;
-        std::string signal;
-
-        float last_press_time = 0.0f;
-        bool is_dbl_click = false;
 
         // Animations
         float target_scale = 1.0f;
@@ -276,8 +286,6 @@ namespace ui {
 
         Text2D* text_2d_value = nullptr;
 
-        std::string signal;
-
         int mode = SliderMode::VERTICAL;
 
         bool disabled = false;
@@ -311,8 +319,6 @@ namespace ui {
 
         bool changing_hue = false;
         bool changing_sv = false;
-
-        std::string signal;
 
         ColorPicker2D() {};
         ColorPicker2D(const std::string& sg, const Color& c);

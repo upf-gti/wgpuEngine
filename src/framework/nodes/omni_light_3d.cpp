@@ -5,6 +5,8 @@
 OmniLight3D::OmniLight3D() : Light3D()
 {
     type = LIGHT_OMNI;
+    node_type = "OmniLight3D";
+    name = node_type + "_" + std::to_string(last_node_id++);
 }
 
 OmniLight3D::~OmniLight3D()

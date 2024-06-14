@@ -5,6 +5,8 @@
 SpotLight3D::SpotLight3D() : Light3D()
 {
     type = LIGHT_SPOT;
+    node_type = "SpotLight3D";
+    name = node_type + "_" + std::to_string(last_node_id++);
 }
 
 SpotLight3D::~SpotLight3D()

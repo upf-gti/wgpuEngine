@@ -170,6 +170,15 @@ void Node::bind(const std::string& name, SignalType callback)
     mapping_signals[name].push_back(callback);
 }
 
+void Node::unbind(const std::string& name)
+{
+    auto it = mapping_signals.find(name);
+    if (it == mapping_signals.end())
+        return;
+
+    mapping_signals.erase(it);
+}
+
 void Node::bind(uint8_t button, FuncEmpty callback)
 {
     controller_signals[button].push_back(callback);

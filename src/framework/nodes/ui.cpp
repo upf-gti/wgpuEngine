@@ -250,8 +250,24 @@ namespace ui {
         return data;
     }
 
+    void Panel2D::on_pressed()
+    {
+        float now = glfwGetTime();
+
+        is_dbl_click = false;
+
+        if ((parameter_flags & DBL_CLICK) && (now - last_press_time) < 0.6f) {
+            Node::emit_signal(signal + "@dbl_click", (void*)nullptr);
+            is_dbl_click = true;
+        }
+
+        last_press_time = now;
+    }
+
     void Panel2D::update_scroll_view()
     {
+        return;
+
         auto parent = get_parent();
 
         if (!(parameter_flags & SCROLLABLE) || !parent) {
@@ -321,28 +337,44 @@ namespace ui {
     *	Image
     */
 
+    Image2D::Image2D(const std::string& image_path, const glm::vec2& s, uint32_t flags)
+        : Image2D("image_no_name", image_path, {0.0f, 0.0f}, s, IMAGE, flags) {}
+
     Image2D::Image2D(const std::string& name, const std::string& image_path, const glm::vec2& s, uint8_t priority)
         : Image2D(name, image_path, { 0.0f, 0.0f }, s, priority) {}
 
-    Image2D::Image2D(const std::string& name, const std::string& image_path, const glm::vec2& p, const glm::vec2& s, uint8_t priority)
+    Image2D::Image2D(const std::string& name, const std::string& image_path, const glm::vec2& p, const glm::vec2& s, uint8_t priority, uint32_t flags)
         : Panel2D(name, p, s)
     {
         class_type = priority;
 
         Material material;
         material.color = color;
-        material.flags = MATERIAL_2D;
+        material.flags = MATERIAL_2D | MATERIAL_UI;
         material.cull_type = CULL_BACK;
         material.transparency_type = ALPHA_BLEND;
         material.priority = class_type;
         material.diffuse_texture = RendererStorage::get_texture(image_path, true);
-        material.shader = RendererStorage::get_shader_from_source(shaders::mesh_texture::source, shaders::mesh_texture::path, material);
+        material.shader = RendererStorage::get_shader_from_source(shaders::ui_texture::source, shaders::ui_texture::path, material);
 
-        Surface* quad_surface = new Surface();
-        quad_surface->create_quad(size.x, size.y);
+        parameter_flags = flags;
 
-        quad_mesh.add_surface(quad_surface);
         quad_mesh.set_surface_material_override(quad_mesh.get_surface(0), material);
+
+        auto webgpu_context = Renderer::instance->get_webgpu_context();
+        RendererStorage::register_ui_widget(webgpu_context, material.shader, &quad_mesh, ui_data, 3);
+    }
+
+    void Image2D::update(float delta_time)
+    {
+        update_scroll_view();
+
+        if (!visibility)
+            return;
+
+        update_ui_data();
+
+        Panel2D::update(delta_time);
     }
 
     /*
@@ -480,7 +512,7 @@ namespace ui {
 
                 data.is_pressed &= IO::equals_focus(this);
 
-                Node2D::push_input(this, data);
+                IO::push_input(this, data);
             }
         }
 
@@ -573,7 +605,7 @@ namespace ui {
         sInputData data = get_input_data();
 
         if (data.is_hovered) {
-            Node2D::push_input(this, data);
+            IO::push_input(this, data);
         }
     }
 
@@ -818,7 +850,7 @@ namespace ui {
         update_ui_data();
 
         if (data.is_hovered) {
-            Node2D::push_input(this, data);
+            IO::push_input(this, data);
         }
     }
 
@@ -839,7 +871,7 @@ namespace ui {
     { }
 
     Text2D::Text2D(const std::string& _text, const glm::vec2& pos, float scale, uint32_t flags, const Color& color)
-        : Panel2D(_text + "@text", pos, { 1.0f, 1.0f }) {
+        : Panel2D("no_signal", pos, {1.0f, 1.0f}) {
 
         text_string = _text;
         text_scale = scale;
@@ -861,7 +893,7 @@ namespace ui {
         render_background = !(flags & SKIP_TEXT_SHADOW);
 
         Material material;
-        material.color = colors::RED;
+        material.color = colors::WHITE;
         material.flags = MATERIAL_2D | MATERIAL_UI;
         material.cull_type = CULL_BACK;
         material.transparency_type = ALPHA_BLEND;
@@ -892,18 +924,64 @@ namespace ui {
             set_translation(centered_position);
         }
 
-        // Convert the mat3x3 to mat4x4
-        uint8_t priority = class_type;
-        glm::vec2 position = get_translation() + (render_background ? glm::vec2(TEXT_SHADOW_MARGIN * text_scale, TEXT_SHADOW_MARGIN * text_scale * 0.5f) * 0.5f * get_scale() : glm::vec2(0.0f));
-        glm::mat4x4 model = glm::translate(glm::mat4x4(1.0f), glm::vec3(position, -priority * 3e-5));
-        model = glm::scale(model, glm::vec3(get_scale(), 1.0f));
-        model = get_global_viewport_model() * model;
+        // Set Text entity in place
+        {
+            uint8_t priority = class_type;
+            glm::vec2 position = get_translation() + (render_background ? glm::vec2(TEXT_SHADOW_MARGIN * text_scale, TEXT_SHADOW_MARGIN * text_scale * 0.5f) * 0.5f * get_scale() : glm::vec2(0.0f));
+            glm::mat4x4 model = glm::translate(glm::mat4x4(1.0f), glm::vec3(position, -priority * 3e-5));
+            model = glm::scale(model, glm::vec3(get_scale(), 1.0f));
+            model = get_global_viewport_model() * model;
 
-        text_entity->set_model(model);
+            text_entity->set_model(model);
+        }
+
+        if (parameter_flags & TEXT_EVENTS) {
+            sInputData data = get_input_data();
+
+            if (data.is_hovered) {
+                IO::push_input(this, data);
+            }
+
+            // Update uniforms
+            ui_data.hover_info.x = 0.0f;
+            ui_data.hover_info.y = 0.0f;
+            ui_data.aspect_ratio = size.x / size.y;
+
+            on_hover = false;
+        }
 
         update_ui_data();
 
         Panel2D::update(delta_time);
+    }
+
+    bool Text2D::on_input(sInputData data)
+    {
+        IO::set_hover(this, data.local_position, data.ray_distance);
+
+        // Internally, use on release mouse, not on press..
+        if (data.was_released)
+        {
+            on_pressed();
+
+            if (!is_dbl_click) {
+                Node::emit_signal(signal, (void*)this);
+            }
+        }
+
+        if (data.was_hovered) {
+            Engine::instance->vibrate_hand(HAND_RIGHT, HOVER_HAPTIC_AMPLITUDE, HOVER_HAPTIC_DURATION);
+        }
+
+        // Update uniforms
+        ui_data.hover_info.x = 1.0f;
+        ui_data.hover_info.y = 1.0f;
+
+        on_hover = true;
+
+        update_ui_data();
+
+        return true;
     }
 
     void Text2D::render()
@@ -941,11 +1019,12 @@ namespace ui {
         : Button2D(sg, col, flags, { 0.0f, 0.0f }, glm::vec2(BUTTON_SIZE)) { }
 
     Button2D::Button2D(const std::string& sg, uint32_t flags, const glm::vec2& pos, const glm::vec2& size)
-        : Panel2D(sg, pos, size), signal(sg) { }
+        : Panel2D(sg, pos, size) { }
 
     Button2D::Button2D(const std::string& sg, const Color& col, uint32_t flags, const glm::vec2& pos, const glm::vec2& size)
-        : Panel2D(sg, pos, size, col), signal(sg) {
+        : Panel2D(sg, pos, size, col) {
 
+        signal = sg;
         class_type = Node2DClassType::BUTTON;
 
         selected = flags & SELECTED;
@@ -998,14 +1077,7 @@ namespace ui {
 
     void Button2D::on_pressed()
     {
-        float now = glfwGetTime();
-
-        if ((parameter_flags & DBL_CLICK) && (now - last_press_time) < 0.6f) {
-            Node::emit_signal(signal + "@dbl_click", (void*)nullptr);
-            is_dbl_click = true;
-        }
-
-        last_press_time = now;
+        Panel2D::on_pressed();
 
         // on press, close button selector..
 
@@ -1076,7 +1148,7 @@ namespace ui {
         sInputData data = get_input_data();
 
         if(data.is_hovered) {
-            Node2D::push_input(this, data);
+            IO::push_input(this, data);
         }
 
         // reset event stuff..
@@ -1156,6 +1228,7 @@ namespace ui {
     TextureButton2D::TextureButton2D(const std::string& sg, const std::string& texture_path, uint32_t flags, const glm::vec2& pos, const glm::vec2& size)
         : Button2D(sg, flags, pos, size) {
 
+        signal = sg;
         class_type = Node2DClassType::TEXTURE_BUTTON;
 
         is_color_button = false;
@@ -1453,8 +1526,9 @@ namespace ui {
         : Slider2D(sg, texture_path, v, { 0.0f, 0.0f }, glm::vec2(BUTTON_SIZE), mode, flags, min, max, precision) {}
 
     Slider2D::Slider2D(const std::string& sg, const std::string& texture_path, float value, const glm::vec2& pos, const glm::vec2& size, int mode, uint32_t flags, float min, float max, int precision)
-        : Panel2D(sg, pos, size), signal(sg), current_value(value), min_value(min), max_value(max), precision(precision) {
+        : Panel2D(sg, pos, size), current_value(value), min_value(min), max_value(max), precision(precision) {
 
+        signal = sg;
         bool is_horizontal = (mode == SliderMode::HORIZONTAL);
 
         this->class_type = is_horizontal ? Node2DClassType::HSLIDER : Node2DClassType::VSLIDER;
@@ -1540,7 +1614,7 @@ namespace ui {
         sInputData data = get_input_data();
 
         if (!disabled && data.is_hovered) {
-            Node2D::push_input(this, data);
+            IO::push_input(this, data);
         }
 
         // Update uniforms
@@ -1650,8 +1724,9 @@ namespace ui {
         : ColorPicker2D(sg, { 0.0f, 0.0f }, glm::vec2(PICKER_SIZE), c) {}
 
     ColorPicker2D::ColorPicker2D(const std::string& sg, const glm::vec2& pos, const glm::vec2& size, const Color& c)
-        : Panel2D(sg, pos, size, c), signal(sg)
+        : Panel2D(sg, pos, size, c)
     {
+        signal = sg;
         class_type = Node2DClassType::COLOR_PICKER;
 
         Material material;
@@ -1696,7 +1771,7 @@ namespace ui {
         hovered &= (dist < 1.f);
 
         if (hovered) {
-            Node2D::push_input(this, data);
+            IO::push_input(this, data);
         }
         else {
             changing_hue = changing_sv = false;

@@ -33,9 +33,10 @@ class Node {
 
     static std::unordered_map<std::string, std::vector<SignalType>> mapping_signals;
     static std::unordered_map<uint8_t, std::vector<FuncEmpty>> controller_signals;
-    static uint32_t last_node_id;
 
 protected:
+
+    static uint32_t last_node_id;
 
     std::string name;
     std::string node_type;
@@ -83,6 +84,8 @@ public:
 
     static void bind(const std::string& name, SignalType callback);
     static void bind(uint8_t button, FuncEmpty callback);
+
+    static void unbind(const std::string& name);
 
     static void check_controller_signals();
 
