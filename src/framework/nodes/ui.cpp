@@ -271,8 +271,6 @@ namespace ui {
 
     void Panel2D::update_scroll_view()
     {
-        return;
-
         auto parent = get_parent();
 
         if (!(parameter_flags & SCROLLABLE) || !parent) {
@@ -281,38 +279,42 @@ namespace ui {
 
         ui_data.range = 1.0f;
 
-        if (class_type == TEXT_SHADOW) {
-            set_visibility(true);
-        }
+        set_visibility(true);
 
         // Last chance..
         parent = parent->get_parent();
 
-        if (parent && parent->get_class_type() == VCONTAINER) {
-            float size_y = get_size().y;
-            float parent_size_y = parent->get_size().y;
-            float y = get_translation().y;
-            float parent_y = parent->get_translation().y;
-            float y_min = parent_y;
-            float y_max = parent_y + parent_size_y - 24.0f;
-            // exceeds at the top
-            if (y < y_min) {
+        if (!parent || parent->get_class_type() != VCONTAINER) {
+            return;
+        }
 
-                ui_data.range = glm::clamp((y - y_min) / size_y, -1.0f, -0.01f);
+        float size_y = get_size().y;
+        float parent_size_y = parent->get_size().y;
+        float y = get_translation().y;
+        float parent_y = parent->get_translation().y;
+        float y_min = parent_y;
+        float y_max = parent_y + parent_size_y - size_y;
+        // exceeds at the top
+        if (y < y_min) {
 
-                if (class_type == TEXT_SHADOW) {
-                    set_visibility(false);
-                }
+            ui_data.range = glm::clamp((y - y_min) / size_y, -1.0f, -0.01f);
+
+            if (class_type == TEXT_SHADOW) {
+                set_visibility(false);
             }
-            // exceeds at the bottom
-            else if (y > y_max) {
+        }
+        // exceeds at the bottom
+        else if (y > y_max) {
 
-                ui_data.range = 1.0f - glm::clamp((y - y_max) / size_y, 0.0f, 0.99f);
+            ui_data.range = 1.0f - glm::clamp((y - y_max) / size_y, 0.0f, 0.99f);
 
-                if (class_type == TEXT_SHADOW) {
-                    set_visibility(false);
-                }
+            if (class_type == TEXT_SHADOW) {
+                set_visibility(false);
             }
+        }
+
+        if (glm::abs(ui_data.range) < 0.2f) {
+            set_visibility(false);
         }
     }
 
