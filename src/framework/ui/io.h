@@ -2,15 +2,13 @@
 
 #include "includes.h"
 
-#include <string>
-#include <vector>
-
-#include "glm/vec2.hpp"
-#include "glm/vec3.hpp"
+#include "framework/nodes/node_2d.h"
 
 class Node2D;
 
 class IO {
+
+    static std::vector<std::pair<Node2D*, sInputData>> frame_inputs;
 
     static float xr_ray_distance;
 
@@ -55,4 +53,11 @@ public:
     static const glm::vec2& get_xr_position() { return xr_position; }
     static const glm::vec3& get_xr_world_position() { return xr_world_position; }
     static const float get_xr_ray_distance() { return xr_ray_distance; }
+
+    /*
+    *   Input management
+    */
+
+    static void push_input(Node2D* node, sInputData data);
+    static void process_input();
 };

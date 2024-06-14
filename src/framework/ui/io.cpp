@@ -8,6 +8,8 @@
 
 #include "graphics/renderer.h"
 
+#include <algorithm>
+
 #include "spdlog/spdlog.h"
 
 float IO::xr_ray_distance = 0.0f;
@@ -17,6 +19,8 @@ Node2D* IO::hovered = nullptr;
 
 glm::vec2 IO::xr_position = { 0.0f, 0.0f };
 glm::vec3 IO::xr_world_position = { 0.0f, 0.0f, 0.0f };
+
+std::vector<std::pair<Node2D*, sInputData>> IO::frame_inputs;
 
 void IO::initialize()
 {
@@ -36,7 +40,7 @@ void IO::render()
 
 void IO::update(float delta_time)
 {
-    Node2D::process_input();
+    process_input();
 }
 
 void IO::set_focus(Node2D* node)
@@ -113,4 +117,42 @@ bool IO::is_any_hover_type(const std::vector<uint32_t>& types)
 bool IO::any_hover()
 {
     return (hovered != nullptr);
+}
+
+void IO::push_input(Node2D* node, sInputData data)
+{
+    frame_inputs.push_back({ node, data });
+}
+
+void IO::process_input()
+{
+    if (!frame_inputs.size()) {
+
+        IO::blur();
+        return;
+    }
+
+    // sort inputs by priority..
+
+    std::sort(frame_inputs.begin(), frame_inputs.end(), [](auto& lhs, auto& rhs) {
+
+        Node2D* lhs_node = lhs.first;
+        Node2D* rhs_node = rhs.first;
+
+        if (lhs_node->get_class_type() < rhs_node->get_class_type()) return true;
+
+        return false;
+    });
+
+    // call on_input functions..
+
+    for (const auto& i : frame_inputs) {
+
+        bool event_processed = i.first->on_input(i.second);
+        if (event_processed) {
+            break;
+        }
+    }
+
+    frame_inputs.clear();
 }

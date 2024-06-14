@@ -50,8 +50,6 @@ class Node2D : public Node {
 
 protected:
 
-    static std::vector<std::pair<Node2D*, sInputData>> frame_inputs;
-
     static unsigned int last_uid;
 
     uint32_t    uid = 0;
@@ -71,7 +69,7 @@ public:
 
     Node2D() : Node2D("unnamed", { 0.0f, 0.0f }, { 0.0f, 0.0f }) {};
     Node2D(const std::string& name, const glm::vec2& p, const glm::vec2& s);
-	virtual ~Node2D() {};
+	virtual ~Node2D();
 
     virtual void add_child(Node2D* child);
     virtual void remove_child(Node2D* child);
@@ -112,11 +110,4 @@ public:
 
     static Node2D* get_widget_from_name(const std::string& name);
     static void clean();
-
-    /*
-    *   Input management
-    */
-
-    static void push_input(Node2D* node, sInputData data);
-    static void process_input();
 };

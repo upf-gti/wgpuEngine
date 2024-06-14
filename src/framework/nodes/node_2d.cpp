@@ -18,7 +18,6 @@
 unsigned int Node2D::last_uid = 0;
 
 std::map<std::string, Node2D*> Node2D::all_widgets;
-std::vector<std::pair<Node2D*, sInputData>> Node2D::frame_inputs;
 
 Node2D::Node2D(const std::string& n, const glm::vec2& p, const glm::vec2& s) : size(s)
 {
@@ -31,6 +30,13 @@ Node2D::Node2D(const std::string& n, const glm::vec2& p, const glm::vec2& s) : s
     all_widgets[name] = this;
 
     set_translation(p);
+}
+
+Node2D::~Node2D()
+{
+    Node::unbind(name);
+
+    all_widgets.erase(name);
 }
 
 void Node2D::add_child(Node2D* child)
@@ -212,48 +218,15 @@ Node2D* Node2D::get_widget_from_name(const std::string& name)
 
 void Node2D::clean()
 {
-    for (auto pair : all_widgets)
-    {
-        delete pair.second;
+    std::vector<Node2D*> to_delete;
+
+    for (auto pair : all_widgets) {
+        to_delete.push_back(pair.second);
+    }
+
+    for (auto node : to_delete) {
+        delete node;
     }
 
     all_widgets.clear();
-}
-
-void Node2D::push_input(Node2D* node, sInputData data)
-{
-    frame_inputs.push_back({ node, data });
-}
-
-void Node2D::process_input()
-{
-    if (!frame_inputs.size()) {
-
-        IO::blur();
-        return;
-    }
-
-    // sort inputs by priority..
-
-    std::sort(frame_inputs.begin(), frame_inputs.end(), [](auto& lhs, auto& rhs) {
-
-        Node2D* lhs_node = lhs.first;
-        Node2D* rhs_node = rhs.first;
-
-        if (lhs_node->get_class_type() < rhs_node->get_class_type()) return true;
-
-        return false;
-    });
-
-    // call on_input functions..
-
-    for (const auto& i : frame_inputs) {
-
-        bool event_processed = i.first->on_input(i.second);
-        if (event_processed) {
-            break;
-        }
-    }
-
-    frame_inputs.clear();
 }
