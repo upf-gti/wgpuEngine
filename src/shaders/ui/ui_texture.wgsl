@@ -28,7 +28,7 @@ fn vs_main(in: VertexInput) -> VertexOutput {
     var world_position = instance_data.model * vec4f(in.position, 1.0);
     out.world_position = world_position.xyz;
     out.position = camera_data.view_projection * world_position;
-    out.uv = in.uv; // forward to the fragment shader
+    out.uv = in.uv;
     out.color = vec4(in.color, 1.0) * albedo;
     out.normal = in.normal;
     return out;
@@ -43,6 +43,13 @@ fn fs_main(in: VertexOutput) -> FragmentOutput {
     
     var dummy = camera_data.eye;
     let dummy1 = ui_data.num_group_items;
+
+    if(ui_data.range < 0.0 && in.uv.y < abs(ui_data.range) ) {
+        discard;
+    }
+    else if(ui_data.range > 0.0 && in.uv.y > ui_data.range ) {
+        discard;
+    }
 
     var out: FragmentOutput;
     var color : vec4f = textureSample(albedo_texture, texture_sampler, in.uv);

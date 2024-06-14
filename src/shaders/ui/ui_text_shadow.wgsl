@@ -46,14 +46,20 @@ fn fs_main(in: VertexOutput) -> FragmentOutput {
 
     var out: FragmentOutput;
 
-    let text_size : f32 = ui_data.num_group_items;
-    let divisions : f32 = text_size / 16.0;
-    uvs.x *= divisions;
-    let p : vec2f = vec2f(clamp(uvs.x, 0.5, divisions - 0.5), 0.5);
-    let dist : f32 = distance(uvs, p);
-    let s : f32 = smoothstep(dist - 0.05, dist + 0.05, 0.5);
+    var ra : vec4f = vec4f(0.6);
+    var si : vec2f = vec2f(0.98 * ui_data.aspect_ratio, 0.98);
+    ra = min(ra, min(vec4f(si.x), vec4f(si.y)));
 
-    out.color = vec4f(vec3f(0.0), 0.6 * s);
-    
+    uvs.y = 1.0 - in.uv.y;
+    var pos : vec2f = vec2(uvs * 2.0 - 1.0);
+    pos.x *= ui_data.aspect_ratio;
+
+    let d : f32 = sdRoundedBox(pos, si, ra);
+
+    var alpha : f32 = 1.0 - smoothstep(0.0, 0.04, d);
+    alpha *= select(0.5, 0.3, ui_data.hover_info.x > 0.0);
+
+    out.color = vec4f(vec3f(0.0), alpha);
+
     return out;
 }

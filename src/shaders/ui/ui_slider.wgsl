@@ -101,10 +101,9 @@ fn fs_main(in: VertexOutput) -> FragmentOutput {
 
     final_color = mix( final_color, vec3f(0.3), 1.0 - smoothstep(0.08, 0.16, abs(d)) );
 
-    var alpha : f32 = select(0.0, 1.0, d > 0.0);
-    alpha = smoothstep(0.0, 0.04, d);
+    var alpha : f32 = 1.0 - smoothstep(0.0, 0.04, d);
 
-    out.color = vec4f(final_color, 1.0 - alpha);
+    out.color = vec4f(final_color, alpha);
 
     return out;
 }
