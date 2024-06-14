@@ -34,7 +34,7 @@ Node2D::Node2D(const std::string& n, const glm::vec2& p, const glm::vec2& s) : s
 
 Node2D::~Node2D()
 {
-    Node::unbind(name);
+    release();
 
     all_widgets.erase(name);
 }
@@ -206,6 +206,18 @@ glm::mat3x3 Node2D::get_rotation() const
 glm::vec2 Node2D::get_size() const
 {
     return size;
+}
+
+void Node2D::release()
+{
+    // Clear event listeners
+    Node::unbind(name);
+    Node::unbind(name + "@pressed");
+    Node::unbind(name + "@released");
+    Node::unbind(name + "@dbl_click");
+    Node::unbind(name + "@changed");
+
+    Node::release();
 }
 
 Node2D* Node2D::get_widget_from_name(const std::string& name)

@@ -158,6 +158,13 @@ std::string Node::find_path(const std::string& node_name, const std::string& cur
     return ""; // Node not found
 }
 
+void Node::release()
+{
+    for (Node* child : children) {
+        child->release();
+    }
+}
+
 void Node::remove_flag(uint8_t flag)
 {
     for (Node* child : children) {

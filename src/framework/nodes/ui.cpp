@@ -73,6 +73,11 @@ namespace ui {
         quad_mesh.set_surface_material_override_color(0, c);
     }
 
+    void Panel2D::set_signal(const std::string& new_signal)
+    {
+        set_name(new_signal);
+    }
+
     void Panel2D::render()
     {
         if (!visibility)
@@ -257,7 +262,7 @@ namespace ui {
         is_dbl_click = false;
 
         if ((parameter_flags & DBL_CLICK) && (now - last_press_time) < 0.6f) {
-            Node::emit_signal(signal + "@dbl_click", (void*)nullptr);
+            Node::emit_signal(name + "@dbl_click", (void*)nullptr);
             is_dbl_click = true;
         }
 
@@ -965,7 +970,7 @@ namespace ui {
             on_pressed();
 
             if (!is_dbl_click) {
-                Node::emit_signal(signal, (void*)this);
+                Node::emit_signal(name, (void*)this);
             }
         }
 
@@ -1024,7 +1029,6 @@ namespace ui {
     Button2D::Button2D(const std::string& sg, const Color& col, uint32_t flags, const glm::vec2& pos, const glm::vec2& size)
         : Panel2D(sg, pos, size, col) {
 
-        signal = sg;
         class_type = Node2DClassType::BUTTON;
 
         selected = flags & SELECTED;
@@ -1054,7 +1058,7 @@ namespace ui {
         RendererStorage::register_ui_widget(webgpu_context, material.shader, &quad_mesh, ui_data, 3);
 
         // Selection styling visibility callback..
-        Node::bind(signal + "@pressed", [&](const std::string& signal, void* button) {
+        Node::bind(name + "@pressed", [&](const std::string& signal, void* button) {
 
             if (disabled)
                 return;
@@ -1191,9 +1195,9 @@ namespace ui {
 
             if (!is_dbl_click) {
                 // Trigger callback
-                Node::emit_signal(signal, (void*)this);
+                Node::emit_signal(name, (void*)this);
                 // Visibility stuff..
-                Node::emit_signal(signal + "@pressed", (void*)nullptr);
+                Node::emit_signal(name + "@pressed", (void*)nullptr);
             }
 
             is_dbl_click = false;
@@ -1228,7 +1232,6 @@ namespace ui {
     TextureButton2D::TextureButton2D(const std::string& sg, const std::string& texture_path, uint32_t flags, const glm::vec2& pos, const glm::vec2& size)
         : Button2D(sg, flags, pos, size) {
 
-        signal = sg;
         class_type = Node2DClassType::TEXTURE_BUTTON;
 
         is_color_button = false;
@@ -1261,7 +1264,7 @@ namespace ui {
         RendererStorage::register_ui_widget(webgpu_context, material.shader, &quad_mesh, ui_data, 3);
 
         // Selection styling visibility callback..
-        Node::bind(signal + "@pressed", [&](const std::string& signal, void* button) {
+        Node::bind(name + "@pressed", [&](const std::string& signal, void* button) {
 
             if (disabled || (!is_unique_selection && !allow_toggle))
                 return;
@@ -1283,7 +1286,7 @@ namespace ui {
         // Use label as background
         if (!texture_path.size()) {
             label_as_background = true;
-            std::string label = signal;
+            std::string label = name;
             // Make upper case only if 1 char
             if (label.size() == 1u) {
                 label = std::string(1, std::toupper(label[0]));
@@ -1296,10 +1299,10 @@ namespace ui {
 
         // Text label
         if (!(flags & SKIP_NAME)) {
-            assert(signal.size() > 0 && "No signal name size!");
+            assert(name.size() > 0 && "No signal name size!");
 
             // Use a prettified text..
-            std::string pretty_name = signal;
+            std::string pretty_name = name;
             to_camel_case(pretty_name);
             text_2d = new Text2D(pretty_name, { 0.f, size.y }, 18.f, TEXT_CENTERED);
             text_2d->set_visibility(false);
@@ -1528,7 +1531,6 @@ namespace ui {
     Slider2D::Slider2D(const std::string& sg, const std::string& texture_path, float value, const glm::vec2& pos, const glm::vec2& size, int mode, uint32_t flags, float min, float max, int precision)
         : Panel2D(sg, pos, size), current_value(value), min_value(min), max_value(max), precision(precision) {
 
-        signal = sg;
         bool is_horizontal = (mode == SliderMode::HORIZONTAL);
 
         this->class_type = is_horizontal ? Node2DClassType::HSLIDER : Node2DClassType::VSLIDER;
@@ -1572,7 +1574,7 @@ namespace ui {
         auto webgpu_context = Renderer::instance->get_webgpu_context();
         RendererStorage::register_ui_widget(webgpu_context, material.shader, &quad_mesh, ui_data, 3);
 
-        Node::bind(signal + "@changed", [&](const std::string& signal, float value) {
+        Node::bind(name + "@changed", [&](const std::string& signal, float value) {
             set_value(value);
         });
 
@@ -1581,7 +1583,7 @@ namespace ui {
             float text_scale = 18.0f;
 
             if (!(flags & SKIP_NAME)) {
-                std::string pretty_name = signal;
+                std::string pretty_name = name;
                 to_camel_case(pretty_name);
                 text_2d = new Text2D(pretty_name, { 0.f, size.y }, text_scale, TEXT_CENTERED);
                 add_child(text_2d);
@@ -1662,7 +1664,7 @@ namespace ui {
             }
 
             // Emit signal to use new value
-            Node::emit_signal(signal, current_value);
+            Node::emit_signal(name, current_value);
 
             on_pressed();
         }
@@ -1726,7 +1728,6 @@ namespace ui {
     ColorPicker2D::ColorPicker2D(const std::string& sg, const glm::vec2& pos, const glm::vec2& size, const Color& c)
         : Panel2D(sg, pos, size, c)
     {
-        signal = sg;
         class_type = Node2DClassType::COLOR_PICKER;
 
         Material material;
@@ -1743,10 +1744,8 @@ namespace ui {
         auto webgpu_context = Renderer::instance->get_webgpu_context();
         RendererStorage::register_ui_widget(webgpu_context, material.shader, &quad_mesh, ui_data, 3);
 
-        Node::bind(signal + "@changed", [&](const std::string& signal, Color color) {
-
+        Node::bind(name + "@changed", [&](const std::string& signal, Color color) {
             glm::vec3 new_color = rgb2hsv(glm::pow(glm::vec3(color), glm::vec3(1.0f / 2.2f)));
-
             this->color = glm::vec4(new_color, 1.0f);
         });
     }
@@ -1814,13 +1813,13 @@ namespace ui {
 
             // Send the signal using the final color
             glm::vec3 new_color = glm::pow(hsv2rgb(color), glm::vec3(2.2f));
-            Node::emit_signal(signal, glm::vec4(new_color, 1.0));
+            Node::emit_signal(name, glm::vec4(new_color, 1.0));
 
             on_pressed();
         }
 
         if (data.was_released) {
-            Node::emit_signal(signal + "@released", color);
+            Node::emit_signal(name + "@released", color);
             changing_hue = changing_sv = false;
         }
 

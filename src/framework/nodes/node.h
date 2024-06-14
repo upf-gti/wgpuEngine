@@ -78,6 +78,8 @@ public:
 
     virtual void remove_flag(uint8_t flag);
 
+    virtual void release();
+
     /*
     *	Callbacks
     */

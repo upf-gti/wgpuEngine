@@ -46,8 +46,6 @@ namespace ui {
     class Panel2D : public Node2D {
     public:
 
-        std::string signal = "";
-
         Color color = glm::vec4(0.0f);
 
         bool render_background  = true;
@@ -80,7 +78,7 @@ namespace ui {
         void set_priority(uint8_t priority) override;
         void update_ui_data() override;
         void set_color(const Color& c);
-        void set_signal(const std::string& new_signal) { signal = new_signal; };
+        void set_signal(const std::string& new_signal);
     };
 
     class Image2D : public Panel2D {

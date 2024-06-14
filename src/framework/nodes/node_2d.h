@@ -79,6 +79,8 @@ public:
 	virtual void render();
 	virtual void update(float delta_time);
 
+    void release() override;
+
     virtual sInputData get_input_data(bool ignore_focus = false) { return sInputData(); };
     virtual bool on_input(sInputData data) { return false; };
     virtual void on_pressed() {};
