@@ -46,17 +46,28 @@ void IO::update(float delta_time)
         return;
     }
 
-    // sort inputs by priority..
+    // xr: sort inputs by ray distance and later by priority
+    // flat screen: sort by priority
 
-    std::sort(frame_inputs.begin(), frame_inputs.end(), [](auto& lhs, auto& rhs) {
+    bool is_xr = Renderer::instance->get_openxr_available();
+
+    std::sort(frame_inputs.begin(), frame_inputs.end(), [xr = is_xr](auto& lhs, auto& rhs) {
 
         Node2D* lhs_node = lhs.first;
         Node2D* rhs_node = rhs.first;
 
-        if (lhs_node->get_class_type() < rhs_node->get_class_type()) return true;
+        if (xr) {
+            if (lhs.second.ray_distance == rhs.second.ray_distance) {
+                if (lhs_node->get_class_type() < rhs_node->get_class_type()) return true;
+            }
+            else {
+                if (lhs.second.ray_distance > rhs.second.ray_distance) return true;
+            }
+        }
+        else if (lhs_node->get_class_type() < rhs_node->get_class_type()) return true;
 
         return false;
-        });
+    });
 
     // call on_input functions..
 

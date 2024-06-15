@@ -811,7 +811,7 @@ namespace ui {
     void CircleContainer2D::on_children_changed()
     {
         size_t child_count = get_children().size();
-        float radius = BUTTON_SIZE + child_count * 3.0f;
+        float radius = BUTTON_SIZE + child_count * 4.0f;
 
         size = glm::vec2(radius * 2.f + BUTTON_SIZE) * 1.05f;
 
