@@ -30,7 +30,7 @@ public:
     static void set_xr_world_position(const glm::vec3& p) { xr_world_position = p; };
 
     static void set_focus(Node2D* node);
-    static void set_hover(Node2D* node, const glm::vec2& p, float ray_distance = -1.0f);
+    static void set_hover(Node2D* node, const sInputData& data);
 
     static void blur() {
         focused = nullptr;
@@ -59,5 +59,4 @@ public:
     */
 
     static void push_input(Node2D* node, sInputData data);
-    static void process_input();
 };

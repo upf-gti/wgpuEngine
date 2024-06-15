@@ -233,6 +233,12 @@ void Node2D::clean()
     std::vector<Node2D*> to_delete;
 
     for (auto pair : all_widgets) {
+
+        // it's a child, will be removed later..
+        if (pair.second->get_parent()) {
+            continue;
+        }
+
         to_delete.push_back(pair.second);
     }
 

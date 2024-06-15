@@ -40,7 +40,35 @@ void IO::render()
 
 void IO::update(float delta_time)
 {
-    process_input();
+    if (!frame_inputs.size()) {
+
+        IO::blur();
+        return;
+    }
+
+    // sort inputs by priority..
+
+    std::sort(frame_inputs.begin(), frame_inputs.end(), [](auto& lhs, auto& rhs) {
+
+        Node2D* lhs_node = lhs.first;
+        Node2D* rhs_node = rhs.first;
+
+        if (lhs_node->get_class_type() < rhs_node->get_class_type()) return true;
+
+        return false;
+        });
+
+    // call on_input functions..
+
+    for (const auto& i : frame_inputs) {
+
+        bool event_processed = i.first->on_input(i.second);
+        if (event_processed) {
+            break;
+        }
+    }
+
+    frame_inputs.clear();
 }
 
 void IO::set_focus(Node2D* node)
@@ -48,13 +76,15 @@ void IO::set_focus(Node2D* node)
     focused = node;
 }
 
-void IO::set_hover(Node2D* node, const glm::vec2& p, float ray_distance)
+void IO::set_hover(Node2D* node, const sInputData& data)
 {
     hovered = node;
 
-    xr_ray_distance = ray_distance;
+    xr_ray_distance = data.ray_distance;
 
-    xr_position = p;
+    xr_position = data.local_position;
+
+    xr_world_position = data.ray_intersection;
 }
 
 bool IO::is_hover_disabled()
@@ -122,37 +152,4 @@ bool IO::any_hover()
 void IO::push_input(Node2D* node, sInputData data)
 {
     frame_inputs.push_back({ node, data });
-}
-
-void IO::process_input()
-{
-    if (!frame_inputs.size()) {
-
-        IO::blur();
-        return;
-    }
-
-    // sort inputs by priority..
-
-    std::sort(frame_inputs.begin(), frame_inputs.end(), [](auto& lhs, auto& rhs) {
-
-        Node2D* lhs_node = lhs.first;
-        Node2D* rhs_node = rhs.first;
-
-        if (lhs_node->get_class_type() < rhs_node->get_class_type()) return true;
-
-        return false;
-    });
-
-    // call on_input functions..
-
-    for (const auto& i : frame_inputs) {
-
-        bool event_processed = i.first->on_input(i.second);
-        if (event_processed) {
-            break;
-        }
-    }
-
-    frame_inputs.clear();
 }

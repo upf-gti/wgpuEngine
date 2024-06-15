@@ -41,6 +41,7 @@ namespace ui {
         SKIP_TEXT_SHADOW = 1 << 10,
         SCROLLABLE = 1 << 11,
         DBL_CLICK = 1 << 12,
+        LONG_CLICK = 1 << 13,
     };
 
     class Panel2D : public Node2D {
@@ -51,9 +52,10 @@ namespace ui {
         bool render_background  = true;
         bool pressed_inside     = false;
         bool on_hover           = false;
-        bool is_dbl_click       = false;
+        bool skip_std_click     = false;
 
-        float last_press_time = 0.0f;
+        float last_release_time  = 0.0f;
+        float last_press_time    = 0.0f;
 
         uint32_t parameter_flags = 0;
 
@@ -64,6 +66,7 @@ namespace ui {
         Panel2D(const std::string& name, const std::string& image_path, const glm::vec2& p, const glm::vec2& s, const Color& c = colors::WHITE);
 
         sInputData get_input_data(bool ignore_focus = false) override;
+        bool on_input(sInputData data) override;
 
         bool was_input_pressed();
         bool was_input_released();
@@ -182,6 +185,7 @@ namespace ui {
         void render() override;
         void update(float delta_time) override;
         bool on_input(sInputData data) override;
+        void release() override;
 
         void remove_flag(uint8_t flag) override;
         void set_priority(uint8_t priority) override;
@@ -298,9 +302,9 @@ namespace ui {
         int   precision = 1;
 
         Slider2D() {};
-        Slider2D(const std::string& sg, float v, int mode = SliderMode::VERTICAL, uint32_t parameter_flags = 0, float min = 0.0f, float max = 1.0f, int precision = 1);
-        Slider2D(const std::string& sg, const std::string& texture_path, float v, int mode = SliderMode::VERTICAL, uint32_t parameter_flags = 0, float min = 0.0f, float max = 1.0f, int precision = 1);
-        Slider2D(const std::string& sg, const std::string& texture_path, float v, const glm::vec2& pos, const glm::vec2& size = glm::vec2(BUTTON_SIZE), int mode = SliderMode::VERTICAL, uint32_t parameter_flags = 0, float min = 0.0f, float max = 1.0f, int precision = 1);
+        Slider2D(const std::string& sg, float v, int mode = SliderMode::VERTICAL, uint32_t flags = 0, float min = 0.0f, float max = 1.0f, int precision = 1);
+        Slider2D(const std::string& sg, const std::string& texture_path, float v, int mode = SliderMode::VERTICAL, uint32_t flags = 0, float min = 0.0f, float max = 1.0f, int precision = 1);
+        Slider2D(const std::string& sg, const std::string& texture_path, float v, const glm::vec2& pos, const glm::vec2& size = glm::vec2(BUTTON_SIZE), int mode = SliderMode::VERTICAL, uint32_t flags = 0, float min = 0.0f, float max = 1.0f, int precision = 1);
 
         void render() override;
         void update(float delta_time) override;
@@ -320,7 +324,7 @@ namespace ui {
 
         ColorPicker2D() {};
         ColorPicker2D(const std::string& sg, const Color& c);
-        ColorPicker2D(const std::string& sg, const glm::vec2& p, const glm::vec2& s, const Color& c);
+        ColorPicker2D(const std::string& sg, const glm::vec2& p, const glm::vec2& s, const Color& c, uint32_t flags = 0);
 
         void update(float delta_time) override;
         bool on_input(sInputData data) override;

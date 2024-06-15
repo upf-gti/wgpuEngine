@@ -142,6 +142,13 @@ fn fs_main(in: VertexOutput) -> FragmentOutput {
 
     var dummy = camera_data.eye;
 
+    if(ui_data.range < 0.0 && in.uv.y < abs(ui_data.range) ) {
+        discard;
+    }
+    else if(ui_data.range > 0.0 && in.uv.y > ui_data.range ) {
+        discard;
+    }
+
     // Mask button shape
     var dist : f32 = distance(in.uv, vec2f(0.5));
     var button_radius : f32 = 0.475;

@@ -213,14 +213,15 @@ namespace ui {
                 false
             );
 
-            if (Renderer::instance->get_openxr_available()) {
-                data.ray_intersection = intersection_point;
-                data.ray_distance = collision_dist;
-                IO::set_xr_world_position(intersection_point);
-            }
+            if (data.is_hovered) {
+                if (Renderer::instance->get_openxr_available()) {
+                    data.ray_intersection = intersection_point;
+                    data.ray_distance = collision_dist;
+                }
 
-            glm::vec2 local_pos = glm::vec2(local_intersection_point) / get_scale();
-            data.local_position = glm::vec2(local_pos.x, size.y - local_pos.y);
+                glm::vec2 local_pos = glm::vec2(local_intersection_point) / get_scale();
+                data.local_position = glm::vec2(local_pos.x, size.y - local_pos.y);
+            }
         }
 
         data.was_pressed = data.is_hovered && was_input_pressed();
@@ -255,18 +256,35 @@ namespace ui {
         return data;
     }
 
+    bool Panel2D::on_input(sInputData data)
+    {
+        if (data.was_pressed) {
+            last_press_time = glfwGetTime();
+        }
+
+        if (data.is_pressed && (parameter_flags & LONG_CLICK) && (glfwGetTime() - last_press_time) > 0.5f) {
+            Node::emit_signal(name + "@long_click", (void*)nullptr);
+        }
+
+        if (data.was_hovered) {
+            Engine::instance->vibrate_hand(HAND_RIGHT, HOVER_HAPTIC_AMPLITUDE, HOVER_HAPTIC_DURATION);
+        }
+
+        return true;
+    }
+
     void Panel2D::on_pressed()
     {
         float now = glfwGetTime();
 
-        is_dbl_click = false;
+        skip_std_click = false;
 
-        if ((parameter_flags & DBL_CLICK) && (now - last_press_time) < 0.6f) {
+        if ((parameter_flags & DBL_CLICK) && (now - last_release_time) < 0.5f) {
             Node::emit_signal(name + "@dbl_click", (void*)nullptr);
-            is_dbl_click = true;
+            skip_std_click = true;
         }
 
-        last_press_time = now;
+        last_release_time = now;
     }
 
     void Panel2D::update_scroll_view()
@@ -321,7 +339,10 @@ namespace ui {
     void Panel2D::remove_flag(uint8_t flag)
     {
         Material* material = quad_mesh.get_surface_material_override(quad_mesh.get_surface(0));
-        material->flags ^= flag;
+
+        if (material->flags & flag) {
+            material->flags ^= flag;
+        }
 
         Node2D::remove_flag(flag);
     }
@@ -474,8 +495,6 @@ namespace ui {
         data.ray_intersection = intersection_point;
         data.ray_distance = collision_dist;
 
-        IO::set_xr_world_position(intersection_point);
-
         glm::vec2 local_pos = glm::vec2(local_intersection_point) / get_scale();
         data.local_position = glm::vec2(local_pos.x, size.y - local_pos.y);
 
@@ -532,12 +551,14 @@ namespace ui {
 
     bool XRPanel::on_input(sInputData data)
     {
-        IO::set_hover(this, data.local_position, data.ray_distance);
+        IO::set_hover(this, data);
 
         // Don't do anything more on background xr panels..
         if (!is_button) {
             return true;
         }
+
+        Panel2D::on_input(data);
 
         if (data.was_released)
         {
@@ -545,10 +566,6 @@ namespace ui {
             Node::emit_signal(name, (void*)this);
 
             on_pressed();
-        }
-
-        if (data.was_hovered) {
-            Engine::instance->vibrate_hand(HAND_RIGHT, HOVER_HAPTIC_AMPLITUDE, HOVER_HAPTIC_DURATION);
         }
 
         // Update uniforms
@@ -618,7 +635,7 @@ namespace ui {
 
     bool Container2D::on_input(sInputData data)
     {
-        IO::set_hover(this, data.local_position, data.ray_distance);
+        IO::set_hover(this, data);
 
         return true;
     }
@@ -863,6 +880,8 @@ namespace ui {
 
     bool CircleContainer2D::on_input(sInputData data)
     {
+        IO::set_hover(this, data);
+
         // use this to get the event and stop the propagation
         float dist = glm::distance(data.local_position, size * 0.5f);
         // allow using buttons inside the circle..
@@ -952,10 +971,11 @@ namespace ui {
             // Update uniforms
             ui_data.hover_info.x = 0.0f;
             ui_data.hover_info.y = 0.0f;
-            ui_data.aspect_ratio = size.x / size.y;
 
             on_hover = false;
         }
+
+        ui_data.aspect_ratio = size.x / size.y;
 
         update_ui_data();
 
@@ -964,20 +984,18 @@ namespace ui {
 
     bool Text2D::on_input(sInputData data)
     {
-        IO::set_hover(this, data.local_position, data.ray_distance);
+        IO::set_hover(this, data);
+
+        Panel2D::on_input(data);
 
         // Internally, use on release mouse, not on press..
         if (data.was_released)
         {
             on_pressed();
 
-            if (!is_dbl_click) {
+            if (!skip_std_click) {
                 Node::emit_signal(name, (void*)this);
             }
-        }
-
-        if (data.was_hovered) {
-            Engine::instance->vibrate_hand(HAND_RIGHT, HOVER_HAPTIC_AMPLITUDE, HOVER_HAPTIC_DURATION);
         }
 
         // Update uniforms
@@ -989,6 +1007,13 @@ namespace ui {
         update_ui_data();
 
         return true;
+    }
+
+    void Text2D::release()
+    {
+        delete text_entity;
+
+        Node2D::release();
     }
 
     void Text2D::render()
@@ -1004,9 +1029,11 @@ namespace ui {
     void Text2D::remove_flag(uint8_t flag)
     {
         uint32_t flags = text_entity->get_flags();
-        flags ^= MATERIAL_2D;
 
-        text_entity->generate_mesh(color, (eMaterialFlags)flags);
+        if (flags & flag) {
+            flags ^= MATERIAL_2D;
+            text_entity->generate_mesh(color, (eMaterialFlags)flags);
+        }
 
         Panel2D::remove_flag(flag);
     }
@@ -1180,9 +1207,9 @@ namespace ui {
 
     bool Button2D::on_input(sInputData data)
     {
-        IO::set_hover(this, data.local_position, data.ray_distance);
+        IO::set_hover(this, data);
 
-        if (ui_data.is_button_disabled) {
+        if (disabled) {
             return true;
         }
 
@@ -1190,23 +1217,19 @@ namespace ui {
             text_2d->set_visibility(true);
         }
 
+        Panel2D::on_input(data);
+
         // Internally, use on release mouse, not on press..
         if (data.was_released)
         {
             on_pressed();
 
-            if (!is_dbl_click) {
+            if (!skip_std_click) {
                 // Trigger callback
                 Node::emit_signal(name, (void*)this);
                 // Visibility stuff..
                 Node::emit_signal(name + "@pressed", (void*)nullptr);
             }
-
-            is_dbl_click = false;
-        }
-
-        if (data.was_hovered) {
-            Engine::instance->vibrate_hand(HAND_RIGHT, HOVER_HAPTIC_AMPLITUDE, HOVER_HAPTIC_DURATION);
         }
 
         target_scale = 1.1f;
@@ -1447,12 +1470,12 @@ namespace ui {
             }
 
             box->set_visibility(data ? true : !last_value);
-            box->set_translation({ (-box->get_size().x + BUTTON_SIZE) * 0.5f, -(size.y + box->get_size().y + GROUP_MARGIN)});
+            box->set_translation({ (-box->get_size().x + BUTTON_SIZE) * 0.5f, -(box->get_size().y + GROUP_MARGIN)});
         });
 
         // Submenu icon..
         {
-            submenu_mark = new TextureButton2D(sg + "@mark", "data/textures/more.png");
+            submenu_mark = new TextureButton2D(sg + "_mark", "data/textures/more.png");
             submenu_mark->set_priority(BUTTON_MARK);
         }
     }
@@ -1638,7 +1661,7 @@ namespace ui {
 
     bool Slider2D::on_input(sInputData data)
     {
-        IO::set_hover(this, data.local_position, data.ray_distance);
+        IO::set_hover(this, data);
 
         if (text_2d) {
             text_2d->set_visibility(true);
@@ -1725,12 +1748,14 @@ namespace ui {
     */
 
     ColorPicker2D::ColorPicker2D(const std::string& sg, const Color& c)
-        : ColorPicker2D(sg, { 0.0f, 0.0f }, glm::vec2(PICKER_SIZE), c) {}
+        : ColorPicker2D(sg, { 0.0f, 0.0f }, glm::vec2(PICKER_SIZE), c, 0) {}
 
-    ColorPicker2D::ColorPicker2D(const std::string& sg, const glm::vec2& pos, const glm::vec2& size, const Color& c)
+    ColorPicker2D::ColorPicker2D(const std::string& sg, const glm::vec2& pos, const glm::vec2& size, const Color& c, uint32_t flags)
         : Panel2D(sg, pos, size, c)
     {
         class_type = Node2DClassType::COLOR_PICKER;
+
+        parameter_flags = flags;
 
         Material material;
         material.flags = MATERIAL_2D | MATERIAL_UI;
@@ -1755,6 +1780,8 @@ namespace ui {
     void ColorPicker2D::update(float delta_time)
     {
         Panel2D::update(delta_time);
+
+        update_scroll_view();
 
         if (!visibility)
             return;
@@ -1789,7 +1816,7 @@ namespace ui {
 
     bool ColorPicker2D::on_input(sInputData data)
     {
-        IO::set_hover(this, data.local_position, data.ray_distance);
+        IO::set_hover(this, data);
 
         glm::vec2 local_mouse_pos = data.local_position;
         local_mouse_pos /= size;
@@ -1870,7 +1897,7 @@ namespace ui {
     */
 
     ImageLabel2D::ImageLabel2D(const std::string& p_text, const std::string& image_path, uint8_t mask, const glm::vec2& scale, float text_scale, const glm::vec2& p)
-        : HContainer2D(p_text + "@box", p), mask(mask)
+        : HContainer2D(p_text + "_box", p), mask(mask)
     {
         class_type = Node2DClassType::LABEL;
 
