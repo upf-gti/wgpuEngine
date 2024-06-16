@@ -52,7 +52,6 @@ namespace ui {
         bool render_background  = true;
         bool pressed_inside     = false;
         bool on_hover           = false;
-        bool skip_std_click     = false;
 
         float last_release_time  = 0.0f;
         float last_press_time    = 0.0f;
@@ -73,7 +72,7 @@ namespace ui {
         bool is_input_pressed();
 
         void update_scroll_view();
-        void on_pressed() override;
+        bool on_pressed() override;
 
         void render() override;
 
@@ -217,7 +216,6 @@ namespace ui {
         void set_is_unique_selection(bool value);
 
         void update(float delta_time) override;
-        void on_pressed() override;
         bool on_input(sInputData data) override;
         void set_priority(uint8_t priority) override;
     };
@@ -296,6 +294,7 @@ namespace ui {
         float target_hover_factor = 0.0f;
         float timer = 0.0f;
 
+        float original_value = 0.0f;
         float current_value = 0.0f;
         float min_value = 0.0f;
         float max_value = 1.0f;

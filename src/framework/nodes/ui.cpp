@@ -14,7 +14,7 @@
 #include "graphics/renderer.h"
 #include "graphics/webgpu_context.h"
 
-#include "spdlog/spdlog.h"
+// #include "spdlog/spdlog.h"
 
 #include "glm/gtx/easing.hpp"
 #include "glm/gtx/compatibility.hpp"
@@ -273,18 +273,20 @@ namespace ui {
         return true;
     }
 
-    void Panel2D::on_pressed()
+    bool Panel2D::on_pressed()
     {
         float now = glfwGetTime();
 
-        skip_std_click = false;
+        bool skip = false;
 
-        if ((parameter_flags & DBL_CLICK) && (now - last_release_time) < 0.5f) {
+        if ((parameter_flags & DBL_CLICK) && (now - last_release_time) < 0.4f) {
             Node::emit_signal(name + "@dbl_click", (void*)nullptr);
-            skip_std_click = true;
+            skip = true;
         }
 
         last_release_time = now;
+
+        return skip;
     }
 
     void Panel2D::update_scroll_view()
@@ -402,7 +404,7 @@ namespace ui {
 
         update_ui_data();
 
-        Panel2D::update(delta_time);
+        Node2D::update(delta_time);
     }
 
     /*
@@ -507,8 +509,6 @@ namespace ui {
 
     void XRPanel::update(float delta_time)
     {
-        Node2D::update(delta_time);
-
         if (!visibility)
             return;
 
@@ -547,6 +547,8 @@ namespace ui {
         on_hover = false;
 
         update_ui_data();
+
+        Node2D::update(delta_time);
     }
 
     bool XRPanel::on_input(sInputData data)
@@ -562,10 +564,9 @@ namespace ui {
 
         if (data.was_released)
         {
-            // Trigger callback
-            Node::emit_signal(name, (void*)this);
-
-            on_pressed();
+            if (!on_pressed()) {
+                Node::emit_signal(name, (void*)this);
+            }
         }
 
         // Update uniforms
@@ -621,9 +622,12 @@ namespace ui {
 
     void Container2D::update(float delta_time)
     {
-        Panel2D::update(delta_time);
+        if (!visibility)
+            return;
 
-        if (!visibility || !can_hover)
+        Node2D::update(delta_time);
+
+        if (!can_hover)
             return;
 
         sInputData data = get_input_data();
@@ -837,10 +841,10 @@ namespace ui {
 
     void CircleContainer2D::update(float delta_time)
     {
-        Container2D::update(delta_time);
-
         if (!visibility)
             return;
+
+        Container2D::update(delta_time);
 
         sInputData data = get_input_data();
 
@@ -939,9 +943,6 @@ namespace ui {
     {
         update_scroll_view();
 
-        if (!visibility)
-            return;
-
         Node2D* parent = get_parent();
 
         if ((parameter_flags & TEXT_CENTERED) && parent) {
@@ -961,7 +962,7 @@ namespace ui {
             text_entity->set_model(model);
         }
 
-        if (parameter_flags & TEXT_EVENTS) {
+        if (visibility && (parameter_flags & TEXT_EVENTS)) {
             sInputData data = get_input_data();
 
             if (data.is_hovered) {
@@ -979,7 +980,7 @@ namespace ui {
 
         update_ui_data();
 
-        Panel2D::update(delta_time);
+        Node2D::update(delta_time);
     }
 
     bool Text2D::on_input(sInputData data)
@@ -991,9 +992,7 @@ namespace ui {
         // Internally, use on release mouse, not on press..
         if (data.was_released)
         {
-            on_pressed();
-
-            if (!skip_std_click) {
+            if (!on_pressed()) {
                 Node::emit_signal(name, (void*)this);
             }
         }
@@ -1108,19 +1107,6 @@ namespace ui {
         });
     }
 
-    void Button2D::on_pressed()
-    {
-        Panel2D::on_pressed();
-
-        // on press, close button selector..
-
-        if (class_type == Node2DClassType::SELECTOR_BUTTON) {
-
-            CircleContainer2D* selector = static_cast<CircleContainer2D*>(get_parent());
-            selector->set_visibility(false);
-        }
-    }
-
     void Button2D::set_disabled(bool value)
     {
         disabled = value;
@@ -1171,8 +1157,6 @@ namespace ui {
             timer = 0.0f;
         }
 
-        Panel2D::update(delta_time);
-
         update_scroll_view();
 
         if (!visibility)
@@ -1203,6 +1187,8 @@ namespace ui {
         on_hover = false;
 
         update_ui_data();
+
+        Node2D::update(delta_time);
     }
 
     bool Button2D::on_input(sInputData data)
@@ -1222,9 +1208,14 @@ namespace ui {
         // Internally, use on release mouse, not on press..
         if (data.was_released)
         {
-            on_pressed();
+            // close selector if needed
+            if (class_type == Node2DClassType::SELECTOR_BUTTON) {
 
-            if (!skip_std_click) {
+                CircleContainer2D* selector = static_cast<CircleContainer2D*>(get_parent());
+                selector->set_visibility(false);
+            }
+
+            if (!on_pressed()) {
                 // Trigger callback
                 Node::emit_signal(name, (void*)this);
                 // Visibility stuff..
@@ -1311,13 +1302,8 @@ namespace ui {
         // Use label as background
         if (!texture_path.size()) {
             label_as_background = true;
-            std::string label = name;
-            // Make upper case only if 1 char
-            if (label.size() == 1u) {
-                label = std::string(1, std::toupper(label[0]));
-            }
-            text_2d = new Text2D(label, {0.0f, size.y * 0.5f - 9.0f}, 18.f, SKIP_TEXT_SHADOW);
-            float w = text_2d->text_entity->get_text_width(label);
+            text_2d = new Text2D(name, {0.0f, size.y * 0.5f - 9.0f}, 18.f, SKIP_TEXT_SHADOW);
+            float w = text_2d->text_entity->get_text_width(name);
             text_2d->translate({ size.x * 0.5f - w * 0.5f, 0.0f });
             add_child(text_2d);
         }
@@ -1554,9 +1540,11 @@ namespace ui {
         : Slider2D(sg, texture_path, v, { 0.0f, 0.0f }, glm::vec2(BUTTON_SIZE), mode, flags, min, max, precision) {}
 
     Slider2D::Slider2D(const std::string& sg, const std::string& texture_path, float value, const glm::vec2& pos, const glm::vec2& size, int mode, uint32_t flags, float min, float max, int precision)
-        : Panel2D(sg, pos, size), current_value(value), min_value(min), max_value(max), precision(precision) {
+        : Panel2D(sg, pos, size), original_value(value), current_value(value), min_value(min), max_value(max), precision(precision) {
 
         bool is_horizontal = (mode == SliderMode::HORIZONTAL);
+
+        flags |= DBL_CLICK;
 
         this->class_type = is_horizontal ? Node2DClassType::HSLIDER : Node2DClassType::VSLIDER;
         this->mode = mode;
@@ -1629,8 +1617,6 @@ namespace ui {
 
     void Slider2D::update(float delta_time)
     {
-        Panel2D::update(delta_time);
-
         timer += delta_time;
 
         update_scroll_view();
@@ -1657,6 +1643,8 @@ namespace ui {
         on_hover = false;
 
         update_ui_data();
+
+        Node2D::update(delta_time);
     }
 
     bool Slider2D::on_input(sInputData data)
@@ -1667,8 +1655,7 @@ namespace ui {
             text_2d->set_visibility(true);
         }
 
-        if (data.is_pressed)
-        {
+        if (data.is_pressed) {
             float real_size = (mode == HORIZONTAL ? size.x : size.y);
             float local_point = (mode == HORIZONTAL ? data.local_position.x : data.local_position.y);
             // This is at range 0..1
@@ -1688,10 +1675,16 @@ namespace ui {
                 current_value = 1.0f / glm::pow(2.0f, current_value);
             }
 
-            // Emit signal to use new value
             Node::emit_signal(name, current_value);
+        }
 
-            on_pressed();
+        if (data.was_released) {
+
+            // if enters here, it means it's a double click, so set original value
+            if (on_pressed()) {
+                set_value(original_value);
+                Node::emit_signal(name, current_value);
+            }
         }
 
         if (data.was_hovered) {
@@ -1764,7 +1757,7 @@ namespace ui {
         material.priority = class_type;
         material.shader = RendererStorage::get_shader_from_source(shaders::ui_color_picker::source, shaders::ui_color_picker::path, material);
 
-        color = { 0.0f, 1.0f, 1.0f, 1.0f };
+        color = Color(rgb2hsv(color), 1.0f);
 
         quad_mesh.set_surface_material_override(quad_mesh.get_surface(0), material);
 
@@ -1779,8 +1772,6 @@ namespace ui {
 
     void ColorPicker2D::update(float delta_time)
     {
-        Panel2D::update(delta_time);
-
         update_scroll_view();
 
         if (!visibility)
@@ -1812,6 +1803,8 @@ namespace ui {
         on_hover = false;
 
         update_ui_data();
+
+        Node2D::update(delta_time);
     }
 
     bool ColorPicker2D::on_input(sInputData data)
@@ -1858,6 +1851,7 @@ namespace ui {
 
         // Update uniforms
         ui_data.hover_info.x = 1.0f;
+        ui_data.picker_color = color;
 
         on_hover = true;
 

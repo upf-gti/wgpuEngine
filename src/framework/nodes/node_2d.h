@@ -83,7 +83,7 @@ public:
 
     virtual sInputData get_input_data(bool ignore_focus = false) { return sInputData(); };
     virtual bool on_input(sInputData data) { return false; };
-    virtual void on_pressed() {};
+    virtual bool on_pressed() { return false; };
 
 	void translate(const glm::vec2& translation);
 	void rotate(float angle);

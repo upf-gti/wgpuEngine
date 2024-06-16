@@ -93,14 +93,13 @@ fn fs_main(in: VertexOutput) -> FragmentOutput {
     pos.x *= ui_data.aspect_ratio;
 
     let d : f32 = sdRoundedBox(pos, si, ra);
-    let center_dist : f32 = distance(in.uv, vec2f(0.5));
 
     var final_color : vec3f = color.rgb;
 
 #ifdef ALBEDO_TEXTURE
         let mask : f32 = color.a;
 #else
-        let mask : f32 = 0.0;
+        let mask : f32 = 1.0;
 #endif
 
     if(!is_disabled) {
