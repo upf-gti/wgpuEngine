@@ -110,3 +110,8 @@ bool Pipeline::is_compute_pipeline()
 {
     return std::holds_alternative<WGPUComputePipeline>(pipeline);
 }
+
+bool Pipeline::is_msaa_allowed()
+{
+    return description.allow_msaa;
+}

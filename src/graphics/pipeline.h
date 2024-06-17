@@ -19,6 +19,7 @@ struct PipelineDescription {
 
     bool blending_enabled   = false;
     uint8_t sample_count    = 1;
+    bool allow_msaa         = true;
 };
 
 class Pipeline {
@@ -41,6 +42,8 @@ public:
 
     bool is_render_pipeline();
     bool is_compute_pipeline();
+
+    bool is_msaa_allowed();
 
 private:
 

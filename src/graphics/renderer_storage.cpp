@@ -548,7 +548,7 @@ void RendererStorage::reload_all_render_pipelines()
         Shader* shader = shader_pair.second;
         Pipeline* pipeline = shader->get_pipeline();
 
-        if (pipeline && pipeline->is_render_pipeline()) {
+        if (pipeline && pipeline->is_render_pipeline() && pipeline->is_msaa_allowed()) {
             shader->reload();
         }
     }
