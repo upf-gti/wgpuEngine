@@ -220,7 +220,12 @@ void BezierSpline::for_each(std::function<void(const Knot&)> fn)
 
         const Knot& end_point = knots[1];
         float distance = glm::distance(start_point.position, end_point.position);
-        uint32_t number_of_edits = (uint32_t)glm::ceil(distance / knot_distance);
+        float k_distance = knot_distance;
+        // Compute new knot distance based on density
+        if (density != 0u) {
+            k_distance = glm::max(k_distance, distance / static_cast<float>(density));
+        }
+        uint32_t number_of_edits = (uint32_t)glm::ceil(distance / k_distance);
 
         for (int j = 0; j < number_of_edits; ++j) {
             float t = static_cast<float>(j) / number_of_edits;
@@ -238,10 +243,23 @@ void BezierSpline::for_each(std::function<void(const Knot&)> fn)
             dirty = false;
         }
 
+        float total_length = 0.0f;
+
+        for (uint32_t i = 0; i < segments; i++) {
+            const std::vector<float>& lut = luts[i];
+            total_length += lut.back();
+        }
+
+        // Compute new knot distance based on density
+        float k_distance = knot_distance;
+        if (density != 0u) {
+            k_distance = glm::max(k_distance, total_length / static_cast<float>(density));
+        }
+
         for (uint32_t i = 0; i < segments; i++) {
 
             const std::vector<float>& lut = luts[i];
-            uint32_t number_of_edits = (uint32_t)glm::ceil(lut.back() / knot_distance);
+            uint32_t number_of_edits = (uint32_t)glm::ceil(lut.back() / k_distance);
 
             const Knot& end_point = knots.at(i + 1u);
 

@@ -72,16 +72,10 @@ public:
 
     BezierSpline() {
 
-        knots = {
-            Knot({ 0.0f, 0.7f, 0.0f }, 2.0f) * 0.5f,
-            Knot({ 0.0f, -0.068f, 0.0f }) * 0.5f,
-            Knot({ 0.205f, 0.344f, 0.0f }) * 0.5f,
-            Knot({ 0.324f, 0.074f, 0.0f }, 2.0f) * 0.5f,
-            Knot({ 0.43f, 0.2f, 0.0f }) * 0.5f,
-            Knot({ 0.58f, 0.467f, 0.0f }) * 0.5f,
-            Knot({ 0.882f, 0.31f, 0.0f }, 3.0f) * 0.5f,
-            Knot({ 0.682f, 0.121f, 0.0f }, 3.0f) * 0.5f
-        };
+        knots = {};
+
+        // no limit by default
+        density = 0u;
     }
 
     void add_knot(const Knot& new_knot) override;
