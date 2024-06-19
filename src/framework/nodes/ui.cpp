@@ -75,7 +75,11 @@ namespace ui {
 
     void Panel2D::set_signal(const std::string& new_signal)
     {
+        all_widgets.erase(name);
+
         set_name(new_signal);
+
+        all_widgets[new_signal] = this;
     }
 
     void Panel2D::render()
