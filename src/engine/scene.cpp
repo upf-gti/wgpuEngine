@@ -14,7 +14,7 @@ Scene::Scene(const std::string& name)
 
 Scene::~Scene()
 {
-
+    delete_all();
 }
 
 void Scene::add_node(Node* node, int idx)
@@ -25,6 +25,8 @@ void Scene::add_node(Node* node, int idx)
     else {
         // TODO: add as a child with global idx
     }
+
+    Node::emit_signal(name + "@nodes_added", (void*)nullptr);
 }
 
 void Scene::add_nodes(const std::vector<Node*>& nodes_to_add, int idx)
@@ -35,6 +37,8 @@ void Scene::add_nodes(const std::vector<Node*>& nodes_to_add, int idx)
     else {
         // TODO: add as a child with global idx
     }
+
+    Node::emit_signal(name + "@nodes_added", (void*)nullptr);
 }
 
 void Scene::set_name(const std::string& name)
@@ -104,7 +108,7 @@ void Scene::parse(const std::string& path)
 
         Node* node = engine->node_factory(node_type);
         node->parse(binary_scene_file);
-        nodes.push_back(node);
+        add_node(node);
     }
 
     binary_scene_file.close();

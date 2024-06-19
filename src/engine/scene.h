@@ -7,6 +7,9 @@ class Node;
 
 class Scene {
 
+    std::vector<Node*> nodes;
+    std::string name;
+
 public:
     Scene(const std::string& name = "");
     ~Scene();
@@ -17,6 +20,7 @@ public:
     void set_name(const std::string& name);
 
     std::vector<Node*>& get_nodes();
+    const std::string& get_name() { return name; }
 
     void delete_all();
 
@@ -25,10 +29,4 @@ public:
 
     void update(float delta_time);
     void render();
-
-private:
-
-    std::vector<Node*> nodes;
-    std::string name;
-
 };
