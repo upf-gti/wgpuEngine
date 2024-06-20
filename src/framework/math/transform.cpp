@@ -106,6 +106,15 @@ const glm::mat4x4& Transform::get_model()
     return model;
 }
 
+Transform Transform::identity()
+{
+    Transform out;
+    out.position_p = { 0.0f, 0.0f, 0.0f };
+    out.rotation_p = { 0.0f, 0.0f, 0.0f, 1.0f };
+    out.scale_p = { 1.0f, 1.0f, 1.0f };
+    return out;
+}
+
 // Transforms can be combined in the same way as matrices and quaternions and the effects of two transforms can be combined into one transform
 // To keep things consistent, combining transforms should maintain a right-to-left combination order
 Transform Transform::combine(const Transform& t1, const Transform& t2)

@@ -43,6 +43,7 @@ public:
 
     const glm::mat4x4& get_model();
 
+    static Transform identity();
     static Transform combine(const Transform& a, const Transform& b);
     static Transform inverse(const Transform& t);
     static Transform mix(const Transform& a, const Transform& b, float t);
