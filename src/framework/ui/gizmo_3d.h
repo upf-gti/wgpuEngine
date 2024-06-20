@@ -4,7 +4,7 @@
 #include "glm/gtc/quaternion.hpp"
 
 #include "framework/colors.h"
-#include "framework/animation/bone_transform.h"
+#include "framework/math/transform.h"
 
 enum eGizmoAxis : uint8_t {
     GIZMO_AXIS_X = 1 << 0,
@@ -86,7 +86,7 @@ class Gizmo3D {
 
 public:
 
-	void initialize(const eGizmoType& new_type, const glm::vec3 &position, const eGizmoAxis& new_axis = GIZMO_ALL_AXIS);
+	void initialize(const eGizmoType& new_type, const glm::vec3 &position = glm::vec3(0.0f), const eGizmoAxis& new_axis = GIZMO_ALL_AXIS);
 	void clean();
 
     void set_operation(const eGizmoType& gizmo_use, const eGizmoAxis& axis = GIZMO_ALL_AXIS);

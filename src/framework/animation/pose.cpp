@@ -64,7 +64,7 @@ Transform Pose::get_global_transform(size_t id)
         if (i >= joints.size()) {
             break;
         }
-        transform = combine(joints[i], transform);
+        transform = Transform::combine(joints[i], transform);
     }
     return transform;
 }
@@ -94,7 +94,7 @@ std::vector<glm::mat4> Pose::get_global_matrices()
 
     for (uint32_t i = 0; i < numJoints; i++) {
         Transform t = get_global_transform(i);
-        out[i] = transformToMat4(t);
+        out[i] = Transform::transform_to_mat4(t);
     }
 
     return out;

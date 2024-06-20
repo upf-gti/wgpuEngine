@@ -91,6 +91,6 @@ void Skeleton::update_inv_bind_pose()
 
     for (uint32_t i = 0; i < size; ++i) {
         Transform world = bind_pose.get_global_transform(i);
-        inv_bind_pose[i] = inverse(transformToMat4(world));
+        inv_bind_pose[i] = glm::inverse(Transform::transform_to_mat4(world));
     }
 }

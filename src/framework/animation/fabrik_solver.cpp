@@ -17,10 +17,10 @@ void FABRIKSolver::ik_chain_to_world()
     size_t chain_size = size();
     for (size_t i = 0; i < chain_size; ++i) {
         Transform world = get_global_transform(i);
-        world_chain[i] = world.position;
+        world_chain[i] = world.get_position();
         if (i >= 1) {
             glm::vec3 prev = world_chain[i - 1];
-            lengths[i] = glm::length(world.position - prev);
+            lengths[i] = glm::length(world.get_position() - prev);
         }
     }
     if (chain_size > 0) {
@@ -31,20 +31,24 @@ void FABRIKSolver::ik_chain_to_world()
 void FABRIKSolver::world_to_ik_chain()
 {
     size_t chain_size = size();
-    if (chain_size == 0) { return; }
+
+    if (chain_size == 0) {
+        return;
+    }
+
     for (int i = 0; i < chain_size - 1; ++i) {
         Transform world = get_global_transform(i);
         Transform next = get_global_transform(i + 1);
-        glm::vec3 position = world.position;
-        glm::quat rotation = world.rotation;
+        glm::vec3 position = world.get_position();
+        glm::quat rotation = world.get_rotation();
 
-        glm::vec3 to_next = next.position - position;
+        glm::vec3 to_next = next.get_position() - position;
         to_next = inverse(rotation) * to_next;
         glm::vec3 to_desired = world_chain[i + 1] - position;
         to_desired = inverse(rotation) * to_desired;
 
-        glm::quat delta = fromTo(to_next, to_desired);
-        ik_chain[i].rotation = ik_chain[i].rotation * delta;
+        glm::quat delta = Transform::get_rotation_between_vectors(to_next, to_desired);
+        ik_chain[i].set_rotation(ik_chain[i].get_rotation() * delta);
     }
 }
 
@@ -84,7 +88,7 @@ bool FABRIKSolver::solve(const Transform& target)
 
     ik_chain_to_world();
 
-    glm::vec3 goal = target.position;
+    glm::vec3 goal = target.get_position();
     glm::vec3 base = world_chain[0];
 
     // [CA] To do:

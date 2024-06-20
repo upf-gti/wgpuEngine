@@ -29,13 +29,13 @@ void Environment3D::update(float delta_time)
     Node3D::update(delta_time);
 
     Renderer* renderer = static_cast<Renderer*>(Renderer::instance);
-    set_translation(renderer->get_camera_eye());
+    set_position(renderer->get_camera_eye());
 }
 
 void Environment3D::set_texture(const std::string& texture_path)
 {
     Renderer* renderer = static_cast<Renderer*>(Renderer::instance);
-    set_translation(renderer->get_camera_eye());
+    set_position(renderer->get_camera_eye());
 
     // Change irradiance first
     renderer->set_irradiance_texture(RendererStorage::get_texture(texture_path));

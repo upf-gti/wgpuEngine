@@ -29,11 +29,11 @@ void SkeletonInstance3D::set_skeleton(Skeleton* s)
 
 void SkeletonInstance3D::update(float dt)
 {
-    if (model_dirty) {
+    if (transform.is_dirty()) {
 
         update_pose_from_joints(dt);
 
-        model_dirty = false;
+        transform.set_dirty(false);
     }
 
     // Update child dones (i.e IK)
@@ -61,7 +61,7 @@ void SkeletonInstance3D::update_pose_from_joints(float dt)
     const std::vector<uint32_t>& indices = skeleton->get_joint_indices();
 
     for (size_t i = 0; i < joint_nodes.size(); ++i) {
-        joint_nodes[i]->set_model_dirty(true);
+        joint_nodes[i]->set_transform_dirty(true);
         joint_nodes[i]->update(dt);
         pose.set_local_transform(i, joint_nodes[i]->get_transform());
     }
@@ -105,10 +105,10 @@ void SkeletonInstance3D::update_helper()
     for (size_t i = 0; i < numJoints; ++i) {
         InterleavedData data;
 
-        data.position = pose.get_global_transform(i).position;
+        data.position = pose.get_global_transform(i).get_position();
         vertices.push_back(data);
         if (pose.get_parent(i) >= 0) {
-            data.position = pose.get_global_transform(pose.get_parent(i)).position;
+            data.position = pose.get_global_transform(pose.get_parent(i)).get_position();
         }
         vertices.push_back(data);
     }
@@ -193,9 +193,8 @@ void SkeletonInstance3D::recursive_tree_gui(Node* node) {
             {
                 glm::mat4 parent = c->get_parent() ? c->get_parent()->get_global_model() : glm::mat4(1.f);
                 glm::mat4 local_model = inverse(get_global_model() * parent) * global_model;
-                c->set_model(local_model);
-                c->set_transform(mat4ToTransform(local_model));
-                set_model_dirty(true);
+                c->set_transform(Transform::mat4_to_transform(local_model));
+                set_transform_dirty(true);
             }
         }
 
@@ -203,14 +202,14 @@ void SkeletonInstance3D::recursive_tree_gui(Node* node) {
         {            
             changed = false;
 
-            changed |= ImGui::DragFloat3("Translation", &transform.position[0], 0.1f);
-            changed |= ImGui::DragFloat4("Rotation", &transform.rotation[0], 0.1f);
-            changed |= ImGui::DragFloat3("Scale", &transform.scale[0], 0.1f);
+            changed |= ImGui::DragFloat3("Translation", &transform.get_position_ref()[0], 0.1f);
+            changed |= ImGui::DragFloat4("Rotation", &transform.get_rotation_ref()[0], 0.1f);
+            changed |= ImGui::DragFloat3("Scale", &transform.get_scale_ref()[0], 0.1f);
 
             if (changed)
             {
-                c->set_model(transformToMat4(transform));
-                set_model_dirty(true);
+                c->set_transform(transform);
+                set_transform_dirty(true);
             }
             ImGui::TreePop();
         }

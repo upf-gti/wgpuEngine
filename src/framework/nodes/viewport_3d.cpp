@@ -48,7 +48,7 @@ void Viewport3D::update(float delta_time)
     glm::vec2 screen_size(width, height);
     pos_2d /= screen_size;
 
-    root->set_translation(pos_2d);
+    root->set_position(pos_2d);
     root->scale(1.0f / glm::vec2(width, height * ar));
 
     root->set_viewport_model(get_global_model());

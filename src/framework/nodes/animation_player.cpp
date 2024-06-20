@@ -164,7 +164,7 @@ void AnimationPlayer::update(float delta_time)
             - nodes that are not joints will automatically set its new model from the animatable properties
     */
 
-    root_node->set_model_dirty(true);
+    root_node->set_transform_dirty(true);
 
     //for (auto instance : root_node->get_children()) {
 
@@ -267,7 +267,7 @@ void AnimationPlayer::render_gui()
         if (new_current_frame != current_frame) {
             playback = new_current_frame * current_animation->get_duration() / (timeline.frame_max - timeline.frame_min);
             blender.update(playback, track_data);
-            root_node->set_model_dirty(true);
+            root_node->set_transform_dirty(true);
         }
 
         // add a UI to edit that particular item

@@ -103,13 +103,13 @@ void create_material_texture(const tinygltf::Model& model, int tex_index, Textur
 void read_transform(const tinygltf::Node& node, Transform& transform)
 {
     if (!node.translation.empty()) {
-        transform.position = { static_cast<float>(node.translation[0]), static_cast<float>(node.translation[1]), static_cast<float>(node.translation[2]) };
+        transform.set_position({ static_cast<float>(node.translation[0]), static_cast<float>(node.translation[1]), static_cast<float>(node.translation[2]) });
     }
     if (!node.rotation.empty()) {
-        transform.rotation = { static_cast<float>(node.rotation[0]), static_cast<float>(node.rotation[1]), static_cast<float>(node.rotation[2]), static_cast<float>(node.rotation[3]) };
+        transform.set_rotation( { static_cast<float>(node.rotation[0]), static_cast<float>(node.rotation[1]), static_cast<float>(node.rotation[2]), static_cast<float>(node.rotation[3]) });
     }
     if (!node.scale.empty()) {
-        transform.scale = { static_cast<float>(node.scale[0]), static_cast<float>(node.scale[1]), static_cast<float>(node.scale[2]) };
+        transform.set_scale( {static_cast<float>(node.scale[0]), static_cast<float>(node.scale[1]), static_cast<float>(node.scale[2]) });
        /* transform.scale.x = transform.scale.x >= 0.99999f ? 1.f : transform.scale.x;
         transform.scale.y = transform.scale.y >= 0.99999f ? 1.f : transform.scale.y;
         transform.scale.z = transform.scale.z >= 0.99999f ? 1.f : transform.scale.z;*/
@@ -711,15 +711,13 @@ void parse_model_nodes(tinygltf::Model& model, int parent_id, uint32_t node_id, 
             model_matrix[(j / 4) % 4][j % 4] = static_cast<float>(node.matrix[j]);
         }
 
-        entity->set_model(model_matrix);
-        entity->set_transform(mat4ToTransform(model_matrix));
+        entity->set_transform(Transform::mat4_to_transform(model_matrix));
     }
     else {
 
         Transform transform;
         read_transform(node, transform);
 
-        entity->set_model(transformToMat4(transform));
         entity->set_transform(transform);
     }
 
@@ -856,10 +854,9 @@ void parse_model_skins(Node3D* scene_root, tinygltf::Model& model, std::map<std:
                     model_matrix[(j / 4) % 4][j % 4] = static_cast<float>(node.matrix[j]);
                 }
 
-                Transform transform = mat4ToTransform(model_matrix);
+                Transform transform = Transform::mat4_to_transform(model_matrix);
                 rest_pose.set_local_transform(id, transform);
 
-                joint_3d->set_model(model_matrix);
                 joint_3d->set_transform(transform);
             }
             else {
@@ -868,7 +865,6 @@ void parse_model_skins(Node3D* scene_root, tinygltf::Model& model, std::map<std:
                 read_transform(node, transform);
 
                 rest_pose.set_local_transform(id, transform);
-                joint_3d->set_model(transformToMat4(transform));
                 joint_3d->set_transform(transform);
             }
 
@@ -899,7 +895,7 @@ void parse_model_skins(Node3D* scene_root, tinygltf::Model& model, std::map<std:
 
             // Set the transform into the array of transforms of the joints in the bind pose (world bind pose)
             glm::mat4x4 bind_matrix = inverse(m);
-            Transform bind_transform = mat4ToTransform(bind_matrix);
+            Transform bind_transform = Transform::mat4_to_transform(bind_matrix);
             world_bind_transforms[id] = bind_transform;
         }
 
@@ -928,7 +924,7 @@ void parse_model_skins(Node3D* scene_root, tinygltf::Model& model, std::map<std:
                     for (int j = 0; j < 16; ++j) {
                         model_matrix[(j / 4) % 4][j % 4] = static_cast<float>(node.matrix[j]);
                     }
-                    parent = mat4ToTransform(model_matrix);
+                    parent = Transform::mat4_to_transform(model_matrix);
                 }
                 else {
                     Transform transform;
@@ -937,7 +933,7 @@ void parse_model_skins(Node3D* scene_root, tinygltf::Model& model, std::map<std:
                 }
             }
 
-            current = combine(inverse(parent), current);
+            current = Transform::combine(Transform::inverse(parent), current);
         }
 
         bind_pose.set_local_transform(i, current);

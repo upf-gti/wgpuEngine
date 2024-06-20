@@ -103,7 +103,7 @@ public:
     bool get_visibility() const;
 
     bool set_visibility(bool value);
-	void set_translation(const glm::vec2& translation);
+	void set_position(const glm::vec2& translation);
     void set_model(const glm::mat3x3& _model);
     void set_viewport_model(glm::mat4x4 model);
     virtual void set_priority(uint8_t priority);

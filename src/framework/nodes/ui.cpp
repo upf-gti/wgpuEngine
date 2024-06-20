@@ -718,7 +718,7 @@ namespace ui {
                 offset = 8.0f;
             }
 
-            node_2d->set_translation(padding + glm::vec2(size.x + item_margin.x * static_cast<float>(child_idx) + offset, (size.y - node_size.y) * 0.50f));
+            node_2d->set_position(padding + glm::vec2(size.x + item_margin.x * static_cast<float>(child_idx) + offset, (size.y - node_size.y) * 0.50f));
             child_idx++;
             size.x += node_size.x;
         }
@@ -732,7 +732,7 @@ namespace ui {
 
         if (centered) {
             const glm::vec2& pos = get_local_translation();
-            set_translation({ (-size.x + BUTTON_SIZE) * 2.0f, pos.y });
+            set_position({ (-size.x + BUTTON_SIZE) * 2.0f, pos.y });
         }
 
         Container2D::on_children_changed();
@@ -773,7 +773,7 @@ namespace ui {
                 continue;
             }
             glm::vec2 node_size = node_2d->get_size();
-            node_2d->set_translation(glm::vec2(padding.x, size.y + padding.y + item_margin.y * static_cast<float>(child_idx)));
+            node_2d->set_position(glm::vec2(padding.x, size.y + padding.y + item_margin.y * static_cast<float>(child_idx)));
             child_idx++;
 
             size.x = glm::max(size.x, node_size.x);
@@ -789,7 +789,7 @@ namespace ui {
 
         if (centered) {
             const glm::vec2& pos = get_local_translation();
-            set_translation({ (-size.x + BUTTON_SIZE) * 0.50f, pos.y });
+            set_position({ (-size.x + BUTTON_SIZE) * 0.50f, pos.y });
         }
 
         Container2D::on_children_changed();
@@ -828,7 +828,7 @@ namespace ui {
         float cc = (-size.x + BUTTON_SIZE) * 0.5f;
         glm::vec2 center = glm::vec2(cc);
 
-        set_translation(center);
+        set_position(center);
 
         for (size_t i = 0; i < child_count; ++i)
         {
@@ -836,7 +836,7 @@ namespace ui {
             glm::vec2 translation = glm::vec2(radius * cos(angle), radius * sin(angle)) - center;
 
             Node2D* node_2d = static_cast<Node2D*>(get_children()[i]);
-            node_2d->set_translation(translation);
+            node_2d->set_position(translation);
             node_2d->set_priority(Node2DClassType::SELECTOR_BUTTON);
         }
 
@@ -952,7 +952,7 @@ namespace ui {
         if ((parameter_flags & TEXT_CENTERED) && parent) {
             const glm::vec2& par_size = parent->get_size();
             const glm::vec2& centered_position = { -size.x * 0.5f + par_size.x * 0.5f, get_local_translation().y };
-            set_translation(centered_position);
+            set_position(centered_position);
         }
 
         // Set Text entity in place
@@ -963,7 +963,7 @@ namespace ui {
             model = glm::scale(model, glm::vec3(get_scale(), 1.0f));
             model = get_global_viewport_model() * model;
 
-            text_entity->set_model(model);
+            text_entity->set_transform(Transform::mat4_to_transform(model));
         }
 
         if (visibility && (parameter_flags & TEXT_EVENTS)) {
@@ -1460,7 +1460,7 @@ namespace ui {
             }
 
             box->set_visibility(data ? true : !last_value);
-            box->set_translation({ (-box->get_size().x + BUTTON_SIZE) * 0.5f, -(box->get_size().y + GROUP_MARGIN)});
+            box->set_position({ (-box->get_size().x + BUTTON_SIZE) * 0.5f, -(box->get_size().y + GROUP_MARGIN)});
         });
 
         // Submenu icon..

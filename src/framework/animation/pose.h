@@ -1,5 +1,5 @@
 #pragma once
-#include "framework/animation/bone_transform.h"
+#include "framework/math/transform.h"
 #include <vector>
 
 // Used to hold the transformation of every bone in an animated hierarchy

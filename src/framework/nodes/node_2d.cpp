@@ -29,7 +29,7 @@ Node2D::Node2D(const std::string& n, const glm::vec2& p, const glm::vec2& s) : s
 
     all_widgets[name] = this;
 
-    set_translation(p);
+    set_position(p);
 }
 
 Node2D::~Node2D()
@@ -142,7 +142,7 @@ void Node2D::set_priority(uint8_t priority)
     class_type = priority;
 }
 
-void Node2D::set_translation(const glm::vec2& translation)
+void Node2D::set_position(const glm::vec2& translation)
 {
 	model = glm::translate(glm::mat3x3(1.f), translation);
 }
