@@ -57,16 +57,16 @@ void IO::update(float delta_time)
         Node2D* rhs_node = rhs.first;
 
         if (xr) {
-            if (lhs.second.ray_distance == rhs.second.ray_distance) {
-                if (lhs_node->get_class_type() < rhs_node->get_class_type()) return true;
-            }
-            else {
-                if (lhs.second.ray_distance > rhs.second.ray_distance) return true;
-            }
-        }
-        else if (lhs_node->get_class_type() < rhs_node->get_class_type()) return true;
 
-        return false;
+            float dt = glm::abs(lhs.second.ray_distance - rhs.second.ray_distance);
+            if (dt < 0.01f) {
+                return lhs_node->get_class_type() < rhs_node->get_class_type();
+            }
+
+            return lhs.second.ray_distance < rhs.second.ray_distance;
+        }
+
+        return lhs_node->get_class_type() < rhs_node->get_class_type();
     });
 
     // call on_input functions..
