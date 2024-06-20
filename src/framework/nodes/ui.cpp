@@ -958,12 +958,13 @@ namespace ui {
         // Set Text entity in place
         {
             uint8_t priority = class_type;
-            glm::vec2 position = get_translation() + (render_background ? glm::vec2(TEXT_SHADOW_MARGIN * text_scale, TEXT_SHADOW_MARGIN * text_scale * 0.5f) * 0.5f * get_scale() : glm::vec2(0.0f));
-            glm::mat4x4 model = glm::translate(glm::mat4x4(1.0f), glm::vec3(position, -priority * 3e-5));
-            model = glm::scale(model, glm::vec3(get_scale(), 1.0f));
-            model = get_global_viewport_model() * model;
+            glm::vec2 scale = get_scale();
+            glm::vec2 position = get_translation() + (render_background ? glm::vec2(TEXT_SHADOW_MARGIN * text_scale, TEXT_SHADOW_MARGIN * text_scale * 0.5f) * 0.5f * scale : glm::vec2(0.0f));
 
-            text_entity->set_transform(Transform::mat4_to_transform(model));
+            auto t = Transform::mat4_to_transform(get_global_model());
+            t.translate(glm::vec3(position, -priority * 3e-5));
+
+            text_entity->set_transform(Transform::combine(Transform::mat4_to_transform(get_global_viewport_model()), t));
         }
 
         if (visibility && (parameter_flags & TEXT_EVENTS)) {
