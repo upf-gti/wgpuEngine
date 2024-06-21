@@ -157,6 +157,11 @@ void Node3D::set_position(const glm::vec3& translation)
     transform.set_position(translation);
 }
 
+void Node3D::set_scale(const glm::vec3& scale)
+{
+    transform.set_scale(scale);
+}
+
 void Node3D::set_transform(const Transform& new_transform)
 {
     transform = new_transform;
