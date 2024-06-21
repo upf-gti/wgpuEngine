@@ -90,10 +90,16 @@ void Scene::parse(const std::string& path)
 
     binary_scene_file.read(reinterpret_cast<char*>(&header), sizeof(sSceneBinaryHeader));
 
+    // Update name if necessary
     size_t name_size = 0;
     binary_scene_file.read(reinterpret_cast<char*>(&name_size), sizeof(size_t));
-    name.resize(name_size);
-    binary_scene_file.read(&name[0], name_size);
+    std::string new_name;
+    new_name.resize(name_size);
+    binary_scene_file.read(&new_name[0], name_size);
+
+    if (name.empty()) {
+        name = new_name;
+    }
 
     Engine* engine = Engine::instance;
 
