@@ -51,9 +51,9 @@ fn pristine_grid(uv : vec2f, lineWidth : vec2f) -> f32
     return mix(grid2.x, 1.0, grid2.y);
 }
 
-const GRID_AREA_SIZE : f32 = 10.0;
+const GRID_AREA_SIZE : f32 = 25.0;
 const GRID_QUAD_SIZE :f32 = 1.0;
-const LINE_WIDTH : f32 = 0.02;
+const LINE_WIDTH : f32 = 0.015;
 
 @fragment
 fn fs_main(in: VertexOutput) -> FragmentOutput {
@@ -61,9 +61,6 @@ fn fs_main(in: VertexOutput) -> FragmentOutput {
     var dummy = camera_data.eye;
 
     let wrapped_uvs : vec2f = (in.uv * GRID_AREA_SIZE / GRID_QUAD_SIZE);
-    let line_width_proportion : f32 = GRID_QUAD_SIZE * LINE_WIDTH;
-    let one_minus_line_width : f32 = 1.0 - line_width_proportion;
-    let zero_plus_line_width : f32 = 0.0 + line_width_proportion;
 
     var out: FragmentOutput;
 
