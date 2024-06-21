@@ -41,6 +41,18 @@ void Scene::add_nodes(const std::vector<Node*>& nodes_to_add, int idx)
     Node::emit_signal(name + "@nodes_added", (void*)nullptr);
 }
 
+// TODO: extend to allow removing nodes inside the hierachy
+void Scene::remove_node(Node* node)
+{
+    // Checks if it's a child
+    auto it = std::find(nodes.begin(), nodes.end(), node);
+    if (it == nodes.end()) {
+        return;
+    }
+
+    nodes.erase(it);
+}
+
 void Scene::set_name(const std::string& name)
 {
     this->name = name;
