@@ -41,6 +41,8 @@ public:
     void rotate(const glm::quat& rotation_factor);
     void scale(const glm::vec3& scale_factor);
 
+    void rotate_world(const glm::quat& rotation_factor);
+
     const glm::mat4x4& get_model();
 
     static Transform identity();

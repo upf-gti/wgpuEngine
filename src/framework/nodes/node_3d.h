@@ -31,6 +31,7 @@ public:
     void translate(const glm::vec3& translation);
     void rotate(float angle, const glm::vec3& axis);
     void rotate(const glm::quat& q);
+    void rotate_world(const glm::quat& q);
     void scale(glm::vec3 scale);
 
     virtual void serialize(std::ofstream& binary_scene_file);

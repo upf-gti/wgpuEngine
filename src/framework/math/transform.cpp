@@ -56,6 +56,11 @@ void Transform::scale(const glm::vec3& scale_factor)
     dirty = true;
 }
 
+void Transform::rotate_world(const glm::quat& rotation_factor)
+{
+    rotate(glm::inverse(rotation_p) * rotation_factor * rotation_p);
+}
+
 const glm::vec3& Transform::get_position() const
 {
     return position_p;
