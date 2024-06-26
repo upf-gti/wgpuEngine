@@ -7,7 +7,7 @@
 
 struct Knot {
     glm::vec3 position;
-    float size = 1.f;
+    glm::vec3 size;
 };
 
 inline Knot operator+(const Knot& a, const Knot& b) { return { a.position + b.position, a.size + b.size }; }
