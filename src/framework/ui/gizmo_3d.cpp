@@ -164,9 +164,11 @@ void Gizmo3D::set_operation(const eGizmoType& gizmo_type, const eGizmoAxis& axis
 
 bool Gizmo3D::update(Transform& t, const glm::vec3& controller_position, float delta_time)
 {
+    current_rotation = t.get_rotation();
+
     bool result = update(t.get_position_ref(), controller_position, delta_time);
 
-    t.set_scale(gizmo_scale);
+    t.set_scale(glm::inverse(gizmo_scale);
     t.set_rotation(current_rotation);
 
     t.set_dirty(true);
@@ -308,7 +310,7 @@ bool Gizmo3D::update(glm::vec3& new_position, const glm::vec3& controller_positi
             }
 
             if (operation & ROTATION_GIZMO) {
-                current_rotation = glm::inverse(rotation_diff) * Input::get_controller_rotation(HAND_RIGHT);
+                current_rotation = glm::inverse(current_rotation) * glm::inverse(rotation_diff) * Input::get_controller_rotation(HAND_RIGHT) * (current_rotation);
             }
         }
         else {
@@ -343,7 +345,7 @@ bool Gizmo3D::update(glm::vec3& new_position, const glm::vec3& controller_positi
                 }
 
                 // Apply the rotation
-                current_rotation = current_rotation * (rot);
+                current_rotation = current_rotation * (glm::inverse(current_rotation) * rot * current_rotation);
                 reference_rotation_pose = controller_position;
             }
         }
