@@ -168,7 +168,7 @@ bool Gizmo3D::update(Transform& t, const glm::vec3& controller_position, float d
 
     bool result = update(t.get_position_ref(), controller_position, delta_time);
 
-    t.set_scale(glm::inverse(gizmo_scale);
+    t.set_scale(gizmo_scale);
     t.set_rotation(current_rotation);
 
     t.set_dirty(true);
