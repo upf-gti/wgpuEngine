@@ -415,15 +415,17 @@ namespace ui {
     *   XRPanel
     */
 
-    XRPanel::XRPanel(const std::string& name, const Color& c, const glm::vec2& p, const glm::vec2& s)
-        : XRPanel(name, "", p, s, c)
+    XRPanel::XRPanel(const std::string& name, const Color& c, const glm::vec2& p, const glm::vec2& s, uint32_t flags)
+        : XRPanel(name, "", p, s, flags, c)
     { }
 
-    XRPanel::XRPanel(const std::string& name, const std::string& image_path, const glm::vec2& p, const glm::vec2& s, const Color& c)
+    XRPanel::XRPanel(const std::string& name, const std::string& image_path, const glm::vec2& p, const glm::vec2& s, uint32_t flags, const Color& c)
         : Panel2D(name, image_path, p, s, c)
     {
         Surface* quad_surface = quad_mesh.get_surface(0);
         quad_surface->create_subvidided_quad(size.x, size.y);
+
+        parameter_flags = flags;
 
         Material* material = quad_mesh.get_surface_material_override(quad_surface);
         material->flags |= MATERIAL_UI;
