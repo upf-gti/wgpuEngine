@@ -651,16 +651,16 @@ void RendererStorage::register_render_pipeline(Material& material)
     }
 
     Pipeline* render_pipeline = new Pipeline();
-    render_pipeline->create_render(material.shader, color_target, description);
+    render_pipeline->create_render_async(material.shader, color_target, description);
     registered_render_pipelines[key] = render_pipeline;
 }
 
-void RendererStorage::register_compute_pipeline(Shader* shader, WGPUPipelineLayout pipeline_layout)
-{
-    Pipeline* compute_pipeline = new Pipeline();
-    compute_pipeline->create_compute(shader, pipeline_layout);
-    registered_compute_pipelines[shader] = compute_pipeline;
-}
+//void RendererStorage::register_compute_pipeline(Shader* shader, WGPUPipelineLayout pipeline_layout)
+//{
+//    Pipeline* compute_pipeline = new Pipeline();
+//    compute_pipeline->create_compute(shader, pipeline_layout);
+//    registered_compute_pipelines[shader] = compute_pipeline;
+//}
 
 void RendererStorage::clean_registered_pipelines()
 {

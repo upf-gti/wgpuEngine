@@ -82,7 +82,7 @@ public:
     static Animation* get_animation(const std::string& animation_path);
 
     static void register_render_pipeline(Material& material);
-    static void register_compute_pipeline(Shader* shader, WGPUPipelineLayout pipeline_layout);
+    //static void register_compute_pipeline(Shader* shader, WGPUPipelineLayout pipeline_layout);
     static void clean_registered_pipelines();
 
 };

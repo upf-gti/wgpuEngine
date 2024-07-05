@@ -220,28 +220,28 @@ int WebGPUContext::initialize(WGPURequestAdapterOptions adapter_opts, WGPURequir
     {
         cubemap_mipmap_pipeline.mipmap_shader = RendererStorage::get_shader_from_source(shaders::cubemap_downsampler::source, shaders::cubemap_downsampler::path);
         cubemap_mipmap_pipeline.mipmap_pipeline = new Pipeline();
-        cubemap_mipmap_pipeline.mipmap_pipeline->create_compute(cubemap_mipmap_pipeline.mipmap_shader);
+        cubemap_mipmap_pipeline.mipmap_pipeline->create_compute_async(cubemap_mipmap_pipeline.mipmap_shader);
     }
 
     {
         panorama_to_cubemap_shader = RendererStorage::get_shader_from_source(shaders::panorama_to_cubemap::source, shaders::panorama_to_cubemap::path);
 
         panorama_to_cubemap_pipeline = new Pipeline();
-        panorama_to_cubemap_pipeline->create_compute(panorama_to_cubemap_shader);
+        panorama_to_cubemap_pipeline->create_compute_async(panorama_to_cubemap_shader);
     }
 
     {
         prefiltered_env_shader = RendererStorage::get_shader_from_source(shaders::prefilter_env::source, shaders::prefilter_env::path);
 
         prefiltered_env_pipeline = new Pipeline();
-        prefiltered_env_pipeline->create_compute(prefiltered_env_shader);
+        prefiltered_env_pipeline->create_compute_async(prefiltered_env_shader);
     }
 
     {
         brdf_lut_shader = RendererStorage::get_shader_from_source(shaders::brdf_lut_gen::source, shaders::brdf_lut_gen::path);
 
         brdf_lut_pipeline = new Pipeline();
-        brdf_lut_pipeline->create_compute(brdf_lut_shader);
+        brdf_lut_pipeline->create_compute_async(brdf_lut_shader);
 
         brdf_lut_texture = new Texture();
         brdf_lut_texture->create(WGPUTextureDimension_2D, WGPUTextureFormat_RG32Float, { 512, 512, 1 },
@@ -794,6 +794,64 @@ void WebGPUContext::process_events()
 #endif
 }
 
+//WGPURenderPipelineDescriptor WebGPUContext::create_render_pipeline_common(WGPUShaderModule render_shader_module, WGPUPipelineLayout pipeline_layout, const std::vector<WGPUVertexBufferLayout>& vertex_attributes, WGPUColorTargetState color_target, bool use_depth, bool depth_read, bool depth_write, WGPUCullMode cull_mode, WGPUPrimitiveTopology topology, uint8_t sample_count, const char* vs_entry_point, const char* fs_entry_point)
+//{
+//    WGPUVertexState vertex_state = {};
+//    vertex_state.module = render_shader_module;
+//    vertex_state.entryPoint = vs_entry_point;
+//    vertex_state.constantCount = 0;
+//    vertex_state.constants = NULL;
+//    vertex_state.bufferCount = static_cast<uint32_t>(vertex_attributes.size());
+//    vertex_state.buffers = vertex_attributes.data();
+//
+//    WGPUFragmentState fragment_state = {};
+//    fragment_state.module = render_shader_module;
+//    fragment_state.entryPoint = fs_entry_point;
+//    fragment_state.constantCount = 0;
+//    fragment_state.constants = NULL;
+//    fragment_state.targetCount = 1;
+//    fragment_state.targets = &color_target;
+//
+//    WGPUDepthStencilState depth_state = {};
+//    depth_state.depthCompare = depth_read ? WGPUCompareFunction_Less : WGPUCompareFunction_Always;
+//    depth_state.depthWriteEnabled = depth_write;
+//    depth_state.format = WGPUTextureFormat_Depth32Float;
+//    depth_state.stencilReadMask = 0;
+//    depth_state.stencilWriteMask = 0;
+//    // Configure the stencils even if unused
+//    depth_state.stencilFront.compare = WGPUCompareFunction_Always;
+//    depth_state.stencilFront.failOp = WGPUStencilOperation_Keep;
+//    depth_state.stencilFront.depthFailOp = WGPUStencilOperation_Keep;
+//    depth_state.stencilFront.passOp = WGPUStencilOperation_Keep;
+//    depth_state.stencilBack.compare = WGPUCompareFunction_Always;
+//    depth_state.stencilBack.failOp = WGPUStencilOperation_Keep;
+//    depth_state.stencilBack.depthFailOp = WGPUStencilOperation_Keep;
+//    depth_state.stencilBack.passOp = WGPUStencilOperation_Keep;
+//
+//    WGPURenderPipelineDescriptor pipeline_descr = {};
+//    pipeline_descr.nextInChain = NULL;
+//    pipeline_descr.layout = pipeline_layout;
+//    pipeline_descr.vertex = vertex_state;
+//
+//    pipeline_descr.primitive = {
+//        .topology = topology,
+//        .stripIndexFormat = WGPUIndexFormat_Undefined, // order of the connected vertices
+//        .frontFace = WGPUFrontFace_CCW,
+//        .cullMode = cull_mode
+//    },
+//
+//        pipeline_descr.depthStencil = use_depth ? &depth_state : nullptr;
+//    pipeline_descr.multisample = {
+//            .count = sample_count,
+//            .mask = ~0u,
+//            .alphaToCoverageEnabled = false
+//    };
+//
+//    pipeline_descr.fragment = &fragment_state;
+//
+//    return pipeline_descr;
+//}
+
 WGPUPipelineLayout WebGPUContext::create_pipeline_layout(const std::vector<WGPUBindGroupLayout>& bind_group_layouts)
 {
     WGPUPipelineLayoutDescriptor layout_descr = {};
@@ -843,11 +901,12 @@ void WebGPUContext::copy_texture_to_texture(WGPUTexture texture_src, WGPUTexture
 }
 
 WGPURenderPipeline WebGPUContext::create_render_pipeline(WGPUShaderModule render_shader_module, WGPUPipelineLayout pipeline_layout, const std::vector<WGPUVertexBufferLayout>& vertex_attributes,
-    WGPUColorTargetState color_target, bool use_depth, bool depth_read, bool depth_write, WGPUCullMode cull_mode, WGPUPrimitiveTopology topology, uint8_t sample_count)
+    WGPUColorTargetState color_target, bool use_depth, bool depth_read, bool depth_write, WGPUCullMode cull_mode, WGPUPrimitiveTopology topology, uint8_t sample_count,
+    const char* vs_entry_point, const char* fs_entry_point)
 {    
     WGPUVertexState vertex_state = {};
     vertex_state.module = render_shader_module;
-    vertex_state.entryPoint = "vs_main";
+    vertex_state.entryPoint = vs_entry_point;
     vertex_state.constantCount = 0;
     vertex_state.constants = NULL;
     vertex_state.bufferCount = static_cast<uint32_t>(vertex_attributes.size());
@@ -855,7 +914,7 @@ WGPURenderPipeline WebGPUContext::create_render_pipeline(WGPUShaderModule render
 
     WGPUFragmentState fragment_state = {};
     fragment_state.module = render_shader_module;
-    fragment_state.entryPoint = "fs_main";
+    fragment_state.entryPoint = fs_entry_point;
     fragment_state.constantCount = 0;
     fragment_state.constants = NULL;
     fragment_state.targetCount = 1;
@@ -889,7 +948,7 @@ WGPURenderPipeline WebGPUContext::create_render_pipeline(WGPUShaderModule render
         .cullMode = cull_mode
     },
 
-    pipeline_descr.depthStencil = use_depth ? &depth_state : nullptr;
+        pipeline_descr.depthStencil = use_depth ? &depth_state : nullptr;
     pipeline_descr.multisample = {
             .count = sample_count,
             .mask = ~0u,
@@ -901,17 +960,90 @@ WGPURenderPipeline WebGPUContext::create_render_pipeline(WGPUShaderModule render
     return wgpuDeviceCreateRenderPipeline(device, &pipeline_descr);
 }
 
-WGPUComputePipeline WebGPUContext::create_compute_pipeline(WGPUShaderModule compute_shader_module, WGPUPipelineLayout pipeline_layout)
+void WebGPUContext::create_render_pipeline_async(WGPUShaderModule render_shader_module, WGPUPipelineLayout pipeline_layout, const std::vector<WGPUVertexBufferLayout>& vertex_attributes,
+    WGPUColorTargetState color_target, WGPUCreateRenderPipelineAsyncCallback callback, void* userdata, bool use_depth, bool depth_read, bool depth_write, WGPUCullMode cull_mode, WGPUPrimitiveTopology topology, uint8_t sample_count,
+    const char* vs_entry_point, const char* fs_entry_point)
+{
+    WGPUVertexState vertex_state = {};
+    vertex_state.module = render_shader_module;
+    vertex_state.entryPoint = vs_entry_point;
+    vertex_state.constantCount = 0;
+    vertex_state.constants = NULL;
+    vertex_state.bufferCount = static_cast<uint32_t>(vertex_attributes.size());
+    vertex_state.buffers = vertex_attributes.data();
+
+    WGPUFragmentState fragment_state = {};
+    fragment_state.module = render_shader_module;
+    fragment_state.entryPoint = fs_entry_point;
+    fragment_state.constantCount = 0;
+    fragment_state.constants = NULL;
+    fragment_state.targetCount = 1;
+    fragment_state.targets = &color_target;
+
+    WGPUDepthStencilState depth_state = {};
+    depth_state.depthCompare = depth_read ? WGPUCompareFunction_Less : WGPUCompareFunction_Always;
+    depth_state.depthWriteEnabled = depth_write;
+    depth_state.format = WGPUTextureFormat_Depth32Float;
+    depth_state.stencilReadMask = 0;
+    depth_state.stencilWriteMask = 0;
+    // Configure the stencils even if unused
+    depth_state.stencilFront.compare = WGPUCompareFunction_Always;
+    depth_state.stencilFront.failOp = WGPUStencilOperation_Keep;
+    depth_state.stencilFront.depthFailOp = WGPUStencilOperation_Keep;
+    depth_state.stencilFront.passOp = WGPUStencilOperation_Keep;
+    depth_state.stencilBack.compare = WGPUCompareFunction_Always;
+    depth_state.stencilBack.failOp = WGPUStencilOperation_Keep;
+    depth_state.stencilBack.depthFailOp = WGPUStencilOperation_Keep;
+    depth_state.stencilBack.passOp = WGPUStencilOperation_Keep;
+
+    WGPURenderPipelineDescriptor pipeline_descr = {};
+    pipeline_descr.nextInChain = NULL;
+    pipeline_descr.layout = pipeline_layout;
+    pipeline_descr.vertex = vertex_state;
+
+    pipeline_descr.primitive = {
+        .topology = topology,
+        .stripIndexFormat = WGPUIndexFormat_Undefined, // order of the connected vertices
+        .frontFace = WGPUFrontFace_CCW,
+        .cullMode = cull_mode
+    },
+
+        pipeline_descr.depthStencil = use_depth ? &depth_state : nullptr;
+    pipeline_descr.multisample = {
+            .count = sample_count,
+            .mask = ~0u,
+            .alphaToCoverageEnabled = false
+    };
+
+    pipeline_descr.fragment = &fragment_state;
+
+    return wgpuDeviceCreateRenderPipelineAsync(device, &pipeline_descr, callback, userdata);
+}
+
+WGPUComputePipeline WebGPUContext::create_compute_pipeline(WGPUShaderModule compute_shader_module, WGPUPipelineLayout pipeline_layout, const char* entry_point)
 {
     WGPUComputePipelineDescriptor computePipelineDesc = {};
     computePipelineDesc.compute.nextInChain = nullptr;
     computePipelineDesc.compute.constantCount = 0;
     computePipelineDesc.compute.constants = nullptr;
-    computePipelineDesc.compute.entryPoint = "compute";
+    computePipelineDesc.compute.entryPoint = entry_point;
     computePipelineDesc.compute.module = compute_shader_module;
     computePipelineDesc.layout = pipeline_layout;
 
     return wgpuDeviceCreateComputePipeline(device, &computePipelineDesc);
+}
+
+void WebGPUContext::create_compute_pipeline_async(WGPUShaderModule compute_shader_module, WGPUPipelineLayout pipeline_layout, WGPUCreateComputePipelineAsyncCallback callback, void* userdata, const char* entry_point)
+{
+    WGPUComputePipelineDescriptor computePipelineDesc = {};
+    computePipelineDesc.compute.nextInChain = nullptr;
+    computePipelineDesc.compute.constantCount = 0;
+    computePipelineDesc.compute.constants = nullptr;
+    computePipelineDesc.compute.entryPoint = entry_point;
+    computePipelineDesc.compute.module = compute_shader_module;
+    computePipelineDesc.layout = pipeline_layout;
+
+    return wgpuDeviceCreateComputePipelineAsync(device, &computePipelineDesc, callback, userdata);
 }
 
 WGPUVertexBufferLayout WebGPUContext::create_vertex_buffer_layout(const std::vector<WGPUVertexAttribute>& vertex_attributes, uint64_t stride, WGPUVertexStepMode step_mode)
