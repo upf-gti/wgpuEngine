@@ -24,6 +24,10 @@
 #include "graphics/shader.h"
 #include "graphics/renderer_storage.h"
 
+#include "engine/scene.h"
+
+#include "shaders/mesh_pbr.wgsl.gen.h"
+
 #include "spdlog/spdlog.h"
 
 void create_material_texture(const tinygltf::Model& model, int tex_index, Texture** texture, bool is_srgb = false)
@@ -99,13 +103,13 @@ void create_material_texture(const tinygltf::Model& model, int tex_index, Textur
 void read_transform(const tinygltf::Node& node, Transform& transform)
 {
     if (!node.translation.empty()) {
-        transform.position = { static_cast<float>(node.translation[0]), static_cast<float>(node.translation[1]), static_cast<float>(node.translation[2]) };
+        transform.set_position({ static_cast<float>(node.translation[0]), static_cast<float>(node.translation[1]), static_cast<float>(node.translation[2]) });
     }
     if (!node.rotation.empty()) {
-        transform.rotation = { static_cast<float>(node.rotation[0]), static_cast<float>(node.rotation[1]), static_cast<float>(node.rotation[2]), static_cast<float>(node.rotation[3]) };
+        transform.set_rotation( { static_cast<float>(node.rotation[0]), static_cast<float>(node.rotation[1]), static_cast<float>(node.rotation[2]), static_cast<float>(node.rotation[3]) });
     }
     if (!node.scale.empty()) {
-        transform.scale = { static_cast<float>(node.scale[0]), static_cast<float>(node.scale[1]), static_cast<float>(node.scale[2]) };
+        transform.set_scale( {static_cast<float>(node.scale[0]), static_cast<float>(node.scale[1]), static_cast<float>(node.scale[2]) });
        /* transform.scale.x = transform.scale.x >= 0.99999f ? 1.f : transform.scale.x;
         transform.scale.y = transform.scale.y >= 0.99999f ? 1.f : transform.scale.y;
         transform.scale.z = transform.scale.z >= 0.99999f ? 1.f : transform.scale.z;*/
@@ -555,7 +559,7 @@ void read_mesh(const tinygltf::Model& model, const tinygltf::Node& node, Node3D*
             material.use_skinning = true;
         }
 
-        material.shader = RendererStorage::get_shader("data/shaders/mesh_pbr.wgsl", material);
+        material.shader = RendererStorage::get_shader_from_source(shaders::mesh_pbr::source, shaders::mesh_pbr::path, material);
 
         surface->create_vertex_buffer();
         surface->set_material_priority(1);
@@ -707,15 +711,13 @@ void parse_model_nodes(tinygltf::Model& model, int parent_id, uint32_t node_id, 
             model_matrix[(j / 4) % 4][j % 4] = static_cast<float>(node.matrix[j]);
         }
 
-        entity->set_model(model_matrix);
-        entity->set_transform(mat4ToTransform(model_matrix));
+        entity->set_transform(Transform::mat4_to_transform(model_matrix));
     }
     else {
 
         Transform transform;
         read_transform(node, transform);
 
-        entity->set_model(transformToMat4(transform));
         entity->set_transform(transform);
     }
 
@@ -852,10 +854,9 @@ void parse_model_skins(Node3D* scene_root, tinygltf::Model& model, std::map<std:
                     model_matrix[(j / 4) % 4][j % 4] = static_cast<float>(node.matrix[j]);
                 }
 
-                Transform transform = mat4ToTransform(model_matrix);
+                Transform transform = Transform::mat4_to_transform(model_matrix);
                 rest_pose.set_local_transform(id, transform);
 
-                joint_3d->set_model(model_matrix);
                 joint_3d->set_transform(transform);
             }
             else {
@@ -864,7 +865,6 @@ void parse_model_skins(Node3D* scene_root, tinygltf::Model& model, std::map<std:
                 read_transform(node, transform);
 
                 rest_pose.set_local_transform(id, transform);
-                joint_3d->set_model(transformToMat4(transform));
                 joint_3d->set_transform(transform);
             }
 
@@ -895,7 +895,7 @@ void parse_model_skins(Node3D* scene_root, tinygltf::Model& model, std::map<std:
 
             // Set the transform into the array of transforms of the joints in the bind pose (world bind pose)
             glm::mat4x4 bind_matrix = inverse(m);
-            Transform bind_transform = mat4ToTransform(bind_matrix);
+            Transform bind_transform = Transform::mat4_to_transform(bind_matrix);
             world_bind_transforms[id] = bind_transform;
         }
 
@@ -924,7 +924,7 @@ void parse_model_skins(Node3D* scene_root, tinygltf::Model& model, std::map<std:
                     for (int j = 0; j < 16; ++j) {
                         model_matrix[(j / 4) % 4][j % 4] = static_cast<float>(node.matrix[j]);
                     }
-                    parent = mat4ToTransform(model_matrix);
+                    parent = Transform::mat4_to_transform(model_matrix);
                 }
                 else {
                     Transform transform;
@@ -933,7 +933,7 @@ void parse_model_skins(Node3D* scene_root, tinygltf::Model& model, std::map<std:
                 }
             }
 
-            current = combine(inverse(parent), current);
+            current = Transform::combine(Transform::inverse(parent), current);
         }
 
         bind_pose.set_local_transform(i, current);
@@ -1235,7 +1235,7 @@ void parse_model_animations(const tinygltf::Model& model, std::vector<SkeletonIn
     }
 }
 
-bool parse_gltf(const char* gltf_path, std::vector<Node3D*>& entities)
+bool parse_gltf(const char* gltf_path, std::vector<Node*>& entities)
 {
     tinygltf::TinyGLTF loader;
     tinygltf::Model model;
@@ -1267,13 +1267,13 @@ bool parse_gltf(const char* gltf_path, std::vector<Node3D*>& entities)
         spdlog::error(err);
     }
 
-    const tinygltf::Scene* scene = nullptr;
+    const tinygltf::Scene* gltf_scene = nullptr;
 
     if (model.defaultScene >= 0) {
-        scene = &model.scenes[model.defaultScene];
+        gltf_scene = &model.scenes[model.defaultScene];
     }
     else {
-        scene = &model.scenes[0];
+        gltf_scene = &model.scenes[0];
     }
 
     std::map<std::string, Node3D*> loaded_nodes;
@@ -1287,33 +1287,32 @@ bool parse_gltf(const char* gltf_path, std::vector<Node3D*>& entities)
 
     std::filesystem::path path_filename = path.replace_extension().filename();
 
-    Node3D* scene_node = new Node3D();
-    scene_node->set_name(path_filename.string() + "_root");
-    entities.push_back(scene_node);
+    Node3D* scene_root = new Node3D();
+    scene_root->set_name(path_filename.string() + "_root");
+    entities.push_back(scene_root);
 
-    for (size_t i = 0; i < scene->nodes.size(); ++i)
+    for (size_t i = 0; i < gltf_scene->nodes.size(); ++i)
     {
-        uint32_t node_id = scene->nodes[i];
+        uint32_t node_id = gltf_scene->nodes[i];
 
         assert(node_id >= 0 && node_id < model.nodes.size());
 
         Node3D* entity = create_node_entity(node_id, model, loaded_nodes, name_repeats);
 
-        process_node_hierarchy(model, -1, node_id, scene_node, entity, hierarchy, skeleton_instances);
+        process_node_hierarchy(model, -1, node_id, scene_root, entity, hierarchy, skeleton_instances);
 
-        parse_model_nodes(model, -1, node_id, scene_node, entity, loaded_nodes, name_repeats, texture_cache, hierarchy, skeleton_instances);
+        parse_model_nodes(model, -1, node_id, scene_root, entity, loaded_nodes, name_repeats, texture_cache, hierarchy, skeleton_instances);
     }
 
     if (model.skins.size()) {
-        parse_model_skins(scene_node, model, loaded_nodes, hierarchy, skeleton_instances);
+        parse_model_skins(scene_root, model, loaded_nodes, hierarchy, skeleton_instances);
     }
 
     if (model.animations.size()) {
         AnimationPlayer* player = new AnimationPlayer("Animation Player");
-        Node3D* gltf_root = entities.back();
         //gltf_root->add_child(player);
-        std::vector<Node*>& nodes = gltf_root->get_children();
-        player->set_parent(gltf_root);
+        std::vector<Node*>& nodes = scene_root->get_children();
+        player->set_parent(scene_root);
         nodes.insert(nodes.begin(), player);
 
         parse_model_animations(model, skeleton_instances, player);

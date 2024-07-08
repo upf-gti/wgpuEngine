@@ -3,10 +3,14 @@
 #include "graphics/renderer.h"
 #include "graphics/renderer_storage.h"
 
-#include "imgui.h"
-#include "framework/utils/ImGuizmo.h"
 #include "framework/camera/camera.h"
 #include "framework/nodes/look_at_ik_3d.h"
+#include "framework/animation/skeleton.h"
+
+#include "imgui.h"
+#include "framework/utils/ImGuizmo.h"
+
+#include "shaders/mesh_color.wgsl.gen.h"
 
 #include <glm/gtc/type_ptr.hpp>
 #include "spdlog/spdlog.h"
@@ -25,11 +29,11 @@ void SkeletonInstance3D::set_skeleton(Skeleton* s)
 
 void SkeletonInstance3D::update(float dt)
 {
-    if (model_dirty) {
+    if (transform.is_dirty()) {
 
         update_pose_from_joints(dt);
 
-        model_dirty = false;
+        transform.set_dirty(false);
     }
 
     // Update child dones (i.e IK)
@@ -56,7 +60,7 @@ void SkeletonInstance3D::update_pose_from_joints(float dt)
     const std::vector<uint32_t>& indices = skeleton->get_joint_indices();
 
     for (size_t i = 0; i < joint_nodes.size(); ++i) {
-        joint_nodes[i]->set_model_dirty(true);
+        joint_nodes[i]->set_transform_dirty(true);
         joint_nodes[i]->update(dt);
         pose.set_local_transform(i, joint_nodes[i]->get_transform());
     }
@@ -99,7 +103,7 @@ void SkeletonInstance3D::update_helper()
 
     std::vector<InterleavedData>& vertices = s->get_vertices();
     vertices.clear();
-    vertices.resize(0);
+    /*vertices.resize(0);*/
 
     size_t numJoints = skeleton->get_current_pose().size();
     Pose pose = skeleton->get_current_pose();
@@ -109,10 +113,10 @@ void SkeletonInstance3D::update_helper()
     for (size_t i = 0; i < numJoints; ++i) {
         InterleavedData data;
 
-        data.position = pose.get_global_transform(i).position;
+        data.position = pose.get_global_transform(i).get_position();
         vertices.push_back(data);
         if (pose.get_parent(i) >= 0) {
-            data.position = pose.get_global_transform(pose.get_parent(i)).position;
+            data.position = pose.get_global_transform(pose.get_parent(i)).get_position();
         }
         vertices.push_back(data);
     }
@@ -133,7 +137,7 @@ void SkeletonInstance3D::init_helper()
     skeleton_material.depth_read = false;
     skeleton_material.priority = 0;
     skeleton_material.topology_type = eTopologyType::TOPOLOGY_LINE_LIST;
-    skeleton_material.shader = RendererStorage::get_shader("data/shaders/mesh_color.wgsl", skeleton_material);
+    skeleton_material.shader = RendererStorage::get_shader_from_source(shaders::mesh_color::source, shaders::mesh_color::path, skeleton_material);
 
     set_surface_material_override(s, skeleton_material);
 }
@@ -213,24 +217,26 @@ void SkeletonInstance3D::recursive_tree_gui(Node* node) {
             {
                 glm::mat4 parent = c->get_parent() ? c->get_parent()->get_global_model() : glm::mat4(1.f);
                 glm::mat4 local_model = inverse(get_global_model() * parent) * global_model;
-                c->set_model(local_model);
-                c->set_transform(mat4ToTransform(local_model));
-                set_model_dirty(true);
-
+                // c->set_model(local_model);
+                // c->set_transform(mat4ToTransform(local_model));
+                // set_model_dirty(true);
+                c->set_transform(Transform::mat4_to_transform(local_model));
+                set_transform_dirty(true);
                 transform = c->get_transform();
 
                 switch (c->get_edit_mode())
                 {
                 case EditModes::TRANSLATE:
-                    c->emit_signal("translation@changed", transform.position);                    
+                    c->emit_signal("translation@changed", transform.get_position());                    
                     break;
                 case EditModes::ROTATE:
-                    c->emit_signal("rotation@changed", transform.rotation);
+                    c->emit_signal("rotation@changed", transform.get_rotation());
                     break;
                 case EditModes::SCALE:
-                    c->emit_signal("scale@changed", transform.scale);
+                    c->emit_signal("scale@changed", transform.get_scale());
                     break;
                 }
+               
             }
         }
 
@@ -238,27 +244,29 @@ void SkeletonInstance3D::recursive_tree_gui(Node* node) {
         {            
             changed = false;
 
-            changed |= ImGui::DragFloat3("Translation", &transform.position[0], 0.1f);
-            changed |= ImGui::DragFloat4("Rotation", &transform.rotation[0], 0.1f);
-            changed |= ImGui::DragFloat3("Scale", &transform.scale[0], 0.1f);
+            changed |= ImGui::DragFloat3("Translation", &transform.get_position_ref()[0], 0.1f);
+            changed |= ImGui::DragFloat4("Rotation", &transform.get_rotation_ref()[0], 0.1f);
+            changed |= ImGui::DragFloat3("Scale", &transform.get_scale_ref()[0], 0.1f);
 
             if (changed)
             {
-                c->set_model(transformToMat4(transform));
-                set_model_dirty(true);
-
+                // c->set_model(transformToMat4(transform));
+                // set_model_dirty(true);
+                c->set_transform(transform);
+                set_transform_dirty(true);
                 switch (c->get_edit_mode())
                 {
                 case EditModes::TRANSLATE:
-                    emit_signal("translation@changed", transform.position);
+                    emit_signal("translation@changed", transform.get_position());
                     break;
                 case EditModes::ROTATE:
-                    emit_signal("rotation@changed", transform.rotation);
+                    emit_signal("rotation@changed", transform.get_rotation());
                     break;
                 case EditModes::SCALE:
-                    emit_signal("scale@changed", transform.scale);
+                    emit_signal("scale@changed", transform.get_scale());
                     break;
                 }
+                
             }
             ImGui::TreePop();
         }

@@ -21,6 +21,8 @@ void print_line(const char* line);
 void print_line(const std::string & line);
 void print_error(const char* p_function, const char* p_file, int p_line, const char* p_error, const char* p_message);
 
+void to_camel_case(std::string& str);
+
 bool read_file(const std::string & filename, std::string & content);
 
 #define ERR_FAIL_COND_V_MSG(m_cond, m_retval, m_msg)                                                                                     \

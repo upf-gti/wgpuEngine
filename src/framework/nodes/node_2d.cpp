@@ -1,7 +1,9 @@
 #include "node_2d.h"
 
 #include "framework/input.h"
-#include "framework/utils/intersections.h"
+#include "framework/math/intersections.h"
+#include "framework/ui/io.h"
+
 #include "graphics/renderer.h"
 
 #include "glm/gtc/matrix_transform.hpp"
@@ -14,10 +16,8 @@
 #include <algorithm>
 
 unsigned int Node2D::last_uid = 0;
-bool Node2D::propagate_event = true;
 
 std::map<std::string, Node2D*> Node2D::all_widgets;
-std::vector<std::pair<Node2D*, sInputData>> Node2D::frame_inputs;
 
 Node2D::Node2D(const std::string& n, const glm::vec2& p, const glm::vec2& s) : size(s)
 {
@@ -29,7 +29,14 @@ Node2D::Node2D(const std::string& n, const glm::vec2& p, const glm::vec2& s) : s
 
     all_widgets[name] = this;
 
-    set_translation(p);
+    set_position(p);
+}
+
+Node2D::~Node2D()
+{
+    release();
+
+    all_widgets.erase(name);
 }
 
 void Node2D::add_child(Node2D* child)
@@ -116,9 +123,13 @@ void Node2D::set_model(const glm::mat3x3& _model)
     model = _model;
 }
 
-void Node2D::set_visibility(bool value)
+bool Node2D::set_visibility(bool value)
 {
+    bool last = visibility;
+
     visibility = value;
+
+    return last != value;
 }
 
 void Node2D::set_viewport_model(glm::mat4x4 model)
@@ -131,7 +142,7 @@ void Node2D::set_priority(uint8_t priority)
     class_type = priority;
 }
 
-void Node2D::set_translation(const glm::vec2& translation)
+void Node2D::set_position(const glm::vec2& translation)
 {
 	model = glm::translate(glm::mat3x3(1.f), translation);
 }
@@ -197,6 +208,18 @@ glm::vec2 Node2D::get_size() const
     return size;
 }
 
+void Node2D::release()
+{
+    // Clear event listeners
+    Node::unbind(name);
+    Node::unbind(name + "@pressed");
+    Node::unbind(name + "@released");
+    Node::unbind(name + "@dbl_click");
+    Node::unbind(name + "@changed");
+
+    Node::release();
+}
+
 Node2D* Node2D::get_widget_from_name(const std::string& name)
 {
     if (all_widgets.count(name)) {
@@ -207,44 +230,21 @@ Node2D* Node2D::get_widget_from_name(const std::string& name)
 
 void Node2D::clean()
 {
-    for (auto pair : all_widgets)
-    {
-        delete pair.second;
+    std::vector<Node2D*> to_delete;
+
+    for (auto pair : all_widgets) {
+
+        // it's a child, will be removed later..
+        if (pair.second->get_parent()) {
+            continue;
+        }
+
+        to_delete.push_back(pair.second);
+    }
+
+    for (auto node : to_delete) {
+        delete node;
     }
 
     all_widgets.clear();
-}
-
-void Node2D::push_input(Node2D* node, sInputData data)
-{
-    frame_inputs.push_back({ node, data });
-}
-
-void Node2D::process_input()
-{
-    // sort inputs by priority..
-
-    std::sort(frame_inputs.begin(), frame_inputs.end(), [](auto& lhs, auto& rhs) {
-
-        Node2D* lhs_node = lhs.first;
-        Node2D* rhs_node = rhs.first;
-
-        // bool equal_priority = lhs_node->get_class_type() == rhs_node->get_class_type();
-
-        if (lhs_node->get_class_type() < rhs_node->get_class_type()) return true;
-
-        return false;
-    });
-
-    // call on_input functions..
-
-    for (const auto& i : frame_inputs)
-    {
-        bool event_processed = i.first->on_input(i.second);
-        if (event_processed) {
-            break;
-        }
-    }
-
-    frame_inputs.clear();
 }

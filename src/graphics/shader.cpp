@@ -1,5 +1,7 @@
 #include "shader.h"
 
+#include <filesystem>
+
 #include "pipeline.h"
 
 #define TINT_BUILD_WGSL_READER 1
@@ -13,7 +15,21 @@
 
 #include "spdlog/spdlog.h"
 
+#include "shaders/math.wgsl.gen.h"
+#include "shaders/tonemappers.wgsl.gen.h"
+#include "shaders/pbr_functions.wgsl.gen.h"
+#include "shaders/pbr_light.wgsl.gen.h"
+
 std::unordered_map<std::string, custom_define_type> Shader::custom_defines;
+std::unordered_map<std::string, const char*> Shader::engine_libraries;
+
+Shader::Shader()
+{
+    engine_libraries[shaders::math::path] = shaders::math::source;
+    engine_libraries[shaders::tonemappers::path] = shaders::tonemappers::source;
+    engine_libraries[shaders::pbr_functions::path] = shaders::pbr_functions::source;
+    engine_libraries[shaders::pbr_light::path] = shaders::pbr_light::source;
+}
 
 Shader::~Shader()
 {
@@ -28,6 +44,8 @@ Shader::~Shader()
 
 bool Shader::load_from_file(const std::string& shader_path, const std::string& specialized_path, std::vector<std::string> define_specializations)
 {
+    loaded_from_file = true;
+
 	path = shader_path;
 
     if (!specialized_path.empty()) {
@@ -52,7 +70,7 @@ bool Shader::load_from_file(const std::string& shader_path, const std::string& s
 	return load(shader_content, specialized_path, define_specializations);
 }
 
-bool Shader::load_from_source(const std::string& shader_source, const std::string& name, const std::string& specialized_name, std::vector<std::string> define_specializations)
+bool Shader::load_from_source(const std::string& shader_source, const std::string& name, const std::string& specialized_path, std::vector<std::string> define_specializations)
 {
     path = name;
 
@@ -75,7 +93,7 @@ bool Shader::parse_preprocessor(std::string &shader_content, const std::string &
     std::istringstream string_stream(shader_content);
     std::string line;
 
-    std::string _directory = dirname_of_file(shader_path);
+    std::string _directory = std::filesystem::path(shader_path).parent_path().string();
 
     std::streampos line_pos;
     while (std::getline(string_stream, line)) {
@@ -86,12 +104,20 @@ bool Shader::parse_preprocessor(std::string &shader_content, const std::string &
         if (tag == "#include")
         {
             const std::string& include_name = tokens[1];
-            const std::string& include_path = _directory + "/" + include_name;
+            std::string include_path;
             std::string new_content;
 
-            if (!read_file(include_path, new_content)) {
-                spdlog::error("\tCould not load shader include: {}", include_path);
-                return false;
+            if (!engine_libraries.contains(include_name)) {
+                include_path = std::filesystem::relative(std::filesystem::path(_directory + "/" + include_name)).string();
+
+                if (!read_file(include_path, new_content)) {
+                    spdlog::error("\tCould not load shader include: {}", include_path);
+                    return false;
+                }
+            }
+            else {
+                new_content = engine_libraries[include_name];
+                include_path = include_name;
             }
 
             if (!parse_preprocessor(new_content, include_path)) {
@@ -526,11 +552,18 @@ void Shader::reload()
 {
 	wgpuShaderModuleRelease(shader_module);
 
+    shader_module = nullptr;
+
 	bind_group_layouts.clear();
 	vertex_attributes.clear();
 	vertex_buffer_layouts.clear();
 
-	load_from_file(path, specialized_path, define_specializations);
+    if (loaded_from_file) {
+        load_from_file(path, specialized_path, define_specializations);
+    } else
+    if (RendererStorage::engine_shaders_refs.contains(path)) {
+        load_from_source(RendererStorage::engine_shaders_refs[path], path, specialized_path, define_specializations);
+    }
 
 	if (pipeline_ref) {
 		pipeline_ref->reload(this);

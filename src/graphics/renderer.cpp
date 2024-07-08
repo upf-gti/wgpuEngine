@@ -6,7 +6,7 @@
 
 #include "xr/openxr_context.h"
 
-#include "dawnxr/dawnxr_internal.h"
+#include "xr/dawnxr/dawnxr_internal.h"
 
 #if defined(BACKEND_DX12)
 #include <dawn/native/D3D12Backend.h>
@@ -24,6 +24,8 @@
 #include "graphics/shader.h"
 #include "graphics/debug/renderdoc_capture.h"
 #include "graphics/renderer_storage.h"
+
+#include "shaders/mesh_pbr.wgsl.gen.h"
 
 #include <algorithm>
 
@@ -79,7 +81,7 @@ int Renderer::initialize(GLFWwindow* window, bool use_mirror_screen)
 
 #ifdef XR_SUPPORT
 
-    xr_context->z_far = z_near;
+    xr_context->z_near = z_near;
     xr_context->z_far = z_far;
 
 #if defined(BACKEND_DX12)
@@ -151,6 +153,8 @@ int Renderer::initialize(GLFWwindow* window, bool use_mirror_screen)
     init_lighting_bind_group();
 
     init_multisample_textures();
+
+    init_timestamp_queries();
 
     return 0;
 }
@@ -227,7 +231,7 @@ void Renderer::init_lighting_bind_group()
     num_lights_buffer.buffer_size = sizeof(int);
 
     std::vector<Uniform*> uniforms = { &irradiance_texture_uniform, &brdf_lut_uniform, &ibl_sampler_uniform, &lights_buffer, &num_lights_buffer };
-    lighting_bind_group = webgpu_context->create_bind_group(uniforms, RendererStorage::get_shader("data/shaders/mesh_pbr.wgsl"), 3);
+    lighting_bind_group = webgpu_context->create_bind_group(uniforms, RendererStorage::get_shader_from_source(shaders::mesh_pbr::source, shaders::mesh_pbr::path), 3);
 }
 
 void Renderer::init_depth_buffers()
@@ -270,6 +274,33 @@ void Renderer::init_multisample_textures()
 
         multisample_textures_views[i] = multisample_textures[i].get_view();
     }
+}
+
+void Renderer::init_timestamp_queries()
+{
+    timestamp_query_set = webgpu_context->create_query_set(maximum_query_sets);
+    timestamp_query_buffer = webgpu_context->create_buffer(sizeof(uint64_t) * maximum_query_sets, WGPUBufferUsage_QueryResolve | WGPUBufferUsage_Storage | WGPUBufferUsage_CopySrc | WGPUBufferUsage_CopyDst, nullptr);
+}
+
+void Renderer::resolve_query_set(WGPUCommandEncoder encoder, uint8_t first_query)
+{
+    wgpuCommandEncoderResolveQuerySet(encoder, timestamp_query_set, first_query, query_index, timestamp_query_buffer, 0);
+}
+
+std::vector<float> Renderer::get_timestamps()
+{
+    uint64_t* buffer_data = reinterpret_cast<uint64_t*>(webgpu_context->read_buffer(timestamp_query_buffer, sizeof(uint64_t) * maximum_query_sets));
+
+    std::vector<float> time_diffs;
+    for (int i = 0; i < query_index; i += 2) {
+        uint64_t diff = buffer_data[i + 1] - buffer_data[i];
+        float milliseconds = (float)diff * 1e-6;
+        time_diffs.push_back(milliseconds);
+    }
+
+    delete[] buffer_data;
+
+    return time_diffs;
 }
 
 void Renderer::set_msaa_count(uint8_t msaa_count)
@@ -564,6 +595,16 @@ void Renderer::render_2D(WGPURenderPassEncoder render_pass, const WGPUBindGroup&
 #endif
 }
 
+uint8_t Renderer::timestamp(WGPUCommandEncoder encoder, const char* label)
+{
+    //wgpuCommandEncoderWriteTimestamp(encoder, timestamp_query_set, query_index);
+    queries_label_map[query_index] = std::string(label);
+
+    assert(query_index + 1 < maximum_query_sets);
+
+    return query_index++;
+}
+
 void Renderer::add_renderable(MeshInstance* mesh_instance, glm::mat4x4 global_matrix)
 {
     render_entity_list.push_back({ mesh_instance, global_matrix });
@@ -582,6 +623,8 @@ void Renderer::clear_renderables()
     }
 
     num_lights = 0;
+
+    query_index = 0;
 }
 
 void Renderer::update_lights()

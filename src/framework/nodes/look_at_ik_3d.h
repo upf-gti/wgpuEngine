@@ -1,15 +1,14 @@
 #pragma once
 
 #include "framework/nodes/node_3d.h"
-#include "framework/animation/fabrik_solver.h"
-#include "framework/animation/ccd_solver.h"
-#include "framework/animation/jacobian_solver.h"
 #include "framework/animation/skeleton.h"
-#include "framework/nodes/skeleton_instance_3d.h"
 
 #include <string>
 #include <vector>
 
+class SkeletonInstance3D;
+class IKSolver;
+class FABRIKSolver;
 
 class LookAtIK3D : public Node
 {
@@ -25,16 +24,13 @@ class LookAtIK3D : public Node
 
     enum IKSolvers { FABRIK, CCD, JACOBIAN };
     uint32_t solver = IKSolvers::FABRIK;
-    IKSolver* ik_solver = new FABRIKSolver();
+    IKSolver* ik_solver = nullptr;
 
     SkeletonInstance3D* skeleton_instance = nullptr;
 
 public:
-    LookAtIK3D() {
-        ik_solver->set_num_steps(max_iterations);
-        ik_solver->set_threshold(min_distance);
-        set_name(name);
-    };
+
+    LookAtIK3D();
     LookAtIK3D(SkeletonInstance3D* in_skeleton_instance);
 
     virtual ~LookAtIK3D() {};

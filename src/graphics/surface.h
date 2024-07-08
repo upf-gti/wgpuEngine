@@ -1,7 +1,7 @@
 #pragma once
 
 #include "graphics/webgpu_context.h"
-#include "framework/aabb.h"
+#include "framework/math/aabb.h"
 #include "material.h"
 
 #include "glm/vec2.hpp"
@@ -69,7 +69,9 @@ public:
     const WGPUBuffer& get_vertex_buffer() const;
     uint32_t get_index() const { return index; };
 
+    void create_axis(float s = 1.f);
     void create_quad(float w = 1.f, float h = 1.f, bool centered = true, const glm::vec3& color = { 1.f, 1.f, 1.f });
+    void create_subvidided_quad(float w = 1.f, float h = 1.f, uint32_t subdivisions = 16, bool centered = true, const glm::vec3& color = { 1.f, 1.f, 1.f });
     void create_box(float w = 1.f, float h = 1.f, float d = 1.f, const glm::vec3& color = { 1.f, 1.f, 1.f });
     void create_rounded_box(float w = 1.f, float h = 1.f, float d = 1.f, float c = 0.2f, const glm::vec3& color = { 1.f, 1.f, 1.f });
     void create_sphere(float r = 1.f, uint32_t segments = 32, uint32_t rings = 32, const glm::vec3& color = { 1.f, 1.f, 1.f });

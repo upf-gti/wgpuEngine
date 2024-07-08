@@ -6,6 +6,7 @@
 #include "spdlog/spdlog.h"
 
 #include "skeleton_instance_3d.h"
+#include "shaders/mesh_color.wgsl.gen.h"
 
 AnimationPlayer::AnimationPlayer(const std::string& n)
 {
@@ -119,19 +120,19 @@ AnimationPlayer::AnimationPlayer(const std::string& n)
 
             if (track)
             {
-                track->get_keyframe(frame_idx).value = t.position;
+                track->get_keyframe(frame_idx).value = t.get_position();
             }
             
             track = animation->get_track_by_path(node_path + "/rotation");
             if (track)
             {
-                track->get_keyframe(frame_idx).value = t.rotation;
+                track->get_keyframe(frame_idx).value = t.get_rotation();
             }
 
             track = animation->get_track_by_path(node_path + "/scale");
             if (track)
             {
-                track->get_keyframe(frame_idx).value = t.scale;
+                track->get_keyframe(frame_idx).value = t.get_scale();
             }
 
             for (size_t i = 0; i < timeline.tracks.size(); i++) {
@@ -257,14 +258,14 @@ void AnimationPlayer::generate_keyposes()
     for (size_t t = 0; t < frames.size(); t++)
     {
         blender.update(frames[t], track_data);
-        root_node->set_model_dirty(true);
+        root_node->set_transform_dirty(true);
         float delta_time = t == 0 ? 0 : frames[t] - frames[t - 1];
         Node::update(delta_time);
         Pose pose = skeleton->get_current_pose();
         keyposes.push_back(pose);
     }
     blender.update(0, track_data);
-    root_node->set_model_dirty(true);
+    root_node->set_transform_dirty(true);
     Node::update(0);
 }
 
@@ -351,7 +352,7 @@ void AnimationPlayer::update_trajectories(std::vector<uint32_t>& tracks_to_updat
                         }
                         mat.depth_read = false;
                         mat.priority = 0;
-                        mat.shader = RendererStorage::get_shader("data/shaders/mesh_color.wgsl", mat);
+                        mat.shader = RendererStorage::get_shader_from_source(shaders::mesh_color::source, shaders::mesh_color::path, mat);
 
                         point->set_surface_material_override(s_point, mat);
                         keyposes_helper.push_back(point);
@@ -369,7 +370,7 @@ void AnimationPlayer::update_trajectories(std::vector<uint32_t>& tracks_to_updat
                 mat.depth_read = false;
                 mat.priority = 0;
                 mat.topology_type = eTopologyType::TOPOLOGY_LINE_LIST;
-                mat.shader = RendererStorage::get_shader("data/shaders/mesh_color.wgsl", mat);
+                mat.shader = RendererStorage::get_shader_from_source(shaders::mesh_color::source, shaders::mesh_color::path, mat);
 
                 trajectories_helper2[i].mesh->set_surface_material_override(s, mat);
                 //trajectories_helper.push_back(mesh);
@@ -478,7 +479,7 @@ void AnimationPlayer::update_trajectories(std::vector<uint32_t>& tracks_to_updat
         mat.depth_read = false;
         mat.priority = 0;
         mat.topology_type = eTopologyType::TOPOLOGY_LINE_LIST;
-        mat.shader = RendererStorage::get_shader("data/shaders/mesh_color.wgsl", mat);
+        mat.shader = RendererStorage::get_shader_from_source(shaders::mesh_color::source, shaders::mesh_color::path, mat);
 
         mesh->set_surface_material_override(s, mat);
         smoothed_trajectories_helper.push_back(mesh);
@@ -687,7 +688,7 @@ void AnimationPlayer::update(float delta_time)
             - nodes that are not joints will automatically set its new model from the animatable properties
     */
 
-    root_node->set_model_dirty(true);
+    root_node->set_transform_dirty(true);
 
     //for (auto instance : root_node->get_children()) {
 
@@ -852,6 +853,11 @@ void AnimationPlayer::render_gui()
             timeline.selected_point.x = -1;
             timeline.selected_point.y = -1;
             selected_entry = -1;
+            /*FROM MERGE*/
+            playback = new_current_frame * current_animation->get_duration() / (timeline.frame_max - timeline.frame_min);
+            blender.update(playback, track_data);
+            root_node->set_transform_dirty(true);
+            /**/
         }
         // add a UI to edit that particular item
         if (selected_entry != -1 && timeline.keyframe_selection_changed)
@@ -909,7 +915,7 @@ void AnimationPlayer::render_gui()
             current_frame = new_current_frame;
             playback = (float)new_current_frame * current_animation->get_duration() / (float)(timeline.frame_max - timeline.frame_min);
             blender.update(playback, track_data);
-            root_node->set_model_dirty(true);
+            root_node->set_transform_dirty(true);
             
             time_tunnel.set_current_frame(new_current_frame);
             update_trajectories(active_tracks);

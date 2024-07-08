@@ -1,9 +1,8 @@
 #pragma once
 
-#include "framework/nodes/node_3d.h"
 #include "framework/nodes/mesh_instance_3d.h"
 
-#include "framework/animation/skeleton.h"
+class Skeleton;
 
 class SkeletonInstance3D : public MeshInstance3D {
 

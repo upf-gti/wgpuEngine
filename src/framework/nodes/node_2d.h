@@ -1,50 +1,56 @@
 #pragma once
 
 #include "framework/nodes/node.h"
-#include "glm/glm.hpp"
+
 #include "graphics/renderer_storage.h"
+
+#include "glm/glm.hpp"
 
 #include <string>
 #include <vector>
 
 enum Node2DClassType {
-    SELECTOR_BUTTON = 10,
-    SELECTOR,
+    CURSOR = 10,
     TEXT,
+    TEXT_SHADOW,
+    SELECTOR_BUTTON,
+    SELECTOR,
     LABEL,
     BUTTON_MARK,
     BUTTON,
     TEXTURE_BUTTON,
     COMBO_BUTTON,
     SUBMENU,
-    SLIDER,
+    HSLIDER,
+    VSLIDER,
     COLOR_PICKER,
     GROUP,
     COMBO,
+    CONTAINER,
     HCONTAINER,
     VCONTAINER,
+    IMAGE,
+    PANEL_BUTTON,
     PANEL,
-    UNDEFINED,
-    NUM_2D_TYPES
+    UNDEFINED
 };
 
 struct sInputData {
     bool is_hovered = false;
     bool is_pressed = false;
+    bool was_hovered = false;
     bool was_pressed = false;
     bool was_released = false;
     glm::vec2 local_position = glm::vec2(0.0f);
-    float ray_distance = 0.0f;
+    glm::vec3 ray_intersection = glm::vec3(0.0f);
+    float ray_distance = -1.0f;
 };
 
 class Node2D : public Node {
 
 protected:
 
-    static std::vector<std::pair<Node2D*, sInputData>> frame_inputs;
-
     static unsigned int last_uid;
-    static bool propagate_event;
 
     uint32_t    uid = 0;
     uint8_t     class_type = Node2DClassType::UNDEFINED;
@@ -63,7 +69,7 @@ public:
 
     Node2D() : Node2D("unnamed", { 0.0f, 0.0f }, { 0.0f, 0.0f }) {};
     Node2D(const std::string& name, const glm::vec2& p, const glm::vec2& s);
-	virtual ~Node2D() {};
+	virtual ~Node2D();
 
     virtual void add_child(Node2D* child);
     virtual void remove_child(Node2D* child);
@@ -73,9 +79,11 @@ public:
 	virtual void render();
 	virtual void update(float delta_time);
 
-    virtual sInputData get_input_data() { return sInputData(); };
+    void release() override;
+
+    virtual sInputData get_input_data(bool ignore_focus = false) { return sInputData(); };
     virtual bool on_input(sInputData data) { return false; };
-    virtual void on_pressed() {};
+    virtual bool on_pressed() { return false; };
 
 	void translate(const glm::vec2& translation);
 	void rotate(float angle);
@@ -94,9 +102,9 @@ public:
     uint8_t get_class_type() const;
     bool get_visibility() const;
 
-	void set_translation(const glm::vec2& translation);
+    bool set_visibility(bool value);
+	void set_position(const glm::vec2& translation);
     void set_model(const glm::mat3x3& _model);
-    void set_visibility(bool value);
     void set_viewport_model(glm::mat4x4 model);
     virtual void set_priority(uint8_t priority);
 
@@ -104,7 +112,4 @@ public:
 
     static Node2D* get_widget_from_name(const std::string& name);
     static void clean();
-
-    static void push_input(Node2D* node, sInputData data);
-    static void process_input();
 };

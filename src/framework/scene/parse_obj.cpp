@@ -9,6 +9,9 @@
 
 #include "framework/nodes/mesh_instance_3d.h"
 
+#include "shaders/mesh_texture.wgsl.gen.h"
+#include "shaders/mesh_color.wgsl.gen.h"
+
 #include <filesystem>
 
 #include "spdlog/spdlog.h"
@@ -46,11 +49,11 @@ void parse_obj(const char* obj_path, MeshInstance3D* entity)
     if (!materials.empty()) {
         if (materials[0].diffuse_texname.empty()) {
             new_surface->set_material_color(glm::vec4(materials[0].diffuse[0], materials[0].diffuse[1], materials[0].diffuse[2], 1.0f));
-            new_surface->set_material_shader(RendererStorage::get_shader("data/shaders/mesh_color.wgsl", new_surface->get_material()));
+            new_surface->set_material_shader(RendererStorage::get_shader_from_source(shaders::mesh_color::source, shaders::mesh_color::path, new_surface->get_material()));
         }
         else {
             new_surface->set_material_diffuse((RendererStorage::get_texture(obj_path_fs.parent_path().string() + "/" + materials[0].diffuse_texname, true)));
-            new_surface->set_material_shader(RendererStorage::get_shader("data/shaders/mesh_texture.wgsl", new_surface->get_material()));
+            new_surface->set_material_shader(RendererStorage::get_shader_from_source(shaders::mesh_texture::source, shaders::mesh_texture::path, new_surface->get_material()));
         }
     }
 

@@ -14,7 +14,7 @@ public:
     bool is_skinned = false;
 
     MeshInstance3D();
-	virtual ~MeshInstance3D();
+	~MeshInstance3D();
 
     AABB get_surface_world_aabb(int surface_idx);
 

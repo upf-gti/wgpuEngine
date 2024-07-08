@@ -35,6 +35,36 @@ void print_error(const char* p_function, const char* p_file, int p_line, const c
     spdlog::error("{}(line {}) at {}\n{} - {}", p_function, p_line, p_file, p_error, p_message);
 }
 
+void to_camel_case(std::string& str)
+{
+    if (!str.size()) {
+        return;
+    }
+
+    if (str[0] == '_') {
+        str.erase(0, 1);
+    }
+
+    if (str.size() > 1) {
+        str[0] = std::toupper(str[0]);
+    }
+
+    size_t num_chars = str.size();
+
+    for (size_t i = 0; i < num_chars; ++i) {
+        auto& c = str[i];
+        if (c == '_') {
+            if (i < num_chars - 1) {
+                c = ' ';
+                str[i + 1] = std::toupper(str[i + 1]);
+            }
+            else {
+                str.erase(i);
+            }
+        }
+    }
+}
+
 bool read_file(const std::string& filename, std::string& content)
 {
 	content.clear();

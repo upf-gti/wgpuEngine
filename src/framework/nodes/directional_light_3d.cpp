@@ -3,6 +3,8 @@
 DirectionalLight3D::DirectionalLight3D() : Light3D()
 {
     type = LIGHT_DIRECTIONAL;
+    node_type = "DirectionalLight3D";
+    name = node_type + "_" + std::to_string(last_node_id++);
 }
 
 DirectionalLight3D::~DirectionalLight3D()

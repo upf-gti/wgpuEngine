@@ -29,6 +29,7 @@ public:
     static RendererStorage* instance;
 
     static std::map<std::string, Shader*> shaders;
+    static std::map<std::string, const char*> engine_shaders_refs;
     static std::map<std::string, std::vector<std::string>> shader_library_references;
     static std::map<std::string, Texture*> textures;
     static std::map<std::string, Surface*> surfaces;
@@ -59,11 +60,11 @@ public:
 
     static Shader* get_shader(const std::string& shader_path, const std::vector<std::string>& custom_define_specializations);
 
-    static Shader* get_shader_from_source(const std::string& source, const std::string& name = "", const Material& material = {},
+    static Shader* get_shader_from_source(const char* source, const std::string& name, const Material& material = {},
         const std::vector<std::string>& custom_define_specializations = {});
 
-    static Shader* get_shader_from_source(const std::string& source, const std::string& name = "",
-        const std::vector<std::string>& custom_define_specializations = {});
+    static Shader* get_shader_from_source(const char* source, const std::string& name,
+        const std::vector<std::string>& custom_define_specializations);
 
     static void reload_shader(const std::string& shader_path);
 
@@ -81,7 +82,7 @@ public:
     static Animation* get_animation(const std::string& animation_path);
 
     static void register_render_pipeline(Material& material);
-    static void register_compute_pipeline(Shader* shader, WGPUPipelineLayout pipeline_layout);
+    //static void register_compute_pipeline(Shader* shader, WGPUPipelineLayout pipeline_layout);
     static void clean_registered_pipelines();
 
 };

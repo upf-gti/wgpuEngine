@@ -18,18 +18,24 @@ struct sLightUniformData {
 };
 
 struct sUIData {
-    // Common
-    float is_hovered = 0.f;
+    // is_hovered / hover transition
+    glm::vec2 hover_info = { 0.f, 0.0f };
+    glm::vec2 press_info = { 0.0f, 0.0f };
+
+    glm::vec4 xr_info = { 0.0f, 0.0f, 0.0f, 0.0f };
+
+    float aspect_ratio = 1.f;
+
     // Groups
-    float num_group_items = 2; // combo buttons use this prop by now to the index in combo
+    float num_group_items = 2.0f; // combo buttons use this prop by now to the index in combo
     // Buttons
     float is_selected = 0.f;
     float is_color_button = 0.f;
 
     // Color Picker
     glm::vec3 picker_color = glm::vec3(1.f);
-    // To keep rgb if icon has colors...
-    float keep_rgb = 0.f;
+    // inside/outside the node parent.. -1..1
+    float range = 0.f;
 
     // Slider
     float slider_value = 0.f;

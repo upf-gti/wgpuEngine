@@ -2,14 +2,21 @@
 
 #include "framework/input.h"
 #include "framework/utils/file_watcher.h"
-#include "framework/nodes/node_2d.h"
+#include "framework/ui/io.h"
 
+#include "graphics/renderer_storage.h"
 #include "graphics/renderer.h"
+
+#include "xr/openxr_context.h"
 
 #include "imgui.h"
 #include "backends/imgui_impl_wgpu.h"
 #include "backends/imgui_impl_glfw.h"
 #include "framework/utils/ImGuizmo.h"
+
+#include "engine/scene.h"
+
+#include "framework/nodes/default_node_factory.h"
 
 #include <GLFW/glfw3.h>
 
@@ -32,6 +39,8 @@ void resize_callback(GLFWwindow* window, int width, int height)
 Engine::Engine()
 {
     instance = this;
+
+    node_factory = default_node_factory;
 }
 
 int Engine::initialize(Renderer* renderer, GLFWwindow* window, bool use_glfw, bool use_mirror_screen)
@@ -64,6 +73,8 @@ int Engine::initialize(Renderer* renderer, GLFWwindow* window, bool use_glfw, bo
 
     Input::init(window, renderer, use_glfw);
 
+    IO::initialize();
+
     glfwSetWindowUserPointer(window, this);
 
     glfwSetFramebufferSizeCallback(window, resize_callback);
@@ -95,6 +106,11 @@ void Engine::clean()
     renderer->clean();
 }
 
+void Engine::add_node(Node* node)
+{
+    main_scene->add_node(node);
+}
+
 bool Engine::get_openxr_available()
 {
     return renderer->get_openxr_available();
@@ -109,26 +125,38 @@ bool Engine::get_use_mirror_window()
 #endif
 }
 
+Scene* Engine::get_main_scene()
+{
+    return main_scene;
+}
+
 void Engine::on_frame()
 {
+    // Update stuff
+
     Input::update(delta_time);
 
     double last_time = current_time;
     current_time = glfwGetTime();
-
     delta_time = static_cast<float>((current_time - last_time));
+
+    IO::start_frame();
 
     update(delta_time);
 
-    Node2D::process_input();
+    // Update IO after updating the engine
+    IO::update(delta_time);
 
-    // Start the Dear ImGui frame
+    // Render stuff
+
     ImGui_ImplWGPU_NewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
 
     ImGuizmo::SetOrthographic(false);
     ImGuizmo::BeginFrame();
+
+    IO::render();
 
     render();
 
@@ -157,4 +185,14 @@ void Engine::resize_window(int width, int height)
     } else {
         renderer->resize_window(width, height);
     }
+}
+
+void Engine::vibrate_hand(int controller, float amplitude, float duration)
+{
+#ifdef XR_SUPPORT
+    if (renderer->get_openxr_available()) {
+        auto openxr_context = renderer->get_openxr_context();
+        openxr_context->apply_haptics(controller, amplitude, duration);
+    }
+#endif
 }

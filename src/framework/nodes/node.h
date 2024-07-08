@@ -1,6 +1,6 @@
 #pragma once
 
-#include "framework/aabb.h"
+#include "framework/math/aabb.h"
 
 #include <string>
 #include <vector>
@@ -13,7 +13,7 @@
 #include "glm/vec4.hpp"
 #include "glm/gtc/quaternion.hpp"
 
-#include "framework/animation/bone_transform.h"
+#include "framework/math/transform.h"
 
 using FuncEmpty = std::function<void()>;
 using FuncFloat = std::function<void(const std::string&, float)>;
@@ -38,11 +38,13 @@ class Node {
 
     static std::unordered_map<std::string, std::vector<SignalType>> mapping_signals;
     static std::unordered_map<uint8_t, std::vector<FuncEmpty>> controller_signals;
-    static uint32_t last_node_id;
 
 protected:
 
+    static uint32_t last_node_id;
+
     std::string name;
+    std::string node_type;
 
     NodeType type;
 
@@ -61,6 +63,9 @@ public:
     virtual void update(float delta_time);
     virtual void render_gui() {};
 
+    virtual void serialize(std::ofstream& binary_scene_file);
+    virtual void parse(std::ifstream& binary_scene_file);
+
     NodeType get_type() const { return type; }
     std::string get_name() const { return name; }
     virtual std::vector<Node*>& get_children() { return children; }
@@ -78,12 +83,16 @@ public:
 
     virtual void remove_flag(uint8_t flag);
 
+    virtual void release();
+
     /*
     *	Callbacks
     */
 
     static void bind(const std::string& name, SignalType callback);
     static void bind(uint8_t button, FuncEmpty callback);
+
+    static void unbind(const std::string& name);
 
     static void check_controller_signals();
 

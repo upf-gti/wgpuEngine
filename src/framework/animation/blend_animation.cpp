@@ -111,7 +111,7 @@ void BlendAnimation::blend(Pose& output, Pose& a, Pose& b, float t)
 {
     size_t num_joints = output.size();
     for (size_t i = 0; i < num_joints; ++i) {        
-        output.set_local_transform(i, mix(a.get_local_transform(i), b.get_local_transform(i), t));
+        output.set_local_transform(i, Transform::mix(a.get_local_transform(i), b.get_local_transform(i), t));
     }
 }
 
@@ -125,9 +125,9 @@ void BlendAnimation::add(Pose& output, Pose& in, Pose& add_pose, Pose& base_pose
    
         // outPose = inPose + (addPose - basePose)
         Transform result(
-            input.position + (additive.position - additiveBase.position),
-            normalize(input.rotation * (inverse(additiveBase.rotation) * additive.rotation)),
-            input.scale + (additive.scale - additiveBase.scale));
+            input.get_position() + (additive.get_position() - additiveBase.get_position()),
+            normalize(input.get_rotation() * (inverse(additiveBase.get_rotation()) * additive.get_rotation())),
+            input.get_scale() + (additive.get_scale() - additiveBase.get_scale()));
         output.set_local_transform(i, result);
     }
 }

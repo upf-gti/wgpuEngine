@@ -18,7 +18,7 @@ enum eTransparencyType {
     ALPHA_OPAQUE,
     ALPHA_BLEND,
     ALPHA_MASK,
-    ALPHA_HASH
+    ALPHA_HASH // TODO
 };
 
 enum eTopologyType {

@@ -1,6 +1,6 @@
 #include "surface.h"
 
-#include "framework/utils/math_utils.h"
+#include "framework/math/math_utils.h"
 
 #include "spdlog/spdlog.h"
 
@@ -95,6 +95,18 @@ const WGPUBuffer& Surface::get_vertex_buffer() const
     return vertex_buffer;
 }
 
+void Surface::create_axis(float s)
+{
+    vertices.push_back({ glm::vec3(-1.0f,  0.0f,  0.0f) * s });
+    vertices.push_back({ glm::vec3( 1.0f,  0.0f,  0.0f) * s });
+    vertices.push_back({ glm::vec3( 0.0f, -1.0f,  0.0f) * s });
+    vertices.push_back({ glm::vec3( 0.0f,  1.0f,  0.0f) * s });
+    vertices.push_back({ glm::vec3( 0.0f,  0.0f, -1.0f) * s });
+    vertices.push_back({ glm::vec3( 0.0f,  0.0f,  1.0f) * s });
+
+    create_vertex_buffer();
+}
+
 std::vector<InterleavedData> Surface::generate_quad(float w, float h, const glm::vec3& position, const glm::vec3& normal, const glm::vec3& color)
 {
     InterleavedData points[4];
@@ -106,7 +118,7 @@ std::vector<InterleavedData> Surface::generate_quad(float w, float h, const glm:
     glm::vec3 delta2 = h * vY;
 
     // Build one corner of the square
-    glm::vec3 orig = -0.5f * w * vX + 0.5f * h * vY;
+    glm::vec3 orig = -0.5f * w * vX - 0.5f * h * vY;
     uint32_t counter = 0;
 
     for (unsigned short i1 = 0; i1 <= 1; i1++)
@@ -114,7 +126,7 @@ std::vector<InterleavedData> Surface::generate_quad(float w, float h, const glm:
         for (unsigned short i2 = 0; i2 <= 1; i2++)
         {
             auto vtx = &points[counter++];
-            vtx->position = position + (orig + float(i1) * delta1 - float(i2) * delta2);
+            vtx->position = position + (orig + float(i1) * delta1 + float(i2) * delta2);
             vtx->normal = n;
             vtx->uv = glm::vec2(1.0f - i1, 1.0f - i2);
         }
@@ -147,14 +159,58 @@ void Surface::create_quad(float w, float h, bool centered, const glm::vec3& colo
 
     glm::vec3 origin(0.0f);
 
-    if (!centered)
-    {
+    if (!centered) {
         origin += glm::vec3(w * 0.5f, h * 0.5f, 0.0f);
     }
 
     vertices = generate_quad(w, h, origin, normals::pZ, color);
 
     spdlog::trace("Quad mesh created ({} vertices)", vertices.size());
+
+    create_vertex_buffer();
+}
+
+void Surface::create_subvidided_quad(float w, float h, uint32_t subdivisions, bool centered, const glm::vec3& color)
+{
+    // Mesh has vertex data...
+    if (vertex_buffer)
+    {
+        vertices.clear();
+        wgpuBufferDestroy(vertex_buffer);
+    }
+
+    float step_x = w / subdivisions;
+    float step_y = h / subdivisions;
+
+    glm::vec3 origin = { -w * 0.5f, h * 0.5f, 0.0f };
+
+    if (!centered) {
+        origin += glm::vec3(w * 0.5f, h * 0.5f, 0.0f);
+    }
+
+    // Generate vertices with positions and UVs
+    for (int i = 0; i < subdivisions; ++i) {
+        for (int j = 0; j < subdivisions; ++j) {
+
+            const glm::vec3& new_origin = origin + glm::vec3(j * step_x, -i * step_y, 0.0f) + glm::vec3(step_x * 0.5f, -step_y * 0.5f, 0.0f);
+            std::vector<InterleavedData> vtxs = generate_quad(step_x, step_y, new_origin, normals::pZ, color);
+
+            const glm::vec2& uv0 = { static_cast<float>(j) / subdivisions, static_cast<float>(i) / subdivisions };
+            const glm::vec2& uv1 = { static_cast<float>(j + 1u) / subdivisions, static_cast<float>(i + 1u) / subdivisions };
+
+            vtxs[0].uv = uv0;
+            vtxs[1].uv = glm::vec2(uv1.x, uv0.y);
+            vtxs[2].uv = uv1;
+
+            vtxs[3].uv = uv0;
+            vtxs[4].uv = uv1;
+            vtxs[5].uv = glm::vec2(uv0.x, uv1.y);
+
+            vertices.insert(vertices.end(), vtxs.begin(), vtxs.end());
+        }
+    }
+
+    spdlog::trace("Subvidided Quad mesh created ({} vertices)", vertices.size());
 
     create_vertex_buffer();
 }
@@ -168,22 +224,25 @@ void Surface::create_box(float w, float h, float d, const glm::vec3& color)
         wgpuBufferDestroy(vertex_buffer);
     }
 
-    w *= 2.0f;
-    h *= 2.0f;
+    float dir_offset = 0.0035f;
 
-    auto pos_x = generate_quad(w, h, d * normals::pX, normals::pX, color);
+    float w2 = w * 2.0f + dir_offset;
+    float h2 = h * 2.0f + dir_offset;
+    float d2 = d * 2.0f + dir_offset;
+
+    auto pos_x = generate_quad(h2, w2, d * normals::pX, -normals::pX, color);
     vertices.insert(vertices.end(), pos_x.begin(), pos_x.end());
-    auto neg_x = generate_quad(w, h, d * normals::nX, normals::nX, color);
+    auto neg_x = generate_quad(h2, w2, d * normals::nX, -normals::nX, color);
     vertices.insert(vertices.end(), neg_x.begin(), neg_x.end());
 
-    auto pos_y = generate_quad(w, h, d * normals::pY, normals::pY, color);
+    auto pos_y = generate_quad(w2, d2, h * normals::pY, -normals::pY, color);
     vertices.insert(vertices.end(), pos_y.begin(), pos_y.end());
-    auto neg_y = generate_quad(w, h, d * normals::nY, normals::nY, color);
+    auto neg_y = generate_quad(w2, d2, h * normals::nY, -normals::nY, color);
     vertices.insert(vertices.end(), neg_y.begin(), neg_y.end());
 
-    auto pos_z = generate_quad(w, h, d * normals::pZ, normals::pZ, color);
+    auto pos_z = generate_quad(w2, h2, d * normals::pZ, -normals::pZ, color);
     vertices.insert(vertices.end(), pos_z.begin(), pos_z.end());
-    auto neg_z = generate_quad(w, h, d * normals::nZ, normals::nZ, color);
+    auto neg_z = generate_quad(w2, h2, d * normals::nZ, -normals::nZ, color);
     vertices.insert(vertices.end(), neg_z.begin(), neg_z.end());
 
     spdlog::trace("Box mesh created ({} vertices)", vertices.size());
@@ -203,20 +262,25 @@ void Surface::create_rounded_box(float w, float h, float d, float c, const glm::
     w -= c;
     h -= c;
 
+    float w2 = w * 2.0f;
+    float h2 = h * 2.0f;
+    float d2 = (d-c) * 2.0f;
+
     // Add side vertices adding the chamfer translation
-    auto pos_x = generate_quad(w, h, d * normals::pX, normals::pX, color);
+
+    auto pos_x = generate_quad(h2, w2, d * normals::pX, -normals::pX, color);
     vertices.insert(vertices.end(), pos_x.begin(), pos_x.end());
-    auto neg_x = generate_quad(w, h, d * normals::nX, normals::nX, color);
+    auto neg_x = generate_quad(h2, w2, d * normals::nX, -normals::nX, color);
     vertices.insert(vertices.end(), neg_x.begin(), neg_x.end());
 
-    auto pos_y = generate_quad(w, h, d * normals::pY, normals::pY, color);
+    auto pos_y = generate_quad(w2, d2, (h + c) * normals::pY, -normals::pY, color);
     vertices.insert(vertices.end(), pos_y.begin(), pos_y.end());
-    auto neg_y = generate_quad(w, h, d * normals::nY, normals::nY, color);
+    auto neg_y = generate_quad(w2, d2, (h + c) * normals::nY, -normals::nY, color);
     vertices.insert(vertices.end(), neg_y.begin(), neg_y.end());
 
-    auto pos_z = generate_quad(w, h, d * normals::pZ, normals::pZ, color);
+    auto pos_z = generate_quad(w2, h2, d * normals::pZ, -normals::pZ, color);
     vertices.insert(vertices.end(), pos_z.begin(), pos_z.end());
-    auto neg_z = generate_quad(w, h, d * normals::nZ, normals::nZ, color);
+    auto neg_z = generate_quad(w2, h2, d * normals::nZ, -normals::nZ, color);
     vertices.insert(vertices.end(), neg_z.begin(), neg_z.end());
 
     constexpr float     pi = glm::pi<float>();
@@ -244,7 +308,7 @@ void Surface::create_rounded_box(float w, float h, float d, float c, const glm::
         float offsetRingAngle = isYPositive ? 0.f : half_pi;
         float offsetSegAngle;
 
-        if (isXPositive && isZPositive) offsetSegAngle = 0;
+        if (isXPositive && isZPositive) offsetSegAngle = 0.0f;
         if ((!isXPositive) && isZPositive) offsetSegAngle = 1.5f * pi;
         if (isXPositive && (!isZPositive)) offsetSegAngle = half_pi;
         if ((!isXPositive) && (!isZPositive)) offsetSegAngle = pi;

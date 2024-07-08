@@ -63,7 +63,7 @@ void IKSolver::set_global_transform(uint32_t index, const Transform& t) {
 
     // convert to local to store
     Transform parentWorld = get_global_transform(index - 1);
-    Transform local = combine(inverse(parentWorld), t);
+    Transform local = Transform::combine(Transform::inverse(parentWorld), t);
 
     ik_chain[index] = local;
 }
@@ -88,7 +88,7 @@ Transform IKSolver::get_global_transform(uint32_t index) {
     uint32_t size = (uint32_t)ik_chain.size();
     Transform world = ik_chain[index];
     for (int i = (int)index - 1; i >= 0; --i) {
-        world = combine(ik_chain[i], world);
+        world = Transform::combine(ik_chain[i], world);
     }
     return world;
 }
@@ -104,21 +104,21 @@ void IKSolver::set_hinge_socket_constraint(uint32_t idx, glm::vec3 axis) {
 }
 
 void IKSolver::apply_ball_socket_constraint(int i, float limit) {
-    glm::quat parent_rot = i == 0 ? aux_parent.rotation : get_global_transform(i - 1).rotation;
-    glm::quat this_rot = get_global_transform(i).rotation;
+    glm::quat parent_rot = i == 0 ? aux_parent.get_rotation() : get_global_transform(i - 1).get_rotation();
+    glm::quat this_rot = get_global_transform(i).get_rotation();
 
     glm::vec3 parentDir = parent_rot * glm::vec3(0, 0, 1);
     glm::vec3 thisDir = this_rot * glm::vec3(0, 0, 1);
-    float a = angle(parentDir, thisDir);
+    float a = Transform::get_angle_between_vectors(parentDir, thisDir);
 
     if (a > glm::radians(limit)) {
         glm::vec3 correction = cross(parentDir, thisDir);
         glm::quat worldSpaceRotation = parent_rot * angleAxis(glm::radians(limit), correction);
         if (i == 0) {
-            ik_chain[i].rotation = worldSpaceRotation;
+            ik_chain[i].set_rotation(worldSpaceRotation);
         }
         else {
-            ik_chain[i].rotation = worldSpaceRotation * inverse(parent_rot);
+            ik_chain[i].set_rotation(worldSpaceRotation * inverse(parent_rot));
         }
     }
 }
@@ -126,7 +126,7 @@ void IKSolver::apply_ball_socket_constraint(int i, float limit) {
 void IKSolver::apply_hinge_socket_constraint(int i, glm::vec3 axis) {
     Transform joint = get_global_transform(i);
     Transform parent = i == 0 ? aux_parent : get_global_transform(i - 1);
-    glm::vec3 current_hinge = joint.rotation * axis;
-    glm::vec3 desired_hinge = parent.rotation * axis;
-    ik_chain[i].rotation = ik_chain[i].rotation * fromTo(current_hinge, desired_hinge);
+    glm::vec3 current_hinge = joint.get_rotation() * axis;
+    glm::vec3 desired_hinge = parent.get_rotation() * axis;
+    ik_chain[i].set_rotation(ik_chain[i].get_rotation() * Transform::get_rotation_between_vectors(current_hinge, desired_hinge));
 }

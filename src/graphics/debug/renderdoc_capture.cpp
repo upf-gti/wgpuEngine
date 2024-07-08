@@ -16,6 +16,8 @@
 RENDERDOC_API_1_6_0* RenderdocCapture::rdoc_api = nullptr;
 #endif
 
+bool RenderdocCapture::capture_started = false;
+
 void RenderdocCapture::init()
 {
     bool loaded = false;
@@ -55,6 +57,7 @@ void RenderdocCapture::start_capture_frame()
 #ifndef __EMSCRIPTEN__
     if (rdoc_api) {
         rdoc_api->StartFrameCapture(NULL, NULL);
+        capture_started = true;
     }
     else {
         //spdlog::error("Can not start frame capture, Renderdoc Capture not initialized");
@@ -67,6 +70,12 @@ void RenderdocCapture::end_capture_frame()
 #ifndef __EMSCRIPTEN__
     if (rdoc_api) {
         rdoc_api->EndFrameCapture(NULL, NULL);
+        capture_started = false;
     }
 #endif
+}
+
+bool RenderdocCapture::is_capture_started()
+{
+    return capture_started;
 }

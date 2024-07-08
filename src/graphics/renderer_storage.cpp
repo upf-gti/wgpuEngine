@@ -19,6 +19,7 @@ RendererStorage* RendererStorage::instance = nullptr;
 std::map<std::string, Surface*> RendererStorage::surfaces;
 std::map<std::string, Texture*> RendererStorage::textures;
 std::map<std::string, Shader*> RendererStorage::shaders;
+std::map<std::string, const char*> RendererStorage::engine_shaders_refs;
 std::map<std::string, Animation*> RendererStorage::animations;
 
 Texture* RendererStorage::current_skybox_texture = nullptr;
@@ -269,14 +270,39 @@ Shader* RendererStorage::get_shader(const std::string& shader_path, const std::v
     return sh;
 }
 
-Shader* RendererStorage::get_shader_from_source(const std::string& source, const std::string& name, const Material& material, const std::vector<std::string>& custom_define_specializations)
+Shader* RendererStorage::get_shader_from_source(const char* source, const std::string& name, const Material& material, const std::vector<std::string>& custom_define_specializations)
 {
-    return nullptr;
+    std::vector<std::string> define_specializations = get_common_define_specializations(material);
+
+    // concatenate
+    define_specializations.insert(define_specializations.end(), custom_define_specializations.begin(), custom_define_specializations.end());
+
+    return get_shader_from_source(source, name, define_specializations);
 }
 
-Shader* RendererStorage::get_shader_from_source(const std::string& source, const std::string& name, const std::vector<std::string>& custom_define_specializations)
+Shader* RendererStorage::get_shader_from_source(const char* source, const std::string& name, const std::vector<std::string>& custom_define_specializations)
 {
-    return nullptr;
+    std::string specialized_name = name;
+    for (const std::string& specialization : custom_define_specializations) {
+        specialized_name += "_" + specialization;
+    }
+
+    // check if already loaded
+    std::map<std::string, Shader*>::iterator it = shaders.find(specialized_name);
+    if (it != shaders.end())
+        return it->second;
+
+    Shader* sh = new Shader();
+
+    if (!sh->load_from_source(source, name, specialized_name, custom_define_specializations)) {
+        return nullptr;
+    }
+
+    // register in map
+    shaders[specialized_name] = sh;
+    engine_shaders_refs[name] = source;
+
+    return sh;
 }
 
 void RendererStorage::reload_shader(const std::string& shader_path)
@@ -522,7 +548,7 @@ void RendererStorage::reload_all_render_pipelines()
         Shader* shader = shader_pair.second;
         Pipeline* pipeline = shader->get_pipeline();
 
-        if (pipeline && pipeline->is_render_pipeline()) {
+        if (pipeline && pipeline->is_render_pipeline() && pipeline->is_msaa_allowed()) {
             shader->reload();
         }
     }
@@ -625,16 +651,16 @@ void RendererStorage::register_render_pipeline(Material& material)
     }
 
     Pipeline* render_pipeline = new Pipeline();
-    render_pipeline->create_render(material.shader, color_target, description);
+    render_pipeline->create_render_async(material.shader, color_target, description);
     registered_render_pipelines[key] = render_pipeline;
 }
 
-void RendererStorage::register_compute_pipeline(Shader* shader, WGPUPipelineLayout pipeline_layout)
-{
-    Pipeline* compute_pipeline = new Pipeline();
-    compute_pipeline->create_compute(shader, pipeline_layout);
-    registered_compute_pipelines[shader] = compute_pipeline;
-}
+//void RendererStorage::register_compute_pipeline(Shader* shader, WGPUPipelineLayout pipeline_layout)
+//{
+//    Pipeline* compute_pipeline = new Pipeline();
+//    compute_pipeline->create_compute(shader, pipeline_layout);
+//    registered_compute_pipelines[shader] = compute_pipeline;
+//}
 
 void RendererStorage::clean_registered_pipelines()
 {

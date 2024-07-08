@@ -5,6 +5,11 @@
 
 #include "spdlog/spdlog.h"
 
+#include <chrono>
+#include <thread>
+
+using namespace std::chrono_literals;
+
 WebGPUContext* Pipeline::webgpu_context = nullptr;
 
 Pipeline::~Pipeline()
@@ -21,56 +26,110 @@ Pipeline::~Pipeline()
     }
 }
 
-void Pipeline::create_render(Shader* shader, const WGPUColorTargetState& p_color_target, const PipelineDescription& desc)
+void render_pipeline_creation_callback(WGPUCreatePipelineAsyncStatus status, WGPURenderPipeline pipeline, char const* message, void* user_data)
 {
-	const std::vector<WGPUBindGroupLayout> layouts_by_id = shader->get_bind_group_layouts();
-	std::vector<WGPUBindGroupLayout> bind_group_layouts;
+    Pipeline* render_pipeline = static_cast<Pipeline*>(user_data);
+    if (status == WGPUCreatePipelineAsyncStatus_Success) {
+        render_pipeline->pipeline = pipeline;
+        render_pipeline->loaded = true;
+    }
+}
 
-	for (const auto& bind_group_layout : layouts_by_id) {
-		bind_group_layouts.push_back(bind_group_layout);
-	}
+void compute_pipeline_creation_callback(WGPUCreatePipelineAsyncStatus status, WGPUComputePipeline pipeline, char const* message, void* user_data)
+{
+    Pipeline* compute_pipeline = static_cast<Pipeline*>(user_data);
+    if (status == WGPUCreatePipelineAsyncStatus_Success) {
+        compute_pipeline->pipeline = pipeline;
+        compute_pipeline->loaded = true;
+    }
+}
+
+void Pipeline::create_render_common(Shader* shader, const WGPUColorTargetState& p_color_target, const PipelineDescription& desc)
+{
+    const std::vector<WGPUBindGroupLayout> layouts_by_id = shader->get_bind_group_layouts();
+    std::vector<WGPUBindGroupLayout> bind_group_layouts;
+
+    for (const auto& bind_group_layout : layouts_by_id) {
+        bind_group_layouts.push_back(bind_group_layout);
+    }
 
     // Copy pipeline info
     description = desc;
     description.blending_enabled = (p_color_target.blend != nullptr);
-	color_target = p_color_target;
+    color_target = p_color_target;
 
     if (description.blending_enabled) {
         blend_state = p_color_target.blend;
     }
 
-	pipeline_layout = webgpu_context->create_pipeline_layout(bind_group_layouts);
-
-	pipeline = webgpu_context->create_render_pipeline(shader->get_module(), pipeline_layout, shader->get_vertex_buffer_layouts(), p_color_target, desc.depth_read, desc.depth_write, desc.cull_mode, desc.topology, desc.sample_count);
-
-	shader->set_pipeline(this);
+    pipeline_layout = webgpu_context->create_pipeline_layout(bind_group_layouts);
 }
 
-void Pipeline::create_compute(Shader* shader, WGPUPipelineLayout pipeline_layout)
-{
-	this->pipeline_layout = pipeline_layout;
-	pipeline = webgpu_context->create_compute_pipeline(shader->get_module(), pipeline_layout);
-
-	shader->set_pipeline(this);
-}
-
-void Pipeline::create_compute(Shader* shader)
+void Pipeline::create_compute_common(Shader* shader)
 {
     const std::vector<WGPUBindGroupLayout> layouts_by_id = shader->get_bind_group_layouts();
     std::vector<WGPUBindGroupLayout> bind_group_layouts;
 
-	for (const auto& bind_group_layout : layouts_by_id) {
-		bind_group_layouts.push_back(bind_group_layout);
-	}
+    for (const auto& bind_group_layout : layouts_by_id) {
+        bind_group_layouts.push_back(bind_group_layout);
+    }
 
-    spdlog::info("Compiling pipeline for shader {}", shader->get_path());
+    pipeline_layout = webgpu_context->create_pipeline_layout(bind_group_layouts);
+}
 
-	pipeline_layout = webgpu_context->create_pipeline_layout(bind_group_layouts);
+void Pipeline::create_render(Shader* shader, const WGPUColorTargetState& p_color_target, const PipelineDescription& desc)
+{
+    create_render_common(shader, p_color_target, desc);
+
+    spdlog::info("Compiling render pipeline for shader {}", shader->get_path());
+
+	pipeline = webgpu_context->create_render_pipeline(shader->get_module(), pipeline_layout, shader->get_vertex_buffer_layouts(), p_color_target,
+        desc.use_depth, desc.depth_read, desc.depth_write, desc.cull_mode, desc.topology, desc.sample_count);
+
+	shader->set_pipeline(this);
+
+    loaded = true;
+}
+
+void Pipeline::create_render_async(Shader* shader, const WGPUColorTargetState& p_color_target, const PipelineDescription& desc)
+{
+    create_render_common(shader, p_color_target, desc);
+
+    spdlog::info("Compiling async render pipeline for shader {}", shader->get_path());
+
+    webgpu_context->create_render_pipeline_async(shader->get_module(), pipeline_layout, shader->get_vertex_buffer_layouts(), p_color_target, render_pipeline_creation_callback, (void*)this,
+        desc.use_depth, desc.depth_read, desc.depth_write, desc.cull_mode, desc.topology, desc.sample_count);
+
+    shader->set_pipeline(this);
+
+    async_compile = true;
+}
+
+void Pipeline::create_compute(Shader* shader)
+{
+    create_compute_common(shader);
+
+    spdlog::info("Compiling compute pipeline for shader {}", shader->get_path());
+
 	pipeline = webgpu_context->create_compute_pipeline(shader->get_module(), pipeline_layout);
 
 	shader->set_pipeline(this);
+
+    loaded = true;
 }
 
+void Pipeline::create_compute_async(Shader* shader)
+{
+    create_compute_common(shader);
+
+    spdlog::info("Compiling async compute pipeline for shader {}", shader->get_path());
+
+    webgpu_context->create_compute_pipeline_async(shader->get_module(), pipeline_layout, compute_pipeline_creation_callback, (void*)this);
+
+    shader->set_pipeline(this);
+
+    async_compile = true;
+}
 
 void Pipeline::reload(Shader* shader)
 {
@@ -83,7 +142,7 @@ void Pipeline::reload(Shader* shader)
         description.sample_count = Renderer::instance->get_msaa_count();
 
 		pipeline = webgpu_context->create_render_pipeline(shader->get_module(), pipeline_layout, shader->get_vertex_buffer_layouts(),
-            color_target, description.depth_read, description.depth_write, description.cull_mode, description.topology, description.sample_count);
+            color_target, description.use_depth, description.depth_read, description.depth_write, description.cull_mode, description.topology, description.sample_count);
 	}
 	else {
 		wgpuComputePipelineRelease(std::get<WGPUComputePipeline>(pipeline));
@@ -93,11 +152,23 @@ void Pipeline::reload(Shader* shader)
 
 void Pipeline::set(const WGPURenderPassEncoder& render_pass)
 {
+    if (async_compile) {
+        while (!loaded) {
+            webgpu_context->process_events();
+        }
+    }
+
 	wgpuRenderPassEncoderSetPipeline(render_pass, std::get<WGPURenderPipeline>(pipeline));
 }
 
 void Pipeline::set(const WGPUComputePassEncoder& compute_pass)
 {
+    if (async_compile) {
+        while (!loaded) {
+            webgpu_context->process_events();
+        }
+    }
+
 	wgpuComputePassEncoderSetPipeline(compute_pass, std::get<WGPUComputePipeline>(pipeline));
 }
 
@@ -109,4 +180,9 @@ bool Pipeline::is_render_pipeline()
 bool Pipeline::is_compute_pipeline()
 {
     return std::holds_alternative<WGPUComputePipeline>(pipeline);
+}
+
+bool Pipeline::is_msaa_allowed()
+{
+    return description.allow_msaa;
 }

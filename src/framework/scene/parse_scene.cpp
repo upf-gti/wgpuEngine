@@ -7,7 +7,7 @@
 
 #include "spdlog/spdlog.h"
 
-bool parse_scene(const char* scene_path, std::vector<Node3D*>& entities)
+bool parse_scene(const char* scene_path, std::vector<Node*>& entities)
 {
     std::string scene_path_str = std::string(scene_path);
     std::string extension = scene_path_str.substr(scene_path_str.find_last_of(".") + 1);
@@ -34,7 +34,7 @@ MeshInstance3D* parse_mesh(const char* mesh_path)
     std::string mesh_path_str = std::string(mesh_path);
     std::string extension = mesh_path_str.substr(mesh_path_str.find_last_of(".") + 1);
 
-    spdlog::info("Parsing mesh: {}", mesh_path);
+    spdlog::trace("Parsing mesh: {}", mesh_path);
 
     if (extension == "obj") {
         return parse_obj(mesh_path);

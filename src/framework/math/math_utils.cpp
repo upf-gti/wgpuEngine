@@ -188,7 +188,13 @@ float clamp_rotation(float angle)
     return angle - pi2 * turns;
 }
 
-glm::vec3 yaw_pitch_to_vector(float yaw, float pitch) {
+float remap_range(float old_value, float old_min, float old_max, float new_min, float new_max)
+{
+    return (((old_value - old_min) * (new_max - new_min)) / (old_max - old_min)) + new_min;
+}
+
+glm::vec3 yaw_pitch_to_vector(float yaw, float pitch)
+{
     return glm::vec3(
         sinf(yaw) * cosf(-pitch),
         sinf(-pitch),
@@ -196,10 +202,22 @@ glm::vec3 yaw_pitch_to_vector(float yaw, float pitch) {
     );
 }
 
-void vector_to_yaw_pitch(const glm::vec3& front, float* yaw, float* pitch) {
+void vector_to_yaw_pitch(const glm::vec3& front, float* yaw, float* pitch)
+{
     *yaw = atan2f(front.x, front.z);
     float mdo = sqrtf(front.x * front.x + front.z * front.z);
     *pitch = atan2f(-front.y, mdo);
+}
+
+// Function to compute rotation quaternion to face the camera
+glm::quat get_rotation_to_face(const glm::vec3& position, const glm::vec3& target, const glm::vec3& up) {
+    // Compute direction from object to camera
+    glm::vec3 direction = glm::normalize(position - target);
+
+    // Compute rotation quaternion to face the camera
+    glm::quat rotation = glm::quatLookAt(direction, up);
+
+    return rotation;
 }
 
 // https://graemepottsfolio.wordpress.com/tag/damped-spring/

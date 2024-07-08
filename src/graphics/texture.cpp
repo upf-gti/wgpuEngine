@@ -116,7 +116,7 @@ void Texture::load(const std::string& texture_path, bool is_srgb)
 
     stbi_image_free(data);
 
-    spdlog::info("Texture loaded: {}", texture_path);
+    spdlog::trace("Texture loaded: {}", texture_path);
 }
 
 void Texture::load_hdr(const std::string& texture_path)
@@ -133,7 +133,7 @@ void Texture::load_hdr(const std::string& texture_path)
 
     stbi_image_free(data);
 
-    spdlog::info("Texture HDR loaded: {}", texture_path);
+    spdlog::trace("Texture HDR loaded: {}", texture_path);
 }
 
 void Texture::load_from_data(const std::string& name, int width, int height, int array_layers, void* data, bool create_mipmaps, WGPUTextureFormat p_format)

@@ -1,7 +1,8 @@
 #pragma once
 
+#include "framework/math/transform.h"
+
 #include <vector>
-#include "bone_transform.h"
 
 class IKSolver {
 protected:
