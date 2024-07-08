@@ -128,24 +128,25 @@ std::vector<std::vector<glm::vec3>> TimeTunnel::compute_trajectories(std::vector
     magnitudes.clear();
     for (auto& track : tracks)
     {
+        if (track->get_type() != TrackType::TYPE_POSITION) {
+            continue;
+        }
         std::vector<glm::vec3> trajectory;
         std::vector<float> magnitudes_t;
-
+            
         for (size_t t = 0; t < track->size(); t++)
         {
-            if (track->get_type() == TrackType::TYPE_POSITION)
-            {
-                glm::vec3 position = std::get<glm::vec3>(track->get_keyframe(t).value);
+            glm::vec3 position = std::get<glm::vec3>(track->get_keyframe(t).value);
 
-                // Compute trajectory position in frame t centered on current frame
-                glm::vec3 Tk = compute_trajectory_position(t, position);
-                trajectory.push_back(Tk);
+            // Compute trajectory position in frame t centered on current frame
+            glm::vec3 Tk = compute_trajectory_position(t, position);
+            trajectory.push_back(Tk);
 
-                // Compute magnitue from joint trajectory position
-                float magnitude = glm::length(Tk);
-                magnitudes_t.push_back(magnitude);               
-            }
+            // Compute magnitue from joint trajectory position
+            float magnitude = glm::length(Tk);
+            magnitudes_t.push_back(magnitude);               
         }
+
         trajectories.push_back(trajectory);
         magnitudes.push_back(magnitudes_t);
     }
@@ -171,7 +172,7 @@ std::vector<uint32_t> TimeTunnel::extract_keyframes(std::vector<Track*>& tracks)
     keyframes.clear();
 
     size_t frames = tracks[0]->size();
-    size_t count = tracks.size();
+    size_t count = trajectories.size();
     std::vector<std::vector<glm::vec3>> sT_k(count);
 
     int t_m = -1; // selected keyframe

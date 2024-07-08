@@ -13,6 +13,14 @@ enum BlendType {
     ADDITIVE
 };
 
+struct Trajectory
+{
+    std::string node_name;
+    uint32_t track_id;
+    MeshInstance3D* mesh;
+    std::vector<glm::vec3> trajectory;
+};
+
 class AnimationPlayer : public Node3D
 {
     Node3D* root_node = nullptr;
@@ -40,6 +48,7 @@ class AnimationPlayer : public Node3D
     int selected_track = -1;
     std::vector<MeshInstance3D*> keyposes_helper;
     std::vector<MeshInstance3D*> trajectories_helper;
+    std::vector<Trajectory> trajectories_helper2;
     std::vector<MeshInstance3D*> smoothed_trajectories_helper;
     void generate_track_data();
     void generate_track_timeline_data(uint32_t track_idx, const std::string& track_path);
