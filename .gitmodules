@@ -19,3 +19,6 @@
 [submodule "src/xr/dawnxr"]
 	path = src/xr/dawnxr
 	url = https://github.com/upf-gti/dawnxr
+[submodule "libraries/easyVDB"]
+	path = libraries/easyVDB
+	url = https://github.com/victorubieto/easyVDB
