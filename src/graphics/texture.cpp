@@ -1,4 +1,5 @@
 #include "texture.h"
+#include "renderer_storage.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
@@ -112,7 +113,7 @@ void Texture::load(const std::string& texture_path, bool is_srgb)
 
     path = texture_path;
 
-    load_from_data(path, width, height, 1, data, true, is_srgb ? WGPUTextureFormat_RGBA8UnormSrgb : WGPUTextureFormat_RGBA8Unorm);
+    load_from_data(path, WGPUTextureDimension_2D, width, height, 1, data, true, is_srgb ? WGPUTextureFormat_RGBA8UnormSrgb : WGPUTextureFormat_RGBA8Unorm);
 
     stbi_image_free(data);
 
@@ -129,22 +130,22 @@ void Texture::load_hdr(const std::string& texture_path)
 
     path = texture_path;
 
-    load_from_data(path, width, height, 1, data, false, WGPUTextureFormat_RGBA32Float);
+    load_from_data(path, WGPUTextureDimension_2D, width, height, 1, data, false, WGPUTextureFormat_RGBA32Float);
 
     stbi_image_free(data);
 
     spdlog::trace("Texture HDR loaded: {}", texture_path);
 }
 
-void Texture::load_from_data(const std::string& name, int width, int height, int array_layers, void* data, bool create_mipmaps, WGPUTextureFormat p_format)
+void Texture::load_from_data(const std::string& name, WGPUTextureDimension dimension, int width, int height, int array_layers, void* data, bool create_mipmaps, WGPUTextureFormat p_format)
 {
-    dimension = WGPUTextureDimension_2D;
-    format = p_format;
-    size = { (unsigned int)width, (unsigned int)height, (unsigned int)array_layers };
-    usage = static_cast<WGPUTextureUsage>(WGPUTextureUsage_TextureBinding | WGPUTextureUsage_CopyDst);
-    mipmaps = create_mipmaps ? std::bit_width(std::max(size.width, size.height)) : 1;
+    this->dimension = dimension;
+    this->format = p_format;
+    this->size = { (unsigned int)width, (unsigned int)height, (unsigned int)array_layers };
+    this->usage = static_cast<WGPUTextureUsage>(WGPUTextureUsage_TextureBinding | WGPUTextureUsage_CopyDst);
+    this->mipmaps = create_mipmaps ? std::bit_width(std::max(size.width, size.height)) : 1;
 
-    texture = webgpu_context->create_texture(dimension, format, size, usage, mipmaps, 1);
+    this->texture = webgpu_context->create_texture(dimension, format, size, usage, mipmaps, 1);
 
     // Create mipmaps
     if (create_mipmaps) {
@@ -153,6 +154,8 @@ void Texture::load_from_data(const std::string& name, int width, int height, int
     else {
         webgpu_context->upload_texture(texture, size, 0, format, data, {0, 0, 0});
     }
+
+    RendererStorage::textures[name] = this;
 }
 
 void Texture::load_from_hdre(HDRE* hdre)
