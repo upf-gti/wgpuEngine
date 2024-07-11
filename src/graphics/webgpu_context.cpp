@@ -629,6 +629,9 @@ void WebGPUContext::upload_texture(WGPUTexture texture, WGPUTextureDimension dim
     case WGPUTextureFormat_RGBA16Uint:
         pixel_size = 4 * sizeof(uint16_t);
         break;
+    case WGPUTextureFormat_R32Float:
+        pixel_size = sizeof(float);
+        break;
     case WGPUTextureFormat_RGBA32Float:
         pixel_size = 4 * sizeof(float);
         break;
@@ -638,6 +641,7 @@ void WebGPUContext::upload_texture(WGPUTexture texture, WGPUTextureDimension dim
 
     source.bytesPerRow = pixel_size * texture_size.width;
     byte_size = source.bytesPerRow * texture_size.height;
+    if (dimension == WGPUTextureDimension_3D) byte_size = byte_size * texture_size.depthOrArrayLayers;
 
     source.rowsPerImage = texture_size.height;
 
