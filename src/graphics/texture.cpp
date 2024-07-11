@@ -49,7 +49,7 @@ void Texture::generate_mipmaps(const void* data)
     // Needed because WEBGPU does not support rgb8unorm-srgb as storage binding
     // also prevents all textures having storage binding
     WGPUTexture texture_temp = webgpu_context->create_texture(dimension, final_format, size, mipmaps_usage, mipmaps, 1);
-    webgpu_context->upload_texture(texture_temp, size, 0, final_format, data, { 0, 0, 0 });
+    webgpu_context->upload_texture(texture_temp, dimension, size, 0, final_format, data, { 0, 0, 0 });
     webgpu_context->create_texture_mipmaps(texture_temp, size, mipmaps, WGPUTextureViewDimension_2D, final_format);
 
     for (uint32_t i = 0; i < mipmaps; ++i) {
@@ -152,7 +152,7 @@ void Texture::load_from_data(const std::string& name, WGPUTextureDimension dimen
         generate_mipmaps(data);
     }
     else {
-        webgpu_context->upload_texture(texture, size, 0, format, data, {0, 0, 0});
+        webgpu_context->upload_texture(texture, dimension, size, 0, format, data, {0, 0, 0});
     }
 
     RendererStorage::textures[name] = this;
@@ -176,7 +176,7 @@ void Texture::load_from_hdre(HDRE* hdre)
             void* data = hdre_level.faces[face];
             WGPUOrigin3D origin = { 0, 0, face };
             WGPUExtent3D tex_size = { (unsigned int)hdre_level.width, (unsigned int)hdre_level.height, 1 };
-            webgpu_context->upload_texture(texture, tex_size, level, format, data, origin);
+            webgpu_context->upload_texture(texture, dimension, tex_size, level, format, data, origin);
         }
     }
 }
