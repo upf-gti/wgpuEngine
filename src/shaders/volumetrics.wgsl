@@ -34,16 +34,20 @@ fn fs_main(in: VertexOutput) -> FragmentOutput {
     
     var dummy = camera_data.eye;
 
+    var color = vec3f(0.0);
     var out: FragmentOutput;
-    var color : vec4f = textureSample(albedo_texture, texture_sampler, vec3f(0.0));
+    for (var i = 0; i < 10; i++) {
+        var density : f32 = textureSample(albedo_texture, texture_sampler, vec3f(0.0)).x;
+        color += vec3f(density);
+    }
 
-    var final_color : vec3f = color.rgb;
+    var final_color : vec3f = color;
 
     if (GAMMA_CORRECTION == 1) {
         final_color = pow(final_color, vec3f(1.0 / 2.2));
     }
 
-    out.color = vec4f(final_color, color.a);
+    out.color = vec4f(final_color, 1.0);
 
     return out;
 }
