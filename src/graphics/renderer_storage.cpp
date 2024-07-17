@@ -51,6 +51,10 @@ void RendererStorage::register_material(WebGPUContext* webgpu_context, MeshInsta
         Uniform* u = new Uniform();
         uint32_t array_layers = material.diffuse_texture->get_array_layers();
         WGPUTextureViewDimension view_dimension = array_layers > 1 ? WGPUTextureViewDimension_Cube : WGPUTextureViewDimension_2D;
+        if (material.diffuse_texture->get_dimension() == WGPUTextureDimension_3D) {
+            view_dimension = WGPUTextureViewDimension_3D;
+            array_layers = 1;
+        }
         u->data = material.diffuse_texture->get_view(view_dimension, 0, material.diffuse_texture->get_mipmap_count(), 0, array_layers);
         u->binding = 0;
         uniforms.push_back(u);

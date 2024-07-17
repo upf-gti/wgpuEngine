@@ -202,6 +202,10 @@ if (NOT EMSCRIPTEN)
 
 endif()
 
+# easyVDB
+add_subdirectory(libraries/easyVDB)
+target_link_libraries(${PROJECT_NAME} PUBLIC easyVDB)
+
 # tinyobjloader
 target_include_directories(${PROJECT_NAME} PUBLIC ${WGPU_DIR_LIBS}/tinyobjloader)
 
