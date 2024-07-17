@@ -76,7 +76,7 @@ namespace ui {
 
         void render() override;
 
-        void remove_flag(uint8_t flag) override;
+        void disable_2d() override;
         void set_priority(uint8_t priority) override;
         void update_ui_data() override;
         void set_color(const Color& c);
@@ -187,7 +187,7 @@ namespace ui {
         bool on_input(sInputData data) override;
         void release() override;
 
-        void remove_flag(uint8_t flag) override;
+        void disable_2d() override;
         void set_priority(uint8_t priority) override;
     };
 

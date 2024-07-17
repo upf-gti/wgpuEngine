@@ -165,10 +165,10 @@ void Node::release()
     }
 }
 
-void Node::remove_flag(uint8_t flag)
+void Node::disable_2d()
 {
     for (Node* child : children) {
-        child->remove_flag(flag);
+        child->disable_2d();
     }
 }
 

@@ -18,6 +18,7 @@ Environment3D::Environment3D() : MeshInstance3D()
 
     set_surface_material_diffuse(0, Renderer::instance->get_irradiance_texture());
     set_surface_material_cull_type(0, CULL_BACK);
+    set_surface_material_type(0, MATERIAL_UNLIT);
     set_surface_material_depth_write(0, false);
     set_surface_material_priority(0, 20);
 

@@ -10,7 +10,7 @@
 #include "imgui.h"
 #include "framework/utils/ImGuizmo.h"
 
-#include "shaders/mesh_color.wgsl.gen.h"
+#include "shaders/mesh_forward.wgsl.gen.h"
 
 #include <glm/gtc/type_ptr.hpp>
 #include "spdlog/spdlog.h"
@@ -129,7 +129,7 @@ void SkeletonInstance3D::init_helper()
     skeleton_material.depth_read = false;
     skeleton_material.priority = 0;
     skeleton_material.topology_type = eTopologyType::TOPOLOGY_LINE_LIST;
-    skeleton_material.shader = RendererStorage::get_shader_from_source(shaders::mesh_color::source, shaders::mesh_color::path, skeleton_material);
+    skeleton_material.shader = RendererStorage::get_shader_from_source(shaders::mesh_forward::source, shaders::mesh_forward::path, skeleton_material);
 
     set_surface_material_override(s, skeleton_material);
 }

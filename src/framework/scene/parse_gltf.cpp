@@ -438,8 +438,6 @@ void read_mesh(const tinygltf::Model& model, const tinygltf::Node& node, Node3D*
 
         entity_mesh->set_aabb({ aabb_position, aabb_half_size });
 
-        material.flags |= MATERIAL_PBR;
-
         switch (primitive.mode) {
         case TINYGLTF_MODE_TRIANGLES:
             material.topology_type = TOPOLOGY_TRIANGLE_LIST;
@@ -465,6 +463,12 @@ void read_mesh(const tinygltf::Model& model, const tinygltf::Node& node, Node3D*
             const tinygltf::Material& gltf_material = model.materials[primitive.material];
 
             const tinygltf::PbrMetallicRoughness& pbrMetallicRoughness = gltf_material.pbrMetallicRoughness;
+
+            for (const auto& extension : gltf_material.extensions) {
+                if (extension.first == "KHR_materials_unlit") {
+                    material.type = MATERIAL_UNLIT;
+                }
+            }
 
             if (pbrMetallicRoughness.baseColorTexture.index >= 0) {
 

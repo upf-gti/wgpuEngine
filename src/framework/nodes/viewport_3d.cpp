@@ -7,7 +7,7 @@
 
 Viewport3D::Viewport3D(Node2D* root_2d) : Node3D(), root(root_2d)
 {
-    root->remove_flag(MATERIAL_2D);
+    root->disable_2d();
 }
 
 Viewport3D::~Viewport3D()

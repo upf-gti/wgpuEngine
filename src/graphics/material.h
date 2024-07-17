@@ -8,10 +8,10 @@
 class Shader;
 class Texture;
 
-enum eMaterialFlags : uint8_t {
-    MATERIAL_PBR        = 1 << 0,
-    MATERIAL_2D         = 1 << 1,
-    MATERIAL_UI         = 1 << 2
+enum eMaterialType {
+    MATERIAL_PBR,
+    MATERIAL_UNLIT,
+    MATERIAL_UI
 };
 
 enum eTransparencyType {
@@ -55,12 +55,13 @@ struct Material
     bool depth_read = true;
     bool depth_write = true;
     bool use_skinning = false;
+    bool is_2D = false;
 
     eTransparencyType transparency_type = ALPHA_OPAQUE;
     eTopologyType topology_type = TOPOLOGY_TRIANGLE_LIST;
     eCullType cull_type = CULL_BACK;
 
-    uint8_t flags = 0;
+    eMaterialType type = MATERIAL_PBR;
     uint8_t priority = 10;
 
     std::string name = "";
@@ -79,6 +80,7 @@ struct Material
             && metalness == other.metalness
             && emissive == other.emissive
             && alpha_mask == other.alpha_mask
+            && type == other.type
             && priority == other.priority
             && transparency_type == other.transparency_type
             && topology_type == other.topology_type

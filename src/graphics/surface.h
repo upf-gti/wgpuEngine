@@ -53,13 +53,14 @@ public:
     void set_material_color(const glm::vec4& color);
     void set_material_diffuse(Texture* diffuse);
     void set_material_shader(Shader* shader);
-    void set_material_flag(eMaterialFlags flag);
+    void set_material_type(eMaterialType type);
     void set_material_priority(uint8_t priority);
     void set_material_transparency_type(eTransparencyType transparency_type);
     void set_material_cull_type(eCullType cull_type);
     void set_material_topology_type(eTopologyType topology_type);
     void set_material_depth_read(bool depth_read);
     void set_material_depth_write(bool depth_write);
+    void set_material_is_2d(bool is_2d);
     void set_name(const std::string& new_name) { name = new_name; };
     void set_index(uint32_t new_index) { index = new_index; };
 

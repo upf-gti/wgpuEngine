@@ -47,7 +47,7 @@ void MeshInstance::set_surface_material_shader(int surface_idx, Shader* shader)
     surfaces[surface_idx]->set_material_shader(shader);
 }
 
-void MeshInstance::set_surface_material_flag(int surface_idx, eMaterialFlags flag)
+void MeshInstance::set_surface_material_type(int surface_idx, eMaterialType type)
 {
     assert(surface_idx < surfaces.size());
 
@@ -55,7 +55,7 @@ void MeshInstance::set_surface_material_flag(int surface_idx, eMaterialFlags fla
         return;
     }
 
-    surfaces[surface_idx]->set_material_flag(flag);
+    surfaces[surface_idx]->set_material_type(type);
 }
 
 void MeshInstance::set_surface_material_priority(int surface_idx, uint8_t priority)
@@ -124,6 +124,17 @@ void MeshInstance::set_surface_material_depth_write(int surface_idx, bool depth_
     surfaces[surface_idx]->set_material_depth_write(depth_write);
 }
 
+void MeshInstance::set_surface_material_is_2d(int surface_idx, bool is_2d)
+{
+    assert(surface_idx < surfaces.size());
+
+    if (surface_idx >= surfaces.size()) {
+        return;
+    }
+
+    surfaces[surface_idx]->set_material_is_2d(is_2d);
+}
+
 // Material override
 
 void MeshInstance::set_surface_material_override_color(int surface_idx, const glm::vec4& color)
@@ -160,7 +171,7 @@ void MeshInstance::set_surface_material_override_shader(int surface_idx, Shader*
     material_overrides[get_surface(surface_idx)].shader = shader;
 }
 
-void MeshInstance::set_surface_material_override_flag(int surface_idx, eMaterialFlags flag)
+void MeshInstance::set_surface_material_override_type(int surface_idx, eMaterialType type)
 {
     assert(surface_idx < surfaces.size());
 
@@ -168,7 +179,7 @@ void MeshInstance::set_surface_material_override_flag(int surface_idx, eMaterial
         return;
     }
 
-    material_overrides[get_surface(surface_idx)].flags |= flag;
+    material_overrides[get_surface(surface_idx)].type = type;
 }
 
 void MeshInstance::set_surface_material_override_priority(int surface_idx, uint8_t priority)
@@ -235,6 +246,17 @@ void MeshInstance::set_surface_material_override_depth_write(int surface_idx, bo
     }
 
     material_overrides[get_surface(surface_idx)].depth_write = depth_write;
+}
+
+Material* MeshInstance::get_surface_material(int surface_idx)
+{
+    assert(surface_idx < surfaces.size());
+
+    if (surface_idx >= surfaces.size()) {
+        return nullptr;
+    }
+
+    return &surfaces[surface_idx]->get_material();
 }
 
 void MeshInstance::set_surface_material_override(Surface* surface, const Material& material)

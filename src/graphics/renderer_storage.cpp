@@ -75,7 +75,7 @@ void RendererStorage::register_material(WebGPUContext* webgpu_context, MeshInsta
         texture_ref = material.metallic_roughness_texture;
     }
 
-    if (material.flags & MATERIAL_PBR) {
+    if (material.type == MATERIAL_PBR) {
         Uniform* u = new Uniform();
         glm::vec3 occlusion_roughness_metallic = { material.occlusion, material.roughness, material.metalness };
         u->data = webgpu_context->create_buffer(sizeof(glm::vec3), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform, &occlusion_roughness_metallic, "mat_occlusion_roughness_metallic");
@@ -111,7 +111,7 @@ void RendererStorage::register_material(WebGPUContext* webgpu_context, MeshInsta
         texture_ref = material.oclussion_texture;
     }
 
-    if (material.flags & MATERIAL_PBR) {
+    if (material.type == MATERIAL_PBR) {
         Uniform* u = new Uniform();
         u->data = webgpu_context->create_buffer(sizeof(glm::vec4), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform, &material.emissive, "mat_emissive");
         u->binding = 6;
@@ -179,7 +179,6 @@ void RendererStorage::register_material(WebGPUContext* webgpu_context, MeshInsta
             uniforms.push_back(skeleton_instance->get_animated_uniform_data());
             uniforms.push_back(skeleton_instance->get_invbind_uniform_data());
         }
-
     }
 
     material_bind_groups[material].bind_group = webgpu_context->create_bind_group(uniforms, material.shader, 2);
@@ -536,8 +535,12 @@ std::vector<std::string> RendererStorage::get_common_define_specializations(cons
 
     if (material.use_skinning) {
         define_specializations.push_back("USE_SKINNING");
-
     }
+
+    if (material.type == MATERIAL_UNLIT) {
+        define_specializations.push_back("UNLIT_MATERIAL");
+    }
+
     return define_specializations;
 }
 
@@ -584,7 +587,7 @@ void RendererStorage::register_render_pipeline(Material& material)
         assert(0);
     }
 
-    if (material.flags & MATERIAL_2D) {
+    if (material.is_2D) {
         description.depth_write = false;
     }
     else {

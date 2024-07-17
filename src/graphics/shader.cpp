@@ -19,6 +19,7 @@
 #include "shaders/tonemappers.wgsl.gen.h"
 #include "shaders/pbr_functions.wgsl.gen.h"
 #include "shaders/pbr_light.wgsl.gen.h"
+#include "shaders/pbr_material.wgsl.gen.h"
 
 std::unordered_map<std::string, custom_define_type> Shader::custom_defines;
 std::unordered_map<std::string, const char*> Shader::engine_libraries;
@@ -29,6 +30,7 @@ Shader::Shader()
     engine_libraries[shaders::tonemappers::path] = shaders::tonemappers::source;
     engine_libraries[shaders::pbr_functions::path] = shaders::pbr_functions::source;
     engine_libraries[shaders::pbr_light::path] = shaders::pbr_light::source;
+    engine_libraries[shaders::pbr_material::path] = shaders::pbr_material::source;
 }
 
 Shader::~Shader()
@@ -157,17 +159,17 @@ bool Shader::parse_preprocessor(std::string &shader_content, const std::string &
                         final_value = std::get<bool>(define.second) ? "1" : "0";
                     }
                     else
-                        if (std::holds_alternative<int32_t>(define.second)) {
-                            final_value = std::to_string(std::get<int32_t>(define.second));
-                        }
-                        else
-                            if (std::holds_alternative<uint32_t>(define.second)) {
-                                final_value = std::to_string(std::get<uint32_t>(define.second));
-                            }
-                            else
-                                if (std::holds_alternative<float>(define.second)) {
-                                    final_value = std::to_string(std::get<float>(define.second));
-                                }
+                    if (std::holds_alternative<int32_t>(define.second)) {
+                        final_value = std::to_string(std::get<int32_t>(define.second));
+                    }
+                    else
+                    if (std::holds_alternative<uint32_t>(define.second)) {
+                        final_value = std::to_string(std::get<uint32_t>(define.second));
+                    }
+                    else
+                    if (std::holds_alternative<float>(define.second)) {
+                        final_value = std::to_string(std::get<float>(define.second));
+                    }
                 }
             }
 
@@ -195,6 +197,42 @@ bool Shader::parse_preprocessor(std::string &shader_content, const std::string &
 
             // if specialization is defined
             if (std::find(define_specializations.begin(), define_specializations.end(), tokens[1]) != define_specializations.end()) {
+
+                // Just advance, do nothing
+                std::string tag_found = continue_until_tags(string_stream, line_pos, line, { "#endif", "#else" });
+
+                // delete #else condition
+                if (tag_found == "#else") {
+                    // remove #else line
+                    shader_content.replace(line_pos, line.length() + 1, "");
+
+                    delete_until_tags(string_stream, shader_content, line_pos, line, { "#endif" });
+                }
+            }
+            else {
+
+                // Delete all lines in between
+                std::string tag_found = delete_until_tags(string_stream, shader_content, line_pos, line, { "#endif", "#else" });
+
+                // mantain #else condition
+                if (tag_found == "#else") {
+                    // remove #else line
+                    shader_content.replace(line_pos, line.length() + 1, "");
+
+                    continue_until_tags(string_stream, line_pos, line, { "#endif" });
+                }
+            }
+
+            // remove #endif line
+            shader_content.replace(line_pos, line.length(), "");
+        }
+        else if (tag == "#ifndef") {
+
+            // remove #ifdef line
+            shader_content.replace(line_pos, line.length() + 1, "");
+
+            // if specialization is not defined
+            if (std::find(define_specializations.begin(), define_specializations.end(), tokens[1]) == define_specializations.end()) {
 
                 // Just advance, do nothing
                 std::string tag_found = continue_until_tags(string_stream, line_pos, line, { "#endif", "#else" });

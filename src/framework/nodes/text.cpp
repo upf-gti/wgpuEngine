@@ -37,7 +37,7 @@ void TextEntity::append_char(glm::vec3 pos, Character& ch)
     }
 }
 
-void TextEntity::generate_mesh(const Color& color, eMaterialFlags flags)
+void TextEntity::generate_mesh(const Color& color, bool is_2D)
 {
     assert(font || "No font set prior to draw!");
 
@@ -50,8 +50,8 @@ void TextEntity::generate_mesh(const Color& color, eMaterialFlags flags)
         surfaces.clear();
     }
 
-    this->color = color;
-    this->flags = flags;
+    //this->color = color;
+    //this->type = type;
 
     float size = (float)font_scale / font->size;
     float space = (float)font->characters[' '].xadvance;
@@ -124,11 +124,19 @@ void TextEntity::generate_mesh(const Color& color, eMaterialFlags flags)
         set_surface_material_diffuse(0, font->textures[0]);
     }
 
-    set_surface_material_color(0, this->color);
-    set_surface_material_flag(0, this->flags);
+    set_surface_material_color(0, color);
+    set_surface_material_is_2d(0, is_2D);
+    set_surface_material_type(0, MATERIAL_UNLIT);
     set_surface_material_transparency_type(0, ALPHA_BLEND);
 
     surface->set_material_shader((RendererStorage::get_shader_from_source(shaders::sdf_fonts::source, shaders::sdf_fonts::path, surface->get_material())));
+}
+
+void TextEntity::set_text(const std::string& p_text)
+{
+    Material* material = get_surface_material(0);
+    text = p_text;
+    generate_mesh(material->color, material->is_2D);
 }
 
 int TextEntity::get_text_width(const std::string& text)

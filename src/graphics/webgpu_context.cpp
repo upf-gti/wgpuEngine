@@ -723,9 +723,9 @@ void* WebGPUContext::read_buffer(WGPUBuffer buffer, size_t size)
 
     struct BufferData {
         bool finished = false;
-        WGPUBuffer output_buffer;
-        size_t buffer_size;
-        void* data;
+        WGPUBuffer output_buffer = nullptr;
+        size_t buffer_size = 0;
+        void* data = nullptr;
     } userdata;
 
     userdata.output_buffer = output_buffer;

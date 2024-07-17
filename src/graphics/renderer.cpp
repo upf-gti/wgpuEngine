@@ -352,7 +352,7 @@ void Renderer::prepare_instancing()
 
             eRenderListType list = RENDER_LIST_OPAQUE;
 
-            if (material.flags & MATERIAL_2D) {
+            if (material.is_2D) {
                 list = material.transparency_type == ALPHA_BLEND ? RENDER_LIST_2D_TRANSPARENT : RENDER_LIST_2D;
             }
             else if (material.transparency_type == ALPHA_BLEND) {
@@ -419,7 +419,7 @@ void Renderer::prepare_instancing()
                     prev_normal == material.normal_texture &&
                     prev_metallic_roughness == material.metallic_roughness_texture &&
                     prev_emissive == material.emissive_texture &&
-                    !(material.flags & MATERIAL_2D)) {
+                    !(material.is_2D)) {
                     repeats++;
                 }
                 else {
@@ -527,14 +527,14 @@ void Renderer::render_render_list(int list_index, WGPURenderPassEncoder render_p
 //        wgpuRenderPassEncoderPushDebugGroup(render_pass, render_data.surface->get_name().c_str());
 //#endif
 
-        if (material.flags & MATERIAL_UI) {
+        if (material.type == MATERIAL_UI) {
             WGPUBindGroup ui_bind_group = renderer_storage->get_ui_widget_bind_group(render_data.mesh_instance_ref);
             if (ui_bind_group) {
                 wgpuRenderPassEncoderSetBindGroup(render_pass, bind_group_index++, ui_bind_group, 0, nullptr);
             }
         }
 
-        if (material.flags & MATERIAL_PBR) {
+        if (material.type == MATERIAL_PBR) {
             wgpuRenderPassEncoderSetBindGroup(render_pass, 3, lighting_bind_group, 0, nullptr);
         }
 

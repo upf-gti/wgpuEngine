@@ -19,8 +19,7 @@
 #include "glm/gtx/easing.hpp"
 #include "glm/gtx/compatibility.hpp"
 
-#include "shaders/mesh_color.wgsl.gen.h"
-#include "shaders/mesh_texture.wgsl.gen.h"
+#include "shaders/mesh_forward.wgsl.gen.h"
 #include "shaders/ui/ui_xr_panel.wgsl.gen.h"
 #include "shaders/ui/ui_color_picker.wgsl.gen.h"
 #include "shaders/ui/ui_slider.wgsl.gen.h"
@@ -46,18 +45,17 @@ namespace ui {
 
         Material material;
         material.color = color;
-        material.flags = MATERIAL_2D;
+        material.type = MATERIAL_UNLIT;
+        material.is_2D = true;
         material.cull_type = CULL_BACK;
         material.transparency_type = ALPHA_BLEND;
         material.priority = class_type;
 
         if (image_path.size()) {
             material.diffuse_texture = RendererStorage::get_texture(image_path, true);
-            material.shader = RendererStorage::get_shader_from_source(shaders::mesh_texture::source, shaders::mesh_texture::path, material);
         }
-        else {
-            material.shader = RendererStorage::get_shader_from_source(shaders::mesh_color::source, shaders::mesh_color::path, material);
-        }
+
+        material.shader = RendererStorage::get_shader_from_source(shaders::mesh_forward::source, shaders::mesh_forward::path, material);
 
         Surface* quad_surface = new Surface();
         quad_surface->create_quad(size.x, size.y);
@@ -106,8 +104,7 @@ namespace ui {
     {
         Material* material = quad_mesh.get_surface_material_override(quad_mesh.get_surface(0));
 
-        bool is_2d = material->flags & MATERIAL_2D;
-        is_2d |= (!Renderer::instance->get_openxr_available());
+        bool is_2d = material->is_2D || (!Renderer::instance->get_openxr_available());
 
         if (is_2d) {
             return Input::was_mouse_pressed(GLFW_MOUSE_BUTTON_LEFT);
@@ -123,8 +120,7 @@ namespace ui {
     {
         Material* material = quad_mesh.get_surface_material_override(quad_mesh.get_surface(0));
 
-        bool is_2d = material->flags & MATERIAL_2D;
-        is_2d |= (!Renderer::instance->get_openxr_available());
+        bool is_2d = material->is_2D || (!Renderer::instance->get_openxr_available());
 
         if (is_2d) {
             return Input::was_mouse_released(GLFW_MOUSE_BUTTON_LEFT);
@@ -140,8 +136,7 @@ namespace ui {
     {
         Material* material = quad_mesh.get_surface_material_override(quad_mesh.get_surface(0));
 
-        bool is_2d = material->flags & MATERIAL_2D;
-        is_2d |= (!Renderer::instance->get_openxr_available());
+        bool is_2d = material->is_2D || (!Renderer::instance->get_openxr_available());
 
         if (is_2d) {
             return Input::is_mouse_pressed(GLFW_MOUSE_BUTTON_LEFT);
@@ -159,7 +154,7 @@ namespace ui {
 
         Material* material = quad_mesh.get_surface_material_override(quad_mesh.get_surface(0));
 
-        if (material->flags & MATERIAL_2D)
+        if (material->is_2D)
         {
             const glm::vec2& mouse_pos = Input::get_mouse_position();
             const glm::vec2& min = get_translation();
@@ -342,15 +337,13 @@ namespace ui {
         }
     }
 
-    void Panel2D::remove_flag(uint8_t flag)
+    void Panel2D::disable_2d()
     {
         Material* material = quad_mesh.get_surface_material_override(quad_mesh.get_surface(0));
 
-        if (material->flags & flag) {
-            material->flags ^= flag;
-        }
+        material->is_2D = false;
 
-        Node2D::remove_flag(flag);
+        Node2D::disable_2d();
     }
 
     void Panel2D::set_priority(uint8_t priority)
@@ -384,7 +377,8 @@ namespace ui {
 
         Material material;
         material.color = color;
-        material.flags = MATERIAL_2D | MATERIAL_UI;
+        material.type = MATERIAL_UI;
+        material.is_2D = true;
         material.cull_type = CULL_BACK;
         material.transparency_type = ALPHA_BLEND;
         material.priority = class_type;
@@ -428,7 +422,7 @@ namespace ui {
         parameter_flags = flags;
 
         Material* material = quad_mesh.get_surface_material_override(quad_surface);
-        material->flags |= MATERIAL_UI;
+        material->type = MATERIAL_UI;
         material->shader = RendererStorage::get_shader_from_source(shaders::ui_xr_panel::source, shaders::ui_xr_panel::path, *material);
         // material->shader = RendererStorage::get_shader("data/shaders/ui_xr_panel.wgsl", *material);
 
@@ -613,10 +607,11 @@ namespace ui {
 
         Material material;
         material.color = color;
-        material.flags = MATERIAL_2D;
+        material.type = MATERIAL_UI;
+        material.is_2D = true;
         material.priority = class_type;
         material.cull_type = CULL_BACK;
-        material.shader = RendererStorage::get_shader_from_source(shaders::mesh_color::source, shaders::mesh_color::path, material);
+        material.shader = RendererStorage::get_shader_from_source(shaders::mesh_forward::source, shaders::mesh_forward::path, material);
 
         quad_mesh.set_surface_material_override(quad_mesh.get_surface(0), material);
 
@@ -804,7 +799,8 @@ namespace ui {
 
         Material material;
         material.color = color;
-        material.flags = MATERIAL_2D | MATERIAL_UI;
+        material.type = MATERIAL_UI;
+        material.is_2D = true;
         material.cull_type = CULL_BACK;
         material.priority = class_type;
         material.transparency_type = ALPHA_BLEND;
@@ -917,7 +913,7 @@ namespace ui {
 
         text_entity = new TextEntity(text_string);
         text_entity->set_scale(text_scale);
-        text_entity->generate_mesh(color, MATERIAL_2D);
+        text_entity->generate_mesh(color, true);
         text_entity->set_surface_material_priority(0, Node2DClassType::TEXT);
 
         float text_width = (float)text_entity->get_text_width(text_string);
@@ -930,7 +926,8 @@ namespace ui {
 
         Material material;
         material.color = colors::WHITE;
-        material.flags = MATERIAL_2D | MATERIAL_UI;
+        material.type = MATERIAL_UI;
+        material.is_2D = true;
         material.cull_type = CULL_BACK;
         material.transparency_type = ALPHA_BLEND;
         material.priority = class_type;
@@ -1033,16 +1030,16 @@ namespace ui {
         text_entity->render();
     }
 
-    void Text2D::remove_flag(uint8_t flag)
+    void Text2D::disable_2d()
     {
-        uint32_t flags = text_entity->get_flags();
+        Material* material = text_entity->get_surface_material_override(quad_mesh.get_surface(0));
 
-        if (flags & flag) {
-            flags ^= MATERIAL_2D;
-            text_entity->generate_mesh(color, (eMaterialFlags)flags);
+        if (material->is_2D) {
+            material->is_2D = false;
+            //text_entity->generate_mesh(color, material->is_2D);
         }
 
-        Panel2D::remove_flag(flag);
+        Panel2D::disable_2d();
     }
 
     void Text2D::set_priority(uint8_t priority)
@@ -1082,7 +1079,8 @@ namespace ui {
 
         Material material;
         material.color = color;
-        material.flags = MATERIAL_2D | MATERIAL_UI;
+        material.type = MATERIAL_UI;
+        material.is_2D = true;
         material.cull_type = CULL_BACK;
         material.transparency_type = ALPHA_BLEND;
         material.priority = class_type;
@@ -1275,7 +1273,8 @@ namespace ui {
 
         Material material;
         material.color = Color(0.02f, 0.02f, 0.02f, 1.0f);
-        material.flags = MATERIAL_2D | MATERIAL_UI;
+        material.type = MATERIAL_UI;
+        material.is_2D = true;
         material.cull_type = CULL_BACK;
         material.transparency_type = ALPHA_BLEND;
         material.priority = class_type;
@@ -1342,7 +1341,8 @@ namespace ui {
 
         Material material;
         material.color = color;
-        material.flags = MATERIAL_2D | MATERIAL_UI;
+        material.type = MATERIAL_UI;
+        material.is_2D = true;
         material.cull_type = CULL_BACK;
         material.priority = class_type;
         material.transparency_type = ALPHA_BLEND;
@@ -1580,7 +1580,8 @@ namespace ui {
 
         Material material;
         material.color = colors::WHITE;
-        material.flags = MATERIAL_2D | MATERIAL_UI;
+        material.type = MATERIAL_UI;
+        material.is_2D = true;
         material.cull_type = CULL_BACK;
         material.transparency_type = ALPHA_BLEND;
         material.priority = class_type;
@@ -1759,7 +1760,8 @@ namespace ui {
         parameter_flags = flags;
 
         Material material;
-        material.flags = MATERIAL_2D | MATERIAL_UI;
+        material.type = MATERIAL_UI;
+        material.is_2D = true;
         material.cull_type = CULL_BACK;
         material.transparency_type = ALPHA_BLEND;
         material.priority = class_type;

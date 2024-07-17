@@ -31,9 +31,9 @@ void Surface::set_material_shader(Shader* shader)
     material.shader = shader;
 }
 
-void Surface::set_material_flag(eMaterialFlags flag)
+void Surface::set_material_type(eMaterialType type)
 {
-    material.flags |= flag;
+    material.type = type;
 }
 
 void Surface::set_material_priority(uint8_t priority)
@@ -64,6 +64,11 @@ void Surface::set_material_depth_read(bool depth_read)
 void Surface::set_material_depth_write(bool depth_write)
 {
     material.depth_write = depth_write;
+}
+
+void Surface::set_material_is_2d(bool is_2d)
+{
+    material.is_2D = is_2d;
 }
 
 void Surface::update_vertex_buffer(const std::vector<InterleavedData>& _vertices)

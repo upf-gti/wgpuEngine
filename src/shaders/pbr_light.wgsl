@@ -1,8 +1,4 @@
 
-// Lights
-
-#define MAX_LIGHTS
-
 const LIGHT_UNDEFINED   = 0;
 const LIGHT_DIRECTIONAL = 1;
 const LIGHT_OMNI        = 2;
@@ -23,23 +19,6 @@ struct Light
     dummy: vec2f,
     inner_cone_cos : f32,
     outer_cone_cos : f32
-};
-
-struct LitMaterial
-{
-    pos : vec3f,
-    normal : vec3f,
-    albedo : vec3f,
-    emissive : vec3f,
-    f0 : vec3f,
-    f90 : vec3f,
-    c_diff : vec3f,
-    specular_weight: f32,
-    metallic : f32,
-    roughness : f32,
-    ao : f32,
-    view_dir : vec3f,
-    reflected_dir : vec3f
 };
 
 // https://github.com/KhronosGroup/glTF/blob/master/extensions/2.0/Khronos/KHR_lights_punctual/README.md#range-property
@@ -96,7 +75,7 @@ fn get_light_intensity(light : Light, point_to_light : vec3f) -> vec3f
     return range_attenuation * spot_attenuation * light.intensity * light.color;
 }
 
-fn get_direct_light( m : LitMaterial ) -> vec3f
+fn get_direct_light( m : PbrMaterial ) -> vec3f
 {
     var f_diffuse : vec3f = vec3f(0.0);
     var f_specular : vec3f = vec3f(0.0);
@@ -147,7 +126,7 @@ fn get_direct_light( m : LitMaterial ) -> vec3f
 }
 
 // https://github.com/KhronosGroup/glTF-Sample-Viewer/blob/main/source/Renderer/shaders/ibl.glsl
-fn get_indirect_light( m : LitMaterial ) -> vec3f
+fn get_indirect_light( m : PbrMaterial ) -> vec3f
 {
     let n_dot_v : f32 = clamp(dot(m.normal, m.view_dir), 0.0, 1.0);
 
