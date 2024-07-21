@@ -368,30 +368,48 @@ void Renderer::prepare_instancing()
         instance_data[i].clear();
         instance_data[i].resize(render_list[i].size());
 
-        // Sort render_list
-        std::sort(render_list[i].begin(), render_list[i].end(), [](auto& lhs, auto& rhs) {
 
-            Material* lhs_ov_mat = lhs.mesh_instance_ref->get_surface_material_override(lhs.surface);
-            Material* rhs_ov_mat = rhs.mesh_instance_ref->get_surface_material_override(rhs.surface);
+        if (i != RENDER_LIST_TRANSPARENT) {
+            // Sort opaques render_list
+            std::sort(render_list[i].begin(), render_list[i].end(), [](auto& lhs, auto& rhs) {
 
-            const Material& lhs_mat = lhs_ov_mat ? *lhs_ov_mat : lhs.surface->get_material();
-            const Material& rhs_mat = rhs_ov_mat ? *rhs_ov_mat : rhs.surface->get_material();
+                Material* lhs_ov_mat = lhs.mesh_instance_ref->get_surface_material_override(lhs.surface);
+                Material* rhs_ov_mat = rhs.mesh_instance_ref->get_surface_material_override(rhs.surface);
 
-            bool equal_priority = lhs_mat.priority == rhs_mat.priority;
-            bool equal_shader = lhs_mat.shader == rhs_mat.shader;
-            bool equal_diffuse = lhs_mat.diffuse_texture == rhs_mat.diffuse_texture;
-            bool equal_normal = lhs_mat.normal_texture == rhs_mat.normal_texture;
-            bool equal_metallic_rougness = lhs_mat.metallic_roughness_texture == rhs_mat.metallic_roughness_texture;
+                const Material& lhs_mat = lhs_ov_mat ? *lhs_ov_mat : lhs.surface->get_material();
+                const Material& rhs_mat = rhs_ov_mat ? *rhs_ov_mat : rhs.surface->get_material();
 
-            if (lhs_mat.priority > rhs_mat.priority) return true;
-            if (equal_priority && lhs_mat.shader > rhs_mat.shader) return true;
-            if (equal_priority && equal_shader && lhs_mat.diffuse_texture > rhs_mat.diffuse_texture) return true;
-            if (equal_priority && equal_shader && equal_diffuse && lhs_mat.normal_texture > rhs_mat.normal_texture) return true;
-            if (equal_priority && equal_shader && equal_diffuse && equal_normal && lhs_mat.metallic_roughness_texture > rhs_mat.metallic_roughness_texture) return true;
-            if (equal_priority && equal_shader && equal_diffuse && equal_normal && equal_metallic_rougness && lhs_mat.emissive_texture > rhs_mat.emissive_texture) return true;
+                bool equal_priority = lhs_mat.priority == rhs_mat.priority;
+                bool equal_shader = lhs_mat.shader == rhs_mat.shader;
+                bool equal_diffuse = lhs_mat.diffuse_texture == rhs_mat.diffuse_texture;
+                bool equal_normal = lhs_mat.normal_texture == rhs_mat.normal_texture;
+                bool equal_metallic_rougness = lhs_mat.metallic_roughness_texture == rhs_mat.metallic_roughness_texture;
 
-            return false;
+
+                if (lhs_mat.priority > rhs_mat.priority) return true;
+                if (equal_priority && lhs_mat.shader > rhs_mat.shader) return true;
+                if (equal_priority && equal_shader && lhs_mat.diffuse_texture > rhs_mat.diffuse_texture) return true;
+                if (equal_priority && equal_shader && equal_diffuse && lhs_mat.normal_texture > rhs_mat.normal_texture) return true;
+                if (equal_priority && equal_shader && equal_diffuse && equal_normal && lhs_mat.metallic_roughness_texture > rhs_mat.metallic_roughness_texture) return true;
+                if (equal_priority && equal_shader && equal_diffuse && equal_normal && equal_metallic_rougness && lhs_mat.emissive_texture > rhs_mat.emissive_texture) return true;
+
+                return false;
             });
+        }
+        else {
+            // Sort transparent render_list by distance to camera
+            std::sort(render_list[i].begin(), render_list[i].end(), [&](auto& lhs, auto& rhs) {
+                glm::vec3 lhs_pos = glm::vec3(lhs.global_matrix[3]);
+                glm::vec3 rhs_pos = glm::vec3(rhs.global_matrix[3]);
+
+                float lhs_dist = glm::distance2(lhs_pos, camera->get_eye());
+                float rhs_dist = glm::distance2(rhs_pos, camera->get_eye());
+
+                if (lhs_dist > rhs_dist) return true;
+
+                return false;
+            });
+        }
 
         // Check instances
         {
