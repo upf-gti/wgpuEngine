@@ -205,6 +205,7 @@ endif()
 # easyVDB
 add_subdirectory(libraries/easyVDB)
 target_link_libraries(${PROJECT_NAME} PUBLIC easyVDB)
+set_property(TARGET easyVDB PROPERTY FOLDER "External/easyVDB")
 
 # tinyobjloader
 target_include_directories(${PROJECT_NAME} PUBLIC ${WGPU_DIR_LIBS}/tinyobjloader)
