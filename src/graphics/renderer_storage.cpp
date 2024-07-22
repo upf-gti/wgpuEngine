@@ -72,7 +72,7 @@ void RendererStorage::register_material(WebGPUContext* webgpu_context, MeshInsta
 
     if (material.metallic_roughness_texture) {
         Uniform* u = new Uniform();
-        u->data = material.metallic_roughness_texture->get_view();
+        u->data = material.metallic_roughness_texture->get_view(WGPUTextureViewDimension_2D, 0, material.diffuse_texture->get_mipmap_count());
         u->binding = 2;
         uniforms.push_back(u);
         uses_textures |= true;
@@ -90,7 +90,7 @@ void RendererStorage::register_material(WebGPUContext* webgpu_context, MeshInsta
 
     if (material.normal_texture) {
         Uniform* u = new Uniform();
-        u->data = material.normal_texture->get_view();
+        u->data = material.normal_texture->get_view(WGPUTextureViewDimension_2D, 0, material.diffuse_texture->get_mipmap_count());
         u->binding = 4;
         uniforms.push_back(u);
         uses_textures |= true;
