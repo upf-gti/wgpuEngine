@@ -98,7 +98,9 @@ fn fs_main(in: VertexOutput) -> FragmentOutput {
         final_color = pow(final_color, vec3f(1.0 / 2.2));
     }
 
-    var alpha : f32 = (1.0 - smoothstep(0.0, 0.04, d)) * color.a;
+    final_color = mix( final_color, vec3f(0.3), 1.0 - smoothstep(0.0, 0.01, abs(d)) );
+
+    var alpha : f32 = (1.0 - smoothstep(0.0, 0.02, d)) * color.a;
 
     if(is_button) {
         alpha += (1.0 - smoothstep(0.0, 0.015, abs(d)));
