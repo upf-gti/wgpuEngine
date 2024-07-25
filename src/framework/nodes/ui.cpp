@@ -729,7 +729,8 @@ namespace ui {
 
         if (centered) {
             const glm::vec2& pos = get_local_translation();
-            set_position({ (-size.x + BUTTON_SIZE) * 2.0f, pos.y });
+            // set_position({ (-size.x + BUTTON_SIZE) * 2.0f, pos.y });
+            set_position({ (-size.x + BUTTON_SIZE) * 0.5f, -(size.y + GROUP_MARGIN) });
         }
 
         Container2D::on_children_changed();
