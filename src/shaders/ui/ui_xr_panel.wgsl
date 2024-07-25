@@ -77,7 +77,7 @@ fn fs_main(in: VertexOutput) -> FragmentOutput {
     // center stuff
     position -= vec2f(0.5);
     
-    var ra : vec4f = vec4f(0.125);
+    var ra : vec4f = vec4f(0.1);
     var si : vec2f = vec2f(ui_data.aspect_ratio, 1.0) * size * global_scale;
     ra = min(ra, min(vec4f(si.x), vec4f(si.y)));
     var uvs = vec2f(in.uv.x, in.uv.y) - position;
