@@ -31,7 +31,8 @@ struct InterleavedData {
 
 class Surface
 {
-    std::vector<InterleavedData> vertices;
+    //std::vector<InterleavedData> vertices;
+    uint32_t vertex_count = 0;
     Material material;
 
     WGPUBuffer vertex_buffer = nullptr;
@@ -64,7 +65,7 @@ public:
     void set_name(const std::string& new_name) { name = new_name; };
     void set_index(uint32_t new_index) { index = new_index; };
 
-    std::vector<InterleavedData>& get_vertices() { return vertices; }
+    //std::vector<InterleavedData>& get_vertices() { return vertices; }
     Material& get_material();
     const Material& get_material() const;
     const WGPUBuffer& get_vertex_buffer() const;
@@ -85,9 +86,8 @@ public:
     void create_from_vertices(const std::vector<InterleavedData>& _vertices);
 
     void update_vertex_buffer(const std::vector<InterleavedData>& _vertices);
-    void create_vertex_buffer();
+    void create_vertex_buffer(const std::vector<InterleavedData>& _vertices);
 
-    void* data();
     uint32_t get_vertex_count() const;
     uint64_t get_byte_size() const;
     const std::string& get_name() { return name; };

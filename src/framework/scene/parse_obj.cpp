@@ -58,10 +58,7 @@ void parse_obj(const char* obj_path, MeshInstance3D* entity)
 
     entity->add_surface(new_surface);
 
-    auto& vertices = new_surface->get_vertices();
-
-    // Mesh already loaded
-    if (!vertices.empty()) { return; }
+    std::vector<InterleavedData> vertices;
 
     InterleavedData vertex_data;
 
@@ -136,7 +133,7 @@ void parse_obj(const char* obj_path, MeshInstance3D* entity)
     entity->set_aabb(aabb);
     new_surface->set_aabb(aabb);
 
-    new_surface->create_vertex_buffer();
+    new_surface->create_vertex_buffer(vertices);
 }
 
 MeshInstance3D* parse_obj(const char* obj_path)

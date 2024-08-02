@@ -141,7 +141,7 @@ void read_mesh(const tinygltf::Model& model, const tinygltf::Node& node, Node3D*
 
         Material& material = surface->get_material();
 
-        std::vector<InterleavedData>& vertices = surface->get_vertices();
+        std::vector<InterleavedData> vertices;
 
         const tinygltf::Primitive& primitive = mesh.primitives[primitive_idx];
 
@@ -565,7 +565,7 @@ void read_mesh(const tinygltf::Model& model, const tinygltf::Node& node, Node3D*
 
         material.shader = RendererStorage::get_shader_from_source(shaders::mesh_forward::source, shaders::mesh_forward::path, material);
 
-        surface->create_vertex_buffer();
+        surface->create_vertex_buffer(vertices);
         surface->set_material_priority(1);
         surface->set_name("Surface_" + material.name);
         entity_mesh->add_surface(surface);

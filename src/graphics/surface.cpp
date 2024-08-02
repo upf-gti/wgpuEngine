@@ -9,11 +9,9 @@ Surface* Surface::quad_mesh = nullptr;
 
 Surface::~Surface()
 {
-    if (vertices.empty()) return;
-
-    vertices.clear();
-
-    wgpuBufferDestroy(vertex_buffer);
+    if (vertex_buffer) {
+        wgpuBufferDestroy(vertex_buffer);
+    }
 }
 
 void Surface::set_material_color(const glm::vec4& color)
@@ -77,11 +75,13 @@ void Surface::update_vertex_buffer(const std::vector<InterleavedData>& _vertices
         create_from_vertices(_vertices);
     }
 
+    vertex_count = _vertices.size();
     webgpu_context->update_buffer(vertex_buffer, 0, _vertices.data(), get_byte_size());
 }
 
-void Surface::create_vertex_buffer()
+void Surface::create_vertex_buffer(const std::vector<InterleavedData>& vertices)
 {
+    vertex_count = vertices.size();
     vertex_buffer = webgpu_context->create_buffer(get_byte_size(), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Vertex, vertices.data(), "mesh_buffer");
 }
 
@@ -102,6 +102,8 @@ const WGPUBuffer& Surface::get_vertex_buffer() const
 
 void Surface::create_axis(float s)
 {
+    std::vector<InterleavedData> vertices;
+
     vertices.push_back({ glm::vec3(-1.0f,  0.0f,  0.0f) * s });
     vertices.push_back({ glm::vec3( 1.0f,  0.0f,  0.0f) * s });
     vertices.push_back({ glm::vec3( 0.0f, -1.0f,  0.0f) * s });
@@ -109,7 +111,7 @@ void Surface::create_axis(float s)
     vertices.push_back({ glm::vec3( 0.0f,  0.0f, -1.0f) * s });
     vertices.push_back({ glm::vec3( 0.0f,  0.0f,  1.0f) * s });
 
-    create_vertex_buffer();
+    create_vertex_buffer(vertices);
 }
 
 std::vector<InterleavedData> Surface::generate_quad(float w, float h, const glm::vec3& position, const glm::vec3& normal, const glm::vec3& color)
@@ -158,7 +160,6 @@ void Surface::create_quad(float w, float h, bool centered, const glm::vec3& colo
     // Mesh has vertex data...
     if (vertex_buffer)
     {
-        vertices.clear();
         wgpuBufferDestroy(vertex_buffer);
     }
 
@@ -168,11 +169,11 @@ void Surface::create_quad(float w, float h, bool centered, const glm::vec3& colo
         origin += glm::vec3(w * 0.5f, h * 0.5f, 0.0f);
     }
 
-    vertices = generate_quad(w, h, origin, normals::pZ, color);
+    std::vector<InterleavedData> vertices = generate_quad(w, h, origin, normals::pZ, color);
 
     spdlog::trace("Quad mesh created ({} vertices)", vertices.size());
 
-    create_vertex_buffer();
+    create_vertex_buffer(vertices);
 }
 
 void Surface::create_subvidided_quad(float w, float h, uint32_t subdivisions, bool centered, const glm::vec3& color)
@@ -180,9 +181,10 @@ void Surface::create_subvidided_quad(float w, float h, uint32_t subdivisions, bo
     // Mesh has vertex data...
     if (vertex_buffer)
     {
-        vertices.clear();
         wgpuBufferDestroy(vertex_buffer);
     }
+
+    std::vector<InterleavedData> vertices;
 
     float step_x = w / subdivisions;
     float step_y = h / subdivisions;
@@ -217,7 +219,7 @@ void Surface::create_subvidided_quad(float w, float h, uint32_t subdivisions, bo
 
     spdlog::trace("Subvidided Quad mesh created ({} vertices)", vertices.size());
 
-    create_vertex_buffer();
+    create_vertex_buffer(vertices);
 }
 
 void Surface::create_box(float w, float h, float d, const glm::vec3& color)
@@ -225,9 +227,10 @@ void Surface::create_box(float w, float h, float d, const glm::vec3& color)
     // Mesh has vertex data...
     if (vertex_buffer)
     {
-        vertices.clear();
         wgpuBufferDestroy(vertex_buffer);
     }
+
+    std::vector<InterleavedData> vertices;
 
     float dir_offset = 0.0035f;
 
@@ -252,7 +255,7 @@ void Surface::create_box(float w, float h, float d, const glm::vec3& color)
 
     spdlog::trace("Box mesh created ({} vertices)", vertices.size());
 
-    create_vertex_buffer();
+    create_vertex_buffer(vertices);
 }
 
 void Surface::create_rounded_box(float w, float h, float d, float c, const glm::vec3& color)
@@ -260,9 +263,10 @@ void Surface::create_rounded_box(float w, float h, float d, float c, const glm::
     // Mesh has vertex data...
     if (vertex_buffer)
     {
-        vertices.clear();
         wgpuBufferDestroy(vertex_buffer);
     }
+
+    std::vector<InterleavedData> vertices;
 
     w -= c;
     h -= c;
@@ -451,7 +455,7 @@ void Surface::create_rounded_box(float w, float h, float d, float c, const glm::
 
     spdlog::trace("Rounded Box mesh created ({} vertices)", vertices.size());
 
-    create_vertex_buffer();
+    create_vertex_buffer(vertices);
 }
 
 void Surface::create_sphere(float r, uint32_t segments, uint32_t rings, const glm::vec3& color)
@@ -459,9 +463,10 @@ void Surface::create_sphere(float r, uint32_t segments, uint32_t rings, const gl
     // Mesh has vertex data...
     if (vertex_buffer)
     {
-        vertices.clear();
         wgpuBufferDestroy(vertex_buffer);
     }
+
+    std::vector<InterleavedData> vertices;
 
     std::vector<InterleavedData> vtxs;
     vtxs.resize((rings + 1) * (segments + 1));
@@ -526,7 +531,7 @@ void Surface::create_sphere(float r, uint32_t segments, uint32_t rings, const gl
 
     spdlog::trace("Sphere mesh created ({} vertices)", vertices.size());
 
-    create_vertex_buffer();
+    create_vertex_buffer(vertices);
 }
 
 void Surface::create_cone(float r, float h, uint32_t segments, const glm::vec3& color)
@@ -534,9 +539,10 @@ void Surface::create_cone(float r, float h, uint32_t segments, const glm::vec3& 
     // Mesh has vertex data...
     if (vertex_buffer)
     {
-        vertices.clear();
         wgpuBufferDestroy(vertex_buffer);
     }
+
+    std::vector<InterleavedData> vertices;
 
     vertices.resize(segments * 6 * 2);
 
@@ -589,7 +595,7 @@ void Surface::create_cone(float r, float h, uint32_t segments, const glm::vec3& 
 
     spdlog::trace("Cone mesh created ({} vertices)", vtx_counter);
 
-    create_vertex_buffer();
+    create_vertex_buffer(vertices);
 }
 
 void Surface::create_cylinder(float r, float h, uint32_t segments, bool capped, const glm::vec3& color)
@@ -597,9 +603,10 @@ void Surface::create_cylinder(float r, float h, uint32_t segments, bool capped, 
     // Mesh has vertex data...
     if (vertex_buffer)
     {
-        vertices.clear();
         wgpuBufferDestroy(vertex_buffer);
     }
+
+    std::vector<InterleavedData> vertices;
 
     vertices.resize(segments * 6);
 
@@ -668,7 +675,7 @@ void Surface::create_cylinder(float r, float h, uint32_t segments, bool capped, 
 
     spdlog::trace("Cylinder mesh created ({} vertices)", vtx_counter);
 
-    create_vertex_buffer();
+    create_vertex_buffer(vertices);
 }
 
 void Surface::create_capsule(float r, float h, uint32_t segments, uint32_t rings, const glm::vec3& color)
@@ -676,9 +683,10 @@ void Surface::create_capsule(float r, float h, uint32_t segments, uint32_t rings
     // Mesh has vertex data...
     if (vertex_buffer)
     {
-        vertices.clear();
         wgpuBufferDestroy(vertex_buffer);
     }
+
+    std::vector<InterleavedData> vertices;
 
     constexpr float pi = glm::pi<float>() * 2.f;
     constexpr float half_pi = glm::pi<float>() * 0.5f;
@@ -803,7 +811,7 @@ void Surface::create_capsule(float r, float h, uint32_t segments, uint32_t rings
 
     spdlog::trace("Capsule mesh created ({} vertices)", vertices.size());
 
-    create_vertex_buffer();
+    create_vertex_buffer(vertices);
 }
 
 void Surface::create_torus(float r, float ir, uint32_t segments_section, uint32_t segments_circle, const glm::vec3& color)
@@ -811,9 +819,10 @@ void Surface::create_torus(float r, float ir, uint32_t segments_section, uint32_
     // Mesh has vertex data...
     if (vertex_buffer)
     {
-        vertices.clear();
         wgpuBufferDestroy(vertex_buffer);
     }
+
+    std::vector<InterleavedData> vertices;
 
     std::vector<InterleavedData> vtxs;
     vtxs.resize((segments_circle + 1) * (segments_section + 1));
@@ -863,11 +872,13 @@ void Surface::create_torus(float r, float ir, uint32_t segments_section, uint32_
 
     spdlog::trace("Torus mesh created ({} vertices)", vertices.size());
 
-    create_vertex_buffer();
+    create_vertex_buffer(vertices);
 }
 
 void Surface::create_skybox()
 {
+    std::vector<InterleavedData> vertices;
+
     vertices.resize(36);
 
     vertices[0].position = { -1.0f, 1.0f, -1.0f };
@@ -912,23 +923,22 @@ void Surface::create_skybox()
     vertices[34].position = { -1.0f, -1.0f,  1.0f };
     vertices[35].position = { 1.0f, -1.0f,  1.0f };
 
-    create_vertex_buffer();
+    create_vertex_buffer(vertices);
 }
 
 void Surface::create_from_vertices(const std::vector<InterleavedData>& _vertices)
 {
-    vertices = _vertices;
-    create_vertex_buffer();
+    create_vertex_buffer(_vertices);
 }
-
-void* Surface::data()
-{
-    return vertices.data();
-}
+//
+//void* Surface::data()
+//{
+//    return vertices.data();
+//}
 
 uint32_t Surface::get_vertex_count() const
 {
-    return static_cast<uint32_t>(vertices.size());
+    return vertex_count;
 }
 
 uint64_t Surface::get_byte_size() const

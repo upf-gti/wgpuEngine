@@ -93,9 +93,7 @@ void SkeletonInstance3D::update_helper()
 {
     Surface* s = get_surface(0);
 
-    std::vector<InterleavedData>& vertices = s->get_vertices();
-    vertices.clear();
-    /*vertices.resize(0);*/
+    std::vector<InterleavedData> vertices;
 
     size_t numJoints = skeleton->get_current_pose().size();
     Pose pose = skeleton->get_current_pose();
