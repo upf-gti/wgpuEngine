@@ -340,22 +340,22 @@ void Renderer::prepare_instancing()
 
             Material* material_override = mesh_instance->get_surface_material_override(surface);
 
-            Material& material = material_override ? *material_override : surface->get_material();
+            Material* material = material_override ? material_override : surface->get_material();
 
-            if (!material.shader) {
+            if (!material || !material->shader) {
                 continue;
             }
 
-            RendererStorage::instance->register_material(webgpu_context, mesh_instance, material);
+            RendererStorage::instance->register_material_bind_group(webgpu_context, mesh_instance, material);
 
             RendererStorage::register_render_pipeline(material);
 
             eRenderListType list = RENDER_LIST_OPAQUE;
 
-            if (material.is_2D) {
-                list = material.transparency_type == ALPHA_BLEND ? RENDER_LIST_2D_TRANSPARENT : RENDER_LIST_2D;
+            if (material->is_2D) {
+                list = material->transparency_type == ALPHA_BLEND ? RENDER_LIST_2D_TRANSPARENT : RENDER_LIST_2D;
             }
-            else if (material.transparency_type == ALPHA_BLEND) {
+            else if (material->transparency_type == ALPHA_BLEND) {
                 list = RENDER_LIST_TRANSPARENT;
             }
 
@@ -373,25 +373,25 @@ void Renderer::prepare_instancing()
             // Sort opaques render_list
             std::sort(render_list[i].begin(), render_list[i].end(), [](auto& lhs, auto& rhs) {
 
-                Material* lhs_ov_mat = lhs.mesh_instance_ref->get_surface_material_override(lhs.surface);
-                Material* rhs_ov_mat = rhs.mesh_instance_ref->get_surface_material_override(rhs.surface);
+                const Material* lhs_ov_mat = lhs.mesh_instance_ref->get_surface_material_override(lhs.surface);
+                const Material* rhs_ov_mat = rhs.mesh_instance_ref->get_surface_material_override(rhs.surface);
 
-                const Material& lhs_mat = lhs_ov_mat ? *lhs_ov_mat : lhs.surface->get_material();
-                const Material& rhs_mat = rhs_ov_mat ? *rhs_ov_mat : rhs.surface->get_material();
+                const Material* lhs_mat = lhs_ov_mat ? lhs_ov_mat : lhs.surface->get_material();
+                const Material* rhs_mat = rhs_ov_mat ? rhs_ov_mat : rhs.surface->get_material();
 
-                bool equal_priority = lhs_mat.priority == rhs_mat.priority;
-                bool equal_shader = lhs_mat.shader == rhs_mat.shader;
-                bool equal_diffuse = lhs_mat.diffuse_texture == rhs_mat.diffuse_texture;
-                bool equal_normal = lhs_mat.normal_texture == rhs_mat.normal_texture;
-                bool equal_metallic_rougness = lhs_mat.metallic_roughness_texture == rhs_mat.metallic_roughness_texture;
+                bool equal_priority = lhs_mat->priority == rhs_mat->priority;
+                bool equal_shader = lhs_mat->shader == rhs_mat->shader;
+                bool equal_diffuse = lhs_mat->diffuse_texture == rhs_mat->diffuse_texture;
+                bool equal_normal = lhs_mat->normal_texture == rhs_mat->normal_texture;
+                bool equal_metallic_rougness = lhs_mat->metallic_roughness_texture == rhs_mat->metallic_roughness_texture;
 
 
-                if (lhs_mat.priority > rhs_mat.priority) return true;
-                if (equal_priority && lhs_mat.shader > rhs_mat.shader) return true;
-                if (equal_priority && equal_shader && lhs_mat.diffuse_texture > rhs_mat.diffuse_texture) return true;
-                if (equal_priority && equal_shader && equal_diffuse && lhs_mat.normal_texture > rhs_mat.normal_texture) return true;
-                if (equal_priority && equal_shader && equal_diffuse && equal_normal && lhs_mat.metallic_roughness_texture > rhs_mat.metallic_roughness_texture) return true;
-                if (equal_priority && equal_shader && equal_diffuse && equal_normal && equal_metallic_rougness && lhs_mat.emissive_texture > rhs_mat.emissive_texture) return true;
+                if (lhs_mat->priority > rhs_mat->priority) return true;
+                if (equal_priority && lhs_mat->shader > rhs_mat->shader) return true;
+                if (equal_priority && equal_shader && lhs_mat->diffuse_texture > rhs_mat->diffuse_texture) return true;
+                if (equal_priority && equal_shader && equal_diffuse && lhs_mat->normal_texture > rhs_mat->normal_texture) return true;
+                if (equal_priority && equal_shader && equal_diffuse && equal_normal && lhs_mat->metallic_roughness_texture > rhs_mat->metallic_roughness_texture) return true;
+                if (equal_priority && equal_shader && equal_diffuse && equal_normal && equal_metallic_rougness && lhs_mat->emissive_texture > rhs_mat->emissive_texture) return true;
 
                 return false;
             });
@@ -426,18 +426,18 @@ void Renderer::prepare_instancing()
 
                 const sRenderData& render_data = render_list[i][j];
 
-                Material* material_override = render_data.mesh_instance_ref->get_surface_material_override(render_data.surface);
+                const Material* material_override = render_data.mesh_instance_ref->get_surface_material_override(render_data.surface);
 
-                const Material& material = material_override ? *material_override : render_data.surface->get_material();
+                const Material* material = material_override ? material_override : render_data.surface->get_material();
 
                 // Repeated MeshInstance3D, must be instanced
-                if (prev_surface == render_data.surface && prev_shader == material.shader &&
-                    prev_color == material.color &&
-                    prev_diffuse == material.diffuse_texture &&
-                    prev_normal == material.normal_texture &&
-                    prev_metallic_roughness == material.metallic_roughness_texture &&
-                    prev_emissive == material.emissive_texture &&
-                    !(material.is_2D)) {
+                if (prev_surface == render_data.surface && prev_shader == material->shader &&
+                    prev_color == material->color &&
+                    prev_diffuse == material->diffuse_texture &&
+                    prev_normal == material->normal_texture &&
+                    prev_metallic_roughness == material->metallic_roughness_texture &&
+                    prev_emissive == material->emissive_texture &&
+                    !(material->is_2D)) {
                     repeats++;
                 }
                 else {
@@ -450,12 +450,12 @@ void Renderer::prepare_instancing()
                 }
 
                 prev_surface = render_data.surface;
-                prev_shader = material.shader;
-                prev_color = material.color;
-                prev_diffuse = material.diffuse_texture;
-                prev_normal = material.normal_texture;
-                prev_metallic_roughness = material.metallic_roughness_texture;
-                prev_emissive = material.emissive_texture;
+                prev_shader = material->shader;
+                prev_color = material->color;
+                prev_diffuse = material->diffuse_texture;
+                prev_normal = material->normal_texture;
+                prev_metallic_roughness = material->metallic_roughness_texture;
+                prev_emissive = material->emissive_texture;
 
                 // Fill instance_data
                 instance_data[i][j] = { render_data.global_matrix };
@@ -486,9 +486,9 @@ void Renderer::prepare_instancing()
 
                 const sRenderData& render_data = render_list[i][j];
 
-                Material* material_override = render_data.mesh_instance_ref->get_surface_material_override(render_data.surface);
+                const Material* material_override = render_data.mesh_instance_ref->get_surface_material_override(render_data.surface);
 
-                Shader* shader = material_override ? material_override->shader : render_data.surface->get_material().shader;
+                const Shader* shader = material_override ? material_override->shader : render_data.surface->get_material()->shader;
 
                 if (bind_groups[i]) {
                     wgpuBindGroupRelease(bind_groups[i]);
@@ -509,19 +509,19 @@ void Renderer::prepare_instancing()
 
 void Renderer::render_render_list(int list_index, WGPURenderPassEncoder render_pass, const WGPUBindGroup& render_bind_group_camera, uint32_t camera_buffer_stride)
 {
-    Pipeline* prev_pipeline = nullptr;
+    const Pipeline* prev_pipeline = nullptr;
 
     for (int i = 0; i < render_list[list_index].size(); ) {
 
         const sRenderData& render_data = render_list[list_index][i];
 
-        Material* material_override = render_data.mesh_instance_ref->get_surface_material_override(render_data.surface);
+        const Material* material_override = render_data.mesh_instance_ref->get_surface_material_override(render_data.surface);
 
-        const Material& material = material_override ? *material_override : render_data.surface->get_material();
+        const Material* material = material_override ? material_override : render_data.surface->get_material();
 
-        Pipeline* pipeline = material.shader->get_pipeline();
+        const Pipeline* pipeline = material->shader->get_pipeline();
 
-        assert(pipeline);        
+        assert(pipeline);
 
         if (pipeline != prev_pipeline) {
             pipeline->set(render_pass);
@@ -545,14 +545,14 @@ void Renderer::render_render_list(int list_index, WGPURenderPassEncoder render_p
 //        wgpuRenderPassEncoderPushDebugGroup(render_pass, render_data.surface->get_name().c_str());
 //#endif
 
-        if (material.type == MATERIAL_UI) {
+        if (material->type == MATERIAL_UI) {
             WGPUBindGroup ui_bind_group = renderer_storage->get_ui_widget_bind_group(render_data.mesh_instance_ref);
             if (ui_bind_group) {
                 wgpuRenderPassEncoderSetBindGroup(render_pass, bind_group_index++, ui_bind_group, 0, nullptr);
             }
         }
 
-        if (material.type == MATERIAL_PBR) {
+        if (material->type == MATERIAL_PBR) {
             wgpuRenderPassEncoderSetBindGroup(render_pass, 3, lighting_bind_group, 0, nullptr);
         }
 

@@ -3,6 +3,8 @@
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
 
+#include "framework/resources/resource.h"
+
 #include <string>
 
 class Shader;
@@ -35,7 +37,7 @@ enum eCullType {
     CULL_FRONT
 };
 
-struct Material
+struct Material : public Resource
 {
     Shader* shader = nullptr;
     glm::vec4 color = { 1.0f, 1.0f, 1.0f, 1.0f };
@@ -66,27 +68,4 @@ struct Material
 
     std::string name = "";
 
-    // Don't take transparency into account for now
-    bool operator==(const Material& other) const
-    {
-        return (shader == other.shader
-            && color == other.color
-            && diffuse_texture == other.diffuse_texture
-            && metallic_roughness_texture == other.metallic_roughness_texture
-            && normal_texture == other.normal_texture
-            && emissive_texture == other.emissive_texture
-            && oclussion_texture == other.oclussion_texture
-            && roughness == other.roughness
-            && metalness == other.metalness
-            && emissive == other.emissive
-            && alpha_mask == other.alpha_mask
-            && type == other.type
-            && priority == other.priority
-            && transparency_type == other.transparency_type
-            && topology_type == other.topology_type
-            && cull_type == other.cull_type
-            && depth_read == other.depth_read
-            && depth_write == other.depth_write
-            && use_skinning == other.use_skinning);
-    }
 };

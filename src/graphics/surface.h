@@ -3,6 +3,7 @@
 #include "graphics/webgpu_context.h"
 #include "framework/math/aabb.h"
 #include "material.h"
+#include "framework/resources/resource.h"
 
 #include "glm/vec2.hpp"
 #include "glm/vec3.hpp"
@@ -29,11 +30,10 @@ struct InterleavedData {
     glm::ivec4 joints;
 };
 
-class Surface
+class Surface : public Resource
 {
-    //std::vector<InterleavedData> vertices;
     uint32_t vertex_count = 0;
-    Material material;
+    Material* material = nullptr;
 
     WGPUBuffer vertex_buffer = nullptr;
     static Surface* quad_mesh;
@@ -51,6 +51,7 @@ public:
 
     static WebGPUContext* webgpu_context;
 
+    void set_material(Material* material);
     void set_material_color(const glm::vec4& color);
     void set_material_diffuse(Texture* diffuse);
     void set_material_shader(Shader* shader);
@@ -65,9 +66,9 @@ public:
     void set_name(const std::string& new_name) { name = new_name; };
     void set_index(uint32_t new_index) { index = new_index; };
 
-    //std::vector<InterleavedData>& get_vertices() { return vertices; }
-    Material& get_material();
-    const Material& get_material() const;
+    Material* get_material();
+    const Material* get_material() const;
+
     const WGPUBuffer& get_vertex_buffer() const;
     uint32_t get_index() const { return index; };
 

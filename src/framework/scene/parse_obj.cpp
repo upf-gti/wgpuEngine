@@ -43,17 +43,25 @@ void parse_obj(const char* obj_path, MeshInstance3D* entity)
 
     entity->set_name(obj_path_fs.stem().string());
 
+    // TODO: don't use path
     Surface* new_surface = RendererStorage::get_surface(obj_path);
 
-    if (!materials.empty()) {
+    Material* material = new_surface->get_material();
+
+    if (!material && !materials.empty()) {
+
+        material = new Material();
+
         if (materials[0].diffuse_texname.empty()) {
-            new_surface->set_material_color(glm::vec4(materials[0].diffuse[0], materials[0].diffuse[1], materials[0].diffuse[2], 1.0f));
+            material->color = glm::vec4(materials[0].diffuse[0], materials[0].diffuse[1], materials[0].diffuse[2], 1.0f);
         }
         else {
-            new_surface->set_material_diffuse((RendererStorage::get_texture(obj_path_fs.parent_path().string() + "/" + materials[0].diffuse_texname, true)));
+            material->diffuse_texture = RendererStorage::get_texture(obj_path_fs.parent_path().string() + "/" + materials[0].diffuse_texname, true);
         }
 
-        new_surface->set_material_shader(RendererStorage::get_shader_from_source(shaders::mesh_forward::source, shaders::mesh_forward::path, new_surface->get_material()));
+        material->shader = RendererStorage::get_shader_from_source(shaders::mesh_forward::source, shaders::mesh_forward::path, material);
+
+        new_surface->set_material(material);
     }
 
     entity->add_surface(new_surface);

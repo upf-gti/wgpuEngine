@@ -25,12 +25,12 @@ public:
 	WGPUShaderModule get_module() const;
 
 	void set_pipeline(Pipeline* pipeline);
-	Pipeline* get_pipeline() { return pipeline_ref; }
+	const Pipeline* get_pipeline() { return pipeline_ref; }
 
-	std::vector<WGPUBindGroupLayout>&    get_bind_group_layouts()    { return bind_group_layouts; }
-	std::vector<WGPUVertexBufferLayout>& get_vertex_buffer_layouts() { return vertex_buffer_layouts; }
+	const std::vector<WGPUBindGroupLayout>&    get_bind_group_layouts() const { return bind_group_layouts; }
+	const std::vector<WGPUVertexBufferLayout>& get_vertex_buffer_layouts() const { return vertex_buffer_layouts; }
 
-	std::string get_path() { return path; }
+	std::string get_path() const { return path; }
 
 	bool is_loaded() { return loaded; }
 

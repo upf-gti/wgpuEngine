@@ -8,13 +8,13 @@
 #include <vector>
 
 #include "webgpu_context.h"
-#include "material.h"
 #include "graphics/uniforms_structs.h"
 #include "framework/utils/hash.h"
 
 class Surface;
 class Texture;
 class Shader;
+class Material;
 class MeshInstance;
 class Animation;
 struct Uniform;
@@ -45,22 +45,22 @@ public:
         WGPUBindGroup bind_group;
     };
 
-    static std::unordered_map<Material, sBindingData> material_bind_groups;
+    static std::unordered_map<const Material*, sBindingData> material_bind_groups;
     static std::unordered_map<const void*, sBindingData> ui_widget_bind_groups;
 
-    static void register_material(WebGPUContext* webgpu_context, MeshInstance* mesh_instance, const Material& material);
-    static WGPUBindGroup get_material_bind_group(const Material& material);
+    static void register_material_bind_group(WebGPUContext* webgpu_context, MeshInstance* mesh_instance, const Material* material);
+    static WGPUBindGroup get_material_bind_group(const Material* material);
 
     static void register_ui_widget(WebGPUContext* webgpu_context, Shader* shader, void* widget, const sUIData& ui_data, uint8_t bind_group_id);
     static WGPUBindGroup get_ui_widget_bind_group(const void* widget);
     static void update_ui_widget(WebGPUContext* webgpu_context, void* entity_mesh, const sUIData& ui_data);
 
-    static Shader* get_shader(const std::string& shader_path, const Material& material = {},
+    static Shader* get_shader(const std::string& shader_path, const Material* material = nullptr,
         const std::vector<std::string>& custom_define_specializations = {});
 
     static Shader* get_shader(const std::string& shader_path, const std::vector<std::string>& custom_define_specializations);
 
-    static Shader* get_shader_from_source(const char* source, const std::string& name, const Material& material = {},
+    static Shader* get_shader_from_source(const char* source, const std::string& name, const Material* material = nullptr,
         const std::vector<std::string>& custom_define_specializations = {});
 
     static Shader* get_shader_from_source(const char* source, const std::string& name,
@@ -74,14 +74,14 @@ public:
 
     static void register_basic_surfaces();
 
-    static std::vector<std::string> get_common_define_specializations(const Material& material);
+    static std::vector<std::string> get_common_define_specializations(const Material* material);
 
     static void reload_all_render_pipelines();
 
     static void register_animation(const std::string& animation_path, Animation* animation);
     static Animation* get_animation(const std::string& animation_path);
 
-    static void register_render_pipeline(Material& material);
+    static void register_render_pipeline(Material* material);
     //static void register_compute_pipeline(Shader* shader, WGPUPipelineLayout pipeline_layout);
     static void clean_registered_pipelines();
 

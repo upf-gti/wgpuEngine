@@ -22,6 +22,15 @@ Node3D::Node3D()
     properties["scale"] = &transform.get_scale_ref();
 }
 
+Node3D::~Node3D()
+{
+    for (Node* child : children) {
+        delete child;
+    }
+
+    children.clear();
+}
+
 void Node3D::add_child(Node3D* child)
 {
     if (child->parent) {

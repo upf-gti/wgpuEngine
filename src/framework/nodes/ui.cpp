@@ -43,19 +43,19 @@ namespace ui {
     {
         class_type = Node2DClassType::PANEL;
 
-        Material material;
-        material.color = color;
-        material.type = MATERIAL_UNLIT;
-        material.is_2D = true;
-        material.cull_type = CULL_BACK;
-        material.transparency_type = ALPHA_BLEND;
-        material.priority = class_type;
+        Material* material = new Material();
+        material->color = color;
+        material->type = MATERIAL_UNLIT;
+        material->is_2D = true;
+        material->cull_type = CULL_BACK;
+        material->transparency_type = ALPHA_BLEND;
+        material->priority = class_type;
 
         if (image_path.size()) {
-            material.diffuse_texture = RendererStorage::get_texture(image_path, true);
+            material->diffuse_texture = RendererStorage::get_texture(image_path, true);
         }
 
-        material.shader = RendererStorage::get_shader_from_source(shaders::mesh_forward::source, shaders::mesh_forward::path, material);
+        material->shader = RendererStorage::get_shader_from_source(shaders::mesh_forward::source, shaders::mesh_forward::path, material);
 
         Surface* quad_surface = new Surface();
         quad_surface->create_quad(size.x, size.y);
@@ -68,7 +68,7 @@ namespace ui {
     {
         color = c;
 
-        quad_mesh.set_surface_material_override_color(0, c);
+        quad_mesh.get_surface_material_override(0)->color = c;
     }
 
     void Panel2D::set_signal(const std::string& new_signal)
@@ -375,22 +375,22 @@ namespace ui {
     {
         class_type = priority;
 
-        Material material;
-        material.color = color;
-        material.type = MATERIAL_UI;
-        material.is_2D = true;
-        material.cull_type = CULL_BACK;
-        material.transparency_type = ALPHA_BLEND;
-        material.priority = class_type;
-        material.diffuse_texture = RendererStorage::get_texture(image_path, true);
-        material.shader = RendererStorage::get_shader_from_source(shaders::ui_texture::source, shaders::ui_texture::path, material);
+        Material* material = new Material();
+        material->color = color;
+        material->type = MATERIAL_UI;
+        material->is_2D = true;
+        material->cull_type = CULL_BACK;
+        material->transparency_type = ALPHA_BLEND;
+        material->priority = class_type;
+        material->diffuse_texture = RendererStorage::get_texture(image_path, true);
+        material->shader = RendererStorage::get_shader_from_source(shaders::ui_texture::source, shaders::ui_texture::path, material);
 
         parameter_flags = flags;
 
         quad_mesh.set_surface_material_override(quad_mesh.get_surface(0), material);
 
         auto webgpu_context = Renderer::instance->get_webgpu_context();
-        RendererStorage::register_ui_widget(webgpu_context, material.shader, &quad_mesh, ui_data, 3);
+        RendererStorage::register_ui_widget(webgpu_context, material->shader, &quad_mesh, ui_data, 3);
     }
 
     void Image2D::update(float delta_time)
@@ -423,7 +423,7 @@ namespace ui {
 
         Material* material = quad_mesh.get_surface_material_override(quad_surface);
         material->type = MATERIAL_UI;
-        material->shader = RendererStorage::get_shader_from_source(shaders::ui_xr_panel::source, shaders::ui_xr_panel::path, *material);
+        material->shader = RendererStorage::get_shader_from_source(shaders::ui_xr_panel::source, shaders::ui_xr_panel::path, material);
         // material->shader = RendererStorage::get_shader("data/shaders/ui_xr_panel.wgsl", *material);
 
         ui_data.xr_info = glm::vec4(1.0f, 1.0f, 0.5f, 0.5f);
@@ -605,13 +605,13 @@ namespace ui {
     {
         class_type = CONTAINER;
 
-        Material material;
-        material.color = color;
-        material.type = MATERIAL_UI;
-        material.is_2D = true;
-        material.priority = class_type;
-        material.cull_type = CULL_BACK;
-        material.shader = RendererStorage::get_shader_from_source(shaders::mesh_forward::source, shaders::mesh_forward::path, material);
+        Material* material = new Material();
+        material->color = color;
+        material->type = MATERIAL_UI;
+        material->is_2D = true;
+        material->priority = class_type;
+        material->cull_type = CULL_BACK;
+        material->shader = RendererStorage::get_shader_from_source(shaders::mesh_forward::source, shaders::mesh_forward::path, material);
 
         quad_mesh.set_surface_material_override(quad_mesh.get_surface(0), material);
 
@@ -798,19 +798,19 @@ namespace ui {
     {
         class_type = Node2DClassType::SELECTOR;
 
-        Material material;
-        material.color = color;
-        material.type = MATERIAL_UI;
-        material.is_2D = true;
-        material.cull_type = CULL_BACK;
-        material.priority = class_type;
-        material.transparency_type = ALPHA_BLEND;
-        material.shader = RendererStorage::get_shader_from_source(shaders::ui_selector::source, shaders::ui_selector::path, material);
+        Material* material = new Material();
+        material->color = color;
+        material->type = MATERIAL_UI;
+        material->is_2D = true;
+        material->cull_type = CULL_BACK;
+        material->priority = class_type;
+        material->transparency_type = ALPHA_BLEND;
+        material->shader = RendererStorage::get_shader_from_source(shaders::ui_selector::source, shaders::ui_selector::path, material);
 
         quad_mesh.set_surface_material_override(quad_mesh.get_surface(0), material);
 
         auto webgpu_context = Renderer::instance->get_webgpu_context();
-        RendererStorage::register_ui_widget(webgpu_context, material.shader, &quad_mesh, ui_data, 3);
+        RendererStorage::register_ui_widget(webgpu_context, material->shader, &quad_mesh, ui_data, 3);
 
         render_background = true;
     }
@@ -915,7 +915,7 @@ namespace ui {
         text_entity = new TextEntity(text_string);
         text_entity->set_scale(text_scale);
         text_entity->generate_mesh(color, true);
-        text_entity->set_surface_material_priority(0, Node2DClassType::TEXT);
+        text_entity->get_surface_material(0)->priority = Node2DClassType::TEXT;
 
         float text_width = (float)text_entity->get_text_width(text_string);
         size.x = std::max(text_width, 24.0f) + TEXT_SHADOW_MARGIN * text_scale;
@@ -925,14 +925,14 @@ namespace ui {
 
         render_background = !(flags & SKIP_TEXT_SHADOW);
 
-        Material material;
-        material.color = colors::WHITE;
-        material.type = MATERIAL_UI;
-        material.is_2D = true;
-        material.cull_type = CULL_BACK;
-        material.transparency_type = ALPHA_BLEND;
-        material.priority = class_type;
-        material.shader = RendererStorage::get_shader_from_source(shaders::ui_text_shadow::source, shaders::ui_text_shadow::path, material);
+        Material* material = new Material();
+        material->color = colors::WHITE;
+        material->type = MATERIAL_UI;
+        material->is_2D = true;
+        material->cull_type = CULL_BACK;
+        material->transparency_type = ALPHA_BLEND;
+        material->priority = class_type;
+        material->shader = RendererStorage::get_shader_from_source(shaders::ui_text_shadow::source, shaders::ui_text_shadow::path, material);
 
         Surface* quad_surface = quad_mesh.get_surface(0);
         quad_surface->create_quad(size.x, size.y);
@@ -940,7 +940,7 @@ namespace ui {
         quad_mesh.set_surface_material_override(quad_mesh.get_surface(0), material);
 
         auto webgpu_context = Renderer::instance->get_webgpu_context();
-        RendererStorage::register_ui_widget(webgpu_context, material.shader, &quad_mesh, ui_data, 3);
+        RendererStorage::register_ui_widget(webgpu_context, material->shader, &quad_mesh, ui_data, 3);
     }
 
     void Text2D::update(float delta_time)
@@ -1045,7 +1045,7 @@ namespace ui {
 
     void Text2D::set_priority(uint8_t priority)
     {
-        text_entity->set_surface_material_priority(0, priority);
+        text_entity->get_surface_material(0)->priority = priority;
 
         Panel2D::set_priority(priority);
     }
@@ -1078,19 +1078,19 @@ namespace ui {
         ui_data.num_group_items = ComboIndex::UNIQUE;
         ui_data.aspect_ratio = size.x / size.y;
 
-        Material material;
-        material.color = color;
-        material.type = MATERIAL_UI;
-        material.is_2D = true;
-        material.cull_type = CULL_BACK;
-        material.transparency_type = ALPHA_BLEND;
-        material.priority = class_type;
-        material.shader = RendererStorage::get_shader_from_source(shaders::ui_button::source, shaders::ui_button::path, material);
+        Material* material = new Material();
+        material->color = color;
+        material->type = MATERIAL_UI;
+        material->is_2D = true;
+        material->cull_type = CULL_BACK;
+        material->transparency_type = ALPHA_BLEND;
+        material->priority = class_type;
+        material->shader = RendererStorage::get_shader_from_source(shaders::ui_button::source, shaders::ui_button::path, material);
 
         quad_mesh.set_surface_material_override(quad_mesh.get_surface(0), material);
 
         auto webgpu_context = Renderer::instance->get_webgpu_context();
-        RendererStorage::register_ui_widget(webgpu_context, material.shader, &quad_mesh, ui_data, 3);
+        RendererStorage::register_ui_widget(webgpu_context, material->shader, &quad_mesh, ui_data, 3);
 
         // Selection styling visibility callback..
         Node::bind(name + "@pressed", [&](const std::string& signal, void* button) {
@@ -1272,20 +1272,20 @@ namespace ui {
         ui_data.num_group_items = ComboIndex::UNIQUE;
         ui_data.aspect_ratio = size.x / size.y;
 
-        Material material;
-        material.color = Color(0.02f, 0.02f, 0.02f, 1.0f);
-        material.type = MATERIAL_UI;
-        material.is_2D = true;
-        material.cull_type = CULL_BACK;
-        material.transparency_type = ALPHA_BLEND;
-        material.priority = class_type;
-        material.diffuse_texture = texture_path.size() ? RendererStorage::get_texture(texture_path, true) : nullptr;
-        material.shader = RendererStorage::get_shader_from_source(shaders::ui_button::source, shaders::ui_button::path, material);
+        Material* material = new Material();
+        material->color = Color(0.02f, 0.02f, 0.02f, 1.0f);
+        material->type = MATERIAL_UI;
+        material->is_2D = true;
+        material->cull_type = CULL_BACK;
+        material->transparency_type = ALPHA_BLEND;
+        material->priority = class_type;
+        material->diffuse_texture = texture_path.size() ? RendererStorage::get_texture(texture_path, true) : nullptr;
+        material->shader = RendererStorage::get_shader_from_source(shaders::ui_button::source, shaders::ui_button::path, material);
 
         quad_mesh.set_surface_material_override(quad_mesh.get_surface(0), material);
 
         auto webgpu_context = Renderer::instance->get_webgpu_context();
-        RendererStorage::register_ui_widget(webgpu_context, material.shader, &quad_mesh, ui_data, 3);
+        RendererStorage::register_ui_widget(webgpu_context, material->shader, &quad_mesh, ui_data, 3);
 
         // Selection styling visibility callback..
         Node::bind(name + "@pressed", [&](const std::string& signal, void* button) {
@@ -1340,19 +1340,19 @@ namespace ui {
 
         ui_data.num_group_items = 0;
 
-        Material material;
-        material.color = color;
-        material.type = MATERIAL_UI;
-        material.is_2D = true;
-        material.cull_type = CULL_BACK;
-        material.priority = class_type;
-        material.transparency_type = ALPHA_BLEND;
-        material.shader = RendererStorage::get_shader_from_source(shaders::ui_group::source, shaders::ui_group::path, material);
+        Material* material = new Material();
+        material->color = color;
+        material->type = MATERIAL_UI;
+        material->is_2D = true;
+        material->cull_type = CULL_BACK;
+        material->priority = class_type;
+        material->transparency_type = ALPHA_BLEND;
+        material->shader = RendererStorage::get_shader_from_source(shaders::ui_group::source, shaders::ui_group::path, material);
 
         quad_mesh.set_surface_material_override(quad_mesh.get_surface(0), material);
 
         auto webgpu_context = Renderer::instance->get_webgpu_context();
-        RendererStorage::register_ui_widget(webgpu_context, material.shader, &quad_mesh, ui_data, 3);
+        RendererStorage::register_ui_widget(webgpu_context, material->shader, &quad_mesh, ui_data, 3);
 
         padding = glm::vec2(GROUP_MARGIN);
         item_margin = glm::vec2(GROUP_MARGIN * 0.5f);
@@ -1579,15 +1579,15 @@ namespace ui {
 
         current_value = glm::clamp(current_value, min_value, max_value);
 
-        Material material;
-        material.color = colors::WHITE;
-        material.type = MATERIAL_UI;
-        material.is_2D = true;
-        material.cull_type = CULL_BACK;
-        material.transparency_type = ALPHA_BLEND;
-        material.priority = class_type;
-        material.diffuse_texture = texture_path.size() > 0 ? RendererStorage::get_texture(texture_path, true) : nullptr;
-        material.shader = RendererStorage::get_shader_from_source(shaders::ui_slider::source, shaders::ui_slider::path, material);
+        Material* material = new Material();
+        material->color = colors::WHITE;
+        material->type = MATERIAL_UI;
+        material->is_2D = true;
+        material->cull_type = CULL_BACK;
+        material->transparency_type = ALPHA_BLEND;
+        material->priority = class_type;
+        material->diffuse_texture = texture_path.size() > 0 ? RendererStorage::get_texture(texture_path, true) : nullptr;
+        material->shader = RendererStorage::get_shader_from_source(shaders::ui_slider::source, shaders::ui_slider::path, material);
 
         Surface* quad_surface = quad_mesh.get_surface(0);
         quad_surface->create_quad(this->size.x, this->size.y);
@@ -1595,7 +1595,7 @@ namespace ui {
         quad_mesh.set_surface_material_override(quad_mesh.get_surface(0), material);
 
         auto webgpu_context = Renderer::instance->get_webgpu_context();
-        RendererStorage::register_ui_widget(webgpu_context, material.shader, &quad_mesh, ui_data, 3);
+        RendererStorage::register_ui_widget(webgpu_context, material->shader, &quad_mesh, ui_data, 3);
 
         Node::bind(name + "@changed", [&](const std::string& signal, float value) {
             set_value(value);
@@ -1760,20 +1760,20 @@ namespace ui {
 
         parameter_flags = flags;
 
-        Material material;
-        material.type = MATERIAL_UI;
-        material.is_2D = true;
-        material.cull_type = CULL_BACK;
-        material.transparency_type = ALPHA_BLEND;
-        material.priority = class_type;
-        material.shader = RendererStorage::get_shader_from_source(shaders::ui_color_picker::source, shaders::ui_color_picker::path, material);
+        Material* material = new Material();
+        material->type = MATERIAL_UI;
+        material->is_2D = true;
+        material->cull_type = CULL_BACK;
+        material->transparency_type = ALPHA_BLEND;
+        material->priority = class_type;
+        material->shader = RendererStorage::get_shader_from_source(shaders::ui_color_picker::source, shaders::ui_color_picker::path, material);
 
         color = Color(rgb2hsv(color), 1.0f);
 
         quad_mesh.set_surface_material_override(quad_mesh.get_surface(0), material);
 
         auto webgpu_context = Renderer::instance->get_webgpu_context();
-        RendererStorage::register_ui_widget(webgpu_context, material.shader, &quad_mesh, ui_data, 3);
+        RendererStorage::register_ui_widget(webgpu_context, material->shader, &quad_mesh, ui_data, 3);
 
         Node::bind(name + "@changed", [&](const std::string& signal, Color color) {
             glm::vec3 new_color = rgb2hsv(glm::pow(glm::vec3(color), glm::vec3(1.0f / 2.2f)));

@@ -10,19 +10,21 @@ Environment3D::Environment3D() : MeshInstance3D()
 
     name = "Environment3D";
 
+    Material* material = new Material();
+
+    material->diffuse_texture = Renderer::instance->get_irradiance_texture();
+    material->cull_type = CULL_BACK;
+    material->type = MATERIAL_UNLIT;
+    material->depth_write = false;
+    material->priority = 20;
+    material->shader = RendererStorage::get_shader_from_source(shaders::mesh_texture_cube::source, shaders::mesh_texture_cube::path, material);
+
     Surface* surface = new Surface;
 
     surface->create_skybox();
+    surface->set_material(material);
 
     surfaces.push_back(surface);
-
-    set_surface_material_diffuse(0, Renderer::instance->get_irradiance_texture());
-    set_surface_material_cull_type(0, CULL_BACK);
-    set_surface_material_type(0, MATERIAL_UNLIT);
-    set_surface_material_depth_write(0, false);
-    set_surface_material_priority(0, 20);
-
-    set_surface_material_shader(0, RendererStorage::get_shader_from_source(shaders::mesh_texture_cube::source, shaders::mesh_texture_cube::path, surfaces[0]->get_material()));
 }
 
 void Environment3D::update(float delta_time)
@@ -41,6 +43,5 @@ void Environment3D::set_texture(const std::string& texture_path)
     // Change irradiance first
     renderer->set_irradiance_texture(RendererStorage::get_texture(texture_path));
 
-    // Update environment
-    set_surface_material_diffuse(0, Renderer::instance->get_irradiance_texture());
+    get_surface_material(0)->diffuse_texture = Renderer::instance->get_irradiance_texture();
 }

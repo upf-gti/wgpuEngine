@@ -12,61 +12,79 @@ Surface::~Surface()
     if (vertex_buffer) {
         wgpuBufferDestroy(vertex_buffer);
     }
+
+    if (material) {
+        material->unref();
+    }
+}
+
+void Surface::set_material(Material* material)
+{
+    if (this->material != material) {
+
+        if (this->material) {
+            this->material->unref();
+        }
+
+        material->ref();
+    }
+
+    this->material = material;
 }
 
 void Surface::set_material_color(const glm::vec4& color)
 {
-    material.color = color;
+    material->color = color;
 }
 
 void Surface::set_material_diffuse(Texture* diffuse)
 {
-    material.diffuse_texture = diffuse;
+    material->diffuse_texture = diffuse;
 }
 
 void Surface::set_material_shader(Shader* shader)
 {
-    material.shader = shader;
+    material->shader = shader;
 }
 
 void Surface::set_material_type(eMaterialType type)
 {
-    material.type = type;
+    material->type = type;
 }
 
 void Surface::set_material_priority(uint8_t priority)
 {
-    material.priority = priority;
+    material->priority = priority;
 }
 
 void Surface::set_material_transparency_type(eTransparencyType transparency_type)
 {
-    material.transparency_type = transparency_type;
+    material->transparency_type = transparency_type;
 }
 
 void Surface::set_material_cull_type(eCullType cull_type)
 {
-    material.cull_type = cull_type;
+    material->cull_type = cull_type;
 }
 
 void Surface::set_material_topology_type(eTopologyType topology_type)
 {
-    material.topology_type = topology_type;
+    material->topology_type = topology_type;
 }
 
 void Surface::set_material_depth_read(bool depth_read)
 {
-    material.depth_write = depth_read;
+    material->depth_write = depth_read;
 }
 
 void Surface::set_material_depth_write(bool depth_write)
 {
-    material.depth_write = depth_write;
+    material->depth_write = depth_write;
 }
 
 void Surface::set_material_is_2d(bool is_2d)
 {
-    material.is_2D = is_2d;
+    material->is_2D = is_2d;
 }
 
 void Surface::update_vertex_buffer(const std::vector<InterleavedData>& _vertices)
@@ -85,12 +103,12 @@ void Surface::create_vertex_buffer(const std::vector<InterleavedData>& vertices)
     vertex_buffer = webgpu_context->create_buffer(get_byte_size(), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Vertex, vertices.data(), "mesh_buffer");
 }
 
-Material& Surface::get_material()
+Material* Surface::get_material()
 {
     return material;
 }
 
-const Material& Surface::get_material() const
+const Material* Surface::get_material() const
 {
     return material;
 }

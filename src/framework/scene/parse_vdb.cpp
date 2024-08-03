@@ -19,11 +19,11 @@
 
 #include <openvdbReader.h>
 
-Material create_material_volume(OpenVDBReader* vdbReader)
+Material* create_material_volume(OpenVDBReader* vdbReader)
 {
-    Material m;
-    m.transparency_type = ALPHA_BLEND;
-    m.shader = RendererStorage::get_shader("data/shaders/volumetrics.wgsl", m);
+    Material* material = new Material();
+    material->transparency_type = ALPHA_BLEND;
+    material->shader = RendererStorage::get_shader("data/shaders/volumetrics.wgsl", material);
 
     uint32_t resolution = 100;
     float radius = 3.0;
@@ -136,14 +136,14 @@ Material create_material_volume(OpenVDBReader* vdbReader)
         t->load_from_data("VDB volume", WGPUTextureDimension_3D, resolution, resolution, resolution, data, false, WGPUTextureFormat_R32Float);
 
         if (grid.uniqueName == "density" || grid.gridName == "density") {
-            m.diffuse_texture = t;
+            material->diffuse_texture = t;
         }
         else if (grid.uniqueName == "flames" || grid.gridName == "flames") {
             // to do
         }
     }
 
-    return m;
+    return material;
 }
 
 bool parse_vdb(const char* vdb_path, std::vector<Node*>& entities)
@@ -168,7 +168,7 @@ bool parse_vdb(const char* vdb_path, std::vector<Node*>& entities)
     vdbReader->read(buffer);
 
     // create a texture
-    Material m = create_material_volume(vdbReader);
+    Material* material = create_material_volume(vdbReader);
 
     MeshInstance3D* a = new MeshInstance3D();
     a->set_name("VDB node");
@@ -178,7 +178,7 @@ bool parse_vdb(const char* vdb_path, std::vector<Node*>& entities)
     s->set_name("VDB surface");
     a->add_surface(s);
 
-    a->set_surface_material_override(s, m);
+    a->set_surface_material_override(s, material);
 
     entities.push_back(a);
 

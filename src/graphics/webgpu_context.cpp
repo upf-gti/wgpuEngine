@@ -679,7 +679,7 @@ WGPUBindGroup WebGPUContext::create_bind_group(const std::vector<Uniform*>& unif
     return wgpuDeviceCreateBindGroup(device, &bindGroupDesc);
 }
 
-WGPUBindGroup WebGPUContext::create_bind_group(const std::vector<Uniform*>& uniforms, Shader* shader, uint16_t bind_group)
+WGPUBindGroup WebGPUContext::create_bind_group(const std::vector<Uniform*>& uniforms, const Shader* shader, uint16_t bind_group) const
 {
     spdlog::trace("Creating bind group {} for shader {}", bind_group, shader->get_path());
 
@@ -689,7 +689,7 @@ WGPUBindGroup WebGPUContext::create_bind_group(const std::vector<Uniform*>& unif
         entries[i] = uniforms[i]->get_bind_group_entry();
     }
 
-    std::vector<WGPUBindGroupLayout>& layouts_by_id = shader->get_bind_group_layouts();
+    const std::vector<WGPUBindGroupLayout>& layouts_by_id = shader->get_bind_group_layouts();
 
     if (layouts_by_id.size() <= bind_group) {
         spdlog::error("Can't find bind group {} in shader: {}", bind_group, shader->get_path());

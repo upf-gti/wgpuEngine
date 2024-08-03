@@ -139,7 +139,7 @@ void read_mesh(const tinygltf::Model& model, const tinygltf::Node& node, Node3D*
 
         Surface* surface = new Surface();
 
-        Material& material = surface->get_material();
+        Material* material = new Material();
 
         std::vector<InterleavedData> vertices;
 
@@ -440,19 +440,19 @@ void read_mesh(const tinygltf::Model& model, const tinygltf::Node& node, Node3D*
 
         switch (primitive.mode) {
         case TINYGLTF_MODE_TRIANGLES:
-            material.topology_type = TOPOLOGY_TRIANGLE_LIST;
+            material->topology_type = TOPOLOGY_TRIANGLE_LIST;
             break;
         case TINYGLTF_MODE_TRIANGLE_STRIP:
-            material.topology_type = TOPOLOGY_TRIANGLE_STRIP;
+            material->topology_type = TOPOLOGY_TRIANGLE_STRIP;
             break;
         case TINYGLTF_MODE_LINE:
-            material.topology_type = TOPOLOGY_LINE_LIST;
+            material->topology_type = TOPOLOGY_LINE_LIST;
             break;
         case TINYGLTF_MODE_LINE_STRIP:
-            material.topology_type = TOPOLOGY_LINE_STRIP;
+            material->topology_type = TOPOLOGY_LINE_STRIP;
             break;
         case TINYGLTF_MODE_POINTS:
-            material.topology_type = TOPOLOGY_POINT_LIST;
+            material->topology_type = TOPOLOGY_POINT_LIST;
             break;
         default:
             assert(0);
@@ -466,22 +466,22 @@ void read_mesh(const tinygltf::Model& model, const tinygltf::Node& node, Node3D*
 
             for (const auto& extension : gltf_material.extensions) {
                 if (extension.first == "KHR_materials_unlit") {
-                    material.type = MATERIAL_UNLIT;
+                    material->type = MATERIAL_UNLIT;
                 }
             }
 
             if (pbrMetallicRoughness.baseColorTexture.index >= 0) {
 
                 if (texture_cache.contains(pbrMetallicRoughness.baseColorTexture.index)) {
-                    material.diffuse_texture = texture_cache[pbrMetallicRoughness.baseColorTexture.index];
+                    material->diffuse_texture = texture_cache[pbrMetallicRoughness.baseColorTexture.index];
                 }
                 else {
-                    create_material_texture(model, pbrMetallicRoughness.baseColorTexture.index, &material.diffuse_texture, true);
-                    texture_cache[pbrMetallicRoughness.baseColorTexture.index] = material.diffuse_texture;
+                    create_material_texture(model, pbrMetallicRoughness.baseColorTexture.index, &material->diffuse_texture, true);
+                    texture_cache[pbrMetallicRoughness.baseColorTexture.index] = material->diffuse_texture;
                 }
             }
-            material.name = gltf_material.name;
-            material.color = glm::vec4(
+            material->name = gltf_material.name;
+            material->color = glm::vec4(
                 pbrMetallicRoughness.baseColorFactor[0],
                 pbrMetallicRoughness.baseColorFactor[1],
                 pbrMetallicRoughness.baseColorFactor[2],
@@ -490,84 +490,86 @@ void read_mesh(const tinygltf::Model& model, const tinygltf::Node& node, Node3D*
 
             if (pbrMetallicRoughness.metallicRoughnessTexture.index >= 0) {
                 if (texture_cache.contains(pbrMetallicRoughness.metallicRoughnessTexture.index)) {
-                    material.metallic_roughness_texture = texture_cache[pbrMetallicRoughness.metallicRoughnessTexture.index];
+                    material->metallic_roughness_texture = texture_cache[pbrMetallicRoughness.metallicRoughnessTexture.index];
                 }
                 else {
-                    create_material_texture(model, pbrMetallicRoughness.metallicRoughnessTexture.index, &material.metallic_roughness_texture);
-                    texture_cache[pbrMetallicRoughness.metallicRoughnessTexture.index] = material.metallic_roughness_texture;
+                    create_material_texture(model, pbrMetallicRoughness.metallicRoughnessTexture.index, &material->metallic_roughness_texture);
+                    texture_cache[pbrMetallicRoughness.metallicRoughnessTexture.index] = material->metallic_roughness_texture;
                 }
             }
 
-            material.roughness = static_cast<float>(pbrMetallicRoughness.roughnessFactor);
-            material.metalness = static_cast<float>(pbrMetallicRoughness.metallicFactor);
+            material->roughness = static_cast<float>(pbrMetallicRoughness.roughnessFactor);
+            material->metalness = static_cast<float>(pbrMetallicRoughness.metallicFactor);
 
             if (gltf_material.normalTexture.index >= 0) {
                 if (texture_cache.contains(gltf_material.normalTexture.index)) {
-                    material.normal_texture = texture_cache[gltf_material.normalTexture.index];
+                    material->normal_texture = texture_cache[gltf_material.normalTexture.index];
                 }
                 else {
-                    create_material_texture(model, gltf_material.normalTexture.index, &material.normal_texture);
-                    texture_cache[gltf_material.normalTexture.index] = material.normal_texture;
+                    create_material_texture(model, gltf_material.normalTexture.index, &material->normal_texture);
+                    texture_cache[gltf_material.normalTexture.index] = material->normal_texture;
                 }
             }
 
             if (gltf_material.emissiveTexture.index >= 0) {
                 if (texture_cache.contains(gltf_material.emissiveTexture.index)) {
-                    material.emissive_texture = texture_cache[gltf_material.emissiveTexture.index];
+                    material->emissive_texture = texture_cache[gltf_material.emissiveTexture.index];
                 }
                 else {
-                    create_material_texture(model, gltf_material.emissiveTexture.index, &material.emissive_texture, true);
-                    texture_cache[gltf_material.emissiveTexture.index] = material.emissive_texture;
+                    create_material_texture(model, gltf_material.emissiveTexture.index, &material->emissive_texture, true);
+                    texture_cache[gltf_material.emissiveTexture.index] = material->emissive_texture;
                 }
             }
 
             if (gltf_material.occlusionTexture.index >= 0) {
                 if (texture_cache.contains(gltf_material.occlusionTexture.index)) {
-                    material.oclussion_texture = texture_cache[gltf_material.occlusionTexture.index];
-                    material.occlusion = static_cast<float>(gltf_material.occlusionTexture.strength);
+                    material->oclussion_texture = texture_cache[gltf_material.occlusionTexture.index];
+                    material->occlusion = static_cast<float>(gltf_material.occlusionTexture.strength);
                 }
                 else {
-                    create_material_texture(model, gltf_material.occlusionTexture.index, &material.oclussion_texture, true);
-                    texture_cache[gltf_material.occlusionTexture.index] = material.oclussion_texture;
+                    create_material_texture(model, gltf_material.occlusionTexture.index, &material->oclussion_texture, true);
+                    texture_cache[gltf_material.occlusionTexture.index] = material->oclussion_texture;
                 }
             }
 
-            material.emissive = { gltf_material.emissiveFactor[0], gltf_material.emissiveFactor[1], gltf_material.emissiveFactor[2] };
+            material->emissive = { gltf_material.emissiveFactor[0], gltf_material.emissiveFactor[1], gltf_material.emissiveFactor[2] };
 
             if (gltf_material.doubleSided) {
-                material.cull_type = CULL_NONE;
+                material->cull_type = CULL_NONE;
             }
             else {
-                material.cull_type = CULL_BACK;
+                material->cull_type = CULL_BACK;
             }
 
             if (gltf_material.alphaMode == "OPAQUE") {
-                material.transparency_type = ALPHA_OPAQUE;
+                material->transparency_type = ALPHA_OPAQUE;
             }
             else if (gltf_material.alphaMode == "BLEND") {
-                material.transparency_type = ALPHA_BLEND;
+                material->transparency_type = ALPHA_BLEND;
             }
             else if (gltf_material.alphaMode == "MASK") {
-                material.alpha_mask = static_cast<float>(gltf_material.alphaCutoff);
-                material.transparency_type = ALPHA_MASK;
+                material->alpha_mask = static_cast<float>(gltf_material.alphaCutoff);
+                material->transparency_type = ALPHA_MASK;
             }
         }
         else {
             // create default material
-            material.color = glm::vec4(1.0f);
-            material.roughness = 1.0f;
-            material.metalness = 0.0f;
+            material->color = glm::vec4(1.0f);
+            material->roughness = 1.0f;
+            material->metalness = 0.0f;
         }
 
         if (entity_mesh->is_skinned) {
-            material.use_skinning = true;
+            material->use_skinning = true;
         }
 
-        material.shader = RendererStorage::get_shader_from_source(shaders::mesh_forward::source, shaders::mesh_forward::path, material);
+        material->shader = RendererStorage::get_shader_from_source(shaders::mesh_forward::source, shaders::mesh_forward::path, material);
+
+        surface->set_material(material);
 
         surface->create_vertex_buffer(vertices);
         surface->set_material_priority(1);
-        surface->set_name("Surface_" + material.name);
+        surface->set_name("Surface_" + material->name);
         entity_mesh->add_surface(surface);
     }
 }

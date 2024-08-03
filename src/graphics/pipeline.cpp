@@ -150,7 +150,7 @@ void Pipeline::reload(Shader* shader)
 	}
 }
 
-void Pipeline::set(const WGPURenderPassEncoder& render_pass)
+void Pipeline::set(const WGPURenderPassEncoder& render_pass) const
 {
     if (async_compile) {
         while (!loaded) {
@@ -161,7 +161,7 @@ void Pipeline::set(const WGPURenderPassEncoder& render_pass)
 	wgpuRenderPassEncoderSetPipeline(render_pass, std::get<WGPURenderPipeline>(pipeline));
 }
 
-void Pipeline::set(const WGPUComputePassEncoder& compute_pass)
+void Pipeline::set(const WGPUComputePassEncoder& compute_pass) const
 {
     if (async_compile) {
         while (!loaded) {
@@ -172,17 +172,17 @@ void Pipeline::set(const WGPUComputePassEncoder& compute_pass)
 	wgpuComputePassEncoderSetPipeline(compute_pass, std::get<WGPUComputePipeline>(pipeline));
 }
 
-bool Pipeline::is_render_pipeline()
+bool Pipeline::is_render_pipeline() const
 {
     return std::holds_alternative<WGPURenderPipeline>(pipeline);
 }
 
-bool Pipeline::is_compute_pipeline()
+bool Pipeline::is_compute_pipeline() const
 {
     return std::holds_alternative<WGPUComputePipeline>(pipeline);
 }
 
-bool Pipeline::is_msaa_allowed()
+bool Pipeline::is_msaa_allowed() const
 {
     return description.allow_msaa;
 }
