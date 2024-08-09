@@ -40,26 +40,31 @@ Material::~Material()
 void Material::set_color(const glm::vec4& color)
 {
     this->color = color;
+    dirty_flags |= eMaterialProperties::PROP_COLOR;
 }
 
 void Material::set_roughness(float roughness)
 {
     this->roughness = roughness;
+    dirty_flags |= eMaterialProperties::PROP_OCLUSSION_ROUGHNESS_METALLIC;
 }
 
 void Material::set_metalness(float metalness)
 {
     this->metalness = metalness;
+    dirty_flags |= eMaterialProperties::PROP_OCLUSSION_ROUGHNESS_METALLIC;
 }
 
 void Material::set_occlusion(float occlusion)
 {
     this->occlusion = occlusion;
+    dirty_flags |= eMaterialProperties::PROP_OCLUSSION_ROUGHNESS_METALLIC;
 }
 
 void Material::set_emissive(const glm::vec3& emissive)
 {
     this->emissive = emissive;
+    dirty_flags |= eMaterialProperties::PROP_EMISSIVE;
 }
 
 void Material::set_diffuse_texture(Texture* diffuse_texture)
@@ -74,6 +79,8 @@ void Material::set_diffuse_texture(Texture* diffuse_texture)
     }
 
     this->diffuse_texture = diffuse_texture;
+
+    dirty_flags |= eMaterialProperties::PROP_DIFFUSE_TEXTURE;
 }
 
 void Material::set_metallic_roughness_texture(Texture* metallic_roughness_texture)
@@ -88,6 +95,8 @@ void Material::set_metallic_roughness_texture(Texture* metallic_roughness_textur
     }
 
     this->metallic_roughness_texture = metallic_roughness_texture;
+
+    dirty_flags |= eMaterialProperties::PROP_METALLIC_ROUGHNESS_TEXTURE;
 }
 
 void Material::set_normal_texture(Texture* normal_texture)
@@ -102,6 +111,8 @@ void Material::set_normal_texture(Texture* normal_texture)
     }
 
     this->normal_texture = normal_texture;
+
+    dirty_flags |= eMaterialProperties::PROP_NORMAL_TEXTURE;
 }
 
 void Material::set_emissive_texture(Texture* emissive_texture)
@@ -116,6 +127,8 @@ void Material::set_emissive_texture(Texture* emissive_texture)
     }
 
     this->emissive_texture = emissive_texture;
+
+    dirty_flags |= eMaterialProperties::PROP_EMISSIVE_TEXTURE;
 }
 
 void Material::set_occlusion_texture(Texture* occlusion_texture)
@@ -130,21 +143,26 @@ void Material::set_occlusion_texture(Texture* occlusion_texture)
     }
 
     this->occlusion_texture = occlusion_texture;
+
+    dirty_flags |= eMaterialProperties::PROP_OCLUSSION_TEXTURE;
 }
 
 void Material::set_alpha_mask(float alpha_mask)
 {
     this->alpha_mask = alpha_mask;
+    dirty_flags |= eMaterialProperties::PROP_ALPHA_MASK;
 }
 
 void Material::set_depth_read(bool depth_read)
 {
     this->depth_read = depth_read;
+    dirty_flags |= eMaterialProperties::PROP_DEPTH_READ;
 }
 
 void Material::set_depth_write(bool depth_write)
 {
     this->depth_write = depth_write;
+    dirty_flags |= eMaterialProperties::PROP_DEPTH_WRITE;
 }
 
 void Material::set_use_skinning(bool use_skinning)
@@ -160,31 +178,37 @@ void Material::set_is_2D(bool is_2D)
 void Material::set_transparency_type(eTransparencyType transparency_type)
 {
     this->transparency_type = transparency_type;
+    dirty_flags |= eMaterialProperties::PROP_TRANSPARENCY_TYPE;
 }
 
 void Material::set_topology_type(eTopologyType topology_type)
 {
     this->topology_type = topology_type;
+    dirty_flags |= eMaterialProperties::PROP_TOPOLOGY_TYPE;
 }
 
 void Material::set_cull_type(eCullType cull_type)
 {
     this->cull_type = cull_type;
+    dirty_flags |= eMaterialProperties::PROP_CULL_TYPE;
 }
 
 void Material::set_type(eMaterialType type)
 {
     this->type = type;
+    dirty_flags |= eMaterialProperties::PROP_TYPE;
 }
 
 void Material::set_priority(uint8_t priority)
 {
     this->priority = priority;
+    dirty_flags |= eMaterialProperties::PROP_PRIORITY;
 }
 
 void Material::set_shader(Shader* shader)
 {
     this->shader = shader;
+    dirty_flags |= eMaterialProperties::PROP_SHADER;
 }
 
 void Material::set_shader_pipeline(Pipeline* pipeline)
@@ -300,6 +324,16 @@ const Shader* Material::get_shader() const
 Shader* Material::get_shader_ref()
 {
     return shader;
+}
+
+void Material::reset_dirty_flags()
+{
+    dirty_flags = 0;
+}
+
+uint32_t Material::get_dirty_flags() const
+{
+    return dirty_flags;
 }
 
 Texture* Material::get_diffuse_texture()

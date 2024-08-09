@@ -35,9 +35,14 @@ RendererStorage::RendererStorage()
     instance = this;
 }
 
-void RendererStorage::register_material_bind_group(WebGPUContext* webgpu_context, MeshInstance* mesh_instance, const Material* material)
+void RendererStorage::register_material_bind_group(WebGPUContext* webgpu_context, MeshInstance* mesh_instance, Material* material)
 {
     if (material_bind_groups.contains(material)) {
+
+        if (material->get_dirty_flags()) {
+            update_material_bind_group(webgpu_context, mesh_instance, material);
+        }
+
         return;
     }
 
@@ -45,6 +50,7 @@ void RendererStorage::register_material_bind_group(WebGPUContext* webgpu_context
     uint32_t binding = 0;
 
     std::vector<Uniform*>& uniforms = material_bind_groups[material].uniforms;
+    std::unordered_map<eMaterialProperties, uint8_t>& uniform_indices = material_bind_groups[material].uniform_indices;
     const Texture* texture_ref = nullptr;
 
     if (material->get_diffuse_texture()) {
@@ -68,6 +74,7 @@ void RendererStorage::register_material_bind_group(WebGPUContext* webgpu_context
         u->data = webgpu_context->create_buffer(sizeof(glm::vec4), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform, &color, "mat_albedo");
         u->binding = 1;
         u->buffer_size = sizeof(glm::vec4);
+        uniform_indices[eMaterialProperties::PROP_COLOR] = uniforms.size();
         uniforms.push_back(u);
     }
 
@@ -86,6 +93,7 @@ void RendererStorage::register_material_bind_group(WebGPUContext* webgpu_context
         u->data = webgpu_context->create_buffer(sizeof(glm::vec3), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform, &occlusion_roughness_metallic, "mat_occlusion_roughness_metallic");
         u->binding = 3;
         u->buffer_size = sizeof(glm::vec3);
+        uniform_indices[eMaterialProperties::PROP_OCLUSSION_ROUGHNESS_METALLIC] = uniforms.size();
         uniforms.push_back(u);
     }
 
@@ -107,6 +115,16 @@ void RendererStorage::register_material_bind_group(WebGPUContext* webgpu_context
         texture_ref = material->get_emissive_texture();
     }
 
+    if (material->get_type() == MATERIAL_PBR) {
+        Uniform* u = new Uniform();
+        const glm::vec3& emissive = material->get_emissive();
+        u->data = webgpu_context->create_buffer(sizeof(glm::vec3), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform, &emissive, "mat_emissive");
+        u->binding = 6;
+        u->buffer_size = sizeof(glm::vec3);
+        uniform_indices[eMaterialProperties::PROP_EMISSIVE] = uniforms.size();
+        uniforms.push_back(u);
+    }
+
     if (material->get_occlusion_texture()) {
         Uniform* u = new Uniform();
         u->data = material->get_occlusion_texture()->get_view();
@@ -114,15 +132,6 @@ void RendererStorage::register_material_bind_group(WebGPUContext* webgpu_context
         uniforms.push_back(u);
         uses_textures |= true;
         texture_ref = material->get_occlusion_texture();
-    }
-
-    if (material->get_type() == MATERIAL_PBR) {
-        Uniform* u = new Uniform();
-        const glm::vec3& emissive = material->get_emissive();
-        u->data = webgpu_context->create_buffer(sizeof(glm::vec4), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform, &emissive, "mat_emissive");
-        u->binding = 6;
-        u->buffer_size = sizeof(glm::vec4);
-        uniforms.push_back(u);
     }
 
     // Add a sampler for basic 2d textures if there's any texture as uniforms
@@ -149,6 +158,7 @@ void RendererStorage::register_material_bind_group(WebGPUContext* webgpu_context
         u->data = webgpu_context->create_buffer(sizeof(float), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform, &alpha_mask, "mat_alpha_cutoff");
         u->binding = 8;
         u->buffer_size = sizeof(float);
+        uniform_indices[eMaterialProperties::PROP_ALPHA_MASK] = uniforms.size();
         uniforms.push_back(u);
     }
 
@@ -198,6 +208,40 @@ WGPUBindGroup RendererStorage::get_material_bind_group(const Material* material)
     }
 
     return material_bind_groups[material].bind_group;
+}
+
+void RendererStorage::update_material_bind_group(WebGPUContext* webgpu_context, MeshInstance* mesh_instance, Material* material)
+{
+    std::vector<Uniform*>& uniforms = material_bind_groups[material].uniforms;
+    std::unordered_map<eMaterialProperties, uint8_t>& uniform_indices = material_bind_groups[material].uniform_indices;
+
+    uint32_t dirty_flags = material->get_dirty_flags();
+
+    if (dirty_flags & eMaterialProperties::PROP_COLOR) {
+        Uniform* u = uniforms[uniform_indices[eMaterialProperties::PROP_COLOR]];
+        const glm::vec4& color = material->get_color();
+        webgpu_context->update_buffer(std::get<WGPUBuffer>(u->data), 0, &color, sizeof(glm::vec4));
+    }
+
+    if (dirty_flags & eMaterialProperties::PROP_OCLUSSION_ROUGHNESS_METALLIC && material->get_type() == MATERIAL_PBR) {
+        Uniform* u = uniforms[uniform_indices[eMaterialProperties::PROP_OCLUSSION_ROUGHNESS_METALLIC]];
+        glm::vec3 occlusion_roughness_metallic = { material->get_occlusion(), material->get_roughness(), material->get_metalness() };
+        webgpu_context->update_buffer(std::get<WGPUBuffer>(u->data), 0, &occlusion_roughness_metallic, sizeof(glm::vec3));
+    }
+
+    if (dirty_flags & eMaterialProperties::PROP_EMISSIVE && material->get_type() == MATERIAL_PBR) {
+        Uniform* u = uniforms[uniform_indices[eMaterialProperties::PROP_EMISSIVE]];
+        const glm::vec3& emissive = material->get_emissive();
+        webgpu_context->update_buffer(std::get<WGPUBuffer>(u->data), 0, &emissive, sizeof(glm::vec3));
+    }
+
+    if (dirty_flags & eMaterialProperties::PROP_ALPHA_MASK && material->get_transparency_type() == ALPHA_MASK) {
+        Uniform* u = uniforms[uniform_indices[eMaterialProperties::PROP_ALPHA_MASK]];
+        float alpha_mask = material->get_alpha_mask();
+        webgpu_context->update_buffer(std::get<WGPUBuffer>(u->data), 0, &alpha_mask, sizeof(float));
+    }
+
+    material->reset_dirty_flags();
 }
 
 void RendererStorage::register_ui_widget(WebGPUContext* webgpu_context, Shader* shader, void* entity_mesh, const sUIData& ui_data, uint8_t bind_group_id)

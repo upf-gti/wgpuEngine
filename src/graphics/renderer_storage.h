@@ -42,14 +42,17 @@ public:
 
     struct sBindingData {
         std::vector<Uniform*> uniforms;
+        std::unordered_map<eMaterialProperties, uint8_t> uniform_indices;
         WGPUBindGroup bind_group;
     };
 
     static std::unordered_map<const Material*, sBindingData> material_bind_groups;
     static std::unordered_map<const void*, sBindingData> ui_widget_bind_groups;
 
-    static void register_material_bind_group(WebGPUContext* webgpu_context, MeshInstance* mesh_instance, const Material* material);
+    static void register_material_bind_group(WebGPUContext* webgpu_context, MeshInstance* mesh_instance, Material* material);
     static WGPUBindGroup get_material_bind_group(const Material* material);
+
+    static void update_material_bind_group(WebGPUContext* webgpu_context, MeshInstance* mesh_instance, Material* material);
 
     static void register_ui_widget(WebGPUContext* webgpu_context, Shader* shader, void* widget, const sUIData& ui_data, uint8_t bind_group_id);
     static WGPUBindGroup get_ui_widget_bind_group(const void* widget);

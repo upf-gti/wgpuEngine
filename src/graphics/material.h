@@ -38,6 +38,27 @@ enum eCullType {
     CULL_FRONT
 };
 
+enum eMaterialProperties : uint32_t {
+    PROP_COLOR                          = 1 << 0,
+    PROP_OCLUSSION_ROUGHNESS_METALLIC   = 1 << 1,
+    PROP_EMISSIVE                       = 1 << 2,
+    PROP_DIFFUSE_TEXTURE                = 1 << 3,
+    PROP_METALLIC_ROUGHNESS_TEXTURE     = 1 << 4,
+    PROP_NORMAL_TEXTURE                 = 1 << 5,
+    PROP_EMISSIVE_TEXTURE               = 1 << 6,
+    PROP_OCLUSSION_TEXTURE              = 1 << 7,
+    PROP_DEPTH_READ                     = 1 << 8,
+    PROP_DEPTH_WRITE                    = 1 << 9,
+    PROP_USE_SKINNING                   = 1 << 10,
+    PROP_TRANSPARENCY_TYPE              = 1 << 11,
+    PROP_TOPOLOGY_TYPE                  = 1 << 12,
+    PROP_CULL_TYPE                      = 1 << 13,
+    PROP_TYPE                           = 1 << 14,
+    PROP_PRIORITY                       = 1 << 15,
+    PROP_ALPHA_MASK                     = 1 << 16,
+    PROP_SHADER                         = 1 << 17,
+};
+
 class Material : public Resource
 {
 
@@ -110,7 +131,13 @@ public:
     const Shader* get_shader() const;
     Shader* get_shader_ref();
 
+    void reset_dirty_flags();
+    uint32_t get_dirty_flags() const;
+
 private:
+
+    uint32_t dirty_flags = 0;
+
     Shader* shader = nullptr;
 
     Texture* diffuse_texture = nullptr;
