@@ -70,6 +70,7 @@ public:
         const std::vector<std::string>& custom_define_specializations);
 
     static void reload_shader(const std::string& shader_path);
+    static void reload_engine_shader(const std::string& shader_path);
 
     static Texture* get_texture(const std::string& texture_path, bool is_srgb = false);
 

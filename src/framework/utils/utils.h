@@ -31,9 +31,5 @@ bool read_file(const std::string & filename, std::string & content);
 		return m_retval;                                                                                                                 \
 	}
 
-
-std::string delete_until_tags(std::istringstream& stream, std::string& text, std::streampos& current_pos, std::string& current_line, const std::vector<std::string>& tags);
-std::string continue_until_tags(std::istringstream& stream, std::streampos& current_pos, std::string& current_line, const std::vector<std::string>& tags);
-
 // https://stackoverflow.com/a/8518855
 std::string dirname_of_file(const std::string& fname);

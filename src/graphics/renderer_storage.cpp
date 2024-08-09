@@ -379,6 +379,30 @@ void RendererStorage::reload_shader(const std::string& shader_path)
     }
 }
 
+void RendererStorage::reload_engine_shader(const std::string& shader_path)
+{
+    std::string name = std::filesystem::path(shader_path).filename().string();
+
+    // Check if already loaded
+    for (auto& [shader_name, shader] : shaders) {
+        if (shader_name.find(name) != std::string::npos) {
+            shader->reload(shader_path);
+        }
+    }
+
+    // If it is not a shader, check if it is a library
+    auto it1 = shader_library_references.find(name);
+    if (it1 != shader_library_references.end())
+    {
+        for (auto& shader_name : shader_library_references[name]) {
+            if (shaders.contains(shader_name)) {
+                Shader* shader = shaders[shader_name];
+                shader->reload();
+            }
+        }
+    }
+}
+
 Texture* RendererStorage::get_texture(const std::string& texture_path, bool is_srgb)
 {
     std::string name = texture_path;

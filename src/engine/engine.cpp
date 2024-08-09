@@ -47,7 +47,9 @@ int Engine::initialize(Renderer* renderer, GLFWwindow* window, bool use_glfw, bo
 {
     this->use_glfw = use_glfw;
 
-    shader_reload_watcher = new FileWatcher("./data/shaders/", 1.0f, [](std::string path_to_watch, eFileStatus status) -> void {
+    std::string engine_shaders = WGPUENGINE_PATH + std::string("/src/shaders/");
+
+    shader_reload_watcher = new FileWatcher({ "./data/shaders/" }, 1.0f, [](std::string path_to_watch, eFileStatus status) -> void {
 
         // Process only regular files, all other file types are ignored
         if (!std::filesystem::is_regular_file(std::filesystem::path(path_to_watch)) && status != eFileStatus::Erased) {
@@ -58,6 +60,24 @@ int Engine::initialize(Renderer* renderer, GLFWwindow* window, bool use_glfw, bo
         case eFileStatus::Modified: {
             spdlog::info("Shader modified: {}", path_to_watch);
             RendererStorage::reload_shader(path_to_watch);
+            break;
+        }
+        default:
+            spdlog::error("Shader reload: Unknown file status");
+        }
+    });
+
+    engine_shader_reload_watcher = new FileWatcher({ engine_shaders }, 1.0f, [](std::string path_to_watch, eFileStatus status) -> void {
+
+        // Process only regular files, all other file types are ignored
+        if (!std::filesystem::is_regular_file(std::filesystem::path(path_to_watch)) && status != eFileStatus::Erased) {
+            return;
+        }
+
+        switch (status) {
+        case eFileStatus::Modified: {
+            spdlog::info("Shader modified: {}", path_to_watch);
+            RendererStorage::reload_engine_shader(path_to_watch);
             break;
         }
         default:
@@ -167,6 +187,7 @@ void Engine::on_frame()
 void Engine::update(float delta_time)
 {
     shader_reload_watcher->update(delta_time);
+    engine_shader_reload_watcher->update(delta_time);
 
     renderer->update(delta_time);
 }

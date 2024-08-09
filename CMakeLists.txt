@@ -17,9 +17,10 @@ else()
     set(DAWN_BUILD "SRC")
 endif()
 
-add_definitions(-D_CRT_SECURE_NO_WARNINGS)
-add_definitions(-D_SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING)
-add_definitions(-DWEBGPU_BACKEND=DAWN)
+add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
+add_compile_definitions(_SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING)
+add_compile_definitions(WEBGPU_BACKEND=DAWN)
+add_compile_definitions(WGPUENGINE_PATH="${WGPU_DIR_ROOT}")
 
 # enable FetchContent
 include(FetchContent)
