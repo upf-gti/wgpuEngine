@@ -24,11 +24,11 @@ void Gizmo3D::initialize(const eGizmoType& new_operation, const glm::vec3& posit
     axis = axis;
 
     Material* material = new Material();
-    material->depth_read = false;
-    material->priority = 0;
-    material->transparency_type = ALPHA_BLEND;
-    material->color = glm::vec4(1.0f);
-    material->shader = RendererStorage::get_shader_from_source(shaders::mesh_forward::source, shaders::mesh_forward::path);
+    material->set_depth_read(false);
+    material->set_priority(0);
+    material->set_transparency_type(ALPHA_BLEND);
+    material->set_color(glm::vec4(1.0f));
+    material->set_shader(RendererStorage::get_shader_from_source(shaders::mesh_forward::source, shaders::mesh_forward::path));
 
     free_hand_point_mesh = parse_mesh("data/meshes/sphere.obj");
     free_hand_point_mesh->set_surface_material_override(free_hand_point_mesh->get_surface(0), material);
@@ -54,69 +54,69 @@ void Gizmo3D::initialize(const eGizmoType& new_operation, const glm::vec3& posit
 void Gizmo3D::init_translation_meshes()
 {
     Material* material = new Material();
-    material->depth_read = false;
-    material->priority = 0;
-    material->transparency_type = ALPHA_BLEND;
+    material->set_depth_read(false);
+    material->set_priority(0);
+    material->set_transparency_type(ALPHA_BLEND);
 
     arrow_mesh_x = parse_mesh("data/meshes/arrow.obj");
-    material->color = colors::RED;
-    material->shader = RendererStorage::get_shader_from_source(shaders::mesh_forward::source, shaders::mesh_forward::path, material);
+    material->set_color(colors::RED);
+    material->set_shader(RendererStorage::get_shader_from_source(shaders::mesh_forward::source, shaders::mesh_forward::path, material));
     arrow_mesh_x->set_surface_material_override(arrow_mesh_x->get_surface(0), material);
 
     arrow_mesh_y = parse_mesh("data/meshes/arrow.obj");
-    material->color = colors::GREEN;
-    material->shader = RendererStorage::get_shader_from_source(shaders::mesh_forward::source, shaders::mesh_forward::path, material);
+    material->set_color(colors::GREEN);
+    material->set_shader(RendererStorage::get_shader_from_source(shaders::mesh_forward::source, shaders::mesh_forward::path, material));
     arrow_mesh_y->set_surface_material_override(arrow_mesh_y->get_surface(0), material);
 
     arrow_mesh_z = parse_mesh("data/meshes/arrow.obj");
-    material->color = colors::BLUE;
-    material->shader = RendererStorage::get_shader_from_source(shaders::mesh_forward::source, shaders::mesh_forward::path, material);
+    material->set_color(colors::BLUE);
+    material->set_shader(RendererStorage::get_shader_from_source(shaders::mesh_forward::source, shaders::mesh_forward::path, material));
     arrow_mesh_z->set_surface_material_override(arrow_mesh_z->get_surface(0), material);
 }
 
 void Gizmo3D::init_scale_meshes()
 {
     Material* material = new Material();
-    material->depth_read = false;
-    material->priority = 0;
-    material->transparency_type = ALPHA_BLEND;
+    material->set_depth_read(false);
+    material->set_priority(0);
+    material->set_transparency_type(ALPHA_BLEND);
 
     scale_arrow_mesh_x = parse_mesh("data/meshes/scale_arrow.obj");
-    material->color = colors::RED;
-    material->shader = RendererStorage::get_shader_from_source(shaders::mesh_forward::source, shaders::mesh_forward::path, material);
+    material->set_color(colors::RED);
+    material->set_shader(RendererStorage::get_shader_from_source(shaders::mesh_forward::source, shaders::mesh_forward::path, material));
     scale_arrow_mesh_x->set_surface_material_override(scale_arrow_mesh_x->get_surface(0), material);
 
     scale_arrow_mesh_y = parse_mesh("data/meshes/scale_arrow.obj");
-    material->color = colors::GREEN;
-    material->shader = RendererStorage::get_shader_from_source(shaders::mesh_forward::source, shaders::mesh_forward::path, material);
+    material->set_color(colors::GREEN);
+    material->set_shader(RendererStorage::get_shader_from_source(shaders::mesh_forward::source, shaders::mesh_forward::path, material));
     scale_arrow_mesh_y->set_surface_material_override(scale_arrow_mesh_y->get_surface(0), material);
 
     scale_arrow_mesh_z = parse_mesh("data/meshes/scale_arrow.obj");
-    material->color = colors::BLUE;
-    material->shader = RendererStorage::get_shader_from_source(shaders::mesh_forward::source, shaders::mesh_forward::path, material);
+    material->set_color(colors::BLUE);
+    material->set_shader(RendererStorage::get_shader_from_source(shaders::mesh_forward::source, shaders::mesh_forward::path, material));
     scale_arrow_mesh_z->set_surface_material_override(scale_arrow_mesh_z->get_surface(0), material);
 }
 
 void Gizmo3D::init_rotation_meshes()
 {
     Material* material = new Material();
-    material->depth_read = false;
-    material->priority = 0;
-    material->transparency_type = ALPHA_BLEND;
+    material->set_depth_read(false);
+    material->set_priority(0);
+    material->set_transparency_type(ALPHA_BLEND);
 
     wire_circle_mesh_x = parse_mesh("data/meshes/wired_circle.obj");
-    material->color = colors::RED;
-    material->shader = RendererStorage::get_shader_from_source(shaders::mesh_forward::source, shaders::mesh_forward::path, material);
+    material->set_color(colors::RED);
+    material->set_shader(RendererStorage::get_shader_from_source(shaders::mesh_forward::source, shaders::mesh_forward::path, material));
     wire_circle_mesh_x->set_surface_material_override(wire_circle_mesh_x->get_surface(0), material);
 
     wire_circle_mesh_y = parse_mesh("data/meshes/wired_circle.obj");
-    material->color = colors::GREEN;
-    material->shader = RendererStorage::get_shader_from_source(shaders::mesh_forward::source, shaders::mesh_forward::path, material);
+    material->set_color(colors::GREEN);
+    material->set_shader(RendererStorage::get_shader_from_source(shaders::mesh_forward::source, shaders::mesh_forward::path, material));
     wire_circle_mesh_y->set_surface_material_override(wire_circle_mesh_y->get_surface(0), material);
 
     wire_circle_mesh_z = parse_mesh("data/meshes/wired_circle.obj");
-    material->color = colors::BLUE;
-    material->shader = RendererStorage::get_shader_from_source(shaders::mesh_forward::source, shaders::mesh_forward::path, material);
+    material->set_color(colors::BLUE);
+    material->set_shader(RendererStorage::get_shader_from_source(shaders::mesh_forward::source, shaders::mesh_forward::path, material));
     wire_circle_mesh_z->set_surface_material_override(wire_circle_mesh_z->get_surface(0), material);
 }
 
@@ -380,7 +380,7 @@ void Gizmo3D::render(int axis)
             arrow_mesh_x->translate(gizmo_position);
             arrow_mesh_x->rotate(glm::radians(-90.f), glm::vec3(0.f, 0.f, 1.f));
             arrow_mesh_x->scale(arrow_gizmo_scale);
-            arrow_mesh_x->get_surface_material_override(0)->color = X_AXIS_COLOR + (position_axis_selected.x ? AXIS_SELECTED_OFFSET_COLOR : Color(0.f));
+            arrow_mesh_x->get_surface_material_override(0)->set_color(X_AXIS_COLOR + (position_axis_selected.x ? AXIS_SELECTED_OFFSET_COLOR : Color(0.f)));
             arrow_mesh_x->render();
         }
 
@@ -389,7 +389,7 @@ void Gizmo3D::render(int axis)
             arrow_mesh_y->set_transform(Transform::identity());
             arrow_mesh_y->translate(gizmo_position);
             arrow_mesh_y->scale(arrow_gizmo_scale);
-            arrow_mesh_y->get_surface_material_override(0)->color = Y_AXIS_COLOR + (position_axis_selected.y ? AXIS_SELECTED_OFFSET_COLOR : Color(0.f));
+            arrow_mesh_y->get_surface_material_override(0)->set_color(Y_AXIS_COLOR + (position_axis_selected.y ? AXIS_SELECTED_OFFSET_COLOR : Color(0.f)));
             arrow_mesh_y->render();
         }
 
@@ -400,7 +400,7 @@ void Gizmo3D::render(int axis)
             arrow_mesh_z->rotate(glm::radians(90.f), glm::vec3(0.f, 0.f, 1.f));
             arrow_mesh_z->rotate(glm::radians(90.f), glm::vec3(1.f, 0.f, 0.f));
             arrow_mesh_z->scale(arrow_gizmo_scale);
-            arrow_mesh_z->get_surface_material_override(0)->color = Z_AXIS_COLOR + (position_axis_selected.z ? AXIS_SELECTED_OFFSET_COLOR : Color(0.f));
+            arrow_mesh_z->get_surface_material_override(0)->set_color(Z_AXIS_COLOR + (position_axis_selected.z ? AXIS_SELECTED_OFFSET_COLOR : Color(0.f)));
             arrow_mesh_z->render();
         }
     }
@@ -413,7 +413,7 @@ void Gizmo3D::render(int axis)
             scale_arrow_mesh_x->translate(gizmo_position);
             scale_arrow_mesh_x->rotate(glm::radians(-90.f), glm::vec3(0.f, 0.f, 1.f));
             scale_arrow_mesh_x->scale(arrow_gizmo_scale);
-            scale_arrow_mesh_x->get_surface_material_override(0)->color = X_AXIS_COLOR + (scale_axis_selected.x ? AXIS_SELECTED_OFFSET_COLOR : Color(0.f));
+            scale_arrow_mesh_x->get_surface_material_override(0)->set_color(X_AXIS_COLOR + (scale_axis_selected.x ? AXIS_SELECTED_OFFSET_COLOR : Color(0.f)));
             scale_arrow_mesh_x->render();
         }
 
@@ -422,7 +422,7 @@ void Gizmo3D::render(int axis)
             scale_arrow_mesh_y->set_transform(Transform::identity());
             scale_arrow_mesh_y->translate(gizmo_position);
             scale_arrow_mesh_y->scale(arrow_gizmo_scale);
-            scale_arrow_mesh_y->get_surface_material_override(0)->color = Y_AXIS_COLOR + (scale_axis_selected.y ? AXIS_SELECTED_OFFSET_COLOR : Color(0.f));
+            scale_arrow_mesh_y->get_surface_material_override(0)->set_color(Y_AXIS_COLOR + (scale_axis_selected.y ? AXIS_SELECTED_OFFSET_COLOR : Color(0.f)));
             scale_arrow_mesh_y->render();
         }
 
@@ -433,7 +433,7 @@ void Gizmo3D::render(int axis)
             scale_arrow_mesh_z->rotate(glm::radians(90.f), glm::vec3(0.f, 0.f, 1.f));
             scale_arrow_mesh_z->rotate(glm::radians(90.f), glm::vec3(1.f, 0.f, 0.f));
             scale_arrow_mesh_z->scale(arrow_gizmo_scale);
-            scale_arrow_mesh_z->get_surface_material_override(0)->color = Z_AXIS_COLOR + (scale_axis_selected.z ? AXIS_SELECTED_OFFSET_COLOR : Color(0.f));
+            scale_arrow_mesh_z->get_surface_material_override(0)->set_color(Z_AXIS_COLOR + (scale_axis_selected.z ? AXIS_SELECTED_OFFSET_COLOR : Color(0.f)));
             scale_arrow_mesh_z->render();
         }
     }
@@ -446,7 +446,7 @@ void Gizmo3D::render(int axis)
             wire_circle_mesh_x->translate(gizmo_position);
             wire_circle_mesh_x->rotate(glm::radians(90.f), glm::vec3(0.f, 1.f, 0.f));
             wire_circle_mesh_x->scale(glm::vec3(circle_gizmo_scale));
-            wire_circle_mesh_x->get_surface_material_override(0)->color = X_AXIS_COLOR + (rotation_axis_selected.x ? AXIS_SELECTED_OFFSET_COLOR : Color(0.f));
+            wire_circle_mesh_x->get_surface_material_override(0)->set_color(X_AXIS_COLOR + (rotation_axis_selected.x ? AXIS_SELECTED_OFFSET_COLOR : Color(0.f)));
             wire_circle_mesh_x->render();
         }
 
@@ -456,7 +456,7 @@ void Gizmo3D::render(int axis)
             wire_circle_mesh_y->translate(gizmo_position);
             wire_circle_mesh_y->rotate(glm::radians(90.f), glm::vec3(1.f, 0.f, 0.f));
             wire_circle_mesh_y->scale(glm::vec3(circle_gizmo_scale));
-            wire_circle_mesh_y->get_surface_material_override(0)->color = Y_AXIS_COLOR + (rotation_axis_selected.y ? AXIS_SELECTED_OFFSET_COLOR : Color(0.f));
+            wire_circle_mesh_y->get_surface_material_override(0)->set_color(Y_AXIS_COLOR + (rotation_axis_selected.y ? AXIS_SELECTED_OFFSET_COLOR : Color(0.f)));
             wire_circle_mesh_y->render();
         }
 
@@ -465,7 +465,7 @@ void Gizmo3D::render(int axis)
             wire_circle_mesh_z->set_transform(Transform::identity());
             wire_circle_mesh_z->translate(gizmo_position);
             wire_circle_mesh_z->scale(glm::vec3(circle_gizmo_scale));
-            wire_circle_mesh_z->get_surface_material_override(0)->color = Z_AXIS_COLOR + (rotation_axis_selected.z ? AXIS_SELECTED_OFFSET_COLOR : Color(0.f));
+            wire_circle_mesh_z->get_surface_material_override(0)->set_color(Z_AXIS_COLOR + (rotation_axis_selected.z ? AXIS_SELECTED_OFFSET_COLOR : Color(0.f)));
             wire_circle_mesh_z->render();
         }
     }

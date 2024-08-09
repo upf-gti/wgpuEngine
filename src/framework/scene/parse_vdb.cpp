@@ -22,8 +22,8 @@
 Material* create_material_volume(OpenVDBReader* vdbReader)
 {
     Material* material = new Material();
-    material->transparency_type = ALPHA_BLEND;
-    material->shader = RendererStorage::get_shader("data/shaders/volumetrics.wgsl", material);
+    material->set_transparency_type(ALPHA_BLEND);
+    material->set_shader(RendererStorage::get_shader("data/shaders/volumetrics.wgsl", material));
 
     uint32_t resolution = 100;
     float radius = 3.0;
@@ -136,7 +136,7 @@ Material* create_material_volume(OpenVDBReader* vdbReader)
         t->load_from_data("VDB volume", WGPUTextureDimension_3D, resolution, resolution, resolution, data, false, WGPUTextureFormat_R32Float);
 
         if (grid.uniqueName == "density" || grid.gridName == "density") {
-            material->diffuse_texture = t;
+            material->set_diffuse_texture(t);
         }
         else if (grid.uniqueName == "flames" || grid.gridName == "flames") {
             // to do

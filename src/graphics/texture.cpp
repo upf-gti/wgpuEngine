@@ -181,7 +181,7 @@ void Texture::load_from_hdre(HDRE* hdre)
     }
 }
 
-WGPUTextureView Texture::get_view(WGPUTextureViewDimension view_dimension, uint32_t base_mip_level, uint32_t mip_level_count, uint32_t base_array_layer, uint32_t array_layer_count)
+WGPUTextureView Texture::get_view(WGPUTextureViewDimension view_dimension, uint32_t base_mip_level, uint32_t mip_level_count, uint32_t base_array_layer, uint32_t array_layer_count) const
 {
     return webgpu_context->create_texture_view(texture, view_dimension, format, WGPUTextureAspect_All, base_mip_level, mip_level_count, base_array_layer, array_layer_count);
 }

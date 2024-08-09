@@ -30,3 +30,17 @@ void Resource::set_name(const std::string& name)
 {
     this->name = name;
 }
+
+const std::string& Resource::get_name() const
+{
+    return name;
+}
+
+void* Resource::get_property(const std::string& name)
+{
+    if (properties.contains(name)) {
+        return properties[name];
+    }
+
+    return nullptr;
+}

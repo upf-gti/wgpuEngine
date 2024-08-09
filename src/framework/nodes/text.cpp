@@ -119,27 +119,27 @@ void TextEntity::generate_mesh(const Color& color, bool is_2D)
     surface->create_from_vertices(vertices);
 
     Material* material = new Material();
-    material->color = color;
-    material->is_2D = is_2D;
-    material->type = MATERIAL_UNLIT;
-    material->transparency_type = ALPHA_BLEND;
+    material->set_color(color);
+    material->set_is_2D(is_2D);
+    material->set_type(MATERIAL_UNLIT);
+    material->set_transparency_type(ALPHA_BLEND);
 
     if (font) {
-        material->diffuse_texture = font->textures[0];
+        material->set_diffuse_texture(font->textures[0]);
     }
+
+    material->set_shader(RendererStorage::get_shader_from_source(shaders::sdf_fonts::source, shaders::sdf_fonts::path, surface->get_material()));
 
     surface->set_material(material);
 
     add_surface(surface);
-
-    surface->set_material_shader((RendererStorage::get_shader_from_source(shaders::sdf_fonts::source, shaders::sdf_fonts::path, surface->get_material())));
 }
 
 void TextEntity::set_text(const std::string& p_text)
 {
     const Material* material = get_surface_material(0);
     text = p_text;
-    generate_mesh(material->color, material->is_2D);
+    generate_mesh(material->get_color(), material->get_is_2D());
 }
 
 int TextEntity::get_text_width(const std::string& text)

@@ -47,6 +47,7 @@ protected:
 
     AABB aabb = {};
 
+    // animatable properties
     std::unordered_map<std::string, void*> properties;
 
 public:

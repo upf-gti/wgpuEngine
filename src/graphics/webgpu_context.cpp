@@ -352,7 +352,7 @@ WGPUTexture WebGPUContext::create_texture(WGPUTextureDimension dimension, WGPUTe
     return wgpuDeviceCreateTexture(device, &textureDesc);
 }
 
-WGPUTextureView WebGPUContext::create_texture_view(WGPUTexture texture, WGPUTextureViewDimension dimension, WGPUTextureFormat format, WGPUTextureAspect aspect, uint32_t base_mip_level, uint32_t mip_level_count, uint32_t base_array_layer, uint32_t array_layer_count, const char* label)
+WGPUTextureView WebGPUContext::create_texture_view(WGPUTexture texture, WGPUTextureViewDimension dimension, WGPUTextureFormat format, WGPUTextureAspect aspect, uint32_t base_mip_level, uint32_t mip_level_count, uint32_t base_array_layer, uint32_t array_layer_count, const char* label) const
 {
     WGPUTextureViewDescriptor textureViewDesc = {};
     textureViewDesc.aspect = aspect;

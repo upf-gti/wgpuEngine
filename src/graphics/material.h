@@ -9,6 +9,7 @@
 
 class Shader;
 class Texture;
+class Pipeline;
 
 enum eMaterialType {
     MATERIAL_PBR,
@@ -37,17 +38,88 @@ enum eCullType {
     CULL_FRONT
 };
 
-struct Material : public Resource
+class Material : public Resource
 {
+
+public:
+
+    Material();
+    ~Material();
+
+    void set_color(const glm::vec4& color);
+    void set_roughness(float roughness);
+    void set_metalness(float metalness);
+    void set_occlusion(float occlusion);
+    void set_emissive(const glm::vec3& emissive);
+
+    void set_diffuse_texture(Texture* diffuse_texture);
+    void set_metallic_roughness_texture(Texture* metallic_roughness_texture);
+    void set_normal_texture(Texture* normal_texture);
+    void set_emissive_texture(Texture* emissive_texture);
+    void set_occlusion_texture(Texture* occlusion_texture);
+
+    void set_alpha_mask(float alpha_mask);
+
+    void set_depth_read(bool depth_read);
+    void set_depth_write(bool depth_write);
+    void set_use_skinning(bool use_skinning);
+    void set_is_2D(bool is_2D);
+
+    void set_transparency_type(eTransparencyType transparency_type);
+    void set_topology_type(eTopologyType topology_type);
+    void set_cull_type(eCullType cull_type);
+
+    void set_type(eMaterialType type);
+    void set_priority(uint8_t priority);
+
+    void set_shader(Shader* shader);
+    void set_shader_pipeline(Pipeline* pipeline);
+
+    glm::vec4 get_color() const;
+    float get_roughness() const;
+    float get_metalness() const;
+    float get_occlusion() const;
+    glm::vec3 get_emissive() const;
+
+    const Texture* get_diffuse_texture() const;
+    const Texture* get_metallic_roughness_texture() const;
+    const Texture* get_normal_texture() const;
+    const Texture* get_emissive_texture() const;
+    const Texture* get_occlusion_texture() const;
+
+    Texture* get_diffuse_texture();
+    Texture* get_metallic_roughness_texture();
+    Texture* get_normal_texture();
+    Texture* get_emissive_texture();
+    Texture* get_occlusion_texture();
+
+    float get_alpha_mask() const;
+
+    bool get_depth_read() const;
+    bool get_depth_write() const;
+    bool get_use_skinning() const;
+    bool get_is_2D() const;
+
+    eTransparencyType get_transparency_type() const;
+    eTopologyType get_topology_type() const;
+    eCullType get_cull_type() const;
+
+    eMaterialType get_type() const;
+    uint8_t get_priority() const;
+
+    const Shader* get_shader() const;
+    Shader* get_shader_ref();
+
+private:
     Shader* shader = nullptr;
-    glm::vec4 color = { 1.0f, 1.0f, 1.0f, 1.0f };
 
     Texture* diffuse_texture = nullptr;
     Texture* metallic_roughness_texture = nullptr;
     Texture* normal_texture = nullptr;
     Texture* emissive_texture = nullptr;
-    Texture* oclussion_texture = nullptr;
+    Texture* occlusion_texture = nullptr;
 
+    glm::vec4 color = { 1.0f, 1.0f, 1.0f, 1.0f };
     float roughness = 1.0f;
     float metalness = 0.0f;
     float occlusion = 1.0f;
@@ -65,7 +137,4 @@ struct Material : public Resource
 
     eMaterialType type = MATERIAL_PBR;
     uint8_t priority = 10;
-
-    std::string name = "";
-
 };

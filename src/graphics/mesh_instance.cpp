@@ -7,6 +7,10 @@ MeshInstance::MeshInstance()
 
 MeshInstance::~MeshInstance()
 {
+    for (auto &material_override : material_overrides) {
+        material_override.second->unref();
+    }
+
     for (Surface* surface : surfaces) {
        surface->unref();
     }
