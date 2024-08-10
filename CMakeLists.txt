@@ -33,7 +33,7 @@ FetchContent_Declare(
     DOWNLOAD_NO_EXTRACT TRUE
 )
 
-# download tinyobjloader
+# download stb_image
 FetchContent_Declare(
     stb_image
     URL https://raw.githubusercontent.com/nothings/stb/master/stb_image.h
@@ -179,14 +179,14 @@ target_link_libraries(${PROJECT_NAME} PUBLIC glm)
 
 if (NOT EMSCRIPTEN)
 
-    # vulkan
-    find_package(Vulkan REQUIRED)
-    target_link_libraries(${PROJECT_NAME} PUBLIC ${Vulkan_LIBRARIES})
-    include_directories(${Vulkan_INCLUDE_DIR})
+    # vulkan-headers
+    add_subdirectory(libraries/Vulkan-Headers)
+    target_link_libraries(${PROJECT_NAME} PUBLIC Vulkan-Headers)
 
     # openxr
     add_subdirectory(libraries/openxr)
     target_link_libraries(${PROJECT_NAME} PUBLIC openxr_loader)
+    target_link_libraries(openxr_loader PUBLIC Vulkan-Headers)
     set_property(TARGET openxr_loader PROPERTY FOLDER "External/OpenXR")
     set_property(TARGET generate_openxr_header PROPERTY FOLDER "External/OpenXR")
     set_property(TARGET xr_global_generated_files PROPERTY FOLDER "External/OpenXR")

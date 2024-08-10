@@ -22,3 +22,6 @@
 [submodule "libraries/easyVDB"]
 	path = libraries/easyVDB
 	url = https://github.com/victorubieto/easyVDB
+[submodule "libraries/Vulkan-Headers"]
+	path = libraries/Vulkan-Headers
+	url = https://github.com/KhronosGroup/Vulkan-Headers.git
