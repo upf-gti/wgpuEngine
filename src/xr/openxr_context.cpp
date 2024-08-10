@@ -425,8 +425,11 @@ int OpenXRContext::check_backend_requirements()
     PFN_xrGetD3D12GraphicsRequirementsKHR pfnGetD3D12GraphicsRequirements2KHR = NULL;
     {
         result = xrGetInstanceProcAddr(instance, "xrGetD3D12GraphicsRequirementsKHR", (PFN_xrVoidFunction*)&pfnGetD3D12GraphicsRequirements2KHR);
-        if (!xr_result(instance, result, "Failed to get DX12 graphics requirements function!"))
-            return 1;
+        if (!XR_SUCCEEDED(result))
+        {
+            spdlog::error("Failed to get DX12 graphics requirements function!");
+            return false;
+        }
     }
 
     pfnGetD3D12GraphicsRequirements2KHR(instance, system_id, &dx12_reqs);

@@ -22,7 +22,7 @@
 #ifdef __EMSCRIPTEN__
 #include <GLFW/glfw3.h>
 #else
-#include "glfw3webgpu.h"
+#include "glfw3webgpu.hpp"
 #endif
 
 WGPUTextureFormat WebGPUContext::swapchain_format = WGPUTextureFormat_BGRA8Unorm;
