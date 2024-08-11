@@ -110,7 +110,14 @@ int Engine::initialize(Renderer* renderer, GLFWwindow* window, bool use_glfw, bo
     ImGui::StyleColorsDark();
 
     ImGui_ImplGlfw_InitForOther(window, true);
-    ImGui_ImplWGPU_Init(renderer->get_webgpu_context()->device, 3, WGPUTextureFormat_BGRA8Unorm, WGPUTextureFormat_Undefined);
+
+    ImGui_ImplWGPU_InitInfo init_info = {};
+    init_info.Device = renderer->get_webgpu_context()->device;
+    init_info.RenderTargetFormat = WGPUTextureFormat_BGRA8Unorm;
+    init_info.DepthStencilFormat = WGPUTextureFormat_Undefined;
+    init_info.NumFramesInFlight = 3;
+
+    ImGui_ImplWGPU_Init(&init_info);
     
     // Disable file-system access in web builds (don't load imgui.ini)
 #ifdef __EMSCRIPTEN__

@@ -145,7 +145,6 @@ int Renderer::initialize(GLFWwindow* window, bool use_mirror_screen)
 
     timestamps_buffer = new uint64_t[maximum_query_sets];
 
-
 #ifndef __EMSCRIPTEN__
     renderdoc_capture = new RenderdocCapture();
 #endif
@@ -181,6 +180,7 @@ void Renderer::clean()
     delete renderer_storage;
     delete[] eye_depth_textures;
     delete[] multisample_textures;
+    delete[] timestamps_buffer;
 
 #ifndef __EMSCRIPTEN__
     delete renderdoc_capture;
