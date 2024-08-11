@@ -143,6 +143,9 @@ int Renderer::initialize(GLFWwindow* window, bool use_mirror_screen)
     eye_depth_textures = new Texture[EYE_COUNT];
     multisample_textures = new Texture[EYE_COUNT];
 
+    timestamps_buffer = new uint64_t[maximum_query_sets];
+
+
 #ifndef __EMSCRIPTEN__
     renderdoc_capture = new RenderdocCapture();
 #endif
@@ -289,16 +292,14 @@ void Renderer::resolve_query_set(WGPUCommandEncoder encoder, uint8_t first_query
 
 std::vector<float> Renderer::get_timestamps()
 {
-    uint64_t* buffer_data = reinterpret_cast<uint64_t*>(webgpu_context->read_buffer(timestamp_query_buffer, sizeof(uint64_t) * maximum_query_sets));
+    webgpu_context->read_buffer(timestamp_query_buffer, sizeof(uint64_t) * maximum_query_sets, timestamps_buffer);
 
     std::vector<float> time_diffs;
     for (int i = 0; i < query_index; i += 2) {
-        uint64_t diff = buffer_data[i + 1] - buffer_data[i];
+        uint64_t diff = timestamps_buffer[i + 1] - timestamps_buffer[i];
         float milliseconds = (float)diff * 1e-6;
         time_diffs.push_back(milliseconds);
     }
-
-    delete[] buffer_data;
 
     return time_diffs;
 }

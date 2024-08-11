@@ -21,8 +21,6 @@ struct WebGPUContext {
     WGPUDevice              device = nullptr;
     WGPUQueue               device_queue = nullptr;
 
-    WGPUSwapChain           screen_swapchain = nullptr;
-
     // For desktop window
     uint32_t                screen_width = 0;
     uint32_t                screen_height = 0;
@@ -91,10 +89,10 @@ struct WebGPUContext {
                                                   WGPUColorTargetState color_target, bool use_depth = true, bool depth_read = true, bool depth_write = true, WGPUCullMode cull_mode = WGPUCullMode_None, WGPUPrimitiveTopology topology = WGPUPrimitiveTopology_TriangleList, uint8_t sample_count = 1,
                                                   const char* vs_entry_point = "vs_main", const char* fs_entry_point = "fs_main");
     void                   create_render_pipeline_async(WGPUShaderModule render_shader_module, WGPUPipelineLayout pipeline_layout, const std::vector<WGPUVertexBufferLayout>& vertex_attributes,
-                                                  WGPUColorTargetState color_target, WGPUCreateRenderPipelineAsyncCallback callback, void* userdata, bool use_depth = true, bool depth_read = true, bool depth_write = true, WGPUCullMode cull_mode = WGPUCullMode_None,
+                                                  WGPUColorTargetState color_target, WGPUCreateRenderPipelineAsyncCallback2 callback, void* userdata, bool use_depth = true, bool depth_read = true, bool depth_write = true, WGPUCullMode cull_mode = WGPUCullMode_None,
                                                   WGPUPrimitiveTopology topology = WGPUPrimitiveTopology_TriangleList, uint8_t sample_count = 1, const char* vs_entry_point = "vs_main", const char* fs_entry_point = "fs_main");
     WGPUComputePipeline    create_compute_pipeline(WGPUShaderModule compute_shader_module, WGPUPipelineLayout pipeline_layout, const char* entry_point = "compute");
-    void                   create_compute_pipeline_async(WGPUShaderModule compute_shader_module, WGPUPipelineLayout pipeline_layout, WGPUCreateComputePipelineAsyncCallback callback, void* userdata, const char* entry_point = "compute");
+    void                   create_compute_pipeline_async(WGPUShaderModule compute_shader_module, WGPUPipelineLayout pipeline_layout, WGPUCreateComputePipelineAsyncCallback2 callback, void* userdata, const char* entry_point = "compute");
 
     WGPUVertexBufferLayout create_vertex_buffer_layout(const std::vector<WGPUVertexAttribute>& vertex_attributes, uint64_t stride, WGPUVertexStepMode step_mode);
 
@@ -106,7 +104,7 @@ struct WebGPUContext {
     void                   update_buffer(WGPUBuffer buffer, uint64_t buffer_offset, void const* data, uint64_t size);
     void                   update_texture(WGPUTexture buffer, void const* data, uint64_t size);
 
-    void*                  read_buffer(WGPUBuffer buffer, size_t size);
+    void                   read_buffer(WGPUBuffer buffer, size_t size, void* output_data);
 
     sMipmapPipeline        get_mipmap_pipeline(WGPUTextureFormat texture_format);
 

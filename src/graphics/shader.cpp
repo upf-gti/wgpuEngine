@@ -345,13 +345,17 @@ bool Shader::load(std::string& shader_source, const std::string& specialized_nam
         bool any_error = false;
     } user_data;
 
-    auto callback = [](WGPUCompilationInfoRequestStatus status, struct WGPUCompilationInfo const* compilation_info, void* p_user_data) {
-        UserData& user_data = *reinterpret_cast<UserData*>(p_user_data);
-        user_data.any_error = compilation_info->messageCount > 0;
+#ifndef __EMSCRIPTEN__
+    auto compilation_infocallback = [](WGPUCompilationInfoRequestStatus status, struct WGPUCompilationInfo const* compilation_info, void* userdata1, void* userdata2) {
+        UserData& user_data = *reinterpret_cast<UserData*>(userdata1);
+        user_data.any_error = status != WGPUCompilationInfoRequestStatus_Success;
     };
 
-#ifndef __EMSCRIPTEN__
-    wgpuShaderModuleGetCompilationInfo(shader_module, callback, &user_data);
+    WGPUCompilationInfoCallbackInfo2 callback_info = {};
+    callback_info.callback = compilation_infocallback;
+    callback_info.mode = WGPUCallbackMode_AllowSpontaneous;
+    callback_info.userdata1 = &user_data;
+    wgpuShaderModuleGetCompilationInfo2(shader_module, callback_info);
 #endif
 
     if (!user_data.any_error) {

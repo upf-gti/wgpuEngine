@@ -125,6 +125,8 @@ protected:
 
     WGPUQuerySet timestamp_query_set;
     uint8_t maximum_query_sets = 16;
+    uint64_t* timestamps_buffer;
+
     WGPUBuffer timestamp_query_buffer;
     uint8_t query_index = 0;
     std::map<uint8_t, std::string> queries_label_map;
