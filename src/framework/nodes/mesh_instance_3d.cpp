@@ -13,6 +13,11 @@ MeshInstance3D::~MeshInstance3D()
 
 }
 
+void MeshInstance3D::set_aabb(const AABB& new_aabb)
+{
+    aabb = new_aabb;
+}
+
 AABB MeshInstance3D::get_surface_world_aabb(int surface_idx)
 {
     assert(surface_idx >= 0 && surface_idx < surfaces.size());

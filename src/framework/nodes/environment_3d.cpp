@@ -10,6 +10,8 @@ Environment3D::Environment3D() : MeshInstance3D()
 
     name = "Environment3D";
 
+    frustum_culling_enabled = false;
+
     Material* material = new Material();
 
     material->set_diffuse_texture(Renderer::instance->get_irradiance_texture());

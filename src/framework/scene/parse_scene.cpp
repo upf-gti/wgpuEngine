@@ -34,7 +34,7 @@ bool parse_scene(const char* scene_path, std::vector<Node*>& entities)
     return false;
 }
 
-MeshInstance3D* parse_mesh(const char* mesh_path)
+MeshInstance3D* parse_mesh(const char* mesh_path, bool create_aabb)
 {
     std::string mesh_path_str = std::string(mesh_path);
     std::string extension = mesh_path_str.substr(mesh_path_str.find_last_of(".") + 1);
@@ -42,7 +42,7 @@ MeshInstance3D* parse_mesh(const char* mesh_path)
     spdlog::trace("Parsing mesh: {}", mesh_path);
 
     if (extension == "obj") {
-        return parse_obj(mesh_path);
+        return parse_obj(mesh_path, create_aabb);
     }
     else {
         spdlog::error("Mesh extension .{} not supported", extension);

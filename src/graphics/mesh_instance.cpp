@@ -35,6 +35,16 @@ void MeshInstance::set_surface_material_override(Surface* surface, Material* mat
     material_overrides[surface] = material;
 }
 
+void MeshInstance::set_frustum_culling_enabled(bool enabled)
+{
+    frustum_culling_enabled = enabled;
+}
+
+bool MeshInstance::get_frustum_culling_enabled()
+{
+    return frustum_culling_enabled;
+}
+
 Material* MeshInstance::get_surface_material_override(Surface* surface)
 {
     if (material_overrides.contains(surface))
@@ -48,7 +58,6 @@ Material* MeshInstance::get_surface_material_override(Surface* surface)
 void MeshInstance::add_surface(Surface* surface)
 {
     surface->ref();
-    surface->set_index(get_surface_count());
     surfaces.push_back(surface);
 }
 

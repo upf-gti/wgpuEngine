@@ -15,7 +15,7 @@
 
 #include "spdlog/spdlog.h"
 
-void parse_obj(const char* obj_path, MeshInstance3D* entity)
+void parse_obj(const char* obj_path, MeshInstance3D* entity, bool create_aabb)
 {
     if (!entity) {
         return;
@@ -134,21 +134,25 @@ void parse_obj(const char* obj_path, MeshInstance3D* entity)
         }
     }
 
-    AABB aabb;
-    aabb.half_size = (max_pos - min_pos) * glm::vec3(0.5);
-    aabb.center = max_pos - aabb.half_size;
 
-    entity->set_aabb(aabb);
-    new_surface->set_aabb(aabb);
+    if (create_aabb) {
+        AABB aabb;
+        aabb.half_size = (max_pos - min_pos) * glm::vec3(0.5);
+        aabb.center = max_pos - aabb.half_size;
+
+        entity->set_aabb(aabb);
+        new_surface->set_aabb(aabb);
+    }
+
 
     new_surface->create_vertex_buffer(vertices);
 }
 
-MeshInstance3D* parse_obj(const char* obj_path)
+MeshInstance3D* parse_obj(const char* obj_path, bool create_aabb)
 {
     MeshInstance3D* new_entity = new MeshInstance3D();
 
-    parse_obj(obj_path, new_entity);
+    parse_obj(obj_path, new_entity, create_aabb);
 
     return new_entity;
 }

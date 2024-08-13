@@ -15,6 +15,8 @@ protected:
 
     Skeleton* skeleton = nullptr;
 
+    bool frustum_culling_enabled = true;
+
     std::vector<Surface*> surfaces;
     std::unordered_map<Surface*, Material*> material_overrides;
 
@@ -26,6 +28,9 @@ public:
     Material* get_surface_material(int surface_idx);
 
     void set_surface_material_override(Surface* surface, Material* material);
+
+    void set_frustum_culling_enabled(bool enabled);
+    bool get_frustum_culling_enabled();
 
     Material* get_surface_material_override(Surface* surface);
 

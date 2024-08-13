@@ -27,7 +27,7 @@ public:
 
 private:
 
-    std::string name;
+    std::string name = "";
     uint32_t ref_count = 0;
     intptr_t id = 0;
 

@@ -3,6 +3,7 @@
 #include "includes.h"
 #include "graphics/uniforms_structs.h"
 #include "graphics/uniform.h"
+#include "framework/math/frustum_cull.h"
 
 #include "glm/mat4x4.hpp"
 
@@ -18,6 +19,7 @@ class Light3D;
 class RenderdocCapture;
 class RendererStorage;
 class MeshInstance;
+class MeshInstance3D;
 struct GLFWwindow;
 struct WebGPUContext;
 struct OpenXRContext;
@@ -50,6 +52,9 @@ protected:
     RenderdocCapture* renderdoc_capture;
 #endif
 
+    Frustum frustum_cull;
+    MeshInstance3D* selected_mesh_aabb = nullptr;
+
     bool is_openxr_available    = false;
     bool use_mirror_screen      = false;
 
@@ -74,7 +79,6 @@ protected:
         Surface* surface;
         uint32_t repeat;
         glm::mat4x4 global_matrix;
-        glm::mat4x4 rotation_matrix;
         MeshInstance* mesh_instance_ref;
     };
 
@@ -132,6 +136,8 @@ protected:
     std::map<uint8_t, std::string> queries_label_map;
     std::vector<float> last_frame_timestamps;
 
+    bool frustum_camera_paused = false;
+
 public:
 
     // Singleton
@@ -153,11 +159,16 @@ public:
     void init_multisample_textures();
     void init_timestamp_queries();
 
+    void set_frustum_camera_paused(bool value);
+    bool get_frustum_camera_paused();
+
     void resolve_query_set(WGPUCommandEncoder encoder, uint8_t first_query);
     std::vector<float>& get_last_frame_timestamps() { return last_frame_timestamps; }
 
     void set_msaa_count(uint8_t msaa_count);
     uint8_t get_msaa_count();
+
+    bool is_inside_frustum(const glm::vec3& minp, const glm::vec3& maxp) const;
 
     void prepare_instancing();
     void render_opaque(WGPURenderPassEncoder render_pass, const WGPUBindGroup& render_bind_group_camera, uint32_t camera_buffer_stride = 0);

@@ -9,7 +9,8 @@
 
 #include "hdre.h"
 
-class Texture : public Resource {
+class Texture : public Resource
+{
 
     WGPUTexture texture = nullptr;
 

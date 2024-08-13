@@ -26,6 +26,10 @@
 #include "graphics/renderer_storage.h"
 
 #include "shaders/mesh_forward.wgsl.gen.h"
+#include "shaders/AABB_shader.wgsl.gen.h"
+
+#include "framework/scene/parse_scene.h"
+#include "framework/nodes/mesh_instance_3d.h"
 
 #include <algorithm>
 
@@ -149,7 +153,6 @@ int Renderer::initialize(GLFWwindow* window, bool use_mirror_screen)
     renderdoc_capture = new RenderdocCapture();
 #endif
 
-
     init_depth_buffers();
 
     init_lighting_bind_group();
@@ -157,6 +160,16 @@ int Renderer::initialize(GLFWwindow* window, bool use_mirror_screen)
     init_multisample_textures();
 
     init_timestamp_queries();
+
+    selected_mesh_aabb = parse_mesh("data/meshes/cube/aabb_cube.obj", false);
+
+    Material* AABB_material = new Material();
+    AABB_material->set_color(glm::vec4(0.8f, 0.3f, 0.9f, 1.0f));
+    AABB_material->set_transparency_type(ALPHA_BLEND);
+    AABB_material->set_cull_type(CULL_NONE);
+    AABB_material->set_type(MATERIAL_UNLIT);
+    AABB_material->set_shader(RendererStorage::get_shader_from_source(shaders::AABB_shader::source, shaders::AABB_shader::path, AABB_material));
+    selected_mesh_aabb->set_surface_material_override(selected_mesh_aabb->get_surface(0), AABB_material);
 
     return 0;
 }
@@ -181,6 +194,8 @@ void Renderer::clean()
     delete[] eye_depth_textures;
     delete[] multisample_textures;
     delete[] timestamps_buffer;
+
+    delete selected_mesh_aabb;
 
 #ifndef __EMSCRIPTEN__
     delete renderdoc_capture;
@@ -318,6 +333,16 @@ void Renderer::set_msaa_count(uint8_t msaa_count)
     RendererStorage::reload_all_render_pipelines();
 }
 
+void Renderer::set_frustum_camera_paused(bool value)
+{
+    frustum_camera_paused = value;
+}
+
+bool Renderer::get_frustum_camera_paused()
+{
+    return frustum_camera_paused;
+}
+
 uint8_t Renderer::get_msaa_count()
 {
     return msaa_count;
@@ -335,13 +360,22 @@ void Renderer::prepare_instancing()
 
         const std::vector<Surface*>& surfaces = mesh_instance->get_surfaces();
 
-        glm::mat4x4 rotation_matrix = glm::toMat4(glm::quat_cast(global_matrix));
-
         for (Surface* surface : surfaces) {
 
             Material* material_override = mesh_instance->get_surface_material_override(surface);
 
             Material* material = material_override ? material_override : surface->get_material();
+
+            if (!material->get_is_2D() && mesh_instance->get_frustum_culling_enabled()) {
+
+                const AABB& surface_aabb = surface->get_aabb();
+
+                AABB aabb_transformed = surface_aabb.transform(global_matrix);
+
+                if (!is_inside_frustum(aabb_transformed.center - aabb_transformed.half_size, aabb_transformed.center + aabb_transformed.half_size)) {
+                    continue;
+                }
+            }
 
             if (!material || !material->get_shader()) {
                 continue;
@@ -360,7 +394,7 @@ void Renderer::prepare_instancing()
                 list = RENDER_LIST_TRANSPARENT;
             }
 
-            render_list[list].push_back({ surface, 1, global_matrix, rotation_matrix, mesh_instance });
+            render_list[list].push_back({ surface, 1, global_matrix, mesh_instance });
         }
     }
 
@@ -612,6 +646,11 @@ void Renderer::render_2D(WGPURenderPassEncoder render_pass, const WGPUBindGroup&
 #ifndef NDEBUG
     wgpuRenderPassEncoderPopDebugGroup(render_pass);
 #endif
+}
+
+bool Renderer::is_inside_frustum(const glm::vec3& minp, const glm::vec3& maxp) const
+{
+    return frustum_cull.is_box_visible(minp, maxp);
 }
 
 uint8_t Renderer::timestamp(WGPUCommandEncoder encoder, const char* label)

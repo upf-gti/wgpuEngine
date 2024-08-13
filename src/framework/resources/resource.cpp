@@ -4,6 +4,7 @@
 
 Resource::Resource()
 {
+    // TODO: set proper unique id for project save/load
     id = reinterpret_cast<intptr_t>(this);
 }
 

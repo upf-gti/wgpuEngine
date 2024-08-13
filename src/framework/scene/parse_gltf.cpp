@@ -436,7 +436,7 @@ void read_mesh(const tinygltf::Model& model, const tinygltf::Node& node, Node3D*
         glm::vec3 aabb_half_size = (max_pos - min_pos) * 0.5f;
         glm::vec3 aabb_position = min_pos + aabb_half_size;
 
-        entity_mesh->set_aabb({ aabb_position, aabb_half_size });
+        surface->set_aabb({ aabb_position, aabb_half_size });
 
         switch (primitive.mode) {
         case TINYGLTF_MODE_TRIANGLES:
@@ -583,6 +583,15 @@ void read_mesh(const tinygltf::Model& model, const tinygltf::Node& node, Node3D*
         surface->set_name("Surface_" + material->get_name());
         entity_mesh->add_surface(surface);
     }
+
+    AABB entity_aabb;
+    for (const Surface* surface : entity_mesh->get_surfaces()) {
+        const AABB& surface_aabb = surface->get_aabb();
+
+        entity_aabb = merge_aabbs(entity_aabb, surface_aabb);
+    }
+
+    entity_mesh->set_aabb(entity_aabb);
 }
 
 void create_light(const tinygltf::Light& gltf_light, Light3D* light_node)

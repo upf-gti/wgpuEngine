@@ -75,7 +75,7 @@ public:
 
     void set_type(NodeType new_type) { type = new_type; }
     void set_name(std::string new_name) { name = new_name; }
-    void set_aabb(const AABB& new_aabb) { aabb = new_aabb; }
+    virtual void set_aabb(const AABB& new_aabb) { aabb = new_aabb; }
 
     virtual void disable_2d();
 

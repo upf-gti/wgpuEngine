@@ -42,9 +42,6 @@ class Surface : public Resource
 
     AABB aabb;
 
-    uint32_t index;
-
-    std::string name = "";
 public:
 
     ~Surface();
@@ -53,14 +50,10 @@ public:
 
     void set_material(Material* material);
 
-    void set_name(const std::string& new_name) { name = new_name; };
-    void set_index(uint32_t new_index) { index = new_index; };
-
     Material* get_material();
     const Material* get_material() const;
 
     const WGPUBuffer& get_vertex_buffer() const;
-    uint32_t get_index() const { return index; };
 
     void create_axis(float s = 1.f);
     void create_quad(float w = 1.f, float h = 1.f, bool centered = true, const glm::vec3& color = { 1.f, 1.f, 1.f });
@@ -81,8 +74,7 @@ public:
 
     uint32_t get_vertex_count() const;
     uint64_t get_byte_size() const;
-    const std::string& get_name() { return name; };
 
-    AABB get_aabb();
+    AABB get_aabb() const;
     void set_aabb(AABB aabb);
 };
