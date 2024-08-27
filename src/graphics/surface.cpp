@@ -263,10 +263,10 @@ void Surface::create_rounded_box(float w, float h, float d, float c, const glm::
 
                 // Store locally the different vertices
                 vtxs[vtx_counter++] = {
-                    glm::vec3(x0 + offsetPosition.x, y0 + offsetPosition.y, z0 + offsetPosition.z),
-                    glm::vec2((float)seg / (float)chamfer_seg, (float)ring / (float)chamfer_seg),
-                    glm::normalize(glm::vec3(x0, y0, z0)),
-                    color
+                    .position = glm::vec3(x0 + offsetPosition.x, y0 + offsetPosition.y, z0 + offsetPosition.z),
+                    .uv = glm::vec2((float)seg / (float)chamfer_seg, (float)ring / (float)chamfer_seg),
+                    .normal = glm::normalize(glm::vec3(x0, y0, z0)),
+                    .color = color
                 };
 
                 if ((ring != chamfer_seg) && (seg != chamfer_seg))
@@ -339,10 +339,11 @@ void Surface::create_rounded_box(float w, float h, float d, float c, const glm::
                 float z0 = c * sinf(j * deltaAngle);
 
                 // Store locally the different vertices
-                vtxs[vtx_counter++] = { glm::vec3(x0 * vx0 + i * deltaHeight * vy0 + z0 * vz0 + offsetPosition),
-                    glm::vec2(j / (float)chamfer_seg, i / (float)numSegHeight),
-                    glm::normalize(glm::vec3(x0 * vx0 + z0 * vz0)),
-                    color
+                vtxs[vtx_counter++] = {
+                    .position = glm::vec3(x0 * vx0 + i * deltaHeight * vy0 + z0 * vz0 + offsetPosition),
+                    .uv = glm::vec2(j / (float)chamfer_seg, i / (float)numSegHeight),
+                    .normal = glm::normalize(glm::vec3(x0 * vx0 + z0 * vz0)),
+                    .color = color
                 };
 
                 if (i != numSegHeight && j != chamfer_seg)
@@ -422,9 +423,10 @@ void Surface::create_sphere(float r, uint32_t segments, uint32_t rings, const gl
             float z0 = r0 * cosf(seg * fDeltaSegAngle);
 
             // Add one vertex to the strip which makes up the sphere
-            vtxs[vtx_counter++] = { glm::vec3(x0, y0, z0),
-                glm::vec2((float)seg / (float)segments, (float)ring / (float)rings),
-                glm::normalize(glm::vec3(x0, y0, z0))
+            vtxs[vtx_counter++] = {
+                .position = glm::vec3(x0, y0, z0),
+                .uv = glm::vec2((float)seg / (float)segments, (float)ring / (float)rings),
+                .normal = glm::normalize(glm::vec3(x0, y0, z0))
             };
 
             if (ring != rings)
@@ -651,9 +653,10 @@ void Surface::create_capsule(float r, float h, uint32_t segments, uint32_t rings
             float z0 = r0 * sinf(seg * delta_seg_angle);
 
             // Add one vertex to the strip which makes up the sphere
-            vtxs[vtx_counter++] = { glm::vec3(x0, 0.5f * h + y0, z0),
-                glm::vec2((float)seg / (float)segments, (float)ring / (float)rings * sphere_ratio),
-                glm::normalize(glm::vec3(x0, y0, z0))
+            vtxs[vtx_counter++] = {
+                .position = glm::vec3(x0, 0.5f * h + y0, z0),
+                .uv = glm::vec2((float)seg / (float)segments, (float)ring / (float)rings * sphere_ratio),
+                .normal = glm::normalize(glm::vec3(x0, y0, z0))
             };
 
             // each vertex (except the last) has six indices pointing to it
@@ -679,9 +682,10 @@ void Surface::create_capsule(float r, float h, uint32_t segments, uint32_t rings
             float x0 = r * cosf(j * deltaAngle);
             float z0 = r * sinf(j * deltaAngle);
 
-            vtxs[vtx_counter++] = { glm::vec3(x0, 0.5f * h - i * deltah, z0),
-                glm::vec2(j / (float)segments, (i / float(num_height_seg)) * cylinder_ratio + sphere_ratio),
-                glm::normalize(glm::vec3(x0, 0, z0))
+            vtxs[vtx_counter++] = {
+                .position = glm::vec3(x0, 0.5f * h - i * deltah, z0),
+                .uv = glm::vec2(j / (float)segments, (i / float(num_height_seg)) * cylinder_ratio + sphere_ratio),
+                .normal = glm::normalize(glm::vec3(x0, 0, z0))
             };
 
             indices[idx_counter++] = (offset + segments + 1);
@@ -709,9 +713,10 @@ void Surface::create_capsule(float r, float h, uint32_t segments, uint32_t rings
             float z0 = r0 * sinf(seg * delta_seg_angle);
 
             // Add one vertex to the strip which makes up the sphere
-            vtxs[vtx_counter++] = { glm::vec3(x0, -0.5f * h + y0, z0),
-                glm::vec2((float)seg / (float)segments, (float)ring / (float)rings * sphere_ratio + cylinder_ratio + sphere_ratio),
-                glm::normalize(glm::vec3(x0, y0, z0))
+            vtxs[vtx_counter++] = {
+                .position = glm::vec3(x0, -0.5f * h + y0, z0),
+                .uv = glm::vec2((float)seg / (float)segments, (float)ring / (float)rings * sphere_ratio + cylinder_ratio + sphere_ratio),
+                .normal = glm::normalize(glm::vec3(x0, y0, z0))
             };
 
             if (ring != rings)
@@ -770,9 +775,10 @@ void Surface::create_torus(float r, float ir, uint32_t segments_section, uint32_
             glm::vec3 v = q * v0;
             glm::vec3 c = q * c0;
 
-            vtxs[vtx_counter++] = { v,
-                glm::vec2(i / (float)segments_circle, j / (float)segments_section),
-                glm::normalize(v - c) };
+            vtxs[vtx_counter++] = {
+                .position = v,
+                .uv = glm::vec2(i / (float)segments_circle, j / (float)segments_section),
+                .normal = glm::normalize(v - c) };
 
             if (i != segments_circle)
             {

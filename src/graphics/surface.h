@@ -21,10 +21,15 @@ namespace normals {
 
 struct InterleavedData {
     glm::vec3 position;
+    float padding;
     glm::vec2 uv;
+    glm::vec2 padding2;
     glm::vec3 normal;
+    float padding3;
     glm::vec3 tangent;
+    float padding4;
     glm::vec3 color = glm::vec3(1.0f);
+    float padding5;
     glm::vec4 weights;
     glm::ivec4 joints;
 };
