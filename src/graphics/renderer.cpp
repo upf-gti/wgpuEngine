@@ -546,6 +546,11 @@ void Renderer::render_render_list(int list_index, WGPURenderPassEncoder render_p
 {
     const Pipeline* prev_pipeline = nullptr;
 
+    wgpuRenderPassEncoderSetBindGroup(render_pass, 0, bind_groups[list_index], 0, nullptr);
+    wgpuRenderPassEncoderSetBindGroup(render_pass, 1, render_bind_group_camera, 1, &camera_buffer_stride);
+
+    const Material* prev_material = nullptr;
+
     for (int i = 0; i < render_list[list_index].size(); ) {
 
         const sRenderData& render_data = render_list[list_index][i];
@@ -553,6 +558,11 @@ void Renderer::render_render_list(int list_index, WGPURenderPassEncoder render_p
         const Material* material_override = render_data.mesh_instance_ref->get_surface_material_override(render_data.surface);
 
         const Material* material = material_override ? material_override : render_data.surface->get_material();
+
+        if (!material) {
+            assert(0);
+            continue;
+        }
 
         const Pipeline* pipeline = material->get_shader()->get_pipeline();
 
@@ -568,13 +578,16 @@ void Renderer::render_render_list(int list_index, WGPURenderPassEncoder render_p
             continue;
         }
 
-        uint8_t bind_group_index = 0;
-
         // Set bind groups
-        wgpuRenderPassEncoderSetBindGroup(render_pass, bind_group_index++, bind_groups[list_index], 0, nullptr);
-        wgpuRenderPassEncoderSetBindGroup(render_pass, bind_group_index++, render_bind_group_camera, 1, &camera_buffer_stride);
 
-        wgpuRenderPassEncoderSetBindGroup(render_pass, bind_group_index++, renderer_storage->get_material_bind_group(material), 0, nullptr);
+        if (material != prev_material) {
+            wgpuRenderPassEncoderSetBindGroup(render_pass, 2, renderer_storage->get_material_bind_group(material), 0, nullptr);
+            prev_material = material;
+
+            if (material->get_type() == MATERIAL_PBR) {
+                wgpuRenderPassEncoderSetBindGroup(render_pass, 3, lighting_bind_group, 0, nullptr);
+            }
+        }
 
 //#ifndef NDEBUG
 //        wgpuRenderPassEncoderPushDebugGroup(render_pass, render_data.surface->get_name().c_str());
@@ -583,12 +596,8 @@ void Renderer::render_render_list(int list_index, WGPURenderPassEncoder render_p
         if (material->get_type() == MATERIAL_UI) {
             WGPUBindGroup ui_bind_group = renderer_storage->get_ui_widget_bind_group(render_data.mesh_instance_ref);
             if (ui_bind_group) {
-                wgpuRenderPassEncoderSetBindGroup(render_pass, bind_group_index++, ui_bind_group, 0, nullptr);
+                wgpuRenderPassEncoderSetBindGroup(render_pass, 3, ui_bind_group, 0, nullptr);
             }
-        }
-
-        if (material->get_type() == MATERIAL_PBR) {
-            wgpuRenderPassEncoderSetBindGroup(render_pass, 3, lighting_bind_group, 0, nullptr);
         }
 
         // Set vertex buffer while encoding the render pass
