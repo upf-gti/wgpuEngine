@@ -49,6 +49,7 @@ int Engine::initialize(Renderer* renderer, GLFWwindow* window, bool use_glfw, bo
 
     std::string engine_shaders = WGPUENGINE_PATH + std::string("/src/shaders/");
 
+#ifndef NDEBUG
     shader_reload_watcher = new FileWatcher({ "./data/shaders/" }, 1.0f, [](std::string path_to_watch, eFileStatus status) -> void {
 
         // Process only regular files, all other file types are ignored
@@ -84,6 +85,7 @@ int Engine::initialize(Renderer* renderer, GLFWwindow* window, bool use_glfw, bo
             spdlog::error("Shader reload: Unknown file status");
         }
     });
+#endif
 
     this->renderer = renderer;
 
@@ -193,8 +195,10 @@ void Engine::on_frame()
 
 void Engine::update(float delta_time)
 {
+#ifndef NDEBUG
     shader_reload_watcher->update(delta_time);
     engine_shader_reload_watcher->update(delta_time);
+#endif
 
     renderer->update(delta_time);
 }
