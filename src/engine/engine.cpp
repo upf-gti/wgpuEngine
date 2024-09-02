@@ -47,7 +47,7 @@ int Engine::initialize(Renderer* renderer, GLFWwindow* window, bool use_glfw, bo
 {
     this->use_glfw = use_glfw;
 
-    std::string engine_shaders = WGPUENGINE_PATH + std::string("/src/shaders/");
+    std::string engine_shaders = WGPUENGINE_PATH + std::string("/data/shaders/");
 
 #ifndef NDEBUG
     shader_reload_watcher = new FileWatcher({ "./data/shaders/" }, 1.0f, [](std::string path_to_watch, eFileStatus status) -> void {
