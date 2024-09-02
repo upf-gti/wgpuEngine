@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 3.16)
 set(WGPU_DIR_ROOT     ${CMAKE_CURRENT_SOURCE_DIR})
 set(WGPU_DIR_SOURCES "${WGPU_DIR_ROOT}/src")
 set(WGPU_DIR_LIBS    "${WGPU_DIR_ROOT}/libraries")
+set(WGPU_DIR_SHADERS "${WGPU_DIR_ROOT}/data/shaders")
 
 project(webgpuEngine LANGUAGES C CXX)
 
@@ -117,27 +118,27 @@ find_package(PythonInterp 3 REQUIRED)
 file(GLOB_RECURSE
     SHADERS
     CONFIGURE_DEPENDS
-    RELATIVE ${WGPU_DIR_SOURCES}/shaders
-    ${WGPU_DIR_SOURCES}/shaders/**.wgsl
+    RELATIVE ${WGPU_DIR_SHADERS}
+    ${WGPU_DIR_SHADERS}/**.wgsl
 )
 
 message(STATUS "Processing shaders...")
 
 list(APPEND WGPU_SHADER_LIBS ${WGPU_DIR_ROOT}/glsl_builder.py)
-list(APPEND WGPU_SHADER_LIBS ${WGPU_DIR_SOURCES}/shaders/math.wgsl)
-list(APPEND WGPU_SHADER_LIBS ${WGPU_DIR_SOURCES}/shaders/mesh_includes.wgsl)
-list(APPEND WGPU_SHADER_LIBS ${WGPU_DIR_SOURCES}/shaders/pbr_functions.wgsl)
-list(APPEND WGPU_SHADER_LIBS ${WGPU_DIR_SOURCES}/shaders/pbr_material.wgsl)
-list(APPEND WGPU_SHADER_LIBS ${WGPU_DIR_SOURCES}/shaders/tonemappers.wgsl)
-list(APPEND WGPU_SHADER_LIBS ${WGPU_DIR_SOURCES}/shaders/ui/ui_includes.wgsl)
+list(APPEND WGPU_SHADER_LIBS ${WGPU_DIR_SHADERS}/math.wgsl)
+list(APPEND WGPU_SHADER_LIBS ${WGPU_DIR_SHADERS}/mesh_includes.wgsl)
+list(APPEND WGPU_SHADER_LIBS ${WGPU_DIR_SHADERS}/pbr_functions.wgsl)
+list(APPEND WGPU_SHADER_LIBS ${WGPU_DIR_SHADERS}/pbr_material.wgsl)
+list(APPEND WGPU_SHADER_LIBS ${WGPU_DIR_SHADERS}/tonemappers.wgsl)
+list(APPEND WGPU_SHADER_LIBS ${WGPU_DIR_SHADERS}/ui/ui_includes.wgsl)
 
 FOREACH(SHADER ${SHADERS})
 
     add_custom_command (
         OUTPUT ${WGPU_DIR_SOURCES}/shaders/${SHADER}.gen.h
 	    COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/glsl_builder.py ${SHADER}
-        DEPENDS ${WGPU_DIR_SOURCES}/shaders/${SHADER} ${WGPU_SHADER_LIBS}
-	    WORKING_DIRECTORY ${WGPU_DIR_SOURCES}/shaders
+        DEPENDS ${WGPU_DIR_SHADERS}/${SHADER} ${WGPU_SHADER_LIBS}
+	    WORKING_DIRECTORY ${WGPU_DIR_SHADERS}
         VERBATIM
     )
 
@@ -186,7 +187,7 @@ if (NOT EMSCRIPTEN)
     # openxr
     add_subdirectory(libraries/openxr)
     target_link_libraries(${PROJECT_NAME} PUBLIC openxr_loader)
-    target_link_libraries(openxr_loader PUBLIC Vulkan-Headers)
+#    target_link_libraries(openxr_loader PUBLIC Vulkan-Headers)
     set_property(TARGET openxr_loader PROPERTY FOLDER "External/OpenXR")
     set_property(TARGET generate_openxr_header PROPERTY FOLDER "External/OpenXR")
     set_property(TARGET xr_global_generated_files PROPERTY FOLDER "External/OpenXR")
