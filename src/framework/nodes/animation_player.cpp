@@ -67,7 +67,7 @@ void AnimationPlayer::generate_track_data()
         Node* node = root_node->get_node(node_path);
 
         if (node) {
-            track_data[i] = node->get_property(property_name);
+            track_data[i] = node->get_animatable_property(property_name).property;
         }
         else {
             spdlog::warn("{} node not found", track_path);

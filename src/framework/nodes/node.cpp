@@ -133,13 +133,13 @@ Node* Node::get_node(const std::string& path)
     return get_node(path_tokens);
 }
 
-void* Node::get_property(const std::string& name)
+Node::AnimatableProperty Node::get_animatable_property(const std::string& name)
 {
-    if (properties.contains(name)) {
-        return properties[name];
+    if (animatable_properties.contains(name)) {
+        return animatable_properties[name];
     }
 
-    return nullptr;
+    return {};
 }
 
 std::string Node::find_path(const std::string& node_name, const std::string& current_path)

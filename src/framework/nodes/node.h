@@ -47,8 +47,36 @@ protected:
 
     AABB aabb = {};
 
-    // animatable properties
-    std::unordered_map<std::string, void*> properties;
+    enum class AnimatablePropertyType {
+        UNDEFINED,
+        INT8,
+        INT16,
+        INT32,
+        INT64,
+        UINT8,
+        UINT16,
+        UINT32,
+        UINT64,
+        FLOAT32,
+        FLOAT64,
+        IVEC2,
+        UVEC2,
+        FVEC2,
+        IVEC3,
+        UVEC3,
+        FVEC3,
+        IVEC4,
+        UVEC4,
+        FVEC4,
+        QUAT
+    };
+
+    struct AnimatableProperty {
+        AnimatablePropertyType property_type = AnimatablePropertyType::UNDEFINED;
+        void* property = nullptr;
+    };
+
+    std::unordered_map<std::string, AnimatableProperty> animatable_properties;
 
 public:
 
@@ -71,7 +99,7 @@ public:
     Node* get_node(const std::string& path);
     std::string find_path(const std::string& node_name, const std::string& current_path = "");
 
-    void* get_property(const std::string& name);
+    Node::AnimatableProperty get_animatable_property(const std::string& name);
 
     void set_type(NodeType new_type) { type = new_type; }
     void set_name(std::string new_name) { name = new_name; }
