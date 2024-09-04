@@ -692,6 +692,8 @@ WGPUBindGroup WebGPUContext::create_bind_group(const std::vector<Uniform*>& unif
 
 WGPUBindGroup WebGPUContext::create_bind_group(const std::vector<Uniform*>& uniforms, const Shader* shader, uint16_t bind_group) const
 {
+    assert(!uniforms.empty());
+
     spdlog::trace("Creating bind group {} for shader {}", bind_group, shader->get_path());
 
     std::vector<WGPUBindGroupEntry> entries(uniforms.size());

@@ -1,5 +1,8 @@
 #include "mesh_instance.h"
 
+#include "graphics/renderer_storage.h"
+#include "graphics/renderer.h"
+
 MeshInstance::MeshInstance()
 {
 
@@ -8,7 +11,9 @@ MeshInstance::MeshInstance()
 MeshInstance::~MeshInstance()
 {
     for (auto &material_override : material_overrides) {
-        material_override.second->unref();
+        if (material_override.second->unref()) {
+            RendererStorage::delete_material_bind_group(Renderer::instance->get_webgpu_context(), material_override.second);
+        }
     }
 
     for (Surface* surface : surfaces) {

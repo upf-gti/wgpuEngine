@@ -2,6 +2,8 @@
 
 #include "framework/math/math_utils.h"
 
+#include "graphics/renderer_storage.h"
+
 #include "spdlog/spdlog.h"
 
 WebGPUContext* Surface::webgpu_context = nullptr;
@@ -14,7 +16,9 @@ Surface::~Surface()
     }
 
     if (material) {
-        material->unref();
+        if (material->unref()) {
+            RendererStorage::delete_material_bind_group(webgpu_context, material);
+        }
     }
 }
 

@@ -59,11 +59,15 @@ public:
     static void register_material_bind_group(WebGPUContext* webgpu_context, MeshInstance* mesh_instance, Material* material);
     static WGPUBindGroup get_material_bind_group(const Material* material);
 
+    static void delete_material_bind_group(WebGPUContext* webgpu_context, Material* material);
+
     static void update_material_bind_group(WebGPUContext* webgpu_context, MeshInstance* mesh_instance, Material* material);
 
     static void register_ui_widget(WebGPUContext* webgpu_context, Shader* shader, void* widget, const sUIData& ui_data, uint8_t bind_group_id);
     static WGPUBindGroup get_ui_widget_bind_group(const void* widget);
     static void update_ui_widget(WebGPUContext* webgpu_context, void* entity_mesh, const sUIData& ui_data);
+
+    static void delete_ui_widget(WebGPUContext* webgpu_context, void* entity_mesh);
 
     static Shader* get_shader(const std::string& shader_path, const Material* material = nullptr,
         const std::vector<std::string>& custom_define_specializations = {});

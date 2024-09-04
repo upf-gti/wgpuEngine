@@ -58,11 +58,13 @@ namespace ui {
 
         uint32_t parameter_flags = 0;
 
-        MeshInstance quad_mesh;
+        MeshInstance* quad_mesh = nullptr;
 
         Panel2D() {};
         Panel2D(const std::string& name, const glm::vec2& p, const glm::vec2& s, const Color& c = colors::WHITE);
         Panel2D(const std::string& name, const std::string& image_path, const glm::vec2& p, const glm::vec2& s, const Color& c = colors::WHITE);
+
+        virtual ~Panel2D();
 
         sInputData get_input_data(bool ignore_focus = false) override;
         bool on_input(sInputData data) override;

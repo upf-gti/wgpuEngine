@@ -210,6 +210,21 @@ WGPUBindGroup RendererStorage::get_material_bind_group(const Material* material)
     return material_bind_groups[material].bind_group;
 }
 
+void RendererStorage::delete_material_bind_group(WebGPUContext* webgpu_context, Material* material)
+{
+    auto it = material_bind_groups.find(material);
+
+    if (it != material_bind_groups.end()) {
+        wgpuBindGroupRelease(it->second.bind_group);
+
+        for (auto uniform : it->second.uniforms) {
+            uniform->destroy();
+        }
+
+        material_bind_groups.erase(it);
+    }
+}
+
 void RendererStorage::update_material_bind_group(WebGPUContext* webgpu_context, MeshInstance* mesh_instance, Material* material)
 {
     std::vector<Uniform*>& uniforms = material_bind_groups[material].uniforms;
@@ -246,17 +261,9 @@ void RendererStorage::update_material_bind_group(WebGPUContext* webgpu_context, 
 
 void RendererStorage::register_ui_widget(WebGPUContext* webgpu_context, Shader* shader, void* entity_mesh, const sUIData& ui_data, uint8_t bind_group_id)
 {
-    // Clean first
     if (ui_widget_bind_groups.contains(entity_mesh)) {
-        sBindingData& data = ui_widget_bind_groups[entity_mesh];
-        for (auto uniform : data.uniforms) {
-            uniform->destroy();
-        }
-        data.uniforms.clear();
-        wgpuBindGroupRelease(data.bind_group);
-        data.bind_group = nullptr;
-        /*assert(false);
-        return;*/
+        assert(false);
+        return;
     }
 
     Uniform* data_uniform = new Uniform();
@@ -264,11 +271,12 @@ void RendererStorage::register_ui_widget(WebGPUContext* webgpu_context, Shader* 
     data_uniform->binding = 0;
     data_uniform->buffer_size = sizeof(sUIData);
 
-    std::vector<Uniform*>& uniforms = ui_widget_bind_groups[entity_mesh].uniforms;
+    RendererStorage::sBindingData& binding_data = ui_widget_bind_groups[entity_mesh];
+    binding_data.uniforms = ui_widget_bind_groups[entity_mesh].uniforms;
 
-    uniforms.push_back(data_uniform);
+    binding_data.uniforms.push_back(data_uniform);
 
-    ui_widget_bind_groups[entity_mesh].bind_group = webgpu_context->create_bind_group(uniforms, shader, bind_group_id);
+    binding_data.bind_group = webgpu_context->create_bind_group(binding_data.uniforms, shader, bind_group_id);
 }
 
 WGPUBindGroup RendererStorage::get_ui_widget_bind_group(const void* widget)
@@ -289,6 +297,21 @@ void RendererStorage::update_ui_widget(WebGPUContext* webgpu_context, void* widg
 
     Uniform* data_uniform = ui_widget_bind_groups[widget].uniforms[0];
     webgpu_context->update_buffer(std::get<WGPUBuffer>(data_uniform->data), 0, &ui_data, sizeof(sUIData));
+}
+
+void RendererStorage::delete_ui_widget(WebGPUContext* webgpu_context, void* entity_mesh)
+{
+    auto it = ui_widget_bind_groups.find(entity_mesh);
+
+    if (it != ui_widget_bind_groups.end()) {
+        wgpuBindGroupRelease(it->second.bind_group);
+
+        for (auto uniform : it->second.uniforms) {
+            uniform->destroy();
+        }
+
+        ui_widget_bind_groups.erase(it);
+    }
 }
 
 Shader* RendererStorage::get_shader(const std::string& shader_path, const Material* material,
