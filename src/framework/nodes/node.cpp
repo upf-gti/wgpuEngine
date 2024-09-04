@@ -142,6 +142,10 @@ Node::AnimatableProperty Node::get_animatable_property(const std::string& name)
     return {};
 }
 
+const std::unordered_map<std::string, Node::AnimatableProperty>& Node::get_animatable_properties() const {
+    return animatable_properties;
+}
+
 std::string Node::find_path(const std::string& node_name, const std::string& current_path)
 {
     if (get_name() == node_name) {

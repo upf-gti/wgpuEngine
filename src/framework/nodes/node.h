@@ -46,6 +46,11 @@ protected:
     std::vector<Node*> children;
 
     AABB aabb = {};
+    // Defined in public section
+    struct AnimatableProperty;
+    std::unordered_map<std::string, AnimatableProperty> animatable_properties;
+
+public:
 
     enum class AnimatablePropertyType {
         UNDEFINED,
@@ -76,10 +81,6 @@ protected:
         void* property = nullptr;
     };
 
-    std::unordered_map<std::string, AnimatableProperty> animatable_properties;
-
-public:
-
     Node();
     virtual ~Node() {};
 
@@ -100,6 +101,7 @@ public:
     std::string find_path(const std::string& node_name, const std::string& current_path = "");
 
     Node::AnimatableProperty get_animatable_property(const std::string& name);
+    const std::unordered_map<std::string, AnimatableProperty>& get_animatable_properties() const;
 
     void set_type(NodeType new_type) { type = new_type; }
     void set_name(std::string new_name) { name = new_name; }
