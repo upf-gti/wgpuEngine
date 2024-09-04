@@ -16,6 +16,7 @@ MeshInstance::~MeshInstance()
     }
 
     surfaces.clear();
+    material_overrides.clear();
 }
 
 Material* MeshInstance::get_surface_material(int surface_idx)
@@ -47,8 +48,7 @@ bool MeshInstance::get_frustum_culling_enabled()
 
 Material* MeshInstance::get_surface_material_override(Surface* surface)
 {
-    if (material_overrides.contains(surface))
-    {
+    if (material_overrides.contains(surface)) {
         return material_overrides[surface];
     }
 

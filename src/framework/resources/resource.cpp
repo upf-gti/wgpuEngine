@@ -1,5 +1,7 @@
 #include "resource.h"
 
+#include "spdlog/spdlog.h"
+
 #include <cassert>
 
 Resource::Resource()
@@ -15,11 +17,11 @@ void Resource::ref()
 
 bool Resource::unref()
 {
-    assert(ref_count > 0);
+    assert(ref_count > 0u);
 
     ref_count--;
 
-    if (ref_count == 0) {
+    if (ref_count == 0u) {
         delete this;
         return true;
     }

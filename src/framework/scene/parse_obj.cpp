@@ -56,7 +56,7 @@ void parse_obj(const char* obj_path, MeshInstance3D* entity, bool create_aabb)
             material->set_color(glm::vec4(materials[0].diffuse[0], materials[0].diffuse[1], materials[0].diffuse[2], 1.0f));
         }
         else {
-            material->set_diffuse_texture(RendererStorage::get_texture(obj_path_fs.parent_path().string() + "/" + materials[0].diffuse_texname, true));
+            material->set_diffuse_texture(RendererStorage::get_texture(obj_path_fs.parent_path().string() + "/" + materials[0].diffuse_texname, TEXTURE_STORAGE_SRGB));
         }
 
         material->set_shader(RendererStorage::get_shader_from_source(shaders::mesh_forward::source, shaders::mesh_forward::path, material));

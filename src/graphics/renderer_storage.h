@@ -19,6 +19,13 @@ class MeshInstance;
 class Animation;
 struct Uniform;
 
+enum TextureStorageFlags : uint8_t {
+    TEXTURE_STORAGE_NONE = 0,
+    TEXTURE_STORAGE_SRGB = 1 << 0,
+    TEXTURE_STORAGE_KEEP_MEMORY = 1 << 1,
+    TEXTURE_STORAGE_UI = TEXTURE_STORAGE_SRGB | TEXTURE_STORAGE_KEEP_MEMORY
+};
+
 class RendererStorage {
 
 public:
@@ -72,7 +79,7 @@ public:
     static void reload_shader(const std::string& shader_path);
     static void reload_engine_shader(const std::string& shader_path);
 
-    static Texture* get_texture(const std::string& texture_path, bool is_srgb = false);
+    static Texture* get_texture(const std::string& texture_path, TextureStorageFlags flags = TEXTURE_STORAGE_NONE);
 
     static Surface* get_surface(const std::string& mesh_path);
 
