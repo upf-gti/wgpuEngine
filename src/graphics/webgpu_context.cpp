@@ -594,7 +594,7 @@ void WebGPUContext::create_cubemap_mipmaps(WGPUTexture texture, WGPUExtent3D tex
     }
 }
 
-void WebGPUContext::upload_texture(WGPUTexture texture, WGPUExtent3D texture_size, uint32_t mip_level, WGPUTextureFormat format, const void* data, WGPUOrigin3D origin)
+void WebGPUContext::upload_texture(WGPUTexture texture, WGPUTextureDimension dimension, WGPUExtent3D texture_size, uint32_t mip_level, WGPUTextureFormat format, const void* data, WGPUOrigin3D origin)
 {
     WGPUQueue mipmap_queue = wgpuDeviceGetQueue(device);
 
@@ -620,6 +620,9 @@ void WebGPUContext::upload_texture(WGPUTexture texture, WGPUExtent3D texture_siz
     case WGPUTextureFormat_RGBA16Uint:
         pixel_size = 4 * sizeof(uint16_t);
         break;
+    case WGPUTextureFormat_R32Float:
+        pixel_size = sizeof(float);
+        break;
     case WGPUTextureFormat_RGBA32Float:
         pixel_size = 4 * sizeof(float);
         break;
@@ -629,6 +632,7 @@ void WebGPUContext::upload_texture(WGPUTexture texture, WGPUExtent3D texture_siz
 
     source.bytesPerRow = pixel_size * texture_size.width;
     byte_size = source.bytesPerRow * texture_size.height;
+    if (dimension == WGPUTextureDimension_3D) byte_size = byte_size * texture_size.depthOrArrayLayers;
 
     source.rowsPerImage = texture_size.height;
 
