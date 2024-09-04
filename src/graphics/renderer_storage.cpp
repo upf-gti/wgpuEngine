@@ -246,9 +246,17 @@ void RendererStorage::update_material_bind_group(WebGPUContext* webgpu_context, 
 
 void RendererStorage::register_ui_widget(WebGPUContext* webgpu_context, Shader* shader, void* entity_mesh, const sUIData& ui_data, uint8_t bind_group_id)
 {
+    // Clean first
     if (ui_widget_bind_groups.contains(entity_mesh)) {
-        assert(false);
-        return;
+        sBindingData& data = ui_widget_bind_groups[entity_mesh];
+        for (auto uniform : data.uniforms) {
+            uniform->destroy();
+        }
+        data.uniforms.clear();
+        wgpuBindGroupRelease(data.bind_group);
+        data.bind_group = nullptr;
+        /*assert(false);
+        return;*/
     }
 
     Uniform* data_uniform = new Uniform();
@@ -403,7 +411,7 @@ void RendererStorage::reload_engine_shader(const std::string& shader_path)
     }
 }
 
-Texture* RendererStorage::get_texture(const std::string& texture_path, bool is_srgb)
+Texture* RendererStorage::get_texture(const std::string& texture_path, TextureStorageFlags flags)
 {
     std::string name = texture_path;
 
@@ -437,11 +445,19 @@ Texture* RendererStorage::get_texture(const std::string& texture_path, bool is_s
     }
     else
     {
+        bool is_srgb = flags & TEXTURE_STORAGE_SRGB;
         tx->load(texture_path, is_srgb);
+
+        // Ref to keep memory alive
+        if (flags & TEXTURE_STORAGE_KEEP_MEMORY) {
+            tx->ref();
+        }
     }
 
     // register in map
     textures[name] = tx;
+
+    tx->set_name(name);
 
     return tx;
 }
@@ -484,41 +500,49 @@ void RendererStorage::register_basic_surfaces()
     // Quad
     Surface* quad_mesh = new Surface();
     quad_mesh->create_quad();
+    quad_mesh->ref();
     surfaces["quad"] = quad_mesh;
 
     // Box
     Surface* box_mesh = new Surface();
     box_mesh->create_box();
+    box_mesh->ref();
     surfaces["box"] = box_mesh;
 
     // Rounded Box
     Surface* rounded_box_mesh = new Surface();
     rounded_box_mesh->create_rounded_box();
+    rounded_box_mesh->ref();
     surfaces["rounded_box"] = rounded_box_mesh;
 
     // Sphere
     Surface* sphere_mesh = new Surface();
     sphere_mesh->create_sphere();
+    sphere_mesh->ref();
     surfaces["sphere"] = sphere_mesh;
 
     // Cone
     Surface* cone_mesh = new Surface();
     cone_mesh->create_cone();
+    cone_mesh->ref();
     surfaces["cone"] = cone_mesh;
 
     // Cylinder
     Surface* cylinder_mesh = new Surface();
     cylinder_mesh->create_cylinder();
+    cylinder_mesh->ref();
     surfaces["cylinder"] = cylinder_mesh;
 
     // Capsule
     Surface* capsule_mesh = new Surface();
     capsule_mesh->create_capsule();
+    capsule_mesh->ref();
     surfaces["capsule"] = capsule_mesh;
 
     // Torus
     Surface* torus_mesh = new Surface();
     torus_mesh->create_torus();
+    torus_mesh->ref();
     surfaces["torus"] = torus_mesh;
 }
 

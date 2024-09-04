@@ -52,7 +52,7 @@ namespace ui {
         material->set_priority(class_type);
 
         if (image_path.size()) {
-            material->set_diffuse_texture(RendererStorage::get_texture(image_path, true));
+            material->set_diffuse_texture(RendererStorage::get_texture(image_path, TEXTURE_STORAGE_UI));
         }
 
         material->set_shader(RendererStorage::get_shader_from_source(shaders::mesh_forward::source, shaders::mesh_forward::path, material));
@@ -382,7 +382,7 @@ namespace ui {
         material->set_cull_type(CULL_BACK);
         material->set_transparency_type(ALPHA_BLEND);
         material->set_priority(class_type);
-        material->set_diffuse_texture(RendererStorage::get_texture(image_path, true));
+        material->set_diffuse_texture(RendererStorage::get_texture(image_path, TEXTURE_STORAGE_UI));
         material->set_shader(RendererStorage::get_shader_from_source(shaders::ui_texture::source, shaders::ui_texture::path, material));
 
         parameter_flags = flags;
@@ -1279,7 +1279,7 @@ namespace ui {
         material->set_cull_type(CULL_BACK);
         material->set_transparency_type(ALPHA_BLEND);
         material->set_priority(class_type);
-        material->set_diffuse_texture(texture_path.size() ? RendererStorage::get_texture(texture_path, true) : nullptr);
+        material->set_diffuse_texture(texture_path.size() ? RendererStorage::get_texture(texture_path, TEXTURE_STORAGE_UI) : nullptr);
         material->set_shader(RendererStorage::get_shader_from_source(shaders::ui_button::source, shaders::ui_button::path, material));
 
         quad_mesh.set_surface_material_override(quad_mesh.get_surface(0), material);
@@ -1586,7 +1586,7 @@ namespace ui {
         material->set_cull_type(CULL_BACK);
         material->set_transparency_type(ALPHA_BLEND);
         material->set_priority(class_type);
-        material->set_diffuse_texture(texture_path.size() > 0 ? RendererStorage::get_texture(texture_path, true) : nullptr);
+        material->set_diffuse_texture(texture_path.size() > 0 ? RendererStorage::get_texture(texture_path, TEXTURE_STORAGE_UI) : nullptr);
         material->set_shader(RendererStorage::get_shader_from_source(shaders::ui_slider::source, shaders::ui_slider::path, material));
 
         Surface* quad_surface = quad_mesh.get_surface(0);

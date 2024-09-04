@@ -217,7 +217,11 @@ void Node2D::release()
     Node::unbind(name + "@dbl_click");
     Node::unbind(name + "@changed");
 
-    Node::release();
+    // Node::release();
+
+    if (parent) {
+        parent->remove_child(this);
+    }
 }
 
 Node2D* Node2D::get_widget_from_name(const std::string& name)
