@@ -255,8 +255,8 @@ void Surface::create_rounded_box(float w, float h, float d, float c, const glm::
     auto neg_z = generate_quad(w2, h2, d * normals::nZ, -normals::nZ, color);
     vertices.insert(vertices.end(), neg_z.begin(), neg_z.end());
 
-    constexpr float     pi = glm::pi<float>();
-    constexpr float     half_pi = glm::pi<float>() * 0.5f;
+    float     pi = glm::pi<float>();
+    float     half_pi = glm::pi<float>() * 0.5f;
     constexpr uint32_t  chamfer_seg = 8;
 
     // Substract now so it's only applied to corners and edges...
@@ -439,8 +439,8 @@ void Surface::create_sphere(float r, uint32_t segments, uint32_t rings, const gl
     indices.resize(rings * (segments + 1) * 6);
     uint32_t idx_counter = 0;
 
-    constexpr float pi = glm::pi<float>();
-    constexpr float pi2 = pi * 2.f;
+    float pi = glm::pi<float>();
+    float pi2 = pi * 2.f;
 
     float fDeltaRingAngle = (pi / rings);
     float fDeltaSegAngle = (pi2 / segments);
@@ -509,7 +509,7 @@ void Surface::create_cone(float r, float h, uint32_t segments, const glm::vec3& 
 
     vertices.resize(segments * 6 * 2);
 
-    constexpr float pi2 = glm::pi<float>() * 2.f;
+    float pi2 = glm::pi<float>() * 2.f;
     float deltaAngle = pi2 / float(segments);
     float normal_y = r / h;
     uint32_t vtx_counter = 0;
@@ -573,7 +573,7 @@ void Surface::create_cylinder(float r, float h, uint32_t segments, bool capped, 
 
     vertices.resize(segments * 6);
 
-    constexpr float pi2 = glm::pi<float>() * 2.f;
+    float pi2 = glm::pi<float>() * 2.f;
     float deltaAngle = pi2 / float(segments);
     uint32_t vtx_counter = 0;
 
@@ -651,9 +651,9 @@ void Surface::create_capsule(float r, float h, uint32_t segments, uint32_t rings
 
     std::vector<InterleavedData> vertices;
 
-    constexpr float pi = glm::pi<float>() * 2.f;
-    constexpr float half_pi = glm::pi<float>() * 0.5f;
-    constexpr float pi2 = glm::pi<float>() * 2.f;
+    float pi = glm::pi<float>() * 2.f;
+    float half_pi = glm::pi<float>() * 0.5f;
+    float pi2 = glm::pi<float>() * 2.f;
 
     float delta_ring_angle = (half_pi / rings);
     float delta_seg_angle = (pi2 / segments);
@@ -795,7 +795,7 @@ void Surface::create_torus(float r, float ir, uint32_t segments_section, uint32_
     indices.resize((segments_circle) * (segments_section + 1) * 6);
     uint32_t idx_counter = 0;
 
-    constexpr float pi2 = glm::pi<float>() * 2.f;
+    float pi2 = glm::pi<float>() * 2.f;
 
     float deltaSection = (pi2 / segments_section);
     float deltaCircle = (pi2 / segments_circle);

@@ -7,9 +7,10 @@ set(WGPU_DIR_SHADERS "${WGPU_DIR_ROOT}/data/shaders")
 
 project(webgpuEngine LANGUAGES C CXX)
 
-# Enable multicore compile on VS solution
+# Enable multicore and simd compile on VS solution
 if(MSVC)
-  add_definitions(/MP)
+    add_definitions(/MP)
+    add_definitions(/arch:AVX2)
 endif()
 
 if (WIN32)
@@ -168,8 +169,11 @@ add_subdirectory(libraries/webgpu)
 target_link_libraries(${PROJECT_NAME} PUBLIC webgpu)
 
 # glm
+set(GLM_ENABLE_SIMD_AVX2 ON)
+
 add_subdirectory(libraries/glm)
 
+target_compile_definitions(glm PUBLIC GLM_FORCE_INTRINSICS)
 target_compile_definitions(glm PUBLIC GLM_ENABLE_EXPERIMENTAL)
 target_compile_definitions(glm PUBLIC GLM_FORCE_QUAT_DATA_XYZW)
 target_compile_definitions(glm PUBLIC GLM_FORCE_QUAT_CTOR_XYZW)

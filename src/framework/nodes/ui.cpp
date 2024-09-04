@@ -822,7 +822,7 @@ namespace ui {
 
         size = glm::vec2(radius * 2.f + BUTTON_SIZE) * 1.05f;
 
-        constexpr float m_pi = glm::pi<float>();
+        float m_pi = glm::pi<float>();
 
         float cc = (-size.x + BUTTON_SIZE) * 0.5f;
         glm::vec2 center = glm::vec2(cc);

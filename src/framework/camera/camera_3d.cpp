@@ -21,12 +21,12 @@ void Camera3D::update(float delta_time)
 
         float max_offset = 0.25f;
 
-        if (delta_pitch >= pi_2 - max_offset && delta_pitch < pi) {
-            delta_pitch = pi_2 - 0.001f - max_offset;
+        if (delta_pitch >= PI_2 - max_offset && delta_pitch < PI) {
+            delta_pitch = PI_2 - 0.001f - max_offset;
         }
 
-        if (delta_pitch > pi && delta_pitch <= 3.0f * pi_2 + max_offset) {
-            delta_pitch = 3.0f * pi_2 + 0.001f + max_offset;
+        if (delta_pitch > PI && delta_pitch <= 3.0f * PI_2 + max_offset) {
+            delta_pitch = 3.0f * PI_2 + 0.001f + max_offset;
         }
     }
 

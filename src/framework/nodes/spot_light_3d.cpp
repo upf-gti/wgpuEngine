@@ -17,7 +17,7 @@ SpotLight3D::~SpotLight3D()
 void SpotLight3D::render_gui()
 {
     bool changed = false;
-    constexpr float pi_2 = glm::pi<float>() * 0.5f;
+    float pi_2 = glm::pi<float>() * 0.5f;
 
     if (ImGui::TreeNodeEx("SpotLight3D"))
     {
