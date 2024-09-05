@@ -75,15 +75,15 @@ void AnimationPlayer::generate_track_data()
        
         int count = 1;
         int type = -1;
-        if (animation->get_track(i)->get_type() == TrackType::TYPE_POSITION) {
+        if (animation->get_track(i)->get_type() == eTrackType::TYPE_POSITION) {
             type = 0;
             count = 3;
         }
-        else if (animation->get_track(i)->get_type() == TrackType::TYPE_ROTATION) {
+        else if (animation->get_track(i)->get_type() == eTrackType::TYPE_ROTATION) {
             type = 1;
             count = 4;
         }
-        else if (animation->get_track(i)->get_type() == TrackType::TYPE_SCALE) {
+        else if (animation->get_track(i)->get_type() == eTrackType::TYPE_SCALE) {
             type = 2;
             count = 3;
         }

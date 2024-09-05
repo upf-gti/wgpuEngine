@@ -3,8 +3,9 @@
 #include "imgui.h"
 #include "graphics/renderer.h"
 
-Light3D::Light3D()
+Light3D::Light3D() : Node3D()
 {
+    animatable_properties["intensity"] = { AnimatablePropertyType::FLOAT32, &intensity };
 }
 
 Light3D::~Light3D()

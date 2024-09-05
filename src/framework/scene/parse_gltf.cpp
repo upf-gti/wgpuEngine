@@ -981,7 +981,7 @@ void parse_model_skins(Node3D* scene_root, tinygltf::Model& model, std::map<std:
     }
 }
 
-void get_scalar_values(std::vector<T>& out, uint32_t component_size, const tinygltf::Model& model, int accessor_idx)
+void get_scalar_values(std::vector<TrackType>& out, uint32_t component_size, const tinygltf::Model& model, int accessor_idx)
 {
     uint32_t size;
     const tinygltf::Accessor& accessor = model.accessors[accessor_idx];
@@ -1108,12 +1108,12 @@ void track_from_channel(Track& result, const tinygltf::AnimationChannel& channel
     result.set_interpolation(interpolation);
 
     // convert sampler input and output accessors into linear arrays of floating-point numbers
-    std::vector<T> time; // times 
+    std::vector<TrackType> time; // times 
     get_scalar_values(time, 1, model, sampler.input);
 
     uint32_t component_size = TrackHelpers::get_size(result);
 
-    std::vector<T> values; // values
+    std::vector<TrackType> values; // values
     get_scalar_values(values, component_size, model, sampler.output);
 
     size_t num_frames = time.size();
@@ -1205,19 +1205,19 @@ void parse_model_animations(const tinygltf::Model& model, std::vector<SkeletonIn
 
             Track* track = new_animation->add_track(node_id);
 
-            TrackType type = TrackType::TYPE_UNDEFINED;
+            eTrackType type = eTrackType::TYPE_UNDEFINED;
 
             if (channel.target_path == "translation") {
-                type = TrackType::TYPE_POSITION;
+                type = eTrackType::TYPE_POSITION;
             }
             else if (channel.target_path == "scale") {
-                type = TrackType::TYPE_SCALE;
+                type = eTrackType::TYPE_SCALE;
             }
             else if (channel.target_path == "rotation") {
-                type = TrackType::TYPE_ROTATION;
+                type = eTrackType::TYPE_ROTATION;
             }
             else if (channel.target_path == "weight") {
-                type = TrackType::TYPE_FLOAT;
+                type = eTrackType::TYPE_FLOAT;
             }
 
             const tinygltf::Node& node = model.nodes[channel.target_node];

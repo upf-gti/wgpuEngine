@@ -515,7 +515,7 @@ Animation* RendererStorage::get_animation(const std::string& animation_path)
     if (it != animations.end())
         return it->second;    
 
-    return NULL;
+    return nullptr;
 }
 
 void RendererStorage::register_basic_surfaces()
