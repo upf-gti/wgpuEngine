@@ -15,9 +15,9 @@
 
 #include "spdlog/spdlog.h"
 
-void parse_obj(const char* obj_path, MeshInstance3D* entity, bool create_aabb)
+void parse_obj(const char* obj_path, MeshInstance3D* entity_mesh, bool create_aabb)
 {
-    if (!entity) {
+    if (!entity_mesh) {
         return;
     }
         
@@ -41,40 +41,45 @@ void parse_obj(const char* obj_path, MeshInstance3D* entity, bool create_aabb)
 
     std::filesystem::path obj_path_fs = std::filesystem::path(obj_path);
 
-    entity->set_name(obj_path_fs.stem().string());
-
-    // TODO: don't use path
-    Surface* new_surface = RendererStorage::get_surface(obj_path);
-
-    Material* material = new_surface->get_material();
-
-    if (!material && !materials.empty()) {
-
-        material = new Material();
-
-        if (materials[0].diffuse_texname.empty()) {
-            material->set_color(glm::vec4(materials[0].diffuse[0], materials[0].diffuse[1], materials[0].diffuse[2], 1.0f));
-        }
-        else {
-            material->set_diffuse_texture(RendererStorage::get_texture(obj_path_fs.parent_path().string() + "/" + materials[0].diffuse_texname, TEXTURE_STORAGE_SRGB));
-        }
-
-        material->set_shader(RendererStorage::get_shader_from_source(shaders::mesh_forward::source, shaders::mesh_forward::path, material));
-
-        new_surface->set_material(material);
-    }
-
-    entity->add_surface(new_surface);
-
-    std::vector<InterleavedData> vertices;
-
-    InterleavedData vertex_data;
-
-    glm::vec3 min_pos = { FLT_MAX, FLT_MAX, FLT_MAX };
-    glm::vec3 max_pos = { -FLT_MAX, -FLT_MAX, -FLT_MAX };
+    entity_mesh->set_name(obj_path_fs.stem().string());
 
     // Loop over shapes
     for (size_t s = 0; s < shapes.size(); s++) {
+
+        Surface* new_surface = new Surface();
+
+        new_surface->set_name(shapes[s].name);
+
+        Material* material = new_surface->get_material();
+
+        if (!material) {
+
+            material = new Material();
+
+            if (!materials.empty()) {
+                uint32_t material_id = shapes[s].mesh.material_ids[0] == -1 ? 0 : shapes[s].mesh.material_ids[0];
+                if (materials[material_id].diffuse_texname.empty()) {
+                    material->set_color(glm::vec4(materials[material_id].diffuse[0], materials[material_id].diffuse[1], materials[material_id].diffuse[2], 1.0f));
+                }
+                else {
+                    material->set_diffuse_texture(RendererStorage::get_texture(obj_path_fs.parent_path().string() + "/" + materials[material_id].diffuse_texname, TEXTURE_STORAGE_SRGB));
+                }
+            }
+
+            material->set_shader(RendererStorage::get_shader_from_source(shaders::mesh_forward::source, shaders::mesh_forward::path, material));
+
+            new_surface->set_material(material);
+        }
+
+        entity_mesh->add_surface(new_surface);
+
+        std::vector<InterleavedData> vertices;
+
+        InterleavedData vertex_data;
+
+        glm::vec3 min_pos = { FLT_MAX, FLT_MAX, FLT_MAX };
+        glm::vec3 max_pos = { -FLT_MAX, -FLT_MAX, -FLT_MAX };
+
         // Loop over faces(polygon)
         size_t index_offset = 0;
         for (size_t f = 0; f < shapes[s].mesh.num_face_vertices.size(); f++) {
@@ -132,20 +137,27 @@ void parse_obj(const char* obj_path, MeshInstance3D* entity, bool create_aabb)
 
             index_offset += fv;
         }
+
+        if (create_aabb) {
+            AABB aabb;
+            aabb.half_size = (max_pos - min_pos) * glm::vec3(0.5);
+            aabb.center = max_pos - aabb.half_size;
+
+            entity_mesh->set_aabb(aabb);
+            new_surface->set_aabb(aabb);
+        }
+
+        new_surface->create_vertex_buffer(vertices);
     }
 
+    AABB entity_aabb;
+    for (const Surface* surface : entity_mesh->get_surfaces()) {
+        const AABB& surface_aabb = surface->get_aabb();
 
-    if (create_aabb) {
-        AABB aabb;
-        aabb.half_size = (max_pos - min_pos) * glm::vec3(0.5);
-        aabb.center = max_pos - aabb.half_size;
-
-        entity->set_aabb(aabb);
-        new_surface->set_aabb(aabb);
+        entity_aabb = merge_aabbs(entity_aabb, surface_aabb);
     }
 
-
-    new_surface->create_vertex_buffer(vertices);
+    entity_mesh->set_aabb(entity_aabb);
 }
 
 MeshInstance3D* parse_obj(const char* obj_path, bool create_aabb)
