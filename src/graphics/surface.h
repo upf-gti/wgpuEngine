@@ -94,6 +94,6 @@ public:
     uint64_t get_byte_size() const;
     const std::string& get_name() { return name; };
 
-    AABB get_aabb();
+    AABB get_aabb() const;
     void set_aabb(AABB aabb);
 };
