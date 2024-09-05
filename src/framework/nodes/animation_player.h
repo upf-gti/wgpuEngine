@@ -39,6 +39,7 @@ public:
 
     AnimationPlayer(const std::string& name);
 
+    void play(Animation* animation, float custom_blend = -1.0f, float custom_speed = 1.0f, bool from_end = false);
     void play(const std::string& animation_name = "", float custom_blend = -1.0f, float custom_speed = 1.0f, bool from_end = false);
     void pause();
     void stop(bool keep_state = false);

@@ -11,8 +11,6 @@ enum AnimationType {
     ANIM_TYPE_SKELETON,
 };
 
-class Animation;
-
 class Animation {
 
     static uint32_t last_animation_id;

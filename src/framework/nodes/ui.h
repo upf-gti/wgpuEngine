@@ -38,7 +38,7 @@ namespace ui {
         CURVE_INV_POW = 1 << 7,
         TEXT_CENTERED = 1 << 8,
         TEXT_EVENTS = 1 << 9,
-        SKIP_TEXT_SHADOW = 1 << 10,
+        SKIP_TEXT_RECT = 1 << 10,
         SCROLLABLE = 1 << 11,
         DBL_CLICK = 1 << 12,
         LONG_CLICK = 1 << 13,

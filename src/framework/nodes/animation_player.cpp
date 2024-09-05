@@ -14,14 +14,19 @@ AnimationPlayer::AnimationPlayer(const std::string& n)
 
 void AnimationPlayer::play(const std::string& animation_name, float custom_blend, float custom_speed, bool from_end)
 {
-    if (!root_node) {
-        root_node = get_parent();
-    }
-        
     Animation* animation = RendererStorage::get_animation(animation_name);
     if (!animation) {
         spdlog::error("No animation called {}", animation_name);
         return;
+    }
+
+    play(animation, custom_blend, custom_speed, from_end);
+}
+
+void AnimationPlayer::play(Animation* animation, float custom_blend, float custom_speed, bool from_end)
+{
+    if (!root_node) {
+        root_node = get_parent();
     }
 
     if (custom_blend >= 0.0f) {
@@ -35,7 +40,7 @@ void AnimationPlayer::play(const std::string& animation_name, float custom_blend
 
     speed = custom_speed;
     playing = true;
-    current_animation_name = animation_name;
+    current_animation_name = animation->get_name();
 
     // sequence with default values
     timeline.frame_max = animation->get_track(0)->size();;

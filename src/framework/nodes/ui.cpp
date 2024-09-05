@@ -932,7 +932,7 @@ namespace ui {
 
         ui_data.num_group_items = size.x;
 
-        render_background = !(flags & SKIP_TEXT_SHADOW);
+        render_background = !(flags & SKIP_TEXT_RECT);
 
         Material* material = new Material();
         material->set_color(colors::WHITE);
@@ -1319,7 +1319,7 @@ namespace ui {
         // Use label as background
         if (!texture_path.size()) {
             label_as_background = true;
-            text_2d = new Text2D(name, {0.0f, size.y * 0.5f - 9.0f}, 18.f, SKIP_TEXT_SHADOW);
+            text_2d = new Text2D(name, {0.0f, size.y * 0.5f - 9.0f}, 18.f, SKIP_TEXT_RECT);
             float w = text_2d->text_entity->get_text_width(name);
             text_2d->translate({ size.x * 0.5f - w * 0.5f, 0.0f });
             add_child(text_2d);
