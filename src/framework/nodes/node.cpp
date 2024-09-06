@@ -190,7 +190,7 @@ void Node::unbind(const std::string& name)
     mapping_signals.erase(it);
 }
 
-void Node::bind(uint8_t button, FuncEmpty callback)
+void Node::bind_button(uint8_t button, FuncEmpty callback)
 {
     controller_signals[button].push_back(callback);
 }

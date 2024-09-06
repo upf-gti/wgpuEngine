@@ -15,12 +15,13 @@
 using FuncEmpty = std::function<void()>;
 using FuncVoid = std::function<void(const std::string&, void*)>;
 using FuncFloat = std::function<void(const std::string&, float)>;
+using FuncInt = std::function<void(const std::string&, int)>;
 using FuncString = std::function<void(const std::string&, std::string)>;
 using FuncVec2 = std::function<void(const std::string&, glm::vec2)>;
 using FuncVec3 = std::function<void(const std::string&, glm::vec3)>;
 using FuncVec4 = std::function<void(const std::string&, glm::vec4)>;
 
-using SignalType = std::variant <FuncFloat, FuncString, FuncVec2, FuncVec3, FuncVec4, FuncVoid>;
+using SignalType = std::variant <FuncInt, FuncFloat, FuncString, FuncVec2, FuncVec3, FuncVec4, FuncVoid>;
 
 enum NodeType {
     NODE_2D,
@@ -116,7 +117,7 @@ public:
     */
 
     static void bind(const std::string& name, SignalType callback);
-    static void bind(uint8_t button, FuncEmpty callback);
+    static void bind_button(uint8_t button, FuncEmpty callback);
 
     static void unbind(const std::string& name);
 
