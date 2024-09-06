@@ -29,7 +29,6 @@ enum NodeType {
     JOINT_3D
 };
 
-class Node; 
 class Node {
 
     static std::unordered_map<std::string, std::vector<SignalType>> mapping_signals;
