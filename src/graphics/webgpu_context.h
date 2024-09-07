@@ -99,7 +99,7 @@ struct WebGPUContext {
     void                   update_buffer(WGPUBuffer buffer, uint64_t buffer_offset, void const* data, uint64_t size);
     void                   update_texture(WGPUTexture buffer, void const* data, uint64_t size);
 
-    sMipmapPipeline        get_mipmap_pipeline(WGPUTextureFormat texture_format);
+    sMipmapPipeline        get_mipmap_pipeline(WGPUTextureFormat texture_format, WGPUTextureViewDimension view_dimension);
 
     void process_events();
 

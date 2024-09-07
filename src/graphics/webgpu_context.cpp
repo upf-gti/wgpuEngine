@@ -383,7 +383,7 @@ void WebGPUContext::create_texture_mipmaps(WGPUTexture texture, WGPUExtent3D tex
         mipmap_queue = wgpuDeviceGetQueue(device);
     }
 
-    sMipmapPipeline mipmap_pipeline = get_mipmap_pipeline(format);
+    sMipmapPipeline mipmap_pipeline = get_mipmap_pipeline(format, view_dimension);
     if (!mipmap_pipeline.mipmap_pipeline) {
         return;
     }
@@ -400,8 +400,10 @@ void WebGPUContext::create_texture_mipmaps(WGPUTexture texture, WGPUExtent3D tex
     sampler.data = create_sampler(WGPUAddressMode_ClampToEdge, WGPUAddressMode_ClampToEdge, WGPUAddressMode_ClampToEdge, WGPUFilterMode_Linear, WGPUFilterMode_Linear);
     sampler.binding = 2;
 
+    uint32_t for_range = view_dimension == WGPUTextureViewDimension_3D ? 1 : texture_size.depthOrArrayLayers;
+
     // For all layers and levels
-    for (uint32_t layer = 0; layer < texture_size.depthOrArrayLayers; ++layer)
+    for (uint32_t layer = 0; layer < for_range; ++layer)
     {
         std::vector<WGPUExtent3D> texture_mip_sizes;
         texture_mip_sizes.resize(mip_level_count);
@@ -450,7 +452,14 @@ void WebGPUContext::create_texture_mipmaps(WGPUTexture texture, WGPUExtent3D tex
             // This ceils invocationCountX / workgroupSizePerDim
             uint32_t workgroupCountX = (invocationCountX + workgroupSizePerDim - 1) / workgroupSizePerDim;
             uint32_t workgroupCountY = (invocationCountY + workgroupSizePerDim - 1) / workgroupSizePerDim;
-            wgpuComputePassEncoderDispatchWorkgroups(compute_pass, workgroupCountX, workgroupCountY, 1);
+            uint32_t workgroupCountZ = 1;
+
+            if (view_dimension == WGPUTextureViewDimension_3D) {
+                uint32_t invocationCountZ = texture_mip_sizes[nextLevel].depthOrArrayLayers;
+                workgroupCountZ = (invocationCountZ + workgroupSizePerDim - 1) / workgroupSizePerDim;
+            }
+
+            wgpuComputePassEncoderDispatchWorkgroups(compute_pass, workgroupCountX, workgroupCountY, workgroupCountZ);
 
             wgpuBindGroupRelease(mipmaps_bind_group);
         }
@@ -697,7 +706,7 @@ WGPUBindGroup WebGPUContext::create_bind_group(const std::vector<Uniform*>& unif
     return wgpuDeviceCreateBindGroup(device, &bindGroupDesc);
 }
 
-WebGPUContext::sMipmapPipeline WebGPUContext::get_mipmap_pipeline(WGPUTextureFormat texture_format)
+WebGPUContext::sMipmapPipeline WebGPUContext::get_mipmap_pipeline(WGPUTextureFormat texture_format, WGPUTextureViewDimension view_dimension)
 {
     if (mipmap_pipelines.contains(texture_format)) {
         return mipmap_pipelines[texture_format];
@@ -717,7 +726,20 @@ WebGPUContext::sMipmapPipeline WebGPUContext::get_mipmap_pipeline(WGPUTextureFor
         assert(false);
     }
 
-    Shader* shader = RendererStorage::get_shader("data/shaders/mipmaps.wgsl", { custom_define });
+    std::string shader_variant;
+
+    switch (view_dimension) {
+    case WGPUTextureViewDimension_2D:
+        shader_variant = "data/shaders/mipmaps.wgsl";
+        break;
+    case WGPUTextureViewDimension_3D:
+        shader_variant = "data/shaders/mipmaps_3D.wgsl";
+        break;
+    default:
+        assert(false);
+    }
+
+    Shader* shader = RendererStorage::get_shader(shader_variant, { custom_define });
 
     Pipeline* pipeline = new Pipeline();
     pipeline->create_compute(shader);
