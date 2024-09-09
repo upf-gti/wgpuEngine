@@ -6,6 +6,7 @@
 Light3D::Light3D() : Node3D()
 {
     animatable_properties["intensity"] = { AnimatablePropertyType::FLOAT32, &intensity };
+    animatable_properties["range"] = { AnimatablePropertyType::FLOAT32, &range };
     animatable_properties["color"] = { AnimatablePropertyType::FVEC4, &color };
 }
 

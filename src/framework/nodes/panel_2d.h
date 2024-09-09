@@ -4,12 +4,13 @@
 #include "framework/colors.h"
 #include "graphics/mesh_instance.h"
 #include "node_2d.h"
-#include "text.h"
 
 #include <functional>
 #include <map>
 #include <string>
 #include <vector>
+
+class TextEntity;
 
 namespace ui {
 
@@ -100,13 +101,12 @@ namespace ui {
         Text2D(const std::string& _text, const glm::vec2& pos, float scale = 16.f, uint32_t parameter_flags = 0, const Color& color = colors::WHITE);
         Text2D(const std::string& _text, float scale = 16.f, uint32_t parameter_flags = 0);
 
-        void set_text(const std::string& text) { text_entity->set_text(text); };
-
         void render() override;
         void update(float delta_time) override;
         bool on_input(sInputData data) override;
         void release() override;
 
+        void set_text(const std::string& text);
         void disable_2d() override;
         void set_priority(uint8_t priority) override;
     };

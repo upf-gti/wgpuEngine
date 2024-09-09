@@ -704,6 +704,21 @@ namespace ui {
             }
         }
 
+        // Send signal on move thumbstick or using wheel hovering the text
+        {
+            float dt = Input::get_thumbstick_value(HAND_RIGHT).y;
+
+            if (dt > 0.01f) {
+                Node::emit_signal(name + "@stick_moved", dt);
+            }
+
+            float wheel_dt = Input::get_mouse_wheel_delta();
+
+            if (glm::abs(wheel_dt) > 0.01f) {
+                Node::emit_signal(name + "@stick_moved", wheel_dt);
+            }
+        }
+
         // Update uniforms
         ui_data.hover_info.x = 1.0f;
         ui_data.hover_info.y = 1.0f;
@@ -730,6 +745,23 @@ namespace ui {
         Panel2D::render();
 
         text_entity->render();
+    }
+
+    void Text2D::set_text(const std::string& text)
+    {
+        text_entity->set_text(text);
+
+        float text_width = (float)text_entity->get_text_width(text);
+        size.x = std::max(text_width, 24.0f) + TEXT_SHADOW_MARGIN * text_scale;
+        size.y = text_scale + TEXT_SHADOW_MARGIN * text_scale * 0.5f;
+
+        ui_data.num_group_items = size.x;
+        update_ui_data();
+
+        Surface* quad_surface = quad_mesh->get_surface(0);
+        quad_surface->create_quad(size.x, size.y);
+
+        Node2D::on_children_changed();
     }
 
     void Text2D::disable_2d()

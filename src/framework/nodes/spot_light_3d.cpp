@@ -7,6 +7,9 @@ SpotLight3D::SpotLight3D() : Light3D()
     type = LIGHT_SPOT;
     node_type = "SpotLight3D";
     name = node_type + "_" + std::to_string(last_node_id++);
+
+    animatable_properties["inner_cone_angle"] = { AnimatablePropertyType::FLOAT32, &inner_cone_angle };
+    animatable_properties["outer_cone_angle"] = { AnimatablePropertyType::FLOAT32, &outer_cone_angle };
 }
 
 SpotLight3D::~SpotLight3D()
