@@ -177,6 +177,7 @@ target_compile_definitions(glm PUBLIC GLM_FORCE_INTRINSICS)
 target_compile_definitions(glm PUBLIC GLM_ENABLE_EXPERIMENTAL)
 target_compile_definitions(glm PUBLIC GLM_FORCE_QUAT_DATA_XYZW)
 target_compile_definitions(glm PUBLIC GLM_FORCE_QUAT_CTOR_XYZW)
+target_compile_definitions(glm PUBLIC GLM_FORCE_DEPTH_ZERO_TO_ONE)
 
 set_property(TARGET glm PROPERTY CXX_STANDARD 20)
 set_property(TARGET glm PROPERTY FOLDER "External/glm")
