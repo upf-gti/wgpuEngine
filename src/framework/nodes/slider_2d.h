@@ -39,6 +39,9 @@ namespace ui {
 
         void render() override;
         void set_disabled(bool new_disabled);
+
+        template <typename T>
+        void process_wheel_joystick(T wheel_multiplier, T joystick_multiplier);
     };
 
     class FloatSlider2D : public Slider2D {

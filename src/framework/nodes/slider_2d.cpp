@@ -36,6 +36,23 @@ namespace ui {
         update_ui_data();
     }
 
+    template <typename T>
+    void Slider2D::process_wheel_joystick(T wheel_multiplier, T joystick_multiplier)
+    {
+        // Send signal on move thumbstick or using wheel hovering the text
+        T dt = static_cast<T>(Input::get_thumbstick_value(HAND_RIGHT).y) * joystick_multiplier;
+
+        if (dt > 0.01f) {
+            Node::emit_signal(name + "@stick_moved", dt);
+        }
+
+        float wheel_dt = Input::get_mouse_wheel_delta() * wheel_multiplier;
+
+        if (glm::abs(wheel_dt) > 0.01f) {
+            Node::emit_signal(name + "@stick_moved", wheel_dt);
+        }
+    }
+
     /*
     *	FloatSlider
     */
@@ -97,6 +114,11 @@ namespace ui {
 
         Node::bind(name + "@changed", (FuncFloat)[&](const std::string& signal, float value) {
             set_value(value);
+        });
+
+        Node::bind(name + "@stick_moved", (FuncFloat)[&](const std::string& signal, float dt) {
+            set_value(current_value + dt);
+            Node::emit_signal(name + "_x", current_value);
         });
 
         // Text labels (only if slider is enabled)
@@ -194,6 +216,8 @@ namespace ui {
             timer = 0.f;
             Engine::instance->vibrate_hand(HAND_RIGHT, HOVER_HAPTIC_AMPLITUDE, HOVER_HAPTIC_DURATION);
         }
+
+        process_wheel_joystick<float>(1.0f / (powf(10.0f, static_cast<float>(precision))), 1.0f);
 
         on_hover = true;
 
@@ -295,6 +319,11 @@ namespace ui {
             set_value(value);
         });
 
+        Node::bind(name + "@stick_moved", (FuncInt)[&](const std::string& signal, int dt) {
+            set_value(current_value + dt);
+            Node::emit_signal(name + "_x", current_value);
+        });
+
         // Text labels (only if slider is enabled)
         {
             float text_scale = 18.0f;
@@ -390,6 +419,8 @@ namespace ui {
             timer = 0.f;
             Engine::instance->vibrate_hand(HAND_RIGHT, HOVER_HAPTIC_AMPLITUDE, HOVER_HAPTIC_DURATION);
         }
+
+        process_wheel_joystick<int>(1, 1);
 
         on_hover = true;
 
