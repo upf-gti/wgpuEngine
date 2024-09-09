@@ -121,7 +121,17 @@ const std::string& Track::get_path()
 
 Keyframe& Track::get_keyframe(uint32_t index)
 {
+    if (index >= keyframes.size()) {
+        assert(0);
+    }
+
     return keyframes[index];
+}
+
+Keyframe& Track::add_keyframe(const Keyframe& k)
+{
+    keyframes.push_back(k);
+    return keyframes.back();
 }
 
 // call sample_constant, sample_linear, or sample_cubic, depending on the track type.
@@ -141,6 +151,8 @@ TrackType Track::sample(float time, bool looping, void* out)
 
     if (out)
     {
+        // TODO: Support the rest of types..
+
         if (std::holds_alternative<float>(r)) {
             float* p = reinterpret_cast<float*>(out);
             *p = std::get<float>(r);

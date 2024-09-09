@@ -10,7 +10,7 @@ Animation::Animation()
     looping = true;
 }
 
-float Animation::sample(float time, uint32_t index, void* out)
+float Animation::sample(float time, uint32_t track_idx, void* out)
 {
     if (get_duration() == 0.0f) {
         return 0.0f;
@@ -24,7 +24,7 @@ float Animation::sample(float time, uint32_t index, void* out)
         return time;       
     }
 
-    Track* track = get_track(index);
+    Track* track = get_track(track_idx);
     track->sample(time, looping, out);
 
 

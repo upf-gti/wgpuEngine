@@ -84,6 +84,8 @@ public:
     uint32_t size();
     void resize(uint32_t size);
 
+    Keyframe& add_keyframe(const Keyframe& k);
+
     // Prameters: time value, if the track is looping or not
     TrackType sample(float time, bool looping, void* out = nullptr);
     Keyframe& operator[](uint32_t index);
