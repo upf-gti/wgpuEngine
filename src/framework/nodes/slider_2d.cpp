@@ -42,11 +42,11 @@ namespace ui {
         // Send signal on move thumbstick or using wheel hovering the text
         T dt = static_cast<T>(Input::get_thumbstick_value(HAND_RIGHT).y) * joystick_multiplier;
 
-        if (dt > 0.01f) {
+        if (glm::abs(dt) > 0.01f) {
             Node::emit_signal(name + "@stick_moved", dt);
         }
 
-        float wheel_dt = Input::get_mouse_wheel_delta() * wheel_multiplier;
+        T wheel_dt = static_cast<T>(Input::get_mouse_wheel_delta()) * wheel_multiplier;
 
         if (glm::abs(wheel_dt) > 0.01f) {
             Node::emit_signal(name + "@stick_moved", wheel_dt);
@@ -118,6 +118,7 @@ namespace ui {
 
         Node::bind(name + "@stick_moved", (FuncFloat)[&](const std::string& signal, float dt) {
             set_value(current_value + dt);
+            Node::emit_signal(name, current_value);
             Node::emit_signal(name + "_x", current_value);
         });
 
@@ -217,7 +218,7 @@ namespace ui {
             Engine::instance->vibrate_hand(HAND_RIGHT, HOVER_HAPTIC_AMPLITUDE, HOVER_HAPTIC_DURATION);
         }
 
-        process_wheel_joystick<float>(1.0f / (powf(10.0f, static_cast<float>(precision))), 1.0f);
+        process_wheel_joystick<float>(1.0f / (powf(10.0f, static_cast<float>(precision))), 0.25f);
 
         on_hover = true;
 

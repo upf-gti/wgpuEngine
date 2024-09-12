@@ -708,8 +708,8 @@ namespace ui {
         {
             float dt = Input::get_thumbstick_value(HAND_RIGHT).y;
 
-            if (dt > 0.01f) {
-                Node::emit_signal(name + "@stick_moved", dt);
+            if (glm::abs(dt) > 0.01f) {
+                Node::emit_signal(name + "@stick_moved", dt * 0.1f);
             }
 
             float wheel_dt = Input::get_mouse_wheel_delta();
