@@ -300,18 +300,18 @@ bool OpenXRContext::create_instance()
     //}
 
     XrInstanceCreateInfo instance_create_info = {
-        XR_TYPE_INSTANCE_CREATE_INFO,
-        nullptr,
-        0,
-        {
+        .type = XR_TYPE_INSTANCE_CREATE_INFO,
+        .next = nullptr,
+        .createFlags = 0,
+        .applicationInfo = {
             "wgpuEngine", 1,
             "Custom", 0,
-            XR_CURRENT_API_VERSION,
+            XR_API_VERSION_1_0,
         },
-        0,
-        NULL,
-        enabled_ext_count,
-        enabled_exts
+        .enabledApiLayerCount = 0,
+        .enabledApiLayerNames = NULL,
+        .enabledExtensionCount = enabled_ext_count,
+        .enabledExtensionNames = enabled_exts
     };
 
     result = xrCreateInstance(&instance_create_info, &instance);

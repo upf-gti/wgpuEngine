@@ -662,12 +662,13 @@ void WebGPUContext::upload_texture(WGPUTexture texture, WGPUTextureDimension dim
     wgpuQueueRelease(mipmap_queue);
 }
 
-WGPUBindGroupLayout WebGPUContext::create_bind_group_layout(const std::vector<WGPUBindGroupLayoutEntry> &entries)
+WGPUBindGroupLayout WebGPUContext::create_bind_group_layout(const std::vector<WGPUBindGroupLayoutEntry> &entries, char const* label)
 {
     // Create a bind group layout
     WGPUBindGroupLayoutDescriptor bindGroupLayoutDesc = {};
     bindGroupLayoutDesc.entryCount = static_cast<uint32_t>(entries.size());
     bindGroupLayoutDesc.entries = entries.data();
+    bindGroupLayoutDesc.label = label;
 
     return wgpuDeviceCreateBindGroupLayout(device, &bindGroupLayoutDesc);
 }

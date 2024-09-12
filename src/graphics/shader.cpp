@@ -635,7 +635,7 @@ void Shader::get_reflection_data(const std::string& shader_content)
 			entries.push_back(entry.second);
 		}
 
-		bind_group_layouts[bind_group_index] = webgpu_context->create_bind_group_layout(entries);
+		bind_group_layouts[bind_group_index] = webgpu_context->create_bind_group_layout(entries, specialized_path.c_str());
 
 		entries.clear();
 	}

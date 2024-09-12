@@ -766,7 +766,7 @@ namespace ui {
 
     void Text2D::disable_2d()
     {
-        Material* material = text_entity->get_surface_material_override(quad_mesh->get_surface(0));
+        Material* material = text_entity->get_surface_material(0);
 
         if (material->get_is_2D()) {
             material->set_is_2D(false);
