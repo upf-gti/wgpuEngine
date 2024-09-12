@@ -12,7 +12,7 @@ void Frustum::set_view_projection(const glm::mat4& view_projection)
     m_planes[Right] = mat[3] - mat[0];
     m_planes[Bottom] = mat[3] + mat[1];
     m_planes[Top] = mat[3] - mat[1];
-    m_planes[Near] = mat[3] + mat[2];
+    m_planes[Near] = mat[2];
     m_planes[Far] = mat[3] - mat[2];
 
     glm::vec3 crosses[Combinations] = {
