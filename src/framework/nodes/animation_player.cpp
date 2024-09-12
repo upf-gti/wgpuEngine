@@ -169,23 +169,26 @@ void AnimationPlayer::play(Animation* animation, float custom_blend, float custo
 
     if (custom_blend >= 0.0f) {
         blend_time = custom_blend;
-        blender.fade_to(current_animation, blend_time);
+        blender.fade_to(animation, blend_time);
     }
     else {
-        blender.play(current_animation);
+        blender.play(animation);
         playback = 0.0f;
     }
 
     speed = custom_speed;
     playing = true;
+    current_animation = animation;
     current_animation_name = animation->get_name();
 
     // sequence with default values
-    timeline.frame_max = current_animation->get_track(0)->size();;
+    timeline.frame_max = current_animation->get_track(0)->size();
     selected_track = -1;
     playback = 0;
+
     active_tracks.clear();
     time_tunnel.clear();
+
     compute_keyframes();
     generate_track_data();
     //generate_keyposes();
@@ -372,6 +375,7 @@ void AnimationPlayer::update_trajectories(std::vector<uint32_t>& tracks_to_updat
                         }
                         mat->set_depth_read(false);
                         mat->set_priority(0u);
+                        mat->set_type(MATERIAL_UNLIT);
                         mat->set_shader(RendererStorage::get_shader_from_source(shaders::mesh_color::source, shaders::mesh_color::path, mat));
 
                         point->set_surface_material_override(s_point, mat);
@@ -391,6 +395,7 @@ void AnimationPlayer::update_trajectories(std::vector<uint32_t>& tracks_to_updat
                 mat->set_depth_read(false);
                 mat->set_priority(0u);
                 mat->set_topology_type(eTopologyType::TOPOLOGY_LINE_LIST);
+                mat->set_type(MATERIAL_UNLIT);
                 mat->set_shader(RendererStorage::get_shader_from_source(shaders::mesh_color::source, shaders::mesh_color::path, mat));
 
                 trajectories_helper2[i].mesh->set_surface_material_override(s, mat);
@@ -501,6 +506,7 @@ void AnimationPlayer::update_trajectories(std::vector<uint32_t>& tracks_to_updat
         mat->set_depth_read(false);
         mat->set_priority(0u);
         mat->set_topology_type(eTopologyType::TOPOLOGY_LINE_LIST);
+        mat->set_type(MATERIAL_UNLIT);
         mat->set_shader(RendererStorage::get_shader_from_source(shaders::mesh_color::source, shaders::mesh_color::path, mat));
 
         mesh->set_surface_material_override(s, mat);
