@@ -83,8 +83,7 @@ void Pipeline::create_render(Shader* shader, const WGPUColorTargetState& p_color
 
     spdlog::info("Compiling render pipeline for shader {}", shader->get_path());
 
-	pipeline = webgpu_context->create_render_pipeline(shader->get_module(), pipeline_layout, shader->get_vertex_buffer_layouts(), p_color_target,
-        desc.use_depth, desc.depth_read, desc.depth_write, desc.cull_mode, desc.topology, desc.sample_count);
+	pipeline = webgpu_context->create_render_pipeline(shader->get_module(), pipeline_layout, shader->get_vertex_buffer_layouts(), p_color_target, desc);
 
 	shader->set_pipeline(this);
 
@@ -97,8 +96,7 @@ void Pipeline::create_render_async(Shader* shader, const WGPUColorTargetState& p
 
     spdlog::info("Compiling async render pipeline for shader {}", shader->get_path());
 
-    webgpu_context->create_render_pipeline_async(shader->get_module(), pipeline_layout, shader->get_vertex_buffer_layouts(), p_color_target, render_pipeline_creation_callback, (void*)this,
-        desc.use_depth, desc.depth_read, desc.depth_write, desc.cull_mode, desc.topology, desc.sample_count);
+    webgpu_context->create_render_pipeline_async(shader->get_module(), pipeline_layout, shader->get_vertex_buffer_layouts(), p_color_target, render_pipeline_creation_callback, (void*)this, desc);
 
     shader->set_pipeline(this);
 
@@ -142,7 +140,7 @@ void Pipeline::reload(Shader* shader)
         description.sample_count = Renderer::instance->get_msaa_count();
 
 		pipeline = webgpu_context->create_render_pipeline(shader->get_module(), pipeline_layout, shader->get_vertex_buffer_layouts(),
-            color_target, description.use_depth, description.depth_read, description.depth_write, description.cull_mode, description.topology, description.sample_count);
+            color_target, description);
 	}
 	else {
 		wgpuComputePipelineRelease(std::get<WGPUComputePipeline>(pipeline));

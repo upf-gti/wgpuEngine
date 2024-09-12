@@ -108,8 +108,6 @@ bool Input::init_xr(OpenXRContext* context)
 }
 #endif
 
-#include "spdlog/spdlog.h"
-
 void Input::update(float delta_time)
 {
     glfwPollEvents();

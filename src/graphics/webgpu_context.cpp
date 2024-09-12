@@ -924,7 +924,7 @@ void WebGPUContext::copy_texture_to_texture(WGPUTexture texture_src, WGPUTexture
 }
 
 WGPURenderPipeline WebGPUContext::create_render_pipeline(WGPUShaderModule render_shader_module, WGPUPipelineLayout pipeline_layout, const std::vector<WGPUVertexBufferLayout>& vertex_attributes,
-    WGPUColorTargetState color_target, bool use_depth, bool depth_read, bool depth_write, WGPUCullMode cull_mode, WGPUPrimitiveTopology topology, uint8_t sample_count,
+    WGPUColorTargetState color_target, const PipelineDescription& description,
     const char* vs_entry_point, const char* fs_entry_point)
 {    
     WGPUVertexState vertex_state = {};
@@ -944,8 +944,8 @@ WGPURenderPipeline WebGPUContext::create_render_pipeline(WGPUShaderModule render
     fragment_state.targets = &color_target;
 
     WGPUDepthStencilState depth_state = {};
-    depth_state.depthCompare = depth_read ? WGPUCompareFunction_Less : WGPUCompareFunction_Always;
-    depth_state.depthWriteEnabled = depth_write;
+    depth_state.depthCompare = description.depth_read ? description.depth_compare : WGPUCompareFunction_Always;
+    depth_state.depthWriteEnabled = description.depth_write;
     depth_state.format = WGPUTextureFormat_Depth32Float;
     depth_state.stencilReadMask = 0;
     depth_state.stencilWriteMask = 0;
@@ -965,15 +965,15 @@ WGPURenderPipeline WebGPUContext::create_render_pipeline(WGPUShaderModule render
     pipeline_descr.vertex = vertex_state;
 
     pipeline_descr.primitive = {
-        .topology = topology,
+        .topology = description.topology,
         .stripIndexFormat = WGPUIndexFormat_Undefined, // order of the connected vertices
         .frontFace = WGPUFrontFace_CCW,
-        .cullMode = cull_mode
+        .cullMode = description.cull_mode
     },
 
-        pipeline_descr.depthStencil = use_depth ? &depth_state : nullptr;
+    pipeline_descr.depthStencil = description.use_depth ? &depth_state : nullptr;
     pipeline_descr.multisample = {
-            .count = sample_count,
+            .count = description.sample_count,
             .mask = ~0u,
             .alphaToCoverageEnabled = false
     };
@@ -984,7 +984,7 @@ WGPURenderPipeline WebGPUContext::create_render_pipeline(WGPUShaderModule render
 }
 
 void WebGPUContext::create_render_pipeline_async(WGPUShaderModule render_shader_module, WGPUPipelineLayout pipeline_layout, const std::vector<WGPUVertexBufferLayout>& vertex_attributes,
-    WGPUColorTargetState color_target, WGPUCreateRenderPipelineAsyncCallback2 callback, void* userdata, bool use_depth, bool depth_read, bool depth_write, WGPUCullMode cull_mode, WGPUPrimitiveTopology topology, uint8_t sample_count,
+    WGPUColorTargetState color_target, WGPUCreateRenderPipelineAsyncCallback2 callback, void* userdata, const PipelineDescription& description,
     const char* vs_entry_point, const char* fs_entry_point)
 {
     WGPUVertexState vertex_state = {};
@@ -1004,8 +1004,8 @@ void WebGPUContext::create_render_pipeline_async(WGPUShaderModule render_shader_
     fragment_state.targets = &color_target;
 
     WGPUDepthStencilState depth_state = {};
-    depth_state.depthCompare = depth_read ? WGPUCompareFunction_Less : WGPUCompareFunction_Always;
-    depth_state.depthWriteEnabled = depth_write;
+    depth_state.depthCompare = description.depth_read ? description.depth_compare : WGPUCompareFunction_Always;
+    depth_state.depthWriteEnabled = description.depth_write;
     depth_state.format = WGPUTextureFormat_Depth32Float;
     depth_state.stencilReadMask = 0;
     depth_state.stencilWriteMask = 0;
@@ -1025,15 +1025,15 @@ void WebGPUContext::create_render_pipeline_async(WGPUShaderModule render_shader_
     pipeline_descr.vertex = vertex_state;
 
     pipeline_descr.primitive = {
-        .topology = topology,
+        .topology = description.topology,
         .stripIndexFormat = WGPUIndexFormat_Undefined, // order of the connected vertices
         .frontFace = WGPUFrontFace_CCW,
-        .cullMode = cull_mode
+        .cullMode = description.cull_mode
     },
 
-        pipeline_descr.depthStencil = use_depth ? &depth_state : nullptr;
+    pipeline_descr.depthStencil = description.use_depth ? &depth_state : nullptr;
     pipeline_descr.multisample = {
-            .count = sample_count,
+            .count = description.sample_count,
             .mask = ~0u,
             .alphaToCoverageEnabled = false
     };

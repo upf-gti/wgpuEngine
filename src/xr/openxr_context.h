@@ -64,8 +64,9 @@ struct OpenXRContext {
     XrFrameState frame_state{ XR_TYPE_FRAME_STATE };
     uint32_t swapchain_length; // Number of textures per swapchain
 
-    float z_near = 0.01f;
-    float z_far = 1000.0f;
+    // inverted for reverse-z
+    float z_near = 1000.0f;
+    float z_far = 0.01f;
 
     std::vector<sSwapchainData> swapchains;
     std::vector<XrView> views;
