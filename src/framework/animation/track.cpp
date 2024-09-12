@@ -293,10 +293,14 @@ TrackType Track::sample_constant(float t, bool loop)
 TrackType Track::sample_linear(float time, bool looping)
 {
     int this_frame = frame_index(time);
-    if (this_frame < 0 || this_frame >= keyframes.size() - 1) {
+    int next_frame = this_frame + 1;
+    if (this_frame < 0 || this_frame > keyframes.size() - 1) {
         return TrackType();
     }
-    int next_frame = this_frame + 1;
+    if (this_frame == keyframes.size() - 1) {
+        return keyframes[this_frame].value;
+    }
+
     // make sure the time is valid
     float track_time = adjust_time_to_fit_track(time, looping);
     float this_time = keyframes[this_frame].time;
