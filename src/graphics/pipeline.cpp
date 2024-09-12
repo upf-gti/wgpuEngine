@@ -26,18 +26,18 @@ Pipeline::~Pipeline()
     }
 }
 
-void render_pipeline_creation_callback(WGPUCreatePipelineAsyncStatus status, WGPURenderPipeline pipeline, char const* message, void* user_data)
+void render_pipeline_creation_callback(WGPUCreatePipelineAsyncStatus status, WGPURenderPipeline pipeline, char const* message, void* userdata1, void* userdata2)
 {
-    Pipeline* render_pipeline = static_cast<Pipeline*>(user_data);
+    Pipeline* render_pipeline = static_cast<Pipeline*>(userdata1);
     if (status == WGPUCreatePipelineAsyncStatus_Success) {
         render_pipeline->pipeline = pipeline;
         render_pipeline->loaded = true;
     }
 }
 
-void compute_pipeline_creation_callback(WGPUCreatePipelineAsyncStatus status, WGPUComputePipeline pipeline, char const* message, void* user_data)
+void compute_pipeline_creation_callback(WGPUCreatePipelineAsyncStatus status, WGPUComputePipeline pipeline, char const* message, void* userdata1, void* userdata2)
 {
-    Pipeline* compute_pipeline = static_cast<Pipeline*>(user_data);
+    Pipeline* compute_pipeline = static_cast<Pipeline*>(userdata1);
     if (status == WGPUCreatePipelineAsyncStatus_Success) {
         compute_pipeline->pipeline = pipeline;
         compute_pipeline->loaded = true;
@@ -150,7 +150,7 @@ void Pipeline::reload(Shader* shader)
 	}
 }
 
-void Pipeline::set(const WGPURenderPassEncoder& render_pass)
+void Pipeline::set(const WGPURenderPassEncoder& render_pass) const
 {
     if (async_compile) {
         while (!loaded) {
@@ -161,7 +161,7 @@ void Pipeline::set(const WGPURenderPassEncoder& render_pass)
 	wgpuRenderPassEncoderSetPipeline(render_pass, std::get<WGPURenderPipeline>(pipeline));
 }
 
-void Pipeline::set(const WGPUComputePassEncoder& compute_pass)
+void Pipeline::set(const WGPUComputePassEncoder& compute_pass) const
 {
     if (async_compile) {
         while (!loaded) {
@@ -172,17 +172,17 @@ void Pipeline::set(const WGPUComputePassEncoder& compute_pass)
 	wgpuComputePassEncoderSetPipeline(compute_pass, std::get<WGPUComputePipeline>(pipeline));
 }
 
-bool Pipeline::is_render_pipeline()
+bool Pipeline::is_render_pipeline() const
 {
     return std::holds_alternative<WGPURenderPipeline>(pipeline);
 }
 
-bool Pipeline::is_compute_pipeline()
+bool Pipeline::is_compute_pipeline() const
 {
     return std::holds_alternative<WGPUComputePipeline>(pipeline);
 }
 
-bool Pipeline::is_msaa_allowed()
+bool Pipeline::is_msaa_allowed() const
 {
     return description.allow_msaa;
 }

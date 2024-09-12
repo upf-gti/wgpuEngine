@@ -47,7 +47,10 @@ int Engine::initialize(Renderer* renderer, GLFWwindow* window, bool use_glfw, bo
 {
     this->use_glfw = use_glfw;
 
-    shader_reload_watcher = new FileWatcher("./data/shaders/", 1.0f, [](std::string path_to_watch, eFileStatus status) -> void {
+    std::string engine_shaders = WGPUENGINE_PATH + std::string("/data/shaders/");
+
+#ifndef NDEBUG
+    shader_reload_watcher = new FileWatcher({ "./data/shaders/" }, 1.0f, [](std::string path_to_watch, eFileStatus status) -> void {
 
         // Process only regular files, all other file types are ignored
         if (!std::filesystem::is_regular_file(std::filesystem::path(path_to_watch)) && status != eFileStatus::Erased) {
@@ -64,6 +67,25 @@ int Engine::initialize(Renderer* renderer, GLFWwindow* window, bool use_glfw, bo
             spdlog::error("Shader reload: Unknown file status");
         }
     });
+
+    engine_shader_reload_watcher = new FileWatcher({ engine_shaders }, 1.0f, [](std::string path_to_watch, eFileStatus status) -> void {
+
+        // Process only regular files, all other file types are ignored
+        if (!std::filesystem::is_regular_file(std::filesystem::path(path_to_watch)) && status != eFileStatus::Erased) {
+            return;
+        }
+
+        switch (status) {
+        case eFileStatus::Modified: {
+            spdlog::info("Shader modified: {}", path_to_watch);
+            RendererStorage::reload_engine_shader(path_to_watch);
+            break;
+        }
+        default:
+            spdlog::error("Shader reload: Unknown file status");
+        }
+    });
+#endif
 
     this->renderer = renderer;
 
@@ -90,7 +112,14 @@ int Engine::initialize(Renderer* renderer, GLFWwindow* window, bool use_glfw, bo
     ImGui::StyleColorsDark();
 
     ImGui_ImplGlfw_InitForOther(window, true);
-    ImGui_ImplWGPU_Init(renderer->get_webgpu_context()->device, 3, WGPUTextureFormat_BGRA8Unorm, WGPUTextureFormat_Undefined);
+
+    ImGui_ImplWGPU_InitInfo init_info = {};
+    init_info.Device = renderer->get_webgpu_context()->device;
+    init_info.RenderTargetFormat = WGPUTextureFormat_BGRA8Unorm;
+    init_info.DepthStencilFormat = WGPUTextureFormat_Undefined;
+    init_info.NumFramesInFlight = 3;
+
+    ImGui_ImplWGPU_Init(&init_info);
     
     // Disable file-system access in web builds (don't load imgui.ini)
 #ifdef __EMSCRIPTEN__
@@ -166,7 +195,10 @@ void Engine::on_frame()
 
 void Engine::update(float delta_time)
 {
+#ifndef NDEBUG
     shader_reload_watcher->update(delta_time);
+    engine_shader_reload_watcher->update(delta_time);
+#endif
 
     renderer->update(delta_time);
 }

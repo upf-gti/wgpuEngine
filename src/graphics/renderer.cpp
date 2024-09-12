@@ -25,7 +25,11 @@
 #include "graphics/debug/renderdoc_capture.h"
 #include "graphics/renderer_storage.h"
 
-#include "shaders/mesh_pbr.wgsl.gen.h"
+#include "shaders/mesh_forward.wgsl.gen.h"
+#include "shaders/AABB_shader.wgsl.gen.h"
+
+#include "framework/scene/parse_scene.h"
+#include "framework/nodes/mesh_instance_3d.h"
 
 #include <algorithm>
 
@@ -143,10 +147,11 @@ int Renderer::initialize(GLFWwindow* window, bool use_mirror_screen)
     eye_depth_textures = new Texture[EYE_COUNT];
     multisample_textures = new Texture[EYE_COUNT];
 
+    timestamps_buffer = new uint64_t[maximum_query_sets];
+
 #ifndef __EMSCRIPTEN__
     renderdoc_capture = new RenderdocCapture();
 #endif
-
 
     init_depth_buffers();
 
@@ -155,6 +160,16 @@ int Renderer::initialize(GLFWwindow* window, bool use_mirror_screen)
     init_multisample_textures();
 
     init_timestamp_queries();
+
+    selected_mesh_aabb = parse_mesh("data/meshes/cube/aabb_cube.obj", false);
+
+    Material* AABB_material = new Material();
+    AABB_material->set_color(glm::vec4(0.8f, 0.3f, 0.9f, 1.0f));
+    AABB_material->set_transparency_type(ALPHA_BLEND);
+    AABB_material->set_cull_type(CULL_NONE);
+    AABB_material->set_type(MATERIAL_UNLIT);
+    AABB_material->set_shader(RendererStorage::get_shader_from_source(shaders::AABB_shader::source, shaders::AABB_shader::path, AABB_material));
+    selected_mesh_aabb->set_surface_material_override(selected_mesh_aabb->get_surface(0), AABB_material);
 
     return 0;
 }
@@ -178,6 +193,9 @@ void Renderer::clean()
     delete renderer_storage;
     delete[] eye_depth_textures;
     delete[] multisample_textures;
+    delete[] timestamps_buffer;
+
+    delete selected_mesh_aabb;
 
 #ifndef __EMSCRIPTEN__
     delete renderdoc_capture;
@@ -231,7 +249,7 @@ void Renderer::init_lighting_bind_group()
     num_lights_buffer.buffer_size = sizeof(int);
 
     std::vector<Uniform*> uniforms = { &irradiance_texture_uniform, &brdf_lut_uniform, &ibl_sampler_uniform, &lights_buffer, &num_lights_buffer };
-    lighting_bind_group = webgpu_context->create_bind_group(uniforms, RendererStorage::get_shader_from_source(shaders::mesh_pbr::source, shaders::mesh_pbr::path), 3);
+    lighting_bind_group = webgpu_context->create_bind_group(uniforms, RendererStorage::get_shader_from_source(shaders::mesh_forward::source, shaders::mesh_forward::path), 3);
 }
 
 void Renderer::init_depth_buffers()
@@ -289,16 +307,14 @@ void Renderer::resolve_query_set(WGPUCommandEncoder encoder, uint8_t first_query
 
 std::vector<float> Renderer::get_timestamps()
 {
-    uint64_t* buffer_data = reinterpret_cast<uint64_t*>(webgpu_context->read_buffer(timestamp_query_buffer, sizeof(uint64_t) * maximum_query_sets));
+    webgpu_context->read_buffer(timestamp_query_buffer, sizeof(uint64_t) * maximum_query_sets, timestamps_buffer);
 
     std::vector<float> time_diffs;
     for (int i = 0; i < query_index; i += 2) {
-        uint64_t diff = buffer_data[i + 1] - buffer_data[i];
+        uint64_t diff = timestamps_buffer[i + 1] - timestamps_buffer[i];
         float milliseconds = (float)diff * 1e-6;
         time_diffs.push_back(milliseconds);
     }
-
-    delete[] buffer_data;
 
     return time_diffs;
 }
@@ -315,6 +331,16 @@ void Renderer::set_msaa_count(uint8_t msaa_count)
     }
 
     RendererStorage::reload_all_render_pipelines();
+}
+
+void Renderer::set_frustum_camera_paused(bool value)
+{
+    frustum_camera_paused = value;
+}
+
+bool Renderer::get_frustum_camera_paused()
+{
+    return frustum_camera_paused;
 }
 
 uint8_t Renderer::get_msaa_count()
@@ -334,32 +360,41 @@ void Renderer::prepare_instancing()
 
         const std::vector<Surface*>& surfaces = mesh_instance->get_surfaces();
 
-        glm::mat4x4 rotation_matrix = glm::toMat4(glm::quat_cast(global_matrix));
-
         for (Surface* surface : surfaces) {
 
             Material* material_override = mesh_instance->get_surface_material_override(surface);
 
-            Material& material = material_override ? *material_override : surface->get_material();
+            Material* material = material_override ? material_override : surface->get_material();
 
-            if (!material.shader) {
+            if (!material->get_is_2D() && mesh_instance->get_frustum_culling_enabled()) {
+
+                const AABB& surface_aabb = surface->get_aabb();
+
+                AABB aabb_transformed = surface_aabb.transform(global_matrix);
+
+                if (!is_inside_frustum(aabb_transformed.center - aabb_transformed.half_size, aabb_transformed.center + aabb_transformed.half_size)) {
+                    continue;
+                }
+            }
+
+            if (!material || !material->get_shader()) {
                 continue;
             }
 
-            RendererStorage::instance->register_material(webgpu_context, mesh_instance, material);
+            RendererStorage::instance->register_material_bind_group(webgpu_context, mesh_instance, material);
 
             RendererStorage::register_render_pipeline(material);
 
             eRenderListType list = RENDER_LIST_OPAQUE;
 
-            if (material.flags & MATERIAL_2D) {
-                list = material.transparency_type == ALPHA_BLEND ? RENDER_LIST_2D_TRANSPARENT : RENDER_LIST_2D;
+            if (material->get_is_2D()) {
+                list = material->get_transparency_type() == ALPHA_BLEND ? RENDER_LIST_2D_TRANSPARENT : RENDER_LIST_2D;
             }
-            else if (material.transparency_type == ALPHA_BLEND) {
+            else if (material->get_transparency_type() == ALPHA_BLEND) {
                 list = RENDER_LIST_TRANSPARENT;
             }
 
-            render_list[list].push_back({ surface, 1, global_matrix, rotation_matrix, mesh_instance });
+            render_list[list].push_back({ surface, 1, global_matrix, mesh_instance });
         }
     }
 
@@ -368,30 +403,48 @@ void Renderer::prepare_instancing()
         instance_data[i].clear();
         instance_data[i].resize(render_list[i].size());
 
-        // Sort render_list
-        std::sort(render_list[i].begin(), render_list[i].end(), [](auto& lhs, auto& rhs) {
 
-            Material* lhs_ov_mat = lhs.mesh_instance_ref->get_surface_material_override(lhs.surface);
-            Material* rhs_ov_mat = rhs.mesh_instance_ref->get_surface_material_override(rhs.surface);
+        if (i != RENDER_LIST_TRANSPARENT) {
+            // Sort opaques render_list
+            std::sort(render_list[i].begin(), render_list[i].end(), [](auto& lhs, auto& rhs) {
 
-            const Material& lhs_mat = lhs_ov_mat ? *lhs_ov_mat : lhs.surface->get_material();
-            const Material& rhs_mat = rhs_ov_mat ? *rhs_ov_mat : rhs.surface->get_material();
+                Material* lhs_ov_mat = lhs.mesh_instance_ref->get_surface_material_override(lhs.surface);
+                Material* rhs_ov_mat = rhs.mesh_instance_ref->get_surface_material_override(rhs.surface);
 
-            bool equal_priority = lhs_mat.priority == rhs_mat.priority;
-            bool equal_shader = lhs_mat.shader == rhs_mat.shader;
-            bool equal_diffuse = lhs_mat.diffuse_texture == rhs_mat.diffuse_texture;
-            bool equal_normal = lhs_mat.normal_texture == rhs_mat.normal_texture;
-            bool equal_metallic_rougness = lhs_mat.metallic_roughness_texture == rhs_mat.metallic_roughness_texture;
+                Material* lhs_mat = lhs_ov_mat ? lhs_ov_mat : lhs.surface->get_material();
+                Material* rhs_mat = rhs_ov_mat ? rhs_ov_mat : rhs.surface->get_material();
 
-            if (lhs_mat.priority > rhs_mat.priority) return true;
-            if (equal_priority && lhs_mat.shader > rhs_mat.shader) return true;
-            if (equal_priority && equal_shader && lhs_mat.diffuse_texture > rhs_mat.diffuse_texture) return true;
-            if (equal_priority && equal_shader && equal_diffuse && lhs_mat.normal_texture > rhs_mat.normal_texture) return true;
-            if (equal_priority && equal_shader && equal_diffuse && equal_normal && lhs_mat.metallic_roughness_texture > rhs_mat.metallic_roughness_texture) return true;
-            if (equal_priority && equal_shader && equal_diffuse && equal_normal && equal_metallic_rougness && lhs_mat.emissive_texture > rhs_mat.emissive_texture) return true;
+                bool equal_priority = lhs_mat->get_priority() == rhs_mat->get_priority();
+                bool equal_shader = lhs_mat->get_shader() == rhs_mat->get_shader();
+                bool equal_diffuse = lhs_mat->get_diffuse_texture() == rhs_mat->get_diffuse_texture();
+                bool equal_normal = lhs_mat->get_normal_texture() == rhs_mat->get_normal_texture();
+                bool equal_metallic_rougness = lhs_mat->get_metallic_roughness_texture() == rhs_mat->get_metallic_roughness_texture();
 
-            return false;
+
+                if (lhs_mat->get_priority() > rhs_mat->get_priority()) return true;
+                if (equal_priority && lhs_mat->get_shader() > rhs_mat->get_shader()) return true;
+                if (equal_priority && equal_shader && lhs_mat->get_diffuse_texture() > rhs_mat->get_diffuse_texture()) return true;
+                if (equal_priority && equal_shader && equal_diffuse && lhs_mat->get_normal_texture() > rhs_mat->get_normal_texture()) return true;
+                if (equal_priority && equal_shader && equal_diffuse && equal_normal && lhs_mat->get_metallic_roughness_texture() > rhs_mat->get_metallic_roughness_texture()) return true;
+                if (equal_priority && equal_shader && equal_diffuse && equal_normal && equal_metallic_rougness && lhs_mat->get_emissive_texture() > rhs_mat->get_emissive_texture()) return true;
+
+                return false;
             });
+        }
+        else {
+            // Sort transparent render_list by distance to camera
+            std::sort(render_list[i].begin(), render_list[i].end(), [&](auto& lhs, auto& rhs) {
+                glm::vec3 lhs_pos = glm::vec3(lhs.global_matrix[3]);
+                glm::vec3 rhs_pos = glm::vec3(rhs.global_matrix[3]);
+
+                float lhs_dist = glm::distance2(lhs_pos, camera->get_eye());
+                float rhs_dist = glm::distance2(rhs_pos, camera->get_eye());
+
+                if (lhs_dist > rhs_dist) return true;
+
+                return false;
+            });
+        }
 
         // Check instances
         {
@@ -410,16 +463,16 @@ void Renderer::prepare_instancing()
 
                 Material* material_override = render_data.mesh_instance_ref->get_surface_material_override(render_data.surface);
 
-                const Material& material = material_override ? *material_override : render_data.surface->get_material();
+                Material* material = material_override ? material_override : render_data.surface->get_material();
 
                 // Repeated MeshInstance3D, must be instanced
-                if (prev_surface == render_data.surface && prev_shader == material.shader &&
-                    prev_color == material.color &&
-                    prev_diffuse == material.diffuse_texture &&
-                    prev_normal == material.normal_texture &&
-                    prev_metallic_roughness == material.metallic_roughness_texture &&
-                    prev_emissive == material.emissive_texture &&
-                    !(material.flags & MATERIAL_2D)) {
+                if (prev_surface == render_data.surface && prev_shader == material->get_shader() &&
+                    prev_color == material->get_color() &&
+                    prev_diffuse == material->get_diffuse_texture() &&
+                    prev_normal == material->get_normal_texture() &&
+                    prev_metallic_roughness == material->get_metallic_roughness_texture() &&
+                    prev_emissive == material->get_emissive_texture() &&
+                    !(material->get_is_2D())) {
                     repeats++;
                 }
                 else {
@@ -432,12 +485,12 @@ void Renderer::prepare_instancing()
                 }
 
                 prev_surface = render_data.surface;
-                prev_shader = material.shader;
-                prev_color = material.color;
-                prev_diffuse = material.diffuse_texture;
-                prev_normal = material.normal_texture;
-                prev_metallic_roughness = material.metallic_roughness_texture;
-                prev_emissive = material.emissive_texture;
+                prev_shader = material->get_shader_ref();
+                prev_color = material->get_color();
+                prev_diffuse = material->get_diffuse_texture();
+                prev_normal = material->get_normal_texture();
+                prev_metallic_roughness = material->get_metallic_roughness_texture();
+                prev_emissive = material->get_emissive_texture();
 
                 // Fill instance_data
                 instance_data[i][j] = { render_data.global_matrix };
@@ -468,9 +521,9 @@ void Renderer::prepare_instancing()
 
                 const sRenderData& render_data = render_list[i][j];
 
-                Material* material_override = render_data.mesh_instance_ref->get_surface_material_override(render_data.surface);
+                const Material* material_override = render_data.mesh_instance_ref->get_surface_material_override(render_data.surface);
 
-                Shader* shader = material_override ? material_override->shader : render_data.surface->get_material().shader;
+                const Shader* shader = material_override ? material_override->get_shader() : render_data.surface->get_material()->get_shader_ref();
 
                 if (bind_groups[i]) {
                     wgpuBindGroupRelease(bind_groups[i]);
@@ -491,19 +544,29 @@ void Renderer::prepare_instancing()
 
 void Renderer::render_render_list(int list_index, WGPURenderPassEncoder render_pass, const WGPUBindGroup& render_bind_group_camera, uint32_t camera_buffer_stride)
 {
-    Pipeline* prev_pipeline = nullptr;
+    const Pipeline* prev_pipeline = nullptr;
+
+    wgpuRenderPassEncoderSetBindGroup(render_pass, 0, bind_groups[list_index], 0, nullptr);
+    wgpuRenderPassEncoderSetBindGroup(render_pass, 1, render_bind_group_camera, 1, &camera_buffer_stride);
+
+    const Material* prev_material = nullptr;
 
     for (int i = 0; i < render_list[list_index].size(); ) {
 
         const sRenderData& render_data = render_list[list_index][i];
 
-        Material* material_override = render_data.mesh_instance_ref->get_surface_material_override(render_data.surface);
+        const Material* material_override = render_data.mesh_instance_ref->get_surface_material_override(render_data.surface);
 
-        const Material& material = material_override ? *material_override : render_data.surface->get_material();
+        const Material* material = material_override ? material_override : render_data.surface->get_material();
 
-        Pipeline* pipeline = material.shader->get_pipeline();
+        if (!material) {
+            assert(0);
+            continue;
+        }
 
-        assert(pipeline);        
+        const Pipeline* pipeline = material->get_shader()->get_pipeline();
+
+        assert(pipeline);
 
         if (pipeline != prev_pipeline) {
             pipeline->set(render_pass);
@@ -515,27 +578,26 @@ void Renderer::render_render_list(int list_index, WGPURenderPassEncoder render_p
             continue;
         }
 
-        uint8_t bind_group_index = 0;
-
         // Set bind groups
-        wgpuRenderPassEncoderSetBindGroup(render_pass, bind_group_index++, bind_groups[list_index], 0, nullptr);
-        wgpuRenderPassEncoderSetBindGroup(render_pass, bind_group_index++, render_bind_group_camera, 1, &camera_buffer_stride);
 
-        wgpuRenderPassEncoderSetBindGroup(render_pass, bind_group_index++, renderer_storage->get_material_bind_group(material), 0, nullptr);
+        if (material != prev_material) {
+            wgpuRenderPassEncoderSetBindGroup(render_pass, 2, renderer_storage->get_material_bind_group(material), 0, nullptr);
+            prev_material = material;
+
+            if (material->get_type() == MATERIAL_PBR) {
+                wgpuRenderPassEncoderSetBindGroup(render_pass, 3, lighting_bind_group, 0, nullptr);
+            }
+        }
 
 //#ifndef NDEBUG
 //        wgpuRenderPassEncoderPushDebugGroup(render_pass, render_data.surface->get_name().c_str());
 //#endif
 
-        if (material.flags & MATERIAL_UI) {
+        if (material->get_type() == MATERIAL_UI) {
             WGPUBindGroup ui_bind_group = renderer_storage->get_ui_widget_bind_group(render_data.mesh_instance_ref);
             if (ui_bind_group) {
-                wgpuRenderPassEncoderSetBindGroup(render_pass, bind_group_index++, ui_bind_group, 0, nullptr);
+                wgpuRenderPassEncoderSetBindGroup(render_pass, 3, ui_bind_group, 0, nullptr);
             }
-        }
-
-        if (material.flags & MATERIAL_PBR) {
-            wgpuRenderPassEncoderSetBindGroup(render_pass, 3, lighting_bind_group, 0, nullptr);
         }
 
         // Set vertex buffer while encoding the render pass
@@ -593,6 +655,11 @@ void Renderer::render_2D(WGPURenderPassEncoder render_pass, const WGPUBindGroup&
 #ifndef NDEBUG
     wgpuRenderPassEncoderPopDebugGroup(render_pass);
 #endif
+}
+
+bool Renderer::is_inside_frustum(const glm::vec3& minp, const glm::vec3& maxp) const
+{
+    return frustum_cull.is_box_visible(minp, maxp);
 }
 
 uint8_t Renderer::timestamp(WGPUCommandEncoder encoder, const char* label)

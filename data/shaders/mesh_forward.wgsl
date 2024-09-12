@@ -1,6 +1,13 @@
 #include mesh_includes.wgsl
 #include pbr_functions.wgsl
 #include tonemappers.wgsl
+#include pbr_material.wgsl
+
+#define MAX_LIGHTS
+
+#ifndef UNLIT_MATERIAL
+#include pbr_light.wgsl
+#endif
 
 #define GAMMA_CORRECTION
 
@@ -18,7 +25,9 @@
 @group(2) @binding(2) var metallic_roughness_texture: texture_2d<f32>;
 #endif
 
+#ifndef UNLIT_MATERIAL
 @group(2) @binding(3) var<uniform> occlusion_roughness_metallic: vec3f;
+#endif
 
 #ifdef NORMAL_TEXTURE
 @group(2) @binding(4) var normal_texture: texture_2d<f32>;
@@ -32,7 +41,9 @@
 @group(2) @binding(9) var oclussion_texture: texture_2d<f32>;
 #endif
 
+#ifndef UNLIT_MATERIAL
 @group(2) @binding(6) var<uniform> emissive: vec3f;
+#endif
 
 #ifdef USE_SAMPLER
 @group(2) @binding(7) var sampler_2d : sampler;
@@ -47,13 +58,13 @@
 @group(2) @binding(11) var<storage, read> inv_bind_matrices: array<mat4x4f>;
 #endif
 
+#ifndef UNLIT_MATERIAL
 @group(3) @binding(0) var irradiance_texture: texture_cube<f32>;
 @group(3) @binding(1) var brdf_lut_texture: texture_2d<f32>;
 @group(3) @binding(2) var sampler_clamp: sampler;
 @group(3) @binding(3) var<uniform> lights : array<Light, MAX_LIGHTS>;
 @group(3) @binding(4) var<uniform> num_lights : u32;
-
-#include pbr_light.wgsl
+#endif
 
 @vertex
 fn vs_main(in: VertexInput) -> VertexOutput {
@@ -93,7 +104,7 @@ fn fs_main(in: VertexOutput) -> FragmentOutput {
     var out: FragmentOutput;
     var dummy = camera_data.eye;
 
-    var m : LitMaterial;
+    var m : PbrMaterial;
 
     // Material properties
 
@@ -114,10 +125,20 @@ fn fs_main(in: VertexOutput) -> FragmentOutput {
     }
 #endif
 
+// fix properly by implementing #elif or nested #ifdef
+#ifdef UNLIT_MATERIAL
+    let emissive : vec3f = vec3f(0.0);
+#endif
+
 #ifdef EMISSIVE_TEXTURE
     m.emissive = textureSample(emissive_texture, sampler_2d, in.uv).rgb * emissive;
 #else
     m.emissive = emissive;
+#endif
+
+// fix properly by implementing #elif or nested #ifdef
+#ifdef UNLIT_MATERIAL
+    let occlusion_roughness_metallic : vec3f = vec3f(0.0);
 #endif
 
 #ifdef OCLUSSION_TEXTURE
@@ -136,14 +157,6 @@ fn fs_main(in: VertexOutput) -> FragmentOutput {
     m.metallic = occlusion_roughness_metallic.b;
 #endif
 
-    m.roughness = max(m.roughness, 0.04);
-    m.c_diff = mix(m.albedo, vec3f(0.0), m.metallic);
-    m.f0 = mix(vec3f(0.04), m.albedo, m.metallic);
-    m.f90 = vec3f(1.0);
-    m.specular_weight = 1.0;
-
-    // Vectors
-
     m.pos = in.world_position;
 
     m.normal = normalize(in.normal);
@@ -155,12 +168,23 @@ fn fs_main(in: VertexOutput) -> FragmentOutput {
     m.normal = perturb_normal(m.normal, m.view_dir, in.uv, normal_color);
 #endif
 
+    var final_color : vec3f = vec3f(0.0);
+
+#ifndef UNLIT_MATERIAL
     m.reflected_dir = normalize(reflect(-m.view_dir, m.normal));
 
-    var final_color : vec3f = vec3f(0.0);
+    m.roughness = max(m.roughness, 0.04);
+    m.c_diff = mix(m.albedo, vec3f(0.0), m.metallic);
+    m.f0 = mix(vec3f(0.04), m.albedo, m.metallic);
+    m.f90 = vec3f(1.0);
+    m.specular_weight = 1.0;
+
     final_color += get_indirect_light(m);
     final_color += get_direct_light(m);
     final_color += m.emissive;
+#else
+    final_color += m.albedo;
+#endif
 
     final_color *= camera_data.exposure;
     final_color = tonemap_khronos_pbr_neutral(final_color);

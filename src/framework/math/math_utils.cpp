@@ -183,7 +183,7 @@ uint32_t ceil_to_next_multiple(uint32_t value, uint32_t step)
 
 float clamp_rotation(float angle)
 {
-    constexpr float pi2 = 2.0f * glm::pi<float>();
+    float pi2 = 2.0f * glm::pi<float>();
     int turns = static_cast<int>(floor(angle / (pi2)));
     return angle - pi2 * turns;
 }
@@ -284,8 +284,8 @@ float smooth_damp_angle(float current, float target, float* current_velocity, fl
 {
     float result;
     float diff = target - current;
-    float pi2 = 2.0f * pi;
-    if (diff < -pi)
+    float pi2 = 2.0f * PI;
+    if (diff < -PI)
     {
         // lerp upwards past PI_TIMES_TWO
         target += pi2;
@@ -295,7 +295,7 @@ float smooth_damp_angle(float current, float target, float* current_velocity, fl
             result -= pi2;
         }
     }
-    else if (diff > pi)
+    else if (diff > PI)
     {
         // lerp downwards past 0
         target -= pi2;

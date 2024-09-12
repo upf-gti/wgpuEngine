@@ -16,6 +16,8 @@ public:
     MeshInstance3D();
 	~MeshInstance3D();
 
+    void set_aabb(const AABB& new_aabb) override;
+
     AABB get_surface_world_aabb(int surface_idx);
 
 	virtual void render() override;

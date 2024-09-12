@@ -17,7 +17,7 @@ enum class eFileStatus { Created, Modified, Erased};
 
 class FileWatcher {
 public:
-    std::string path_to_watch;
+    std::vector<std::string> paths_to_watch;
 
     // Time interval at which we check the base folder for changes
     float delay = 0.0f;
@@ -28,19 +28,21 @@ public:
     const std::function<void(std::string, eFileStatus)> callback;
 
     // Keep a record of files from the base directory and their last modification time
-    FileWatcher(std::string path_to_watch, float delay, const std::function<void(std::string, eFileStatus)>& callback) : path_to_watch{ path_to_watch }, delay{ delay }, counter{ delay }, callback(callback) {
+    FileWatcher(std::vector<std::string> paths_to_watch, float delay, const std::function<void(std::string, eFileStatus)>& callback) : paths_to_watch{ paths_to_watch }, delay{ delay }, counter{ delay }, callback(callback) {
 
-        std::filesystem::path filepath = path_to_watch;
+        for (const std::string& path_to_watch : paths_to_watch) {
+            std::filesystem::path filepath = path_to_watch;
 
-        // Check if path exists
-        if (!std::filesystem::is_directory(filepath.parent_path())) {
-            spdlog::error("File watcher error: Path \"{}\" does not exist. Wrong working directory?", path_to_watch);
-            return;
-        }
+            // Check if path exists
+            if (!std::filesystem::is_directory(filepath.parent_path())) {
+                spdlog::error("File watcher error: Path \"{}\" does not exist. Wrong working directory?", path_to_watch);
+                return;
+            }
 
-        for(auto &file : std::filesystem::recursive_directory_iterator(filepath)) {
-            if (std::filesystem::is_regular_file(file)) {
-                paths[std::filesystem::relative(file.path()).string()] = std::filesystem::last_write_time(file);
+            for (auto& file : std::filesystem::recursive_directory_iterator(filepath)) {
+                if (std::filesystem::is_regular_file(file)) {
+                    paths[std::filesystem::relative(file.path()).string()] = std::filesystem::last_write_time(file);
+                }
             }
         }
     }
@@ -66,27 +68,29 @@ public:
             }                    
         }
 
-        // Check if a file was Created or Modified
-        for(auto &file : std::filesystem::recursive_directory_iterator(path_to_watch)) {
-            auto current_file_last_write_time = std::filesystem::last_write_time(file);
+        for (const std::string& path_to_watch : paths_to_watch) {
+            // Check if a file was Created or Modified
+            for (auto& file : std::filesystem::recursive_directory_iterator(path_to_watch)) {
+                auto current_file_last_write_time = std::filesystem::last_write_time(file);
 
-            std::string path_string = std::filesystem::relative(file.path()).string();
+                std::string path_string = std::filesystem::relative(file.path()).string();
 
-            // File creation
-            if(!contains(path_string)) {
-                paths[path_string] = current_file_last_write_time;
-                callback(path_string, eFileStatus::Created);
-            // File modification
-            } else {
-                if(paths[path_string] != current_file_last_write_time) {
+                // File creation
+                if (!contains(path_string)) {
                     paths[path_string] = current_file_last_write_time;
-                    callback(path_string, eFileStatus::Modified);
+                    callback(path_string, eFileStatus::Created);
+                    // File modification
+                }
+                else {
+                    if (paths[path_string] != current_file_last_write_time) {
+                        paths[path_string] = current_file_last_write_time;
+                        callback(path_string, eFileStatus::Modified);
+                    }
                 }
             }
         }
 
         counter = delay;
-        
     }
 private:
     std::unordered_map<std::string, std::filesystem::file_time_type> paths;

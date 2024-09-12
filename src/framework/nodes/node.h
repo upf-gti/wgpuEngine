@@ -17,6 +17,7 @@
 
 using FuncEmpty = std::function<void()>;
 using FuncFloat = std::function<void(const std::string&, float)>;
+using FuncInt = std::function<void(const std::string&, int)>;
 using FuncString = std::function<void(const std::string&, std::string)>;
 using FuncVec2 = std::function<void(const std::string&, glm::vec2)>;
 using FuncVec3 = std::function<void(const std::string&, glm::vec3)>;
@@ -25,7 +26,7 @@ using FuncQuat = std::function<void(const std::string&, glm::quat)>;
 using FuncVoid = std::function<void(const std::string&, void*)>;
 using FuncTransform = std::function<void(const std::string&, Transform)>;
 
-using SignalType = std::variant <FuncFloat, FuncString, FuncVec2, FuncVec3, FuncVec4, FuncQuat, FuncVoid, FuncTransform>;
+using SignalType = std::variant <FuncInt, FuncFloat, FuncString, FuncVec2, FuncVec3, FuncVec4, FuncQuat, FuncVoid, FuncTransform>;
 
 enum NodeType {
     NODE_2D,
@@ -33,7 +34,6 @@ enum NodeType {
     JOINT_3D
 };
 
-class Node; 
 class Node {
 
     static std::unordered_map<std::string, std::vector<SignalType>> mapping_signals;
@@ -51,10 +51,40 @@ protected:
     std::vector<Node*> children;
 
     AABB aabb = {};
-
-    std::unordered_map<std::string, void*> properties;
+    // Defined in public section
+    struct AnimatableProperty;
+    std::unordered_map<std::string, AnimatableProperty> animatable_properties;
 
 public:
+
+    enum class AnimatablePropertyType {
+        UNDEFINED,
+        INT8,
+        INT16,
+        INT32,
+        INT64,
+        UINT8,
+        UINT16,
+        UINT32,
+        UINT64,
+        FLOAT32,
+        FLOAT64,
+        IVEC2,
+        UVEC2,
+        FVEC2,
+        IVEC3,
+        UVEC3,
+        FVEC3,
+        IVEC4,
+        UVEC4,
+        FVEC4,
+        QUAT
+    };
+
+    struct AnimatableProperty {
+        AnimatablePropertyType property_type = AnimatablePropertyType::UNDEFINED;
+        void* property = nullptr;
+    };
 
     Node();
     virtual ~Node() {};
@@ -75,13 +105,14 @@ public:
     Node* get_node(const std::string& path);
     std::string find_path(const std::string& node_name, const std::string& current_path = "");
 
-    void* get_property(const std::string& name);
+    Node::AnimatableProperty get_animatable_property(const std::string& name);
+    const std::unordered_map<std::string, AnimatableProperty>& get_animatable_properties() const;
 
     void set_type(NodeType new_type) { type = new_type; }
     void set_name(std::string new_name) { name = new_name; }
-    void set_aabb(const AABB& new_aabb) { aabb = new_aabb; }
+    virtual void set_aabb(const AABB& new_aabb) { aabb = new_aabb; }
 
-    virtual void remove_flag(uint8_t flag);
+    virtual void disable_2d();
 
     virtual void release();
 
@@ -90,7 +121,7 @@ public:
     */
 
     static void bind(const std::string& name, SignalType callback);
-    static void bind(uint8_t button, FuncEmpty callback);
+    static void bind_button(uint8_t button, FuncEmpty callback);
 
     static void unbind(const std::string& name);
 

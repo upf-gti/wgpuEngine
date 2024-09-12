@@ -7,9 +7,9 @@
 
 #include <string>
 
-constexpr float pi = glm::pi<float>();
-constexpr float pi_2 = 0.5f * pi;
-constexpr float pi_4 = 0.5f * pi_2;
+#define PI 3.14159265358979323846264338327950288
+#define PI_2 (0.5f * PI)
+#define PI_4 (0.5f * PI_2)
 
 void quat_swing_twist_decomposition(const glm::vec3& dir, const glm::quat& rotation, glm::quat& swing, glm::quat& twist);
 

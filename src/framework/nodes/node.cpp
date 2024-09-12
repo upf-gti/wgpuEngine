@@ -133,13 +133,17 @@ Node* Node::get_node(const std::string& path)
     return get_node(path_tokens);
 }
 
-void* Node::get_property(const std::string& name)
+Node::AnimatableProperty Node::get_animatable_property(const std::string& name)
 {
-    if (properties.contains(name)) {
-        return properties[name];
+    if (animatable_properties.contains(name)) {
+        return animatable_properties[name];
     }
 
-    return nullptr;
+    return {};
+}
+
+const std::unordered_map<std::string, Node::AnimatableProperty>& Node::get_animatable_properties() const {
+    return animatable_properties;
 }
 
 std::string Node::find_path(const std::string& node_name, const std::string& current_path)
@@ -165,10 +169,10 @@ void Node::release()
     }
 }
 
-void Node::remove_flag(uint8_t flag)
+void Node::disable_2d()
 {
     for (Node* child : children) {
-        child->remove_flag(flag);
+        child->disable_2d();
     }
 }
 
@@ -186,7 +190,7 @@ void Node::unbind(const std::string& name)
     mapping_signals.erase(it);
 }
 
-void Node::bind(uint8_t button, FuncEmpty callback)
+void Node::bind_button(uint8_t button, FuncEmpty callback)
 {
     controller_signals[button].push_back(callback);
 }

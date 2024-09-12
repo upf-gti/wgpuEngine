@@ -7,6 +7,9 @@ SpotLight3D::SpotLight3D() : Light3D()
     type = LIGHT_SPOT;
     node_type = "SpotLight3D";
     name = node_type + "_" + std::to_string(last_node_id++);
+
+    animatable_properties["inner_cone_angle"] = { AnimatablePropertyType::FLOAT32, &inner_cone_angle };
+    animatable_properties["outer_cone_angle"] = { AnimatablePropertyType::FLOAT32, &outer_cone_angle };
 }
 
 SpotLight3D::~SpotLight3D()
@@ -17,7 +20,7 @@ SpotLight3D::~SpotLight3D()
 void SpotLight3D::render_gui()
 {
     bool changed = false;
-    constexpr float pi_2 = glm::pi<float>() * 0.5f;
+    float pi_2 = glm::pi<float>() * 0.5f;
 
     if (ImGui::TreeNodeEx("SpotLight3D"))
     {

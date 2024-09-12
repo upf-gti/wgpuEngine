@@ -1,5 +1,8 @@
 #include "mesh_instance.h"
 
+#include "graphics/renderer_storage.h"
+#include "graphics/renderer.h"
+
 MeshInstance::MeshInstance()
 {
 
@@ -7,246 +10,51 @@ MeshInstance::MeshInstance()
 
 MeshInstance::~MeshInstance()
 {
+    for (auto &material_override : material_overrides) {
+        if (material_override.second->unref()) {
+            RendererStorage::delete_material_bind_group(Renderer::instance->get_webgpu_context(), material_override.second);
+        }
+    }
+
     for (Surface* surface : surfaces) {
-        delete surface;
+       surface->unref();
     }
 
     surfaces.clear();
+    material_overrides.clear();
 }
 
-void MeshInstance::set_surface_material_color(int surface_idx, const glm::vec4& color)
+Material* MeshInstance::get_surface_material(int surface_idx)
 {
     assert(surface_idx < surfaces.size());
 
     if (surface_idx >= surfaces.size()) {
-        return;
+        return nullptr;
     }
 
-    surfaces[surface_idx]->set_material_color(color);
+    return surfaces[surface_idx]->get_material();
 }
 
-void MeshInstance::set_surface_material_diffuse(int surface_idx, Texture* diffuse)
+void MeshInstance::set_surface_material_override(Surface* surface, Material* material)
 {
-    assert(surface_idx < surfaces.size());
-
-    if (surface_idx >= surfaces.size()) {
-        return;
-    }
-
-    surfaces[surface_idx]->set_material_diffuse(diffuse);
-}
-
-void MeshInstance::set_surface_material_shader(int surface_idx, Shader* shader)
-{
-    assert(surface_idx < surfaces.size());
-
-    if (surface_idx >= surfaces.size()) {
-        return;
-    }
-
-    surfaces[surface_idx]->set_material_shader(shader);
-}
-
-void MeshInstance::set_surface_material_flag(int surface_idx, eMaterialFlags flag)
-{
-    assert(surface_idx < surfaces.size());
-
-    if (surface_idx >= surfaces.size()) {
-        return;
-    }
-
-    surfaces[surface_idx]->set_material_flag(flag);
-}
-
-void MeshInstance::set_surface_material_priority(int surface_idx, uint8_t priority)
-{
-    assert(surface_idx < surfaces.size());
-
-    if (surface_idx >= surfaces.size()) {
-        return;
-    }
-
-    surfaces[surface_idx]->set_material_priority(priority);
-}
-
-void MeshInstance::set_surface_material_transparency_type(int surface_idx, eTransparencyType transparency_type)
-{
-    assert(surface_idx < surfaces.size());
-
-    if (surface_idx >= surfaces.size()) {
-        return;
-    }
-
-    surfaces[surface_idx]->set_material_transparency_type(transparency_type);
-}
-
-void MeshInstance::set_surface_material_cull_type(int surface_idx, eCullType cull_type)
-{
-    assert(surface_idx < surfaces.size());
-
-    if (surface_idx >= surfaces.size()) {
-        return;
-    }
-
-    surfaces[surface_idx]->set_material_cull_type(cull_type);
-}
-
-void MeshInstance::set_surface_material_topology_type(int surface_idx, eTopologyType topology_type)
-{
-    assert(surface_idx < surfaces.size());
-
-    if (surface_idx >= surfaces.size()) {
-        return;
-    }
-
-    surfaces[surface_idx]->set_material_topology_type(topology_type);
-}
-
-void MeshInstance::set_surface_material_depth_read(int surface_idx, bool depth_read)
-{
-    assert(surface_idx < surfaces.size());
-
-    if (surface_idx >= surfaces.size()) {
-        return;
-    }
-
-    surfaces[surface_idx]->set_material_depth_read(depth_read);
-}
-
-void MeshInstance::set_surface_material_depth_write(int surface_idx, bool depth_write)
-{
-    assert(surface_idx < surfaces.size());
-
-    if (surface_idx >= surfaces.size()) {
-        return;
-    }
-
-    surfaces[surface_idx]->set_material_depth_write(depth_write);
-}
-
-// Material override
-
-void MeshInstance::set_surface_material_override_color(int surface_idx, const glm::vec4& color)
-{
-    assert(surface_idx < surfaces.size());
-
-    if (surface_idx >= surfaces.size()) {
-        return;
-    }
-
-    material_overrides[get_surface(surface_idx)].color = color;
-}
-
-void MeshInstance::set_surface_material_override_diffuse(int surface_idx, Texture* diffuse)
-{
-    assert(surface_idx < surfaces.size());
-
-    if (surface_idx >= surfaces.size()) {
-        return;
-    }
-
-    Surface* surface = get_surface(surface_idx);
-    material_overrides[surface].diffuse_texture = diffuse;
-}
-
-void MeshInstance::set_surface_material_override_shader(int surface_idx, Shader* shader)
-{
-    assert(surface_idx < surfaces.size());
-
-    if (surface_idx >= surfaces.size()) {
-        return;
-    }
-
-    material_overrides[get_surface(surface_idx)].shader = shader;
-}
-
-void MeshInstance::set_surface_material_override_flag(int surface_idx, eMaterialFlags flag)
-{
-    assert(surface_idx < surfaces.size());
-
-    if (surface_idx >= surfaces.size()) {
-        return;
-    }
-
-    material_overrides[get_surface(surface_idx)].flags |= flag;
-}
-
-void MeshInstance::set_surface_material_override_priority(int surface_idx, uint8_t priority)
-{
-    assert(surface_idx < surfaces.size());
-
-    if (surface_idx >= surfaces.size()) {
-        return;
-    }
-
-    material_overrides[get_surface(surface_idx)].priority = priority;
-}
-
-void MeshInstance::set_surface_material_override_transparency_type(int surface_idx, eTransparencyType transparency_type)
-{
-    assert(surface_idx < surfaces.size());
-
-    if (surface_idx >= surfaces.size()) {
-        return;
-    }
-
-    material_overrides[get_surface(surface_idx)].transparency_type = transparency_type;
-}
-
-void MeshInstance::set_surface_material_override_cull_type(int surface_idx, eCullType cull_type)
-{
-    assert(surface_idx < surfaces.size());
-
-    if (surface_idx >= surfaces.size()) {
-        return;
-    }
-
-    material_overrides[get_surface(surface_idx)].cull_type = cull_type;
-}
-
-void MeshInstance::set_surface_material_override_topology_type(int surface_idx, eTopologyType topology_type)
-{
-    assert(surface_idx < surfaces.size());
-
-    if (surface_idx >= surfaces.size()) {
-        return;
-    }
-
-    material_overrides[get_surface(surface_idx)].topology_type = topology_type;
-}
-
-void MeshInstance::set_surface_material_override_depth_read(int surface_idx, bool depth_read)
-{
-    assert(surface_idx < surfaces.size());
-
-    if (surface_idx >= surfaces.size()) {
-        return;
-    }
-
-    material_overrides[get_surface(surface_idx)].depth_read = depth_read;
-}
-
-void MeshInstance::set_surface_material_override_depth_write(int surface_idx, bool depth_write)
-{
-    assert(surface_idx < surfaces.size());
-
-    if (surface_idx >= surfaces.size()) {
-        return;
-    }
-
-    material_overrides[get_surface(surface_idx)].depth_write = depth_write;
-}
-
-void MeshInstance::set_surface_material_override(Surface* surface, const Material& material)
-{
+    material->ref();
     material_overrides[surface] = material;
+}
+
+void MeshInstance::set_frustum_culling_enabled(bool enabled)
+{
+    frustum_culling_enabled = enabled;
+}
+
+bool MeshInstance::get_frustum_culling_enabled()
+{
+    return frustum_culling_enabled;
 }
 
 Material* MeshInstance::get_surface_material_override(Surface* surface)
 {
-    if (material_overrides.contains(surface))
-    {
-        return &material_overrides[surface];
+    if (material_overrides.contains(surface)) {
+        return material_overrides[surface];
     }
 
     return nullptr;
@@ -254,7 +62,7 @@ Material* MeshInstance::get_surface_material_override(Surface* surface)
 
 void MeshInstance::add_surface(Surface* surface)
 {
-    surface->set_index(get_surface_count());
+    surface->ref();
     surfaces.push_back(surface);
 }
 

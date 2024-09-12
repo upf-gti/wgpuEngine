@@ -26,7 +26,7 @@
 
 #include "engine/scene.h"
 
-#include "shaders/mesh_pbr.wgsl.gen.h"
+#include "shaders/mesh_forward.wgsl.gen.h"
 
 #include "spdlog/spdlog.h"
 
@@ -61,13 +61,13 @@ void create_material_texture(const tinygltf::Model& model, int tex_index, Textur
 
         if (Texture::convert_to_rgba8unorm(image.width, image.height, texture_format, (void*)image.image.data(), converted_texture)) {
             *texture = new Texture();
-            (*texture)->load_from_data(image.uri, image.width, image.height, 1, converted_texture, true, is_srgb ? WGPUTextureFormat_RGBA8UnormSrgb : WGPUTextureFormat_RGBA8Unorm);
+            (*texture)->load_from_data(image.uri, WGPUTextureDimension_2D, image.width, image.height, 1, converted_texture, true, is_srgb ? WGPUTextureFormat_RGBA8UnormSrgb : WGPUTextureFormat_RGBA8Unorm);
             delete[] converted_texture;
         }
     }
     else {
         *texture = new Texture();
-        (*texture)->load_from_data(image.uri, image.width, image.height, 1, (void*)image.image.data(), true, is_srgb ? WGPUTextureFormat_RGBA8UnormSrgb : WGPUTextureFormat_RGBA8Unorm);
+        (*texture)->load_from_data(image.uri, WGPUTextureDimension_2D, image.width, image.height, 1, (void*)image.image.data(), true, is_srgb ? WGPUTextureFormat_RGBA8UnormSrgb : WGPUTextureFormat_RGBA8Unorm);
     }
 
     if (tex.sampler != -1)
@@ -139,9 +139,9 @@ void read_mesh(const tinygltf::Model& model, const tinygltf::Node& node, Node3D*
 
         Surface* surface = new Surface();
 
-        Material& material = surface->get_material();
+        Material* material = new Material();
 
-        std::vector<InterleavedData>& vertices = surface->get_vertices();
+        std::vector<InterleavedData> vertices;
 
         const tinygltf::Primitive& primitive = mesh.primitives[primitive_idx];
 
@@ -436,25 +436,23 @@ void read_mesh(const tinygltf::Model& model, const tinygltf::Node& node, Node3D*
         glm::vec3 aabb_half_size = (max_pos - min_pos) * 0.5f;
         glm::vec3 aabb_position = min_pos + aabb_half_size;
 
-        entity_mesh->set_aabb({ aabb_position, aabb_half_size });
-
-        material.flags |= MATERIAL_PBR;
+        surface->set_aabb({ aabb_position, aabb_half_size });
 
         switch (primitive.mode) {
         case TINYGLTF_MODE_TRIANGLES:
-            material.topology_type = TOPOLOGY_TRIANGLE_LIST;
+            material->set_topology_type(TOPOLOGY_TRIANGLE_LIST);
             break;
         case TINYGLTF_MODE_TRIANGLE_STRIP:
-            material.topology_type = TOPOLOGY_TRIANGLE_STRIP;
+            material->set_topology_type(TOPOLOGY_TRIANGLE_STRIP);
             break;
         case TINYGLTF_MODE_LINE:
-            material.topology_type = TOPOLOGY_LINE_LIST;
+            material->set_topology_type(TOPOLOGY_LINE_LIST);
             break;
         case TINYGLTF_MODE_LINE_STRIP:
-            material.topology_type = TOPOLOGY_LINE_STRIP;
+            material->set_topology_type(TOPOLOGY_LINE_STRIP);
             break;
         case TINYGLTF_MODE_POINTS:
-            material.topology_type = TOPOLOGY_POINT_LIST;
+            material->set_topology_type(TOPOLOGY_POINT_LIST);
             break;
         default:
             assert(0);
@@ -466,106 +464,134 @@ void read_mesh(const tinygltf::Model& model, const tinygltf::Node& node, Node3D*
 
             const tinygltf::PbrMetallicRoughness& pbrMetallicRoughness = gltf_material.pbrMetallicRoughness;
 
+            for (const auto& extension : gltf_material.extensions) {
+                if (extension.first == "KHR_materials_unlit") {
+                    material->set_type(MATERIAL_UNLIT);
+                }
+            }
+
             if (pbrMetallicRoughness.baseColorTexture.index >= 0) {
 
                 if (texture_cache.contains(pbrMetallicRoughness.baseColorTexture.index)) {
-                    material.diffuse_texture = texture_cache[pbrMetallicRoughness.baseColorTexture.index];
+                    material->set_diffuse_texture(texture_cache[pbrMetallicRoughness.baseColorTexture.index]);
                 }
                 else {
-                    create_material_texture(model, pbrMetallicRoughness.baseColorTexture.index, &material.diffuse_texture, true);
-                    texture_cache[pbrMetallicRoughness.baseColorTexture.index] = material.diffuse_texture;
+                    Texture* diffuse_texture;
+                    create_material_texture(model, pbrMetallicRoughness.baseColorTexture.index, &diffuse_texture, true);
+                    texture_cache[pbrMetallicRoughness.baseColorTexture.index] = diffuse_texture;
+                    material->set_diffuse_texture(diffuse_texture);
                 }
             }
-            material.name = gltf_material.name;
-            material.color = glm::vec4(
+            material->set_name(gltf_material.name);
+            material->set_color(glm::vec4(
                 pbrMetallicRoughness.baseColorFactor[0],
                 pbrMetallicRoughness.baseColorFactor[1],
                 pbrMetallicRoughness.baseColorFactor[2],
                 pbrMetallicRoughness.baseColorFactor[3]
-            );
+            ));
 
             if (pbrMetallicRoughness.metallicRoughnessTexture.index >= 0) {
                 if (texture_cache.contains(pbrMetallicRoughness.metallicRoughnessTexture.index)) {
-                    material.metallic_roughness_texture = texture_cache[pbrMetallicRoughness.metallicRoughnessTexture.index];
+                    material->set_metallic_roughness_texture(texture_cache[pbrMetallicRoughness.metallicRoughnessTexture.index]);
                 }
                 else {
-                    create_material_texture(model, pbrMetallicRoughness.metallicRoughnessTexture.index, &material.metallic_roughness_texture);
-                    texture_cache[pbrMetallicRoughness.metallicRoughnessTexture.index] = material.metallic_roughness_texture;
+                    Texture* metallic_roughness_texture;
+                    create_material_texture(model, pbrMetallicRoughness.metallicRoughnessTexture.index, &metallic_roughness_texture);
+                    texture_cache[pbrMetallicRoughness.metallicRoughnessTexture.index] = metallic_roughness_texture;
+                    material->set_metallic_roughness_texture(metallic_roughness_texture);
                 }
             }
 
-            material.roughness = static_cast<float>(pbrMetallicRoughness.roughnessFactor);
-            material.metalness = static_cast<float>(pbrMetallicRoughness.metallicFactor);
+            material->set_roughness(static_cast<float>(pbrMetallicRoughness.roughnessFactor));
+            material->set_metalness(static_cast<float>(pbrMetallicRoughness.metallicFactor));
 
             if (gltf_material.normalTexture.index >= 0) {
                 if (texture_cache.contains(gltf_material.normalTexture.index)) {
-                    material.normal_texture = texture_cache[gltf_material.normalTexture.index];
+                    material->set_normal_texture(texture_cache[gltf_material.normalTexture.index]);
                 }
                 else {
-                    create_material_texture(model, gltf_material.normalTexture.index, &material.normal_texture);
-                    texture_cache[gltf_material.normalTexture.index] = material.normal_texture;
+                    Texture* normal_texture;
+                    create_material_texture(model, gltf_material.normalTexture.index, &normal_texture);
+                    texture_cache[gltf_material.normalTexture.index] = normal_texture;
+                    material->set_normal_texture(normal_texture);
                 }
             }
 
             if (gltf_material.emissiveTexture.index >= 0) {
                 if (texture_cache.contains(gltf_material.emissiveTexture.index)) {
-                    material.emissive_texture = texture_cache[gltf_material.emissiveTexture.index];
+                    material->set_emissive_texture(texture_cache[gltf_material.emissiveTexture.index]);
                 }
                 else {
-                    create_material_texture(model, gltf_material.emissiveTexture.index, &material.emissive_texture, true);
-                    texture_cache[gltf_material.emissiveTexture.index] = material.emissive_texture;
+                    Texture* emissive_texture;
+                    create_material_texture(model, gltf_material.emissiveTexture.index, &emissive_texture, true);
+                    texture_cache[gltf_material.emissiveTexture.index] = emissive_texture;
+                    material->set_emissive_texture(emissive_texture);
                 }
             }
 
             if (gltf_material.occlusionTexture.index >= 0) {
                 if (texture_cache.contains(gltf_material.occlusionTexture.index)) {
-                    material.oclussion_texture = texture_cache[gltf_material.occlusionTexture.index];
-                    material.occlusion = static_cast<float>(gltf_material.occlusionTexture.strength);
+                    material->set_occlusion_texture(texture_cache[gltf_material.occlusionTexture.index]);
+                    material->set_occlusion(static_cast<float>(gltf_material.occlusionTexture.strength));
                 }
                 else {
-                    create_material_texture(model, gltf_material.occlusionTexture.index, &material.oclussion_texture, true);
-                    texture_cache[gltf_material.occlusionTexture.index] = material.oclussion_texture;
+                    Texture* occlusion_texture;
+                    create_material_texture(model, gltf_material.occlusionTexture.index, &occlusion_texture, true);
+                    texture_cache[gltf_material.occlusionTexture.index] = occlusion_texture;
+                    material->set_occlusion_texture(occlusion_texture);
                 }
             }
 
-            material.emissive = { gltf_material.emissiveFactor[0], gltf_material.emissiveFactor[1], gltf_material.emissiveFactor[2] };
+            material->set_emissive({ gltf_material.emissiveFactor[0], gltf_material.emissiveFactor[1], gltf_material.emissiveFactor[2] });
 
             if (gltf_material.doubleSided) {
-                material.cull_type = CULL_NONE;
+                material->set_cull_type(CULL_NONE);
             }
             else {
-                material.cull_type = CULL_BACK;
+                material->set_cull_type(CULL_BACK);
             }
 
             if (gltf_material.alphaMode == "OPAQUE") {
-                material.transparency_type = ALPHA_OPAQUE;
+                material->set_transparency_type(ALPHA_OPAQUE);
             }
             else if (gltf_material.alphaMode == "BLEND") {
-                material.transparency_type = ALPHA_BLEND;
+                material->set_transparency_type(ALPHA_BLEND);
             }
             else if (gltf_material.alphaMode == "MASK") {
-                material.alpha_mask = static_cast<float>(gltf_material.alphaCutoff);
-                material.transparency_type = ALPHA_MASK;
+                material->set_alpha_mask(static_cast<float>(gltf_material.alphaCutoff));
+                material->set_transparency_type(ALPHA_MASK);
             }
         }
         else {
             // create default material
-            material.color = glm::vec4(1.0f);
-            material.roughness = 1.0f;
-            material.metalness = 0.0f;
+            material->set_color(glm::vec4(1.0f));
+            material->set_roughness(1.0f);
+            material->set_metalness(0.0f);
         }
 
         if (entity_mesh->is_skinned) {
-            material.use_skinning = true;
+            material->set_use_skinning(true);
         }
 
-        material.shader = RendererStorage::get_shader_from_source(shaders::mesh_pbr::source, shaders::mesh_pbr::path, material);
+        material->set_priority(1);
 
-        surface->create_vertex_buffer();
-        surface->set_material_priority(1);
-        surface->set_name("Surface_" + material.name);
+        material->set_shader(RendererStorage::get_shader_from_source(shaders::mesh_forward::source, shaders::mesh_forward::path, material));
+
+        surface->set_material(material);
+
+        surface->create_vertex_buffer(vertices);
+        surface->set_name("Surface_" + material->get_name());
         entity_mesh->add_surface(surface);
     }
+
+    AABB entity_aabb;
+    for (const Surface* surface : entity_mesh->get_surfaces()) {
+        const AABB& surface_aabb = surface->get_aabb();
+
+        entity_aabb = merge_aabbs(entity_aabb, surface_aabb);
+    }
+
+    entity_mesh->set_aabb(entity_aabb);
 }
 
 void create_light(const tinygltf::Light& gltf_light, Light3D* light_node)
@@ -955,7 +981,7 @@ void parse_model_skins(Node3D* scene_root, tinygltf::Model& model, std::map<std:
     }
 }
 
-void get_scalar_values(std::vector<T>& out, uint32_t component_size, const tinygltf::Model& model, int accessor_idx)
+void get_scalar_values(std::vector<TrackType>& out, uint32_t component_size, const tinygltf::Model& model, int accessor_idx)
 {
     uint32_t size;
     const tinygltf::Accessor& accessor = model.accessors[accessor_idx];
@@ -1082,12 +1108,12 @@ void track_from_channel(Track& result, const tinygltf::AnimationChannel& channel
     result.set_interpolation(interpolation);
 
     // convert sampler input and output accessors into linear arrays of floating-point numbers
-    std::vector<T> time; // times 
+    std::vector<TrackType> time; // times 
     get_scalar_values(time, 1, model, sampler.input);
 
     uint32_t component_size = TrackHelpers::get_size(result);
 
-    std::vector<T> values; // values
+    std::vector<TrackType> values; // values
     get_scalar_values(values, component_size, model, sampler.output);
 
     size_t num_frames = time.size();
@@ -1179,19 +1205,19 @@ void parse_model_animations(const tinygltf::Model& model, std::vector<SkeletonIn
 
             Track* track = new_animation->add_track(node_id);
 
-            TrackType type = TrackType::TYPE_UNDEFINED;
+            eTrackType type = eTrackType::TYPE_UNDEFINED;
 
             if (channel.target_path == "translation") {
-                type = TrackType::TYPE_POSITION;
+                type = eTrackType::TYPE_POSITION;
             }
             else if (channel.target_path == "scale") {
-                type = TrackType::TYPE_SCALE;
+                type = eTrackType::TYPE_SCALE;
             }
             else if (channel.target_path == "rotation") {
-                type = TrackType::TYPE_ROTATION;
+                type = eTrackType::TYPE_ROTATION;
             }
             else if (channel.target_path == "weight") {
-                type = TrackType::TYPE_FLOAT;
+                type = eTrackType::TYPE_FLOAT;
             }
 
             const tinygltf::Node& node = model.nodes[channel.target_node];

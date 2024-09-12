@@ -30,7 +30,7 @@ AnimationPlayer::AnimationPlayer(const std::string& n)
                 int prev = timeline.selected_point.y - 1 >= 0 ? timeline.selected_point.y - 1 : 0;
                 int next = timeline.selected_point.y + 1 < keyposes.size() ? timeline.selected_point.y + 1 : keyposes.size() - 1;
                 
-                animation->get_track(track_idx)->update_value(frame_idx, (T)rotation, glm::vec2(keyposes[prev], keyposes[next]));
+                animation->get_track(track_idx)->update_value(frame_idx, (TrackType)rotation, glm::vec2(keyposes[prev], keyposes[next]));
                 update_trajectories(active_tracks);
             }
             else {
@@ -60,7 +60,7 @@ AnimationPlayer::AnimationPlayer(const std::string& n)
                 int prev = timeline.selected_point.y - 1 >= 0 ? timeline.selected_point.y - 1 : 0;
                 int next = timeline.selected_point.y + 1 < keyposes.size() ? timeline.selected_point.y + 1 : keyposes.size() - 1;
 
-                animation->get_track(track_idx)->update_value(frame_idx, (T)position, glm::vec2(keyposes[prev], keyposes[next]), time_tunnel.get_gaussian_sigma()/(next-prev));
+                animation->get_track(track_idx)->update_value(frame_idx, (TrackType)position, glm::vec2(keyposes[prev], keyposes[next]), time_tunnel.get_gaussian_sigma()/(next-prev));
                 update_trajectories(active_tracks);
             }
             else {
@@ -89,7 +89,7 @@ AnimationPlayer::AnimationPlayer(const std::string& n)
                 int prev = timeline.selected_point.y - 1 >= 0 ? timeline.selected_point.y - 1 : 0;
                 int next = timeline.selected_point.y + 1 < keyposes.size() ? timeline.selected_point.y + 1 : keyposes.size() - 1;
 
-                animation->get_track(track_idx)->update_value(frame_idx, (T)scale, glm::vec2(keyposes[prev], keyposes[next]));
+                animation->get_track(track_idx)->update_value(frame_idx, (TrackType)scale, glm::vec2(keyposes[prev], keyposes[next]));
                 update_trajectories(active_tracks);
             }
             else {
@@ -152,14 +152,19 @@ AnimationPlayer::AnimationPlayer(const std::string& n)
 
 void AnimationPlayer::play(const std::string& animation_name, float custom_blend, float custom_speed, bool from_end)
 {
-    if (!root_node) {
-        root_node = get_parent();
-    }
-        
-    current_animation = RendererStorage::get_animation(animation_name);
-    if (!current_animation) {
+    Animation* animation = RendererStorage::get_animation(animation_name);
+    if (!animation) {
         spdlog::error("No animation called {}", animation_name);
         return;
+    }
+
+    play(animation, custom_blend, custom_speed, from_end);
+}
+
+void AnimationPlayer::play(Animation* animation, float custom_blend, float custom_speed, bool from_end)
+{
+    if (!root_node) {
+        root_node = get_parent();
     }
 
     if (custom_blend >= 0.0f) {
@@ -173,7 +178,7 @@ void AnimationPlayer::play(const std::string& animation_name, float custom_blend
 
     speed = custom_speed;
     playing = true;
-    current_animation_name = animation_name;
+    current_animation_name = animation->get_name();
 
     // sequence with default values
     timeline.frame_max = current_animation->get_track(0)->size();;
@@ -207,11 +212,27 @@ void AnimationPlayer::generate_track_data()
         Node* node = root_node->get_node(node_path);
 
         if (node) {
-            track_data[i] = node->get_property(property_name);
+            track_data[i] = node->get_animatable_property(property_name).property;
         }
         else {
             spdlog::warn("{} node not found", track_path);
         }
+       
+        int count = 1;
+        int type = -1;
+        if (current_animation->get_track(i)->get_type() == eTrackType::TYPE_POSITION) {
+            type = 0;
+            count = 3;
+        }
+        else if (current_animation->get_track(i)->get_type() == eTrackType::TYPE_ROTATION) {
+            type = 1;
+            count = 4;
+        }
+        else if (current_animation->get_track(i)->get_type() == eTrackType::TYPE_SCALE) {
+            type = 2;
+            count = 3;
+        }
+        const int c = count;
 
         generate_track_timeline_data(i, track_path);       
     }
@@ -316,7 +337,7 @@ void AnimationPlayer::update_trajectories(std::vector<uint32_t>& tracks_to_updat
             {
                 trajectories_helper2[i].trajectory = trajectories[i];
                 Surface* s = new Surface();
-                std::vector<InterleavedData>& vertices = s->get_vertices();
+                std::vector<InterleavedData> vertices;
 
                 trajectories_helper2[i].mesh->add_surface(s);
                 glm::mat4x4 parent_model;
@@ -344,15 +365,14 @@ void AnimationPlayer::update_trajectories(std::vector<uint32_t>& tracks_to_updat
                         s_point->create_sphere(0.10f);
                         point->add_surface(s_point);
                         point->translate(data.position);
-                        Material mat;
-                        mat.color = { 0.26f, 0.59f, 0.98f, 1.00f };
-                        if (t == time_tunnel.get_current_frame())
-                        {
-                            mat.color = { 0.9f, 0.58f, 0.19f, 1.0f };
+                        Material * mat = new Material();
+                        mat->set_color({ 0.26f, 0.59f, 0.98f, 1.0f });
+                        if (t == time_tunnel.get_current_frame()) {
+                            mat->set_color({0.9f, 0.58f, 0.19f, 1.0f});
                         }
-                        mat.depth_read = false;
-                        mat.priority = 0;
-                        mat.shader = RendererStorage::get_shader_from_source(shaders::mesh_color::source, shaders::mesh_color::path, mat);
+                        mat->set_depth_read(false);
+                        mat->set_priority(0u);
+                        mat->set_shader(RendererStorage::get_shader_from_source(shaders::mesh_color::source, shaders::mesh_color::path, mat));
 
                         point->set_surface_material_override(s_point, mat);
                         keyposes_helper.push_back(point);
@@ -363,14 +383,15 @@ void AnimationPlayer::update_trajectories(std::vector<uint32_t>& tracks_to_updat
                     }
                     vertices.push_back(data);
                 }
+
                 s->update_vertex_buffer(vertices);
 
-                Material mat;
-                mat.color = { 0.26f, 0.59f, 0.98f, 1.00f };
-                mat.depth_read = false;
-                mat.priority = 0;
-                mat.topology_type = eTopologyType::TOPOLOGY_LINE_LIST;
-                mat.shader = RendererStorage::get_shader_from_source(shaders::mesh_color::source, shaders::mesh_color::path, mat);
+                Material* mat = new Material();
+                mat->set_color({0.26f, 0.59f, 0.98f, 1.00f});
+                mat->set_depth_read(false);
+                mat->set_priority(0u);
+                mat->set_topology_type(eTopologyType::TOPOLOGY_LINE_LIST);
+                mat->set_shader(RendererStorage::get_shader_from_source(shaders::mesh_color::source, shaders::mesh_color::path, mat));
 
                 trajectories_helper2[i].mesh->set_surface_material_override(s, mat);
                 //trajectories_helper.push_back(mesh);
@@ -447,7 +468,7 @@ void AnimationPlayer::update_trajectories(std::vector<uint32_t>& tracks_to_updat
     {
         MeshInstance3D* mesh = new MeshInstance3D();
         Surface* s = new Surface();
-        std::vector<InterleavedData>& vertices = s->get_vertices();
+        std::vector<InterleavedData> vertices;
 
         mesh->add_surface(s);
         glm::mat4x4 parent_model;
@@ -472,14 +493,15 @@ void AnimationPlayer::update_trajectories(std::vector<uint32_t>& tracks_to_updat
             }
             vertices.push_back(data);
         }
+
         s->update_vertex_buffer(vertices);
 
-        Material mat;
-        mat.color = { 1.0f, 0.50f, 0.0f, 1.0f };
-        mat.depth_read = false;
-        mat.priority = 0;
-        mat.topology_type = eTopologyType::TOPOLOGY_LINE_LIST;
-        mat.shader = RendererStorage::get_shader_from_source(shaders::mesh_color::source, shaders::mesh_color::path, mat);
+        Material * mat = new Material();
+        mat->set_color({1.0f, 0.50f, 0.0f, 1.0f});
+        mat->set_depth_read(false);
+        mat->set_priority(0u);
+        mat->set_topology_type(eTopologyType::TOPOLOGY_LINE_LIST);
+        mat->set_shader(RendererStorage::get_shader_from_source(shaders::mesh_color::source, shaders::mesh_color::path, mat));
 
         mesh->set_surface_material_override(s, mat);
         smoothed_trajectories_helper.push_back(mesh);
@@ -493,16 +515,16 @@ void AnimationPlayer::generate_track_timeline_data(uint32_t track_idx, const std
 
     Track* track = current_animation->get_track(track_idx);
 
-    if (track->get_type() == TrackType::TYPE_POSITION) {
+    if (track->get_type() == eTrackType::TYPE_POSITION) {
         type = 0;
         count = 3;
     }
 
-    else if (track->get_type() == TrackType::TYPE_ROTATION) {
+    else if (track->get_type() == eTrackType::TYPE_ROTATION) {
         type = 1;
         count = 4;
     }
-    else if (track->get_type() == TrackType::TYPE_SCALE) {
+    else if (track->get_type() == eTrackType::TYPE_SCALE) {
         type = 2;
         count = 3;
     }
@@ -623,7 +645,7 @@ void AnimationPlayer::compute_keyframes()
             //if (joint_name != "Hips")
             //    continue;
 
-            if (property_name == "translation" || property_name == "translate" || property_name == "position" || track->get_type() == TrackType::TYPE_POSITION) {
+            if (property_name == "translation" || property_name == "translate" || property_name == "position" || track->get_type() == eTrackType::TYPE_POSITION) {
                 active_tracks.push_back(i);
                 time_tunnel_tracks.push_back(track);
                 Trajectory t;

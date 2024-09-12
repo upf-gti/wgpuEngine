@@ -163,6 +163,7 @@ struct Timeline : public ImSequencer::SequenceInterface
     virtual void DoubleClick(int index);
 
     int DrawPoint(ImDrawList* draw_list, ImVec2 pos, const ImVec2 size, const ImVec2 offset, int type, bool edited, bool selected);
+
     virtual void CustomDraw(int index, ImDrawList* draw_list, const ImRect& rc, const ImRect& legendRect, const ImRect& clippingRect, const ImRect& legendClippingRect)
     {
         for (int j = tracks[index].frame_start; j < tracks[index].frame_end; j++) {

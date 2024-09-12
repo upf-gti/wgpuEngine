@@ -9,7 +9,7 @@
 namespace TrackHelpers {
 
     // linear interpolation for each type of track
-    T interpolate(T a, T b, float t) {
+    TrackType interpolate(TrackType a, TrackType b, float t) {
         if (std::holds_alternative<float>(a))
         {
             float qa = std::get<float>(a);
@@ -31,11 +31,11 @@ namespace TrackHelpers {
         }
 
         assert(0);
-        return T();
+        return TrackType();
     }
 
     // When a Hermite spline is interpolated, if the input type was a quaternion, the result needs to be normalized.
-    T adjustHermiteResult(const T& r) {
+    TrackType adjustHermiteResult(const TrackType& r) {
         if (std::holds_alternative<glm::quat>(r))
         {
             glm::quat q = std::get<glm::quat>(r);
@@ -47,7 +47,7 @@ namespace TrackHelpers {
     }
 
     // Make sure two quaternions are in the correct neighborhood
-    void neighborhood(const T& a, T& b) {
+    void neighborhood(const TrackType& a, TrackType& b) {
 
         if (std::holds_alternative<glm::quat>(a))
         {
@@ -63,13 +63,13 @@ namespace TrackHelpers {
     uint32_t get_size(const Track& t) {
         switch (t.get_type()) {
 
-        case TrackType::TYPE_FLOAT:
+        case eTrackType::TYPE_FLOAT:
             return 1;
 
-        case TrackType::TYPE_VECTOR3: case TrackType::TYPE_POSITION: case TrackType::TYPE_SCALE:
+        case eTrackType::TYPE_VECTOR3: case eTrackType::TYPE_POSITION: case eTrackType::TYPE_SCALE:
             return 3;
 
-        case TrackType::TYPE_QUAT: case TrackType::TYPE_ROTATION:
+        case eTrackType::TYPE_QUAT: case eTrackType::TYPE_ROTATION:
             return 4;
         }
         return 0;
@@ -129,6 +129,10 @@ const std::string& Track::get_path()
 
 Keyframe& Track::get_keyframe(uint32_t index)
 {
+    if (index >= keyframes.size()) {
+        assert(0);
+    }
+
     return keyframes[index];
 }
 
@@ -147,10 +151,16 @@ const std::vector<float> Track::get_times()
     return times;
 }
 
-// call sample_constant, sample_linear, or sample_cubic, depending on the track type.
-T Track::sample(float time, bool looping, void* out)
+Keyframe& Track::add_keyframe(const Keyframe& k)
 {
-    T r;
+    keyframes.push_back(k);
+    return keyframes.back();
+}
+
+// call sample_constant, sample_linear, or sample_cubic, depending on the track type.
+TrackType Track::sample(float time, bool looping, void* out)
+{
+    TrackType r;
 
     if (interpolation == Interpolation::CONSTANT) {
         r = sample_constant(time, looping);
@@ -164,6 +174,8 @@ T Track::sample(float time, bool looping, void* out)
 
     if (out)
     {
+        // TODO: Support the rest of types..
+
         if (std::holds_alternative<float>(r)) {
             float* p = reinterpret_cast<float*>(out);
             *p = std::get<float>(r);
@@ -208,23 +220,23 @@ void Track::set_interpolation(Interpolation interpolationType)
 }
 
 template<typename Tn>
-T Track::cubic_interpolation(const T& p1, const T& s1, const T& p2, const T& s2, float h1, float h2, float h3, float h4)
+TrackType Track::cubic_interpolation(const TrackType& p1, const TrackType& s1, const TrackType& p2, const TrackType& s2, float h1, float h2, float h3, float h4)
 {
     return std::get<Tn>(p1) * h1 + std::get<Tn>(p2) * h2 + std::get<Tn>(s1) * h3 + std::get<Tn>(s2) * h4;
 }
 
-T Track::hermite(float t, const T& p1, const T& s1, const T& _p2, const T& s2)
+TrackType Track::hermite(float t, const TrackType& p1, const TrackType& s1, const TrackType& _p2, const TrackType& s2)
 {
     float tt = t * t;
     float ttt = tt * t;
-    T p2 = _p2;
+    TrackType p2 = _p2;
     TrackHelpers::neighborhood(p1, p2);
     float h1 = 2.0f * ttt - 3.0f * tt + 1.0f;
     float h2 = -2.0f * ttt + 3.0f * tt;
     float h3 = ttt - 2.0f * tt + t;
     float h4 = ttt - tt;
 
-    T result;
+    TrackType result;
 
     if (std::holds_alternative<float>(p1)) {
         result = cubic_interpolation<float>(p1, s1, p2, s2, h1, h2, h3, h4);
@@ -291,41 +303,45 @@ float Track::adjust_time_to_fit_track(float time, bool looping)
 }
 
 // Often used for things such as visibility flags, where it makes sense for the value of a variable to change from one frame to the next without any real interpolation
-T Track::sample_constant(float t, bool loop)
+TrackType Track::sample_constant(float t, bool loop)
 {
     int frame = frame_index(t);
     if (frame < 0 || frame >= (int)keyframes.size()) {
-        return T();
+        return TrackType();
     }
     return keyframes[frame].value;
 }
 
 // Applications provide an option to approximate animation curves by sampling them at set intervals
-T Track::sample_linear(float time, bool looping)
+TrackType Track::sample_linear(float time, bool looping)
 {
     int this_frame = frame_index(time);
-    if (this_frame < 0 || this_frame >= keyframes.size() - 1) {
-        return T();
-    }
     int next_frame = this_frame + 1;
+    if (this_frame < 0 || this_frame > keyframes.size() - 1) {
+        return TrackType();
+    }
+    if (this_frame == keyframes.size() - 1) {
+        return keyframes[this_frame].value;
+    }
+
     // make sure the time is valid
     float track_time = adjust_time_to_fit_track(time, looping);
     float this_time = keyframes[this_frame].time;
     float frame_delta = keyframes[next_frame].time - this_time;
     if (frame_delta <= 0.0f) {
-        return T();
+        return TrackType();
     }
     float t = (track_time - this_time) / frame_delta;
-    T start = keyframes[this_frame].value;
-    T end = keyframes[next_frame].value;
+    TrackType start = keyframes[this_frame].value;
+    TrackType end = keyframes[next_frame].value;
     return TrackHelpers::interpolate(start, end, t);
 }
 
-T Track::sample_cubic(float time, bool looping)
+TrackType Track::sample_cubic(float time, bool looping)
 {
     int this_frame = frame_index(time);
     if (this_frame < 0 || this_frame >= keyframes.size() - 1) {
-        return T();
+        return TrackType();
     }
     int next_frame = this_frame + 1;
 
@@ -334,7 +350,7 @@ T Track::sample_cubic(float time, bool looping)
     float frame_delta = keyframes[next_frame].time - this_time;
 
     if (frame_delta <= 0.0f) {
-        return T();
+        return TrackType();
     }
 
     // auto mul_T = std::multiplies<T>();
@@ -343,7 +359,7 @@ T Track::sample_cubic(float time, bool looping)
     // Using memcpy instead of cast copies the values directly, avoiding normalization.
     float t = (track_time - this_time) / frame_delta;
     size_t fltSize = sizeof(float);
-    T point1 = keyframes[this_frame].value;
+    TrackType point1 = keyframes[this_frame].value;
     /*T slope1 = mul_T(keyframes[this_frame].out, frame_delta);
 
     T point2 =keyframes[next_frame].value;
@@ -370,7 +386,7 @@ void Track::remove_all_keyframes()
     keyframes.resize(0);
 }
 
-void Track::update_value(uint32_t index, const T& value, const glm::vec2& propagate_frames, float weight)
+void Track::update_value(uint32_t index, const TrackType& value, const glm::vec2& propagate_frames, float weight)
 {
     keyframes[index].value = value;
        

@@ -26,7 +26,6 @@ You will need to install the following tools:
 
 - [CMake](https://cmake.org/download/)
 - [Python](https://www.python.org/) (added to your PATH)
-- [Vulkan SDK](https://vulkan.lunarg.com/)
 
 ### Desktop
 

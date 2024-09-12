@@ -21,8 +21,6 @@ struct WebGPUContext {
     WGPUDevice              device = nullptr;
     WGPUQueue               device_queue = nullptr;
 
-    WGPUSwapChain           screen_swapchain = nullptr;
-
     // For desktop window
     uint32_t                screen_width = 0;
     uint32_t                screen_height = 0;
@@ -72,17 +70,17 @@ struct WebGPUContext {
 
     WGPUBuffer             create_buffer(uint64_t size, int usage, const void* data, const char* label = nullptr);
     WGPUTexture            create_texture(WGPUTextureDimension dimension, WGPUTextureFormat format, WGPUExtent3D size, WGPUTextureUsage usage, uint32_t mipmaps, uint8_t sample_count);
-    WGPUTextureView        create_texture_view(WGPUTexture texture, WGPUTextureViewDimension dimension, WGPUTextureFormat format, WGPUTextureAspect aspect = WGPUTextureAspect_All, uint32_t base_mip_level = 0, uint32_t mip_level_count = 1, uint32_t base_array_layer = 0, uint32_t array_layer_count = 1, const char* label = "");
+    WGPUTextureView        create_texture_view(WGPUTexture texture, WGPUTextureViewDimension dimension, WGPUTextureFormat format, WGPUTextureAspect aspect = WGPUTextureAspect_All, uint32_t base_mip_level = 0, uint32_t mip_level_count = 1, uint32_t base_array_layer = 0, uint32_t array_layer_count = 1, const char* label = "") const;
     
                            // By now wrapU = wrapV = wrapW
     WGPUSampler            create_sampler(WGPUAddressMode wrap_u = WGPUAddressMode_ClampToEdge, WGPUAddressMode wrap_v = WGPUAddressMode_ClampToEdge, WGPUAddressMode wrap_w = WGPUAddressMode_ClampToEdge, WGPUFilterMode mag_filter = WGPUFilterMode_Linear, WGPUFilterMode min_filter = WGPUFilterMode_Linear, WGPUMipmapFilterMode mipmap_filter = WGPUMipmapFilterMode_Linear, float lod_max_clamp = 1.0f, uint16_t max_anisotropy = 1);
     void                   create_texture_mipmaps(WGPUTexture texture, WGPUExtent3D texture_size, uint32_t mip_level_count, WGPUTextureViewDimension view_dimension = WGPUTextureViewDimension_2D, WGPUTextureFormat format = WGPUTextureFormat_RGBA8Unorm, WGPUOrigin3D origin = {0, 0, 0}, WGPUCommandEncoder custom_command_encoder = nullptr);
     void                   create_cubemap_mipmaps(WGPUTexture texture, WGPUExtent3D texture_size, uint32_t mip_level_count, WGPUTextureViewDimension view_dimension = WGPUTextureViewDimension_2D, WGPUTextureFormat format = WGPUTextureFormat_RGBA8Unorm, WGPUOrigin3D origin = {0, 0, 0}, WGPUCommandEncoder custom_command_encoder = nullptr);
-    void                   upload_texture(WGPUTexture texture, WGPUExtent3D texture_size, uint32_t mip_level, WGPUTextureFormat format, const void* data, WGPUOrigin3D origin = { 0, 0, 0 });
+    void                   upload_texture(WGPUTexture texture, WGPUTextureDimension dimension, WGPUExtent3D texture_size, uint32_t mip_level, WGPUTextureFormat format, const void* data, WGPUOrigin3D origin = { 0, 0, 0 });
 
     WGPUBindGroupLayout    create_bind_group_layout(const std::vector<WGPUBindGroupLayoutEntry>& entries);
     WGPUBindGroup          create_bind_group(const std::vector<Uniform*>& uniforms, WGPUBindGroupLayout bind_group_layout);
-    WGPUBindGroup          create_bind_group(const std::vector<Uniform*>& uniforms, Shader* shader, uint16_t bind_group);
+    WGPUBindGroup          create_bind_group(const std::vector<Uniform*>& uniforms, const Shader* shader, uint16_t bind_group) const;
     WGPUPipelineLayout     create_pipeline_layout(const std::vector<WGPUBindGroupLayout>& bind_group_layouts);
 
     void                   copy_texture_to_texture(WGPUTexture texture_src, WGPUTexture texture_dst, uint32_t src_mipmap_level, uint32_t dst_mipmap_level, const WGPUExtent3D& copy_size, WGPUCommandEncoder custom_command_encoder = nullptr);
@@ -91,10 +89,10 @@ struct WebGPUContext {
                                                   WGPUColorTargetState color_target, bool use_depth = true, bool depth_read = true, bool depth_write = true, WGPUCullMode cull_mode = WGPUCullMode_None, WGPUPrimitiveTopology topology = WGPUPrimitiveTopology_TriangleList, uint8_t sample_count = 1,
                                                   const char* vs_entry_point = "vs_main", const char* fs_entry_point = "fs_main");
     void                   create_render_pipeline_async(WGPUShaderModule render_shader_module, WGPUPipelineLayout pipeline_layout, const std::vector<WGPUVertexBufferLayout>& vertex_attributes,
-                                                  WGPUColorTargetState color_target, WGPUCreateRenderPipelineAsyncCallback callback, void* userdata, bool use_depth = true, bool depth_read = true, bool depth_write = true, WGPUCullMode cull_mode = WGPUCullMode_None,
+                                                  WGPUColorTargetState color_target, WGPUCreateRenderPipelineAsyncCallback2 callback, void* userdata, bool use_depth = true, bool depth_read = true, bool depth_write = true, WGPUCullMode cull_mode = WGPUCullMode_None,
                                                   WGPUPrimitiveTopology topology = WGPUPrimitiveTopology_TriangleList, uint8_t sample_count = 1, const char* vs_entry_point = "vs_main", const char* fs_entry_point = "fs_main");
     WGPUComputePipeline    create_compute_pipeline(WGPUShaderModule compute_shader_module, WGPUPipelineLayout pipeline_layout, const char* entry_point = "compute");
-    void                   create_compute_pipeline_async(WGPUShaderModule compute_shader_module, WGPUPipelineLayout pipeline_layout, WGPUCreateComputePipelineAsyncCallback callback, void* userdata, const char* entry_point = "compute");
+    void                   create_compute_pipeline_async(WGPUShaderModule compute_shader_module, WGPUPipelineLayout pipeline_layout, WGPUCreateComputePipelineAsyncCallback2 callback, void* userdata, const char* entry_point = "compute");
 
     WGPUVertexBufferLayout create_vertex_buffer_layout(const std::vector<WGPUVertexAttribute>& vertex_attributes, uint64_t stride, WGPUVertexStepMode step_mode);
 
@@ -106,7 +104,7 @@ struct WebGPUContext {
     void                   update_buffer(WGPUBuffer buffer, uint64_t buffer_offset, void const* data, uint64_t size);
     void                   update_texture(WGPUTexture buffer, void const* data, uint64_t size);
 
-    void*                  read_buffer(WGPUBuffer buffer, size_t size);
+    void                   read_buffer(WGPUBuffer buffer, size_t size, void* output_data);
 
     sMipmapPipeline        get_mipmap_pipeline(WGPUTextureFormat texture_format);
 

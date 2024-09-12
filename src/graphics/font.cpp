@@ -46,7 +46,7 @@ void Font::load(const std::string& font_name)
             page_path.replace_extension("png");
             std::string filename = "data/fonts/" + font_name + "/" + page_path.string();
 
-            Texture* tex = RendererStorage::get_texture(filename);
+            Texture* tex = RendererStorage::get_texture(filename, TEXTURE_STORAGE_KEEP_MEMORY);
             textures.push_back(tex);
         }
     }

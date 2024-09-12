@@ -128,7 +128,7 @@ std::vector<std::vector<glm::vec3>> TimeTunnel::compute_trajectories(std::vector
     magnitudes.clear();
     for (auto& track : tracks)
     {
-        if (track->get_type() != TrackType::TYPE_POSITION) {
+        if (track->get_type() != eTrackType::TYPE_POSITION) {
             continue;
         }
         std::vector<glm::vec3> trajectory;

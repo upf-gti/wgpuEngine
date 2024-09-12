@@ -129,7 +129,13 @@ bool Node2D::set_visibility(bool value)
 
     visibility = value;
 
-    return last != value;
+    bool changed = (last != value);
+
+    if (changed) {
+        on_children_changed();
+    }
+
+    return changed;
 }
 
 void Node2D::set_viewport_model(glm::mat4x4 model)
@@ -217,7 +223,11 @@ void Node2D::release()
     Node::unbind(name + "@dbl_click");
     Node::unbind(name + "@changed");
 
-    Node::release();
+    // Node::release();
+
+    if (parent) {
+        parent->remove_child(this);
+    }
 }
 
 Node2D* Node2D::get_widget_from_name(const std::string& name)

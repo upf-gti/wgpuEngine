@@ -14,6 +14,7 @@ protected:
 
     Renderer* renderer = nullptr;
     FileWatcher* shader_reload_watcher = nullptr;
+    FileWatcher* engine_shader_reload_watcher = nullptr;
     Scene* main_scene;
 
     bool use_glfw;

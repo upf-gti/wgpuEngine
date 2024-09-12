@@ -2,6 +2,7 @@
 
 #include "parse_obj.h"
 #include "parse_gltf.h"
+#include "parse_vdb.h"
 
 #include "framework/nodes/mesh_instance_3d.h"
 
@@ -21,6 +22,10 @@ bool parse_scene(const char* scene_path, std::vector<Node*>& entities)
     else if (extension == "gltf" || extension == "glb") {
         return parse_gltf(scene_path, entities);
     }
+    else if (extension == "vdb") {
+        spdlog::info("Parsing a VDB file (WIP)");
+        parse_vdb(scene_path, entities);
+    }
     else {
         spdlog::error("Scene extension .{} not supported", extension);
         assert(0);
@@ -29,7 +34,7 @@ bool parse_scene(const char* scene_path, std::vector<Node*>& entities)
     return false;
 }
 
-MeshInstance3D* parse_mesh(const char* mesh_path)
+MeshInstance3D* parse_mesh(const char* mesh_path, bool create_aabb)
 {
     std::string mesh_path_str = std::string(mesh_path);
     std::string extension = mesh_path_str.substr(mesh_path_str.find_last_of(".") + 1);
@@ -37,7 +42,7 @@ MeshInstance3D* parse_mesh(const char* mesh_path)
     spdlog::trace("Parsing mesh: {}", mesh_path);
 
     if (extension == "obj") {
-        return parse_obj(mesh_path);
+        return parse_obj(mesh_path, create_aabb);
     }
     else {
         spdlog::error("Mesh extension .{} not supported", extension);

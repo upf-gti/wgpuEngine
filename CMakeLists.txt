@@ -3,12 +3,14 @@ cmake_minimum_required(VERSION 3.16)
 set(WGPU_DIR_ROOT     ${CMAKE_CURRENT_SOURCE_DIR})
 set(WGPU_DIR_SOURCES "${WGPU_DIR_ROOT}/src")
 set(WGPU_DIR_LIBS    "${WGPU_DIR_ROOT}/libraries")
+set(WGPU_DIR_SHADERS "${WGPU_DIR_ROOT}/data/shaders")
 
 project(webgpuEngine LANGUAGES C CXX)
 
-# Enable multicore compile on VS solution
+# Enable multicore and simd compile on VS solution
 if(MSVC)
-  add_definitions(/MP)
+    add_definitions(/MP)
+    add_definitions(/arch:AVX2)
 endif()
 
 if (WIN32)
@@ -17,9 +19,10 @@ else()
     set(DAWN_BUILD "SRC")
 endif()
 
-add_definitions(-D_CRT_SECURE_NO_WARNINGS)
-add_definitions(-D_SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING)
-add_definitions(-DWEBGPU_BACKEND=DAWN)
+add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
+add_compile_definitions(_SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING)
+add_compile_definitions(WEBGPU_BACKEND=DAWN)
+add_compile_definitions(WGPUENGINE_PATH="${WGPU_DIR_ROOT}")
 
 # enable FetchContent
 include(FetchContent)
@@ -32,7 +35,7 @@ FetchContent_Declare(
     DOWNLOAD_NO_EXTRACT TRUE
 )
 
-# download tinyobjloader
+# download stb_image
 FetchContent_Declare(
     stb_image
     URL https://raw.githubusercontent.com/nothings/stb/master/stb_image.h
@@ -96,6 +99,7 @@ WGPU_SOURCES_APPEND(${WGPU_DIR_SOURCES})
 WGPU_SOURCES_APPEND(${WGPU_DIR_SOURCES}/framework)
 WGPU_SOURCES_APPEND(${WGPU_DIR_SOURCES}/framework/camera)
 WGPU_SOURCES_APPEND(${WGPU_DIR_SOURCES}/framework/nodes)
+WGPU_SOURCES_APPEND(${WGPU_DIR_SOURCES}/framework/resources)
 WGPU_SOURCES_APPEND(${WGPU_DIR_SOURCES}/framework/scene)
 WGPU_SOURCES_APPEND(${WGPU_DIR_SOURCES}/framework/ui)
 WGPU_SOURCES_APPEND(${WGPU_DIR_SOURCES}/framework/utils)
@@ -115,26 +119,27 @@ find_package(PythonInterp 3 REQUIRED)
 file(GLOB_RECURSE
     SHADERS
     CONFIGURE_DEPENDS
-    RELATIVE ${WGPU_DIR_SOURCES}/shaders
-    ${WGPU_DIR_SOURCES}/shaders/**.wgsl
+    RELATIVE ${WGPU_DIR_SHADERS}
+    ${WGPU_DIR_SHADERS}/**.wgsl
 )
 
 message(STATUS "Processing shaders...")
 
 list(APPEND WGPU_SHADER_LIBS ${WGPU_DIR_ROOT}/glsl_builder.py)
-list(APPEND WGPU_SHADER_LIBS ${WGPU_DIR_SOURCES}/shaders/math.wgsl)
-list(APPEND WGPU_SHADER_LIBS ${WGPU_DIR_SOURCES}/shaders/mesh_includes.wgsl)
-list(APPEND WGPU_SHADER_LIBS ${WGPU_DIR_SOURCES}/shaders/pbr_functions.wgsl)
-list(APPEND WGPU_SHADER_LIBS ${WGPU_DIR_SOURCES}/shaders/tonemappers.wgsl)
-list(APPEND WGPU_SHADER_LIBS ${WGPU_DIR_SOURCES}/shaders/ui/ui_includes.wgsl)
+list(APPEND WGPU_SHADER_LIBS ${WGPU_DIR_SHADERS}/math.wgsl)
+list(APPEND WGPU_SHADER_LIBS ${WGPU_DIR_SHADERS}/mesh_includes.wgsl)
+list(APPEND WGPU_SHADER_LIBS ${WGPU_DIR_SHADERS}/pbr_functions.wgsl)
+list(APPEND WGPU_SHADER_LIBS ${WGPU_DIR_SHADERS}/pbr_material.wgsl)
+list(APPEND WGPU_SHADER_LIBS ${WGPU_DIR_SHADERS}/tonemappers.wgsl)
+list(APPEND WGPU_SHADER_LIBS ${WGPU_DIR_SHADERS}/ui/ui_includes.wgsl)
 
 FOREACH(SHADER ${SHADERS})
 
     add_custom_command (
         OUTPUT ${WGPU_DIR_SOURCES}/shaders/${SHADER}.gen.h
 	    COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/glsl_builder.py ${SHADER}
-        DEPENDS ${WGPU_DIR_SOURCES}/shaders/${SHADER} ${WGPU_SHADER_LIBS}
-	    WORKING_DIRECTORY ${WGPU_DIR_SOURCES}/shaders
+        DEPENDS ${WGPU_DIR_SHADERS}/${SHADER} ${WGPU_SHADER_LIBS}
+	    WORKING_DIRECTORY ${WGPU_DIR_SHADERS}
         VERBATIM
     )
 
@@ -164,11 +169,15 @@ add_subdirectory(libraries/webgpu)
 target_link_libraries(${PROJECT_NAME} PUBLIC webgpu)
 
 # glm
+set(GLM_ENABLE_SIMD_AVX2 ON)
+
 add_subdirectory(libraries/glm)
 
+target_compile_definitions(glm PUBLIC GLM_FORCE_INTRINSICS)
 target_compile_definitions(glm PUBLIC GLM_ENABLE_EXPERIMENTAL)
 target_compile_definitions(glm PUBLIC GLM_FORCE_QUAT_DATA_XYZW)
 target_compile_definitions(glm PUBLIC GLM_FORCE_QUAT_CTOR_XYZW)
+target_compile_definitions(glm PUBLIC GLM_FORCE_DEPTH_ZERO_TO_ONE)
 
 set_property(TARGET glm PROPERTY CXX_STANDARD 20)
 set_property(TARGET glm PROPERTY FOLDER "External/glm")
@@ -176,14 +185,14 @@ target_link_libraries(${PROJECT_NAME} PUBLIC glm)
 
 if (NOT EMSCRIPTEN)
 
-    # vulkan
-    find_package(Vulkan REQUIRED)
-    target_link_libraries(${PROJECT_NAME} PUBLIC ${Vulkan_LIBRARIES})
-    include_directories(${Vulkan_INCLUDE_DIR})
+    # vulkan-headers
+    add_subdirectory(libraries/Vulkan-Headers)
+    target_link_libraries(${PROJECT_NAME} PUBLIC Vulkan-Headers)
 
     # openxr
     add_subdirectory(libraries/openxr)
     target_link_libraries(${PROJECT_NAME} PUBLIC openxr_loader)
+#    target_link_libraries(openxr_loader PUBLIC Vulkan-Headers)
     set_property(TARGET openxr_loader PROPERTY FOLDER "External/OpenXR")
     set_property(TARGET generate_openxr_header PROPERTY FOLDER "External/OpenXR")
     set_property(TARGET xr_global_generated_files PROPERTY FOLDER "External/OpenXR")
@@ -200,6 +209,11 @@ if (NOT EMSCRIPTEN)
     target_include_directories(${PROJECT_NAME} PUBLIC ${WGPU_DIR_LIBS}/renderdoc)
 
 endif()
+
+# easyVDB
+add_subdirectory(libraries/easyVDB)
+target_link_libraries(${PROJECT_NAME} PUBLIC easyVDB)
+set_property(TARGET easyVDB PROPERTY FOLDER "External/easyVDB")
 
 # tinyobjloader
 target_include_directories(${PROJECT_NAME} PUBLIC ${WGPU_DIR_LIBS}/tinyobjloader)

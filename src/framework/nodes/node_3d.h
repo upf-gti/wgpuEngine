@@ -23,7 +23,7 @@ protected:
 public:
 
     Node3D();
-    virtual ~Node3D() {};
+    virtual ~Node3D();
 
     void add_child(Node3D* child);
     void remove_child(Node3D* child);

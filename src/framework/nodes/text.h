@@ -17,9 +17,6 @@ class TextEntity : public MeshInstance3D {
     glm::vec2 box_size;
     bool wrap = true;
 
-    eMaterialFlags flags;
-    Color color;
-
     std::string text = "";
 
     void append_char(glm::vec3 pos, Character& c);
@@ -38,9 +35,8 @@ public:
     int get_text_width(const std::string& text);
     int get_text_height(const std::string& text);
 
-    void generate_mesh(const Color& color, eMaterialFlags flags);
-    eMaterialFlags get_flags() { return flags; }
+    void generate_mesh(const Color& color, bool is_2D);
 
-    void set_text(const std::string& p_text) { text = p_text; generate_mesh(color, flags); };
+    void set_text(const std::string& p_text);;
     TextEntity* set_scale(float _scale) { font_scale = _scale; return this; }
 };

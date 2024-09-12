@@ -3,8 +3,11 @@
 #include "imgui.h"
 #include "graphics/renderer.h"
 
-Light3D::Light3D()
+Light3D::Light3D() : Node3D()
 {
+    animatable_properties["intensity"] = { AnimatablePropertyType::FLOAT32, &intensity };
+    animatable_properties["range"] = { AnimatablePropertyType::FLOAT32, &range };
+    animatable_properties["color"] = { AnimatablePropertyType::FVEC4, &color };
 }
 
 Light3D::~Light3D()
@@ -44,6 +47,8 @@ void Light3D::render_gui()
 
         ImGui::TreePop();
     }
+
+    Node3D::render_gui();
 }
 
 void Light3D::set_color(glm::vec3 color)

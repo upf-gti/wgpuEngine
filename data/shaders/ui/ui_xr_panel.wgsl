@@ -77,7 +77,7 @@ fn fs_main(in: VertexOutput) -> FragmentOutput {
     // center stuff
     position -= vec2f(0.5);
     
-    var ra : vec4f = vec4f(0.125);
+    var ra : vec4f = vec4f(0.1);
     var si : vec2f = vec2f(ui_data.aspect_ratio, 1.0) * size * global_scale;
     ra = min(ra, min(vec4f(si.x), vec4f(si.y)));
     var uvs = vec2f(in.uv.x, in.uv.y) - position;
@@ -98,7 +98,9 @@ fn fs_main(in: VertexOutput) -> FragmentOutput {
         final_color = pow(final_color, vec3f(1.0 / 2.2));
     }
 
-    var alpha : f32 = (1.0 - smoothstep(0.0, 0.04, d)) * color.a;
+    final_color = mix( final_color, vec3f(0.3), 1.0 - smoothstep(0.0, 0.01, abs(d)) );
+
+    var alpha : f32 = (1.0 - smoothstep(0.0, 0.02, d)) * color.a;
 
     if(is_button) {
         alpha += (1.0 - smoothstep(0.0, 0.015, abs(d)));

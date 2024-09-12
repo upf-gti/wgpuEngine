@@ -15,11 +15,22 @@
 
 Node3D::Node3D()
 {
-    node_type = "Node3D";
+    if (node_type.empty()) {
+        node_type = "Node3D";
+    }
 
-    properties["translation"] = &transform.get_position_ref();
-    properties["rotation"] = &transform.get_rotation_ref();
-    properties["scale"] = &transform.get_scale_ref();
+    animatable_properties["translation"] = { AnimatablePropertyType::FVEC3, &transform.get_position_ref() };
+    animatable_properties["rotation"] = { AnimatablePropertyType::QUAT, &transform.get_rotation_ref() };
+    animatable_properties["scale"] = { AnimatablePropertyType::FVEC3, &transform.get_scale_ref() };
+}
+
+Node3D::~Node3D()
+{
+    for (Node* child : children) {
+        delete child;
+    }
+
+    children.clear();
 }
 
 void Node3D::add_child(Node3D* child)

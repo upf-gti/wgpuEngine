@@ -24,7 +24,7 @@ std::map<std::string, Animation*> RendererStorage::animations;
 
 Texture* RendererStorage::current_skybox_texture = nullptr;
 std::map<std::string, std::vector<std::string>> RendererStorage::shader_library_references;
-std::unordered_map<Material, RendererStorage::sBindingData> RendererStorage::material_bind_groups;
+std::unordered_map<const Material*, RendererStorage::sBindingData> RendererStorage::material_bind_groups;
 std::unordered_map<const void*, RendererStorage::sBindingData> RendererStorage::ui_widget_bind_groups;
 
 std::unordered_map<RenderPipelineKey, Pipeline*> RendererStorage::registered_render_pipelines;
@@ -35,9 +35,14 @@ RendererStorage::RendererStorage()
     instance = this;
 }
 
-void RendererStorage::register_material(WebGPUContext* webgpu_context, MeshInstance* mesh_instance, const Material& material)
+void RendererStorage::register_material_bind_group(WebGPUContext* webgpu_context, MeshInstance* mesh_instance, Material* material)
 {
     if (material_bind_groups.contains(material)) {
+
+        if (material->get_dirty_flags()) {
+            update_material_bind_group(webgpu_context, mesh_instance, material);
+        }
+
         return;
     }
 
@@ -45,78 +50,88 @@ void RendererStorage::register_material(WebGPUContext* webgpu_context, MeshInsta
     uint32_t binding = 0;
 
     std::vector<Uniform*>& uniforms = material_bind_groups[material].uniforms;
-    Texture* texture_ref = nullptr;
+    std::unordered_map<eMaterialProperties, uint8_t>& uniform_indices = material_bind_groups[material].uniform_indices;
+    const Texture* texture_ref = nullptr;
 
-    if (material.diffuse_texture) {
+    if (material->get_diffuse_texture()) {
         Uniform* u = new Uniform();
-        uint32_t array_layers = material.diffuse_texture->get_array_layers();
+        uint32_t array_layers = material->get_diffuse_texture()->get_array_layers();
         WGPUTextureViewDimension view_dimension = array_layers > 1 ? WGPUTextureViewDimension_Cube : WGPUTextureViewDimension_2D;
-        u->data = material.diffuse_texture->get_view(view_dimension, 0, material.diffuse_texture->get_mipmap_count(), 0, array_layers);
+        if (material->get_diffuse_texture()->get_dimension() == WGPUTextureDimension_3D) {
+            view_dimension = WGPUTextureViewDimension_3D;
+            array_layers = 1;
+        }
+        u->data = material->get_diffuse_texture()->get_view(view_dimension, 0, material->get_diffuse_texture()->get_mipmap_count(), 0, array_layers);
         u->binding = 0;
         uniforms.push_back(u);
         uses_textures |= true;
-        texture_ref = material.diffuse_texture;
+        texture_ref = material->get_diffuse_texture();
     }
 
     {
         Uniform* u = new Uniform();
-        u->data = webgpu_context->create_buffer(sizeof(glm::vec4), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform, &material.color, "mat_albedo");
+        const glm::vec4& color = material->get_color();
+        u->data = webgpu_context->create_buffer(sizeof(glm::vec4), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform, &color, "mat_albedo");
         u->binding = 1;
         u->buffer_size = sizeof(glm::vec4);
+        uniform_indices[eMaterialProperties::PROP_COLOR] = uniforms.size();
         uniforms.push_back(u);
     }
 
-    if (material.metallic_roughness_texture) {
+    if (material->get_metallic_roughness_texture()) {
         Uniform* u = new Uniform();
-        u->data = material.metallic_roughness_texture->get_view();
+        u->data = material->get_metallic_roughness_texture()->get_view(WGPUTextureViewDimension_2D, 0, material->get_metallic_roughness_texture()->get_mipmap_count());
         u->binding = 2;
         uniforms.push_back(u);
         uses_textures |= true;
-        texture_ref = material.metallic_roughness_texture;
+        texture_ref = material->get_metallic_roughness_texture();
     }
 
-    if (material.flags & MATERIAL_PBR) {
+    if (material->get_type() == MATERIAL_PBR) {
         Uniform* u = new Uniform();
-        glm::vec3 occlusion_roughness_metallic = { material.occlusion, material.roughness, material.metalness };
+        glm::vec3 occlusion_roughness_metallic = { material->get_occlusion(), material->get_roughness(), material->get_metalness() };
         u->data = webgpu_context->create_buffer(sizeof(glm::vec3), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform, &occlusion_roughness_metallic, "mat_occlusion_roughness_metallic");
         u->binding = 3;
         u->buffer_size = sizeof(glm::vec3);
+        uniform_indices[eMaterialProperties::PROP_OCLUSSION_ROUGHNESS_METALLIC] = uniforms.size();
         uniforms.push_back(u);
     }
 
-    if (material.normal_texture) {
+    if (material->get_normal_texture()) {
         Uniform* u = new Uniform();
-        u->data = material.normal_texture->get_view();
+        u->data = material->get_normal_texture()->get_view(WGPUTextureViewDimension_2D, 0, material->get_normal_texture()->get_mipmap_count());
         u->binding = 4;
         uniforms.push_back(u);
         uses_textures |= true;
-        texture_ref = material.normal_texture;
+        texture_ref = material->get_normal_texture();
     }
 
-    if (material.emissive_texture) {
+    if (material->get_emissive_texture()) {
         Uniform* u = new Uniform();
-        u->data = material.emissive_texture->get_view();
+        u->data = material->get_emissive_texture()->get_view();
         u->binding = 5;
         uniforms.push_back(u);
         uses_textures |= true;
-        texture_ref = material.emissive_texture;
+        texture_ref = material->get_emissive_texture();
     }
 
-    if (material.oclussion_texture) {
+    if (material->get_type() == MATERIAL_PBR) {
         Uniform* u = new Uniform();
-        u->data = material.oclussion_texture->get_view();
+        const glm::vec3& emissive = material->get_emissive();
+        u->data = webgpu_context->create_buffer(sizeof(glm::vec3), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform, &emissive, "mat_emissive");
+        u->binding = 6;
+        u->buffer_size = sizeof(glm::vec3);
+        uniform_indices[eMaterialProperties::PROP_EMISSIVE] = uniforms.size();
+        uniforms.push_back(u);
+    }
+
+    if (material->get_occlusion_texture()) {
+        Uniform* u = new Uniform();
+        u->data = material->get_occlusion_texture()->get_view();
         u->binding = 9;
         uniforms.push_back(u);
         uses_textures |= true;
-        texture_ref = material.oclussion_texture;
-    }
-
-    if (material.flags & MATERIAL_PBR) {
-        Uniform* u = new Uniform();
-        u->data = webgpu_context->create_buffer(sizeof(glm::vec4), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform, &material.emissive, "mat_emissive");
-        u->binding = 6;
-        u->buffer_size = sizeof(glm::vec4);
-        uniforms.push_back(u);
+        texture_ref = material->get_occlusion_texture();
     }
 
     // Add a sampler for basic 2d textures if there's any texture as uniforms
@@ -137,15 +152,17 @@ void RendererStorage::register_material(WebGPUContext* webgpu_context, MeshInsta
         uniforms.push_back(sampler_uniform);
     }
 
-    if (material.transparency_type == ALPHA_MASK) {
+    if (material->get_transparency_type() == ALPHA_MASK) {
         Uniform* u = new Uniform();
-        u->data = webgpu_context->create_buffer(sizeof(float), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform, &material.alpha_mask, "mat_alpha_cutoff");
+        float alpha_mask = material->get_alpha_mask();
+        u->data = webgpu_context->create_buffer(sizeof(float), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform, &alpha_mask, "mat_alpha_cutoff");
         u->binding = 8;
         u->buffer_size = sizeof(float);
+        uniform_indices[eMaterialProperties::PROP_ALPHA_MASK] = uniforms.size();
         uniforms.push_back(u);
     }
 
-    if (material.use_skinning) {
+    if (material->get_use_skinning()) {
 
         MeshInstance3D* instance_3d = static_cast<MeshInstance3D*>(mesh_instance);
         SkeletonInstance3D* skeleton_instance = dynamic_cast<SkeletonInstance3D*>(instance_3d->get_parent());
@@ -179,19 +196,67 @@ void RendererStorage::register_material(WebGPUContext* webgpu_context, MeshInsta
             uniforms.push_back(skeleton_instance->get_animated_uniform_data());
             uniforms.push_back(skeleton_instance->get_invbind_uniform_data());
         }
-
     }
 
-    material_bind_groups[material].bind_group = webgpu_context->create_bind_group(uniforms, material.shader, 2);
+    material_bind_groups[material].bind_group = webgpu_context->create_bind_group(uniforms, material->get_shader(), 2);
 }
 
-WGPUBindGroup RendererStorage::get_material_bind_group(const Material& material)
+WGPUBindGroup RendererStorage::get_material_bind_group(const Material* material)
 {
     if (!material_bind_groups.contains(material)) {
         assert(false);
     }
 
     return material_bind_groups[material].bind_group;
+}
+
+void RendererStorage::delete_material_bind_group(WebGPUContext* webgpu_context, Material* material)
+{
+    auto it = material_bind_groups.find(material);
+
+    if (it != material_bind_groups.end()) {
+        wgpuBindGroupRelease(it->second.bind_group);
+
+        for (auto uniform : it->second.uniforms) {
+            uniform->destroy();
+        }
+
+        material_bind_groups.erase(it);
+    }
+}
+
+void RendererStorage::update_material_bind_group(WebGPUContext* webgpu_context, MeshInstance* mesh_instance, Material* material)
+{
+    std::vector<Uniform*>& uniforms = material_bind_groups[material].uniforms;
+    std::unordered_map<eMaterialProperties, uint8_t>& uniform_indices = material_bind_groups[material].uniform_indices;
+
+    uint32_t dirty_flags = material->get_dirty_flags();
+
+    if (dirty_flags & eMaterialProperties::PROP_COLOR) {
+        Uniform* u = uniforms[uniform_indices[eMaterialProperties::PROP_COLOR]];
+        const glm::vec4& color = material->get_color();
+        webgpu_context->update_buffer(std::get<WGPUBuffer>(u->data), 0, &color, sizeof(glm::vec4));
+    }
+
+    if (dirty_flags & eMaterialProperties::PROP_OCLUSSION_ROUGHNESS_METALLIC && material->get_type() == MATERIAL_PBR) {
+        Uniform* u = uniforms[uniform_indices[eMaterialProperties::PROP_OCLUSSION_ROUGHNESS_METALLIC]];
+        glm::vec3 occlusion_roughness_metallic = { material->get_occlusion(), material->get_roughness(), material->get_metalness() };
+        webgpu_context->update_buffer(std::get<WGPUBuffer>(u->data), 0, &occlusion_roughness_metallic, sizeof(glm::vec3));
+    }
+
+    if (dirty_flags & eMaterialProperties::PROP_EMISSIVE && material->get_type() == MATERIAL_PBR) {
+        Uniform* u = uniforms[uniform_indices[eMaterialProperties::PROP_EMISSIVE]];
+        const glm::vec3& emissive = material->get_emissive();
+        webgpu_context->update_buffer(std::get<WGPUBuffer>(u->data), 0, &emissive, sizeof(glm::vec3));
+    }
+
+    if (dirty_flags & eMaterialProperties::PROP_ALPHA_MASK && material->get_transparency_type() == ALPHA_MASK) {
+        Uniform* u = uniforms[uniform_indices[eMaterialProperties::PROP_ALPHA_MASK]];
+        float alpha_mask = material->get_alpha_mask();
+        webgpu_context->update_buffer(std::get<WGPUBuffer>(u->data), 0, &alpha_mask, sizeof(float));
+    }
+
+    material->reset_dirty_flags();
 }
 
 void RendererStorage::register_ui_widget(WebGPUContext* webgpu_context, Shader* shader, void* entity_mesh, const sUIData& ui_data, uint8_t bind_group_id)
@@ -206,11 +271,12 @@ void RendererStorage::register_ui_widget(WebGPUContext* webgpu_context, Shader* 
     data_uniform->binding = 0;
     data_uniform->buffer_size = sizeof(sUIData);
 
-    std::vector<Uniform*>& uniforms = ui_widget_bind_groups[entity_mesh].uniforms;
+    RendererStorage::sBindingData& binding_data = ui_widget_bind_groups[entity_mesh];
+    binding_data.uniforms = ui_widget_bind_groups[entity_mesh].uniforms;
 
-    uniforms.push_back(data_uniform);
+    binding_data.uniforms.push_back(data_uniform);
 
-    ui_widget_bind_groups[entity_mesh].bind_group = webgpu_context->create_bind_group(uniforms, shader, bind_group_id);
+    binding_data.bind_group = webgpu_context->create_bind_group(binding_data.uniforms, shader, bind_group_id);
 }
 
 WGPUBindGroup RendererStorage::get_ui_widget_bind_group(const void* widget)
@@ -233,7 +299,22 @@ void RendererStorage::update_ui_widget(WebGPUContext* webgpu_context, void* widg
     webgpu_context->update_buffer(std::get<WGPUBuffer>(data_uniform->data), 0, &ui_data, sizeof(sUIData));
 }
 
-Shader* RendererStorage::get_shader(const std::string& shader_path, const Material& material,
+void RendererStorage::delete_ui_widget(WebGPUContext* webgpu_context, void* entity_mesh)
+{
+    auto it = ui_widget_bind_groups.find(entity_mesh);
+
+    if (it != ui_widget_bind_groups.end()) {
+        wgpuBindGroupRelease(it->second.bind_group);
+
+        for (auto uniform : it->second.uniforms) {
+            uniform->destroy();
+        }
+
+        ui_widget_bind_groups.erase(it);
+    }
+}
+
+Shader* RendererStorage::get_shader(const std::string& shader_path, const Material* material,
     const std::vector<std::string> &custom_define_specializations)
 {
     std::vector<std::string> define_specializations = get_common_define_specializations(material);
@@ -270,7 +351,7 @@ Shader* RendererStorage::get_shader(const std::string& shader_path, const std::v
     return sh;
 }
 
-Shader* RendererStorage::get_shader_from_source(const char* source, const std::string& name, const Material& material, const std::vector<std::string>& custom_define_specializations)
+Shader* RendererStorage::get_shader_from_source(const char* source, const std::string& name, const Material* material, const std::vector<std::string>& custom_define_specializations)
 {
     std::vector<std::string> define_specializations = get_common_define_specializations(material);
 
@@ -329,7 +410,31 @@ void RendererStorage::reload_shader(const std::string& shader_path)
     }
 }
 
-Texture* RendererStorage::get_texture(const std::string& texture_path, bool is_srgb)
+void RendererStorage::reload_engine_shader(const std::string& shader_path)
+{
+    std::string name = std::filesystem::path(shader_path).filename().string();
+
+    // Check if already loaded
+    for (auto& [shader_name, shader] : shaders) {
+        if (shader_name.find(name) != std::string::npos) {
+            shader->reload(shader_path);
+        }
+    }
+
+    // If it is not a shader, check if it is a library
+    auto it1 = shader_library_references.find(name);
+    if (it1 != shader_library_references.end())
+    {
+        for (auto& shader_name : shader_library_references[name]) {
+            if (shaders.contains(shader_name)) {
+                Shader* shader = shaders[shader_name];
+                shader->reload();
+            }
+        }
+    }
+}
+
+Texture* RendererStorage::get_texture(const std::string& texture_path, TextureStorageFlags flags)
 {
     std::string name = texture_path;
 
@@ -363,11 +468,19 @@ Texture* RendererStorage::get_texture(const std::string& texture_path, bool is_s
     }
     else
     {
+        bool is_srgb = flags & TEXTURE_STORAGE_SRGB;
         tx->load(texture_path, is_srgb);
+
+        // Ref to keep memory alive
+        if (flags & TEXTURE_STORAGE_KEEP_MEMORY) {
+            tx->ref();
+        }
     }
 
     // register in map
     textures[name] = tx;
+
+    tx->set_name(name);
 
     return tx;
 }
@@ -381,7 +494,7 @@ Surface* RendererStorage::get_surface(const std::string& mesh_path)
     if (it != surfaces.end())
         return it->second;
 
-    Surface* new_surface= new Surface();
+    Surface* new_surface = new Surface();
 
     // register in map
     surfaces[name] = new_surface;
@@ -402,7 +515,7 @@ Animation* RendererStorage::get_animation(const std::string& animation_path)
     if (it != animations.end())
         return it->second;    
 
-    return NULL;
+    return nullptr;
 }
 
 void RendererStorage::register_basic_surfaces()
@@ -410,74 +523,88 @@ void RendererStorage::register_basic_surfaces()
     // Quad
     Surface* quad_mesh = new Surface();
     quad_mesh->create_quad();
+    quad_mesh->ref();
     surfaces["quad"] = quad_mesh;
 
     // Box
     Surface* box_mesh = new Surface();
     box_mesh->create_box();
+    box_mesh->ref();
     surfaces["box"] = box_mesh;
 
     // Rounded Box
     Surface* rounded_box_mesh = new Surface();
     rounded_box_mesh->create_rounded_box();
+    rounded_box_mesh->ref();
     surfaces["rounded_box"] = rounded_box_mesh;
 
     // Sphere
     Surface* sphere_mesh = new Surface();
     sphere_mesh->create_sphere();
+    sphere_mesh->ref();
     surfaces["sphere"] = sphere_mesh;
 
     // Cone
     Surface* cone_mesh = new Surface();
     cone_mesh->create_cone();
+    cone_mesh->ref();
     surfaces["cone"] = cone_mesh;
 
     // Cylinder
     Surface* cylinder_mesh = new Surface();
     cylinder_mesh->create_cylinder();
+    cylinder_mesh->ref();
     surfaces["cylinder"] = cylinder_mesh;
 
     // Capsule
     Surface* capsule_mesh = new Surface();
     capsule_mesh->create_capsule();
+    capsule_mesh->ref();
     surfaces["capsule"] = capsule_mesh;
 
     // Torus
     Surface* torus_mesh = new Surface();
     torus_mesh->create_torus();
+    torus_mesh->ref();
     surfaces["torus"] = torus_mesh;
 }
 
-std::vector<std::string> RendererStorage::get_common_define_specializations(const Material& material)
+std::vector<std::string> RendererStorage::get_common_define_specializations(const Material* material)
 {
+    bool default_material = false;
+
+    if (!material) {
+        material = new Material();
+        default_material = true;
+    }
+
     std::vector<std::string> define_specializations;
 
-    if (material.diffuse_texture) {
+    if (material->get_diffuse_texture()) {
         define_specializations.push_back("ALBEDO_TEXTURE");
     }
 
-    if (material.metallic_roughness_texture) {
+    if (material->get_metallic_roughness_texture()) {
         define_specializations.push_back("METALLIC_ROUGHNESS_TEXTURE");
     }
 
-    if (material.normal_texture) {
+    if (material->get_normal_texture()) {
         define_specializations.push_back("NORMAL_TEXTURE");
     }
 
-    if (material.emissive_texture) {
+    if (material->get_emissive_texture()) {
         define_specializations.push_back("EMISSIVE_TEXTURE");
     }
 
-    if (material.oclussion_texture) {
+    if (material->get_occlusion_texture()) {
         define_specializations.push_back("OCLUSSION_TEXTURE");
     }
-
 
     if (!define_specializations.empty()) {
         define_specializations.push_back("USE_SAMPLER");
     }
 
-    switch (material.topology_type) {
+    switch (material->get_topology_type()) {
     case TOPOLOGY_TRIANGLE_LIST:
         define_specializations.push_back("TRIANGLE_LIST");
         break;
@@ -497,7 +624,7 @@ std::vector<std::string> RendererStorage::get_common_define_specializations(cons
         assert(0);
     }
 
-    switch (material.cull_type) {
+    switch (material->get_cull_type()) {
     case CULL_NONE:
         define_specializations.push_back("CULL_NONE");
         break;
@@ -511,7 +638,7 @@ std::vector<std::string> RendererStorage::get_common_define_specializations(cons
         assert(0);
     }
 
-    switch (material.transparency_type) {
+    switch (material->get_transparency_type()) {
     case ALPHA_OPAQUE:
         define_specializations.push_back("ALPHA_OPAQUE");
         break;
@@ -526,18 +653,26 @@ std::vector<std::string> RendererStorage::get_common_define_specializations(cons
         break;
     }
 
-    if (material.depth_read) {
+    if (material->get_depth_read()) {
         define_specializations.push_back("DEPTH_READ");
     }
 
-    if (material.depth_write) {
+    if (material->get_depth_write()) {
         define_specializations.push_back("DEPTH_WRITE");
     }
 
-    if (material.use_skinning) {
+    if (material->get_use_skinning()) {
         define_specializations.push_back("USE_SKINNING");
-
     }
+
+    if (material->get_type() == MATERIAL_UNLIT) {
+        define_specializations.push_back("UNLIT_MATERIAL");
+    }
+
+    if (default_material) {
+        delete material;
+    }
+
     return define_specializations;
 }
 
@@ -546,7 +681,7 @@ void RendererStorage::reload_all_render_pipelines()
     for (auto& shader_pair : shaders) {
 
         Shader* shader = shader_pair.second;
-        Pipeline* pipeline = shader->get_pipeline();
+        const Pipeline* pipeline = shader->get_pipeline();
 
         if (pipeline && pipeline->is_render_pipeline() && pipeline->is_msaa_allowed()) {
             shader->reload();
@@ -554,9 +689,9 @@ void RendererStorage::reload_all_render_pipelines()
     }
 }
 
-void RendererStorage::register_render_pipeline(Material& material)
+void RendererStorage::register_render_pipeline(Material* material)
 {
-    if (material.shader && material.shader->get_pipeline()) {
+    if (material->get_shader() && material->get_shader()->get_pipeline()) {
         return;
     }
 
@@ -564,7 +699,7 @@ void RendererStorage::register_render_pipeline(Material& material)
 
     PipelineDescription description = {};
 
-    switch (material.topology_type) {
+    switch (material->get_topology_type()) {
     case TOPOLOGY_TRIANGLE_LIST:
         description.topology = WGPUPrimitiveTopology_TriangleList;
         break;
@@ -584,14 +719,14 @@ void RendererStorage::register_render_pipeline(Material& material)
         assert(0);
     }
 
-    if (material.flags & MATERIAL_2D) {
+    if (material->get_is_2D()) {
         description.depth_write = false;
     }
     else {
-        description.depth_write = material.depth_write;
+        description.depth_write = material->get_depth_write();
     }
 
-    switch (material.cull_type) {
+    switch (material->get_cull_type()) {
     case CULL_NONE:
         description.cull_mode = WGPUCullMode_None;
         break;
@@ -612,7 +747,7 @@ void RendererStorage::register_render_pipeline(Material& material)
     color_target.format = swapchain_format;
     color_target.writeMask = WGPUColorWriteMask_All;
 
-    switch (material.transparency_type) {
+    switch (material->get_transparency_type()) {
     case ALPHA_OPAQUE:
         break;
     case ALPHA_BLEND: {
@@ -640,18 +775,18 @@ void RendererStorage::register_render_pipeline(Material& material)
         break;
     }
 
-    description.depth_read = material.depth_read;
+    description.depth_read = material->get_depth_read();
     description.sample_count = Renderer::instance->get_msaa_count();
 
-    RenderPipelineKey key = { material.shader, color_target, description };
+    RenderPipelineKey key = { material->get_shader(), color_target, description};
 
     if (registered_render_pipelines.contains(key)) {
-        material.shader->set_pipeline(registered_render_pipelines[key]);
+        material->set_shader_pipeline(registered_render_pipelines[key]);
         return;
     }
 
     Pipeline* render_pipeline = new Pipeline();
-    render_pipeline->create_render_async(material.shader, color_target, description);
+    render_pipeline->create_render_async(material->get_shader_ref(), color_target, description);
     registered_render_pipelines[key] = render_pipeline;
 }
 
