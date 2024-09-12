@@ -371,6 +371,11 @@ namespace ui {
         {
             Node2D* node_2d = static_cast<Node2D*>(get_children()[i]);
 
+            if (!node_2d->get_visibility()) {
+                child_count--;
+                continue;
+            }
+
             if (node_2d->get_class_type() == Node2DClassType::HSLIDER) {
                 child_count++;
             }
