@@ -348,7 +348,7 @@ uint8_t Renderer::get_msaa_count()
     return msaa_count;
 }
 
-void Renderer::prepare_instancing()
+void Renderer::prepare_instancing(const glm::vec3& camera_position)
 {
     update_lights();
 
@@ -437,8 +437,8 @@ void Renderer::prepare_instancing()
                 glm::vec3 lhs_pos = glm::vec3(lhs.global_matrix[3]);
                 glm::vec3 rhs_pos = glm::vec3(rhs.global_matrix[3]);
 
-                float lhs_dist = glm::distance2(lhs_pos, camera->get_eye());
-                float rhs_dist = glm::distance2(rhs_pos, camera->get_eye());
+                float lhs_dist = glm::distance2(lhs_pos, camera_position);
+                float rhs_dist = glm::distance2(rhs_pos, camera_position);
 
                 if (lhs_dist > rhs_dist) return true;
 

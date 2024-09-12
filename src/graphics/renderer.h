@@ -171,7 +171,7 @@ public:
 
     bool is_inside_frustum(const glm::vec3& minp, const glm::vec3& maxp) const;
 
-    void prepare_instancing();
+    void prepare_instancing(const glm::vec3& camera_position);
     void render_opaque(WGPURenderPassEncoder render_pass, const WGPUBindGroup& render_bind_group_camera, uint32_t camera_buffer_stride = 0);
     void render_transparent(WGPURenderPassEncoder render_pass, const WGPUBindGroup& render_bind_group_camera, uint32_t camera_buffer_stride = 0);
     void render_2D(WGPURenderPassEncoder render_pass, const WGPUBindGroup& render_bind_group_camera);
