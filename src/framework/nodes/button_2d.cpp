@@ -86,6 +86,8 @@ namespace ui {
 
             set_selected(allow_toggle ? !last_value : true);
         });
+
+        set_visibility(!(flags & HIDDEN));
     }
 
     void Button2D::set_disabled(bool value)
@@ -301,6 +303,8 @@ namespace ui {
             text_2d->set_visibility(false);
             add_child(text_2d);
         }
+
+        set_visibility(!(flags& HIDDEN));
     }
 
     /*

@@ -129,7 +129,13 @@ bool Node2D::set_visibility(bool value)
 
     visibility = value;
 
-    return last != value;
+    bool changed = (last != value);
+
+    if (changed) {
+        on_children_changed();
+    }
+
+    return changed;
 }
 
 void Node2D::set_viewport_model(glm::mat4x4 model)
