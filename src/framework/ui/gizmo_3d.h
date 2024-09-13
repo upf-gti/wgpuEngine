@@ -52,6 +52,10 @@ class Gizmo3D {
     MeshInstance3D* scale_arrow_mesh_y = nullptr;
     MeshInstance3D* scale_arrow_mesh_z = nullptr;
 
+    MeshInstance3D* scale_sphere_mesh_x = nullptr;
+    MeshInstance3D* scale_sphere_mesh_y = nullptr;
+    MeshInstance3D* scale_sphere_mesh_z = nullptr;
+
     MeshInstance3D* wire_circle_mesh_x = nullptr;
     MeshInstance3D* wire_circle_mesh_y = nullptr;
     MeshInstance3D* wire_circle_mesh_z = nullptr;
@@ -66,10 +70,11 @@ class Gizmo3D {
 	glm::vec3 gizmo_position = { 0.0f, 0.0f, 0.0f };
     glm::vec3 gizmo_scale = { 1.0f, 1.0f, 1.0f };
 
-    glm::vec3 arrow_gizmo_scale = {};
-	glm::vec3 mesh_size = {};
+    const glm::vec3 arrow_gizmo_scale = glm::vec3(0.1f);
+    const glm::vec3 sphere_gizmo_scale = glm::vec3(0.1f);
+	const glm::vec3 mesh_size = glm::vec3(0.3f, 1.8f, 0.3f);
 
-    float circle_gizmo_scale = 0.0f;
+    const float circle_gizmo_scale = 0.05f;
     glm::vec3 reference_rotation_pose;
     glm::quat current_rotation = { 0.0f, 0.0f, 0.0f, 1.0f };
     glm::quat rotation_diff = { 0.0f, 0.0f, 0.0f, 1.0f };

@@ -298,7 +298,7 @@ namespace intersection {
     inline bool point_sphere(const glm::vec3& point,
         const glm::vec3& sphere_center,
         const float      radius) {
-        return glm::length(point - sphere_center) <= radius;
+        return glm::abs(glm::length(point - sphere_center)) <= radius;
     }
 
     inline bool AABB_AABB_min_max(const AABB& box1, const AABB& box2)
