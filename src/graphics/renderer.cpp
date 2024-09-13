@@ -30,8 +30,12 @@
 
 #include "framework/scene/parse_scene.h"
 #include "framework/nodes/mesh_instance_3d.h"
+#include "framework/camera/camera_2d.h"
+#include "framework/camera/flyover_camera.h"
 
 #include <algorithm>
+
+#include "shaders/quad_mirror.wgsl.gen.h"
 
 #include "glm/gtx/quaternion.hpp"
 
@@ -156,10 +160,30 @@ int Renderer::initialize(GLFWwindow* window, bool use_mirror_screen)
     init_depth_buffers();
 
     init_lighting_bind_group();
+    init_camera_bind_group();
 
     init_multisample_textures();
 
     init_timestamp_queries();
+
+#ifdef XR_SUPPORT
+    if (is_openxr_available && use_mirror_screen) {
+        init_mirror_pipeline();
+    }
+#endif
+
+    // Main 3D Camera
+
+    camera = new FlyoverCamera();
+    camera->set_perspective(glm::radians(45.0f), webgpu_context->render_width / static_cast<float>(webgpu_context->render_height), z_near, z_far);
+    camera->look_at(glm::vec3(0.0f, 0.2f, 0.8f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    camera->set_mouse_sensitivity(0.003f);
+    camera->set_speed(0.5f);
+
+    // Orthographic camera for ui rendering
+
+    camera_2d = new Camera2D();
+    camera_2d->set_orthographic(0.0f, webgpu_context->render_width, webgpu_context->render_height, 0.0f, -1.0f, 1.0f);
 
     selected_mesh_aabb = parse_mesh("data/meshes/cube/aabb_cube.obj", false);
 
@@ -176,9 +200,21 @@ int Renderer::initialize(GLFWwindow* window, bool use_mirror_screen)
 
 void Renderer::clean()
 {
-#ifdef XR_SUPPORT
+
+#if defined(XR_SUPPORT)
+
     xr_context->clean();
-#endif
+
+#if defined(USE_MIRROR_WINDOW)
+    if (is_openxr_available) {
+        for (uint8_t i = 0; i < swapchain_uniforms.size(); i++) {
+            swapchain_uniforms[i].destroy();
+            wgpuBindGroupRelease(swapchain_bind_groups[i]);
+        }
+    }
+
+#endif // XR_SUPPORT
+#endif // USE_MIRROR_WINDOW
 
     uint8_t num_textures = is_openxr_available ? 2 : 1;
     for (int i = 0; i < num_textures; ++i)
@@ -201,6 +237,36 @@ void Renderer::clean()
     delete renderdoc_capture;
 #endif
 
+    if (camera) {
+        delete camera;
+    }
+
+    if (camera_2d) {
+        delete camera_2d;
+    }
+}
+
+void Renderer::update(float delta_time)
+{
+#if defined(XR_SUPPORT)
+    if (is_openxr_available) {
+        xr_context->update();
+    }
+#endif
+
+    // Create the command encoder
+    WGPUCommandEncoderDescriptor encoder_desc = {};
+    global_command_encoder = wgpuDeviceCreateCommandEncoder(webgpu_context->device, &encoder_desc);
+
+    if (!is_openxr_available) {
+        const auto& io = ImGui::GetIO();
+        if (!io.WantCaptureMouse && !io.WantCaptureKeyboard /*&& !IO::any_focus()*/) {
+            camera->update(delta_time);
+        }
+    }
+    else {
+        camera->update(delta_time);
+    }
 }
 
 void Renderer::init_lighting_bind_group()
@@ -767,3 +833,127 @@ GLFWwindow* Renderer::get_glfw_window()
     return webgpu_context->window;
 };
 
+#if defined(XR_SUPPORT) && defined(USE_MIRROR_WINDOW)
+
+void Renderer::init_mirror_pipeline()
+{
+    mirror_shader = RendererStorage::get_shader_from_source(shaders::quad_mirror::source, shaders::quad_mirror::path);
+
+    quad_surface.create_quad(2.0f, 2.0f);
+
+    WGPUTextureFormat swapchain_format = webgpu_context->swapchain_format;
+
+    WGPUColorTargetState color_target = {};
+    color_target.format = swapchain_format;
+    color_target.blend = nullptr;
+    color_target.writeMask = WGPUColorWriteMask_All;
+
+    // Generate uniforms from the swapchain
+    for (uint8_t i = 0; i < xr_context->swapchains[0].images.size(); i++) {
+        Uniform swapchain_uni;
+
+        swapchain_uni.data = xr_context->swapchains[0].images[i].textureView;
+        swapchain_uni.binding = 0;
+
+        swapchain_uniforms.push_back(swapchain_uni);
+    }
+
+    linear_sampler_uniform.data = webgpu_context->create_sampler(WGPUAddressMode_ClampToEdge, WGPUAddressMode_ClampToEdge, WGPUAddressMode_ClampToEdge, WGPUFilterMode_Linear, WGPUFilterMode_Linear);
+    linear_sampler_uniform.binding = 1;
+
+    // Generate bindgroups from the swapchain
+    for (uint8_t i = 0; i < swapchain_uniforms.size(); i++) {
+        Uniform swapchain_uni;
+
+        std::vector<Uniform*> uniforms = { &swapchain_uniforms[i], &linear_sampler_uniform };
+
+        swapchain_bind_groups.push_back(webgpu_context->create_bind_group(uniforms, mirror_shader, 0));
+    }
+
+    mirror_pipeline.create_render(mirror_shader, color_target, { .use_depth = false, .allow_msaa = false });
+}
+
+void Renderer::render_mirror(WGPUTextureView screen_surface_texture_view)
+{
+    ImGui::Render();
+
+    // Create & fill the render pass (encoder)
+    {
+        // Prepare the color attachment
+        WGPURenderPassColorAttachment render_pass_color_attachment = {};
+        render_pass_color_attachment.view = screen_surface_texture_view;
+        render_pass_color_attachment.loadOp = WGPULoadOp_Clear;
+        render_pass_color_attachment.storeOp = WGPUStoreOp_Store;
+        render_pass_color_attachment.clearValue = WGPUColor(clear_color.x, clear_color.y, clear_color.z, 1.0f);
+        render_pass_color_attachment.depthSlice = WGPU_DEPTH_SLICE_UNDEFINED;
+
+        WGPURenderPassDescriptor render_pass_descr = {};
+        render_pass_descr.colorAttachmentCount = 1;
+        render_pass_descr.colorAttachments = &render_pass_color_attachment;
+        render_pass_descr.depthStencilAttachment = nullptr;
+
+        {
+            WGPURenderPassEncoder render_pass = wgpuCommandEncoderBeginRenderPass(global_command_encoder, &render_pass_descr);
+
+            // Bind Pipeline
+            mirror_pipeline.set(render_pass);
+
+            // Set binding group
+            wgpuRenderPassEncoderSetBindGroup(render_pass, 0, swapchain_bind_groups[xr_context->swapchains[0].image_index], 0, nullptr);
+
+            // Set vertex buffer while encoding the render pass
+            wgpuRenderPassEncoderSetVertexBuffer(render_pass, 0, quad_surface.get_vertex_buffer(), 0, quad_surface.get_byte_size());
+
+            // Submit drawcall
+            wgpuRenderPassEncoderDraw(render_pass, 6, 1, 0, 0);
+
+            wgpuRenderPassEncoderEnd(render_pass);
+
+            wgpuRenderPassEncoderRelease(render_pass);
+        }
+    }
+
+    // render imgui
+    {
+        WGPURenderPassColorAttachment color_attachments = {};
+        color_attachments.view = screen_surface_texture_view;
+        color_attachments.loadOp = WGPULoadOp_Load;
+        color_attachments.storeOp = WGPUStoreOp_Store;
+        color_attachments.clearValue = { 0.0, 0.0, 0.0, 0.0 };
+        color_attachments.depthSlice = WGPU_DEPTH_SLICE_UNDEFINED;
+
+        WGPURenderPassDescriptor render_pass_desc = {};
+        render_pass_desc.colorAttachmentCount = 1;
+        render_pass_desc.colorAttachments = &color_attachments;
+        render_pass_desc.depthStencilAttachment = nullptr;
+
+        WGPURenderPassEncoder pass = wgpuCommandEncoderBeginRenderPass(global_command_encoder, &render_pass_desc);
+
+        ImGui_ImplWGPU_RenderDrawData(ImGui::GetDrawData(), pass);
+
+        wgpuRenderPassEncoderEnd(pass);
+        wgpuRenderPassEncoderRelease(pass);
+    }
+}
+
+#endif
+
+void Renderer::init_camera_bind_group()
+{
+    camera_buffer_stride = std::max(static_cast<uint32_t>(sizeof(sCameraData)), required_limits.limits.minUniformBufferOffsetAlignment);
+
+    camera_uniform.data = webgpu_context->create_buffer(camera_buffer_stride * EYE_COUNT, WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform, nullptr, "camera_buffer");
+    camera_uniform.binding = 0;
+    camera_uniform.buffer_size = sizeof(sCameraData);
+
+    camera_2d_uniform.data = webgpu_context->create_buffer(sizeof(sCameraData), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform, nullptr, "camera_2d_buffer");
+    camera_2d_uniform.binding = 0;
+    camera_2d_uniform.buffer_size = sizeof(sCameraData);
+
+    std::vector<Uniform*> uniforms = { &camera_uniform };
+    render_bind_group_camera = webgpu_context->create_bind_group(uniforms, RendererStorage::get_shader_from_source(shaders::mesh_forward::source, shaders::mesh_forward::path), 1);
+
+    uniforms = { &camera_2d_uniform };
+    render_bind_group_camera_2d = webgpu_context->create_bind_group(uniforms, RendererStorage::get_shader_from_source(shaders::mesh_forward::source, shaders::mesh_forward::path), 1);
+
+}

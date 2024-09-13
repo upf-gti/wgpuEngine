@@ -4,8 +4,12 @@
 #include "graphics/uniforms_structs.h"
 #include "graphics/uniform.h"
 #include "framework/math/frustum_cull.h"
+#include "graphics/surface.h"
+#include "graphics/pipeline.h"
 
 #include "glm/mat4x4.hpp"
+
+#include "backends/imgui_impl_wgpu.h"
 
 #include <map>
 #include <string>
@@ -34,12 +38,23 @@ protected:
 
     WebGPUContext*  webgpu_context;
 
+    WGPUCommandEncoder global_command_encoder;
+
     Camera* camera = nullptr;
     Camera* camera_2d = nullptr;
 
+    // Render meshes with material color
+    WGPUBindGroup render_bind_group_camera = nullptr;
+    WGPUBindGroup render_bind_group_camera_2d = nullptr;
+
+    Uniform camera_uniform;
+    Uniform camera_2d_uniform;
+
+    uint32_t camera_buffer_stride = 0;
+
     Texture* irradiance_texture = nullptr;
 
-    Texture*         eye_depth_textures;
+    Texture*        eye_depth_textures;
     WGPUTextureView eye_depth_texture_view[EYE_COUNT] = {};
 
     uint8_t msaa_count = 1;
@@ -91,7 +106,22 @@ protected:
         RENDER_LIST_SIZE
     };
 
+    struct sCameraData {
+        glm::mat4x4 mvp;
+
+        glm::vec3 eye;
+        float exposure;
+
+        glm::vec3 right_controller_position;
+        float ibl_intensity;
+    };
+
+    sCameraData camera_data;
+    sCameraData camera_2d_data;
+
     void render_render_list(int list_index, WGPURenderPassEncoder render_pass, const WGPUBindGroup& render_bind_group_camera, uint32_t camera_buffer_stride = 0);
+
+    void init_camera_bind_group();
 
     std::vector<float> get_timestamps();
 
@@ -150,7 +180,7 @@ public:
     virtual int initialize(GLFWwindow* window, bool use_mirror_screen = false);
     virtual void clean();
     
-    virtual void update(float delta_time) = 0;
+    virtual void update(float delta_time);
     virtual void render() = 0;
 
     void init_lighting_bind_group();
@@ -178,6 +208,22 @@ public:
 
     bool get_openxr_available() { return is_openxr_available; }
     bool get_use_mirror_screen() { return use_mirror_screen; }
+
+    // For the XR mirror screen
+#if defined(USE_MIRROR_WINDOW)
+    void render_mirror(WGPUTextureView swapchain_view);
+    void init_mirror_pipeline();
+
+    Pipeline mirror_pipeline;
+    Shader* mirror_shader = nullptr;
+
+    Uniform linear_sampler_uniform;
+
+    Surface quad_surface;
+
+    std::vector<Uniform> swapchain_uniforms;
+    std::vector<WGPUBindGroup> swapchain_bind_groups;
+#endif // USE_MIRROR_WINDOW
 
     uint8_t timestamp(WGPUCommandEncoder encoder, const char* label = "");
 
