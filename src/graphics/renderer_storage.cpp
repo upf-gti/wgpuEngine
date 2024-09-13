@@ -53,19 +53,20 @@ void RendererStorage::register_material_bind_group(WebGPUContext* webgpu_context
     std::unordered_map<eMaterialProperties, uint8_t>& uniform_indices = material_bind_groups[material].uniform_indices;
     const Texture* texture_ref = nullptr;
 
-    if (material->get_diffuse_texture()) {
+    Texture* diffuse_texture = material->get_diffuse_texture();
+    if (diffuse_texture) {
         Uniform* u = new Uniform();
-        uint32_t array_layers = material->get_diffuse_texture()->get_array_layers();
+        uint32_t array_layers = diffuse_texture->get_array_layers();
         WGPUTextureViewDimension view_dimension = array_layers > 1 ? WGPUTextureViewDimension_Cube : WGPUTextureViewDimension_2D;
-        if (material->get_diffuse_texture()->get_dimension() == WGPUTextureDimension_3D) {
+        if (diffuse_texture->get_dimension() == WGPUTextureDimension_3D) {
             view_dimension = WGPUTextureViewDimension_3D;
             array_layers = 1;
         }
-        u->data = material->get_diffuse_texture()->get_view(view_dimension, 0, material->get_diffuse_texture()->get_mipmap_count(), 0, array_layers);
+        u->data = diffuse_texture->get_view(view_dimension, 0, diffuse_texture->get_mipmap_count(), 0, array_layers);
         u->binding = 0;
         uniforms.push_back(u);
         uses_textures |= true;
-        texture_ref = material->get_diffuse_texture();
+        texture_ref = diffuse_texture;
     }
 
     {
@@ -78,13 +79,14 @@ void RendererStorage::register_material_bind_group(WebGPUContext* webgpu_context
         uniforms.push_back(u);
     }
 
-    if (material->get_metallic_roughness_texture()) {
+    Texture* metallic_roughness_texture = material->get_metallic_roughness_texture();
+    if (metallic_roughness_texture) {
         Uniform* u = new Uniform();
-        u->data = material->get_metallic_roughness_texture()->get_view(WGPUTextureViewDimension_2D, 0, material->get_metallic_roughness_texture()->get_mipmap_count());
+        u->data = metallic_roughness_texture->get_view(WGPUTextureViewDimension_2D, 0, metallic_roughness_texture->get_mipmap_count());
         u->binding = 2;
         uniforms.push_back(u);
         uses_textures |= true;
-        texture_ref = material->get_metallic_roughness_texture();
+        texture_ref = metallic_roughness_texture;
     }
 
     if (material->get_type() == MATERIAL_PBR) {
@@ -97,22 +99,24 @@ void RendererStorage::register_material_bind_group(WebGPUContext* webgpu_context
         uniforms.push_back(u);
     }
 
-    if (material->get_normal_texture()) {
+    Texture* normal_texture = material->get_normal_texture();
+    if (normal_texture) {
         Uniform* u = new Uniform();
-        u->data = material->get_normal_texture()->get_view(WGPUTextureViewDimension_2D, 0, material->get_normal_texture()->get_mipmap_count());
+        u->data = normal_texture->get_view(WGPUTextureViewDimension_2D, 0, normal_texture->get_mipmap_count());
         u->binding = 4;
         uniforms.push_back(u);
         uses_textures |= true;
-        texture_ref = material->get_normal_texture();
+        texture_ref = normal_texture;
     }
 
-    if (material->get_emissive_texture()) {
+    Texture* emissive_texture = material->get_emissive_texture();
+    if (emissive_texture) {
         Uniform* u = new Uniform();
-        u->data = material->get_emissive_texture()->get_view();
+        u->data = emissive_texture->get_view(WGPUTextureViewDimension_2D, 0, emissive_texture->get_mipmap_count());
         u->binding = 5;
         uniforms.push_back(u);
         uses_textures |= true;
-        texture_ref = material->get_emissive_texture();
+        texture_ref = emissive_texture;
     }
 
     if (material->get_type() == MATERIAL_PBR) {
@@ -125,13 +129,14 @@ void RendererStorage::register_material_bind_group(WebGPUContext* webgpu_context
         uniforms.push_back(u);
     }
 
-    if (material->get_occlusion_texture()) {
+    Texture* occlusion_texture = material->get_occlusion_texture();
+    if (occlusion_texture) {
         Uniform* u = new Uniform();
-        u->data = material->get_occlusion_texture()->get_view();
+        u->data = occlusion_texture->get_view(WGPUTextureViewDimension_2D, 0, occlusion_texture->get_mipmap_count());
         u->binding = 9;
         uniforms.push_back(u);
         uses_textures |= true;
-        texture_ref = material->get_occlusion_texture();
+        texture_ref = occlusion_texture;
     }
 
     // Add a sampler for basic 2d textures if there's any texture as uniforms
