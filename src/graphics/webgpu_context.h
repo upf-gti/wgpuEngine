@@ -76,6 +76,8 @@ struct WebGPUContext {
     int                    initialize(WGPURequestAdapterOptions adapter_opts, WGPURequiredLimits required_limits, GLFWwindow* window, bool create_screen_swapchain);
     void                   destroy();
 
+    void                   close_window();
+
     void                   create_instance();
 
     WGPUInstance           get_instance();

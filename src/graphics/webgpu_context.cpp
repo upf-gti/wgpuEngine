@@ -291,6 +291,17 @@ void WebGPUContext::destroy()
     delete brdf_lut_texture;
 
     delete prefiltered_env_pipeline;
+
+    if (window) {
+        close_window();
+    }
+}
+
+void WebGPUContext::close_window()
+{
+#if !defined(XR_SUPPORT) || (defined(XR_SUPPORT) && defined(USE_MIRROR_WINDOW))
+    glfwDestroyWindow(window);
+#endif
 }
 
 void WebGPUContext::create_instance()
