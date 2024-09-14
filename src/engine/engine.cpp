@@ -74,6 +74,8 @@ Engine::~Engine()
 
 int Engine::initialize(Renderer* renderer)
 {
+    spdlog::set_pattern("[%^%l%$] %v");
+    spdlog::set_level(spdlog::level::debug);
 
 #ifdef __EMSCRIPTEN__
     int screen_width = canvas_get_width();

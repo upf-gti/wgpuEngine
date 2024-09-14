@@ -38,6 +38,17 @@ protected:
 
     WebGPUContext*  webgpu_context;
 
+    std::function<void(void*, WGPURenderPassEncoder)> custom_pre_opaque_pass = nullptr;
+    std::function<void(void*, WGPURenderPassEncoder)> custom_post_opaque_pass = nullptr;
+
+    std::function<void(void*, WGPURenderPassEncoder)> custom_pre_transparent_pass = nullptr;
+    std::function<void(void*, WGPURenderPassEncoder)> custom_post_transparent_pass = nullptr;
+
+    std::function<void(void*, WGPURenderPassEncoder)> custom_pre_2d_pass = nullptr;
+    std::function<void(void*, WGPURenderPassEncoder)> custom_post_2d_pass = nullptr;
+
+    void* custom_pass_user_data = nullptr;
+
     WGPUCommandEncoder global_command_encoder;
 
     Camera* camera = nullptr;
@@ -50,7 +61,7 @@ protected:
     Uniform camera_uniform;
     Uniform camera_2d_uniform;
 
-    uint32_t camera_buffer_stride = 0;
+    uint32_t xr_camera_buffer_stride = 0;
 
     Texture* irradiance_texture = nullptr;
 
@@ -168,6 +179,16 @@ protected:
     std::vector<float> last_frame_timestamps;
 
     bool frustum_camera_paused = false;
+    bool debug_this_frame = false;
+
+    void render_screen(WGPUTextureView swapchain_view);
+
+#if defined(XR_SUPPORT)
+    void render_xr();
+#endif // XR_SUPPORT
+
+    float exposure = 1.0f;
+    float ibl_intensity = 1.0f;
 
 public:
 
@@ -181,7 +202,9 @@ public:
     virtual void clean();
     
     virtual void update(float delta_time);
-    virtual void render() = 0;
+    virtual void render();
+
+    void set_custom_pass_user_data(void* user_data);
 
     void init_lighting_bind_group();
     WGPUBindGroup get_lighting_bind_group() { return lighting_bind_group; }
@@ -208,6 +231,18 @@ public:
 
     bool get_openxr_available() { return is_openxr_available; }
     bool get_use_mirror_screen() { return use_mirror_screen; }
+
+    inline void set_exposure(float new_exposure) { exposure = new_exposure; }
+    inline void set_ibl_intensity(float new_intensity) { ibl_intensity = new_intensity; }
+
+    inline void toogle_frame_debug() { debug_this_frame = true; }
+
+    float get_exposure() { return exposure; }
+    float get_ibl_intensity() { return ibl_intensity; }
+
+    inline Uniform* get_current_camera_uniform() { return &camera_uniform; }
+    glm::vec3 get_camera_eye();
+    glm::vec3 get_camera_front();
 
     // For the XR mirror screen
 #if defined(USE_MIRROR_WINDOW)
@@ -253,5 +288,4 @@ public:
     Texture* get_irradiance_texture() { return irradiance_texture; }
 
     Camera* get_camera() { return camera; }
-    glm::vec3 get_camera_eye();
 };
