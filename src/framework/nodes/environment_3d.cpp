@@ -26,7 +26,7 @@ Environment3D::Environment3D() : MeshInstance3D()
     surface->create_skybox();
     surface->set_material(material);
 
-    surfaces.push_back(surface);
+    add_surface(surface);
 }
 
 void Environment3D::update(float delta_time)

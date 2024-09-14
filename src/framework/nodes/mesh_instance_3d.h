@@ -18,8 +18,6 @@ public:
 
     void set_aabb(const AABB& new_aabb) override;
 
-    AABB get_surface_world_aabb(int surface_idx);
-
 	virtual void render() override;
 	virtual void update(float delta_time) override;
 

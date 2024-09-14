@@ -34,22 +34,6 @@ class Node {
     static std::unordered_map<std::string, std::vector<SignalType>> mapping_signals;
     static std::unordered_map<uint8_t, std::vector<FuncEmpty>> controller_signals;
 
-protected:
-
-    static uint32_t last_node_id;
-
-    std::string name;
-    std::string node_type;
-
-    NodeType type;
-
-    std::vector<Node*> children;
-
-    AABB aabb = {};
-    // Defined in public section
-    struct AnimatableProperty;
-    std::unordered_map<std::string, AnimatableProperty> animatable_properties;
-
 public:
 
     enum class AnimatablePropertyType {
@@ -80,6 +64,22 @@ public:
         AnimatablePropertyType property_type = AnimatablePropertyType::UNDEFINED;
         void* property = nullptr;
     };
+
+protected:
+
+    static uint32_t last_node_id;
+
+    std::string name;
+    std::string node_type;
+
+    NodeType type;
+
+    std::vector<Node*> children;
+
+    AABB aabb = {};
+    std::unordered_map<std::string, AnimatableProperty> animatable_properties;
+
+public:
 
     Node();
     virtual ~Node() {};
