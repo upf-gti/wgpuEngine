@@ -186,15 +186,15 @@ int Renderer::initialize(GLFWwindow* window, bool use_mirror_screen)
     camera_2d = new Camera2D();
     camera_2d->set_orthographic(0.0f, webgpu_context->render_width, webgpu_context->render_height, 0.0f, -1.0f, 1.0f);
 
-    selected_mesh_aabb = parse_mesh("data/meshes/cube/aabb_cube.obj", false);
+    //selected_mesh_aabb = parse_mesh("data/meshes/cube/aabb_cube.obj", false);
 
-    Material* AABB_material = new Material();
-    AABB_material->set_color(glm::vec4(0.8f, 0.3f, 0.9f, 1.0f));
-    AABB_material->set_transparency_type(ALPHA_BLEND);
-    AABB_material->set_cull_type(CULL_NONE);
-    AABB_material->set_type(MATERIAL_UNLIT);
-    AABB_material->set_shader(RendererStorage::get_shader_from_source(shaders::AABB_shader::source, shaders::AABB_shader::path, AABB_material));
-    selected_mesh_aabb->set_surface_material_override(selected_mesh_aabb->get_surface(0), AABB_material);
+    //Material* AABB_material = new Material();
+    //AABB_material->set_color(glm::vec4(0.8f, 0.3f, 0.9f, 1.0f));
+    //AABB_material->set_transparency_type(ALPHA_BLEND);
+    //AABB_material->set_cull_type(CULL_NONE);
+    //AABB_material->set_type(MATERIAL_UNLIT);
+    //AABB_material->set_shader(RendererStorage::get_shader_from_source(shaders::AABB_shader::source, shaders::AABB_shader::path, AABB_material));
+    //selected_mesh_aabb->set_surface_material_override(selected_mesh_aabb->get_surface(0), AABB_material);
 
     return 0;
 }
@@ -232,7 +232,7 @@ void Renderer::clean()
     delete[] multisample_textures;
     delete[] timestamps_buffer;
 
-    delete selected_mesh_aabb;
+    //delete selected_mesh_aabb;
 
 #ifndef __EMSCRIPTEN__
     delete renderdoc_capture;
