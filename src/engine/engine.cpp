@@ -70,6 +70,10 @@ Engine::~Engine()
     if (use_glfw) {
         glfwTerminate();
     }
+
+    if (main_scene) {
+        delete main_scene;
+    }
 }
 
 int Engine::initialize(Renderer* renderer)
@@ -214,6 +218,8 @@ void Engine::init_shader_watchers()
 void Engine::clean()
 {
     renderer->clean();
+
+    Node2D::clean();
 }
 
 void Engine::start_loop()
