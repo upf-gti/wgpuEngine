@@ -38,7 +38,7 @@ public:
     Engine();
     ~Engine();
 
-    virtual int initialize(Renderer* renderer, sEngineConfiguration configuration);
+    virtual int initialize(Renderer* renderer, sEngineConfiguration configuration = {});
     virtual void clean();
 
     virtual void start_loop();
