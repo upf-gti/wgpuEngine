@@ -28,12 +28,17 @@ protected:
 
 public:
 
+    struct sEngineConfiguration {
+        uint16_t window_width = 1900;
+        uint16_t window_height = 600;
+    };
+
     static Engine* instance;
 
     Engine();
     ~Engine();
 
-    virtual int initialize(Renderer* renderer);
+    virtual int initialize(Renderer* renderer, sEngineConfiguration configuration);
     virtual void clean();
 
     virtual void start_loop();

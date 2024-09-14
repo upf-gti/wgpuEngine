@@ -76,7 +76,7 @@ Engine::~Engine()
     }
 }
 
-int Engine::initialize(Renderer* renderer)
+int Engine::initialize(Renderer* renderer, sEngineConfiguration configuration)
 {
     spdlog::set_pattern("[%^%l%$] %v");
     spdlog::set_level(spdlog::level::debug);
@@ -90,8 +90,8 @@ int Engine::initialize(Renderer* renderer)
         (void*)engine, 0, on_web_display_size_changed
     );
 #else
-    int screen_width = 1600;
-    int screen_height = 900;
+    int screen_width = configuration.window_width;
+    int screen_height = configuration.window_height;
 #endif
 
     const bool use_xr = renderer->get_openxr_available();
