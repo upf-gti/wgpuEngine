@@ -120,11 +120,11 @@ protected:
     struct sCameraData {
         glm::mat4x4 mvp;
 
-        glm::vec3 eye;
-        float exposure;
+        glm::vec3 eye = {};
+        float exposure = 1.0f;
 
-        glm::vec3 right_controller_position;
-        float ibl_intensity;
+        glm::vec3 right_controller_position = {};
+        float ibl_intensity = 1.0f;
     };
 
     sCameraData camera_data;

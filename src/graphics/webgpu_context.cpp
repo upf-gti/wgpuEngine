@@ -633,7 +633,7 @@ void WebGPUContext::upload_texture(WGPUTexture texture, WGPUTextureDimension dim
     destination.texture = texture;
     destination.origin = origin;
     destination.aspect = WGPUTextureAspect_All;
-    destination.mipLevel = 0;
+    destination.mipLevel = mip_level;
 
     WGPUTextureDataLayout source = {};
     source.offset = 0;

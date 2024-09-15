@@ -37,6 +37,8 @@ public:
 
 	void create(WGPUTextureDimension dimension, WGPUTextureFormat format, WGPUExtent3D size, WGPUTextureUsage usage, uint32_t mipmaps, uint8_t sample_count, const void* data);
 
+    void update(void* data, uint32_t mip_level, WGPUOrigin3D origin);
+
     void generate_mipmaps(const void* data);
 
     static bool convert_to_rgba8unorm(uint32_t width, uint32_t height, WGPUTextureFormat src_format, void* src, uint8_t* dst);

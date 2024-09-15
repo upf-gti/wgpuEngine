@@ -102,7 +102,7 @@ std::vector<InterleavedData> Surface::generate_quad(float w, float h, const glm:
             auto vtx = &points[counter++];
             vtx->position = position + (orig + float(i1) * delta1 + float(i2) * delta2);
             vtx->normal = n;
-            vtx->uv = glm::vec2(1.0f - i1, 1.0f - i2);
+            vtx->uv = glm::vec2(1.0f - i1, i2);
         }
     }
 

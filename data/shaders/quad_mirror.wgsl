@@ -30,7 +30,7 @@ struct FragmentOutput {
 @fragment
 fn fs_main(in: VertexOutput) -> FragmentOutput {
 
-    let uvs : vec2f = vec2f(in.uv.x, 1.0 - in.uv.y);
+    let uvs : vec2f = vec2f(in.uv.x, in.uv.y);
     let xr_image = textureSample(left_eye_texture, texture_sampler, uvs);
 
     var out: FragmentOutput;

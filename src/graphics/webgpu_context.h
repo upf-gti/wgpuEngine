@@ -121,7 +121,6 @@ struct WebGPUContext {
     void                   generate_prefiltered_env_texture(Texture* prefiltered_env_texture, Texture* hdr_texture);
 
     void                   update_buffer(WGPUBuffer buffer, uint64_t buffer_offset, void const* data, uint64_t size);
-    void                   update_texture(WGPUTexture buffer, void const* data, uint64_t size);
 
     void                   read_buffer(WGPUBuffer buffer, size_t size, void* output_data);
 

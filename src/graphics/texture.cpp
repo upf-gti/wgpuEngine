@@ -37,6 +37,11 @@ void Texture::create(WGPUTextureDimension dimension, WGPUTextureFormat format, W
     }
 }
 
+void Texture::update(void* data, uint32_t mip_level, WGPUOrigin3D origin)
+{
+    webgpu_context->upload_texture(texture, dimension, size, mip_level, format, data, origin);
+}
+
 void Texture::generate_mipmaps(const void* data)
 {
     WGPUTextureUsage mipmaps_usage = static_cast<WGPUTextureUsage>(WGPUTextureUsage_TextureBinding | WGPUTextureUsage_StorageBinding | WGPUTextureUsage_CopyDst | WGPUTextureUsage_CopySrc);

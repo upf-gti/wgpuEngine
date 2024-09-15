@@ -11,6 +11,8 @@
 #define PI_2 (0.5f * PI)
 #define PI_4 (0.5f * PI_2)
 
+const double infinity = std::numeric_limits<double>::infinity();
+
 void quat_swing_twist_decomposition(const glm::vec3& dir, const glm::quat& rotation, glm::quat& swing, glm::quat& twist);
 
 glm::vec3 load_vec3(const std::string& str);

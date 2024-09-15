@@ -55,6 +55,18 @@ void Camera::look_at(const glm::vec3& eye, const glm::vec3& center, const glm::v
     update_view_matrix();
 }
 
+void Camera::set_view(const glm::mat4x4& view)
+{
+    this->view = view;
+    view_projection = projection * view;
+}
+
+void Camera::set_projection(const glm::mat4x4& projection)
+{
+    this->projection = projection;
+    view_projection = projection * view;
+}
+
 void Camera::update_view_matrix()
 {
     view = glm::lookAt(eye, center, up);

@@ -19,6 +19,9 @@ public:
     void set_orthographic(float left, float right, float bottom, float top, float z_near, float z_far);
     virtual void look_at(const glm::vec3& eye, const glm::vec3& center, const glm::vec3& up, bool reset_internals = true);
 
+    void set_view(const glm::mat4x4& view);
+    void set_projection(const glm::mat4x4& projection);
+
     glm::vec3 screen_to_ray(const glm::vec2& mouse_position);
 
     void update_view_matrix();
@@ -52,9 +55,9 @@ protected:
 
     eCameraType type;
 
-    glm::vec3 eye;
-    glm::vec3 center;
-    glm::vec3 up;
+    glm::vec3 eye = {};
+    glm::vec3 center = {};
+    glm::vec3 up = { 0.0f, 1.0f, 0.0f };
 
     float fov;
     float aspect;

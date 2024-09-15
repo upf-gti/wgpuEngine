@@ -293,7 +293,6 @@ void Renderer::render()
 
     prepare_instancing(camera_position);
 
-
     WGPUTextureView screen_surface_texture_view;
     WGPUSurfaceTexture screen_surface_texture;
 
@@ -384,6 +383,9 @@ void Renderer::render_screen(WGPUTextureView screen_surface_texture_view)
 
     camera_2d_data.eye = camera_2d->get_eye();
     camera_2d_data.mvp = camera_2d->get_view_projection();
+
+    camera_2d_data.exposure = exposure;
+    camera_2d_data.ibl_intensity = ibl_intensity;
 
     wgpuQueueWriteBuffer(webgpu_context->device_queue, std::get<WGPUBuffer>(camera_2d_uniform.data), 0, &camera_2d_data, sizeof(sCameraData));
 
@@ -754,6 +756,10 @@ void Renderer::prepare_instancing(const glm::vec3& camera_position)
 
             Material* material = material_override ? material_override : surface->get_material();
 
+            if (!material || !material->get_shader()) {
+                continue;
+            }
+
             if (!material->get_is_2D() && mesh_instance->get_frustum_culling_enabled()) {
 
                 const AABB& surface_aabb = surface->get_aabb();
@@ -763,10 +769,6 @@ void Renderer::prepare_instancing(const glm::vec3& camera_position)
                 if (!is_inside_frustum(aabb_transformed.center - aabb_transformed.half_size, aabb_transformed.center + aabb_transformed.half_size)) {
                     continue;
                 }
-            }
-
-            if (!material || !material->get_shader()) {
-                continue;
             }
 
             RendererStorage::instance->register_material_bind_group(webgpu_context, mesh_instance, material);
