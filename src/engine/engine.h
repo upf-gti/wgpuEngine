@@ -29,8 +29,8 @@ protected:
 public:
 
     struct sEngineConfiguration {
-        uint16_t window_width = 1900;
-        uint16_t window_height = 600;
+        uint16_t window_width = 1600;
+        uint16_t window_height = 900;
     };
 
     static Engine* instance;
