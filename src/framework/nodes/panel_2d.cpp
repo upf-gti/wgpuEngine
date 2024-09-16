@@ -417,7 +417,9 @@ namespace ui {
         : Panel2D(name, image_path, p, s, c)
     {
         Surface* quad_surface = quad_mesh->get_surface(0);
-        quad_surface->create_subvidided_quad(size.x, size.y);
+        quad_surface->create_quad(size.x, size.y);
+        // Use subdivided quad in case we use panels with curvature
+        // quad_surface->create_subvidided_quad(size.x, size.y);
 
         parameter_flags = flags;
 
@@ -524,7 +526,7 @@ namespace ui {
 
             if (is_button) {
 
-                auto local_pos = data.local_position;
+                glm::vec2 local_pos = { data.local_position.x, -(data.local_position.y - size.y)};
                 data.is_hovered &= local_pos.x > (button_position.x - button_size.x * 0.5f) && local_pos.x < (button_position.x + button_size.x * 0.5f);
                 data.is_hovered &= local_pos.y > (button_position.y - button_size.y * 0.5f) && local_pos.y < (button_position.y + button_size.y * 0.5f);
             }
