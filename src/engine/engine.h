@@ -20,6 +20,8 @@ protected:
     FileWatcher* engine_shader_reload_watcher = nullptr;
     Scene* main_scene = nullptr;
 
+    Node* selected_node = nullptr;
+
     bool use_glfw = false;
     float delta_time = 0.0f;
     double current_time = 0.0;

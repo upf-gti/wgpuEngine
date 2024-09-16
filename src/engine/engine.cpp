@@ -392,41 +392,35 @@ void Engine::render_default_gui()
         ImGui::EndMainMenuBar();
     }
 
-    // ImGui::SetNextWindowSize({ 300, 400 });
-    ImGui::Begin("Debug panel", &active, ImGuiWindowFlags_NoFocusOnAppearing);
+    float right_panel_width = 350.0f; // px
+    float right_panel_height = 500.0f; // px
+    WebGPUContext* webgpu_context = Renderer::instance->get_webgpu_context();
+
+    ImGui::SetNextWindowPos({ static_cast<float>(webgpu_context->screen_width) - right_panel_width, 18.0f });
+    ImGui::SetNextWindowSize({ right_panel_width, right_panel_height });
+    ImGui::Begin("Debug panel", &active, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize |
+        ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoFocusOnAppearing);
 
     ImGuiTabBarFlags tab_bar_flags = ImGuiTabBarFlags_None;
+    bool scene_tab_open = false;
     if (ImGui::BeginTabBar("TabBar", tab_bar_flags))
     {
-        if (ImGui::BeginTabItem("Scene"))
+        scene_tab_open = ImGui::BeginTabItem("Scene");
+        if (scene_tab_open)
         {
-            if (ImGui::TreeNodeEx("Root", ImGuiTreeNodeFlags_DefaultOpen))
+            std::vector<Node*>& nodes = main_scene->get_nodes();
+            std::vector<Node*>::iterator it = nodes.begin();
+            while (it != nodes.end())
             {
-                if (ImGui::BeginPopupContextItem()) // <-- use last item id as popup id
-                {
-                    if (ImGui::Button("Delete All")) {
-                        main_scene->delete_all();
-                        ImGui::CloseCurrentPopup();
-                    }
-
-                    ImGui::EndPopup();
+                if (render_scene_tree_recursive(*it)) {
+                    delete* it;
+                    it = nodes.erase(it);
                 }
-
-                std::vector<Node*>& nodes = main_scene->get_nodes();
-                std::vector<Node*>::iterator it = nodes.begin();
-                while (it != nodes.end())
-                {
-                    if (render_scene_tree_recursive(*it)) {
-                        delete* it;
-                        it = nodes.erase(it);
-                    }
-                    else {
-                        it++;
-                    }
+                else {
+                    it++;
                 }
-
-                ImGui::TreePop();
             }
+
             ImGui::EndTabItem();
         }
         if (ImGui::BeginTabItem("Debugger"))
@@ -455,6 +449,10 @@ void Engine::render_default_gui()
 
     ImGui::Separator();
 
+    if (selected_node && scene_tab_open) {
+        selected_node->render_gui();
+    }
+
     ImGui::End();
 }
 
@@ -464,14 +462,29 @@ bool Engine::render_scene_tree_recursive(Node* entity)
 
     MeshInstance3D* entity_mesh = dynamic_cast<MeshInstance3D*>(entity);
 
-    ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_DefaultOpen;
+    ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick;
 
-    if ((entity_mesh && children.empty() && entity_mesh->get_surfaces().empty())) {
+    if ((entity_mesh && children.empty())) {
         flags |= ImGuiTreeNodeFlags_Leaf;
+    }
+
+    if (entity == selected_node) {
+        flags |= ImGuiTreeNodeFlags_Selected;
     }
 
     if (ImGui::TreeNodeEx(entity->get_name().c_str(), flags))
     {
+
+        if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen())
+        {
+            if (selected_node != entity) {
+                selected_node = entity;
+            }
+            else {
+                selected_node = nullptr;
+            }
+        }
+
         if (ImGui::BeginPopupContextItem()) // <-- use last item id as popup id
         {
             if (ImGui::Button("Delete")) {
@@ -482,20 +495,6 @@ bool Engine::render_scene_tree_recursive(Node* entity)
             }
             ImGui::EndPopup();
         }
-
-        if (entity_mesh) {
-
-            const std::vector<Surface*>& surfaces = entity_mesh->get_surfaces();
-
-            for (int i = 0; i < surfaces.size(); ++i) {
-                std::string surface_name = surfaces[i]->get_name();
-                std::string final_surface_name = surface_name.empty() ? ("Surface " + std::to_string(i)).c_str() : surface_name;
-                ImGui::TreeNodeEx(final_surface_name.c_str(), ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_Leaf);
-                ImGui::TreePop();
-            }
-        }
-
-        entity->render_gui();
 
         std::vector<Node*>::iterator it = children.begin();
 
