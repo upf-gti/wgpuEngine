@@ -172,13 +172,13 @@ void Surface::create_subvidided_quad(float w, float h, uint32_t subdivisions, bo
             const glm::vec2& uv0 = { static_cast<float>(j) / subdivisions, static_cast<float>(i) / subdivisions };
             const glm::vec2& uv1 = { static_cast<float>(j + 1u) / subdivisions, static_cast<float>(i + 1u) / subdivisions };
 
-            vtxs[0].uv = uv0;
-            vtxs[1].uv = glm::vec2(uv1.x, uv0.y);
-            vtxs[2].uv = uv1;
+            vtxs[0].uv = glm::vec2(uv1.x, 1.0f - uv0.y);
+            vtxs[1].uv = glm::vec2(uv0.x, 1.0f - uv1.y);
+            vtxs[2].uv = glm::vec2(uv0.x, 1.0f - uv0.y);
 
-            vtxs[3].uv = uv0;
-            vtxs[4].uv = uv1;
-            vtxs[5].uv = glm::vec2(uv0.x, uv1.y);
+            vtxs[3].uv = glm::vec2(uv1.x, 1.0f - uv0.y);
+            vtxs[4].uv = glm::vec2(uv1.x, 1.0f - uv1.y);;
+            vtxs[5].uv = glm::vec2(uv0.x, 1.0f - uv1.y);
 
             vertices.insert(vertices.end(), vtxs.begin(), vtxs.end());
         }
