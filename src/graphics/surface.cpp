@@ -85,7 +85,7 @@ std::vector<InterleavedData> Surface::generate_quad(float w, float h, const glm:
 {
     InterleavedData points[4];
 
-    glm::vec3 n = -normal;
+    glm::vec3 n = normal;
     glm::vec3 vY = get_perpendicular(n);
     glm::vec3 vX = glm::cross(n, vY);
     glm::vec3 delta1 = w * vX;
@@ -100,9 +100,9 @@ std::vector<InterleavedData> Surface::generate_quad(float w, float h, const glm:
         for (unsigned short i2 = 0; i2 <= 1; i2++)
         {
             auto vtx = &points[counter++];
-            vtx->position = position + (orig + float(i1) * delta1 + float(i2) * delta2);
+            vtx->position = position - (orig + float(i1) * delta1 + float(i2) * delta2);
             vtx->normal = n;
-            vtx->uv = glm::vec2(1.0f - i1, i2);
+            vtx->uv = glm::vec2(i1, 1.0f - i2);
         }
     }
 
@@ -112,12 +112,12 @@ std::vector<InterleavedData> Surface::generate_quad(float w, float h, const glm:
     counter = 0;
 
     vertices[counter++] = points[2];
-    vertices[counter++] = points[0];
     vertices[counter++] = points[1];
+    vertices[counter++] = points[0];
 
     vertices[counter++] = points[2];
-    vertices[counter++] = points[1];
     vertices[counter++] = points[3];
+    vertices[counter++] = points[1];
 
     return vertices;
 }
