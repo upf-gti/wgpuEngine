@@ -348,10 +348,10 @@ bool Gizmo3D::update(glm::vec3& new_position, const glm::vec3& controller_positi
                 current_rotation = current_rotation * (glm::inverse(current_rotation) * rotation_diff * current_rotation);
             }
 
-            // TODO: fix this
+            // TODO: Scale down, not only up
             if (free_hand_scale && (operation & SCALE_GIZMO)) {
-                float dist = glm::length(start_hand_translation - controller_position);
-                float prev_dist = glm::length(start_hand_translation - last_hand_translation);
+                float dist = glm::length(current_hand_translation - gizmo_position);
+                float prev_dist = glm::length(last_hand_translation - gizmo_position);
                 gizmo_scale += (dist - prev_dist) * 1e1f;
             }
         }
