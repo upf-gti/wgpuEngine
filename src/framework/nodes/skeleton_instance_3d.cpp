@@ -12,12 +12,26 @@
 
 #include "shaders/mesh_forward.wgsl.gen.h"
 
+#include "framework/scene/parse_obj.h"
+
 #include <glm/gtc/type_ptr.hpp>
 #include "spdlog/spdlog.h"
 
 SkeletonInstance3D::SkeletonInstance3D()
 {
     set_frustum_culling_enabled(false);
+
+    Material* joint_material = new Material();
+    joint_material->set_depth_read(false);
+    joint_material->set_priority(0);
+    joint_material->set_transparency_type(ALPHA_BLEND);
+    joint_material->set_color(glm::vec4(1.0f));
+    joint_material->set_shader(RendererStorage::get_shader_from_source(shaders::mesh_forward::source, shaders::mesh_forward::path));
+
+    joint_render_instance.set_frustum_culling_enabled(false);
+
+    joint_render_instance.add_surface(RendererStorage::get_surface("box"));
+    joint_render_instance.set_surface_material_override(joint_render_instance.get_surface(0), joint_material);
 }
 
 void SkeletonInstance3D::set_skeleton(Skeleton* s)
@@ -95,8 +109,7 @@ void SkeletonInstance3D::update_helper()
     std::vector<InterleavedData> vertices;
 
     size_t numJoints = skeleton->get_current_pose().size();
-    Pose pose = skeleton->get_current_pose();
-    glm::mat4x4 global_model = get_global_model();
+    Pose &pose = skeleton->get_current_pose();
 
     for (size_t i = 0; i < numJoints; ++i) {
         InterleavedData data;
@@ -211,6 +224,26 @@ void SkeletonInstance3D::recursive_tree_gui(Node* node) {
 
         ImGui::TreePop();
     }
+}
+
+void SkeletonInstance3D::render() {
+
+    Pose& pose = skeleton->get_current_pose();
+
+    for (size_t i = 0; i < joint_nodes.size(); ++i) {
+        Transform joint_transform;
+        if (pose.get_parent(i) >= 0) {
+            joint_transform = pose.get_global_transform(pose.get_parent(i));
+        } else {
+            joint_transform = pose.get_global_transform(i);
+        }
+
+        joint_transform.set_scale({ 0.025f, 0.025f, 0.025f });
+
+        Renderer::instance->add_renderable(&joint_render_instance, joint_transform.get_model());
+    }
+
+    MeshInstance3D::render();
 }
 
 void SkeletonInstance3D::render_gui()
