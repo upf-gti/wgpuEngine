@@ -123,7 +123,7 @@ void Node2D::set_model(const glm::mat3x3& _model)
     model = _model;
 }
 
-bool Node2D::set_visibility(bool value)
+bool Node2D::set_visibility(bool value, bool propagate)
 {
     bool last = visibility;
 
@@ -131,7 +131,7 @@ bool Node2D::set_visibility(bool value)
 
     bool changed = (last != value);
 
-    if (changed) {
+    if (propagate && changed) {
         on_children_changed();
     }
 

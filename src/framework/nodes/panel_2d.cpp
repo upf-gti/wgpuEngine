@@ -290,15 +290,13 @@ namespace ui {
 
     void Panel2D::update_scroll_view()
     {
+        // return;
+
         auto parent = get_parent();
 
         if (!(parameter_flags & SCROLLABLE) || !parent) {
             return;
         }
-
-        ui_data.range = 1.0f;
-
-        set_visibility(true);
 
         // Last chance..
         parent = parent->get_parent();
@@ -306,6 +304,10 @@ namespace ui {
         if (!parent || parent->get_class_type() != VCONTAINER) {
             return;
         }
+
+        ui_data.range = 1.0f;
+
+        set_visibility(true, false);
 
         float size_y = get_size().y;
         float parent_size_y = parent->get_size().y;
@@ -319,7 +321,7 @@ namespace ui {
             ui_data.range = glm::clamp((y - y_min) / size_y, -1.0f, -0.01f);
 
             if (class_type == TEXT_SHADOW) {
-                set_visibility(false);
+                set_visibility(false, false);
             }
         }
         // exceeds at the bottom
@@ -328,12 +330,12 @@ namespace ui {
             ui_data.range = 1.0f - glm::clamp((y - y_max) / size_y, 0.0f, 0.99f);
 
             if (class_type == TEXT_SHADOW) {
-                set_visibility(false);
+                set_visibility(false, false);
             }
         }
 
         if (glm::abs(ui_data.range) < 0.2f) {
-            set_visibility(false);
+            set_visibility(false, false);
         }
     }
 

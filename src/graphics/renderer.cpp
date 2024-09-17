@@ -33,6 +33,7 @@
 #include "framework/camera/camera_2d.h"
 #include "framework/camera/flyover_camera.h"
 #include "framework/input.h"
+#include "framework/ui/io.h"
 
 #include <algorithm>
 
@@ -265,7 +266,7 @@ void Renderer::update(float delta_time)
 
     if (!is_openxr_available) {
         const auto& io = ImGui::GetIO();
-        if (!io.WantCaptureMouse && !io.WantCaptureKeyboard /*&& !IO::any_focus()*/) {
+        if (!io.WantCaptureMouse && !io.WantCaptureKeyboard && !IO::any_focus()) {
             camera->update(delta_time);
         }
     }
