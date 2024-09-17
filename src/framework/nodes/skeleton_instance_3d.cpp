@@ -17,7 +17,7 @@
 
 SkeletonInstance3D::SkeletonInstance3D()
 {
-
+    set_frustum_culling_enabled(false);
 }
 
 void SkeletonInstance3D::set_skeleton(Skeleton* s)
@@ -45,7 +45,6 @@ void SkeletonInstance3D::update(float dt)
     // Update GPU data
     if (animated_uniform_data && invbind_uniform_data)
     {
-        
         const std::vector<glm::mat4x4>& animated_matrices = get_animated_data();
         const std::vector<glm::mat4x4>& inv_bind_matrices = get_invbind_data();
         auto webgpu_context = Renderer::instance->get_webgpu_context();
@@ -97,12 +96,10 @@ void SkeletonInstance3D::update_helper()
 
     size_t numJoints = skeleton->get_current_pose().size();
     Pose pose = skeleton->get_current_pose();
-
     glm::mat4x4 global_model = get_global_model();
 
     for (size_t i = 0; i < numJoints; ++i) {
         InterleavedData data;
-
         data.position = pose.get_global_transform(i).get_position();
         vertices.push_back(data);
         if (pose.get_parent(i) >= 0) {
@@ -156,7 +153,6 @@ void SkeletonInstance3D::set_uniform_data(Uniform* animated_u, Uniform* invbind_
     invbind_uniform_data = invbind_u;
 }
 
-
 void SkeletonInstance3D::recursive_tree_gui(Node* node) {
 
     ImGuiTreeNodeFlags flags = {};
@@ -164,8 +160,7 @@ void SkeletonInstance3D::recursive_tree_gui(Node* node) {
     bool selected = ((Node3D*)node)->is_selected();
     bool child_selected = ((Node3D*)node)->is_child_selected();
 
-    if (selected || child_selected)
-    {
+    if (selected || child_selected) {
         flags = { ImGuiTreeNodeFlags_DefaultOpen };
     } 
 
@@ -196,32 +191,30 @@ void SkeletonInstance3D::recursive_tree_gui(Node* node) {
             }
         }
 
-        if (is_open)
-        {            
+        if (is_open) {            
             changed = false;
-
             changed |= ImGui::DragFloat3("Translation", &transform.get_position_ref()[0], 0.1f);
             changed |= ImGui::DragFloat4("Rotation", &transform.get_rotation_ref()[0], 0.1f);
             changed |= ImGui::DragFloat3("Scale", &transform.get_scale_ref()[0], 0.1f);
 
-            if (changed)
-            {
+            if (changed) {
                 c->set_transform(transform);
                 set_transform_dirty(true);
             }
+
             ImGui::TreePop();
         }
 
         for (Node* child : node->get_children()) {
-
             recursive_tree_gui(child);
         }
+
         ImGui::TreePop();
     }
 }
 
-void SkeletonInstance3D::render_gui() {
-
+void SkeletonInstance3D::render_gui()
+{
     if (ImGui::Begin(name.c_str())) {
 
         if (ImGui::TreeNodeEx("Bones", ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_Framed)) {

@@ -66,7 +66,6 @@ class Gizmo3D {
     void init_scale_meshes();
     void init_rotation_meshes();
 
-	glm::vec3 prev_controller_position;
 	glm::vec3 gizmo_position = { 0.0f, 0.0f, 0.0f };
     glm::vec3 gizmo_scale = { 1.0f, 1.0f, 1.0f };
 
@@ -75,9 +74,11 @@ class Gizmo3D {
 	const glm::vec3 mesh_size = glm::vec3(0.3f, 1.8f, 0.3f);
 
     const float circle_gizmo_scale = 0.05f;
-    glm::vec3 reference_rotation_pose;
     glm::quat current_rotation = { 0.0f, 0.0f, 0.0f, 1.0f };
-    glm::quat rotation_diff = { 0.0f, 0.0f, 0.0f, 1.0f };
+
+    glm::quat last_hand_rotation = { 0.0f, 0.0f, 0.0f, 1.0f };
+    glm::vec3 last_hand_translation = {};
+   //  glm::vec3 prev_hand_translation = {};
 
     bool free_hand_selected = false;
 
