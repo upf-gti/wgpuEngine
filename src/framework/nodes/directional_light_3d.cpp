@@ -9,6 +9,8 @@
 
 #include "framework/math/math_utils.h"
 
+#include "imgui.h"
+
 DirectionalLight3D::DirectionalLight3D() : Light3D()
 {
     type = LIGHT_DIRECTIONAL;
@@ -44,8 +46,9 @@ DirectionalLight3D::~DirectionalLight3D()
 
 void DirectionalLight3D::render()
 {
-    debug_mesh_v->render();
-    debug_mesh_h->render();
+    // Use light transform to simplify rotation logic
+    Renderer::instance->add_renderable(debug_mesh_v, get_global_model() * debug_mesh_v->get_global_model());
+    Renderer::instance->add_renderable(debug_mesh_v, get_global_model() * debug_mesh_h->get_global_model());
 
     Light3D::render();
 }

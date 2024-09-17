@@ -1063,7 +1063,7 @@ uint8_t Renderer::timestamp(WGPUCommandEncoder encoder, const char* label)
     return query_index++;
 }
 
-void Renderer::add_renderable(MeshInstance* mesh_instance, glm::mat4x4 global_matrix)
+void Renderer::add_renderable(MeshInstance* mesh_instance, const glm::mat4x4& global_matrix)
 {
     render_entity_list.push_back({ mesh_instance, global_matrix });
 }

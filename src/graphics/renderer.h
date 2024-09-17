@@ -274,7 +274,7 @@ public:
 
     void set_required_limits(const WGPURequiredLimits& required_limits) { this->required_limits = required_limits; }
 
-    void add_renderable(MeshInstance* mesh_instance, glm::mat4x4 global_matrix);
+    void add_renderable(MeshInstance* mesh_instance, const glm::mat4x4& global_matrix);
     void clear_renderables();
 
     void update_lights();

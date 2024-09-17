@@ -1,6 +1,21 @@
 #include "spot_light_3d.h"
 
+#include "graphics/renderer_storage.h"
+
+#include "framework/nodes/mesh_instance_3d.h"
+
+#include "shaders/mesh_forward.wgsl.gen.h"
+
+#include "framework/math/math_utils.h"
+
 #include "imgui.h"
+
+void SpotLight3D::create_debug_render_cone()
+{
+    float radius = range * sin(outer_cone_angle);
+    float height = sqrt(range * range - radius * radius);
+    debug_surface->create_cone(radius, height, 32);
+}
 
 SpotLight3D::SpotLight3D() : Light3D()
 {
@@ -10,11 +25,32 @@ SpotLight3D::SpotLight3D() : Light3D()
 
     animatable_properties["inner_cone_angle"] = { AnimatablePropertyType::FLOAT32, &inner_cone_angle };
     animatable_properties["outer_cone_angle"] = { AnimatablePropertyType::FLOAT32, &outer_cone_angle };
+
+    debug_mesh = new MeshInstance3D();
+    debug_mesh->set_frustum_culling_enabled(false);
+    debug_mesh->set_scale(glm::vec3(range));
+
+    debug_surface = new Surface();
+    create_debug_render_cone();
+
+    debug_material = new Material();
+    debug_material->set_color(glm::vec4(color, 1.0f));
+    debug_material->set_type(MATERIAL_UNLIT);
+    debug_material->set_topology_type(TOPOLOGY_LINE_STRIP);
+    debug_material->set_shader(RendererStorage::get_shader_from_source(shaders::mesh_forward::source, shaders::mesh_forward::path, debug_material));
+    debug_surface->set_material(debug_material);
+
+    debug_mesh->add_surface(debug_surface);
 }
 
 SpotLight3D::~SpotLight3D()
 {
     
+}
+
+void SpotLight3D::render()
+{
+    debug_mesh->render();
 }
 
 void SpotLight3D::render_gui()
@@ -24,9 +60,15 @@ void SpotLight3D::render_gui()
 
     if (ImGui::TreeNodeEx("SpotLight3D"))
     {
-        ImGui::SliderFloat("Range", &range, -1.f, 10.0f);
+        if (ImGui::SliderFloat("Range", &range, 0.f, 10.0f)) {
+            create_debug_render_cone();
+        }
+
         ImGui::SliderFloat("Inner Angle", &inner_cone_angle, 0.f, pi_2);
-        ImGui::SliderFloat("Outer Angle", &outer_cone_angle, 0.f, pi_2);
+
+        if (ImGui::SliderFloat("Outer Angle", &outer_cone_angle, 0.f, pi_2)) {
+            create_debug_render_cone();
+        }
 
         ImGui::TreePop();
     }
@@ -48,6 +90,13 @@ sLightUniformData SpotLight3D::get_uniform_data()
     };
 }
 
+void SpotLight3D::set_range(float value)
+{
+    create_debug_render_cone();
+
+    Light3D::set_range(value);
+}
+
 void SpotLight3D::set_inner_cone_angle(float value)
 {
     this->inner_cone_angle = value;
@@ -56,4 +105,6 @@ void SpotLight3D::set_inner_cone_angle(float value)
 void SpotLight3D::set_outer_cone_angle(float value)
 {
     this->outer_cone_angle = value;
+
+    create_debug_render_cone();
 }

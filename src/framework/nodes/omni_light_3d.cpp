@@ -1,6 +1,5 @@
 #include "omni_light_3d.h"
 
-#include "graphics/renderer.h"
 #include "graphics/renderer_storage.h"
 
 #include "framework/nodes/mesh_instance_3d.h"
