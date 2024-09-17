@@ -38,14 +38,14 @@ protected:
 
     WebGPUContext*  webgpu_context;
 
-    std::function<void(void*, WGPURenderPassEncoder)> custom_pre_opaque_pass = nullptr;
-    std::function<void(void*, WGPURenderPassEncoder)> custom_post_opaque_pass = nullptr;
+    std::function<void(void*, WGPURenderPassEncoder, uint32_t)> custom_pre_opaque_pass = nullptr;
+    std::function<void(void*, WGPURenderPassEncoder, uint32_t)> custom_post_opaque_pass = nullptr;
 
-    std::function<void(void*, WGPURenderPassEncoder)> custom_pre_transparent_pass = nullptr;
-    std::function<void(void*, WGPURenderPassEncoder)> custom_post_transparent_pass = nullptr;
+    std::function<void(void*, WGPURenderPassEncoder, uint32_t)> custom_pre_transparent_pass = nullptr;
+    std::function<void(void*, WGPURenderPassEncoder, uint32_t)> custom_post_transparent_pass = nullptr;
 
-    std::function<void(void*, WGPURenderPassEncoder)> custom_pre_2d_pass = nullptr;
-    std::function<void(void*, WGPURenderPassEncoder)> custom_post_2d_pass = nullptr;
+    std::function<void(void*, WGPURenderPassEncoder, uint32_t)> custom_pre_2d_pass = nullptr;
+    std::function<void(void*, WGPURenderPassEncoder, uint32_t)> custom_post_2d_pass = nullptr;
 
     void* custom_pass_user_data = nullptr;
 

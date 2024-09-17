@@ -435,33 +435,33 @@ void Renderer::render_screen(WGPUTextureView screen_surface_texture_view)
         WGPURenderPassEncoder render_pass = wgpuCommandEncoderBeginRenderPass(global_command_encoder, &render_pass_descr);
 
         if (custom_pre_opaque_pass) {
-            custom_pre_opaque_pass(custom_pass_user_data, render_pass);
+            custom_pre_opaque_pass(custom_pass_user_data, render_pass, 0);
         }
 
         render_opaque(render_pass, render_bind_group_camera);
 
         if (custom_post_opaque_pass) {
-            custom_post_opaque_pass(custom_pass_user_data, render_pass);
+            custom_post_opaque_pass(custom_pass_user_data, render_pass, 0);
         }
 
         if (custom_pre_transparent_pass) {
-            custom_pre_transparent_pass(custom_pass_user_data, render_pass);
+            custom_pre_transparent_pass(custom_pass_user_data, render_pass, 0);
         }
 
         render_transparent(render_pass, render_bind_group_camera);
 
         if (custom_post_transparent_pass) {
-            custom_post_transparent_pass(custom_pass_user_data, render_pass);
+            custom_post_transparent_pass(custom_pass_user_data, render_pass, 0);
         }
 
         if (custom_pre_2d_pass) {
-            custom_pre_2d_pass(custom_pass_user_data, render_pass);
+            custom_pre_2d_pass(custom_pass_user_data, render_pass, 0);
         }
 
         render_2D(render_pass, render_bind_group_camera_2d);
 
         if (custom_post_2d_pass) {
-            custom_post_2d_pass(custom_pass_user_data, render_pass);
+            custom_post_2d_pass(custom_pass_user_data, render_pass, 0);
         }
 
         wgpuRenderPassEncoderEnd(render_pass);
@@ -555,33 +555,33 @@ void Renderer::render_xr()
             WGPURenderPassEncoder render_pass = wgpuCommandEncoderBeginRenderPass(global_command_encoder, &render_pass_descr);
 
             if (custom_pre_opaque_pass) {
-                custom_pre_opaque_pass(custom_pass_user_data, render_pass);
+                custom_pre_opaque_pass(custom_pass_user_data, render_pass, i * xr_camera_buffer_stride);
             }
 
             render_opaque(render_pass, render_bind_group_camera, i * xr_camera_buffer_stride);
 
             if (custom_post_opaque_pass) {
-                custom_post_opaque_pass(custom_pass_user_data, render_pass);
+                custom_post_opaque_pass(custom_pass_user_data, render_pass, i * xr_camera_buffer_stride);
             }
 
             if (custom_pre_transparent_pass) {
-                custom_pre_transparent_pass(custom_pass_user_data, render_pass);
+                custom_pre_transparent_pass(custom_pass_user_data, render_pass, i * xr_camera_buffer_stride);
             }
 
             render_transparent(render_pass, render_bind_group_camera, i * xr_camera_buffer_stride);
 
             if (custom_post_transparent_pass) {
-                custom_post_transparent_pass(custom_pass_user_data, render_pass);
+                custom_post_transparent_pass(custom_pass_user_data, render_pass, i * xr_camera_buffer_stride);
             }
 
             if (custom_pre_2d_pass) {
-                custom_pre_2d_pass(custom_pass_user_data, render_pass);
+                custom_pre_2d_pass(custom_pass_user_data, render_pass, i * xr_camera_buffer_stride);
             }
 
             render_2D(render_pass, render_bind_group_camera_2d);
 
             if (custom_post_2d_pass) {
-                custom_post_2d_pass(custom_pass_user_data, render_pass);
+                custom_post_2d_pass(custom_pass_user_data, render_pass, i * xr_camera_buffer_stride);
             }
 
             wgpuRenderPassEncoderEnd(render_pass);

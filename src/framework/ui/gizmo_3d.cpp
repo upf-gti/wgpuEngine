@@ -43,9 +43,9 @@ void Gizmo3D::initialize(const eGizmoType& new_operation, const glm::vec3& posit
         init_scale_meshes();
     }
 
-    /*/if (operation & ROTATION_GIZMO) {
+    if (operation & ROTATION_GIZMO) {
         init_rotation_meshes();
-    }*/
+    }
 
     gizmo_position = position;
 }
@@ -293,10 +293,10 @@ bool Gizmo3D::update(glm::vec3& new_position, const glm::vec3& controller_positi
                 }
             }
                 
-            /*if (operation & ROTATION_GIZMO) {
+            if (operation & ROTATION_GIZMO) {
 
                 float circle_scale = circle_gizmo_scale + 0.015f;
-                float circle_radius = 0.02f;
+                float circle_radius = 0.06f;
 
                 if (axis & GIZMO_AXIS_X) {
                     rotation_axis_selected.x = intersection::point_circle_ring(controller_position, gizmo_position, glm::vec3(1.0f, 0.0f, 0.0f), circle_scale, circle_radius);
@@ -309,7 +309,7 @@ bool Gizmo3D::update(glm::vec3& new_position, const glm::vec3& controller_positi
                 if (axis & GIZMO_AXIS_Z) {
                     rotation_axis_selected.z = !rotation_axis_selected.y && intersection::point_circle_ring(controller_position, gizmo_position, glm::vec3(0.0f, 0.0f, 1.0f), circle_scale, circle_radius);
                 }
-            }*/
+            }
         }
         else {
             position_axis_selected = glm::bvec3(false);
@@ -323,70 +323,78 @@ bool Gizmo3D::update(glm::vec3& new_position, const glm::vec3& controller_positi
     // Calculate the movement vector for the gizmo
     if (Input::get_trigger_value(HAND_RIGHT) > 0.5f) {
 
+        glm::quat current_hand_rotation = Input::get_controller_rotation(HAND_RIGHT);
+        glm::vec3 current_hand_translation = Input::get_controller_position(HAND_RIGHT);
+
         if (!has_graved) {
-            reference_rotation_pose = controller_position;
-            prev_controller_position = controller_position;
-            rotation_diff = Input::get_controller_rotation(HAND_RIGHT) * glm::inverse(current_rotation);
+            start_hand_translation = current_hand_translation;
+            last_hand_translation = current_hand_translation;
+            last_hand_rotation = current_hand_rotation;
             has_graved = true;
         }
 
-        const glm::vec3& controller_delta = controller_position - prev_controller_position;
+        const glm::quat& rotation_diff = (current_hand_rotation * glm::inverse(last_hand_rotation));
+        const glm::vec3& translation_diff = current_hand_translation - last_hand_translation;
 
         if (free_hand_selected) {
+
+            bool free_hand_scale = !(operation & TRANSLATION_GIZMO) && !(operation & ROTATION_GIZMO);
 
             if (operation & TRANSLATION_GIZMO) {
                 gizmo_position = controller_position;
             }
 
-            if (operation & SCALE_GIZMO) {
-                float dist = glm::length(reference_rotation_pose - controller_position);
-                float prev_dist = glm::length(reference_rotation_pose - prev_controller_position);
-                gizmo_scale += (dist - prev_dist) * 1e1f;
+            if (operation & ROTATION_GIZMO) {
+                current_rotation = current_rotation * (glm::inverse(current_rotation) * rotation_diff * current_rotation);
             }
 
-            if (operation & ROTATION_GIZMO) {
-                current_rotation = glm::inverse(current_rotation) * glm::inverse(rotation_diff) * Input::get_controller_rotation(HAND_RIGHT) * (current_rotation);
+            // TODO: Scale down, not only up
+            if (free_hand_scale && (operation & SCALE_GIZMO)) {
+                float dist = glm::length(current_hand_translation - gizmo_position);
+                float prev_dist = glm::length(last_hand_translation - gizmo_position);
+                gizmo_scale += (dist - prev_dist) * 1e1f;
             }
         }
         else {
 
             if (operation & TRANSLATION_GIZMO) {
                 const glm::vec3& constraint = { position_axis_selected.x ? 1.0f : 0.0f, position_axis_selected.y ? 1.0f : 0.0f, position_axis_selected.z ? 1.0f : 0.0f };
-                gizmo_position += controller_delta * constraint;
+                gizmo_position += translation_diff * constraint;
             }
 
             if (operation & SCALE_GIZMO) {
+                // TODO: local scale, redo it to scale in world
                 const glm::vec3& constraint = { scale_axis_selected.x ? 1.0f : 0.0f, scale_axis_selected.y ? 1.0f : 0.0f, scale_axis_selected.z ? 1.0f : 0.0f };
-                gizmo_scale += controller_delta * constraint * 1e1f;
+                gizmo_scale += translation_diff * constraint * 1e1f;
                 gizmo_scale = glm::clamp(gizmo_scale, 0.0f, 4.0f);
             }
 
-            //if (operation & ROTATION_GIZMO) {
-            //    const glm::vec3& t = controller_position - reference_rotation_pose;
+            if (operation & ROTATION_GIZMO) {
 
-            //    // Normalize the points to the gizmo, for computeing the rotation delta
-            //    glm::vec3 p1 = (reference_rotation_pose - gizmo_position);
-            //    glm::vec3 p2 = (controller_position - gizmo_position);
+                // Normalize the points to the gizmo, for computeing the rotation delta
+                glm::vec3 p1 = (current_hand_translation - gizmo_position);
+                glm::vec3 p2 = (last_hand_translation - gizmo_position);
 
-            //    // Compute the rotation delta between the previous and the new position,
-            //    // restricted for each axis
-            //    glm::quat rot = { 0.0f, 0.0f, 0.0f, 1.0f };
+                // Compute the rotation delta between the previous and the new position,
+                // restricted for each axis
+                glm::quat rot = { 0.0f, 0.0f, 0.0f, 1.0f };
 
-            //    if (rotation_axis_selected.x) { p1.x = p2.x = 0.0f; }
-            //    else if (rotation_axis_selected.y) { p1.y = p2.y = 0.0f; }
-            //    else if (rotation_axis_selected.z) { p1.z = p2.z = 0.0f; }
+                if (rotation_axis_selected.x) { p1.x = p2.x = 0.0f; }
+                else if (rotation_axis_selected.y) { p1.y = p2.y = 0.0f; }
+                else if (rotation_axis_selected.z) { p1.z = p2.z = 0.0f; }
 
-            //    if (glm::any(rotation_axis_selected)) {
-            //        rot = get_quat_between_vec3(p1, p2);
-            //    }
+                if (glm::any(rotation_axis_selected)) {
+                    rot = get_quat_between_vec3(p1, p2);
+                }
 
-            //    // Apply the rotation
-            //    current_rotation = current_rotation * (glm::inverse(current_rotation) * rot * current_rotation);
-            //    reference_rotation_pose = controller_position;
-            //}
+                // Apply the rotation
+                current_rotation = current_rotation * (glm::inverse(current_rotation) * glm::inverse(rot) * current_rotation);
+                // start_hand_translation = controller_position;
+            }
         }
 
-        prev_controller_position = controller_position;
+        last_hand_rotation = current_hand_rotation;
+        last_hand_translation = current_hand_translation;
     }
     else {
         has_graved = false;
@@ -472,7 +480,7 @@ void Gizmo3D::render(int axis)
         } 
     }
 
-    /*if (operation & ROTATION_GIZMO) {
+    if (operation & ROTATION_GIZMO) {
 
         if (axis & GIZMO_AXIS_X)
         {
@@ -480,7 +488,7 @@ void Gizmo3D::render(int axis)
             wire_circle_mesh_x->translate(gizmo_position);
             wire_circle_mesh_x->rotate(glm::radians(90.f), glm::vec3(0.f, 1.f, 0.f));
             wire_circle_mesh_x->scale(glm::vec3(circle_gizmo_scale));
-            wire_circle_mesh_x->get_surface_material_override(0)->set_color(X_AXIS_COLOR + (rotation_axis_selected.x ? AXIS_SELECTED_OFFSET_COLOR : Color(0.f)));
+            wire_circle_mesh_x->get_surface_material_override(wire_circle_mesh_x->get_surface(0))->set_color(X_AXIS_COLOR + (rotation_axis_selected.x ? AXIS_SELECTED_OFFSET_COLOR : Color(0.f)));
             wire_circle_mesh_x->render();
         }
 
@@ -490,7 +498,7 @@ void Gizmo3D::render(int axis)
             wire_circle_mesh_y->translate(gizmo_position);
             wire_circle_mesh_y->rotate(glm::radians(90.f), glm::vec3(1.f, 0.f, 0.f));
             wire_circle_mesh_y->scale(glm::vec3(circle_gizmo_scale));
-            wire_circle_mesh_y->get_surface_material_override(0)->set_color(Y_AXIS_COLOR + (rotation_axis_selected.y ? AXIS_SELECTED_OFFSET_COLOR : Color(0.f)));
+            wire_circle_mesh_y->get_surface_material_override(wire_circle_mesh_y->get_surface(0))->set_color(Y_AXIS_COLOR + (rotation_axis_selected.y ? AXIS_SELECTED_OFFSET_COLOR : Color(0.f)));
             wire_circle_mesh_y->render();
         }
 
@@ -499,8 +507,8 @@ void Gizmo3D::render(int axis)
             wire_circle_mesh_z->set_transform(Transform::identity());
             wire_circle_mesh_z->translate(gizmo_position);
             wire_circle_mesh_z->scale(glm::vec3(circle_gizmo_scale));
-            wire_circle_mesh_z->get_surface_material_override(0)->set_color(Z_AXIS_COLOR + (rotation_axis_selected.z ? AXIS_SELECTED_OFFSET_COLOR : Color(0.f)));
+            wire_circle_mesh_z->get_surface_material_override(wire_circle_mesh_z->get_surface(0))->set_color(Z_AXIS_COLOR + (rotation_axis_selected.z ? AXIS_SELECTED_OFFSET_COLOR : Color(0.f)));
             wire_circle_mesh_z->render();
         }
-    }*/
+    }
 }
