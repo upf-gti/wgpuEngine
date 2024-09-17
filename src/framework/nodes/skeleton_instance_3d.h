@@ -16,12 +16,15 @@ class SkeletonInstance3D : public MeshInstance3D {
 
     void recursive_tree_gui(Node* node);
 
+    MeshInstance3D joint_render_instance;
+
 public:
 
     SkeletonInstance3D();
 
     void update(float dt) override;
     void update_pose_from_joints(float dt);
+    void render() override;
     void render_gui() override;
 
     Skeleton* get_skeleton();

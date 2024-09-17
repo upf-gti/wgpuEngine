@@ -38,6 +38,11 @@ void Surface::set_material(Material* material)
 
 void Surface::update_vertex_buffer(const std::vector<InterleavedData>& _vertices)
 {
+    if (_vertices.size() > vertex_count && vertex_buffer) {
+        wgpuBufferDestroy(vertex_buffer);
+        vertex_buffer = nullptr;
+    }
+
     if (!vertex_buffer) {
         create_from_vertices(_vertices);
     }
