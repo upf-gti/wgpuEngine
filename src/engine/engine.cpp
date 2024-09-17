@@ -408,6 +408,9 @@ void Engine::render_default_gui()
         scene_tab_open = ImGui::BeginTabItem("Scene");
         if (scene_tab_open)
         {
+            ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 5.0f);
+            ImGui::BeginChild("SceneTree", ImVec2(0, 260), ImGuiChildFlags_Border, ImGuiWindowFlags_None);
+
             std::vector<Node*>& nodes = main_scene->get_nodes();
             std::vector<Node*>::iterator it = nodes.begin();
             while (it != nodes.end())
@@ -420,6 +423,9 @@ void Engine::render_default_gui()
                     it++;
                 }
             }
+
+            ImGui::EndChild();
+            ImGui::PopStyleVar();
 
             ImGui::EndTabItem();
         }
@@ -460,11 +466,9 @@ bool Engine::render_scene_tree_recursive(Node* entity)
 {
     std::vector<Node*>& children = entity->get_children();
 
-    MeshInstance3D* entity_mesh = dynamic_cast<MeshInstance3D*>(entity);
+    ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_SpanAvailWidth;
 
-    ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick;
-
-    if ((entity_mesh && children.empty())) {
+    if (children.empty()) {
         flags |= ImGuiTreeNodeFlags_Leaf;
     }
 

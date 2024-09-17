@@ -306,8 +306,9 @@ void AnimationPlayer::render_gui()
             }
 
         }
-        ImGui::End();
     }
+
+    ImGui::End();
 }
 
 void AnimationPlayer::set_speed(float time)
