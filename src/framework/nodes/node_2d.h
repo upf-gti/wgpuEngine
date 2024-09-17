@@ -102,7 +102,7 @@ public:
     uint8_t get_class_type() const;
     bool get_visibility() const;
 
-    bool set_visibility(bool value);
+    bool set_visibility(bool value, bool propagate = true);
 	void set_position(const glm::vec2& translation);
     void set_model(const glm::mat3x3& _model);
     void set_viewport_model(glm::mat4x4 model);
