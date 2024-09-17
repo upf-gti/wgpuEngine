@@ -393,13 +393,13 @@ void Engine::render_default_gui()
     }
 
     float right_panel_width = 350.0f; // px
-    float right_panel_height = 500.0f; // px
+    float right_panel_height = 570.0f; // px
     WebGPUContext* webgpu_context = Renderer::instance->get_webgpu_context();
 
     ImGui::SetNextWindowPos({ static_cast<float>(webgpu_context->screen_width) - right_panel_width, 18.0f });
     ImGui::SetNextWindowSize({ right_panel_width, right_panel_height });
     ImGui::Begin("Debug panel", &active, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize |
-        ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoFocusOnAppearing);
+        ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_AlwaysAutoResize);
 
     ImGuiTabBarFlags tab_bar_flags = ImGuiTabBarFlags_None;
     bool scene_tab_open = false;
@@ -455,9 +455,15 @@ void Engine::render_default_gui()
 
     ImGui::Separator();
 
+
     if (selected_node && scene_tab_open) {
+        ImGui::BeginChild("NodeProperties", ImVec2(0, 260), ImGuiChildFlags_Border, ImGuiWindowFlags_None);
+
         selected_node->render_gui();
+
+        ImGui::EndChild();
     }
+
 
     ImGui::End();
 }

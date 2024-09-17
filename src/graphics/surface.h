@@ -66,6 +66,7 @@ public:
     void create_capsule(float r = 1.f, float h = 1.f, uint32_t segments = 32, uint32_t rings = 8, const glm::vec3& color = { 1.f, 1.f, 1.f });
     void create_torus(float r = 1.f, float ir = 0.2f, uint32_t segments_section = 32, uint32_t segments_circle = 32, const glm::vec3& color = { 1.f, 1.f, 1.f });
     void create_circle(float radius = 1.f, uint32_t segments = 32);
+    void create_arrow();
     void create_skybox();
 
     void create_from_vertices(const std::vector<InterleavedData>& _vertices);
@@ -75,6 +76,8 @@ public:
 
     uint32_t get_vertex_count() const;
     uint64_t get_byte_size() const;
+
+    void render_gui();
 
     AABB get_aabb() const;
     void set_aabb(AABB aabb);

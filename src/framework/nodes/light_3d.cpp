@@ -37,7 +37,11 @@ void Light3D::render_gui()
     {
         bool changed = false;
 
-        ImGui::ColorEdit3("Color", &color[0]);
+        glm::vec3 gui_color = color;
+        if (ImGui::ColorEdit3("Color", &gui_color[0])) {
+            set_color(gui_color);
+        }
+
         ImGui::SliderFloat("Intensity", &intensity, 0.f, 100.0f);
         ImGui::Checkbox("Cast Shadows", &cast_shadows);
 

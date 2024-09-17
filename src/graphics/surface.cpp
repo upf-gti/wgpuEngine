@@ -858,6 +858,24 @@ void Surface::create_circle(float radius, uint32_t segments)
     create_vertex_buffer(vertices);
 }
 
+void Surface::create_arrow()
+{
+    std::vector<InterleavedData> vertices;
+
+    vertices.push_back({ .position = glm::vec3(1.0f, 0.0f, 0.0f) });
+    vertices.push_back({ .position = glm::vec3(0.6f, 0.25f, 0.0f) });
+    vertices.push_back({ .position = glm::vec3(0.6f, 0.1f, 0.0f) });
+    vertices.push_back({ .position = glm::vec3(0.0f, 0.1f, 0.0f) });
+    vertices.push_back({ .position = glm::vec3(0.0f, -0.1f, 0.0f) });
+    vertices.push_back({ .position = glm::vec3(0.6f, -0.1f, 0.0f) });
+    vertices.push_back({ .position = glm::vec3(0.6f, -0.25f, 0.0f) });
+    vertices.push_back({ .position = glm::vec3(1.0f, 0.0f, 0.0f) });
+
+    spdlog::trace("Circle mesh created ({} vertices)", vertices.size());
+
+    create_vertex_buffer(vertices);
+}
+
 void Surface::create_skybox()
 {
     std::vector<InterleavedData> vertices;
@@ -927,6 +945,11 @@ uint32_t Surface::get_vertex_count() const
 uint64_t Surface::get_byte_size() const
 {
     return get_vertex_count() * sizeof(InterleavedData);
+}
+
+void Surface::render_gui()
+{
+
 }
 
 AABB Surface::get_aabb() const
