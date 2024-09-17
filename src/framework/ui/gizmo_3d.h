@@ -73,12 +73,12 @@ class Gizmo3D {
     const glm::vec3 sphere_gizmo_scale = glm::vec3(0.1f);
 	const glm::vec3 mesh_size = glm::vec3(0.3f, 1.8f, 0.3f);
 
-    const float circle_gizmo_scale = 0.05f;
+    const float circle_gizmo_scale = 0.1f;
     glm::quat current_rotation = { 0.0f, 0.0f, 0.0f, 1.0f };
 
     glm::quat last_hand_rotation = { 0.0f, 0.0f, 0.0f, 1.0f };
     glm::vec3 last_hand_translation = {};
-   //  glm::vec3 prev_hand_translation = {};
+    glm::vec3 start_hand_translation = {};
 
     bool free_hand_selected = false;
 
