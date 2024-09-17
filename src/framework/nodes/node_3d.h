@@ -45,8 +45,9 @@ public:
     Node3D* get_parent() const;
     const Transform& get_transform() const;
 
-    void set_position(const glm::vec3& translation);
-    void set_scale(const glm::vec3& scale);
+    virtual void set_position(const glm::vec3& translation);
+    virtual void set_rotation(const glm::quat& rotation);
+    virtual void set_scale(const glm::vec3& scale);
     void set_transform_dirty(bool value);
     void set_transform(const Transform& new_transform);
     void set_parent(Node3D* node);

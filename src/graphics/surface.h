@@ -65,6 +65,7 @@ public:
     void create_cylinder(float r = 1.f, float h = 1.f, uint32_t segments = 32, bool capped = true, const glm::vec3& color = { 1.f, 1.f, 1.f });
     void create_capsule(float r = 1.f, float h = 1.f, uint32_t segments = 32, uint32_t rings = 8, const glm::vec3& color = { 1.f, 1.f, 1.f });
     void create_torus(float r = 1.f, float ir = 0.2f, uint32_t segments_section = 32, uint32_t segments_circle = 32, const glm::vec3& color = { 1.f, 1.f, 1.f });
+    void create_circle(float radius = 1.f, uint32_t segments = 32);
     void create_skybox();
 
     void create_from_vertices(const std::vector<InterleavedData>& _vertices);

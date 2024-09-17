@@ -19,7 +19,7 @@ protected:
 
     float       intensity = 1.0f;
     glm::vec3   color = { 1.0f, 1.0f, 1.0f };
-    float       range = -1.0f;
+    float       range = 1.0f;
 
     // Fading
 
@@ -51,9 +51,9 @@ public:
     bool get_cast_shadows() { return cast_shadows; };
     float get_range() { return range; };
 
-    void set_color(glm::vec3 color);
+    virtual void set_color(glm::vec3 color);
     void set_intensity(float value);
-    void set_range(float value);
+    virtual void set_range(float value);
     void set_fading_enabled(bool value);
     void set_cast_shadows(bool value);
 };

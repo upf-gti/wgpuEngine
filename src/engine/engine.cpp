@@ -505,7 +505,12 @@ bool Engine::render_scene_tree_recursive(Node* entity)
         while (it != children.end())
         {
             if (render_scene_tree_recursive(*it)) {
-                delete* it;
+
+                if (*it == selected_node) {
+                    selected_node = nullptr;
+                }
+
+                delete *it;
                 it = children.erase(it);
             }
             else {

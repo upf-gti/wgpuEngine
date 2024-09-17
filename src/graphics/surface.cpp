@@ -842,6 +842,22 @@ void Surface::create_torus(float r, float ir, uint32_t segments_section, uint32_
     create_vertex_buffer(vertices);
 }
 
+void Surface::create_circle(float radius, uint32_t segments)
+{
+    std::vector<InterleavedData> vertices;
+
+    float increment = 2.0f * PI / segments;
+
+    for (float currAngle = 0.0f; currAngle <= 2.0f * PI + increment; currAngle += increment)
+    {
+        vertices.push_back({ .position = glm::vec3(radius * cos(currAngle), radius * sin(currAngle), 0) });
+    }
+
+    spdlog::trace("Circle mesh created ({} vertices)", vertices.size());
+
+    create_vertex_buffer(vertices);
+}
+
 void Surface::create_skybox()
 {
     std::vector<InterleavedData> vertices;

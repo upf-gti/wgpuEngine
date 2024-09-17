@@ -87,25 +87,21 @@ void Node3D::render_gui()
         ImGuiIO& io = ImGui::GetIO();
         ImGuizmo::SetRect(0, 0, io.DisplaySize.x, io.DisplaySize.y);
 
-        bool changed = ImGuizmo::Manipulate(glm::value_ptr(camera->get_view()), glm::value_ptr(camera->get_projection()),
-            ImGuizmo::OPERATION::ROTATE, ImGuizmo::MODE::WORLD, glm::value_ptr(test_model));
+        glm::vec3 position = transform.get_position();
+        glm::quat rotation = transform.get_rotation();
+        glm::vec3 scale = transform.get_scale();
 
-        if (changed)
-        {
-            transform = Transform::mat4_to_transform(test_model);
+        if (ImGui::DragFloat3("Translation", &position[0], 0.1f)) {
+            set_position(position);
         }
 
-        changed = false;
-
-        changed |= ImGui::DragFloat3("Translation", &transform.get_position_ref()[0], 0.1f);
-        changed |= ImGui::DragFloat4("Rotation", &transform.get_rotation_ref()[0], 0.1f);
-        changed |= ImGui::DragFloat3("Scale", &transform.get_scale_ref()[0], 0.1f);
-
-        if (changed)
-        {
-            transform.set_dirty(true);
+        if (ImGui::DragFloat4("Rotation", &rotation[0], 0.1f)) {
+            set_rotation(rotation);
         }
 
+        if (ImGui::DragFloat3("Scale", &scale[0], 0.1f)) {
+            set_scale(scale);
+        }
 
         ImGui::TreePop();
     }
@@ -171,6 +167,11 @@ void Node3D::set_transform_dirty(bool value)
 void Node3D::set_position(const glm::vec3& translation)
 {
     transform.set_position(translation);
+}
+
+void Node3D::set_rotation(const glm::quat& rotation)
+{
+    transform.set_rotation(rotation);
 }
 
 void Node3D::set_scale(const glm::vec3& scale)
