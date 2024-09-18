@@ -795,7 +795,7 @@ void Renderer::prepare_instancing(const glm::vec3& camera_position)
         instance_data[i].resize(render_list[i].size());
 
 
-        if (i != RENDER_LIST_TRANSPARENT) {
+        /*if (i != RENDER_LIST_TRANSPARENT)*/ {
             // Sort opaques render_list
             std::sort(render_list[i].begin(), render_list[i].end(), [](auto& lhs, auto& rhs) {
 
@@ -811,7 +811,6 @@ void Renderer::prepare_instancing(const glm::vec3& camera_position)
                 bool equal_normal = lhs_mat->get_normal_texture() == rhs_mat->get_normal_texture();
                 bool equal_metallic_rougness = lhs_mat->get_metallic_roughness_texture() == rhs_mat->get_metallic_roughness_texture();
 
-
                 if (lhs_mat->get_priority() > rhs_mat->get_priority()) return true;
                 if (equal_priority && lhs_mat->get_shader() > rhs_mat->get_shader()) return true;
                 if (equal_priority && equal_shader && lhs_mat->get_diffuse_texture() > rhs_mat->get_diffuse_texture()) return true;
@@ -822,20 +821,20 @@ void Renderer::prepare_instancing(const glm::vec3& camera_position)
                 return false;
             });
         }
-        else {
-            // Sort transparent render_list by distance to camera
-            std::sort(render_list[i].begin(), render_list[i].end(), [&](auto& lhs, auto& rhs) {
-                glm::vec3 lhs_pos = glm::vec3(lhs.global_matrix[3]);
-                glm::vec3 rhs_pos = glm::vec3(rhs.global_matrix[3]);
+        //else {
+        //    // Sort transparent render_list by distance to camera
+        //    std::sort(render_list[i].begin(), render_list[i].end(), [&](auto& lhs, auto& rhs) {
+        //        glm::vec3 lhs_pos = glm::vec3(lhs.global_matrix[3]);
+        //        glm::vec3 rhs_pos = glm::vec3(rhs.global_matrix[3]);
 
-                float lhs_dist = glm::distance2(lhs_pos, camera_position);
-                float rhs_dist = glm::distance2(rhs_pos, camera_position);
+        //        float lhs_dist = glm::distance2(lhs_pos, camera_position);
+        //        float rhs_dist = glm::distance2(rhs_pos, camera_position);
 
-                if (lhs_dist > rhs_dist) return true;
+        //        if (lhs_dist > rhs_dist) return true;
 
-                return false;
-            });
-        }
+        //        return false;
+        //    });
+        //}
 
         // Check instances
         {
