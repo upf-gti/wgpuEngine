@@ -37,6 +37,8 @@ public:
 
     static Engine* instance;
 
+    static Engine* get_instance() { return instance; }
+
     Engine();
     ~Engine();
 
