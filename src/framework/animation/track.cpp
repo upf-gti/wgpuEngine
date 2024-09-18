@@ -17,6 +17,9 @@ namespace TrackHelpers {
         else if (std::holds_alternative<glm::vec3>(a)) {
             return lerp(std::get<glm::vec3>(a), std::get<glm::vec3>(b), t);
         }
+        else if (std::holds_alternative<glm::vec4>(a)) {
+            return lerp(std::get<glm::vec4>(a), std::get<glm::vec4>(b), t);
+        }
         else if (std::holds_alternative<glm::quat>(a)) {
             glm::quat qa = std::get<glm::quat>(a);
             glm::quat qb = std::get<glm::quat>(b);
