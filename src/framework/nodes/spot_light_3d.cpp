@@ -1,5 +1,6 @@
 #include "spot_light_3d.h"
 
+#include "graphics/renderer.h"
 #include "graphics/renderer_storage.h"
 
 #include "framework/nodes/mesh_instance_3d.h"
@@ -50,7 +51,7 @@ SpotLight3D::~SpotLight3D()
 
 void SpotLight3D::render()
 {
-    debug_mesh->render();
+    Renderer::instance->add_renderable(debug_mesh, get_global_model() * debug_mesh->get_global_model());
 }
 
 void SpotLight3D::render_gui()

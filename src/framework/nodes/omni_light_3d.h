@@ -21,8 +21,6 @@ public:
 
     void render_gui() override;
 
-    void set_position(const glm::vec3& translation) override;
-
     void set_color(glm::vec3 color) override;
     void set_range(float value) override;
 

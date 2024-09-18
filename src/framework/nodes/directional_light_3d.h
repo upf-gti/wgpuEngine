@@ -21,8 +21,6 @@ public:
 
     void render_gui() override;
 
-    void set_position(const glm::vec3& translation) override;
-
     void set_color(glm::vec3 color) override;
 
     sLightUniformData get_uniform_data() override;

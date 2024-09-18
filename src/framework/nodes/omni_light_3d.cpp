@@ -1,5 +1,6 @@
 #include "omni_light_3d.h"
 
+#include "graphics/renderer.h"
 #include "graphics/renderer_storage.h"
 
 #include "framework/nodes/mesh_instance_3d.h"
@@ -47,8 +48,8 @@ OmniLight3D::~OmniLight3D()
 
 void OmniLight3D::render()
 {
-    debug_mesh_v->render();
-    debug_mesh_h->render();
+    Renderer::instance->add_renderable(debug_mesh_v, get_global_model() * debug_mesh_v->get_global_model());
+    Renderer::instance->add_renderable(debug_mesh_h, get_global_model() * debug_mesh_h->get_global_model());
 
     Light3D::render();
 }
@@ -68,14 +69,6 @@ void OmniLight3D::render_gui()
     }
 
     Light3D::render_gui();
-}
-
-void OmniLight3D::set_position(const glm::vec3& translation)
-{
-    debug_mesh_v->set_position(translation);
-    debug_mesh_h->set_position(translation);
-
-    Light3D::set_position(translation);
 }
 
 void OmniLight3D::set_color(glm::vec3 color)

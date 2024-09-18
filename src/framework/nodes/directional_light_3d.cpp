@@ -68,14 +68,6 @@ void DirectionalLight3D::render_gui()
     Light3D::render_gui();
 }
 
-void DirectionalLight3D::set_position(const glm::vec3& translation)
-{
-    debug_mesh_v->set_position(translation);
-    debug_mesh_h->set_position(translation);
-
-    Light3D::set_position(translation);
-}
-
 void DirectionalLight3D::set_color(glm::vec3 color)
 {
     debug_material->set_color(glm::vec4(color, 1.0f));
