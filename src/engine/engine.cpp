@@ -321,6 +321,10 @@ void Engine::update(float delta_time)
     engine_shader_reload_watcher->update(delta_time);
 #endif
 
+    if (Input::was_key_pressed(GLFW_KEY_G)) {
+        show_imgui = !show_imgui;
+    }
+
     renderer->update(delta_time);
 }
 

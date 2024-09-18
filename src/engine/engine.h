@@ -28,6 +28,8 @@ protected:
 
     bool stop_game_loop = false;
 
+    bool show_imgui = true;
+
 public:
 
     struct sEngineConfiguration {
