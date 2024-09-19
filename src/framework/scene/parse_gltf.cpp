@@ -1035,110 +1035,85 @@ void get_scalar_values(std::vector<TrackType>& out, uint32_t component_size, con
             {
             case 1:
             {
-                out[id] = *(float*)&buffer.data[i];
+                out[id++] = *(float*)&buffer.data[i];
                 break;
             }
             case 3: // translate/scale
             {
                 glm::vec3 v = { *(float*)&buffer.data[i] , *(float*)&buffer.data[i + 4] , *(float*)&buffer.data[i + 8] };
-                out[id] = v;
+                out[id++] = v;
                 break;
             }
             case 4: // rotation (quat)
             {
                 glm::quat q = { *(float*)&buffer.data[i] , *(float*)&buffer.data[i + 4] , *(float*)&buffer.data[i + 8], *(float*)&buffer.data[i + 12] };
-                out[id] = q;
+                out[id++] = q;
                 break;
             }
             }
             break;
         }
-            //case TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE:
-            //    switch (component_size)
-            //    {
-            //    case 1:
-            //        out[id] = *(uint8_t*)&buffer.data[i];
-            //        break;
-            //    case 3: // translate/scale
-            //        glm::vec3 v = { *(uint8_t*)&buffer.data[i] , *(uint8_t*)&buffer.data[i + 1] , *(uint8_t*)&buffer.data[i + 2] };
-            //        out[id] = v;
-            //        break;
-            //    case 4: // rotation (quat)
-            //        glm::quat q = { *(uint8_t*)&buffer.data[i] , *(uint8_t*)&buffer.data[i + 1] , *(uint8_t*)&buffer.data[i + 2], *(uint8_t*)&buffer.data[i + 3] };
-            //        out[id] = q;
-            //        break;
-            //    }
-            //    break;
-            //case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT:
-            //    switch (component_size)
-            //    {
-            //    case 1:
-            //        out[id] = *(uint16_t*)&buffer.data[i];
-            //        break;
-            //    case 3: // translate/scale
-            //        glm::vec3 v = { *(uint16_t*)&buffer.data[i] , *(uint16_t*)&buffer.data[i + 2] , *(uint16_t*)&buffer.data[i + 4] };
-            //        out[id] = v;
-            //        break;
-            //    case 4: // rotation (quat)
-            //        glm::quat q = { *(uint16_t*)&buffer.data[i] , *(uint16_t*)&buffer.data[i + 2] , *(uint16_t*)&buffer.data[i + 4], *(uint16_t*)&buffer.data[i + 6] };
-            //        out[id] = q;
-            //        break;
-            //    }
-            //    break;
         default:
             assert(0);
         }
-        id++;
     }
 }
 
 // converts a glTF animation channel into a VectorTrack or a QuaternionTrack
 void track_from_channel(Track& result, const tinygltf::AnimationChannel& channel, const tinygltf::AnimationSampler& sampler, const tinygltf::Model& model)
 {
-    Interpolation interpolation = Interpolation::CONSTANT;
+    eInterpolationType interpolation;
 
     // make sure the Interpolation type of the track matches the cgltf_interpolation_type type of the sampler
-    if (sampler.interpolation == "LINEAR") {
-        interpolation = Interpolation::LINEAR;
+    if (sampler.interpolation == "STEP") {
+        interpolation = eInterpolationType::STEP;
+    }
+    else if (sampler.interpolation == "LINEAR") {
+        interpolation = eInterpolationType::LINEAR;
     }
     else if (sampler.interpolation == "CUBICSPLINE") {
-        interpolation = Interpolation::CUBIC;
+        interpolation = eInterpolationType::CUBIC;
+    }
+    else {
+        assert(0);
     }
 
-    result.set_interpolation(interpolation);
+    Interpolator& interpolator = result.get_interpolator();
+    interpolator.set_type(interpolation);
 
     // convert sampler input and output accessors into linear arrays of floating-point numbers
     std::vector<TrackType> time; // times 
     get_scalar_values(time, 1, model, sampler.input);
 
-    uint32_t component_size = TrackHelpers::get_size(result);
+    uint32_t stride = result.get_stride();
 
     std::vector<TrackType> values; // values
-    get_scalar_values(values, component_size, model, sampler.output);
+    get_scalar_values(values, stride, model, sampler.output);
 
     size_t num_frames = time.size();
 
     // Resize the track to have enough room to store all the frames
     result.resize(num_frames);
 
-    bool is_sampler_cubic = interpolation == Interpolation::CUBIC;
+    // Deal with in and out tangents for cubic interpolations
+    bool is_sampler_cubic = (interpolation == eInterpolationType::CUBIC);
 
     // Parse the time and value arrays into frame structures
     for (size_t baseIndex = 0; baseIndex < num_frames; ++baseIndex) {
 
         Keyframe& frame = result[baseIndex];
+        frame.time = std::get<float>(time[baseIndex]);
 
         // offset used to deal with cubic tracks since the input and output tangents are as large as the number of components
         size_t offset = 0;
-
-        frame.time = std::get<float>(time[baseIndex]);
+        size_t k = is_sampler_cubic ? (baseIndex * 3) : baseIndex;
 
         // read input tangent (only if the sample is cubic)
-        frame.in = is_sampler_cubic ? values[baseIndex + offset++] : 0.0f;
+        frame.in = is_sampler_cubic ? values[k + offset++] : 0.0f;
         // read the value
-        frame.value = values[baseIndex + offset++];
+        frame.value = values[k + offset++];
         // read the output tangent (only if the sample is cubic)
-        frame.out = is_sampler_cubic ? values[baseIndex + offset++] : 0.0f;
+        frame.out = is_sampler_cubic ? values[k + offset++] : 0.0f;
     }
 }
 
