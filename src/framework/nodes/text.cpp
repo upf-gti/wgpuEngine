@@ -11,9 +11,18 @@
 TextEntity::TextEntity(const std::string& _text, glm::vec2 _box_size, bool _wrap) : MeshInstance3D()
 {
     font = Font::get("Lato");
+    font->ref();
     text = _text;
     box_size = _box_size;
     wrap = _wrap;
+}
+
+TextEntity::~TextEntity()
+{
+    if (font) {
+        font->unref();
+        delete font;
+    }
 }
 
 void TextEntity::update(float delta_time)

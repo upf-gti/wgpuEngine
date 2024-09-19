@@ -2,6 +2,7 @@
 
 #include "includes.h"
 #include "framework/utils/json_utils.h"
+#include "framework/resources/resource.h"
 
 #include "font_common.h"
 
@@ -14,7 +15,8 @@
 
 class Texture;
 
-class Font {
+class Font : public Resource
+{
 
 public:
 

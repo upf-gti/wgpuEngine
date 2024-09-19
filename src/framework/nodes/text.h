@@ -24,7 +24,7 @@ class TextEntity : public MeshInstance3D {
 public:
 
     TextEntity(const std::string& _text, glm::vec2 _box_size = { 1, 1 }, bool _wrap = false);
-    virtual ~TextEntity() {};
+    virtual ~TextEntity();
 
     virtual void update(float delta_time) override;
 
