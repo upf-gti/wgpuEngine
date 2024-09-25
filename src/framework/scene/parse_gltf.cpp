@@ -726,6 +726,8 @@ void parse_model_nodes(tinygltf::Model& model, int parent_id, uint32_t node_id, 
 
     if (node.mesh >= 0 && node.mesh < model.meshes.size()) {
         read_mesh(model, node, entity, texture_cache);
+        AABB parent_aabb = merge_aabbs(entity->get_aabb(), parent_node->get_aabb());
+        parent_node->set_aabb(parent_aabb);
     }
 
     // Set model matrix

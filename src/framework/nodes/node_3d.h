@@ -6,6 +6,14 @@
 #include <string>
 #include <vector>
 
+enum eColliderShape {
+    COLLIDER_SHAPE_NONE,
+    COLLIDER_SHAPE_AABB,
+    COLLIDER_SHAPE_SPHERE,
+    COLLIDER_SHAPE_CAPSULE,
+    COLLIDER_SHAPE_CUSTOM,
+};
+
 class Node3D : public Node {
 
 protected:
@@ -13,6 +21,8 @@ protected:
     Node3D* parent = nullptr;
 
     Transform transform = {};
+
+    eColliderShape collider_shape = COLLIDER_SHAPE_AABB;
 
     bool selected = false;
 
@@ -51,6 +61,8 @@ public:
     void set_transform_dirty(bool value);
     void set_transform(const Transform& new_transform);
     void set_parent(Node3D* node);
+
+    bool test_ray_collision(const glm::vec3& ray_origin, const glm::vec3& ray_direction, float& distance);
 
     void select();
     void unselect();

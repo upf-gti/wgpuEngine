@@ -38,7 +38,7 @@ glm::vec3 Camera::screen_to_ray(const glm::vec2& mouse_position)
     glm::vec3 mouse_pos_ndc;
     mouse_pos_ndc.x = (mouse_pos.x / webgpu_context->render_width) * 2.0f - 1.0f;
     mouse_pos_ndc.y = -((mouse_pos.y / webgpu_context->render_height) * 2.0f - 1.0f);
-    mouse_pos_ndc.z = 1.0f;
+    mouse_pos_ndc.z = 0.0f;
 
     glm::vec4 ray_dir = view_projection_inv * glm::vec4(mouse_pos_ndc, 1.0f);
     ray_dir /= ray_dir.w;

@@ -3,6 +3,7 @@
 #include "imgui.h"
 #include "framework/utils/ImGuizmo.h"
 #include "framework/camera/camera.h"
+#include "framework/math/intersections.h"
 
 #include "graphics/renderer.h"
 
@@ -226,6 +227,17 @@ Node3D* Node3D::get_parent() const
 const Transform& Node3D::get_transform() const
 {
     return transform;
+}
+
+bool Node3D::test_ray_collision(const glm::vec3& ray_origin, const glm::vec3& ray_direction, float& distance)
+{
+    if (collider_shape == COLLIDER_SHAPE_AABB) {
+        return intersection::ray_AABB(ray_origin, ray_direction, aabb.center, aabb.half_size, distance);
+    } else if (collider_shape == COLLIDER_SHAPE_SPHERE) {
+        return intersection::ray_sphere(ray_origin, ray_direction, aabb.center, 0.25f, distance);
+    }
+
+    return false;
 }
 
 void Node3D::select()

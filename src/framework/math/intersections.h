@@ -195,15 +195,36 @@ namespace intersection {
         return glm::length(intersection_point - circle_origin) < circle_radius;
     }
 
+    inline bool ray_sphere(const glm::vec3& ray_origin,
+        const glm::vec3& ray_direction,
+        const glm::vec3& sphere_center,
+        float sphere_radius,
+        float& collision_distance) {
+
+        const glm::vec3 origin_to_center = sphere_center - ray_origin;
+        const double a = glm::length2(ray_direction);
+        const double h = glm::dot(ray_direction, origin_to_center);
+        const double c = glm::length2(origin_to_center) - sphere_radius * sphere_radius;
+
+        const double discriminant = h * h - a * c;
+
+        if (discriminant < 0) {
+            return false;
+        }
+
+        collision_distance = (h - glm::sqrt(discriminant)) / a;
+
+        return true;
+    }
+
     inline bool ray_AABB(const glm::vec3& ray_origin,
         const glm::vec3& ray_direction,
         const glm::vec3& box_origin,
-        const glm::vec3& box_size,
+        const glm::vec3& box_halfsize,
         float& collision_distance) {
 
         // Using the slabs method
         const glm::vec3 inv_ray_dir = 1.0f / ray_direction;
-        const glm::vec3 box_halfsize = box_size / 2.0f;
 
         const glm::vec3 box_min = box_origin - box_halfsize;
         const glm::vec3 box_max = box_origin + box_halfsize;
@@ -219,15 +240,23 @@ namespace intersection {
         const float t_max = glm::min(tmax.x, glm::min(tmax.y, tmax.z));
 
         // NOTE: in the case the ray origin is inside AABB, take t_max
-        collision_distance = t_min;
 
-        return t_min < t_max;
+        // if tmax < 0, ray (line) is intersecting AABB, but the whole AABB is behind us
+        // if tmin > tmax, ray doesn't intersect AABB
+        if (t_max < 0 || t_min > t_max)
+        {
+            collision_distance = t_max;
+            return false;
+        }
+
+        collision_distance = t_min;
+        return true;
     }
 
     inline bool ray_OBB(const glm::vec3& ray_origin,
         const glm::vec3& ray_direction,
         const glm::vec3& box_origin,
-        const glm::vec3& box_size,
+        const glm::vec3& box_halfsize,
         const glm::quat& box_rotation,
         float& collision_distance) {
 
@@ -237,7 +266,7 @@ namespace intersection {
         return ray_AABB(rotate_to_OBB * ray_origin,
             rotate_to_OBB * ray_direction,
             rotate_to_OBB * box_origin,
-            box_size,
+            box_halfsize,
             collision_distance);
     }
 
