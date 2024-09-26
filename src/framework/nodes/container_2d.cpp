@@ -426,7 +426,7 @@ namespace ui {
     *   Label
     */
 
-    ImageLabel2D::ImageLabel2D(const std::string& p_text, const std::string& image_path, uint32_t mask, const glm::vec2& scale, float text_scale, const glm::vec2& p)
+    ImageLabel2D::ImageLabel2D(const std::string& p_text, const std::string& image_path, uint8_t mask, const glm::vec2& scale, float text_scale, const glm::vec2& p)
         : HContainer2D(p_text + "_box", p), mask(mask)
     {
         class_type = Node2DClassType::LABEL;

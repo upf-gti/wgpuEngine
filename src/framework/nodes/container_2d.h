@@ -84,16 +84,16 @@ namespace ui {
 
     class ImageLabel2D : public HContainer2D {
 
-        uint32_t mask = 0;
+        uint8_t mask = 0;
 
     public:
 
         Text2D* text = nullptr;
 
-        ImageLabel2D(const std::string& p_text, const std::string& image_path, uint32_t mask = 0, const glm::vec2& scale = { 1.f, 1.f }, float text_scale = 16.0f, const glm::vec2& p = { 0.f, 0.f });
+        ImageLabel2D(const std::string& p_text, const std::string& image_path, uint8_t mask = 0, const glm::vec2& scale = { 1.f, 1.f }, float text_scale = 16.0f, const glm::vec2& p = { 0.f, 0.f });
 
         void set_text(const std::string& p_text) { text->set_text(p_text); }
 
-        uint32_t get_mask() { return mask; }
+        uint8_t get_mask() { return mask; }
     };
 }
