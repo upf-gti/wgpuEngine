@@ -115,6 +115,14 @@ fn intersectAABB(rayOrigin : vec3f, rayDir : vec3f, boxMin : vec3f, boxMax : vec
     return vec2f(tNear, tFar);
 }
 
+const M_PI : f32 = 3.1415926535897932384626433832795;
+
+fn phase(g : f32, cos_theta : f32) -> f32
+{
+    let denom : f32 = 1.0 + g * g - 2.0 * g * cos_theta;
+    return 1.0 / (4.0 * M_PI) * (1.0 - g * g) / (denom * sqrt(denom));
+}
+
 @fragment
 fn fs_main(in: VolumesVertexOutput) -> FragmentOutput {
     
@@ -123,15 +131,17 @@ fn fs_main(in: VolumesVertexOutput) -> FragmentOutput {
     var color = vec3f(0.0);
     var out: FragmentOutput;
 
-    let step_length : f32 = 0.01f;
+    let u_step_length : f32 = 0.001f;
     let ray_dir : vec3f = normalize(in.vertex_position - in.eye_in_local);
-    let ray_step : vec3f = ray_dir * step_length;
-    let ray_origin : vec3f = in.position.xyz;
+    let ray_step : vec3f = ray_dir * u_step_length;
+    let ray_origin : vec3f = in.vertex_position;
+
     var sample_ray : vec3f = ray_origin;
+    var sample_ray_light : vec3f = sample_ray;
 
     let near_far : vec2f = intersectAABB(ray_origin, ray_dir, vec3f(-1.0f), vec3f(1.0f));
     let inner_distance : f32 = near_far.y - near_far.x;
-    let num_samples : u32 = u32(inner_distance / step_length);
+    let num_samples : u32 = u32(inner_distance / u_step_length);
 
     var transmittance : f32 = 1.0f;
     var illumination : vec3f = vec3f(0.0);
@@ -139,11 +149,43 @@ fn fs_main(in: VolumesVertexOutput) -> FragmentOutput {
     for (var i : u32 = 0u; i < num_samples; i++) {
 
         var sample_density : f32 = textureSampleLevel(albedo_texture, texture_sampler, (sample_ray + vec3f(1.0f)) / 2.0f, 0).x;
-        transmittance *= exp(-sample_density * step_length * 10);
-        if (sample_density > 0.0f) {
-            illumination += sample_density * 10;
+
+        let dist : f32 = u_step_length * 1;
+        let coef_abso : f32 = 1.0;
+        let coef_scat : f32 = 1.0;
+        let coef_ext : f32 = (coef_abso + coef_scat);
+        transmittance *= exp(-sample_density * coef_ext * dist);
+        
+        if (sample_density > 0.0)
+        {
+            // Distance until end of volume
+            let ray_dir_light : vec3f = normalize(vec3f(1.5f, 2.0f, 1.5f) - sample_ray);
+            let near_far_inside : vec2f = intersectAABB(sample_ray, ray_dir_light, vec3f(-1.0), vec3f(1.0));
+            
+            // Init variables in raymarching to light
+            let u_num_steps_light : i32 = 5;
+            let step_length_light : f32 = near_far_inside.y / f32(u_num_steps_light);
+            var tau : f32 = 0.0; // also called optical depth   
+            sample_ray_light = sample_ray;
+            
+            // Raymarching for heterogeneous volumes
+            for (var j : i32 = 0; j < u_num_steps_light; j++)
+            {
+                // get sample position
+                let sample_ray_light : vec3f = sample_ray + ray_dir_light * step_length_light * f32(j);
+                // accumulate density value
+                tau += textureSampleLevel(albedo_texture, texture_sampler, (sample_ray_light + vec3(1.0)) / 2.0, 0).x;
+            }
+            
+            let Li_x : f32 = exp(-tau * coef_ext * step_length_light); 
+
+            let cos_theta : f32 = dot(ray_dir, ray_dir_light);
+            illumination += Li_x * transmittance * u_step_length * sample_density * phase(0.0, cos_theta) * coef_scat * 10.0;
         }
+
         sample_ray += ray_step;
+
+        if (transmittance <= 0.0) { break; }
     }
 
     var final_color : vec3f = illumination;
@@ -152,7 +194,7 @@ fn fs_main(in: VolumesVertexOutput) -> FragmentOutput {
         final_color = pow(final_color, vec3f(1.0 / 2.2));
     }
 
-    out.color = vec4f(final_color, 1.0);
+    out.color = vec4f(final_color, 1.0 - transmittance);
 
     return out;
 }

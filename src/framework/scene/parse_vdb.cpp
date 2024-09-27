@@ -19,11 +19,12 @@
 
 #include <openvdbReader.h>
 
-Material* create_material_volume(OpenVDBReader* vdbReader)
+Material* create_material_volume(easyVDB::OpenVDBReader* vdbReader)
 {
     Material* material = new Material();
     material->set_transparency_type(ALPHA_BLEND);
-    material->set_shader(RendererStorage::get_shader("data/shaders/volumetrics.wgsl", material));
+    material->set_type(MATERIAL_UNLIT);
+    material->set_shader(RendererStorage::get_shader_from_source(shaders::volumetrics::source, shaders::volumetrics::path, material));
 
     uint32_t resolution = 100;
     float radius = 3.0;
@@ -41,12 +42,12 @@ Material* create_material_volume(OpenVDBReader* vdbReader)
 
     // read all grids data and convert to texture
     for (unsigned int i = 0; i < totalGrids; i++) {
-        Grid& grid = vdbReader->grids[i];
+        easyVDB::Grid& grid = vdbReader->grids[i];
         float* data = new float[resolutionPow3];
         memset(data, 0, sizeof(float) * resolutionPow3);
 
         // Bbox
-        Bbox bbox = Bbox();
+        easyVDB::Bbox bbox = easyVDB::Bbox();
         bbox = grid.getPreciseWorldBbox();
         glm::vec3 target = bbox.getCenter();
         glm::vec3 size = bbox.getSize();
@@ -88,19 +89,19 @@ Material* create_material_volume(OpenVDBReader* vdbReader)
                             int targetIndex = baseIndex + sx + sy * resolution + sz * resolutionPow2;
 
                             float offset = std::max(0.0, std::min(1.0, 1.0 - std::hypot(sx, sy, sz) / (radius / 2.0)));
-                            float dataValue = offset * value * 255.f;
+                            float dataValue = offset * value;
 
                             data[targetIndex] += dataValue;
-                            data[targetIndex] = std::min((float)data[targetIndex], 255.f);
+                            data[targetIndex] = std::min((float)data[targetIndex], 1.f);
                         }
                     }
                 }
             }
             else {
-                float dataValue = value * 255.f;
+                float dataValue = value;
 
                 data[baseIndex] += dataValue;
-                data[baseIndex] = std::min((float)data[baseIndex], 255.f);
+                data[baseIndex] = std::min((float)data[baseIndex], 1.f);
             }
 
             convertedVoxels++;
@@ -135,12 +136,9 @@ Material* create_material_volume(OpenVDBReader* vdbReader)
         Texture* t = new Texture();
         t->load_from_data("VDB volume", WGPUTextureDimension_3D, resolution, resolution, resolution, data, false, WGPUTextureFormat_R32Float);
 
-        if (grid.uniqueName == "density" || grid.gridName == "density") {
-            material->set_diffuse_texture(t);
-        }
-        else if (grid.uniqueName == "flames" || grid.gridName == "flames") {
-            // to do
-        }
+        spdlog::info("VDB Grid name: {}", grid.gridName);
+        spdlog::info("VDB Grid unique name: {}", grid.uniqueName);
+        material->set_diffuse_texture(t);
     }
 
     return material;
@@ -164,7 +162,7 @@ bool parse_vdb(const char* vdb_path, std::vector<Node*>& entities)
     // Copy all the bytes from from the the file into the vector named return
     input_file.read(reinterpret_cast<char*>(buffer.data()), eof_position);
 
-    OpenVDBReader* vdbReader = new OpenVDBReader();
+    easyVDB::OpenVDBReader* vdbReader = new easyVDB::OpenVDBReader();
     vdbReader->read(buffer);
 
     // create a texture
