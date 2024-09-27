@@ -11,6 +11,19 @@ project(webgpuEngine LANGUAGES C CXX)
 if(MSVC)
     add_definitions(/MP)
     add_definitions(/arch:AVX2)
+
+    # enable link time optimization
+    if (CMAKE_BUILD_TYPE STREQUAL "Release")
+        add_definitions(/GL)
+        add_definitions(/LTCG)
+    endif()
+
+    # disable RTTI (dynamic cast)
+#    string(REGEX REPLACE "/GR" "/GR-" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+
+    # disable exceptions
+	string(REGEX REPLACE "/EHsc" "/EHs-c-" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+
 endif()
 
 if (WIN32)
@@ -158,9 +171,20 @@ endif()
 
 # INSTALL(FILES ${WGPU_HEADERS} DESTINATION ${CMAKE_BINARY_DIR})
 
-# needed to compile tint on web
 if (EMSCRIPTEN)
+
+    add_compile_options(
+        "-fno-exceptions"
+        "$<$<CONFIG:Release>:-flto>"
+    )
+    add_link_options(
+        "-fno-exceptions"
+        "$<$<CONFIG:Release>:-flto>"
+    )
+
+    # needed to compile tint on web
     add_compile_options(-w)
+
 endif()
 
 # dawn
@@ -169,7 +193,9 @@ add_subdirectory(libraries/webgpu)
 target_link_libraries(${PROJECT_NAME} PUBLIC webgpu)
 
 # glm
-set(GLM_ENABLE_SIMD_AVX2 ON)
+if(MSVC)
+    set(GLM_ENABLE_SIMD_AVX2 ON)
+endif()
 
 add_subdirectory(libraries/glm)
 
@@ -229,6 +255,7 @@ target_include_directories(${PROJECT_NAME} PUBLIC ${WGPU_DIR_LIBS}/tiny_gltf)
 
 # spdlog
 SET(SPDLOG_ENABLE_PCH ON CACHE BOOL "BUILD PRECOMPILED HEADER IN SPDLOG")
+SET(SPDLOG_NO_EXCEPTIONS ON)
 add_subdirectory(libraries/spdlog)
 target_link_libraries(${PROJECT_NAME} PUBLIC spdlog::spdlog)
 set_property(TARGET spdlog PROPERTY FOLDER "External/spdlog")
