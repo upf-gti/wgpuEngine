@@ -286,11 +286,13 @@ void Renderer::render()
 
         camera_position = camera->get_eye();
     }
+#ifdef XR_SUPPORT
     else {
         // TODO: use both eyes, only left eye for now
         frustum_cull.set_view_projection(xr_context->per_view_data[0].view_projection_matrix);
         camera_position = xr_context->per_view_data[0].position;
     }
+#endif
 
     prepare_instancing(camera_position);
 

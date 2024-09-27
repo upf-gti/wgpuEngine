@@ -8,6 +8,11 @@ class Renderer;
 class Scene;
 class Node;
 
+struct sEngineConfiguration {
+    uint16_t window_width = 1600;
+    uint16_t window_height = 900;
+};
+
 class Engine {
 
     void init_imgui(GLFWwindow* window);
@@ -31,11 +36,6 @@ protected:
     bool show_imgui = true;
 
 public:
-
-    struct sEngineConfiguration {
-        uint16_t window_width = 1600;
-        uint16_t window_height = 900;
-    };
 
     static Engine* instance;
 

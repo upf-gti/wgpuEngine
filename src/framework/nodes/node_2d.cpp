@@ -201,10 +201,10 @@ bool Node2D::get_visibility() const
 glm::mat3x3 Node2D::get_rotation() const
 {
     glm::mat4x4 trans = model;
-    glm::transpose(trans);
+    trans = glm::transpose(trans);
 
     glm::mat4x4 inv = model;
-    glm::inverse(model);
+    inv = glm::inverse(model);
 
     return trans * inv;
 }

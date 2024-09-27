@@ -153,10 +153,12 @@ void Input::set_prev_state()
     memcpy((void*)&prev_keystate, keystate, GLFW_KEY_LAST);
     memcpy((void*)&prev_buttons, buttons, GLFW_MOUSE_BUTTON_LAST);
 
+#ifdef XR_SUPPORT
     for (int i = 0; i < HAND_COUNT; ++i) {
         prev_trigger_state[i] = is_trigger_pressed(i);
         prev_grab_state[i] = is_grab_pressed(i);
     }
+#endif
 }
 
 void Input::set_key_state(int key, uint8_t value)

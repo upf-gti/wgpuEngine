@@ -76,8 +76,8 @@ public:
     virtual void on_children_changed();
     virtual void update_ui_data() {};
 
-	virtual void render();
-	virtual void update(float delta_time);
+	virtual void render() override;
+	virtual void update(float delta_time) override;
 
     void release() override;
 

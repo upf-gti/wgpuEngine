@@ -26,18 +26,18 @@ Pipeline::~Pipeline()
     }
 }
 
-void render_pipeline_creation_callback(WGPUCreatePipelineAsyncStatus status, WGPURenderPipeline pipeline, char const* message, void* userdata1, void* userdata2)
+void render_pipeline_creation_callback(WGPUCreatePipelineAsyncStatus status, WGPURenderPipeline pipeline, char const* message, void* userdata)
 {
-    Pipeline* render_pipeline = static_cast<Pipeline*>(userdata1);
+    Pipeline* render_pipeline = static_cast<Pipeline*>(userdata);
     if (status == WGPUCreatePipelineAsyncStatus_Success) {
         render_pipeline->pipeline = pipeline;
         render_pipeline->loaded = true;
     }
 }
 
-void compute_pipeline_creation_callback(WGPUCreatePipelineAsyncStatus status, WGPUComputePipeline pipeline, char const* message, void* userdata1, void* userdata2)
+void compute_pipeline_creation_callback(WGPUCreatePipelineAsyncStatus status, WGPUComputePipeline pipeline, char const* message, void* userdata)
 {
-    Pipeline* compute_pipeline = static_cast<Pipeline*>(userdata1);
+    Pipeline* compute_pipeline = static_cast<Pipeline*>(userdata);
     if (status == WGPUCreatePipelineAsyncStatus_Success) {
         compute_pipeline->pipeline = pipeline;
         compute_pipeline->loaded = true;

@@ -27,11 +27,12 @@ public:
 
 private:
 
-    std::string name = "";
     uint32_t ref_count = 0;
     intptr_t id = 0;
 
 protected:
+
+    std::string name = "";
 
     // animatable properties
     std::unordered_map<std::string, void*> properties;

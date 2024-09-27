@@ -71,7 +71,7 @@ float Animation::adjust_time_to_fit_range(float time)
 {
     if (looping) {
         float duration = end_time - start_time;
-        if (duration <= 0) { 0.0f; }
+        if (duration <= 0) { return 0.0f; }
         time = fmodf(time - start_time, end_time - start_time);
         if (time < 0.0f) {
             time += end_time - start_time;

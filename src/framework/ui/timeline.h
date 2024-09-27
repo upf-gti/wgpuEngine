@@ -12,7 +12,7 @@
 #include <algorithm>
 #include <vector>
 
-static const char* TrackTypes[] = {
+static std::vector<std::string> TrackTypes = {
     "UNDEFINED",
     "FLOAT", // Set a value in a property, can be interpolated.
     "VECTOR3", // Vector3 track, can be compressed.
@@ -20,7 +20,8 @@ static const char* TrackTypes[] = {
     "METHOD", // Call any method on a specific node.
     "POSITION",
     "ROTATION",
-    "SCALE" };
+    "SCALE"
+};
 
 struct CurveEdit : public ImCurveEdit::Delegate
 {
@@ -135,8 +136,8 @@ struct Timeline : public ImSequencer::SequenceInterface
     }
     virtual int GetItemCount() const { return (int)tracks.size(); }
 
-    virtual int GetItemTypeCount() const { return sizeof(TrackTypes) / sizeof(char*); }
-    virtual const char* GetItemTypeName(int typeIndex) const { return TrackTypes[typeIndex]; }
+    virtual int GetItemTypeCount() const { return TrackTypes.size(); }
+    virtual const char* GetItemTypeName(int typeIndex) const { return TrackTypes[typeIndex].c_str(); }
     virtual const char* GetItemLabel(int index) const
     {
         static char tmps[512];

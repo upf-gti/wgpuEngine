@@ -1,6 +1,6 @@
 #pragma once
 
-#include "iK_solver.h"
+#include "ik_solver.h"
 
 class JacobianSolver : public IKSolver {
 protected:

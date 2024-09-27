@@ -14,6 +14,7 @@
 #include "xr/openxr_context.h"
 
 #include "imgui.h"
+#include "imgui_internal.h"
 #include "backends/imgui_impl_wgpu.h"
 #include "backends/imgui_impl_glfw.h"
 
@@ -36,7 +37,7 @@ EM_JS(int, canvas_get_height, (), {
 static EM_BOOL on_web_display_size_changed(int event_type,
     const EmscriptenUiEvent* ui_event, void* user_data)
 {
-    RoomsEngine* engine = reinterpret_cast<RoomsEngine*>(user_data);
+    Engine* engine = reinterpret_cast<Engine*>(user_data);
     engine->resize_window(ui_event->windowInnerWidth, ui_event->windowInnerHeight);
     return true;
 }
@@ -87,7 +88,7 @@ int Engine::initialize(Renderer* renderer, sEngineConfiguration configuration)
 
     emscripten_set_resize_callback(
         EMSCRIPTEN_EVENT_TARGET_WINDOW,
-        (void*)engine, 0, on_web_display_size_changed
+        (void*)this, 0, on_web_display_size_changed
     );
 #else
     int screen_width = configuration.window_width;
@@ -118,6 +119,8 @@ int Engine::initialize(Renderer* renderer, sEngineConfiguration configuration)
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
         window = glfwCreateWindow(screen_width, screen_height, "ROOMS", NULL, NULL);
+
+        glfwSetWindowTitle(window, "wgpuEngine");
     }
 
     this->renderer = renderer;
@@ -149,7 +152,7 @@ void Engine::init_imgui(GLFWwindow* window)
     // Init imgui
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
-    ImGuiIO& io = ImGui::GetIO(); (void)io;
+    ImGuiIO& io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
 
     ImGui::StyleColorsDark();
@@ -167,7 +170,7 @@ void Engine::init_imgui(GLFWwindow* window)
     // Disable file-system access in web builds (don't load imgui.ini)
 #ifdef __EMSCRIPTEN__
     io.IniFilename = nullptr;
-    ImGui_ImplGlfw_InstallEmscriptenCanvasResizeCallback("#canvas");
+    ImGui_ImplGlfw_InstallEmscriptenCallbacks(window, "#canvas");
 #endif
 
 }
@@ -226,8 +229,8 @@ void Engine::start_loop()
 {
 #ifdef __EMSCRIPTEN__
     emscripten_set_main_loop_arg(
-        [](void* userData) {
-            Engine* engine = reinterpret_cast<Engine*>(userData);
+        [](void* user_data) {
+            Engine* engine = reinterpret_cast<Engine*>(user_data);
             engine->on_frame();
         },
         (void*)this,
@@ -237,9 +240,6 @@ void Engine::start_loop()
 #else
     while (!stop_game_loop) {
         on_frame();
-
-        std::string fps = "FPS: " + std::to_string(1.0 / (std::max(get_delta_time(), 0.0001f)));
-        glfwSetWindowTitle(renderer->get_glfw_window(), fps.c_str());
 
         stop_game_loop = glfwWindowShouldClose(renderer->get_glfw_window());
     }
@@ -394,6 +394,18 @@ void Engine::render_default_gui()
             ImGui::EndMenu();
         }
         ImGui::EndMainMenuBar();
+    }
+
+    ImGuiViewportP* viewport = (ImGuiViewportP*)(void*)ImGui::GetMainViewport();
+    ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_MenuBar;
+    float height = ImGui::GetFrameHeight();
+    if (ImGui::BeginViewportSideBar("##SecondaryMenuBar", viewport, ImGuiDir_Down, height, window_flags)) {
+        if (ImGui::BeginMenuBar()) {
+            ImGuiIO& io = ImGui::GetIO();
+            ImGui::Text("Performance %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
+            ImGui::EndMenuBar();
+        }
+        ImGui::End();
     }
 
     float right_panel_width = 350.0f; // px

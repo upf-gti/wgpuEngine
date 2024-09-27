@@ -279,8 +279,8 @@ void AnimationPlayer::render_gui()
         if (selected_entry != -1)
         {            
             const Timeline::TimelineTrack item = timeline.tracks[selected_entry];
-            ImGui::Text("I am a %s, please edit me", TrackTypes[item.type]);
-            std::cout << "I am a %s, please edit me ( " << TrackTypes[item.type] << " )" << std::endl;
+            ImGui::Text("I am a %s, please edit me", TrackTypes[item.type].c_str());
+            //std::cout << "I am a %s, please edit me ( " << TrackTypes[item.type].c_str() << " )" << std::endl;
             size_t last_idx = item.name.find_last_of('/');
             std::string node_path = item.name.substr(0, last_idx);
 

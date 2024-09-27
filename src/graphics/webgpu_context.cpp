@@ -21,6 +21,8 @@
 
 #ifdef __EMSCRIPTEN__
 #include <GLFW/glfw3.h>
+#include <emscripten.h>
+#include <emscripten/html5.h>
 #else
 #include "glfw3webgpu.hpp"
 #endif
@@ -56,6 +58,14 @@ void DeviceLostCallback(WGPUDevice const* device, WGPUDeviceLostReason reason, c
         spdlog::error("Device lost: {}", message);
     }
 }
+
+#ifdef __EMSCRIPTEN__
+void EmDeviceLostCallback(WGPUDeviceLostReason reason, char const* message, void* userdata) {
+    if (reason != WGPUDeviceLostReason_Destroyed) {
+        spdlog::error("Device lost: {}", message);
+    }
+}
+#endif
 
 void PrintGLFWError(int code, const char* message) {
     spdlog::error("GLFW error: {} - {}", code, message);
@@ -165,11 +175,15 @@ int WebGPUContext::initialize(WGPURequestAdapterOptions adapter_opts, WGPURequir
 
     device_desc.requiredLimits = &required_limits;
     device_desc.defaultQueue.label = "The default queue";
+
+#if defined(__EMSCRIPTEN__)
+    device_desc.deviceLostCallback = EmDeviceLostCallback;
+#else
+
     device_desc.deviceLostCallbackInfo.mode = WGPUCallbackMode_AllowSpontaneous;
     device_desc.deviceLostCallbackInfo.callback = DeviceLostCallback;
     device_desc.uncapturedErrorCallbackInfo.callback = PrintDeviceError;
 
-#if !defined(__EMSCRIPTEN__)
     std::vector<const char*> enabled_toggles;
     std::vector<const char*> disabled_toggles;
 
@@ -198,6 +212,9 @@ int WebGPUContext::initialize(WGPURequestAdapterOptions adapter_opts, WGPURequir
     device = requestDevice(adapter, &device_desc);
 
 #ifdef __EMSCRIPTEN__
+
+    wgpuDeviceSetUncapturedErrorCallback(device, PrintDeviceError, nullptr);
+
     // emscripten-specific extension not supported by webgpu.cpp
     WGPUSurfaceDescriptorFromCanvasHTMLSelector canvDesc = {};
     canvDesc.chain.sType = WGPUSType_SurfaceDescriptorFromCanvasHTMLSelector;
@@ -341,7 +358,7 @@ WGPUShaderModule WebGPUContext::create_shader_module(char const* code)
     return wgpuDeviceCreateShaderModule(device, &shader_descr);
 }
 
-WGPUBuffer WebGPUContext::create_buffer(uint64_t size, int usage, const void* data, const char* label)
+WGPUBuffer WebGPUContext::create_buffer(size_t size, int usage, const void* data, const char* label)
 {
     WGPUBufferDescriptor bufferDesc = {};
 
@@ -353,7 +370,7 @@ WGPUBuffer WebGPUContext::create_buffer(uint64_t size, int usage, const void* da
     WGPUBuffer buffer = wgpuDeviceCreateBuffer(device, &bufferDesc);
 
     if (data != nullptr) {
-        wgpuQueueWriteBuffer(device_queue, buffer, 0, data, size);
+        update_buffer(buffer, 0, data, size);
     }
 
     return buffer;
@@ -761,19 +778,16 @@ void WebGPUContext::read_buffer(WGPUBuffer buffer, size_t size, void* output_dat
     userdata.buffer_size = size;
     userdata.data = output_data;
 
-    WGPUBufferMapCallbackInfo2 callback_info = {};
-    callback_info.mode = WGPUCallbackMode_AllowSpontaneous;
-    callback_info.userdata1 = &userdata;
-    callback_info.callback = [](WGPUMapAsyncStatus status, char const* message, void* userdata1, void* userdata2) {
+    WGPUBufferMapCallback callback = [](WGPUBufferMapAsyncStatus status, void* userdata) {
 
-        BufferData* buffer_data = reinterpret_cast<BufferData*>(userdata1);
+        BufferData* buffer_data = reinterpret_cast<BufferData*>(userdata);
 
         if (status == WGPUBufferMapAsyncStatus_Success) {
             memcpy(buffer_data->data, wgpuBufferGetConstMappedRange(buffer_data->output_buffer, 0, buffer_data->buffer_size), buffer_data->buffer_size);
             wgpuBufferUnmap(buffer_data->output_buffer);
         }
         else {
-            spdlog::error("Error reading buffer: {}", message);
+            //spdlog::error("Error reading buffer: {}", message);
         }
 
         buffer_data->finished = true;
@@ -781,7 +795,7 @@ void WebGPUContext::read_buffer(WGPUBuffer buffer, size_t size, void* output_dat
     };
 
     bool finished = false;
-    wgpuBufferMapAsync2(output_buffer, WGPUMapMode_Read, 0, size, callback_info);
+    wgpuBufferMapAsync(output_buffer, WGPUMapMode_Read, 0, size, callback, &userdata);
 
     while (!userdata.finished) {
         process_events();
@@ -825,6 +839,8 @@ void WebGPUContext::process_events()
 {
 #ifndef __EMSCRIPTEN__
     wgpuInstanceProcessEvents(get_instance());
+#else
+    emscripten_sleep(50);
 #endif
 }
 
@@ -995,7 +1011,7 @@ WGPURenderPipeline WebGPUContext::create_render_pipeline(WGPUShaderModule render
 }
 
 void WebGPUContext::create_render_pipeline_async(WGPUShaderModule render_shader_module, WGPUPipelineLayout pipeline_layout, const std::vector<WGPUVertexBufferLayout>& vertex_attributes,
-    WGPUColorTargetState color_target, WGPUCreateRenderPipelineAsyncCallback2 callback, void* userdata, const PipelineDescription& description,
+    WGPUColorTargetState color_target, WGPUCreateRenderPipelineAsyncCallback callback, void* userdata, const PipelineDescription& description,
     const char* vs_entry_point, const char* fs_entry_point)
 {
     WGPUVertexState vertex_state = {};
@@ -1051,12 +1067,7 @@ void WebGPUContext::create_render_pipeline_async(WGPUShaderModule render_shader_
 
     pipeline_descr.fragment = &fragment_state;
 
-    WGPUCreateRenderPipelineAsyncCallbackInfo2 callback_info = {};
-    callback_info.mode = WGPUCallbackMode_AllowSpontaneous;
-    callback_info.callback = callback;
-    callback_info.userdata1 = userdata;
-
-    WGPUFuture future = wgpuDeviceCreateRenderPipelineAsync2(device, &pipeline_descr, callback_info);
+    wgpuDeviceCreateRenderPipelineAsync(device, &pipeline_descr, callback, userdata);
 }
 
 WGPUComputePipeline WebGPUContext::create_compute_pipeline(WGPUShaderModule compute_shader_module, WGPUPipelineLayout pipeline_layout, const char* entry_point)
@@ -1072,7 +1083,7 @@ WGPUComputePipeline WebGPUContext::create_compute_pipeline(WGPUShaderModule comp
     return wgpuDeviceCreateComputePipeline(device, &computePipelineDesc);
 }
 
-void WebGPUContext::create_compute_pipeline_async(WGPUShaderModule compute_shader_module, WGPUPipelineLayout pipeline_layout, WGPUCreateComputePipelineAsyncCallback2 callback, void* userdata, const char* entry_point)
+void WebGPUContext::create_compute_pipeline_async(WGPUShaderModule compute_shader_module, WGPUPipelineLayout pipeline_layout, WGPUCreateComputePipelineAsyncCallback callback, void* userdata, const char* entry_point)
 {
     WGPUComputePipelineDescriptor computePipelineDesc = {};
     computePipelineDesc.compute.nextInChain = nullptr;
@@ -1082,12 +1093,7 @@ void WebGPUContext::create_compute_pipeline_async(WGPUShaderModule compute_shade
     computePipelineDesc.compute.module = compute_shader_module;
     computePipelineDesc.layout = pipeline_layout;
 
-    WGPUCreateComputePipelineAsyncCallbackInfo2 callback_info = {};
-    callback_info.mode = WGPUCallbackMode_AllowSpontaneous;
-    callback_info.callback = callback;
-    callback_info.userdata1 = userdata;
-
-    WGPUFuture future = wgpuDeviceCreateComputePipelineAsync2(device, &computePipelineDesc, callback_info);
+   wgpuDeviceCreateComputePipelineAsync(device, &computePipelineDesc, callback, userdata);
 }
 
 WGPUVertexBufferLayout WebGPUContext::create_vertex_buffer_layout(const std::vector<WGPUVertexAttribute>& vertex_attributes, uint64_t stride, WGPUVertexStepMode step_mode)
@@ -1307,7 +1313,7 @@ void WebGPUContext::generate_prefiltered_env_texture(Texture* prefiltered_env_te
     wgpuQueueRelease(prefilter_queue);
 }
 
-void WebGPUContext::update_buffer(WGPUBuffer buffer, uint64_t buffer_offset, void const* data, uint64_t size)
+void WebGPUContext::update_buffer(WGPUBuffer buffer, uint64_t buffer_offset, void const* data, size_t size)
 {
     wgpuQueueWriteBuffer(device_queue, buffer, buffer_offset, data, size);
 }

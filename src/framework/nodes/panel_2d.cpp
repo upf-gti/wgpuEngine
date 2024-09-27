@@ -421,7 +421,7 @@ namespace ui {
         Surface* quad_surface = quad_mesh->get_surface(0);
         quad_surface->create_quad(size.x, size.y);
         // Use subdivided quad in case we use panels with curvature
-        // quad_surface->create_subvidided_quad(size.x, size.y);
+        // quad_surface->create_subdivided_quad(size.x, size.y);
 
         parameter_flags = flags;
 
