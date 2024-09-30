@@ -41,11 +41,10 @@ void MeshInstance3D::render_gui()
         for (int i = 0; i < surfaces.size(); ++i) {
             std::string surface_name = surfaces[i]->get_name();
             std::string final_surface_name = surface_name.empty() ? ("Surface " + std::to_string(i)).c_str() : surface_name;
-            ImGui::TreeNodeEx(final_surface_name.c_str(), ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_Leaf);
-
-            surfaces[i]->render_gui();
-
-            ImGui::TreePop();
+            if (ImGui::TreeNodeEx(final_surface_name.c_str(), ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_Leaf)) {
+                surfaces[i]->get_material()->render_gui();
+                ImGui::TreePop();
+            }
         }
 
         ImGui::TreePop();

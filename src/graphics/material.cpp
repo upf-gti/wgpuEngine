@@ -4,6 +4,8 @@
 #include "pipeline.h"
 #include "shader.h"
 
+#include "imgui.h"
+
 Material::Material()
 {
     properties["color"] = &color;
@@ -334,6 +336,89 @@ void Material::reset_dirty_flags()
 uint32_t Material::get_dirty_flags() const
 {
     return dirty_flags;
+}
+
+void Material::render_gui()
+{
+    std::string material_name = name.empty() ? "" : (" (" + name + ")");
+    if (ImGui::TreeNodeEx(("Material" + material_name).c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
+
+        ImGui::Text("Diffuse Color");
+        ImGui::SameLine(200);
+        if (ImGui::ColorEdit4("##Color", &color[0], ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel)) {
+            dirty_flags |= eMaterialProperties::PROP_COLOR;
+        }
+
+        ImGui::Text("Emissive Color");
+        ImGui::SameLine(200);
+        if (ImGui::ColorEdit4("##Emissive", &emissive[0], ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel)) {
+            dirty_flags |= eMaterialProperties::PROP_EMISSIVE;
+        }
+
+        ImGui::Text("Cull Type");
+        ImGui::SameLine(200);
+        static const char* cull_types[] = { "NONE", "BACK", "FRONT" };
+        int cull_type_int = static_cast<int>(cull_type);
+        if (ImGui::Combo("##Cull Type", &cull_type_int, cull_types, ((int)(sizeof(cull_types) / sizeof(*(cull_types)))))) {
+            cull_type = static_cast<eCullType>(cull_type_int);
+            dirty_flags |= eMaterialProperties::PROP_CULL_TYPE;
+        }
+
+        ImGui::Text("Transparency Type");
+        ImGui::SameLine(200);
+        static const char* transparency_types[] = { "OPAQUE", "BLEND", "MASK", "HASH" };
+        int transparency_type_int = static_cast<int>(transparency_type);
+        if (ImGui::Combo("##Transparency", &transparency_type_int, transparency_types, ((int)(sizeof(transparency_types) / sizeof(*(transparency_types)))))) {
+            transparency_type = static_cast<eTransparencyType>(transparency_type_int);
+            dirty_flags |= eMaterialProperties::PROP_TRANSPARENCY_TYPE;
+        }
+
+        if (transparency_type == ALPHA_MASK) {
+            ImGui::Text("Alpha Mask");
+            ImGui::SameLine(200);
+            ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
+            if (ImGui::DragFloat("##Alpha Mask", &alpha_mask, 0.01f, 0.0f, 1.0f)) {
+                dirty_flags |= eMaterialProperties::PROP_ALPHA_MASK;
+            }
+        }
+
+        ImGui::Text("Roughness");
+        ImGui::SameLine(200);
+        ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
+        if (ImGui::DragFloat("##Roughness", &roughness, 0.01f, 0.0f, 1.0f)) {
+            dirty_flags |= eMaterialProperties::PROP_OCLUSSION_ROUGHNESS_METALLIC;
+        }
+
+        ImGui::Text("Metallic");
+        ImGui::SameLine(200);
+        ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
+        if (ImGui::DragFloat("##Metallic", &metalness, 0.01f, 0.0f, 1.0f)) {
+            dirty_flags |= eMaterialProperties::PROP_OCLUSSION_ROUGHNESS_METALLIC;
+        }
+
+        ImGui::Text("Oclussion");
+        ImGui::SameLine(200);
+        ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
+        if (ImGui::DragFloat("##Oclussion", &occlusion, 0.01f, 0.0f, 1.0f)) {
+            dirty_flags |= eMaterialProperties::PROP_OCLUSSION_ROUGHNESS_METALLIC;
+        }
+
+        ImGui::Text("Depth Read");
+        ImGui::SameLine(200);
+        ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
+        if (ImGui::Checkbox("##Depth Read", &depth_read)) {
+            dirty_flags |= eMaterialProperties::PROP_DEPTH_READ;
+        }
+
+        ImGui::Text("Depth Write");
+        ImGui::SameLine(200);
+        ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
+        if (ImGui::Checkbox("##Depth Write", &depth_write)) {
+            dirty_flags |= eMaterialProperties::PROP_DEPTH_WRITE;
+        }
+
+        ImGui::TreePop();
+    }
 }
 
 Texture* Material::get_diffuse_texture()

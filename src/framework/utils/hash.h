@@ -17,6 +17,7 @@ struct RenderPipelineKey {
     const Shader* shader;
     WGPUColorTargetState color_target;
     PipelineDescription description;
+    WGPUPipelineLayout pipeline_layout;
 
     bool operator==(const RenderPipelineKey& other) const;
 };
@@ -36,9 +37,15 @@ struct std::hash<RenderPipelineKey>
         std::size_t h4 = hash<void const*>()(k.color_target.blend);
         std::size_t h5 = hash<uint32_t>()(static_cast<uint32_t>(k.description.cull_mode));
         std::size_t h6 = hash<uint32_t>()(static_cast<uint32_t>(k.description.topology));
+        std::size_t h7 = hash<uint32_t>()(static_cast<uint32_t>(k.description.depth_read));
+        std::size_t h8 = hash<uint32_t>()(static_cast<uint32_t>(k.description.depth_write));
+        std::size_t h9 = hash<uint32_t>()(static_cast<uint32_t>(k.description.blending_enabled));
+        std::size_t h10 = hash<uint32_t>()(static_cast<uint32_t>(k.description.topology));
+        std::size_t h11 = hash<uint32_t>()(static_cast<uint32_t>(k.description.depth_compare));
+        std::size_t h12 = hash<const void*>()(k.pipeline_layout);
 
         std::size_t seed = 0;
-        hash_combine(seed, h1, h2, h3, h4, h5, h6);
+        hash_combine(seed, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12);
         return seed;
     }
 };

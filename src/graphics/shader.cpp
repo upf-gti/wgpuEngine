@@ -639,11 +639,17 @@ void Shader::get_reflection_data(const std::string& shader_content)
 
 		entries.clear();
 	}
+
+    pipeline_layout = webgpu_context->create_pipeline_layout(bind_group_layouts);
 }
 
 void Shader::reload(const std::string& engine_shader_path)
 {
 	wgpuShaderModuleRelease(shader_module);
+
+    if (pipeline_layout) {
+        wgpuPipelineLayoutRelease(pipeline_layout);
+    }
 
     shader_module = nullptr;
 
@@ -659,8 +665,18 @@ void Shader::reload(const std::string& engine_shader_path)
     }
 
 	if (pipeline_ref) {
-		pipeline_ref->reload(this);
+        pipeline_ref = nullptr;
 	}
+}
+
+void Shader::set_define_specializations(std::vector<std::string> define_specializations)
+{
+    this->define_specializations = define_specializations;
+
+    specialized_path = path;
+    for (const std::string& specialization : define_specializations) {
+        specialized_path += "_" + specialization;
+    }
 }
 
 WGPUShaderModule Shader::get_module() const

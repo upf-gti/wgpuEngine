@@ -57,6 +57,11 @@ enum eMaterialProperties : uint32_t {
     PROP_PRIORITY                       = 1 << 15,
     PROP_ALPHA_MASK                     = 1 << 16,
     PROP_SHADER                         = 1 << 17,
+
+    PROP_RELOAD_NEEDED                  = PROP_DIFFUSE_TEXTURE | PROP_METALLIC_ROUGHNESS_TEXTURE | PROP_NORMAL_TEXTURE | PROP_EMISSIVE_TEXTURE | PROP_TRANSPARENCY_TYPE |
+                                          PROP_OCLUSSION_TEXTURE | PROP_DEPTH_READ | PROP_DEPTH_WRITE | PROP_TOPOLOGY_TYPE | PROP_CULL_TYPE | PROP_TYPE,
+
+    PROP_UPDATE_NEEDED                  = PROP_COLOR | PROP_OCLUSSION_ROUGHNESS_METALLIC | PROP_EMISSIVE | PROP_ALPHA_MASK
 };
 
 class Material : public Resource
@@ -133,6 +138,8 @@ public:
 
     void reset_dirty_flags();
     uint32_t get_dirty_flags() const;
+
+    void render_gui();
 
 private:
 

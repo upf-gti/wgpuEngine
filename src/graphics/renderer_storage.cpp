@@ -39,11 +39,20 @@ void RendererStorage::register_material_bind_group(WebGPUContext* webgpu_context
 {
     if (material_bind_groups.contains(material)) {
 
-        if (material->get_dirty_flags()) {
+        if (material->get_dirty_flags() & PROP_RELOAD_NEEDED) {
+            delete_material_bind_group(webgpu_context, material);
+            std::vector<std::string> define_specializations = get_common_define_specializations(material);
+            Shader* shader = material->get_shader_ref();
+            shader->set_define_specializations(define_specializations);
+            shader->reload();
+        } else
+        if (material->get_dirty_flags() & PROP_UPDATE_NEEDED) {
             update_material_bind_group(webgpu_context, mesh_instance, material);
+            return;
         }
-
-        return;
+        else {
+            return;
+        }
     }
 
     bool uses_textures = false;
@@ -202,6 +211,8 @@ void RendererStorage::register_material_bind_group(WebGPUContext* webgpu_context
             uniforms.push_back(skeleton_instance->get_invbind_uniform_data());
         }
     }
+
+    material->reset_dirty_flags();
 
     material_bind_groups[material].bind_group = webgpu_context->create_bind_group(uniforms, material->get_shader(), 2);
 }
@@ -700,6 +711,28 @@ void RendererStorage::register_render_pipeline(Material* material)
         return;
     }
 
+    RenderPipelineKey key = get_render_pipeline_key(material);
+
+    if (registered_render_pipelines.contains(key)) {
+        material->set_shader_pipeline(registered_render_pipelines[key]);
+        return;
+    }
+
+    Pipeline* render_pipeline = new Pipeline();
+    render_pipeline->create_render_async(material->get_shader_ref(), key.color_target, key.description);
+    registered_render_pipelines[key] = render_pipeline;
+}
+
+//void RendererStorage::register_compute_pipeline(Shader* shader, WGPUPipelineLayout pipeline_layout)
+//{
+//    Pipeline* compute_pipeline = new Pipeline();
+//    compute_pipeline->create_compute(shader, pipeline_layout);
+//    registered_compute_pipelines[shader] = compute_pipeline;
+//}
+
+RenderPipelineKey RendererStorage::get_render_pipeline_key(Material* material)
+{
+
     WebGPUContext* webgpu_context = Renderer::instance->get_webgpu_context();
 
     PipelineDescription description = {};
@@ -783,24 +816,8 @@ void RendererStorage::register_render_pipeline(Material* material)
     description.depth_read = material->get_depth_read();
     description.sample_count = Renderer::instance->get_msaa_count();
 
-    RenderPipelineKey key = { material->get_shader(), color_target, description};
-
-    if (registered_render_pipelines.contains(key)) {
-        material->set_shader_pipeline(registered_render_pipelines[key]);
-        return;
-    }
-
-    Pipeline* render_pipeline = new Pipeline();
-    render_pipeline->create_render_async(material->get_shader_ref(), color_target, description);
-    registered_render_pipelines[key] = render_pipeline;
+    return { material->get_shader(), color_target, description, material->get_shader()->get_pipeline_layout() };
 }
-
-//void RendererStorage::register_compute_pipeline(Shader* shader, WGPUPipelineLayout pipeline_layout)
-//{
-//    Pipeline* compute_pipeline = new Pipeline();
-//    compute_pipeline->create_compute(shader, pipeline_layout);
-//    registered_compute_pipelines[shader] = compute_pipeline;
-//}
 
 void RendererStorage::clean_registered_pipelines()
 {

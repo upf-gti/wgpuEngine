@@ -22,6 +22,8 @@ public:
 
 	void reload(const std::string& engine_shader_path = "");
 
+    void set_define_specializations(std::vector<std::string> define_specializations);
+
 	WGPUShaderModule get_module() const;
 
 	void set_pipeline(Pipeline* pipeline);
@@ -29,6 +31,8 @@ public:
 
 	const std::vector<WGPUBindGroupLayout>&    get_bind_group_layouts() const { return bind_group_layouts; }
 	const std::vector<WGPUVertexBufferLayout>& get_vertex_buffer_layouts() const { return vertex_buffer_layouts; }
+
+    const WGPUPipelineLayout get_pipeline_layout() const { return pipeline_layout; }
 
 	std::string get_path() const { return path; }
 
@@ -54,6 +58,7 @@ private:
 	WGPUShaderModule shader_module = nullptr;
 
 	std::vector<WGPUBindGroupLayout> bind_group_layouts;
+    WGPUPipelineLayout pipeline_layout = nullptr;
 
 	std::vector<WGPUVertexAttribute>	vertex_attributes;
 	std::vector<WGPUVertexBufferLayout> vertex_buffer_layouts;

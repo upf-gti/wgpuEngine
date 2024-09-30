@@ -98,6 +98,8 @@ public:
 
     static void register_render_pipeline(Material* material);
     //static void register_compute_pipeline(Shader* shader, WGPUPipelineLayout pipeline_layout);
+
+    static RenderPipelineKey get_render_pipeline_key(Material* material);
     static void clean_registered_pipelines();
 
 };

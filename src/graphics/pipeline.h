@@ -45,7 +45,6 @@ private:
     void create_render_common(Shader* shader, const WGPUColorTargetState& p_color_target, const PipelineDescription& desc = {});
     void create_compute_common(Shader* shader);
 
-	WGPUPipelineLayout pipeline_layout = nullptr;
     WGPUPipeline pipeline;
 
 	WGPUColorTargetState    color_target;
