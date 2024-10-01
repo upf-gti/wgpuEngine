@@ -41,10 +41,9 @@ void RendererStorage::register_material_bind_group(WebGPUContext* webgpu_context
 
         if (material->get_dirty_flags() & PROP_RELOAD_NEEDED) {
             delete_material_bind_group(webgpu_context, material);
-            std::vector<std::string> define_specializations = get_common_define_specializations(material);
-            Shader* shader = material->get_shader_ref();
-            shader->set_define_specializations(define_specializations);
-            shader->reload();
+            const Shader* old_shader = material->get_shader();
+            // TODO: try to cache shaders and use as resource
+            material->set_shader(get_shader_from_source(engine_shaders_refs[old_shader->get_path()], old_shader->get_path(), material));
         } else
         if (material->get_dirty_flags() & PROP_UPDATE_NEEDED) {
             update_material_bind_group(webgpu_context, mesh_instance, material);
