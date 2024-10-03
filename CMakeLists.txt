@@ -82,24 +82,6 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(tinyobjloader stb_image nlohmann_json nlohmann_json_fwd tiny_gltf)
 
-# Macro to map filters to folder structure for MSVC projects
-macro(GroupSources curdir)
-    if(MSVC)
-		file(GLOB children RELATIVE ${PROJECT_SOURCE_DIR}/${curdir} ${PROJECT_SOURCE_DIR}/${curdir}/*)
-
-        foreach(child ${children})
-            if(IS_DIRECTORY ${PROJECT_SOURCE_DIR}/${curdir}/${child})
-                GroupSources(${curdir}/${child})
-            else()
-                string(REPLACE "/" "\\" groupname ${curdir})
-                source_group(${groupname} FILES ${PROJECT_SOURCE_DIR}/${curdir}/${child})
-            endif()
-        endforeach()
-    endif()
-endmacro()
-
-GroupSources(src)
-
 # Sources
 macro(WGPU_SOURCES_APPEND)
     file(GLOB FILES_APPEND CONFIGURE_DEPENDS ${ARGV0}/*.h)
@@ -114,7 +96,7 @@ WGPU_SOURCES_APPEND(${WGPU_DIR_SOURCES}/framework)
 WGPU_SOURCES_APPEND(${WGPU_DIR_SOURCES}/framework/camera)
 WGPU_SOURCES_APPEND(${WGPU_DIR_SOURCES}/framework/nodes)
 WGPU_SOURCES_APPEND(${WGPU_DIR_SOURCES}/framework/resources)
-WGPU_SOURCES_APPEND(${WGPU_DIR_SOURCES}/framework/scene)
+WGPU_SOURCES_APPEND(${WGPU_DIR_SOURCES}/framework/parsers)
 WGPU_SOURCES_APPEND(${WGPU_DIR_SOURCES}/framework/ui)
 WGPU_SOURCES_APPEND(${WGPU_DIR_SOURCES}/framework/utils)
 WGPU_SOURCES_APPEND(${WGPU_DIR_SOURCES}/framework/animation)
@@ -127,6 +109,8 @@ if (NOT EMSCRIPTEN)
     WGPU_SOURCES_APPEND(${WGPU_DIR_SOURCES}/xr)
     WGPU_SOURCES_APPEND(${WGPU_DIR_SOURCES}/xr/dawnxr)
 endif()
+
+source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${WGPU_SOURCES} ${WGPU_HEADERS})
 
 find_package(PythonInterp 3 REQUIRED)
 

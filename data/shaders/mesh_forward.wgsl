@@ -89,8 +89,14 @@ fn vs_main(in: VertexInput) -> VertexOutput {
     out.position = camera_data.view_projection * world_position;
     out.uv = in.uv; // forward to the fragment shader
     out.color = vec4f(in.color, 1.0) * albedo;
-    out.normal = (instance_data.model * normals).xyz;
-    
+
+    out.normal = normalize((instance_data.model * normals).xyz);
+
+#ifdef HAS_TANGENTS
+    out.tangent = normalize((instance_data.model * vec4(in.tangent.xyz, 0.0)).xyz);
+    out.bitangent = normalize(cross(out.normal, out.tangent) * in.tangent.w);
+#endif
+
     return out;
 }
 
@@ -165,7 +171,14 @@ fn fs_main(in: VertexOutput) -> FragmentOutput {
 #ifdef NORMAL_TEXTURE
     var normal_color = textureSample(normal_texture, sampler_2d, in.uv).rgb * 2.0 - 1.0;
     // normal_color.y = -normal_color.y;
+
+#ifdef HAS_TANGENTS
+    let TBN : mat3x3f = mat3x3f(in.tangent, in.bitangent, in.normal);
+    m.normal = normalize(TBN * normal_color);
+#else
     m.normal = perturb_normal(m.normal, m.view_dir, in.uv, normal_color);
+#endif
+
 #endif
 
     var final_color : vec3f = vec3f(0.0);

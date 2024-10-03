@@ -48,13 +48,19 @@ void Surface::update_vertex_buffer(const std::vector<InterleavedData>& _vertices
     }
 
     vertex_count = _vertices.size();
-    webgpu_context->update_buffer(vertex_buffer, 0, _vertices.data(), get_byte_size());
+    webgpu_context->update_buffer(vertex_buffer, 0, _vertices.data(), get_vertices_byte_size());
 }
 
 void Surface::create_vertex_buffer(const std::vector<InterleavedData>& vertices)
 {
     vertex_count = vertices.size();
-    vertex_buffer = webgpu_context->create_buffer(get_byte_size(), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Vertex, vertices.data(), ("mesh_buffer_" + name).c_str());
+    vertex_buffer = webgpu_context->create_buffer(get_vertices_byte_size(), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Vertex, vertices.data(), ("mesh_buffer_" + name).c_str());
+}
+
+void Surface::create_index_buffer(const std::vector<uint32_t>& indices)
+{
+    index_count = indices.size();
+    index_buffer = webgpu_context->create_buffer(get_indices_byte_size(), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Index, indices.data(), ("index_buffer_" + name).c_str());
 }
 
 Material* Surface::get_material()
@@ -70,6 +76,11 @@ const Material* Surface::get_material() const
 const WGPUBuffer& Surface::get_vertex_buffer() const
 {
     return vertex_buffer;
+}
+
+const WGPUBuffer& Surface::get_index_buffer() const
+{
+    return index_buffer;
 }
 
 void Surface::create_axis(float s)
@@ -319,6 +330,7 @@ void Surface::create_rounded_box(float w, float h, float d, float c, const glm::
                     glm::vec3(x0 + offsetPosition.x, y0 + offsetPosition.y, z0 + offsetPosition.z),
                     glm::vec2((float)seg / (float)chamfer_seg, (float)ring / (float)chamfer_seg),
                     glm::normalize(glm::vec3(x0, y0, z0)),
+                    glm::vec4(0.0f),
                     color
                 };
 
@@ -395,6 +407,7 @@ void Surface::create_rounded_box(float w, float h, float d, float c, const glm::
                 vtxs[vtx_counter++] = { glm::vec3(x0 * vx0 + i * deltaHeight * vy0 + z0 * vz0 + offsetPosition),
                     glm::vec2(j / (float)chamfer_seg, i / (float)numSegHeight),
                     glm::normalize(glm::vec3(x0 * vx0 + z0 * vz0)),
+                    glm::vec4(0.0f),
                     color
                 };
 
@@ -971,9 +984,19 @@ uint32_t Surface::get_vertex_count() const
     return vertex_count;
 }
 
-uint64_t Surface::get_byte_size() const
+uint64_t Surface::get_vertices_byte_size() const
 {
     return vertex_count * sizeof(InterleavedData);
+}
+
+uint32_t Surface::get_index_count() const
+{
+    return index_count;
+}
+
+uint64_t Surface::get_indices_byte_size() const
+{
+    return index_count * sizeof(uint32_t);
 }
 
 void Surface::render_gui()

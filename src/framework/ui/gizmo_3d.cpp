@@ -7,7 +7,7 @@
 #include <framework/input.h>
 #include <framework/math/intersections.h>
 #include <framework/math/math_utils.h>
-#include "framework/scene/parse_scene.h"
+#include "framework/parsers/parse_scene.h"
 
 #include "shaders/mesh_forward.wgsl.gen.h"
 

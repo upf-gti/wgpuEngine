@@ -6,7 +6,7 @@
 #include "framework/nodes/default_node_factory.h"
 #include "framework/utils/tinyfiledialogs.h"
 #include "framework/nodes/mesh_instance_3d.h"
-#include "framework/scene/parse_scene.h"
+#include "framework/parsers/parse_scene.h"
 
 #include "graphics/renderer_storage.h"
 #include "graphics/renderer.h"
