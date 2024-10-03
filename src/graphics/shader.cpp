@@ -664,9 +664,9 @@ void Shader::reload(const std::string& engine_shader_path)
         load_from_source(RendererStorage::engine_shaders_refs[path], path, specialized_path, define_specializations);
     }
 
-	if (pipeline_ref) {
-        pipeline_ref = nullptr;
-	}
+    if (pipeline_ref) {
+        pipeline_ref->reload(this);
+    }
 }
 
 void Shader::set_define_specializations(std::vector<std::string> define_specializations)
