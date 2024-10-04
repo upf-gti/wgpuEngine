@@ -28,7 +28,7 @@
 #include "shaders/mesh_forward.wgsl.gen.h"
 #include "shaders/AABB_shader.wgsl.gen.h"
 
-#include "framework/scene/parse_scene.h"
+#include "framework/parsers/parse_scene.h"
 #include "framework/nodes/mesh_instance_3d.h"
 #include "framework/camera/camera_2d.h"
 #include "framework/camera/flyover_camera.h"
@@ -993,10 +993,19 @@ void Renderer::render_render_list(int list_index, WGPURenderPassEncoder render_p
         }
 
         // Set vertex buffer while encoding the render pass
-        wgpuRenderPassEncoderSetVertexBuffer(render_pass, 0, render_data.surface->get_vertex_buffer(), 0, render_data.surface->get_byte_size());
+        wgpuRenderPassEncoderSetVertexBuffer(render_pass, 0, render_data.surface->get_vertex_buffer(), 0, render_data.surface->get_vertices_byte_size());
 
-        // Submit drawcall
-        wgpuRenderPassEncoderDraw(render_pass, render_data.surface->get_vertex_count(), render_data.repeat, 0, i);
+        WGPUBuffer index_buffer = render_data.surface->get_index_buffer();
+
+        if (index_buffer) {
+            wgpuRenderPassEncoderSetIndexBuffer(render_pass, index_buffer, WGPUIndexFormat_Uint32, 0, render_data.surface->get_indices_byte_size());
+
+            wgpuRenderPassEncoderDrawIndexed(render_pass, render_data.surface->get_index_count(), render_data.repeat, 0, 0, i);
+        }
+        else {
+            wgpuRenderPassEncoderDraw(render_pass, render_data.surface->get_vertex_count(), render_data.repeat, 0, i);
+        }
+
 
 //#ifndef NDEBUG
 //        wgpuRenderPassEncoderPopDebugGroup(render_pass);
@@ -1217,7 +1226,7 @@ void Renderer::render_mirror(WGPUTextureView screen_surface_texture_view)
             wgpuRenderPassEncoderSetBindGroup(render_pass, 0, swapchain_bind_groups[xr_context->swapchains[0].image_index], 0, nullptr);
 
             // Set vertex buffer while encoding the render pass
-            wgpuRenderPassEncoderSetVertexBuffer(render_pass, 0, quad_surface.get_vertex_buffer(), 0, quad_surface.get_byte_size());
+            wgpuRenderPassEncoderSetVertexBuffer(render_pass, 0, quad_surface.get_vertex_buffer(), 0, quad_surface.get_vertices_byte_size());
 
             // Submit drawcall
             wgpuRenderPassEncoderDraw(render_pass, 6, 1, 0, 0);

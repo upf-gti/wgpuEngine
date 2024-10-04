@@ -12,7 +12,7 @@
 
 #include "shaders/mesh_forward.wgsl.gen.h"
 
-#include "framework/scene/parse_obj.h"
+#include "framework/parsers/parse_obj.h"
 
 #include <glm/gtc/type_ptr.hpp>
 #include "spdlog/spdlog.h"

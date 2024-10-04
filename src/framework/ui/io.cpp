@@ -4,7 +4,7 @@
 #include "framework/nodes/node_2d.h"
 #include "framework/nodes/button_2d.h"
 #include "framework/nodes/viewport_3d.h"
-#include "framework/scene/parse_scene.h"
+#include "framework/parsers/parse_scene.h"
 #include "framework/input.h"
 
 #include "graphics/renderer.h"

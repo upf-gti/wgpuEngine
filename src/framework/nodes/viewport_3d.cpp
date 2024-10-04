@@ -2,7 +2,7 @@
 
 #include "graphics/renderer.h"
 
-#include "framework/scene/parse_scene.h"
+#include "framework/parsers/parse_scene.h"
 #include "framework/input.h"
 
 Viewport3D::Viewport3D(Node2D* root_2d) : Node3D(), root(root_2d)

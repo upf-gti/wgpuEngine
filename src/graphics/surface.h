@@ -24,7 +24,7 @@ struct InterleavedData {
     glm::vec3 position;
     glm::vec2 uv;
     glm::vec3 normal;
-    glm::vec3 tangent;
+    glm::vec4 tangent;
     glm::vec3 color = glm::vec3(1.0f);
     glm::vec4 weights;
     glm::ivec4 joints;
@@ -33,9 +33,13 @@ struct InterleavedData {
 class Surface : public Resource
 {
     uint32_t vertex_count = 0;
+    uint32_t index_count = 0;
+
     Material* material = nullptr;
 
     WGPUBuffer vertex_buffer = nullptr;
+    WGPUBuffer index_buffer = nullptr;
+
     static Surface* quad_mesh;
 
     std::vector<InterleavedData> generate_quad(float w = 1.f, float h = 1.f, const glm::vec3& position = { 0.f, 0.f, 0.f }, const glm::vec3& normal = { 0.f, 1.f, 0.f }, const glm::vec3& color = { 1.f, 1.f, 1.f });
@@ -54,6 +58,7 @@ public:
     const Material* get_material() const;
 
     const WGPUBuffer& get_vertex_buffer() const;
+    const WGPUBuffer& get_index_buffer() const;
 
     void create_axis(float s = 1.f);
     void create_quad(float w = 1.f, float h = 1.f, bool centered = true, const glm::vec3& color = { 1.f, 1.f, 1.f });
@@ -74,8 +79,13 @@ public:
     void update_vertex_buffer(const std::vector<InterleavedData>& _vertices);
     void create_vertex_buffer(const std::vector<InterleavedData>& _vertices);
 
+    void create_index_buffer(const std::vector<uint32_t>& indices);
+
     uint32_t get_vertex_count() const;
-    uint64_t get_byte_size() const;
+    uint64_t get_vertices_byte_size() const;
+
+    uint32_t get_index_count() const;
+    uint64_t get_indices_byte_size() const;
 
     void render_gui();
 

@@ -106,13 +106,13 @@ void read_transform(const tinygltf::Node& node, Transform& transform)
         transform.set_position({ static_cast<float>(node.translation[0]), static_cast<float>(node.translation[1]), static_cast<float>(node.translation[2]) });
     }
     if (!node.rotation.empty()) {
-        transform.set_rotation( { static_cast<float>(node.rotation[0]), static_cast<float>(node.rotation[1]), static_cast<float>(node.rotation[2]), static_cast<float>(node.rotation[3]) });
+        transform.set_rotation({ static_cast<float>(node.rotation[0]), static_cast<float>(node.rotation[1]), static_cast<float>(node.rotation[2]), static_cast<float>(node.rotation[3]) });
     }
     if (!node.scale.empty()) {
-        transform.set_scale( {static_cast<float>(node.scale[0]), static_cast<float>(node.scale[1]), static_cast<float>(node.scale[2]) });
-       /* transform.scale.x = transform.scale.x >= 0.99999f ? 1.f : transform.scale.x;
-        transform.scale.y = transform.scale.y >= 0.99999f ? 1.f : transform.scale.y;
-        transform.scale.z = transform.scale.z >= 0.99999f ? 1.f : transform.scale.z;*/
+        transform.set_scale({ static_cast<float>(node.scale[0]), static_cast<float>(node.scale[1]), static_cast<float>(node.scale[2]) });
+        /* transform.scale.x = transform.scale.x >= 0.99999f ? 1.f : transform.scale.x;
+         transform.scale.y = transform.scale.y >= 0.99999f ? 1.f : transform.scale.y;
+         transform.scale.z = transform.scale.z >= 0.99999f ? 1.f : transform.scale.z;*/
 
     }
 }
@@ -141,30 +141,28 @@ void read_mesh(const tinygltf::Model& model, const tinygltf::Node& node, Node3D*
 
         Material* material = new Material();
 
+        bool has_tangents = false;
+
         std::vector<InterleavedData> vertices;
 
         const tinygltf::Primitive& primitive = mesh.primitives[primitive_idx];
 
-        bool uses_indices = primitive.indices >= 0;
-
-        tinygltf::BufferView const* final_buffer_view = nullptr;
-        tinygltf::BufferView const* indices_buffer_view = nullptr;
-        tinygltf::Accessor const* final_accessor = nullptr;
-        tinygltf::Accessor const* index_accessor = nullptr;
-        tinygltf::Buffer const* indices_buffer = nullptr;
-
-        size_t final_data_size = 0;
         size_t index_data_size = 0;
 
+        bool uses_indices = primitive.indices >= 0;
+
         if (uses_indices) {
+            tinygltf::BufferView const* indices_buffer_view = nullptr;
+            tinygltf::Accessor const* index_accessor = nullptr;
+            tinygltf::Buffer const* indices_buffer = nullptr;
+
+            std::vector<uint32_t> indices;
+
             index_accessor = &model.accessors[primitive.indices];
-            final_accessor = index_accessor;
 
             indices_buffer_view = &model.bufferViews[index_accessor->bufferView];
             indices_buffer = &model.buffers[indices_buffer_view->buffer];
             size_t index_buffer_size = 0;
-
-            final_buffer_view = indices_buffer_view;
 
             uint16_t index_coponent_size = 1;
 
@@ -186,7 +184,56 @@ void read_mesh(const tinygltf::Model& model, const tinygltf::Node& node, Node3D*
                 break;
             }
 
-            final_data_size = index_data_size;
+            size_t index_stride;
+
+            if (indices_buffer_view->byteStride == 0) {
+                index_stride = index_data_size;
+            }
+            else {
+                index_stride = indices_buffer_view->byteStride;
+            }
+
+            size_t index_buffer_start = index_accessor->byteOffset + indices_buffer_view->byteOffset;
+            size_t index_buffer_end = index_stride * index_accessor->count + index_buffer_start;
+
+            uint32_t index_idx = 0;
+
+            indices.resize((index_buffer_end - index_buffer_start) / index_stride);
+
+            for (size_t buffer_idx = index_buffer_start; buffer_idx < index_buffer_end; buffer_idx += index_stride) {
+                if (index_idx >= indices.size())
+                    break;
+
+                uint32_t index = 0;
+                switch (index_accessor->componentType) {
+                    //case TINYGLTF_COMPONENT_TYPE_BYTE:
+                    //    index = *(int8_t*)&(indices_buffer->data[index_idx]);
+                    //    break;
+                case TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE:
+                    index = *(uint8_t*)&(indices_buffer->data[buffer_idx]);
+                    break;
+                    //case TINYGLTF_COMPONENT_TYPE_SHORT:
+                    //    index = *(int16_t*)&(indices_buffer->data[index_idx]);
+                    //    break;
+                case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT:
+                    index = *(uint16_t*)&(indices_buffer->data[buffer_idx]);
+                    break;
+                    //case TINYGLTF_COMPONENT_TYPE_INT:
+                    //    index = *(int32_t*)&(indices_buffer->data[index_idx]);
+                    //    break;
+                case TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT:
+                    index = *(uint32_t*)&(indices_buffer->data[buffer_idx]);
+                    break;
+                default:
+                    assert(0);
+                }
+
+                indices[index_idx] = index;
+
+                index_idx++;
+            }
+
+            surface->create_index_buffer(indices);
         }
 
         for (auto& attrib : primitive.attributes) {
@@ -219,144 +266,74 @@ void read_mesh(const tinygltf::Model& model, const tinygltf::Node& node, Node3D*
                 assert(0);
             }
 
-            if (!uses_indices) {
-                size_t buffer_size = buffer_view.byteLength / vertex_attribute_size;
-                final_data_size = vertex_attribute_size;
-                final_buffer_view = &buffer_view;
-                final_accessor = &accessor;
-            }
-
             size_t vertex_idx = 0;
-            size_t final_stride;
+            size_t stride;
 
-            if (final_buffer_view->byteStride == 0) {
-                final_stride = final_data_size;
+            if (buffer_view.byteStride == 0) {
+                stride = vertex_attribute_size;
             }
             else {
-                final_stride = final_buffer_view->byteStride;
+                stride = buffer_view.byteStride;
             }
 
-            size_t buffer_start = final_accessor->byteOffset + final_buffer_view->byteOffset;
-            size_t buffer_end = final_data_size * final_accessor->count + buffer_start;
+            size_t buffer_start = accessor.byteOffset + buffer_view.byteOffset;
+            size_t buffer_end = stride * accessor.count + buffer_start;
 
-            vertices.resize((buffer_end - buffer_start) / final_stride);
+            vertices.resize((buffer_end - buffer_start) / stride);
 
-            for (size_t j = buffer_start; j < buffer_end; j += final_stride) {
+            for (size_t buffer_idx = buffer_start; buffer_idx < buffer_end; buffer_idx += stride) {
                 if (vertex_idx >= vertices.size())
                     break;
-
-                size_t buffer_idx = 0;
-
-                if (uses_indices) {
-
-                    uint32_t index = 0;
-                    switch (index_accessor->componentType) {
-                        //case TINYGLTF_COMPONENT_TYPE_BYTE:
-                        //    index = *(int8_t*)&(indices_buffer->data[j]);
-                        //    break;
-                    case TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE:
-                        index = *(uint8_t*)&(indices_buffer->data[j]);
-                        break;
-                        //case TINYGLTF_COMPONENT_TYPE_SHORT:
-                        //    index = *(int16_t*)&(indices_buffer->data[j]);
-                        //    break;
-                    case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT:
-                        index = *(uint16_t*)&(indices_buffer->data[j]);
-                        break;
-                        //case TINYGLTF_COMPONENT_TYPE_INT:
-                        //    index = *(int32_t*)&(indices_buffer->data[j]);
-                        //    break;
-                    case TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT:
-                        index = *(uint32_t*)&(indices_buffer->data[j]);
-                        break;
-                    default:
-                        assert(0);
-                    }
-
-                    size_t stride;
-
-                    if (buffer_view.byteStride == 0) {
-                        stride = vertex_attribute_size;
-                    }
-                    else {
-                        stride = buffer_view.byteStride;
-                    }
-
-                    buffer_idx = index * stride + buffer_view.byteOffset + accessor.byteOffset;
-                }
-                else {
-                    buffer_idx = j;
-                }
 
                 // position
                 if (attrib.first[0] == 'P') {
                     glm::vec3& position = vertices[vertex_idx].position;
-                    position.x = *(float*)&buffer.data[buffer_idx + 0];
-                    position.y = *(float*)&buffer.data[buffer_idx + 4];
-                    position.z = *(float*)&buffer.data[buffer_idx + 8];
+                    memcpy(&position[0], &buffer.data[buffer_idx], sizeof(float) * 3);
 
-                    glm::bvec3 less_than = glm::lessThan(position, min_pos);
-
-                    if (less_than.x) {
-                        min_pos.x = position.x;
-                    }
-                    if (less_than.y) {
-                        min_pos.y = position.y;
-                    }
-                    if (less_than.z) {
-                        min_pos.z = position.z;
-                    }
-
-                    glm::bvec3 greater_than = glm::greaterThan(position, max_pos);
-
-                    if (greater_than.x) {
-                        max_pos.x = position.x;
-                    }
-                    if (greater_than.y) {
-                        max_pos.y = position.y;
-                    }
-                    if (greater_than.z) {
-                        max_pos.z = position.z;
-                    }
+                    // For AABB
+                    min_pos = glm::min(position, min_pos);
+                    max_pos = glm::max(position, max_pos);
                 }
 
                 // normal
                 if (attrib.first[0] == 'N') {
-                    vertices[vertex_idx].normal.x = *(float*)&buffer.data[buffer_idx + 0];
-                    vertices[vertex_idx].normal.y = *(float*)&buffer.data[buffer_idx + 4];
-                    vertices[vertex_idx].normal.z = *(float*)&buffer.data[buffer_idx + 8];
+                    glm::vec3& normal = vertices[vertex_idx].normal;
+                    memcpy(&normal[0], &buffer.data[buffer_idx], sizeof(float) * 3);
                 }
 
                 // uv
                 if (attrib.first == std::string("TEXCOORD_0")) {
-                    vertices[vertex_idx].uv.x = *(float*)&buffer.data[buffer_idx + 0];
-                    vertices[vertex_idx].uv.y = *(float*)&buffer.data[buffer_idx + 4];
+                    glm::vec2& uv = vertices[vertex_idx].uv;
+                    memcpy(&uv[0], &buffer.data[buffer_idx], sizeof(float) * 2);
                 }
 
                 // tangents
                 if (attrib.first[0] == 'T' && attrib.first[1] == 'A') {
-                    vertices[vertex_idx].tangent.x = *(float*)&buffer.data[buffer_idx + 0];
-                    vertices[vertex_idx].tangent.y = *(float*)&buffer.data[buffer_idx + 4];
-                    vertices[vertex_idx].tangent.z = *(float*)&buffer.data[buffer_idx + 8];
+                    glm::vec4& tangent = vertices[vertex_idx].tangent;
+                    memcpy(&tangent[0], &buffer.data[buffer_idx], sizeof(float) * 4);
                 }
 
                 // color
                 if (attrib.first == std::string("COLOR_0")) {
+                    glm::vec3& color = vertices[vertex_idx].color;
+
                     switch (accessor.componentType) {
                     case TINYGLTF_COMPONENT_TYPE_FLOAT:
-                        vertices[vertex_idx].color.x = *(float*)&buffer.data[buffer_idx + 0];
-                        vertices[vertex_idx].color.y = *(float*)&buffer.data[buffer_idx + 4];
-                        vertices[vertex_idx].color.z = *(float*)&buffer.data[buffer_idx + 8];
+                        memcpy(&color[0], &buffer.data[buffer_idx], sizeof(float) * 3);
                         break;
                     case TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE:
-                        vertices[vertex_idx].color.x = *(uint8_t*)&buffer.data[buffer_idx + 0] / 255.0f;
-                        vertices[vertex_idx].color.y = *(uint8_t*)&buffer.data[buffer_idx + 1] / 255.0f;
-                        vertices[vertex_idx].color.z = *(uint8_t*)&buffer.data[buffer_idx + 2] / 255.0f;
+                        glm::u8vec3 color_u8;
+                        memcpy(&color_u8[0], &buffer.data[buffer_idx], sizeof(uint8_t) * 3);
+                        vertices[vertex_idx].color.x = color_u8.x / 255.0f;
+                        vertices[vertex_idx].color.y = color_u8.y / 255.0f;
+                        vertices[vertex_idx].color.z = color_u8.z / 255.0f;
                         break;
                     case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT:
-                        vertices[vertex_idx].color.x = *(uint16_t*)&buffer.data[buffer_idx + 0] / 65535.0f;
-                        vertices[vertex_idx].color.y = *(uint16_t*)&buffer.data[buffer_idx + 2] / 65535.0f;
-                        vertices[vertex_idx].color.z = *(uint16_t*)&buffer.data[buffer_idx + 4] / 65535.0f;
+                        glm::u16vec3 color_u16;
+                        memcpy(&color_u16[0], &buffer.data[buffer_idx], sizeof(uint16_t) * 3);
+                        vertices[vertex_idx].color.x = color_u16.x / 65535.0f;
+                        vertices[vertex_idx].color.y = color_u16.y / 65535.0f;
+                        vertices[vertex_idx].color.z = color_u16.z / 65535.0f;
                         break;
                     default:
                         assert(0);
@@ -369,26 +346,21 @@ void read_mesh(const tinygltf::Model& model, const tinygltf::Node& node, Node3D*
 
                     switch (accessor.componentType) {
                     case TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE:
-                        joints.x = *(uint8_t*)&buffer.data[buffer_idx + 0];
-                        joints.y = *(uint8_t*)&buffer.data[buffer_idx + 1];
-                        joints.z = *(uint8_t*)&buffer.data[buffer_idx + 2];
-                        joints.w = *(uint8_t*)&buffer.data[buffer_idx + 3];
+                        glm::u8vec4 joints_u8;
+                        memcpy(&joints_u8[0], &buffer.data[buffer_idx], sizeof(uint8_t) * 4);
+                        joints = joints_u8;
                         break;
                     case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT:
-                        joints.x = *(uint16_t*)&buffer.data[buffer_idx + 0];
-                        joints.y = *(uint16_t*)&buffer.data[buffer_idx + 2];
-                        joints.z = *(uint16_t*)&buffer.data[buffer_idx + 4];
-                        joints.w = *(uint16_t*)&buffer.data[buffer_idx + 6];
+                        glm::u16vec4 joints_u16;
+                        memcpy(&joints_u16[0], &buffer.data[buffer_idx], sizeof(uint16_t) * 4);
+                        joints = joints_u16;
                         break;
                     default:
                         assert(0);
                     }
 
                     //Make sure that even the invalid nodes have a value of 0 (any negative joint indices will break the skinning implementation)
-                    joints.x = std::max(0, joints.x) + joints_count;
-                    joints.y = std::max(0, joints.y) + joints_count;
-                    joints.z = std::max(0, joints.z) + joints_count;
-                    joints.w = std::max(0, joints.w) + joints_count;
+                    joints = glm::max(glm::ivec4(0), joints) + static_cast<int32_t>(joints_count);
                 }
 
                 // weights (skinning)
@@ -397,22 +369,17 @@ void read_mesh(const tinygltf::Model& model, const tinygltf::Node& node, Node3D*
 
                     switch (accessor.componentType) {
                     case TINYGLTF_COMPONENT_TYPE_FLOAT:
-                        weights.x = *(float*)&buffer.data[buffer_idx + 0];
-                        weights.y = *(float*)&buffer.data[buffer_idx + 4];
-                        weights.z = *(float*)&buffer.data[buffer_idx + 8];
-                        weights.w = *(float*)&buffer.data[buffer_idx + 12];
+                        memcpy(&weights[0], &buffer.data[buffer_idx], sizeof(float) * 4);
                         break;
                     case TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE:
-                        weights.x = *(uint8_t*)&buffer.data[buffer_idx + 0];
-                        weights.y = *(uint8_t*)&buffer.data[buffer_idx + 1];
-                        weights.z = *(uint8_t*)&buffer.data[buffer_idx + 2];
-                        weights.w = *(uint8_t*)&buffer.data[buffer_idx + 3];
+                        glm::u8vec4 weights_u8;
+                        memcpy(&weights_u8[0], &buffer.data[buffer_idx], sizeof(uint8_t) * 4);
+                        weights = weights_u8;
                         break;
                     case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT:
-                        weights.x = *(uint16_t*)&buffer.data[buffer_idx + 0];
-                        weights.y = *(uint16_t*)&buffer.data[buffer_idx + 2];
-                        weights.z = *(uint16_t*)&buffer.data[buffer_idx + 4];
-                        weights.w = *(uint16_t*)&buffer.data[buffer_idx + 6];
+                        glm::u16vec4 weights_u16;
+                        memcpy(&weights_u16[0], &buffer.data[buffer_idx], sizeof(uint16_t) * 4);
+                        weights = weights_u16;
                         break;
                     default:
                         assert(0);
@@ -575,7 +542,13 @@ void read_mesh(const tinygltf::Model& model, const tinygltf::Node& node, Node3D*
 
         material->set_priority(1);
 
-        material->set_shader(RendererStorage::get_shader_from_source(shaders::mesh_forward::source, shaders::mesh_forward::path, material));
+        std::vector<std::string> custom_defines;
+
+        if (primitive.attributes.contains("TANGENT")) {
+            custom_defines.push_back("HAS_TANGENTS");
+        }
+
+        material->set_shader(RendererStorage::get_shader_from_source(shaders::mesh_forward::source, shaders::mesh_forward::path, material, custom_defines));
 
         surface->set_material(material);
 
@@ -799,7 +772,7 @@ void parse_model_skins(Node3D* scene_root, tinygltf::Model& model, std::map<std:
             SkeletonInstance3D* e = nullptr;
 
             if (joint_root_parent_id >= 0) {
-                    
+
                 const tinygltf::Node& parent = model.nodes[joint_root_parent_id];
                 assert(loaded_nodes.contains(parent.name));
                 parent_node = loaded_nodes[parent.name];
@@ -815,9 +788,9 @@ void parse_model_skins(Node3D* scene_root, tinygltf::Model& model, std::map<std:
                 skeleton_instances.push_back(e);
             }
             else {
-                
+
             }
-            
+
             e = skeleton_instances[skeleton_instances.size() - 1];
             e->add_child(skinned_mesh_node);
         }
@@ -911,14 +884,14 @@ void parse_model_skins(Node3D* scene_root, tinygltf::Model& model, std::map<std:
                 }
                 parent = j;
                 break;
-                }           
+            }
             rest_pose.set_parent(id, parent);
 
             glm::mat4x4 m;
 
             // Get the 16 values of the inverse bind matrix and put them into a mat4
             memcpy(&m, ptr + i * 16, 16 * sizeof(float));
-        
+
             inverse_bind_matrices[id] = m;
 
             // Set the transform into the array of transforms of the joints in the bind pose (world bind pose)
@@ -930,7 +903,7 @@ void parse_model_skins(Node3D* scene_root, tinygltf::Model& model, std::map<std:
     }
     bind_pose = rest_pose;
 
-    for (uint32_t i = 0 ; i < rest_pose.size(); ++i) {
+    for (uint32_t i = 0; i < rest_pose.size(); ++i) {
 
         Transform current = world_bind_transforms[i];
 

@@ -1,5 +1,6 @@
 #include "environment_3d.h"
-#include "framework/scene/parse_obj.h"
+
+#include "framework/parsers/parse_obj.h"
 #include "graphics/renderer.h"
 #include "graphics/renderer_storage.h"
 #include "shaders/mesh_texture_cube.wgsl.gen.h"

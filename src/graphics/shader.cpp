@@ -288,19 +288,31 @@ std::string Shader::delete_until_tags(std::istringstream& string_stream, std::st
 {
     std::string current_tag;
 
+    uint16_t ifdefs_found = 0;
+
     while (true) {
         std::getline(string_stream, line);
         auto tokens = tokenize(line);
         current_tag = tokens[0];
 
+        if (current_tag == "#ifdef" || current_tag == "#ifndef") {
+            ifdefs_found++;
+        }
+
         auto it = std::find(tags.begin(), tags.end(), current_tag);
 
         if (it != tags.end()) {
-            return *it;
+            if (ifdefs_found == 0) {
+                return *it;
+            }
+            else {
+                if (current_tag != "#else") {
+                    ifdefs_found--;
+                }
+            }
         }
-        else {
-            shader_content.replace(line_pos, line.length() + 1, "");
-        }
+
+        shader_content.replace(line_pos, line.length() + 1, "");
     }
 }
 
@@ -664,9 +676,9 @@ void Shader::reload(const std::string& engine_shader_path)
         load_from_source(RendererStorage::engine_shaders_refs[path], path, specialized_path, define_specializations);
     }
 
-	if (pipeline_ref) {
-        pipeline_ref = nullptr;
-	}
+    if (pipeline_ref) {
+        pipeline_ref->reload(this);
+    }
 }
 
 void Shader::set_define_specializations(std::vector<std::string> define_specializations)
