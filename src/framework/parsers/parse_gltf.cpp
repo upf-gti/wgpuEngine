@@ -1105,7 +1105,7 @@ void parse_model_animations(const tinygltf::Model& model, std::vector<SkeletonIn
         Skeleton* skeleton = nullptr;
 
         Animation* new_animation = new Animation();
-        new_animation->set_type(AnimationType::ANIM_TYPE_SIMPLE);
+        new_animation->set_type(eAnimationType::ANIMATION_TYPE_SIMPLE);
 
         if (skeleton_instances.size() > 0) {
 
@@ -1127,7 +1127,7 @@ void parse_model_animations(const tinygltf::Model& model, std::vector<SkeletonIn
             }
 
             if (skeleton) {
-                new_animation->set_type(AnimationType::ANIM_TYPE_SKELETON);
+                new_animation->set_type(eAnimationType::ANIMATION_TYPE_SKELETON);
             }
         }
 
