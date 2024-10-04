@@ -1,16 +1,4 @@
-struct VertexInput {
-    @location(0) position: vec3f,
-    @location(1) uv: vec2f,
-    @location(2) normal: vec3f,
-    @location(3) tangent: vec3f,
-    @location(4) color: vec3f,
-    @location(5) weights: vec4f,
-    @location(6) joints: vec4i
-};
-struct VertexOutput {
-    @builtin(position) position: vec4f,
-    @location(0) uv: vec2f,
-};
+#include mesh_includes.wgsl
 
 @vertex
 fn vs_main(in: VertexInput) -> VertexOutput {

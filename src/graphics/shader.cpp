@@ -20,6 +20,7 @@
 #include "shaders/pbr_functions.wgsl.gen.h"
 #include "shaders/pbr_light.wgsl.gen.h"
 #include "shaders/pbr_material.wgsl.gen.h"
+#include "shaders/mesh_includes.wgsl.gen.h"
 
 std::unordered_map<std::string, custom_define_type> Shader::custom_defines;
 std::unordered_map<std::string, const char*> Shader::engine_libraries;
@@ -31,6 +32,7 @@ Shader::Shader()
     engine_libraries[shaders::pbr_functions::path] = shaders::pbr_functions::source;
     engine_libraries[shaders::pbr_light::path] = shaders::pbr_light::source;
     engine_libraries[shaders::pbr_material::path] = shaders::pbr_material::source;
+    engine_libraries[shaders::mesh_includes::path] = shaders::mesh_includes::source;
 }
 
 Shader::~Shader()
