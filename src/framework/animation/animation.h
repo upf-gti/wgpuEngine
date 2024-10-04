@@ -5,10 +5,22 @@
 
 #include "track.h"
 
-enum AnimationType {
-    ANIM_TYPE_UNDEFINED,
-    ANIM_TYPE_SIMPLE,
-    ANIM_TYPE_SKELETON,
+enum eAnimationType {
+    ANIMATION_TYPE_UNDEFINED,
+    ANIMATION_TYPE_SIMPLE,
+    ANIMATION_TYPE_SKELETON,
+};
+
+enum eBlendType : uint8_t {
+    ANIMATION_BLEND_CROSSFADE,
+    ANIMATION_BLEND_ADDITIVE
+};
+
+enum eLoopType : uint8_t {
+    ANIMATION_LOOP_NONE,
+    ANIMATION_LOOP_DEFAULT,
+    ANIMATION_LOOP_REVERSE,
+    ANIMATION_LOOP_PING_PONG
 };
 
 class Animation {
@@ -20,13 +32,13 @@ class Animation {
 
     float start_time = 0.0f;
     float end_time = 0.0f;
-    bool looping = true;
     float duration = 0.0f;
 
-    float adjust_time_to_fit_range(float time);
-    void sample_pose(float time, void* out);
+    bool reversed = false;
 
-    AnimationType type = ANIM_TYPE_UNDEFINED;
+    float adjust_time_to_fit_range(float time, uint8_t loop);
+
+    eAnimationType type = ANIMATION_TYPE_UNDEFINED;
 
 public:
 
@@ -40,7 +52,7 @@ public:
     void set_id_at_index(uint32_t index, int id);
 
     // Samples the animation clip at the provided time into the out reference
-    float sample(float time, uint32_t track_idx, void* out = nullptr);
+    float sample(float time, uint32_t track_idx, uint8_t loop, void* out = nullptr);
 
     // Returns a transform track for the specified track position id
     Track* operator[](uint32_t index);
@@ -58,12 +70,11 @@ public:
     float get_duration();
     float get_start_time();
     float get_end_time();
-    bool get_looping();
-    AnimationType get_type();
+    eAnimationType get_type();
+    bool is_reversed();
 
-    void set_type(AnimationType new_type);
+    void set_type(eAnimationType new_type);
     void set_name(const std::string& new_name);
-    void set_looping(bool new_looping);
 };
 
 

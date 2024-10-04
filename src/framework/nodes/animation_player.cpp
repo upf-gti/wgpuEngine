@@ -43,7 +43,7 @@ void AnimationPlayer::play(Animation* animation, float custom_blend, float custo
     current_animation_name = animation->get_name();
 
     // sequence with default values
-    timeline.frame_max = animation->get_track(0)->size();;
+    timeline.frame_max = animation->get_track(0)->size();
     selected_track = -1;
 
     generate_track_data();
@@ -120,10 +120,6 @@ void AnimationPlayer::generate_track_data()
                 timeline.curve_editor.point_count[1] = points[1].size();
                 timeline.curve_editor.point_count[2] = points[2].size();
                 timeline.curve_editor.point_count[3] = points[3].size();
-                /*timeline.curve_editor.AddPoint(0, ImVec2(j, p.x));
-                timeline.curve_editor.AddPoint(1, ImVec2(j, p.y));
-                timeline.curve_editor.AddPoint(2, ImVec2(j, p.z));
-                timeline.curve_editor.AddPoint(3, ImVec2(j, p.w));*/
             }
         }
         timeline.tracks.push_back(Timeline::TimelineTrack{ animation->get_track(i)->get_type(), 0, (int)animation->get_track(i)->size(), false, track_path, points });
@@ -142,24 +138,27 @@ void AnimationPlayer::stop(bool keep_state)
 }
 
 void AnimationPlayer::update(float delta_time)
-{ 
-    float current_time = playback + delta_time * speed;
+{
     Animation* current_animation = blender.get_current_animation();
-    if (current_animation == nullptr)
+    if (current_animation == nullptr) {
         return;
+    }
 
     if (!playing) {
-        //current_time = playback;
         Node::update(delta_time);
         return;
     }
-    if (!current_animation->get_looping() && playback >= current_animation->get_duration()) {
+
+    if (loop_type == ANIMATION_LOOP_NONE && playback >= current_animation->get_duration()) {
         playing = false;
         return;
     }
 
+    bool playing_reverse = current_animation->is_reversed();
+    float current_time = playback + delta_time * speed * (playing_reverse ? -1.0f : 1.0f);
+
     // Sample data from the animation and store it at &track_data   
-    playback = blender.update(current_time, track_data);
+    playback = blender.update(current_time, loop_type, track_data);
 
     /*
         After sampling, we should have the skeletonInstance joint nodes with the correct
@@ -170,30 +169,6 @@ void AnimationPlayer::update(float delta_time)
     */
 
     root_node->set_transform_dirty(true);
-
-    //for (auto instance : root_node->get_children()) {
-
-    //    MeshInstance3D* node = dynamic_cast<MeshInstance3D*>(instance);
-
-    //    if (!node) {
-    //        continue;
-    //    }
-
-    //    // skeletal animation case: we get the skeleton pose
-    //    // in case we want to process the values and update it manually
-    //    if (current_animation->get_type() == anim_type_skeleton) {
-    //        skeleton* skeleton = node->get_skeleton();
-    //        if (!skeleton) {
-    //            continue;
-    //        }
-    //        pose& pose = skeleton->get_current_pose();
-    //        playback = blender.update(delta_time * speed, &pose);
-    //    }
-    //    else {
-    //        // general case: out is not used..
-    //        playback = blender.update(delta_time * speed);
-    //    }
-    //}
 
     Node::update(delta_time);
 }
@@ -219,9 +194,9 @@ void AnimationPlayer::render_gui()
     if (current_animation == nullptr)
         return;
 
-    if (ImGui::Checkbox("Loop", &looping)) {
-        if (current_animation) {
-            current_animation->set_looping(looping);
+    if (ImGui::Combo("Loop Type", (int*)&loop_type, "NONE\0DEFAULT\0REVERSE\0PING_PONG\0")) {
+        if (loop_type != ANIMATION_LOOP_NONE) {
+            play(current_animation);
         }
     }
 
@@ -271,7 +246,7 @@ void AnimationPlayer::render_gui()
         Sequencer(&timeline, &new_current_frame, &expanded, &selected_entry, &first_frame, ImSequencer::SEQUENCER_EDIT_STARTEND | ImSequencer::SEQUENCER_ADD | ImSequencer::SEQUENCER_DEL | ImSequencer::SEQUENCER_COPYPASTE | ImSequencer::SEQUENCER_CHANGE_FRAME);
         if (new_current_frame != current_frame) {
             playback = new_current_frame * current_animation->get_duration() / (timeline.frame_max - timeline.frame_min);
-            blender.update(playback, track_data);
+            blender.update(playback, loop_type, track_data);
             root_node->set_transform_dirty(true);
         }
 
@@ -321,16 +296,9 @@ void AnimationPlayer::set_blend_time(float time)
     blend_time = time;
 }
 
-void AnimationPlayer::set_looping(bool loop)
+void AnimationPlayer::set_loop_type(uint8_t new_loop_type)
 {
-    looping = loop;
-
-    Animation* current_animation = blender.get_current_animation();
-
-    if (current_animation)
-    {
-        current_animation->set_looping(looping);
-    }
+    loop_type = new_loop_type;
 }
 
 void AnimationPlayer::set_root_node(Node3D* new_root_node)
@@ -348,9 +316,9 @@ float AnimationPlayer::get_speed()
     return speed;
 }
 
-bool AnimationPlayer::is_looping()
+uint8_t AnimationPlayer::get_loop_type()
 {
-    return looping;
+    return loop_type;
 }
 
 bool AnimationPlayer::is_playing()

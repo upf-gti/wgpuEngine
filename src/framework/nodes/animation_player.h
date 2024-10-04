@@ -7,25 +7,21 @@
 
 class MeshInstance3D;
 
-enum BlendType {
-    CROSSFADE,
-    ADDITIVE
-};
-
 class AnimationPlayer : public Node3D
 {
     Node3D* root_node = nullptr;
 
     std::string current_animation_name;
 
-    bool autoplay   = false;
-    bool playing    = false;
-    bool looping    = true;
-    bool blend_type = BlendType::CROSSFADE;
+    bool autoplay           = false;
+    bool playing            = false;
 
     float playback   = 0.f;
     float speed      = 1.f;
     float blend_time = 0.f;
+
+    uint8_t blend_type = ANIMATION_BLEND_CROSSFADE;
+    uint8_t loop_type = ANIMATION_LOOP_DEFAULT;
 
     BlendAnimation blender;
     Timeline timeline;
@@ -49,12 +45,12 @@ public:
 
     void set_speed(float time);
     void set_blend_time(float time);
-    void set_looping(bool loop);
+    void set_loop_type(uint8_t new_loop_type);
     void set_root_node(Node3D* new_root_node);
 
     float get_blend_time();
     float get_speed();
+    uint8_t get_loop_type();
     bool is_playing();
-    bool is_looping();
 };
 

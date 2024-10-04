@@ -7,84 +7,62 @@ Animation::Animation()
     name = "AnimationUnnamed_" + std::to_string(last_animation_id++);
     start_time = 0.0f;
     end_time = 0.0f;
-    looping = true;
 }
 
-float Animation::sample(float time, uint32_t track_idx, void* out)
+float Animation::sample(float time, uint32_t track_idx, uint8_t loop, void* out)
 {
     if (get_duration() == 0.0f) {
         return 0.0f;
     }
 
-    time = adjust_time_to_fit_range(time);
+    time = adjust_time_to_fit_range(time, loop);
 
     Track* track = get_track(track_idx);
-    track->sample(time, looping, out);
-
-
-    /*if(type == ANIM_TYPE_SKELETON) {
-        sample_pose(time, data);
-    }
-    else {
-        assert(0);
-    }*/
+    track->sample(time, loop, out);
 
     return time;
 }
 
-void Animation::sample_pose(float time, void* out)
+float Animation::adjust_time_to_fit_range(float time, uint8_t loop)
 {
-    /*Pose* pose = reinterpret_cast<Pose*>(out);
-    assert(pose);
+    if (duration <= 0) { return 0.0f; }
 
-    for (size_t i = 0; i < tracks.size(); i += 3) {
-
-        Transform transform;
-        uint32_t id;
-
-        for (size_t j = i; j < i + 3; ++j) {
-
-            Track& track = tracks[j];
-            id = track.get_id();
-
-            switch (tracks[j].get_type()) {
-                case TYPE_POSITION: {
-                    transform.position = std::get<glm::vec3>(track.sample(time, looping));
-                    break;
-                }
-                case TYPE_ROTATION: {
-                    transform.rotation = std::get<glm::quat>(track.sample(time, looping));
-                    break;
-                }
-                case TYPE_SCALE: {
-                    transform.scale = std::get<glm::vec3>(track.sample(time, looping));
-                    break;
-                }
-            }
-        }
-
-        pose->set_local_transform(id, transform);
-    }*/
-}
-
-float Animation::adjust_time_to_fit_range(float time)
-{
-    if (looping) {
-        float duration = end_time - start_time;
-        if (duration <= 0) { return 0.0f; }
-        time = fmodf(time - start_time, end_time - start_time);
-        if (time < 0.0f) {
-            time += end_time - start_time;
-        }
-        time += start_time;
-    }
-    else {
+    switch (loop)
+    {
+    case ANIMATION_LOOP_NONE:
         if (time < start_time) {
             time = start_time;
         }
-        if (time > end_time) {
+        else if (time > end_time) {
             time = end_time;
         }
+        break;
+    case ANIMATION_LOOP_DEFAULT:
+        reversed = false;
+        if (time > end_time) {
+            time = start_time + fmod(time - start_time, duration);
+        }
+        break;
+    case ANIMATION_LOOP_REVERSE:
+        reversed = true;
+        if (time < start_time) {
+            time = end_time;
+        }
+        break;
+    case ANIMATION_LOOP_PING_PONG:
+        if (reversed) {
+            if (time < start_time) {
+                time = start_time;
+                reversed = false;
+            }
+        }
+        else {
+            if (time > end_time) {
+                time = start_time + fmod(time - start_time, duration);
+                reversed = true;
+            }
+        }
+        break;
     }
 
     return time;
@@ -186,19 +164,19 @@ float Animation::get_end_time()
     return end_time;
 }
 
-bool Animation::get_looping()
-{
-    return looping;
-}
-
-AnimationType Animation::get_type()
+eAnimationType Animation::get_type()
 {
     return type;
 }
 
+bool Animation::is_reversed()
+{
+    return reversed;
+}
+
 // setters
 
-void Animation::set_type(AnimationType new_type)
+void Animation::set_type(eAnimationType new_type)
 {
     type = new_type;
 }
@@ -213,9 +191,4 @@ void Animation::set_name(const std::string& new_name)
 void Animation::set_id_at_index(uint32_t index, int id)
 {
     return tracks[index].set_id(id);
-}
-
-void Animation::set_looping(bool new_looping)
-{
-    looping = new_looping;
 }

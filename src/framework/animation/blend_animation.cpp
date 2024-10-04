@@ -48,7 +48,7 @@ void BlendAnimation::fade_to(Animation* target, float fade_time)
 }
 
 // Play the active animation and blend in any other animations that are in the fade list
-float BlendAnimation::update(float current_time, std::vector<void*>& data)
+float BlendAnimation::update(float current_time, uint8_t loop, std::vector<void*>& data)
 {
     if (!animation) {
         return time;
@@ -67,14 +67,14 @@ float BlendAnimation::update(float current_time, std::vector<void*>& data)
     }
 
     for (uint32_t i = 0; i < animation->get_track_count(); ++i) {
-        time = animation->sample(current_time, i, data[i]);
+        time = animation->sample(current_time, i, loop, data[i]);
     }
 
     // Blend the fade list with the current animation
 
     num_targets = targets.size();
 
-    if (animation->get_type() == ANIM_TYPE_SKELETON) {
+    if (animation->get_type() == ANIMATION_TYPE_SKELETON) {
 
         //Pose* pose = (Pose*)(&data);
         Pose* pose = (Pose*)(&data);
