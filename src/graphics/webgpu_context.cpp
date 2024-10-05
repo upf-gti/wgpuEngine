@@ -347,7 +347,6 @@ void WebGPUContext::create_instance()
 
 WGPUShaderModule WebGPUContext::create_shader_module(char const* code)
 {
-    // Load the shader module https://eliemichel.github.io/LearnWebGPU/basic-3d-rendering/hello-triangle.html
     WGPUShaderModuleWGSLDescriptor shader_code_desc = {};
     shader_code_desc.chain.sType = WGPUSType_ShaderModuleWGSLDescriptor;
     shader_code_desc.code = code;
