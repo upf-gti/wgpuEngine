@@ -136,6 +136,7 @@ public:
     const Shader* get_shader() const;
     Shader* get_shader_ref();
 
+    void set_dirty_flag(eMaterialProperties property_flag);
     void reset_dirty_flags();
     uint32_t get_dirty_flags() const;
 

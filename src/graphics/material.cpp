@@ -328,6 +328,11 @@ Shader* Material::get_shader_ref()
     return shader;
 }
 
+void Material::set_dirty_flag(eMaterialProperties property_flag)
+{
+    dirty_flags |= property_flag;
+}
+
 void Material::reset_dirty_flags()
 {
     dirty_flags = 0;

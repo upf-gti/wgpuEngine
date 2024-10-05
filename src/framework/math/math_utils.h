@@ -26,7 +26,8 @@ glm::quat get_quat_between_vec3(const glm::vec3& p1, const glm::vec3& p2);
 glm::vec3 rgb2hsv(glm::vec3 rgb);
 glm::vec3 hsv2rgb(glm::vec3 c);
 
-float random_f(float range = 1.0f, int offset = 0);
+float random_f(float min = 0.0f, float max = 1.0f);
+double random_d(double min = 0.0, double max = 1.0);
 glm::vec3 get_front(const glm::mat4& pose);
 glm::vec3 get_perpendicular(const glm::vec3& v);
 
