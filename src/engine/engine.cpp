@@ -341,38 +341,6 @@ void Engine::render_default_gui()
     {
         if (ImGui::BeginMenu("File"))
         {
-            if (ImGui::MenuItem("Open room (.room)"))
-            {
-                std::vector<const char*> filter_patterns = { "*.room" };
-                char const* open_file_name = tinyfd_openFileDialog(
-                    "Room loader",
-                    "",
-                    filter_patterns.size(),
-                    filter_patterns.data(),
-                    "Rooms format",
-                    0
-                );
-
-                if (open_file_name) {
-                    set_main_scene(open_file_name);
-                }
-            }
-            if (ImGui::MenuItem("Save room (.room)"))
-            {
-                std::vector<const char*> filter_patterns = { "*.room" };
-
-                char const* save_file_name = tinyfd_saveFileDialog(
-                    "Room loader",
-                    "",
-                    filter_patterns.size(),
-                    filter_patterns.data(),
-                    "Rooms format"
-                );
-
-                if (save_file_name) {
-                    main_scene->serialize(save_file_name);
-                }
-            }
             if (ImGui::MenuItem("Open scene (.gltf, .glb, .obj, .vdb)"))
             {
                 std::vector<const char*> filter_patterns = { "*.gltf", "*.glb", "*.obj", "*.vdb"};
