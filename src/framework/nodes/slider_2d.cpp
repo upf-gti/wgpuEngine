@@ -105,7 +105,7 @@ namespace ui {
         material->set_shader(RendererStorage::get_shader_from_source(shaders::ui_slider::source, shaders::ui_slider::path, material));
 
         Surface* quad_surface = quad_mesh->get_surface(0);
-        quad_surface->create_quad(this->size.x, this->size.y);
+        quad_surface->create_quad(this->size.x, this->size.y, true);
 
         quad_mesh->set_surface_material_override(quad_mesh->get_surface(0), material);
 
@@ -309,7 +309,7 @@ namespace ui {
         material->set_shader(RendererStorage::get_shader_from_source(shaders::ui_slider::source, shaders::ui_slider::path, material));
 
         Surface* quad_surface = quad_mesh->get_surface(0);
-        quad_surface->create_quad(this->size.x, this->size.y);
+        quad_surface->create_quad(this->size.x, this->size.y, true);
 
         quad_mesh->set_surface_material_override(quad_mesh->get_surface(0), material);
 

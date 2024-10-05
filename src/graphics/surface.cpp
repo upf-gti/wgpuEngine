@@ -97,7 +97,7 @@ void Surface::create_axis(float s)
     create_vertex_buffer(vertices);
 }
 
-std::vector<InterleavedData> Surface::generate_quad(float w, float h, const glm::vec3& position, const glm::vec3& normal, const glm::vec3& color)
+std::vector<InterleavedData> Surface::generate_quad(float w, float h, const glm::vec3& position, const glm::vec3& normal, const glm::vec3& color, bool flip_y)
 {
     InterleavedData points[4];
 
@@ -118,7 +118,7 @@ std::vector<InterleavedData> Surface::generate_quad(float w, float h, const glm:
             auto vtx = &points[counter++];
             vtx->position = position - (orig + float(i1) * delta1 + float(i2) * delta2);
             vtx->normal = n;
-            vtx->uv = glm::vec2(i1, i2);
+            vtx->uv = glm::vec2(i1, flip_y ? (1.0f - i2) : i2);
         }
     }
 
@@ -127,18 +127,29 @@ std::vector<InterleavedData> Surface::generate_quad(float w, float h, const glm:
 
     counter = 0;
 
-    vertices[counter++] = points[2];
-    vertices[counter++] = points[1];
-    vertices[counter++] = points[0];
+    if (flip_y) {
+        vertices[counter++] = points[2];
+        vertices[counter++] = points[1];
+        vertices[counter++] = points[0];
 
-    vertices[counter++] = points[2];
-    vertices[counter++] = points[3];
-    vertices[counter++] = points[1];
+        vertices[counter++] = points[2];
+        vertices[counter++] = points[3];
+        vertices[counter++] = points[1];
+    }
+    else {
+        vertices[counter++] = points[0];
+        vertices[counter++] = points[1];
+        vertices[counter++] = points[2];
+
+        vertices[counter++] = points[1];
+        vertices[counter++] = points[3];
+        vertices[counter++] = points[2];
+    }
 
     return vertices;
 }
 
-void Surface::create_quad(float w, float h, bool centered, const glm::vec3& color)
+void Surface::create_quad(float w, float h, bool flip_y, bool centered, const glm::vec3& color)
 {
     // Mesh has vertex data...
     if (vertex_buffer)
@@ -154,7 +165,7 @@ void Surface::create_quad(float w, float h, bool centered, const glm::vec3& colo
         origin += glm::vec3(w * 0.5f, h * 0.5f, 0.0f);
     }
 
-    std::vector<InterleavedData> vertices = generate_quad(w, h, origin, normals::pZ, color);
+    std::vector<InterleavedData> vertices = generate_quad(w, h, origin, normals::pZ, color, flip_y);
 
     spdlog::trace("Quad mesh created ({} vertices)", vertices.size());
 

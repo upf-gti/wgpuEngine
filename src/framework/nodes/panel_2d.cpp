@@ -49,7 +49,7 @@ namespace ui {
         material->set_shader(RendererStorage::get_shader_from_source(shaders::mesh_forward::source, shaders::mesh_forward::path, material));
 
         Surface* quad_surface = new Surface();
-        quad_surface->create_quad(size.x, size.y);
+        quad_surface->create_quad(size.x, size.y, true);
 
         quad_mesh = new MeshInstance();
         quad_mesh->add_surface(quad_surface);
@@ -419,7 +419,7 @@ namespace ui {
         : Panel2D(name, image_path, p, s, c)
     {
         Surface* quad_surface = quad_mesh->get_surface(0);
-        quad_surface->create_quad(size.x, size.y);
+        quad_surface->create_quad(size.x, size.y, true);
         // Use subdivided quad in case we use panels with curvature
         // quad_surface->create_subdivided_quad(size.x, size.y);
 
@@ -640,7 +640,7 @@ namespace ui {
         material->set_shader(RendererStorage::get_shader_from_source(shaders::ui_text_shadow::source, shaders::ui_text_shadow::path, material));
 
         Surface* quad_surface = quad_mesh->get_surface(0);
-        quad_surface->create_quad(size.x, size.y);
+        quad_surface->create_quad(size.x, size.y, true);
 
         quad_mesh->set_surface_material_override(quad_mesh->get_surface(0), material);
 
@@ -763,7 +763,7 @@ namespace ui {
         update_ui_data();
 
         Surface* quad_surface = quad_mesh->get_surface(0);
-        quad_surface->create_quad(size.x, size.y);
+        quad_surface->create_quad(size.x, size.y, true);
 
         Node2D::on_children_changed();
     }
