@@ -60,7 +60,7 @@ private:
 	std::vector<WGPUBindGroupLayout> bind_group_layouts;
     WGPUPipelineLayout pipeline_layout = nullptr;
 
-	std::vector<WGPUVertexAttribute>	vertex_attributes;
+	std::vector<std::vector<WGPUVertexAttribute>> vertex_attributes;
 	std::vector<WGPUVertexBufferLayout> vertex_buffer_layouts;
 
 	// Pipeline that uses this shader
@@ -72,6 +72,7 @@ private:
 
     static std::unordered_map<std::string, custom_define_type> custom_defines;
     std::unordered_map<uint8_t, uint8_t> dynamic_bindings;
+    std::unordered_map<uint8_t, WGPUVertexStepMode> unique_vertex_buffers;
     std::vector<std::string> define_specializations;
 
 	bool loaded = false;

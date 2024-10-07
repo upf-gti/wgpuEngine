@@ -203,6 +203,25 @@ bool Shader::parse_preprocessor_line(std::istringstream& string_stream, std::str
 
         line_pos += line.length() - (tag.length() + 1);
     }
+    else if (tag.find("#unique") != std::string::npos) {
+
+        std::string step_mode_str = tokens[1];
+        uint8_t location = tokens[2].at(10) - '0';
+        WGPUVertexStepMode step_mode;
+
+        if (step_mode_str == "vertex") {
+            step_mode = WGPUVertexStepMode_Vertex;
+        } else
+        if (step_mode_str == "instance") {
+            step_mode = WGPUVertexStepMode_Instance;
+        }
+
+        unique_vertex_buffers[location] = step_mode;
+
+        shader_content.replace(line_pos, tag.length() + tokens[2].length() + 1, "");
+
+        line_pos += line.length() - (tag.length() + tokens[2].length() + 1);
+    }
     else if (tag == "#ifdef") {
 
         // remove #ifdef line
@@ -415,12 +434,17 @@ void Shader::get_reflection_data(const std::string& shader_content)
 		if (entry_point.stage == tint::inspector::PipelineStage::kVertex) {
 
 			uint64_t offset = 0;
+			uint64_t unique_offset = 0;
+
+            std::vector<WGPUVertexAttribute>	shared_buffer_vertex_attributes;
+            std::vector<WGPUVertexAttribute>	unique_buffer_vertex_attributes;
+
+            WGPUVertexStepMode unique_step_mode = WGPUVertexStepMode_Vertex;
 
 			for (const auto & input_variable : entry_point.input_variables) {
 				WGPUVertexAttribute vertex_attribute = {};
 
 				vertex_attribute.shaderLocation = input_variable.attributes.location.value();
-				vertex_attribute.offset = offset;
 
 				size_t byte_size = 0;
 				switch (input_variable.component_type) {
@@ -464,12 +488,29 @@ void Shader::get_reflection_data(const std::string& shader_content)
 					break;
 				}
 
-				offset += byte_size;
-				
-				vertex_attributes.push_back(vertex_attribute);
+                if (!unique_vertex_buffers.contains(vertex_attribute.shaderLocation)) {
+                    vertex_attribute.offset = offset;
+                    offset += byte_size;
+
+                    shared_buffer_vertex_attributes.push_back(vertex_attribute);
+                }
+                else {
+                    vertex_attribute.offset = unique_offset;
+                    unique_offset += byte_size;
+
+                    unique_step_mode = unique_vertex_buffers[vertex_attribute.shaderLocation];
+
+                    unique_buffer_vertex_attributes.push_back(vertex_attribute);
+                }
 			}
 
-			vertex_buffer_layouts.push_back(webgpu_context->create_vertex_buffer_layout(vertex_attributes, offset, WGPUVertexStepMode_Vertex));
+            vertex_attributes.push_back(shared_buffer_vertex_attributes);
+			vertex_buffer_layouts.push_back(webgpu_context->create_vertex_buffer_layout(vertex_attributes.back(), offset, WGPUVertexStepMode_Vertex));
+
+            if (!unique_buffer_vertex_attributes.empty()) {
+                vertex_attributes.push_back(unique_buffer_vertex_attributes);
+                vertex_buffer_layouts.push_back(webgpu_context->create_vertex_buffer_layout(vertex_attributes.back(), unique_offset, unique_step_mode));
+            }
 		}
 
 		bool has_sampler = false;

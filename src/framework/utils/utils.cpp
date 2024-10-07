@@ -21,7 +21,10 @@ std::vector<std::string> tokenize(const std::string& str, char token)
     std::string::const_iterator end = str.end();
     std::string::const_iterator next = std::find(start, end, token);
     while (next != end) {
-        results.push_back(std::string(start, next));
+        const std::string new_token = std::string(start, next);
+        if (!new_token.empty() && new_token != " " && new_token != "\t") {
+            results.push_back(new_token);
+        }
         start = next + 1;
         next = std::find(start, end, token);
     }
