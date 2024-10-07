@@ -18,7 +18,8 @@
 Color Gizmo3D::X_AXIS_COLOR(0.89f, 0.01f, 0.02f, 1.0f);
 Color Gizmo3D::Y_AXIS_COLOR(0.02f, 0.79f, 0.04f, 1.0f);
 Color Gizmo3D::Z_AXIS_COLOR(0.03f, 0.04f, 0.8f, 1.0f);
-Color Gizmo3D::AXIS_SELECTED_OFFSET_COLOR(0.5f, 0.5f, 0.5f, 0.0f);
+Color Gizmo3D::AXIS_SELECTED_OFFSET_COLOR(0.4f, 0.4f, 0.4f, 0.0f);
+Color Gizmo3D::AXIS_NOT_SELECTED_COLOR(0.2f, 0.2f, 0.2f, 1.0f);
 
 void Gizmo3D::initialize(const eGizmoType& new_operation, const glm::vec3& position, const eGizmoAxis& new_axis)
 {
@@ -295,8 +296,8 @@ bool Gizmo3D::update(glm::vec3& new_position, const glm::vec3& controller_positi
                 
             if (operation & ROTATION_GIZMO) {
 
-                float circle_scale = circle_gizmo_scale + 0.015f;
-                float circle_radius = 0.06f;
+                float circle_scale = circle_gizmo_scale + 0.025f;
+                float circle_radius = 0.05f;
 
                 if (axis & GIZMO_AXIS_X) {
                     rotation_axis_selected.x = intersection::point_circle_ring(controller_position, gizmo_position, glm::vec3(1.0f, 0.0f, 0.0f), circle_scale, circle_radius);
@@ -424,16 +425,17 @@ void Gizmo3D::render(int axis)
             arrow_mesh_x->translate(gizmo_position);
             arrow_mesh_x->rotate(glm::radians(-90.f), glm::vec3(0.f, 0.f, 1.f));
             arrow_mesh_x->scale(arrow_gizmo_scale);
-            arrow_mesh_x->get_surface_material_override(arrow_mesh_x->get_surface(0))->set_color(X_AXIS_COLOR + (position_axis_selected.x ? AXIS_SELECTED_OFFSET_COLOR : Color(0.f)));
+            const Color& color = position_axis_selected.x ? X_AXIS_COLOR + AXIS_SELECTED_OFFSET_COLOR : (position_axis_selected.y || position_axis_selected.z) ? AXIS_NOT_SELECTED_COLOR : X_AXIS_COLOR;
+            arrow_mesh_x->get_surface_material_override(arrow_mesh_x->get_surface(0))->set_color(color);
             arrow_mesh_x->render();
         }
 
         if (axis & GIZMO_AXIS_Y)
         {
-            const glm::vec4 color = Y_AXIS_COLOR + (position_axis_selected.y ? AXIS_SELECTED_OFFSET_COLOR : Color(0.f));
             arrow_mesh_y->set_transform(Transform::identity());
             arrow_mesh_y->translate(gizmo_position);
             arrow_mesh_y->scale(arrow_gizmo_scale);
+            const Color& color = position_axis_selected.y ? Y_AXIS_COLOR + AXIS_SELECTED_OFFSET_COLOR : (position_axis_selected.x || position_axis_selected.z) ? AXIS_NOT_SELECTED_COLOR : Y_AXIS_COLOR;
             arrow_mesh_y->get_surface_material_override(arrow_mesh_y->get_surface(0))->set_color(color);
             arrow_mesh_y->render();
         }
@@ -445,7 +447,8 @@ void Gizmo3D::render(int axis)
             arrow_mesh_z->rotate(glm::radians(90.f), glm::vec3(0.f, 0.f, 1.f));
             arrow_mesh_z->rotate(glm::radians(90.f), glm::vec3(1.f, 0.f, 0.f));
             arrow_mesh_z->scale(arrow_gizmo_scale);
-            arrow_mesh_z->get_surface_material_override(arrow_mesh_z->get_surface(0))->set_color(Z_AXIS_COLOR + (position_axis_selected.z ? AXIS_SELECTED_OFFSET_COLOR : Color(0.f)));
+            const Color& color = position_axis_selected.z ? Z_AXIS_COLOR + AXIS_SELECTED_OFFSET_COLOR : (position_axis_selected.x || position_axis_selected.y) ? AXIS_NOT_SELECTED_COLOR : Z_AXIS_COLOR;
+            arrow_mesh_z->get_surface_material_override(arrow_mesh_z->get_surface(0))->set_color(color);
             arrow_mesh_z->render();
         }
     }
@@ -457,7 +460,8 @@ void Gizmo3D::render(int axis)
             scale_sphere_mesh_x->set_transform(Transform::identity());
             scale_sphere_mesh_x->translate(gizmo_position + glm::vec3(sphere_gizmo_scale.x, 0.0f, 0.0f) * 2.5f);
             scale_sphere_mesh_x->scale(sphere_gizmo_scale);
-            scale_sphere_mesh_x->get_surface_material_override(scale_sphere_mesh_x->get_surface(0))->set_color(X_AXIS_COLOR + (scale_axis_selected.x ? AXIS_SELECTED_OFFSET_COLOR : Color(0.f)));
+            const Color& color = scale_axis_selected.x ? X_AXIS_COLOR + AXIS_SELECTED_OFFSET_COLOR : (scale_axis_selected.y || scale_axis_selected.z) ? AXIS_NOT_SELECTED_COLOR : X_AXIS_COLOR;
+            scale_sphere_mesh_x->get_surface_material_override(scale_sphere_mesh_x->get_surface(0))->set_color(color);
             scale_sphere_mesh_x->render();
         }
 
@@ -466,7 +470,8 @@ void Gizmo3D::render(int axis)
             scale_sphere_mesh_y->set_transform(Transform::identity());
             scale_sphere_mesh_y->translate(gizmo_position + glm::vec3(0.0f, sphere_gizmo_scale.y, 0.0f) * 2.5f);
             scale_sphere_mesh_y->scale(sphere_gizmo_scale);
-            scale_sphere_mesh_y->get_surface_material_override(scale_sphere_mesh_y->get_surface(0))->set_color(Y_AXIS_COLOR + (scale_axis_selected.y ? AXIS_SELECTED_OFFSET_COLOR : Color(0.f)));
+            const Color& color = scale_axis_selected.y ? Y_AXIS_COLOR + AXIS_SELECTED_OFFSET_COLOR : (scale_axis_selected.x || scale_axis_selected.z) ? AXIS_NOT_SELECTED_COLOR : Y_AXIS_COLOR;
+            scale_sphere_mesh_y->get_surface_material_override(scale_sphere_mesh_y->get_surface(0))->set_color(color);
             scale_sphere_mesh_y->render();
         }
 
@@ -475,7 +480,8 @@ void Gizmo3D::render(int axis)
             scale_sphere_mesh_z->set_transform(Transform::identity());
             scale_sphere_mesh_z->translate(gizmo_position + glm::vec3(0.0f, 0.0f, sphere_gizmo_scale.z) * 2.5f);
             scale_sphere_mesh_z->scale(sphere_gizmo_scale);
-            scale_sphere_mesh_z->get_surface_material_override(scale_sphere_mesh_z->get_surface(0))->set_color(Z_AXIS_COLOR + (scale_axis_selected.z ? AXIS_SELECTED_OFFSET_COLOR : Color(0.f)));
+            const Color& color = scale_axis_selected.z ? Z_AXIS_COLOR + AXIS_SELECTED_OFFSET_COLOR : (scale_axis_selected.x || scale_axis_selected.y) ? AXIS_NOT_SELECTED_COLOR : Z_AXIS_COLOR;
+            scale_sphere_mesh_z->get_surface_material_override(scale_sphere_mesh_z->get_surface(0))->set_color(color);
             scale_sphere_mesh_z->render();
         } 
     }
@@ -488,7 +494,8 @@ void Gizmo3D::render(int axis)
             wire_circle_mesh_x->translate(gizmo_position);
             wire_circle_mesh_x->rotate(glm::radians(90.f), glm::vec3(0.f, 1.f, 0.f));
             wire_circle_mesh_x->scale(glm::vec3(circle_gizmo_scale));
-            wire_circle_mesh_x->get_surface_material_override(wire_circle_mesh_x->get_surface(0))->set_color(X_AXIS_COLOR + (rotation_axis_selected.x ? AXIS_SELECTED_OFFSET_COLOR : Color(0.f)));
+            const Color& color = rotation_axis_selected.x ? X_AXIS_COLOR + AXIS_SELECTED_OFFSET_COLOR : (rotation_axis_selected.y || rotation_axis_selected.z) ? AXIS_NOT_SELECTED_COLOR : X_AXIS_COLOR;
+            wire_circle_mesh_x->get_surface_material_override(wire_circle_mesh_x->get_surface(0))->set_color(color);
             wire_circle_mesh_x->render();
         }
 
@@ -498,7 +505,8 @@ void Gizmo3D::render(int axis)
             wire_circle_mesh_y->translate(gizmo_position);
             wire_circle_mesh_y->rotate(glm::radians(90.f), glm::vec3(1.f, 0.f, 0.f));
             wire_circle_mesh_y->scale(glm::vec3(circle_gizmo_scale));
-            wire_circle_mesh_y->get_surface_material_override(wire_circle_mesh_y->get_surface(0))->set_color(Y_AXIS_COLOR + (rotation_axis_selected.y ? AXIS_SELECTED_OFFSET_COLOR : Color(0.f)));
+            const Color& color = rotation_axis_selected.y ? Y_AXIS_COLOR + AXIS_SELECTED_OFFSET_COLOR : (rotation_axis_selected.x || rotation_axis_selected.z) ? AXIS_NOT_SELECTED_COLOR : Y_AXIS_COLOR;
+            wire_circle_mesh_y->get_surface_material_override(wire_circle_mesh_y->get_surface(0))->set_color(color);
             wire_circle_mesh_y->render();
         }
 
@@ -507,7 +515,8 @@ void Gizmo3D::render(int axis)
             wire_circle_mesh_z->set_transform(Transform::identity());
             wire_circle_mesh_z->translate(gizmo_position);
             wire_circle_mesh_z->scale(glm::vec3(circle_gizmo_scale));
-            wire_circle_mesh_z->get_surface_material_override(wire_circle_mesh_z->get_surface(0))->set_color(Z_AXIS_COLOR + (rotation_axis_selected.z ? AXIS_SELECTED_OFFSET_COLOR : Color(0.f)));
+            const Color& color = rotation_axis_selected.z ? Z_AXIS_COLOR + AXIS_SELECTED_OFFSET_COLOR : (rotation_axis_selected.x || rotation_axis_selected.y) ? AXIS_NOT_SELECTED_COLOR : Z_AXIS_COLOR;
+            wire_circle_mesh_z->get_surface_material_override(wire_circle_mesh_z->get_surface(0))->set_color(color);
             wire_circle_mesh_z->render();
         }
     }

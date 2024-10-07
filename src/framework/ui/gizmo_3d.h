@@ -36,6 +36,7 @@ class Gizmo3D {
     static Color Z_AXIS_COLOR;
 
     static Color AXIS_SELECTED_OFFSET_COLOR;
+    static Color AXIS_NOT_SELECTED_COLOR;
 
     eGizmoType operation = TRANSLATION_GIZMO;
     eGizmoAxis axis = GIZMO_ALL_AXIS;
