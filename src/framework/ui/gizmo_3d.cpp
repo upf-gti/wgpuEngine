@@ -201,10 +201,11 @@ void Gizmo3D::set_operation(const eGizmoType& gizmo_type, const eGizmoAxis& axis
 bool Gizmo3D::update(Transform& t, const glm::vec3& controller_position, float delta_time)
 {
     current_rotation = t.get_rotation();
+    gizmo_scale = t.get_scale();
 
     bool result = update(t.get_position_ref(), controller_position, delta_time);
 
-    t.set_scale({ gizmo_scale.z, gizmo_scale.y, gizmo_scale .x});
+    t.set_scale({ gizmo_scale.z, gizmo_scale.y, gizmo_scale.x });
     t.set_rotation(current_rotation);
 
     t.set_dirty(true);
