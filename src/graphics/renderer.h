@@ -216,6 +216,8 @@ public:
     void set_frustum_camera_paused(bool value);
     bool get_frustum_camera_paused();
 
+    WGPUCommandEncoder get_global_command_encoder() { return global_command_encoder; }
+
     void resolve_query_set(WGPUCommandEncoder encoder, uint8_t first_query);
     std::vector<float>& get_last_frame_timestamps() { return last_frame_timestamps; }
 
