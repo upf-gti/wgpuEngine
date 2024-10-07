@@ -231,10 +231,11 @@ const Transform& Node3D::get_transform() const
 
 bool Node3D::test_ray_collision(const glm::vec3& ray_origin, const glm::vec3& ray_direction, float& distance)
 {
-    glm::vec3 center = aabb.center + transform.get_position();
+    const glm::vec3& center = aabb.center + transform.get_position();
+    const glm::vec3& half_size = aabb.half_size * transform.get_scale();
 
     if (collider_shape == COLLIDER_SHAPE_AABB) {
-        return intersection::ray_AABB(ray_origin, ray_direction, center, aabb.half_size, distance);
+        return intersection::ray_AABB(ray_origin, ray_direction, center, half_size, distance);
     } else if (collider_shape == COLLIDER_SHAPE_SPHERE) {
         return intersection::ray_sphere(ray_origin, ray_direction, center, 0.1f, distance);
     }
