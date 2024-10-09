@@ -6,7 +6,7 @@
 
 OrbitCamera::OrbitCamera() : Camera3D()
 {
-    speed = 0.05f;
+    speed = 0.005f;
 }
 
 void OrbitCamera::update(float delta_time)
@@ -58,5 +58,6 @@ void OrbitCamera::look_at(const glm::vec3& eye, const glm::vec3& center, const g
 
     if (reset_internals) {
         distance = glm::length(eye - center);
+        distance_lerp.value = distance;
     }
 }
