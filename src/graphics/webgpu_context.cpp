@@ -11,6 +11,8 @@
 #include "shaders/prefilter_env.wgsl.gen.h"
 #include "shaders/brdf_lut_gen.wgsl.gen.h"
 
+#include "framework/utils/utils.h"
+
 #include "renderer.h"
 
 #include "spdlog/spdlog.h"
@@ -29,6 +31,11 @@
 
 WGPUTextureFormat WebGPUContext::swapchain_format = WGPUTextureFormat_BGRA8Unorm;
 WGPUTextureFormat WebGPUContext::xr_swapchain_format = WGPUTextureFormat_BGRA8UnormSrgb;
+
+WGPUStringView get_string_view(const char* str)
+{
+    return { str, strlen(str) };
+}
 
 void PrintDeviceError(WGPUErrorType errorType, const char* message, void* userdata) {
     const char* errorTypeName = "";
@@ -58,14 +65,6 @@ void DeviceLostCallback(WGPUDevice const* device, WGPUDeviceLostReason reason, c
         spdlog::error("Device lost: {}", message);
     }
 }
-
-#ifdef __EMSCRIPTEN__
-void EmDeviceLostCallback(WGPUDeviceLostReason reason, char const* message, void* userdata) {
-    if (reason != WGPUDeviceLostReason_Destroyed) {
-        spdlog::error("Device lost: {}", message);
-    }
-}
-#endif
 
 void PrintGLFWError(int code, const char* message) {
     spdlog::error("GLFW error: {} - {}", code, message);
@@ -161,7 +160,7 @@ int WebGPUContext::initialize(WGPURequestAdapterOptions adapter_opts, WGPURequir
 
     // Create device
     WGPUDeviceDescriptor device_desc = {};
-    device_desc.label = "My Device";
+    device_desc.label = get_string_view("My Device");
 
     this->required_limits = required_limits;
 
@@ -174,20 +173,19 @@ int WebGPUContext::initialize(WGPURequestAdapterOptions adapter_opts, WGPURequir
     device_desc.requiredFeatures = required_features.data();
 
     device_desc.requiredLimits = &required_limits;
-    device_desc.defaultQueue.label = "The default queue";
-
-#if defined(__EMSCRIPTEN__)
-    device_desc.deviceLostCallback = EmDeviceLostCallback;
-#else
+    device_desc.defaultQueue.label = get_string_view("The default queue");
 
     device_desc.deviceLostCallbackInfo.mode = WGPUCallbackMode_AllowSpontaneous;
     device_desc.deviceLostCallbackInfo.callback = DeviceLostCallback;
     device_desc.uncapturedErrorCallbackInfo.callback = PrintDeviceError;
 
+#if !defined(__EMSCRIPTEN__)
+
     std::vector<const char*> enabled_toggles;
     std::vector<const char*> disabled_toggles;
 
     disabled_toggles.push_back("lazy_clear_resource_on_first_use");
+    disabled_toggles.push_back("use_placeholder_fragment_in_vertex_only_pipeline");
 
     enabled_toggles.push_back("use_dxc");
 
@@ -216,9 +214,9 @@ int WebGPUContext::initialize(WGPURequestAdapterOptions adapter_opts, WGPURequir
     wgpuDeviceSetUncapturedErrorCallback(device, PrintDeviceError, nullptr);
 
     // emscripten-specific extension not supported by webgpu.cpp
-    WGPUSurfaceDescriptorFromCanvasHTMLSelector canvDesc = {};
-    canvDesc.chain.sType = WGPUSType_SurfaceDescriptorFromCanvasHTMLSelector;
-    canvDesc.selector = "canvas";
+    WGPUSurfaceSourceCanvasHTMLSelector_Emscripten canvDesc = {};
+    canvDesc.chain.sType = WGPUSType_SurfaceSourceCanvasHTMLSelector_Emscripten;
+    canvDesc.selector = { "canvas", WGPU_STRLEN };
 
     WGPUSurfaceDescriptor surfDesc = {};
     surfDesc.nextInChain = reinterpret_cast<WGPUChainedStruct*>(&canvDesc);
@@ -348,8 +346,8 @@ void WebGPUContext::create_instance()
 WGPUShaderModule WebGPUContext::create_shader_module(char const* code)
 {
     WGPUShaderModuleWGSLDescriptor shader_code_desc = {};
-    shader_code_desc.chain.sType = WGPUSType_ShaderModuleWGSLDescriptor;
-    shader_code_desc.code = code;
+    shader_code_desc.chain.sType = WGPUSType_ShaderSourceWGSL;
+    shader_code_desc.code = get_string_view(code);
 
     WGPUShaderModuleDescriptor shader_descr = {};
     shader_descr.nextInChain = &shader_code_desc.chain;
@@ -364,7 +362,7 @@ WGPUBuffer WebGPUContext::create_buffer(size_t size, int usage, const void* data
     bufferDesc.size = size;
     bufferDesc.usage = usage;
     bufferDesc.mappedAtCreation = false;
-    bufferDesc.label = label;
+    bufferDesc.label = { label, WGPU_STRLEN };
 
     WGPUBuffer buffer = wgpuDeviceCreateBuffer(device, &bufferDesc);
 
@@ -400,7 +398,7 @@ WGPUTextureView WebGPUContext::create_texture_view(WGPUTexture texture, WGPUText
     textureViewDesc.format = format;
     textureViewDesc.mipLevelCount = mip_level_count;
     textureViewDesc.baseMipLevel = base_mip_level;
-    textureViewDesc.label = label;
+    textureViewDesc.label = { label, WGPU_STRLEN };
 
     return wgpuTextureCreateView(texture, &textureViewDesc);
 }
@@ -512,7 +510,7 @@ void WebGPUContext::create_texture_mipmaps(WGPUTexture texture, WGPUExtent3D tex
 
     WGPUCommandBufferDescriptor cmd_buff_descriptor = {};
     cmd_buff_descriptor.nextInChain = NULL;
-    cmd_buff_descriptor.label = "Create Mipmaps Command Buffer";
+    cmd_buff_descriptor.label = { "Create Mipmaps Command Buffer", WGPU_STRLEN };
 
     if (!custom_command_encoder) {
         // Encode and submit the GPU commands
@@ -623,7 +621,7 @@ void WebGPUContext::create_cubemap_mipmaps(WGPUTexture texture, WGPUExtent3D tex
 
     WGPUCommandBufferDescriptor cmd_buff_descriptor = {};
     cmd_buff_descriptor.nextInChain = NULL;
-    cmd_buff_descriptor.label = "Create Mipmaps Command Buffer";
+    cmd_buff_descriptor.label = { "Create Mipmaps Command Buffer", WGPU_STRLEN };
 
     if (!custom_command_encoder) {
         // Encode and submit the GPU commands
@@ -695,7 +693,7 @@ WGPUBindGroupLayout WebGPUContext::create_bind_group_layout(const std::vector<WG
     WGPUBindGroupLayoutDescriptor bindGroupLayoutDesc = {};
     bindGroupLayoutDesc.entryCount = static_cast<uint32_t>(entries.size());
     bindGroupLayoutDesc.entries = entries.data();
-    bindGroupLayoutDesc.label = label;
+    bindGroupLayoutDesc.label = { label, WGPU_STRLEN };
 
     return wgpuDeviceCreateBindGroupLayout(device, &bindGroupLayoutDesc);
 }
@@ -757,7 +755,7 @@ void WebGPUContext::read_buffer(WGPUBuffer buffer, size_t size, void* output_dat
 
     WGPUCommandBufferDescriptor cmd_buff_descriptor = {};
     cmd_buff_descriptor.nextInChain = NULL;
-    cmd_buff_descriptor.label = "read buffer command";
+    cmd_buff_descriptor.label = { "read buffer command", WGPU_STRLEN };
 
     WGPUCommandBuffer commands = wgpuCommandEncoderFinish(encoder, &cmd_buff_descriptor);
 
@@ -938,7 +936,7 @@ void WebGPUContext::copy_texture_to_texture(WGPUTexture texture_src, WGPUTexture
     if (!custom_command_encoder) {
         WGPUCommandBufferDescriptor cmd_buff_descriptor = {};
         cmd_buff_descriptor.nextInChain = NULL;
-        cmd_buff_descriptor.label = "Copy texture Command Buffer";
+        cmd_buff_descriptor.label = { "Copy texture Command Buffer", WGPU_STRLEN };
 
         // Encode and submit the GPU commands
         WGPUCommandBuffer commands = wgpuCommandEncoderFinish(command_encoder, &cmd_buff_descriptor);
@@ -955,7 +953,7 @@ WGPURenderPipeline WebGPUContext::create_render_pipeline(WGPUShaderModule render
 {    
     WGPUVertexState vertex_state = {};
     vertex_state.module = render_shader_module;
-    vertex_state.entryPoint = vs_entry_point;
+    vertex_state.entryPoint = { vs_entry_point, WGPU_STRLEN };
     vertex_state.constantCount = 0;
     vertex_state.constants = NULL;
     vertex_state.bufferCount = static_cast<uint32_t>(vertex_attributes.size());
@@ -963,7 +961,7 @@ WGPURenderPipeline WebGPUContext::create_render_pipeline(WGPUShaderModule render
 
     WGPUFragmentState fragment_state = {};
     fragment_state.module = render_shader_module;
-    fragment_state.entryPoint = fs_entry_point;
+    fragment_state.entryPoint = { fs_entry_point, WGPU_STRLEN };
     fragment_state.constantCount = 0;
     fragment_state.constants = NULL;
     fragment_state.targetCount = 1;
@@ -1015,7 +1013,7 @@ void WebGPUContext::create_render_pipeline_async(WGPUShaderModule render_shader_
 {
     WGPUVertexState vertex_state = {};
     vertex_state.module = render_shader_module;
-    vertex_state.entryPoint = vs_entry_point;
+    vertex_state.entryPoint = { vs_entry_point, WGPU_STRLEN };
     vertex_state.constantCount = 0;
     vertex_state.constants = NULL;
     vertex_state.bufferCount = static_cast<uint32_t>(vertex_attributes.size());
@@ -1023,7 +1021,7 @@ void WebGPUContext::create_render_pipeline_async(WGPUShaderModule render_shader_
 
     WGPUFragmentState fragment_state = {};
     fragment_state.module = render_shader_module;
-    fragment_state.entryPoint = fs_entry_point;
+    fragment_state.entryPoint = { fs_entry_point, WGPU_STRLEN };
     fragment_state.constantCount = 0;
     fragment_state.constants = NULL;
     fragment_state.targetCount = 1;
@@ -1075,7 +1073,7 @@ WGPUComputePipeline WebGPUContext::create_compute_pipeline(WGPUShaderModule comp
     computePipelineDesc.compute.nextInChain = nullptr;
     computePipelineDesc.compute.constantCount = 0;
     computePipelineDesc.compute.constants = nullptr;
-    computePipelineDesc.compute.entryPoint = entry_point;
+    computePipelineDesc.compute.entryPoint = { entry_point, WGPU_STRLEN };
     computePipelineDesc.compute.module = compute_shader_module;
     computePipelineDesc.layout = pipeline_layout;
 
@@ -1088,7 +1086,7 @@ void WebGPUContext::create_compute_pipeline_async(WGPUShaderModule compute_shade
     computePipelineDesc.compute.nextInChain = nullptr;
     computePipelineDesc.compute.constantCount = 0;
     computePipelineDesc.compute.constants = nullptr;
-    computePipelineDesc.compute.entryPoint = entry_point;
+    computePipelineDesc.compute.entryPoint = { entry_point, WGPU_STRLEN };
     computePipelineDesc.compute.module = compute_shader_module;
     computePipelineDesc.layout = pipeline_layout;
 
@@ -1111,7 +1109,7 @@ WGPUQuerySet WebGPUContext::create_query_set(uint8_t maximum_query_sets)
     WGPUQuerySetDescriptor query_set_descriptor = {};
     query_set_descriptor.count = maximum_query_sets;
     query_set_descriptor.type = WGPUQueryType_Timestamp;
-    query_set_descriptor.label = "timestamp_query";
+    query_set_descriptor.label = { "timestamp_query", WGPU_STRLEN };
 
     return wgpuDeviceCreateQuerySet(device, &query_set_descriptor);
 }
@@ -1148,7 +1146,7 @@ void WebGPUContext::generate_brdf_lut_texture()
 
     WGPUCommandBufferDescriptor cmd_buff_descriptor = {};
     cmd_buff_descriptor.nextInChain = NULL;
-    cmd_buff_descriptor.label = "Create BRDF Command Buffer";
+    cmd_buff_descriptor.label = { "Create BRDF Command Buffer", WGPU_STRLEN };
 
     // Encode and submit the GPU commands
     WGPUCommandBuffer commands = wgpuCommandEncoderFinish(command_encoder, &cmd_buff_descriptor);
@@ -1300,7 +1298,7 @@ void WebGPUContext::generate_prefiltered_env_texture(Texture* prefiltered_env_te
 
     WGPUCommandBufferDescriptor cmd_buff_descriptor = {};
     cmd_buff_descriptor.nextInChain = NULL;
-    cmd_buff_descriptor.label = "Create Prefiltered Env Command Buffer";
+    cmd_buff_descriptor.label = { "Create Prefiltered Env Command Buffer", WGPU_STRLEN };
 
     // Encode and submit the GPU commands
     WGPUCommandBuffer commands = wgpuCommandEncoderFinish(command_encoder, &cmd_buff_descriptor);

@@ -247,23 +247,15 @@ bool HDRE::clean()
 	if (!data)
 		return false;
 
-	try {
-		delete data;
+	delete data;
 
-		for (int i = 0; i < N_LEVELS; i++)
-		{
-			delete faces_array[i];
+	for (int i = 0; i < N_LEVELS; i++)
+	{
+		delete faces_array[i];
 
-			for (int j = 0; j < N_FACES; j++)
-				delete pixels[i][j];
-		}
-
-		return true;
-	}
-	catch (const std::exception&) {
-        spdlog::error("Error cleaning");
-		return false;
+		for (int j = 0; j < N_FACES; j++)
+			delete pixels[i][j];
 	}
 
-	return false;
+	return true;
 }

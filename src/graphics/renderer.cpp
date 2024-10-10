@@ -326,7 +326,7 @@ void Renderer::render()
 
     WGPUCommandBufferDescriptor cmd_buff_descriptor = {};
     cmd_buff_descriptor.nextInChain = NULL;
-    cmd_buff_descriptor.label = "Command buffer";
+    cmd_buff_descriptor.label = { "Command buffer", WGPU_STRLEN };
 
     resolve_query_set(global_command_encoder, 0);
 

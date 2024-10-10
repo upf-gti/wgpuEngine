@@ -26,7 +26,7 @@ AABB merge_aabbs(const AABB& AABB_0, const AABB& AABB_1)
     return { new_center, new_half_size };
 }
 
-inline bool AABB::initialized() const {
+bool AABB::initialized() const {
     return glm::any(glm::notEqual(center, glm::vec3(0.0f))) || glm::any(glm::notEqual(half_size, glm::vec3(0.0f)));
 }
 

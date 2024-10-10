@@ -757,10 +757,10 @@ RenderPipelineKey RendererStorage::get_render_pipeline_key(Material* material)
     }
 
     if (material->get_is_2D()) {
-        description.depth_write = false;
+        description.depth_write = WGPUOptionalBool_False;
     }
     else {
-        description.depth_write = material->get_depth_write();
+        description.depth_write = material->get_depth_write() ? WGPUOptionalBool_True : WGPUOptionalBool_False;
     }
 
     switch (material->get_cull_type()) {
@@ -802,7 +802,7 @@ RenderPipelineKey RendererStorage::get_render_pipeline_key(Material* material)
 
         color_target.blend = blend_state;
 
-        description.depth_write = false;
+        description.depth_write = WGPUOptionalBool_False;
         description.blending_enabled = true;
         break;
     }

@@ -20,7 +20,7 @@ struct PipelineDescription {
 
     bool use_depth = true;
     bool depth_read = true;
-    bool depth_write = true;
+    WGPUOptionalBool depth_write = WGPUOptionalBool_True;
 
     WGPUCompareFunction depth_compare = WGPUCompareFunction_Greater;
 
@@ -28,6 +28,8 @@ struct PipelineDescription {
     uint8_t sample_count = 1;
     bool allow_msaa = true;
 };
+
+WGPUStringView get_string_view(const char* str);
 
 struct WebGPUContext {
 

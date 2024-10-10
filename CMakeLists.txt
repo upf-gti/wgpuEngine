@@ -246,6 +246,16 @@ target_link_libraries(${PROJECT_NAME} PUBLIC spdlog::spdlog)
 set_property(TARGET spdlog PROPERTY FOLDER "External/spdlog")
 
 # imgui
+
+# patch imgui to support emscripten build
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/libraries/patches/imgui_web_build_fix.patch" "${CMAKE_CURRENT_SOURCE_DIR}/libraries/imgui/imgui_web_build_fix.patch" COPYONLY)
+
+message(STATUS "Applying ImGui web fix patch...")
+
+execute_process(
+    COMMAND cmd /C cd ${CMAKE_CURRENT_SOURCE_DIR}/libraries/imgui && git apply imgui_web_build_fix.patch
+)
+
 add_library(imgui STATIC
     ${WGPU_DIR_LIBS}/imgui/imgui.cpp
     ${WGPU_DIR_LIBS}/imgui/imgui_demo.cpp
@@ -261,6 +271,8 @@ add_library(imgui STATIC
     ${WGPU_DIR_LIBS}/imgui/imstb_textedit.h
     ${WGPU_DIR_LIBS}/imgui/imstb_truetype.h
 )
+
+target_compile_definitions(imgui PUBLIC "IMGUI_IMPL_WEBGPU_BACKEND_DAWN")
 
 target_link_libraries(imgui PUBLIC glfw webgpu)
 target_include_directories(imgui PUBLIC ${WGPU_DIR_LIBS}/imgui)
