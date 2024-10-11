@@ -13,8 +13,9 @@ class AnimationPlayer : public Node3D
 
     std::string current_animation_name;
 
-    bool autoplay           = false;
-    bool playing            = false;
+    bool autoplay   = false;
+    bool playing    = false;
+    bool paused     = false;
 
     float playback   = 0.f;
     float speed      = 1.f;
@@ -35,9 +36,10 @@ public:
 
     AnimationPlayer(const std::string& name);
 
-    void play(Animation* animation, float custom_blend = -1.0f, float custom_speed = 1.0f, bool from_end = false);
+    void play(Animation* animation = nullptr, float custom_blend = -1.0f, float custom_speed = 1.0f, bool from_end = false);
     void play(const std::string& animation_name = "", float custom_blend = -1.0f, float custom_speed = 1.0f, bool from_end = false);
     void pause();
+    void resume();
     void stop(bool keep_state = false);
 
     void update(float delta_time) override;
