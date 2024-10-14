@@ -25,6 +25,11 @@ void AnimationPlayer::play(const std::string& animation_name, float custom_blend
 
 void AnimationPlayer::play(Animation* animation, float custom_blend, float custom_speed, bool from_end)
 {
+    if (paused) {
+        resume();
+        return;
+    }
+
     if (!root_node) {
         root_node = get_parent();
     }
@@ -126,15 +131,30 @@ void AnimationPlayer::generate_track_data()
     }
 }
 
+void AnimationPlayer::resume()
+{
+    playing = true;
+    paused = false;
+}
+
 void AnimationPlayer::pause()
 {
-    playing = !playing;
+    playing = false;
+    paused = true;
 }
 
 void AnimationPlayer::stop(bool keep_state)
 {
-    blender.stop();
+    playback = 0.0f;
+    playing = true; // hack to force update..
+    update(0.0f);
+
+    if (!keep_state) {
+        blender.stop();
+    }
+
     playing = false;
+    paused = false;
 }
 
 void AnimationPlayer::update(float delta_time)
