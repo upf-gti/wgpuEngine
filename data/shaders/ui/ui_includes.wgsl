@@ -69,5 +69,5 @@ fn draw_line( uv : vec2f, p1 : vec2f, p2 : vec2f, color : vec4f, thickness : f32
 fn draw_point( uv : vec2f, p : vec2f, s : f32) -> vec4f
 {
     let alpha : f32 = smoothstep(0.002,0.015, abs(length(uv - p) - s));
-    return vec4(vec3(1.0), alpha);
+    return vec4(vec3(1.0), 1.0 - alpha);
 }
