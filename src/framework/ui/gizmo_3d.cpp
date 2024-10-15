@@ -23,7 +23,7 @@ Color Gizmo3D::Z_AXIS_COLOR(0.03f, 0.04f, 0.8f, 1.0f);
 Color Gizmo3D::AXIS_SELECTED_OFFSET_COLOR(0.4f, 0.4f, 0.4f, 0.0f);
 Color Gizmo3D::AXIS_NOT_SELECTED_COLOR(0.2f, 0.2f, 0.2f, 1.0f);
 
-void Gizmo3D::initialize(const eGizmoType& new_operation, const glm::vec3& position)
+void Gizmo3D::initialize(const eGizmoOp& new_operation, const glm::vec3& position)
 {
     operation = new_operation;
 
@@ -53,7 +53,7 @@ void Gizmo3D::initialize(const eGizmoType& new_operation, const glm::vec3& posit
         }
     }
     else {
-        gizmo_2d.set_operation((ImGuizmo::OPERATION)new_operation);
+        gizmo_2d.set_operation(new_operation);
     }
 
     transform.set_position(position);
@@ -182,7 +182,7 @@ void Gizmo3D::set_transform(const Transform& t)
     transform = t;
 }
 
-void Gizmo3D::set_operation(const eGizmoType& gizmo_type)
+void Gizmo3D::set_operation(const eGizmoOp& gizmo_type)
 {
     if (xr_enabled) {
         operation = gizmo_type;
@@ -209,7 +209,7 @@ void Gizmo3D::set_operation(const eGizmoType& gizmo_type)
         }
     }
     else {
-        gizmo_2d.set_operation((ImGuizmo::OPERATION)gizmo_type);
+        gizmo_2d.set_operation(gizmo_type);
     }
 }
 
@@ -318,7 +318,7 @@ bool Gizmo3D::update(glm::vec3& new_position, const glm::vec3& controller_positi
                     scale_axis_selected.z = intersection::point_sphere(controller_position, box_center, size.z);
                 }
             }
-                
+
             if (operation & ROTATE) {
 
                 float circle_scale = circle_gizmo_scale + 0.025f;
@@ -434,10 +434,10 @@ bool Gizmo3D::update(glm::vec3& new_position, const glm::vec3& controller_positi
     return is_active;
 }
 
-void Gizmo3D::render()
+bool Gizmo3D::render()
 {
     if (!enabled) {
-        return;
+        return false;
     }
 
     if (xr_enabled) {
@@ -448,8 +448,11 @@ void Gizmo3D::render()
         glm::mat4x4 m = Transform::transform_to_mat4(transform);
         if (gizmo_2d.render(camera->get_view(), camera->get_projection(), m)) {
             transform = Transform::mat4_to_transform(m);
+            return true;
         }
     }
+
+    return false;
 }
 
 void Gizmo3D::render_xr()
