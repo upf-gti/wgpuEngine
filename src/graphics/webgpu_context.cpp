@@ -697,7 +697,7 @@ WGPUBindGroupLayout WebGPUContext::create_bind_group_layout(const std::vector<WG
     return wgpuDeviceCreateBindGroupLayout(device, &bindGroupLayoutDesc);
 }
 
-WGPUBindGroup WebGPUContext::create_bind_group(const std::vector<Uniform*>& uniforms, WGPUBindGroupLayout bind_group_layout)
+WGPUBindGroup WebGPUContext::create_bind_group(const std::vector<Uniform*>& uniforms, WGPUBindGroupLayout bind_group_layout, char const* label)
 {
     std::vector<WGPUBindGroupEntry> entries(uniforms.size());
 
@@ -711,11 +711,12 @@ WGPUBindGroup WebGPUContext::create_bind_group(const std::vector<Uniform*>& unif
     // There must be as many bindings as declared in the layout!
     bindGroupDesc.entryCount = static_cast<uint32_t>(entries.size());
     bindGroupDesc.entries = entries.data();
+    bindGroupDesc.label = { label, WGPU_STRLEN };
 
     return wgpuDeviceCreateBindGroup(device, &bindGroupDesc);
 }
 
-WGPUBindGroup WebGPUContext::create_bind_group(const std::vector<Uniform*>& uniforms, const Shader* shader, uint16_t bind_group) const
+WGPUBindGroup WebGPUContext::create_bind_group(const std::vector<Uniform*>& uniforms, const Shader* shader, uint16_t bind_group, char const* label) const
 {
     assert(!uniforms.empty());
 
@@ -740,6 +741,7 @@ WGPUBindGroup WebGPUContext::create_bind_group(const std::vector<Uniform*>& unif
     // There must be as many bindings as declared in the layout!
     bindGroupDesc.entryCount = static_cast<uint32_t>(entries.size());
     bindGroupDesc.entries = entries.data();
+    bindGroupDesc.label = { label, WGPU_STRLEN };
 
     return wgpuDeviceCreateBindGroup(device, &bindGroupDesc);
 }

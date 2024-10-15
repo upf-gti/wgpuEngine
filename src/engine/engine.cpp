@@ -403,6 +403,9 @@ void Engine::render_default_gui()
             while (it != nodes.end())
             {
                 if (render_scene_tree_recursive(*it)) {
+                    if (*it == selected_node) {
+                        selected_node = nullptr;
+                    }
                     delete* it;
                     it = nodes.erase(it);
                 }
@@ -488,6 +491,7 @@ bool Engine::render_scene_tree_recursive(Node* entity)
                 ImGui::CloseCurrentPopup();
                 ImGui::EndPopup();
                 ImGui::TreePop();
+                Node::emit_signal("@node_deleted", (void*)entity);
                 return true;
             }
             ImGui::EndPopup();

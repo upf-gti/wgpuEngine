@@ -1,32 +1,16 @@
 #pragma once
 
-#include "glm/vec3.hpp"
-#include "glm/gtc/quaternion.hpp"
-
+#include "gizmo_2d.h"
 #include "framework/colors.h"
 #include "framework/math/transform.h"
 
-enum eGizmoAxis : uint8_t {
-    GIZMO_AXIS_X = 1 << 0,
-    GIZMO_AXIS_Y = 1 << 1,
-    GIZMO_AXIS_Z = 1 << 2,
-    GIZMO_AXIS_XZ = GIZMO_AXIS_X | GIZMO_AXIS_Z,
-    GIZMO_ALL_AXIS = GIZMO_AXIS_X | GIZMO_AXIS_Y | GIZMO_AXIS_Z
-};
-
-enum eGizmoType : uint8_t {
-    TRANSLATION_GIZMO = 1 << 0,
-    SCALE_GIZMO = 1 << 1,
-    ROTATION_GIZMO = 1 << 2,
-    SCALE_ROTATION_GIZMO = SCALE_GIZMO | ROTATION_GIZMO,
-    POSITION_ROTATION_GIZMO = TRANSLATION_GIZMO | ROTATION_GIZMO,
-    POSITION_SCALE_ROTATION_GIZMO = POSITION_ROTATION_GIZMO | SCALE_GIZMO
-};
+using namespace ImGuizmo;
+using eGizmoOp = OPERATION;
 
 class MeshInstance3D;
 
 /*
-	TRANSFORM GIZMO COMPONENT FOR VR
+	TRANSFORM GIZMO COMPONENT
 */
 
 class Gizmo3D {
@@ -38,10 +22,10 @@ class Gizmo3D {
     static Color AXIS_SELECTED_OFFSET_COLOR;
     static Color AXIS_NOT_SELECTED_COLOR;
 
-    eGizmoType operation = TRANSLATION_GIZMO;
-    eGizmoAxis axis = GIZMO_ALL_AXIS;
+    eGizmoOp operation = TRANSLATE;
 
 	bool enabled = true;
+	bool xr_enabled = false;
 	bool has_graved = false;
     bool has_graved_position = false;
 	
@@ -67,15 +51,13 @@ class Gizmo3D {
     void init_scale_meshes();
     void init_rotation_meshes();
 
-	glm::vec3 gizmo_position = { 0.0f, 0.0f, 0.0f };
-    glm::vec3 gizmo_scale = { 1.0f, 1.0f, 1.0f };
+    Transform transform;
 
     const glm::vec3 arrow_gizmo_scale = glm::vec3(0.1f);
     const glm::vec3 sphere_gizmo_scale = glm::vec3(0.1f);
 	const glm::vec3 mesh_size = glm::vec3(0.3f, 1.8f, 0.3f);
 
     const float circle_gizmo_scale = 0.1f;
-    glm::quat current_rotation = { 0.0f, 0.0f, 0.0f, 1.0f };
 
     glm::quat last_hand_rotation = { 0.0f, 0.0f, 0.0f, 1.0f };
     glm::vec3 last_hand_translation = {};
@@ -91,25 +73,29 @@ class Gizmo3D {
     float y_angle = 0.0f;
     float z_angle = 0.0f;
 
+    // 2D mode when no VR
+    Gizmo2D gizmo_2d;
+
 public:
 
-	void initialize(const eGizmoType& new_type, const glm::vec3 &position = glm::vec3(0.0f), const eGizmoAxis& new_axis = GIZMO_ALL_AXIS);
+	void initialize(const eGizmoOp& new_type, const glm::vec3 &position = glm::vec3(0.0f));
 	void clean();
 
-    void set_operation(const eGizmoType& gizmo_use, const eGizmoAxis& axis = GIZMO_ALL_AXIS);
+    void set_operation(const eGizmoOp& gizmo_use);
+    void set_transform(const Transform& t);
 
 	bool update(glm::vec3& new_position, const glm::vec3& controller_position, float delta_time);
     bool update(glm::vec3& new_position, glm::quat& rotation, const glm::vec3& controller_position, float delta_time);
     bool update(glm::vec3& new_position, glm::vec3& scale, const glm::vec3& controller_position, float delta_time);
     bool update(Transform& t, const glm::vec3& controller_position, float delta_time);
+    bool update(const glm::vec3& controller_position, float delta_time);
 
-    void render(int axis = GIZMO_ALL_AXIS);
+    // This returns bool due to the gizmo2d being used..
+    bool render();
+    void render_xr();
 
-    inline glm::quat get_rotation() const {
-        return current_rotation;
-    }
-
-    inline glm::vec3 get_euler_rotation() const {
-        return glm::vec3(x_angle, y_angle, z_angle);
-    }
+    Transform& get_transform() { return transform; };
+    inline glm::vec3 get_position() const { return transform.get_position(); }
+    inline glm::quat get_rotation() const { return transform.get_rotation(); }
+    inline glm::vec3 get_euler_rotation() const { return glm::vec3(x_angle, y_angle, z_angle); }
 };
