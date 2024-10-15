@@ -227,6 +227,9 @@ void Engine::clean()
 
 void Engine::start_loop()
 {
+    // Submit any initialization commands
+    renderer->submit_global_command_encoder();
+
 #ifdef __EMSCRIPTEN__
     emscripten_set_main_loop_arg(
         [](void* user_data) {

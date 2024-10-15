@@ -107,13 +107,13 @@ struct WebGPUContext {
 
     WGPURenderPipeline     create_render_pipeline(WGPUShaderModule render_shader_module, WGPUPipelineLayout pipeline_layout, const std::vector<WGPUVertexBufferLayout>& vertex_attributes,
                                                   WGPUColorTargetState color_target, const PipelineDescription& description,
-                                                  const char* vs_entry_point = "vs_main", const char* fs_entry_point = "fs_main");
+                                                  const char* vs_entry_point = "vs_main", const char* fs_entry_point = "fs_main", std::vector< WGPUConstantEntry> constants = {});
     void                   create_render_pipeline_async(WGPUShaderModule render_shader_module, WGPUPipelineLayout pipeline_layout, const std::vector<WGPUVertexBufferLayout>& vertex_attributes,
                                                   WGPUColorTargetState color_target, WGPUCreateRenderPipelineAsyncCallback callback, void* userdata, const PipelineDescription& description,
-                                                  const char* vs_entry_point = "vs_main", const char* fs_entry_point = "fs_main");
+                                                  const char* vs_entry_point = "vs_main", const char* fs_entry_point = "fs_main", std::vector< WGPUConstantEntry> constants = {});
 
-    WGPUComputePipeline    create_compute_pipeline(WGPUShaderModule compute_shader_module, WGPUPipelineLayout pipeline_layout, const char* entry_point = "compute");
-    void                   create_compute_pipeline_async(WGPUShaderModule compute_shader_module, WGPUPipelineLayout pipeline_layout, WGPUCreateComputePipelineAsyncCallback callback, void* userdata, const char* entry_point = "compute");
+    WGPUComputePipeline    create_compute_pipeline(WGPUShaderModule compute_shader_module, WGPUPipelineLayout pipeline_layout, const char* entry_point = "compute", std::vector< WGPUConstantEntry> constants = {});
+    void                   create_compute_pipeline_async(WGPUShaderModule compute_shader_module, WGPUPipelineLayout pipeline_layout, WGPUCreateComputePipelineAsyncCallback callback, void* userdata, const char* entry_point = "compute", std::vector< WGPUConstantEntry> constants = {});
 
     WGPUVertexBufferLayout create_vertex_buffer_layout(const std::vector<WGPUVertexAttribute>& vertex_attributes, uint64_t stride, WGPUVertexStepMode step_mode);
 

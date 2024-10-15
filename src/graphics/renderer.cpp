@@ -142,6 +142,10 @@ int Renderer::initialize(GLFWwindow* window, bool use_mirror_screen)
         webgpu_context->render_height = webgpu_context->screen_height;
     }
 
+    // Create the command encoder
+    WGPUCommandEncoderDescriptor encoder_desc = {};
+    global_command_encoder = wgpuDeviceCreateCommandEncoder(webgpu_context->device, &encoder_desc);
+
     RendererStorage::register_basic_surfaces();
 
     if (!irradiance_texture) {
@@ -324,18 +328,7 @@ void Renderer::render()
     }
 #endif
 
-    WGPUCommandBufferDescriptor cmd_buff_descriptor = {};
-    cmd_buff_descriptor.nextInChain = NULL;
-    cmd_buff_descriptor.label = { "Command buffer", WGPU_STRLEN };
-
-    resolve_query_set(global_command_encoder, 0);
-
-    WGPUCommandBuffer commands = wgpuCommandEncoderFinish(global_command_encoder, &cmd_buff_descriptor);
-
-    wgpuQueueSubmit(webgpu_context->device_queue, 1, &commands);
-
-    wgpuCommandBufferRelease(commands);
-    wgpuCommandEncoderRelease(global_command_encoder);
+    submit_global_command_encoder();
 
     if (RenderdocCapture::is_capture_started() && debug_this_frame) {
         RenderdocCapture::end_capture_frame();
@@ -360,6 +353,23 @@ void Renderer::render()
 #endif
 
     clear_renderables();
+}
+
+void Renderer::submit_global_command_encoder()
+{
+    WGPUCommandBufferDescriptor cmd_buff_descriptor = {};
+    cmd_buff_descriptor.nextInChain = NULL;
+    cmd_buff_descriptor.label = { "Command buffer", WGPU_STRLEN };
+
+    resolve_query_set(global_command_encoder, 0);
+
+    WGPUCommandBuffer commands = wgpuCommandEncoderFinish(global_command_encoder, &cmd_buff_descriptor);
+
+    wgpuQueueSubmit(webgpu_context->device_queue, 1, &commands);
+
+    wgpuCommandBufferRelease(commands);
+    wgpuCommandEncoderRelease(global_command_encoder);
+
 }
 
 void Renderer::set_custom_pass_user_data(void* user_data)

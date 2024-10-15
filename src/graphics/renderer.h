@@ -204,6 +204,8 @@ public:
     virtual void update(float delta_time);
     virtual void render();
 
+    void submit_global_command_encoder();
+
     void set_custom_pass_user_data(void* user_data);
 
     void init_lighting_bind_group();

@@ -19,6 +19,8 @@ glm::vec3 load_vec3(const std::string& str);
 glm::vec4 load_vec4(const std::string& str);
 glm::quat load_quat(const std::string& str);
 
+uint32_t log2(uint32_t value);
+
 glm::vec3 mod_vec3(glm::vec3 v, float m);
 uint32_t next_power_of_two(uint32_t value);
 glm::quat get_quat_between_vec3(const glm::vec3& p1, const glm::vec3& p2);

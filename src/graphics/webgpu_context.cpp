@@ -185,7 +185,6 @@ int WebGPUContext::initialize(WGPURequestAdapterOptions adapter_opts, WGPURequir
     std::vector<const char*> disabled_toggles;
 
     disabled_toggles.push_back("lazy_clear_resource_on_first_use");
-    disabled_toggles.push_back("use_placeholder_fragment_in_vertex_only_pipeline");
 
     enabled_toggles.push_back("use_dxc");
 
@@ -949,21 +948,21 @@ void WebGPUContext::copy_texture_to_texture(WGPUTexture texture_src, WGPUTexture
 
 WGPURenderPipeline WebGPUContext::create_render_pipeline(WGPUShaderModule render_shader_module, WGPUPipelineLayout pipeline_layout, const std::vector<WGPUVertexBufferLayout>& vertex_attributes,
     WGPUColorTargetState color_target, const PipelineDescription& description,
-    const char* vs_entry_point, const char* fs_entry_point)
+    const char* vs_entry_point, const char* fs_entry_point, std::vector< WGPUConstantEntry> constants)
 {    
     WGPUVertexState vertex_state = {};
     vertex_state.module = render_shader_module;
     vertex_state.entryPoint = { vs_entry_point, WGPU_STRLEN };
-    vertex_state.constantCount = 0;
-    vertex_state.constants = NULL;
+    vertex_state.constantCount = constants.size();
+    vertex_state.constants = constants.data();
     vertex_state.bufferCount = static_cast<uint32_t>(vertex_attributes.size());
     vertex_state.buffers = vertex_attributes.data();
 
     WGPUFragmentState fragment_state = {};
     fragment_state.module = render_shader_module;
     fragment_state.entryPoint = { fs_entry_point, WGPU_STRLEN };
-    fragment_state.constantCount = 0;
-    fragment_state.constants = NULL;
+    fragment_state.constantCount = constants.size();
+    fragment_state.constants = constants.data();
     fragment_state.targetCount = 1;
     fragment_state.targets = &color_target;
 
@@ -1009,7 +1008,7 @@ WGPURenderPipeline WebGPUContext::create_render_pipeline(WGPUShaderModule render
 
 void WebGPUContext::create_render_pipeline_async(WGPUShaderModule render_shader_module, WGPUPipelineLayout pipeline_layout, const std::vector<WGPUVertexBufferLayout>& vertex_attributes,
     WGPUColorTargetState color_target, WGPUCreateRenderPipelineAsyncCallback callback, void* userdata, const PipelineDescription& description,
-    const char* vs_entry_point, const char* fs_entry_point)
+    const char* vs_entry_point, const char* fs_entry_point, std::vector< WGPUConstantEntry> constants)
 {
     WGPUVertexState vertex_state = {};
     vertex_state.module = render_shader_module;
@@ -1067,12 +1066,13 @@ void WebGPUContext::create_render_pipeline_async(WGPUShaderModule render_shader_
     wgpuDeviceCreateRenderPipelineAsync(device, &pipeline_descr, callback, userdata);
 }
 
-WGPUComputePipeline WebGPUContext::create_compute_pipeline(WGPUShaderModule compute_shader_module, WGPUPipelineLayout pipeline_layout, const char* entry_point)
+WGPUComputePipeline WebGPUContext::create_compute_pipeline(WGPUShaderModule compute_shader_module, WGPUPipelineLayout pipeline_layout,
+    const char* entry_point, std::vector< WGPUConstantEntry> constants)
 {
     WGPUComputePipelineDescriptor computePipelineDesc = {};
     computePipelineDesc.compute.nextInChain = nullptr;
-    computePipelineDesc.compute.constantCount = 0;
-    computePipelineDesc.compute.constants = nullptr;
+    computePipelineDesc.compute.constantCount = constants.size();
+    computePipelineDesc.compute.constants = constants.data();
     computePipelineDesc.compute.entryPoint = { entry_point, WGPU_STRLEN };
     computePipelineDesc.compute.module = compute_shader_module;
     computePipelineDesc.layout = pipeline_layout;
@@ -1080,12 +1080,13 @@ WGPUComputePipeline WebGPUContext::create_compute_pipeline(WGPUShaderModule comp
     return wgpuDeviceCreateComputePipeline(device, &computePipelineDesc);
 }
 
-void WebGPUContext::create_compute_pipeline_async(WGPUShaderModule compute_shader_module, WGPUPipelineLayout pipeline_layout, WGPUCreateComputePipelineAsyncCallback callback, void* userdata, const char* entry_point)
+void WebGPUContext::create_compute_pipeline_async(WGPUShaderModule compute_shader_module, WGPUPipelineLayout pipeline_layout,
+    WGPUCreateComputePipelineAsyncCallback callback, void* userdata, const char* entry_point, std::vector< WGPUConstantEntry> constants)
 {
     WGPUComputePipelineDescriptor computePipelineDesc = {};
     computePipelineDesc.compute.nextInChain = nullptr;
-    computePipelineDesc.compute.constantCount = 0;
-    computePipelineDesc.compute.constants = nullptr;
+    computePipelineDesc.compute.constantCount = constants.size();
+    computePipelineDesc.compute.constants = constants.data();
     computePipelineDesc.compute.entryPoint = { entry_point, WGPU_STRLEN };
     computePipelineDesc.compute.module = compute_shader_module;
     computePipelineDesc.layout = pipeline_layout;
