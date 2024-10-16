@@ -54,12 +54,24 @@ fn fs_main(in: VertexOutput) -> FragmentOutput {
     var pos : vec2f = vec2(uvs * 2.0 - 1.0);
     pos.x *= ui_data.aspect_ratio;
 
-    let d : f32 = sdRoundedBox(pos, si, ra);
+    let d : f32 = sdRoundedBox(pos, si * 0.975, ra * 0.975);
+    let d_selected : f32 = sdRoundedBox(pos, si, ra);
 
     var alpha : f32 = 1.0 - smoothstep(0.0, 0.04, d);
-    alpha *= select(0.5, 0.3, ui_data.hover_info.x > 0.0);
+    var alpha_selected : f32 = 1.0 - smoothstep(0.0, 0.04, d_selected);
 
-    out.color = vec4f(vec3f(0.0), alpha);
+    let selected_mask : f32 = (alpha_selected - alpha) * ui_data.is_selected;
+    var color_factor : f32 = select(0.01, 0.1, ui_data.hover_info.x > 0.0);
+    color_factor = mix(color_factor, 0.75, selected_mask);
+
+    let highlight_color : vec3f = mix(COLOR_HIGHLIGHT_LIGHT, COLOR_TERCIARY, uvs.x);
+    var final_color = mix(vec3f(color_factor), highlight_color, selected_mask);
+
+    if (GAMMA_CORRECTION == 1) {
+        final_color = pow(final_color, vec3f(1.0 / 2.2));
+    }
+
+    out.color = vec4f(final_color, alpha_selected);
 
     return out;
 }

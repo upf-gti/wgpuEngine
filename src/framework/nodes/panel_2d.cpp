@@ -604,6 +604,8 @@ namespace ui {
     *   Text
     */
 
+    Text2D* Text2D::selected = nullptr;
+
     Text2D::Text2D(const std::string& _text, float scale, uint32_t flags)
         : Text2D(_text, { 0.0f, 0.0f }, scale, flags, colors::WHITE)
     { }
@@ -629,6 +631,10 @@ namespace ui {
         ui_data.num_group_items = size.x;
 
         render_background = !(flags & SKIP_TEXT_RECT);
+
+        if (flags & SELECTED) {
+            selected = this;
+        }
 
         Material* material = new Material();
         material->set_color(colors::WHITE);
@@ -683,8 +689,10 @@ namespace ui {
             // Update uniforms
             ui_data.hover_info.x = 0.0f;
             ui_data.hover_info.y = 0.0f;
+            ui_data.is_selected = 0.0f;
 
             on_hover = false;
+            ui_data.is_selected = (selected == this) ? 1.0f : 0.0f;
         }
 
         ui_data.aspect_ratio = size.x / size.y;
@@ -705,6 +713,7 @@ namespace ui {
         {
             if (!on_pressed()) {
                 Node::emit_signal(name, (void*)this);
+                selected = this;
             }
         }
 

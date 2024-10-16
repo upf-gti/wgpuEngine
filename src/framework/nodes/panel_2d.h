@@ -90,6 +90,7 @@ namespace ui {
 
     class Text2D : public Panel2D {
 
+        static Text2D* selected;
         float text_scale = 1.0f;
         std::string text_string = "";
 
