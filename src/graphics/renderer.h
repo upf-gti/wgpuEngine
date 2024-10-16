@@ -55,8 +55,9 @@ protected:
     Camera* camera_2d = nullptr;
 
     // Render meshes with material color
-    WGPUBindGroup render_bind_group_camera = nullptr;
-    WGPUBindGroup render_bind_group_camera_2d = nullptr;
+    WGPUBindGroup render_camera_bind_group = nullptr;
+    WGPUBindGroup compute_camera_bind_group = nullptr;
+    WGPUBindGroup render_camera_bind_group_2d = nullptr;
 
     Uniform camera_uniform;
     Uniform camera_2d_uniform;
@@ -118,19 +119,24 @@ protected:
     };
 
     struct sCameraData {
-        glm::mat4x4 mvp;
+        glm::mat4x4 view_projection;
+        glm::mat4x4 view;
+        glm::mat4x4 projection;
 
         glm::vec3 eye = {};
         float exposure = 1.0f;
 
         glm::vec3 right_controller_position = {};
         float ibl_intensity = 1.0f;
+
+        glm::vec2 screen_size;
+        glm::vec2 dummy;
     };
 
     sCameraData camera_data;
     sCameraData camera_2d_data;
 
-    void render_render_list(int list_index, WGPURenderPassEncoder render_pass, const WGPUBindGroup& render_bind_group_camera, uint32_t camera_buffer_stride = 0);
+    void render_render_list(int list_index, WGPURenderPassEncoder render_pass, const WGPUBindGroup& render_camera_bind_group, uint32_t camera_buffer_stride = 0);
 
     void init_camera_bind_group();
 
@@ -210,6 +216,8 @@ public:
 
     void init_lighting_bind_group();
     WGPUBindGroup get_lighting_bind_group() { return lighting_bind_group; }
+    WGPUBindGroup get_render_camera_bind_group() { return render_camera_bind_group; }
+    WGPUBindGroup get_compute_camera_bind_group() { return compute_camera_bind_group; }
 
     void init_depth_buffers();
     void init_multisample_textures();
@@ -229,9 +237,9 @@ public:
     bool is_inside_frustum(const glm::vec3& minp, const glm::vec3& maxp) const;
 
     void prepare_instancing(const glm::vec3& camera_position);
-    void render_opaque(WGPURenderPassEncoder render_pass, const WGPUBindGroup& render_bind_group_camera, uint32_t camera_buffer_stride = 0);
-    void render_transparent(WGPURenderPassEncoder render_pass, const WGPUBindGroup& render_bind_group_camera, uint32_t camera_buffer_stride = 0);
-    void render_2D(WGPURenderPassEncoder render_pass, const WGPUBindGroup& render_bind_group_camera);
+    void render_opaque(WGPURenderPassEncoder render_pass, const WGPUBindGroup& render_camera_bind_group, uint32_t camera_buffer_stride = 0);
+    void render_transparent(WGPURenderPassEncoder render_pass, const WGPUBindGroup& render_camera_bind_group, uint32_t camera_buffer_stride = 0);
+    void render_2D(WGPURenderPassEncoder render_pass, const WGPUBindGroup& render_camera_bind_group);
 
     bool get_openxr_available() { return is_openxr_available; }
     bool get_use_mirror_screen() { return use_mirror_screen; }

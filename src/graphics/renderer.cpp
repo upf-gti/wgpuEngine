@@ -382,7 +382,10 @@ void Renderer::render_screen(WGPUTextureView screen_surface_texture_view)
     // Update main 3d camera
 
     camera_data.eye = camera->get_eye();
-    camera_data.mvp = camera->get_view_projection();
+    camera_data.view_projection = camera->get_view_projection();
+    camera_data.view = camera->get_view();
+    camera_data.projection = camera->get_projection();
+    camera_data.screen_size = { webgpu_context->screen_width, webgpu_context->screen_height };
 
     // Use camera position as controller position
     camera_data.right_controller_position = camera_data.eye;
@@ -395,7 +398,7 @@ void Renderer::render_screen(WGPUTextureView screen_surface_texture_view)
     // Update 2d camera for UI
 
     camera_2d_data.eye = camera_2d->get_eye();
-    camera_2d_data.mvp = camera_2d->get_view_projection();
+    camera_2d_data.view_projection = camera_2d->get_view_projection();
 
     camera_2d_data.exposure = exposure;
     camera_2d_data.ibl_intensity = ibl_intensity;
@@ -451,7 +454,7 @@ void Renderer::render_screen(WGPUTextureView screen_surface_texture_view)
             custom_pre_opaque_pass(custom_pass_user_data, render_pass, 0);
         }
 
-        render_opaque(render_pass, render_bind_group_camera);
+        render_opaque(render_pass, render_camera_bind_group);
 
         if (custom_post_opaque_pass) {
             custom_post_opaque_pass(custom_pass_user_data, render_pass, 0);
@@ -461,7 +464,7 @@ void Renderer::render_screen(WGPUTextureView screen_surface_texture_view)
             custom_pre_transparent_pass(custom_pass_user_data, render_pass, 0);
         }
 
-        render_transparent(render_pass, render_bind_group_camera);
+        render_transparent(render_pass, render_camera_bind_group);
 
         if (custom_post_transparent_pass) {
             custom_post_transparent_pass(custom_pass_user_data, render_pass, 0);
@@ -471,7 +474,7 @@ void Renderer::render_screen(WGPUTextureView screen_surface_texture_view)
             custom_pre_2d_pass(custom_pass_user_data, render_pass, 0);
         }
 
-        render_2D(render_pass, render_bind_group_camera_2d);
+        render_2D(render_pass, render_camera_bind_group_2d);
 
         if (custom_post_2d_pass) {
             custom_post_2d_pass(custom_pass_user_data, render_pass, 0);
@@ -520,7 +523,11 @@ void Renderer::render_xr()
         const sSwapchainData& swapchainData = xr_context->swapchains[i];
 
         camera_data.eye = xr_context->per_view_data[i].position;
-        camera_data.mvp = xr_context->per_view_data[i].view_projection_matrix;
+        camera_data.view_projection = xr_context->per_view_data[i].view_projection_matrix;
+
+        camera_data.view = xr_context->per_view_data[i].view_matrix;
+        camera_data.projection = xr_context->per_view_data[i].projection_matrix;
+        camera_data.screen_size = { webgpu_context->render_width, webgpu_context->render_height };
 
         camera_data.right_controller_position = Input::get_controller_position(HAND_RIGHT);
 
@@ -571,7 +578,7 @@ void Renderer::render_xr()
                 custom_pre_opaque_pass(custom_pass_user_data, render_pass, i * xr_camera_buffer_stride);
             }
 
-            render_opaque(render_pass, render_bind_group_camera, i * xr_camera_buffer_stride);
+            render_opaque(render_pass, render_camera_bind_group, i * xr_camera_buffer_stride);
 
             if (custom_post_opaque_pass) {
                 custom_post_opaque_pass(custom_pass_user_data, render_pass, i * xr_camera_buffer_stride);
@@ -581,7 +588,7 @@ void Renderer::render_xr()
                 custom_pre_transparent_pass(custom_pass_user_data, render_pass, i * xr_camera_buffer_stride);
             }
 
-            render_transparent(render_pass, render_bind_group_camera, i * xr_camera_buffer_stride);
+            render_transparent(render_pass, render_camera_bind_group, i * xr_camera_buffer_stride);
 
             if (custom_post_transparent_pass) {
                 custom_post_transparent_pass(custom_pass_user_data, render_pass, i * xr_camera_buffer_stride);
@@ -591,7 +598,7 @@ void Renderer::render_xr()
                 custom_pre_2d_pass(custom_pass_user_data, render_pass, i * xr_camera_buffer_stride);
             }
 
-            render_2D(render_pass, render_bind_group_camera_2d);
+            render_2D(render_pass, render_camera_bind_group_2d);
 
             if (custom_post_2d_pass) {
                 custom_post_2d_pass(custom_pass_user_data, render_pass, i * xr_camera_buffer_stride);
@@ -944,12 +951,12 @@ void Renderer::prepare_instancing(const glm::vec3& camera_position)
     }
 }
 
-void Renderer::render_render_list(int list_index, WGPURenderPassEncoder render_pass, const WGPUBindGroup& render_bind_group_camera, uint32_t camera_buffer_stride)
+void Renderer::render_render_list(int list_index, WGPURenderPassEncoder render_pass, const WGPUBindGroup& render_camera_bind_group, uint32_t camera_buffer_stride)
 {
     const Pipeline* prev_pipeline = nullptr;
 
     wgpuRenderPassEncoderSetBindGroup(render_pass, 0, bind_groups[list_index], 0, nullptr);
-    wgpuRenderPassEncoderSetBindGroup(render_pass, 1, render_bind_group_camera, 1, &camera_buffer_stride);
+    wgpuRenderPassEncoderSetBindGroup(render_pass, 1, render_camera_bind_group, 1, &camera_buffer_stride);
 
     const Material* prev_material = nullptr;
 
@@ -1027,41 +1034,41 @@ void Renderer::render_render_list(int list_index, WGPURenderPassEncoder render_p
     }
 }
 
-void Renderer::render_opaque(WGPURenderPassEncoder render_pass, const WGPUBindGroup& render_bind_group_camera, uint32_t camera_buffer_stride)
+void Renderer::render_opaque(WGPURenderPassEncoder render_pass, const WGPUBindGroup& render_camera_bind_group, uint32_t camera_buffer_stride)
 {
 #ifndef NDEBUG
     wgpuRenderPassEncoderPushDebugGroup(render_pass, "Opaque");
 #endif
 
-    render_render_list(RENDER_LIST_OPAQUE, render_pass, render_bind_group_camera, camera_buffer_stride);
+    render_render_list(RENDER_LIST_OPAQUE, render_pass, render_camera_bind_group, camera_buffer_stride);
 
 #ifndef NDEBUG
     wgpuRenderPassEncoderPopDebugGroup(render_pass);
 #endif
 }
 
-void Renderer::render_transparent(WGPURenderPassEncoder render_pass, const WGPUBindGroup& render_bind_group_camera, uint32_t camera_buffer_stride)
+void Renderer::render_transparent(WGPURenderPassEncoder render_pass, const WGPUBindGroup& render_camera_bind_group, uint32_t camera_buffer_stride)
 {
 #ifndef NDEBUG
     wgpuRenderPassEncoderPushDebugGroup(render_pass, "Transparent");
 #endif
 
-    render_render_list(RENDER_LIST_TRANSPARENT, render_pass, render_bind_group_camera, camera_buffer_stride);
+    render_render_list(RENDER_LIST_TRANSPARENT, render_pass, render_camera_bind_group, camera_buffer_stride);
 
 #ifndef NDEBUG
     wgpuRenderPassEncoderPopDebugGroup(render_pass);
 #endif
 }
 
-void Renderer::render_2D(WGPURenderPassEncoder render_pass, const WGPUBindGroup& render_bind_group_camera)
+void Renderer::render_2D(WGPURenderPassEncoder render_pass, const WGPUBindGroup& render_camera_bind_group)
 {
 #ifndef NDEBUG
     wgpuRenderPassEncoderPushDebugGroup(render_pass, "2D");
 #endif
 
-    render_render_list(RENDER_LIST_2D, render_pass, render_bind_group_camera);
+    render_render_list(RENDER_LIST_2D, render_pass, render_camera_bind_group);
 
-    render_render_list(RENDER_LIST_2D_TRANSPARENT, render_pass, render_bind_group_camera);
+    render_render_list(RENDER_LIST_2D_TRANSPARENT, render_pass, render_camera_bind_group);
 
 #ifndef NDEBUG
     wgpuRenderPassEncoderPopDebugGroup(render_pass);
@@ -1285,11 +1292,19 @@ void Renderer::init_camera_bind_group()
     camera_2d_uniform.buffer_size = sizeof(sCameraData);
 
     std::vector<Uniform*> uniforms = { &camera_uniform };
-    render_bind_group_camera = webgpu_context->create_bind_group(uniforms, RendererStorage::get_shader_from_source(shaders::mesh_forward::source, shaders::mesh_forward::path), 1);
+    render_camera_bind_group = webgpu_context->create_bind_group(uniforms, RendererStorage::get_shader_from_source(shaders::mesh_forward::source, shaders::mesh_forward::path), 1);
+
+    WGPUBindGroupLayoutEntry entry = {};
+    entry.binding = 0;
+    entry.buffer.type = WGPUBufferBindingType_Uniform;
+    entry.buffer.hasDynamicOffset = true;
+    entry.visibility = WGPUShaderStage_Compute;
+
+    WGPUBindGroupLayout compute_camera_bind_group_layout = webgpu_context->create_bind_group_layout({ entry });
+    compute_camera_bind_group = webgpu_context->create_bind_group(uniforms, compute_camera_bind_group_layout);
 
     uniforms = { &camera_2d_uniform };
-    render_bind_group_camera_2d = webgpu_context->create_bind_group(uniforms, RendererStorage::get_shader_from_source(shaders::mesh_forward::source, shaders::mesh_forward::path), 1);
-
+    render_camera_bind_group_2d = webgpu_context->create_bind_group(uniforms, RendererStorage::get_shader_from_source(shaders::mesh_forward::source, shaders::mesh_forward::path), 1);
 }
 
 glm::vec3 Renderer::get_camera_eye()

@@ -246,6 +246,9 @@ add_subdirectory(libraries/spdlog)
 target_link_libraries(${PROJECT_NAME} PUBLIC spdlog::spdlog)
 set_property(TARGET spdlog PROPERTY FOLDER "External/spdlog")
 
+# happly
+target_include_directories(${PROJECT_NAME} PUBLIC ${WGPU_DIR_LIBS}/happly)
+
 # imgui
 
 # patch imgui to support emscripten build
