@@ -231,16 +231,9 @@ void SkeletonInstance3D::render() {
     Pose& pose = skeleton->get_current_pose();
 
     for (size_t i = 0; i < joint_nodes.size(); ++i) {
-        Transform joint_transform;
-        if (pose.get_parent(i) >= 0) {
-            joint_transform = pose.get_global_transform(pose.get_parent(i));
-        } else {
-            joint_transform = pose.get_global_transform(i);
-        }
-
-        joint_transform.set_scale({ 0.025f, 0.025f, 0.025f });
-
-        Renderer::instance->add_renderable(&joint_render_instance, joint_transform.get_model());
+        Transform joint_transform = pose.get_global_transform(i);
+        joint_transform.set_scale(glm::vec3(0.025f));
+        Renderer::instance->add_renderable(&joint_render_instance, get_global_model() * joint_transform.get_model());
     }
 
     MeshInstance3D::render();

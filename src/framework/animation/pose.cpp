@@ -60,12 +60,12 @@ Transform Pose::get_global_transform(size_t id)
     }
 
     Transform transform = joints[id];
-    for (int i = parents[id]; i >= 0; i = parents[i]) {
-        if (i >= joints.size()) {
-            break;
-        }
-        transform = Transform::combine(joints[i], transform);
+
+    int parent_id = get_parent(id);
+    if (parent_id >= 0) {
+        transform = Transform::combine(get_global_transform(parent_id), transform);
     }
+
     return transform;
 }
 
@@ -74,7 +74,8 @@ Transform Pose::operator[](size_t index)
     return get_global_transform(index);
 }
 
-Pose& Pose::operator=(const Pose& other) {
+Pose& Pose::operator=(const Pose& other)
+{
     if (this == &other) {
         return *this;
     }
