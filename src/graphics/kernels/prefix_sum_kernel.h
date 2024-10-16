@@ -29,5 +29,9 @@ class PrefixSumKernel {
 public:
 
     PrefixSumKernel(WGPUBuffer data, uint32_t data_byte_size, uint32_t count, glm::uvec2 workgroup_size = glm::uvec2(16, 16));
+    ~PrefixSumKernel();
 
+    std::vector<glm::uvec2> get_dispatch_chain();
+
+    void dispatch(WGPUComputePassEncoder compute_pass);
 };

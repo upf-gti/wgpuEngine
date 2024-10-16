@@ -5,6 +5,7 @@
 #include "uniform.h"
 
 #include <unordered_map>
+#include <string>
 
 class Shader;
 class Pipeline;
@@ -13,7 +14,10 @@ struct GLFWwindow;
 
 #define ENVIRONMENT_RESOLUTION 1024
 
-struct PipelineDescription {
+struct RenderPipelineDescription {
+
+    std::string vs_entry_point = "vs_main";
+    std::string fs_entry_point = "fs_main";
 
     WGPUCullMode cull_mode = WGPUCullMode_None;
     WGPUPrimitiveTopology topology = WGPUPrimitiveTopology_TriangleList;
@@ -67,6 +71,7 @@ struct WebGPUContext {
     Texture*                brdf_lut_texture = nullptr;
 
     WGPURequiredLimits      required_limits;
+    WGPUSupportedLimits     supported_limits;
 
     bool                    is_initialized = false;
 
@@ -106,11 +111,10 @@ struct WebGPUContext {
     void                   copy_texture_to_texture(WGPUTexture texture_src, WGPUTexture texture_dst, uint32_t src_mipmap_level, uint32_t dst_mipmap_level, const WGPUExtent3D& copy_size, WGPUCommandEncoder custom_command_encoder = nullptr);
 
     WGPURenderPipeline     create_render_pipeline(WGPUShaderModule render_shader_module, WGPUPipelineLayout pipeline_layout, const std::vector<WGPUVertexBufferLayout>& vertex_attributes,
-                                                  WGPUColorTargetState color_target, const PipelineDescription& description,
-                                                  const char* vs_entry_point = "vs_main", const char* fs_entry_point = "fs_main", std::vector< WGPUConstantEntry> constants = {});
+                                                  WGPUColorTargetState color_target, const RenderPipelineDescription& description, std::vector< WGPUConstantEntry> constants = {});
     void                   create_render_pipeline_async(WGPUShaderModule render_shader_module, WGPUPipelineLayout pipeline_layout, const std::vector<WGPUVertexBufferLayout>& vertex_attributes,
-                                                  WGPUColorTargetState color_target, WGPUCreateRenderPipelineAsyncCallback callback, void* userdata, const PipelineDescription& description,
-                                                  const char* vs_entry_point = "vs_main", const char* fs_entry_point = "fs_main", std::vector< WGPUConstantEntry> constants = {});
+                                                  WGPUColorTargetState color_target, WGPUCreateRenderPipelineAsyncCallback callback, void* userdata, const RenderPipelineDescription& description,
+                                                  std::vector< WGPUConstantEntry> constants = {});
 
     WGPUComputePipeline    create_compute_pipeline(WGPUShaderModule compute_shader_module, WGPUPipelineLayout pipeline_layout, const char* entry_point = "compute", std::vector< WGPUConstantEntry> constants = {});
     void                   create_compute_pipeline_async(WGPUShaderModule compute_shader_module, WGPUPipelineLayout pipeline_layout, WGPUCreateComputePipelineAsyncCallback callback, void* userdata, const char* entry_point = "compute", std::vector< WGPUConstantEntry> constants = {});

@@ -40,7 +40,7 @@ void compute_pipeline_creation_callback(WGPUCreatePipelineAsyncStatus status, WG
     }
 }
 
-void Pipeline::create_render_common(Shader* shader, const WGPUColorTargetState& p_color_target, const PipelineDescription& desc)
+void Pipeline::create_render_common(Shader* shader, const WGPUColorTargetState& p_color_target, const RenderPipelineDescription& desc)
 {
     const std::vector<WGPUBindGroupLayout> layouts_by_id = shader->get_bind_group_layouts();
     std::vector<WGPUBindGroupLayout> bind_group_layouts;
@@ -69,52 +69,53 @@ void Pipeline::create_compute_common(Shader* shader)
     }
 }
 
-void Pipeline::create_render(Shader* shader, const WGPUColorTargetState& p_color_target, const PipelineDescription& desc)
+void Pipeline::create_render(Shader* shader, const WGPUColorTargetState& p_color_target, const RenderPipelineDescription& desc, const std::vector<WGPUConstantEntry> &constants)
 {
     create_render_common(shader, p_color_target, desc);
 
     spdlog::info("Compiling render pipeline for shader {}", shader->get_path());
 
-	pipeline = webgpu_context->create_render_pipeline(shader->get_module(), shader->get_pipeline_layout(), shader->get_vertex_buffer_layouts(), p_color_target, desc);
+	pipeline = webgpu_context->create_render_pipeline(shader->get_module(), shader->get_pipeline_layout(), shader->get_vertex_buffer_layouts(), p_color_target, desc, constants);
 
 	shader->set_pipeline(this);
 
     loaded = true;
 }
 
-void Pipeline::create_render_async(Shader* shader, const WGPUColorTargetState& p_color_target, const PipelineDescription& desc)
+void Pipeline::create_render_async(Shader* shader, const WGPUColorTargetState& p_color_target, const RenderPipelineDescription& desc, const std::vector<WGPUConstantEntry> &constants)
 {
     create_render_common(shader, p_color_target, desc);
 
     spdlog::info("Compiling async render pipeline for shader {}", shader->get_path());
 
-    webgpu_context->create_render_pipeline_async(shader->get_module(), shader->get_pipeline_layout(), shader->get_vertex_buffer_layouts(), p_color_target, render_pipeline_creation_callback, (void*)this, desc);
+    webgpu_context->create_render_pipeline_async(shader->get_module(), shader->get_pipeline_layout(), shader->get_vertex_buffer_layouts(),
+        p_color_target, render_pipeline_creation_callback, (void*)this, desc, constants);
 
     shader->set_pipeline(this);
 
     async_compile = true;
 }
 
-void Pipeline::create_compute(Shader* shader)
+void Pipeline::create_compute(Shader* shader, const char* entry_point, const std::vector<WGPUConstantEntry> &constants)
 {
     create_compute_common(shader);
 
     spdlog::info("Compiling compute pipeline for shader {}", shader->get_path());
 
-	pipeline = webgpu_context->create_compute_pipeline(shader->get_module(), shader->get_pipeline_layout());
+	pipeline = webgpu_context->create_compute_pipeline(shader->get_module(), shader->get_pipeline_layout(), entry_point, constants);
 
 	shader->set_pipeline(this);
 
     loaded = true;
 }
 
-void Pipeline::create_compute_async(Shader* shader)
+void Pipeline::create_compute_async(Shader* shader, const char* entry_point, const std::vector<WGPUConstantEntry> &constants)
 {
     create_compute_common(shader);
 
     spdlog::info("Compiling async compute pipeline for shader {}", shader->get_path());
 
-    webgpu_context->create_compute_pipeline_async(shader->get_module(), shader->get_pipeline_layout(), compute_pipeline_creation_callback, (void*)this);
+    webgpu_context->create_compute_pipeline_async(shader->get_module(), shader->get_pipeline_layout(), compute_pipeline_creation_callback, (void*)this, entry_point, constants);
 
     shader->set_pipeline(this);
 

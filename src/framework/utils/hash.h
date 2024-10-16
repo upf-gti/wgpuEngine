@@ -16,7 +16,7 @@ inline void hash_combine(std::size_t& seed, std::size_t v, const Rest... rest)
 struct RenderPipelineKey {
     const Shader* shader;
     WGPUColorTargetState color_target;
-    PipelineDescription description;
+    RenderPipelineDescription description;
     WGPUPipelineLayout pipeline_layout;
 
     bool operator==(const RenderPipelineKey& other) const;

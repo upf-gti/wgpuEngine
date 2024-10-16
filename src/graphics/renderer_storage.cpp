@@ -734,7 +734,7 @@ RenderPipelineKey RendererStorage::get_render_pipeline_key(Material* material)
 
     WebGPUContext* webgpu_context = Renderer::instance->get_webgpu_context();
 
-    PipelineDescription description = {};
+    RenderPipelineDescription description = {};
 
     switch (material->get_topology_type()) {
     case TOPOLOGY_TRIANGLE_LIST:

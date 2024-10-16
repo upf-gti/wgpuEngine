@@ -208,6 +208,8 @@ int WebGPUContext::initialize(WGPURequestAdapterOptions adapter_opts, WGPURequir
     
     device = requestDevice(adapter, &device_desc);
 
+    wgpuDeviceGetLimits(device, &supported_limits);
+
 #ifdef __EMSCRIPTEN__
 
     wgpuDeviceSetUncapturedErrorCallback(device, PrintDeviceError, nullptr);
@@ -949,12 +951,11 @@ void WebGPUContext::copy_texture_to_texture(WGPUTexture texture_src, WGPUTexture
 }
 
 WGPURenderPipeline WebGPUContext::create_render_pipeline(WGPUShaderModule render_shader_module, WGPUPipelineLayout pipeline_layout, const std::vector<WGPUVertexBufferLayout>& vertex_attributes,
-    WGPUColorTargetState color_target, const PipelineDescription& description,
-    const char* vs_entry_point, const char* fs_entry_point, std::vector< WGPUConstantEntry> constants)
+    WGPUColorTargetState color_target, const RenderPipelineDescription& description, std::vector< WGPUConstantEntry> constants)
 {    
     WGPUVertexState vertex_state = {};
     vertex_state.module = render_shader_module;
-    vertex_state.entryPoint = { vs_entry_point, WGPU_STRLEN };
+    vertex_state.entryPoint = { description.vs_entry_point.c_str(), description.vs_entry_point.size() };
     vertex_state.constantCount = constants.size();
     vertex_state.constants = constants.data();
     vertex_state.bufferCount = static_cast<uint32_t>(vertex_attributes.size());
@@ -962,7 +963,7 @@ WGPURenderPipeline WebGPUContext::create_render_pipeline(WGPUShaderModule render
 
     WGPUFragmentState fragment_state = {};
     fragment_state.module = render_shader_module;
-    fragment_state.entryPoint = { fs_entry_point, WGPU_STRLEN };
+    fragment_state.entryPoint = { description.fs_entry_point.c_str(), description.fs_entry_point.size() };
     fragment_state.constantCount = constants.size();
     fragment_state.constants = constants.data();
     fragment_state.targetCount = 1;
@@ -1009,22 +1010,21 @@ WGPURenderPipeline WebGPUContext::create_render_pipeline(WGPUShaderModule render
 }
 
 void WebGPUContext::create_render_pipeline_async(WGPUShaderModule render_shader_module, WGPUPipelineLayout pipeline_layout, const std::vector<WGPUVertexBufferLayout>& vertex_attributes,
-    WGPUColorTargetState color_target, WGPUCreateRenderPipelineAsyncCallback callback, void* userdata, const PipelineDescription& description,
-    const char* vs_entry_point, const char* fs_entry_point, std::vector< WGPUConstantEntry> constants)
+    WGPUColorTargetState color_target, WGPUCreateRenderPipelineAsyncCallback callback, void* userdata, const RenderPipelineDescription& description, std::vector< WGPUConstantEntry> constants)
 {
     WGPUVertexState vertex_state = {};
     vertex_state.module = render_shader_module;
-    vertex_state.entryPoint = { vs_entry_point, WGPU_STRLEN };
-    vertex_state.constantCount = 0;
-    vertex_state.constants = NULL;
+    vertex_state.entryPoint = { description.vs_entry_point.c_str(), description.vs_entry_point.size() };
+    vertex_state.constantCount = constants.size();
+    vertex_state.constants = constants.data();
     vertex_state.bufferCount = static_cast<uint32_t>(vertex_attributes.size());
     vertex_state.buffers = vertex_attributes.data();
 
     WGPUFragmentState fragment_state = {};
     fragment_state.module = render_shader_module;
-    fragment_state.entryPoint = { fs_entry_point, WGPU_STRLEN };
-    fragment_state.constantCount = 0;
-    fragment_state.constants = NULL;
+    fragment_state.entryPoint = { description.fs_entry_point.c_str(), description.fs_entry_point.size() };
+    fragment_state.constantCount = constants.size();
+    fragment_state.constants = constants.data();
     fragment_state.targetCount = 1;
     fragment_state.targets = &color_target;
 
