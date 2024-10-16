@@ -77,7 +77,9 @@ void Material::set_diffuse_texture(Texture* diffuse_texture)
             this->diffuse_texture->unref();
         }
 
-        diffuse_texture->ref();
+        if (diffuse_texture) {
+            diffuse_texture->ref();
+        }
     }
 
     this->diffuse_texture = diffuse_texture;

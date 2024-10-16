@@ -53,6 +53,21 @@ namespace ui {
         TextureButton2D(const std::string& sg, const std::string& texture_path, uint32_t parameter_flags, const glm::vec2& pos, const glm::vec2& size = glm::vec2(BUTTON_SIZE));
     };
 
+    class ConfirmButton2D : public TextureButton2D {
+
+        bool confirm_pending = false;
+        std::string texture_path;
+        float confirm_timer = 0.0f;
+
+    public:
+
+        ConfirmButton2D(const std::string& sg, const std::string& texture_path, uint32_t parameter_flags = 0);
+        ConfirmButton2D(const std::string& sg, const std::string& texture_path, uint32_t parameter_flags, const glm::vec2& pos, const glm::vec2& size = glm::vec2(BUTTON_SIZE));
+
+        void update(float delta_time) override;
+        bool on_input(sInputData data) override;
+    };
+
     class ButtonSubmenu2D : public TextureButton2D {
     public:
 

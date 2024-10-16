@@ -293,7 +293,7 @@ namespace ui {
         }
 
         // Text label
-        if (!(flags & SKIP_NAME)) {
+        else if (!(flags & SKIP_NAME)) {
             assert(name.size() > 0 && "No signal name size!");
 
             // Use a prettified text..
@@ -305,6 +305,87 @@ namespace ui {
         }
 
         set_visibility(!(flags& HIDDEN));
+    }
+
+    ConfirmButton2D::ConfirmButton2D(const std::string& sg, const std::string& texture_path, uint32_t flags)
+        : TextureButton2D(sg, texture_path, flags) { }
+
+    ConfirmButton2D::ConfirmButton2D(const std::string& sg, const std::string& texture_path, uint32_t flags, const glm::vec2& pos, const glm::vec2& size)
+        : TextureButton2D(sg, texture_path, flags, pos, size) {
+
+        this->texture_path = texture_path;
+
+        text_2d = new Text2D("ok", { 0.0f, size.y * 0.5f - 9.0f }, 18.f, SKIP_TEXT_RECT);
+        float w = text_2d->text_entity->get_text_width("ok");
+        text_2d->translate({ size.x * 0.5f - w * 0.5f, 0.0f });
+        text_2d->set_visibility(false);
+        add_child(text_2d);
+
+    }
+
+    void ConfirmButton2D::update(float delta_time)
+    {
+        Button2D::update(delta_time);
+
+        text_2d->set_visibility(confirm_pending);
+
+        if (confirm_pending) {
+            confirm_timer += delta_time;
+
+            if (confirm_timer > 2.0f) {
+                Material* material = quad_mesh->get_surface_material_override(quad_mesh->get_surface(0));
+                material->set_diffuse_texture(RendererStorage::get_texture(texture_path, TEXTURE_STORAGE_UI));
+                confirm_pending = false;
+                confirm_timer = 0.0f;
+            }
+        }
+    }
+
+    bool ConfirmButton2D::on_input(sInputData data)
+    {
+        IO::set_hover(this, data);
+
+        if (disabled) {
+            return true;
+        }
+
+        Panel2D::on_input(data);
+
+        // Internally, use on release mouse, not on press..
+        if (data.was_released)
+        {
+            if (!on_pressed()) {
+
+                if (confirm_pending) {
+                    confirm_pending = false;
+                    text_2d->set_visibility(false);
+                    // Trigger callback
+                    Node::emit_signal(name, (void*)this);
+                    // Visibility stuff..
+                    Node::emit_signal(name + "@pressed", (void*)nullptr);
+                }
+                else {
+                    confirm_pending = true;
+
+                    Material* material = quad_mesh->get_surface_material_override(quad_mesh->get_surface(0));
+                    material->set_diffuse_texture(nullptr);
+                }
+
+            }
+        }
+
+        target_scale = 1.1f;
+
+        // Update uniforms
+        ui_data.hover_info.x = 1.0f;
+        ui_data.hover_info.y = glm::lerp(0.0f, 1.0f, glm::clamp(scaling.x / target_scale, 0.0f, 1.0f));
+        ui_data.press_info.x = data.is_pressed ? 1.0f : 0.0f;
+
+        on_hover = true;
+
+        update_ui_data();
+
+        return true;
     }
 
     /*
