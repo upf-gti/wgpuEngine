@@ -7,6 +7,8 @@
 #include "graphics/surface.h"
 #include "graphics/pipeline.h"
 
+#include "framework/camera/camera.h"
+
 #include "glm/mat4x4.hpp"
 
 #include "backends/imgui_impl_wgpu.h"
@@ -133,6 +135,7 @@ protected:
         glm::vec2 dummy;
     };
 
+    eCameraType camera_type = CAMERA_FLYOVER;
     sCameraData camera_data;
     sCameraData camera_2d_data;
 
@@ -211,6 +214,9 @@ public:
     virtual void render();
 
     void submit_global_command_encoder();
+
+    void set_camera_type(eCameraType camera_type);
+    eCameraType get_camera_type();
 
     void set_custom_pass_user_data(void* user_data);
 

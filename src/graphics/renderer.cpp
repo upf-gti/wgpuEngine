@@ -32,6 +32,7 @@
 #include "framework/nodes/mesh_instance_3d.h"
 #include "framework/camera/camera_2d.h"
 #include "framework/camera/flyover_camera.h"
+#include "framework/camera/orbit_camera.h"
 #include "framework/input.h"
 #include "framework/ui/io.h"
 
@@ -177,14 +178,6 @@ int Renderer::initialize(GLFWwindow* window, bool use_mirror_screen)
         init_mirror_pipeline();
     }
 #endif
-
-    // Main 3D Camera
-
-    camera = new FlyoverCamera();
-    camera->set_perspective(glm::radians(45.0f), webgpu_context->render_width / static_cast<float>(webgpu_context->render_height), z_near, z_far);
-    camera->look_at(glm::vec3(0.0f, 0.2f, 0.8f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-    camera->set_mouse_sensitivity(0.003f);
-    camera->set_speed(0.5f);
 
     // Orthographic camera for ui rendering
 
@@ -370,6 +363,38 @@ void Renderer::submit_global_command_encoder()
     wgpuCommandBufferRelease(commands);
     wgpuCommandEncoderRelease(global_command_encoder);
 
+}
+
+void Renderer::set_camera_type(eCameraType camera_type)
+{
+    this->camera_type = camera_type;
+
+    Camera* old_camera = camera;
+    if (camera_type == CAMERA_FLYOVER) {
+        camera = new FlyoverCamera();
+    }
+    else if (camera_type == CAMERA_ORBIT) {
+        camera = new OrbitCamera();
+    }
+
+    camera->set_perspective(glm::radians(45.0f), webgpu_context->render_width / static_cast<float>(webgpu_context->render_height), z_near, z_far);
+
+    if (old_camera) {
+        camera->look_at(old_camera->get_eye(), old_camera->get_center(), old_camera->get_up());
+    }
+    else {
+        camera->look_at(glm::vec3(0.0f, 0.2f, 0.8f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    }
+
+    camera->set_mouse_sensitivity(0.003f);
+    camera->set_speed(0.5f);
+
+    delete old_camera;
+}
+
+eCameraType Renderer::get_camera_type()
+{
+    return camera_type;
 }
 
 void Renderer::set_custom_pass_user_data(void* user_data)

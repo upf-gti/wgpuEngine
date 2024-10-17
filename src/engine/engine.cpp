@@ -142,6 +142,8 @@ int Engine::initialize(Renderer* renderer, sEngineConfiguration configuration)
         return 1;
     }
 
+    renderer->set_camera_type(configuration.camera_type);
+
     Input::init(window, renderer, use_glfw);
     IO::initialize();
 
