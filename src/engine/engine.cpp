@@ -153,6 +153,10 @@ int Engine::initialize(Renderer* renderer, sEngineConfiguration configuration)
     init_imgui(window);
     init_shader_watchers();
 
+    if (configuration.window_title.size()) {
+        glfwSetWindowTitle(renderer->get_glfw_window(), configuration.window_title.c_str());
+    }
+
     spdlog::info("Engine initialized");
 
     return 0;
