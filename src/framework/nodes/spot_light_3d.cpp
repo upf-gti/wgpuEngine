@@ -54,6 +54,21 @@ void SpotLight3D::render()
     Renderer::instance->add_renderable(debug_mesh, get_global_model() * debug_mesh->get_global_model());
 }
 
+void SpotLight3D::clone(Node* new_node, bool copy)
+{
+    Light3D::clone(new_node, copy);
+
+    SpotLight3D* new_light = static_cast<SpotLight3D*>(new_node);
+
+    if (!copy) {
+        // TODO
+    }
+    else {
+        new_light->set_inner_cone_angle(inner_cone_angle);
+        new_light->set_outer_cone_angle(outer_cone_angle);
+    }
+}
+
 void SpotLight3D::render_gui()
 {
     bool changed = false;

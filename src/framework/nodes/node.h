@@ -91,8 +91,9 @@ public:
     virtual void serialize(std::ofstream& binary_scene_file);
     virtual void parse(std::ifstream& binary_scene_file);
 
-    NodeType get_type() const { return type; }
     std::string get_name() const { return name; }
+    NodeType get_type() const { return type; }
+    std::string get_node_type() const { return node_type; }
     virtual std::vector<Node*>& get_children() { return children; }
     AABB get_aabb() const;
 
@@ -109,6 +110,7 @@ public:
 
     virtual void disable_2d();
 
+    virtual void clone(Node* new_node, bool copy = true);
     virtual void release();
 
     /*

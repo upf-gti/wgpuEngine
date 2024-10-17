@@ -33,6 +33,26 @@ void Light3D::render()
     Node3D::render();
 }
 
+void Light3D::clone(Node* new_node, bool copy)
+{
+    Node3D::clone(new_node, copy);
+
+    Light3D* new_light = static_cast<Light3D*>(new_node);
+
+    if (!copy) {
+        // TODO
+    }
+    else {
+        new_light->set_intensity(intensity);
+        new_light->set_color(color);
+        new_light->set_range(range);
+        // Fading
+        // ...
+        // Shadows
+        // ...
+    }
+}
+
 void Light3D::render_gui()
 {
     if (ImGui::TreeNodeEx("Light3D", ImGuiTreeNodeFlags_DefaultOpen))

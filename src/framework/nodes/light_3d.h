@@ -38,6 +38,8 @@ public:
 
     virtual void render() override;
 
+    void clone(Node* new_node, bool copy = true) override;
+
     void render_gui() override;
 
     virtual sLightUniformData get_uniform_data() = 0;

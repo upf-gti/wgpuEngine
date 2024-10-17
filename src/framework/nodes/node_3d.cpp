@@ -243,6 +243,15 @@ bool Node3D::test_ray_collision(const glm::vec3& ray_origin, const glm::vec3& ra
     return false;
 }
 
+void Node3D::clone(Node* new_node, bool copy)
+{
+    Node::clone(new_node, copy);
+
+    Node3D* new_node_3d = static_cast<Node3D*>(new_node);
+
+    new_node_3d->set_transform(get_transform());
+}
+
 void Node3D::select()
 {
     selected = true;

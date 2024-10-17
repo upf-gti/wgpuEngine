@@ -162,6 +162,12 @@ std::string Node::find_path(const std::string& node_name, const std::string& cur
     return ""; // Node not found
 }
 
+void Node::clone(Node* new_node, bool copy)
+{
+    assert(new_node);
+    new_node->set_name(get_name() + (copy ? "_copy" : "_instance"));
+}
+
 void Node::release()
 {
     for (Node* child : children) {

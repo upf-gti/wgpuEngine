@@ -64,6 +64,8 @@ public:
 
     virtual bool test_ray_collision(const glm::vec3& ray_origin, const glm::vec3& ray_direction, float& distance);
 
+    void clone(Node* new_node, bool copy = true) override;
+
     void select();
     void unselect();
 
