@@ -31,18 +31,8 @@
 #include <emscripten/bind.h>
 
 EM_JS(void, on_engine_initialized, (), {
-    load_app();
+    loadApp();
 });
-
-void call_on_engine_initialized()
-{
-    on_engine_initialized();
-}
-
-EMSCRIPTEN_BINDINGS(module)
-{
-    emscripten::function("call_on_engine_initialized", &call_on_engine_initialized);
-}
 
 EM_JS(int, canvas_get_width, (), {
   return canvas.clientWidth;
@@ -61,7 +51,7 @@ static EM_BOOL on_web_display_size_changed(int event_type,
 }
 
 #else
-void call_on_engine_initialized() {}
+void on_engine_initialized() {}
 #endif
 
 Engine* Engine::instance = nullptr;
@@ -251,7 +241,7 @@ void Engine::start_loop()
     // Submit any initialization commands
     renderer->submit_global_command_encoder();
 
-    call_on_engine_initialized();
+    on_engine_initialized();
 
 #ifdef __EMSCRIPTEN__
     emscripten_set_main_loop_arg(
