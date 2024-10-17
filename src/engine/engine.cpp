@@ -25,15 +25,33 @@
 #include <GLFW/glfw3.h>
 
 #ifdef __EMSCRIPTEN__
+
 #include <emscripten.h>
 #include <emscripten/html5.h>
 #include <emscripten/bind.h>
+
+EM_JS(void, on_engine_initialized, (), {
+    load_app();
+});
+
+void call_on_engine_initialized()
+{
+    on_engine_initialized();
+}
+
+EMSCRIPTEN_BINDINGS(module)
+{
+    emscripten::function("call_on_engine_initialized", &call_on_engine_initialized);
+}
+
 EM_JS(int, canvas_get_width, (), {
   return canvas.clientWidth;
-    });
+});
+
 EM_JS(int, canvas_get_height, (), {
   return canvas.clientHeight;
-    });
+});
+
 static EM_BOOL on_web_display_size_changed(int event_type,
     const EmscriptenUiEvent* ui_event, void* user_data)
 {
@@ -41,6 +59,9 @@ static EM_BOOL on_web_display_size_changed(int event_type,
     engine->resize_window(ui_event->windowInnerWidth, ui_event->windowInnerHeight);
     return true;
 }
+
+#else
+void call_on_engine_initialized() {}
 #endif
 
 Engine* Engine::instance = nullptr;
@@ -229,6 +250,8 @@ void Engine::start_loop()
 {
     // Submit any initialization commands
     renderer->submit_global_command_encoder();
+
+    call_on_engine_initialized();
 
 #ifdef __EMSCRIPTEN__
     emscripten_set_main_loop_arg(
