@@ -142,3 +142,34 @@ public:
         return true;
     }
 };
+
+class NodeFactory {
+public:
+
+    static NodeFactory* instance;
+
+    std::unordered_map<std::string, std::function<Node* ()>> registry;
+
+    NodeFactory();
+
+    void register_class(const std::string& name, std::function<Node* ()> constructor) {
+        registry[name] = constructor;
+    }
+
+    Node* create_node(const std::string& name) {
+        if (registry.find(name) != registry.end()) {
+            return registry[name]();
+        }
+        return nullptr;
+    }
+
+    static NodeFactory* get_instance() {
+        if (instance == nullptr) {
+            instance = new NodeFactory();
+        }
+        return instance;
+    }
+};
+
+#define REGISTER_NODE_TYPE(node_type) \
+    NodeFactory::get_instance()->register_class(#node_type, []() -> Node* { return new node_type(); });

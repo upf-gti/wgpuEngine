@@ -3,6 +3,7 @@
 #include "framework/input.h"
 #include "framework/utils/utils.h"
 
+#include "default_node_factory.h"
 #include "node_binary_format.h"
 
 #include "engine/engine.h"
@@ -66,8 +67,6 @@ void Node::parse(std::ifstream& binary_scene_file)
     name.resize(name_size);
     binary_scene_file.read(&name[0], name_size);
 
-    Engine* engine = Engine::instance;
-
     std::string child_node_type;
 
     for (int i = 0; i < header.children_count; ++i) {
@@ -78,7 +77,7 @@ void Node::parse(std::ifstream& binary_scene_file)
         child_node_type.resize(node_type_size);
         binary_scene_file.read(&child_node_type[0], node_type_size);
 
-        Node* child = engine->node_factory(node_type);
+        Node* child = default_node_factory(node_type);
         child->parse(binary_scene_file);
         children.push_back(child);
     }

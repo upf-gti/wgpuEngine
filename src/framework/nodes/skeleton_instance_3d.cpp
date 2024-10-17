@@ -19,6 +19,8 @@
 
 SkeletonInstance3D::SkeletonInstance3D()
 {
+    node_type = "SkeletonInstance3D";
+
     set_frustum_culling_enabled(false);
 
     Material* joint_material = new Material();

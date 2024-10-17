@@ -2,28 +2,43 @@
 
 #include "node_2d.h"
 #include "mesh_instance_3d.h"
+#include "skeleton_instance_3d.h"
 #include "environment_3d.h"
+#include "omni_light_3d.h"
+#include "directional_light_3d.h"
+#include "spot_light_3d.h"
+
+#include "assert.h"
+
+NodeFactory* NodeFactory::instance = nullptr;
+
+NodeFactory::NodeFactory()
+{
+    assert(instance == nullptr);
+    instance = this;
+
+    REGISTER_NODE_TYPE(Node)
+    REGISTER_NODE_TYPE(Node2D)
+    REGISTER_NODE_TYPE(Node3D)
+    REGISTER_NODE_TYPE(MeshInstance3D)
+    REGISTER_NODE_TYPE(Environment3D)
+    REGISTER_NODE_TYPE(OmniLight3D)
+    REGISTER_NODE_TYPE(DirectionalLight3D)
+    REGISTER_NODE_TYPE(SpotLight3D)
+}
 
 Node* default_node_factory(const std::string& node_type)
 {
-    Node* node = nullptr;
+    std::string node_class = node_type;
 
-    if (node_type == "Node") {
-        node = new Node();
-    } else
-    if (node_type == "Node2D") {
-        node = new Node2D();
-    } else
-    if (node_type == "Node3D") {
-        node = new Node3D();
-    } else
-    if (node_type == "MeshInstance3D") {
-        node = new MeshInstance3D();
-    } else
-    if (node_type == "Environment3D") {
-        node = new Environment3D();
+    // legacy
+    if (node_class == "SculptInstance") {
+        node_class = "SculptNode";
     }
-    else {
+
+    Node* node = NodeFactory::get_instance()->create_node(node_class);
+
+    if (!node) {
         assert(0);
     }
 

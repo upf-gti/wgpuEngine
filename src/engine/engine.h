@@ -50,8 +50,6 @@ public:
 
     virtual void start_loop();
 
-    Node* (*node_factory)(const std::string& node_type);
-
     void add_node(Node* node);
 
     bool get_openxr_available();

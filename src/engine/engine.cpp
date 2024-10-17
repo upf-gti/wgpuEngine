@@ -73,8 +73,6 @@ void resize_callback(GLFWwindow* window, int width, int height)
 Engine::Engine()
 {
     instance = this;
-
-    node_factory = default_node_factory;
 }
 
 Engine::~Engine()
