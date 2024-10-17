@@ -11,6 +11,7 @@ class Node;
 struct sEngineConfiguration {
     uint16_t window_width = 1600;
     uint16_t window_height = 900;
+    std::string window_title = "";
 };
 
 class Engine {
