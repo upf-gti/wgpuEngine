@@ -559,8 +559,7 @@ void read_mesh(const tinygltf::Model& model, const tinygltf::Node& node, Node3D*
 
     AABB entity_aabb;
     for (const Surface* surface : entity_mesh->get_surfaces()) {
-        const AABB& surface_aabb = surface->get_aabb();
-
+        const AABB& surface_aabb = surface->get_aabb().transform(entity_mesh->get_global_model());
         entity_aabb = merge_aabbs(entity_aabb, surface_aabb);
     }
 
@@ -697,12 +696,6 @@ void parse_model_nodes(tinygltf::Model& model, int parent_id, uint32_t node_id, 
 {
     tinygltf::Node& node = model.nodes[node_id];
 
-    if (node.mesh >= 0 && node.mesh < model.meshes.size()) {
-        read_mesh(model, node, entity, texture_cache);
-        AABB parent_aabb = merge_aabbs(entity->get_aabb(), parent_node->get_aabb());
-        parent_node->set_aabb(parent_aabb);
-    }
-
     // Set model matrix
     if (!node.matrix.empty())
     {
@@ -720,6 +713,12 @@ void parse_model_nodes(tinygltf::Model& model, int parent_id, uint32_t node_id, 
         read_transform(node, transform);
 
         entity->set_transform(transform);
+    }
+
+    if (node.mesh >= 0 && node.mesh < model.meshes.size()) {
+        read_mesh(model, node, entity, texture_cache);
+        AABB parent_aabb = merge_aabbs(entity->get_aabb(), parent_node->get_aabb());
+        parent_node->set_aabb(parent_aabb);
     }
 
     // Parse children

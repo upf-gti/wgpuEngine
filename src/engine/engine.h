@@ -1,6 +1,6 @@
 #pragma once
 
-#include <string>
+#include "framework/camera/camera.h"
 
 struct GLFWwindow;
 class FileWatcher;
@@ -12,6 +12,7 @@ struct sEngineConfiguration {
     uint16_t window_width = 1600;
     uint16_t window_height = 900;
     std::string window_title = "";
+    eCameraType camera_type = CAMERA_FLYOVER;
 };
 
 class Engine {
