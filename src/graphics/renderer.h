@@ -26,6 +26,7 @@ class RenderdocCapture;
 class RendererStorage;
 class MeshInstance;
 class MeshInstance3D;
+class GSNode;
 struct GLFWwindow;
 struct WebGPUContext;
 struct OpenXRContext;
@@ -110,6 +111,7 @@ protected:
     enum eRenderListType {
         RENDER_LIST_OPAQUE,
         RENDER_LIST_TRANSPARENT,
+        RENDER_LIST_SPLATS,
         RENDER_LIST_2D,
         RENDER_LIST_2D_TRANSPARENT,
         RENDER_LIST_SIZE
@@ -149,6 +151,9 @@ protected:
     // Entities to be rendered this frame
     std::vector<sRenderListData> render_entity_list;
 
+    // Gaussian Splatting scenes to render
+    std::vector<GSNode*> gs_scenes_list;
+
     std::vector<sRenderData> render_list[RENDER_LIST_SIZE];
 
     // Bind group per shader
@@ -172,6 +177,8 @@ protected:
     Uniform lights_buffer;
     Uniform num_lights_buffer;
 
+    Pipeline gs_render_pipeline;
+    Shader* gs_render_shader = nullptr;
 
     WGPUQuerySet timestamp_query_set;
     uint8_t maximum_query_sets = 16;
@@ -248,6 +255,7 @@ public:
     void prepare_instancing(const glm::vec3& camera_position);
     void render_opaque(WGPURenderPassEncoder render_pass, const WGPUBindGroup& render_camera_bind_group, uint32_t camera_buffer_stride = 0);
     void render_transparent(WGPURenderPassEncoder render_pass, const WGPUBindGroup& render_camera_bind_group, uint32_t camera_buffer_stride = 0);
+    void render_splats(WGPURenderPassEncoder render_pass, const WGPUBindGroup& render_camera_bind_group, uint32_t camera_buffer_stride = 0);
     void render_2D(WGPURenderPassEncoder render_pass, const WGPUBindGroup& render_camera_bind_group);
 
     bool get_openxr_available() { return is_openxr_available; }
@@ -296,6 +304,7 @@ public:
     void set_required_limits(const WGPURequiredLimits& required_limits) { webgpu_context->required_limits = required_limits; }
 
     void add_renderable(MeshInstance* mesh_instance, const glm::mat4x4& global_matrix);
+    void add_splat_scene(GSNode* gs_scene);
     void clear_renderables();
 
     void update_lights();

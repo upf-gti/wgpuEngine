@@ -110,7 +110,7 @@ void GSNode::initialize(uint32_t splat_count)
 
 void GSNode::render()
 {
-
+    Renderer::instance->add_splat_scene(this);
 }
 
 void GSNode::update(float delta_time)

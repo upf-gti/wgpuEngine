@@ -30,6 +30,7 @@
 
 #include "framework/parsers/parse_scene.h"
 #include "framework/nodes/mesh_instance_3d.h"
+#include "framework/nodes/gs_node.h"
 #include "framework/camera/camera_2d.h"
 #include "framework/camera/flyover_camera.h"
 #include "framework/camera/orbit_camera.h"
@@ -39,6 +40,7 @@
 #include <algorithm>
 
 #include "shaders/quad_mirror.wgsl.gen.h"
+#include "shaders/gaussian_splatting/gs_render.wgsl.gen.h"
 
 #include "glm/gtx/quaternion.hpp"
 
@@ -187,6 +189,35 @@ int Renderer::post_initialize()
         init_mirror_pipeline();
     }
 #endif
+
+    WGPUTextureFormat swapchain_format = is_openxr_available ? webgpu_context->xr_swapchain_format : webgpu_context->swapchain_format;
+
+    WGPUColorTargetState color_target = {};
+    color_target.format = swapchain_format;
+    color_target.blend = nullptr;
+    color_target.writeMask = WGPUColorWriteMask_All;
+
+    RenderPipelineDescription desc = { .topology = WGPUPrimitiveTopology_TriangleStrip };
+
+    WGPUBlendState* blend_state = new WGPUBlendState;
+    blend_state->color = {
+            .operation = WGPUBlendOperation_Add,
+            .srcFactor = WGPUBlendFactor_SrcAlpha,
+            .dstFactor = WGPUBlendFactor_OneMinusSrcAlpha,
+    };
+    blend_state->alpha = {
+            .operation = WGPUBlendOperation_Add,
+            .srcFactor = WGPUBlendFactor_Zero,
+            .dstFactor = WGPUBlendFactor_One,
+    };
+
+    color_target.blend = blend_state;
+
+    desc.depth_write = WGPUOptionalBool_False;
+    desc.blending_enabled = true;
+
+    gs_render_shader = RendererStorage::get_shader_from_source(shaders::gs_render::source, shaders::gs_render::path);
+    gs_render_pipeline.create_render_async(gs_render_shader, color_target, desc);
 
     RendererStorage::register_basic_surfaces();
 
@@ -510,6 +541,8 @@ void Renderer::render_screen(WGPUTextureView screen_surface_texture_view)
         if (custom_post_transparent_pass) {
             custom_post_transparent_pass(custom_pass_user_data, render_pass, 0);
         }
+
+        render_splats(render_pass, render_camera_bind_group);
 
         if (custom_pre_2d_pass) {
             custom_pre_2d_pass(custom_pass_user_data, render_pass, 0);
@@ -1109,6 +1142,32 @@ void Renderer::render_transparent(WGPURenderPassEncoder render_pass, const WGPUB
 #endif
 }
 
+void Renderer::render_splats(WGPURenderPassEncoder render_pass, const WGPUBindGroup& render_camera_bind_group, uint32_t camera_buffer_stride)
+{
+#ifndef NDEBUG
+    wgpuRenderPassEncoderPushDebugGroup(render_pass, "Transparent");
+#endif
+
+    for (GSNode* gs_node : gs_scenes_list) {
+
+        if (!gs_render_pipeline.set(render_pass)) {
+            continue;
+        }
+
+        wgpuRenderPassEncoderSetBindGroup(render_pass, 0, gs_node->get_render_bindgroup(), 0, nullptr);
+        wgpuRenderPassEncoderSetBindGroup(render_pass, 1, render_camera_bind_group, 1, &camera_buffer_stride);
+
+        wgpuRenderPassEncoderSetVertexBuffer(render_pass, 0, gs_node->get_render_buffer(), 0, gs_node->get_splats_render_bytes_size());
+        wgpuRenderPassEncoderSetVertexBuffer(render_pass, 1, gs_node->get_ids_buffer(), 0, gs_node->get_ids_render_bytes_size());
+
+        wgpuRenderPassEncoderDraw(render_pass, 4, gs_node->get_splat_count(), 0, 0);
+    }
+
+#ifndef NDEBUG
+    wgpuRenderPassEncoderPopDebugGroup(render_pass);
+#endif
+}
+
 void Renderer::render_2D(WGPURenderPassEncoder render_pass, const WGPUBindGroup& render_camera_bind_group)
 {
 #ifndef NDEBUG
@@ -1144,9 +1203,15 @@ void Renderer::add_renderable(MeshInstance* mesh_instance, const glm::mat4x4& gl
     render_entity_list.push_back({ mesh_instance, global_matrix });
 }
 
+void Renderer::add_splat_scene(GSNode* gs_scene)
+{
+    gs_scenes_list.push_back(gs_scene);
+}
+
 void Renderer::clear_renderables()
 {
     render_entity_list.clear();
+    gs_scenes_list.clear();
 
     for (int i = 0; i < RENDER_LIST_SIZE; ++i) {
         render_list[i].clear();
