@@ -53,6 +53,8 @@ class GSNode : public Node3D {
     Shader* basis_shader = nullptr;
     Pipeline basis_pipeline;
 
+    bool covariance_calculated = false;
+
 public:
 
     bool is_skinned = false;
@@ -79,11 +81,13 @@ public:
         return render_bindgroup;
     }
 
+    bool is_covariance_calculated() { return covariance_calculated; }
+
     void set_render_buffers(const std::vector<glm::vec4>& positions, const std::vector<glm::vec4>& colors);
     void set_covariance_buffers(const std::vector<glm::quat>& rotations, const std::vector<glm::vec4>& scales);
 
     void calculate_basis(WGPUComputePassEncoder compute_pass);
-    void calculate_covariance();
+    void calculate_covariance(WGPUComputePassEncoder compute_pass);
 
     uint32_t get_splat_count();
     uint32_t get_padded_splat_count();

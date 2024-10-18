@@ -215,6 +215,7 @@ int Renderer::post_initialize()
 
     desc.depth_write = WGPUOptionalBool_False;
     desc.blending_enabled = true;
+    desc.sample_count = msaa_count;
 
     gs_render_shader = RendererStorage::get_shader_from_source(shaders::gs_render::source, shaders::gs_render::path);
     gs_render_pipeline.create_render_async(gs_render_shader, color_target, desc);

@@ -188,14 +188,18 @@ void RadixSortKernel::dispatch(WGPUComputePassEncoder compute_pass)
         PipelineData* block_sum_pipeline = pipelines[i];
         PipelineData* reorder_pipeline = pipelines[i + 1];
 
-        block_sum_pipeline->pipeline.set(compute_pass);
+        if (!block_sum_pipeline->pipeline.set(compute_pass)) {
+            return;
+        }
 
         wgpuComputePassEncoderSetBindGroup(compute_pass, 0, block_sum_pipeline->bind_group, 0, nullptr);
         wgpuComputePassEncoderDispatchWorkgroups(compute_pass, dispatch_size.x, dispatch_size.y, 1);
 
         prefix_sum_kernel->dispatch(compute_pass);
 
-        reorder_pipeline->pipeline.set(compute_pass);
+        if (!reorder_pipeline->pipeline.set(compute_pass)) {
+            return;
+        }
 
         wgpuComputePassEncoderSetBindGroup(compute_pass, 0, reorder_pipeline->bind_group, 0, nullptr);
         wgpuComputePassEncoderDispatchWorkgroups(compute_pass, dispatch_size.x, dispatch_size.y, 1);

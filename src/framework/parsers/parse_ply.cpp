@@ -65,8 +65,6 @@ bool parse_ply(const char* ply_path, std::vector<Node*>& entities)
     gs_node->set_render_buffers(positions, colors);
     gs_node->set_covariance_buffers(rotations, scales);
 
-    gs_node->calculate_covariance();
-
     entities.push_back(gs_node);
 
     return false;
