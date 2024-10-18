@@ -100,14 +100,21 @@ int Renderer::pre_initialize(GLFWwindow* window, bool use_mirror_screen)
 
 int Renderer::initialize()
 {
+    static WGPUFuture adapter_future = { 0 };
+    static WGPUFuture device_future = { 0 };
+
     if (!webgpu_context->adapter) {
-        webgpu_context->request_adapter(xr_context, is_openxr_available);
+        if (adapter_future.id == 0) {
+            adapter_future = webgpu_context->request_adapter(xr_context, is_openxr_available);
+        }
         webgpu_context->process_events();
         return 1;
     }
 
     if (webgpu_context->adapter && !webgpu_context->device) {
-        webgpu_context->request_device();
+        if (device_future.id == 0) {
+            device_future = webgpu_context->request_device();
+        }
         webgpu_context->process_events();
         return 1;
     }

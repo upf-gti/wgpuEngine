@@ -80,7 +80,7 @@ void PrintGLFWError(int code, const char* message) {
     spdlog::error("GLFW error: {} - {}", code, message);
 }
 
-void WebGPUContext::request_adapter(OpenXRContext* xr_context, bool is_openxr_available)
+WGPUFuture WebGPUContext::request_adapter(OpenXRContext* xr_context, bool is_openxr_available)
 {
     WGPURequestAdapterOptions adapter_opts = {};
 
@@ -124,14 +124,14 @@ void WebGPUContext::request_adapter(OpenXRContext* xr_context, bool is_openxr_av
     };
 
     // Call to the WebGPU request adapter procedure
-    wgpuInstanceRequestAdapter2(
+    return wgpuInstanceRequestAdapter2(
         instance,
         &adapter_opts,
         adapter_callback_info
     );
 }
 
-void WebGPUContext::request_device()
+WGPUFuture WebGPUContext::request_device()
 {
     // Create device
     WGPUDeviceDescriptor device_desc = {};
@@ -194,7 +194,7 @@ void WebGPUContext::request_device()
             }
         };
 
-        wgpuAdapterRequestDevice2(
+        return wgpuAdapterRequestDevice2(
             adapter,
             &device_desc,
             device_callback_info

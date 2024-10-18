@@ -88,8 +88,8 @@ struct WebGPUContext {
     void                   close_window();
 
     void                   create_instance();
-    void                   request_adapter(OpenXRContext* xr_context, bool is_openxr_available);
-    void                   request_device();
+    WGPUFuture             request_adapter(OpenXRContext* xr_context, bool is_openxr_available);
+    WGPUFuture             request_device();
 
     void                   print_device_info();
 
