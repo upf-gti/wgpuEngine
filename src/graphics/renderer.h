@@ -34,10 +34,8 @@ struct sLightUniformData;
 class Renderer {
 
 protected:
-#ifdef XR_SUPPORT
-    OpenXRContext*  xr_context;
-#endif
 
+    OpenXRContext*  xr_context;
     WebGPUContext*  webgpu_context;
 
     std::function<void(void*, WGPURenderPassEncoder, uint32_t)> custom_pre_opaque_pass = nullptr;
@@ -92,9 +90,6 @@ protected:
     // inverted for reverse-z
     float z_near = 1000.0f;
     float z_far = 0.01f;
-
-    // Required device limits
-    WGPURequiredLimits required_limits = {};
 
     struct sUniformData {
         glm::mat4x4 model;
@@ -199,6 +194,8 @@ protected:
     float exposure = 1.0f;
     float ibl_intensity = 1.0f;
 
+    bool initialized = false;
+
 public:
 
     // Singleton
@@ -207,11 +204,17 @@ public:
     Renderer();
     virtual ~Renderer();
 
-    virtual int initialize(GLFWwindow* window, bool use_mirror_screen = false);
+    virtual int pre_initialize(GLFWwindow* window, bool use_mirror_screen = false);
+    virtual int initialize();
+    virtual int post_initialize();
     virtual void clean();
+
+    bool is_initialized() { return initialized; }
     
     virtual void update(float delta_time);
     virtual void render();
+
+    void process_events();
 
     void submit_global_command_encoder();
 
@@ -290,7 +293,7 @@ public:
 #endif
     WebGPUContext* get_webgpu_context();
 
-    void set_required_limits(const WGPURequiredLimits& required_limits) { this->required_limits = required_limits; }
+    void set_required_limits(const WGPURequiredLimits& required_limits) { webgpu_context->required_limits = required_limits; }
 
     void add_renderable(MeshInstance* mesh_instance, const glm::mat4x4& global_matrix);
     void clear_renderables();

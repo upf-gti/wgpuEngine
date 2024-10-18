@@ -22,18 +22,18 @@ Pipeline::~Pipeline()
     }
 }
 
-void render_pipeline_creation_callback(WGPUCreatePipelineAsyncStatus status, WGPURenderPipeline pipeline, char const* message, void* userdata)
+void render_pipeline_creation_callback(WGPUCreatePipelineAsyncStatus status, WGPURenderPipeline pipeline, char const* message, void* userdata1, void* userdata2)
 {
-    Pipeline* render_pipeline = static_cast<Pipeline*>(userdata);
+    Pipeline* render_pipeline = static_cast<Pipeline*>(userdata1);
     if (status == WGPUCreatePipelineAsyncStatus_Success) {
         render_pipeline->pipeline = pipeline;
         render_pipeline->loaded = true;
     }
 }
 
-void compute_pipeline_creation_callback(WGPUCreatePipelineAsyncStatus status, WGPUComputePipeline pipeline, char const* message, void* userdata)
+void compute_pipeline_creation_callback(WGPUCreatePipelineAsyncStatus status, WGPUComputePipeline pipeline, char const* message, void* userdata1, void* userdata2)
 {
-    Pipeline* compute_pipeline = static_cast<Pipeline*>(userdata);
+    Pipeline* compute_pipeline = static_cast<Pipeline*>(userdata1);
     if (status == WGPUCreatePipelineAsyncStatus_Success) {
         compute_pipeline->pipeline = pipeline;
         compute_pipeline->loaded = true;
@@ -88,8 +88,13 @@ void Pipeline::create_render_async(Shader* shader, const WGPUColorTargetState& p
 
     spdlog::info("Compiling async render pipeline for shader {}", shader->get_path());
 
+    WGPUCreateRenderPipelineAsyncCallbackInfo2 callback_info = {};
+    callback_info.mode = WGPUCallbackMode_AllowProcessEvents;
+    callback_info.callback = render_pipeline_creation_callback;
+    callback_info.userdata1 = (void*)this;
+
     webgpu_context->create_render_pipeline_async(shader->get_module(), shader->get_pipeline_layout(), shader->get_vertex_buffer_layouts(),
-        p_color_target, render_pipeline_creation_callback, (void*)this, desc, constants);
+        p_color_target, callback_info, desc, constants);
 
     shader->set_pipeline(this);
 
@@ -115,7 +120,12 @@ void Pipeline::create_compute_async(Shader* shader, const char* entry_point, con
 
     spdlog::info("Compiling async compute pipeline for shader {}", shader->get_path());
 
-    webgpu_context->create_compute_pipeline_async(shader->get_module(), shader->get_pipeline_layout(), compute_pipeline_creation_callback, (void*)this, entry_point, constants);
+    WGPUCreateComputePipelineAsyncCallbackInfo2 callback_info = {};
+    callback_info.mode = WGPUCallbackMode_AllowProcessEvents;
+    callback_info.callback = compute_pipeline_creation_callback;
+    callback_info.userdata1 = (void*)this;
+
+    webgpu_context->create_compute_pipeline_async(shader->get_module(), shader->get_pipeline_layout(), callback_info, entry_point, constants);
 
     shader->set_pipeline(this);
 
@@ -141,26 +151,26 @@ void Pipeline::reload(Shader* shader)
 	}
 }
 
-void Pipeline::set(const WGPURenderPassEncoder& render_pass) const
+bool Pipeline::set(const WGPURenderPassEncoder& render_pass) const
 {
-    if (async_compile) {
-        while (!loaded) {
-            webgpu_context->process_events();
-        }
+    if (async_compile && !loaded) {
+        return false;
     }
 
 	wgpuRenderPassEncoderSetPipeline(render_pass, std::get<WGPURenderPipeline>(pipeline));
+
+    return true;
 }
 
-void Pipeline::set(const WGPUComputePassEncoder& compute_pass) const
+bool Pipeline::set(const WGPUComputePassEncoder& compute_pass) const
 {
-    if (async_compile) {
-        while (!loaded) {
-            webgpu_context->process_events();
-        }
+    if (async_compile && !loaded) {
+        return false;
     }
 
 	wgpuComputePassEncoderSetPipeline(compute_pass, std::get<WGPUComputePipeline>(pipeline));
+
+    return true;
 }
 
 bool Pipeline::is_render_pipeline() const

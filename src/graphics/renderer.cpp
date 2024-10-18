@@ -77,56 +77,71 @@ Renderer::~Renderer()
 #endif
 }
 
-int Renderer::initialize(GLFWwindow* window, bool use_mirror_screen)
+int Renderer::pre_initialize(GLFWwindow* window, bool use_mirror_screen)
 {
-    bool create_screen_swapchain = true;
-
     this->use_mirror_screen = use_mirror_screen;
 
+    webgpu_context->window = window;
     webgpu_context->create_instance();
 
-    WGPURequestAdapterOptions adapter_opts = {};
+    Shader::set_custom_define("MAX_LIGHTS", MAX_LIGHTS);
 
-    // To choose dedicated GPU on laptops
-    adapter_opts.powerPreference = WGPUPowerPreference_HighPerformance;
+    eye_depth_textures = new Texture[EYE_COUNT];
+    multisample_textures = new Texture[EYE_COUNT];
+
+    timestamps_buffer = new uint64_t[maximum_query_sets];
+
+#ifndef __EMSCRIPTEN__
+    renderdoc_capture = new RenderdocCapture();
+#endif
+
+    return 0;
+}
+
+int Renderer::initialize()
+{
+    if (!webgpu_context->adapter) {
+        webgpu_context->request_adapter(xr_context, is_openxr_available);
+        webgpu_context->process_events();
+        return 1;
+    }
+
+    if (webgpu_context->adapter && !webgpu_context->device) {
+        webgpu_context->request_device();
+        webgpu_context->process_events();
+        return 1;
+    }
+
+    bool create_screen_swapchain = true;
+#ifdef XR_SUPPORT
+    if (is_openxr_available) {
+        create_screen_swapchain = use_mirror_screen;
+    }
+#endif
+
+    if (webgpu_context->adapter && webgpu_context->device) {
+        if (webgpu_context->initialize(create_screen_swapchain)) {
+            spdlog::error("Could not initialize WebGPU context");
+            return 1;
+        }
+    }
+
+    spdlog::info("Renderer initialized");
+
+    initialized = true;
+
+    return 0;
+}
+
+int Renderer::post_initialize()
+{
+    webgpu_context->print_device_info();
 
 #ifdef XR_SUPPORT
 
     xr_context->z_near = z_near;
     xr_context->z_far = z_far;
 
-#if defined(BACKEND_DX12)
-    adapter_opts.backendType = WGPUBackendType_D3D12;
-#elif defined(BACKEND_VULKAN)
-    dawn::native::vulkan::RequestAdapterOptionsOpenXRConfig adapter_opts_xr_config = {};
-    adapter_opts.backendType = WGPUBackendType_Vulkan;
-#endif
-
-    // Create internal vulkan instance
-    if (is_openxr_available) {
-
-#if defined(BACKEND_VULKAN)
-        dawnxr::internal::createVulkanOpenXRConfig(xr_context->instance, xr_context->system_id, (void**)&adapter_opts_xr_config.openXRConfig);
-        adapter_opts.nextInChain = reinterpret_cast<WGPUChainedStruct*>(&adapter_opts_xr_config);
-#endif
-
-        create_screen_swapchain = use_mirror_screen;
-    }
-    else {
-        spdlog::warn("XR not available, fallback to desktop mode");
-    }
-
-#else
-    // Create internal vulkan instance
-    //webgpu_context->instance->DiscoverDefaultAdapters();
-#endif
-
-    if (webgpu_context->initialize(adapter_opts, required_limits, window, create_screen_swapchain)) {
-        spdlog::error("Could not initialize WebGPU context");
-        return 1;
-    }
-
-#ifdef XR_SUPPORT
     if (is_openxr_available && !xr_context->init(webgpu_context)) {
         spdlog::error("Could not initialize OpenXR context");
         is_openxr_available = false;
@@ -147,22 +162,9 @@ int Renderer::initialize(GLFWwindow* window, bool use_mirror_screen)
     WGPUCommandEncoderDescriptor encoder_desc = {};
     global_command_encoder = wgpuDeviceCreateCommandEncoder(webgpu_context->device, &encoder_desc);
 
-    RendererStorage::register_basic_surfaces();
-
     if (!irradiance_texture) {
         irradiance_texture = RendererStorage::get_texture("data/textures/environments/sky.hdr");
     }
-
-    Shader::set_custom_define("MAX_LIGHTS", MAX_LIGHTS);
-
-    eye_depth_textures = new Texture[EYE_COUNT];
-    multisample_textures = new Texture[EYE_COUNT];
-
-    timestamps_buffer = new uint64_t[maximum_query_sets];
-
-#ifndef __EMSCRIPTEN__
-    renderdoc_capture = new RenderdocCapture();
-#endif
 
     init_depth_buffers();
 
@@ -178,6 +180,8 @@ int Renderer::initialize(GLFWwindow* window, bool use_mirror_screen)
         init_mirror_pipeline();
     }
 #endif
+
+    RendererStorage::register_basic_surfaces();
 
     // Orthographic camera for ui rendering
 
@@ -346,6 +350,11 @@ void Renderer::render()
 #endif
 
     clear_renderables();
+}
+
+void Renderer::process_events()
+{
+    webgpu_context->process_events();
 }
 
 void Renderer::submit_global_command_encoder()
@@ -1003,7 +1012,10 @@ void Renderer::render_render_list(int list_index, WGPURenderPassEncoder render_p
         assert(pipeline);
 
         if (pipeline != prev_pipeline) {
-            pipeline->set(render_pass);
+            if (!pipeline->set(render_pass)) {
+                i += render_data.repeat;
+                continue;
+            }
         }
 
         // Not initialized
@@ -1262,7 +1274,11 @@ void Renderer::render_mirror(WGPUTextureView screen_surface_texture_view)
             WGPURenderPassEncoder render_pass = wgpuCommandEncoderBeginRenderPass(global_command_encoder, &render_pass_descr);
 
             // Bind Pipeline
-            mirror_pipeline.set(render_pass);
+            if (!mirror_pipeline.set(render_pass)) {
+                wgpuRenderPassEncoderEnd(render_pass);
+                wgpuRenderPassEncoderRelease(render_pass);
+                return;
+            }
 
             // Set binding group
             wgpuRenderPassEncoderSetBindGroup(render_pass, 0, swapchain_bind_groups[xr_context->swapchains[0].image_index], 0, nullptr);
@@ -1274,7 +1290,6 @@ void Renderer::render_mirror(WGPUTextureView screen_surface_texture_view)
             wgpuRenderPassEncoderDraw(render_pass, 6, 1, 0, 0);
 
             wgpuRenderPassEncoderEnd(render_pass);
-
             wgpuRenderPassEncoderRelease(render_pass);
         }
     }
@@ -1306,7 +1321,7 @@ void Renderer::render_mirror(WGPUTextureView screen_surface_texture_view)
 
 void Renderer::init_camera_bind_group()
 {
-    xr_camera_buffer_stride = std::max(static_cast<uint32_t>(sizeof(sCameraData)), required_limits.limits.minUniformBufferOffsetAlignment);
+    xr_camera_buffer_stride = std::max(static_cast<uint32_t>(sizeof(sCameraData)), webgpu_context->required_limits.limits.minUniformBufferOffsetAlignment);
 
     camera_uniform.data = webgpu_context->create_buffer(xr_camera_buffer_stride * EYE_COUNT, WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform, nullptr, "camera_buffer");
     camera_uniform.binding = 0;

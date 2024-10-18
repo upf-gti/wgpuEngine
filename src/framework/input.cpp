@@ -46,10 +46,11 @@ void mouse_scroll_callback(GLFWwindow* window, double offset_x, double offset_y)
     Input::set_mouse_wheel(static_cast<float>(offset_x), static_cast<float>(offset_y));
 }
 
-void Input::init(GLFWwindow* _window, Renderer* renderer, bool use_glfw)
+void Input::init(GLFWwindow* _window, bool use_mirror_screen, bool use_glfw)
 {
     Input::use_glfw = use_glfw;
-	use_mirror_screen = renderer->get_use_mirror_screen();
+    Input::use_mirror_screen = use_mirror_screen;
+
     window = _window;
 
     if (use_glfw) {

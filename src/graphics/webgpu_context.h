@@ -10,6 +10,7 @@
 class Shader;
 class Pipeline;
 class Texture;
+struct OpenXRContext;
 struct GLFWwindow;
 
 #define ENVIRONMENT_RESOLUTION 1024
@@ -38,6 +39,7 @@ WGPUStringView get_string_view(const char* str);
 struct WebGPUContext {
 
     WGPUInstance            instance = nullptr;
+    WGPUAdapter             adapter = nullptr;
 
     WGPUSurface             surface = nullptr;
     WGPUDevice              device = nullptr;
@@ -80,12 +82,16 @@ struct WebGPUContext {
     static WGPUTextureFormat    swapchain_format;
     static WGPUTextureFormat    xr_swapchain_format;
 
-    int                    initialize(WGPURequestAdapterOptions adapter_opts, WGPURequiredLimits required_limits, GLFWwindow* window, bool create_screen_swapchain);
+    int                    initialize(bool create_screen_swapchain);
     void                   destroy();
 
     void                   close_window();
 
     void                   create_instance();
+    void                   request_adapter(OpenXRContext* xr_context, bool is_openxr_available);
+    void                   request_device();
+
+    void                   print_device_info();
 
     WGPUInstance           get_instance();
 
@@ -113,11 +119,12 @@ struct WebGPUContext {
     WGPURenderPipeline     create_render_pipeline(WGPUShaderModule render_shader_module, WGPUPipelineLayout pipeline_layout, const std::vector<WGPUVertexBufferLayout>& vertex_attributes,
                                                   WGPUColorTargetState color_target, const RenderPipelineDescription& description, std::vector< WGPUConstantEntry> constants = {});
     void                   create_render_pipeline_async(WGPUShaderModule render_shader_module, WGPUPipelineLayout pipeline_layout, const std::vector<WGPUVertexBufferLayout>& vertex_attributes,
-                                                  WGPUColorTargetState color_target, WGPUCreateRenderPipelineAsyncCallback callback, void* userdata, const RenderPipelineDescription& description,
+                                                  WGPUColorTargetState color_target, WGPUCreateRenderPipelineAsyncCallbackInfo2 callback_info, const RenderPipelineDescription& description,
                                                   std::vector< WGPUConstantEntry> constants = {});
 
     WGPUComputePipeline    create_compute_pipeline(WGPUShaderModule compute_shader_module, WGPUPipelineLayout pipeline_layout, const char* entry_point = "compute", std::vector< WGPUConstantEntry> constants = {});
-    void                   create_compute_pipeline_async(WGPUShaderModule compute_shader_module, WGPUPipelineLayout pipeline_layout, WGPUCreateComputePipelineAsyncCallback callback, void* userdata, const char* entry_point = "compute", std::vector< WGPUConstantEntry> constants = {});
+    void                   create_compute_pipeline_async(WGPUShaderModule compute_shader_module, WGPUPipelineLayout pipeline_layout, WGPUCreateComputePipelineAsyncCallbackInfo2 callback_info,
+                                                  const char* entry_point = "compute", std::vector< WGPUConstantEntry> constants = {});
 
     WGPUVertexBufferLayout create_vertex_buffer_layout(const std::vector<WGPUVertexAttribute>& vertex_attributes, uint64_t stride, WGPUVertexStepMode step_mode);
 
@@ -135,7 +142,6 @@ struct WebGPUContext {
     void process_events();
 
 private:
-
 
     //WGPURenderPipelineDescriptor& create_render_pipeline_common(WGPUShaderModule render_shader_module, WGPUPipelineLayout pipeline_layout, const std::vector<WGPUVertexBufferLayout>& vertex_attributes,
     //    WGPUColorTargetState color_target, bool use_depth = true, bool depth_read = true, bool depth_write = true, WGPUCullMode cull_mode = WGPUCullMode_None, WGPUPrimitiveTopology topology = WGPUPrimitiveTopology_TriangleList, uint8_t sample_count = 1,
