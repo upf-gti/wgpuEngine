@@ -240,7 +240,7 @@ public:
     void resolve_query_set(WGPUCommandEncoder encoder, uint8_t first_query);
     std::vector<float>& get_last_frame_timestamps() { return last_frame_timestamps; }
 
-    void set_msaa_count(uint8_t msaa_count);
+    void set_msaa_count(uint8_t msaa_count, bool is_initial_value = false);
     uint8_t get_msaa_count();
 
     bool is_inside_frustum(const glm::vec3& minp, const glm::vec3& maxp) const;

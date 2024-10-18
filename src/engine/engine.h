@@ -13,6 +13,7 @@ struct sEngineConfiguration {
     uint16_t window_height = 900;
     std::string window_title = "";
     eCameraType camera_type = CAMERA_FLYOVER;
+    uint8_t msaa_count = 1;
 };
 
 class Engine {

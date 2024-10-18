@@ -90,6 +90,8 @@ int Engine::initialize(Renderer* renderer, sEngineConfiguration configuration)
     spdlog::set_pattern("[%^%l%$] %v");
     spdlog::set_level(spdlog::level::debug);
 
+    renderer->set_msaa_count(configuration.msaa_count, true);
+
     this->renderer = renderer;
     this->configuration = configuration;
 

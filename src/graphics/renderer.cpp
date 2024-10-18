@@ -770,8 +770,13 @@ std::vector<float> Renderer::get_timestamps()
     return time_diffs;
 }
 
-void Renderer::set_msaa_count(uint8_t msaa_count)
+void Renderer::set_msaa_count(uint8_t msaa_count, bool is_initial_value)
 {
+    if (is_initial_value) {
+        this->msaa_count = msaa_count;
+        return;
+    }
+
     bool recreate = msaa_count != this->msaa_count && multisample_textures[0].get_texture() != nullptr;
 
     this->msaa_count = msaa_count;
