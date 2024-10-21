@@ -11,7 +11,7 @@ class Node;
 struct sEngineConfiguration {
     uint16_t window_width = 1600;
     uint16_t window_height = 900;
-    std::string window_title = "";
+    std::string window_title = "wgpuEngine";
     eCameraType camera_type = CAMERA_FLYOVER;
     uint8_t msaa_count = 1;
 };

@@ -140,10 +140,6 @@ bool Engine::initialize_renderer()
     // Only init glfw if no xr or using mirror
     this->use_glfw = !use_xr || (use_xr && use_mirror_screen);
 
-    if (configuration.window_title.size()) {
-        glfwSetWindowTitle(renderer->get_glfw_window(), configuration.window_title.c_str());
-    }
-
     GLFWwindow* window = nullptr;
 
     if (use_glfw) {
@@ -157,8 +153,9 @@ bool Engine::initialize_renderer()
 
         window = glfwCreateWindow(screen_width, screen_height, "ROOMS", NULL, NULL);
 
-        glfwSetWindowTitle(window, "wgpuEngine");
+        glfwSetWindowTitle(window, configuration.window_title.c_str());
     }
+
 
     Input::init(window, use_mirror_screen, use_glfw);
     glfwSetWindowUserPointer(window, this);
@@ -314,9 +311,8 @@ void Engine::on_frame()
     if (!renderer->is_initialized()) {
         if (!renderer->initialize()) {
             renderer->post_initialize();
-            renderer->set_camera_type(configuration.camera_type);
             init_imgui(renderer->get_glfw_window());
-
+            renderer->set_camera_type(configuration.camera_type);
             post_initialize();
 
             // Submit any initialization commands
