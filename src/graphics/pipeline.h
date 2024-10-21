@@ -29,16 +29,16 @@ public:
 
 	void reload(Shader* shader);
 
-	void set(const WGPURenderPassEncoder& render_pass) const;
-	void set(const WGPUComputePassEncoder& compute_pass) const;
+    bool set(const WGPURenderPassEncoder& render_pass) const;
+    bool set(const WGPUComputePassEncoder& compute_pass) const;
 
     bool is_render_pipeline() const;
     bool is_compute_pipeline() const;
 
     bool is_msaa_allowed() const;
 
-    friend void render_pipeline_creation_callback(WGPUCreatePipelineAsyncStatus status, WGPURenderPipeline pipeline, char const* message, void* userdata);
-    friend void compute_pipeline_creation_callback(WGPUCreatePipelineAsyncStatus status, WGPUComputePipeline pipeline, char const* message, void* userdata);
+    friend void render_pipeline_creation_callback(WGPUCreatePipelineAsyncStatus status, WGPURenderPipeline pipeline, char const* message, void* userdata1, void* userdata2);
+    friend void compute_pipeline_creation_callback(WGPUCreatePipelineAsyncStatus status, WGPUComputePipeline pipeline, char const* message, void* userdata1, void* userdata2);
 
 private:
 

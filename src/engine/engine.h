@@ -1,6 +1,6 @@
 #pragma once
 
-#include <string>
+#include "framework/camera/camera.h"
 
 struct GLFWwindow;
 class FileWatcher;
@@ -11,7 +11,9 @@ class Node;
 struct sEngineConfiguration {
     uint16_t window_width = 1600;
     uint16_t window_height = 900;
-    std::string window_title = "";
+    std::string window_title = "wgpuEngine";
+    eCameraType camera_type = CAMERA_FLYOVER;
+    uint8_t msaa_count = 1;
 };
 
 class Engine {
@@ -26,6 +28,8 @@ protected:
     FileWatcher* engine_shader_reload_watcher = nullptr;
     Scene* main_scene = nullptr;
 
+    sEngineConfiguration configuration = {};
+
     Node* selected_node = nullptr;
 
     bool use_glfw = false;
@@ -35,6 +39,8 @@ protected:
     bool stop_game_loop = false;
 
     bool show_imgui = true;
+
+    bool initialize_renderer();
 
 public:
 
@@ -46,6 +52,12 @@ public:
     ~Engine();
 
     virtual int initialize(Renderer* renderer, sEngineConfiguration configuration = {});
+    virtual int post_initialize();
+
+    sEngineConfiguration get_configuration() { return configuration; }
+
+    Renderer* get_renderer() { return renderer; }
+
     virtual void clean();
 
     virtual void start_loop();

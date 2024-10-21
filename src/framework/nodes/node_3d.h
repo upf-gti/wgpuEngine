@@ -34,9 +34,9 @@ public:
     void add_child(Node3D* child);
     void remove_child(Node3D* child);
 
-    virtual void render();
-    virtual void update(float delta_time);
-    void render_gui();
+    virtual void render() override;
+    virtual void update(float delta_time) override;
+    virtual void render_gui() override;
 
     void translate(const glm::vec3& translation);
     void rotate(float angle, const glm::vec3& axis);
@@ -44,8 +44,8 @@ public:
     void rotate_world(const glm::quat& q);
     void scale(glm::vec3 scale);
 
-    virtual void serialize(std::ofstream& binary_scene_file);
-    virtual void parse(std::ifstream& binary_scene_file);
+    virtual void serialize(std::ofstream& binary_scene_file) override;
+    virtual void parse(std::ifstream& binary_scene_file) override;
 
     const glm::vec3 get_local_translation() const;
     const glm::vec3 get_translation();

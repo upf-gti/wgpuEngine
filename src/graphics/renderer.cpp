@@ -30,14 +30,17 @@
 
 #include "framework/parsers/parse_scene.h"
 #include "framework/nodes/mesh_instance_3d.h"
+#include "framework/nodes/gs_node.h"
 #include "framework/camera/camera_2d.h"
 #include "framework/camera/flyover_camera.h"
+#include "framework/camera/orbit_camera.h"
 #include "framework/input.h"
 #include "framework/ui/io.h"
 
 #include <algorithm>
 
 #include "shaders/quad_mirror.wgsl.gen.h"
+#include "shaders/gaussian_splatting/gs_render.wgsl.gen.h"
 
 #include "glm/gtx/quaternion.hpp"
 
@@ -76,56 +79,78 @@ Renderer::~Renderer()
 #endif
 }
 
-int Renderer::initialize(GLFWwindow* window, bool use_mirror_screen)
+int Renderer::pre_initialize(GLFWwindow* window, bool use_mirror_screen)
 {
-    bool create_screen_swapchain = true;
-
     this->use_mirror_screen = use_mirror_screen;
 
+    webgpu_context->window = window;
     webgpu_context->create_instance();
 
-    WGPURequestAdapterOptions adapter_opts = {};
+    Shader::set_custom_define("MAX_LIGHTS", MAX_LIGHTS);
 
-    // To choose dedicated GPU on laptops
-    adapter_opts.powerPreference = WGPUPowerPreference_HighPerformance;
+    eye_depth_textures = new Texture[EYE_COUNT];
+    multisample_textures = new Texture[EYE_COUNT];
+
+    timestamps_buffer = new uint64_t[maximum_query_sets];
+
+#ifndef __EMSCRIPTEN__
+    renderdoc_capture = new RenderdocCapture();
+#endif
+
+    return 0;
+}
+
+int Renderer::initialize()
+{
+    static WGPUFuture adapter_future = { 0 };
+    static WGPUFuture device_future = { 0 };
+
+    if (!webgpu_context->adapter) {
+        if (adapter_future.id == 0) {
+            adapter_future = webgpu_context->request_adapter(xr_context, is_openxr_available);
+        }
+        webgpu_context->process_events();
+        return 1;
+    }
+
+    if (webgpu_context->adapter && !webgpu_context->device) {
+        if (device_future.id == 0) {
+            device_future = webgpu_context->request_device();
+        }
+        webgpu_context->process_events();
+        return 1;
+    }
+
+    bool create_screen_swapchain = true;
+#ifdef XR_SUPPORT
+    if (is_openxr_available) {
+        create_screen_swapchain = use_mirror_screen;
+    }
+#endif
+
+    if (webgpu_context->adapter && webgpu_context->device) {
+        if (webgpu_context->initialize(create_screen_swapchain)) {
+            spdlog::error("Could not initialize WebGPU context");
+            return 1;
+        }
+    }
+
+    spdlog::info("Renderer initialized");
+
+    initialized = true;
+
+    return 0;
+}
+
+int Renderer::post_initialize()
+{
+    webgpu_context->print_device_info();
 
 #ifdef XR_SUPPORT
 
     xr_context->z_near = z_near;
     xr_context->z_far = z_far;
 
-#if defined(BACKEND_DX12)
-    adapter_opts.backendType = WGPUBackendType_D3D12;
-#elif defined(BACKEND_VULKAN)
-    dawn::native::vulkan::RequestAdapterOptionsOpenXRConfig adapter_opts_xr_config = {};
-    adapter_opts.backendType = WGPUBackendType_Vulkan;
-#endif
-
-    // Create internal vulkan instance
-    if (is_openxr_available) {
-
-#if defined(BACKEND_VULKAN)
-        dawnxr::internal::createVulkanOpenXRConfig(xr_context->instance, xr_context->system_id, (void**)&adapter_opts_xr_config.openXRConfig);
-        adapter_opts.nextInChain = reinterpret_cast<WGPUChainedStruct*>(&adapter_opts_xr_config);
-#endif
-
-        create_screen_swapchain = use_mirror_screen;
-    }
-    else {
-        spdlog::warn("XR not available, fallback to desktop mode");
-    }
-
-#else
-    // Create internal vulkan instance
-    //webgpu_context->instance->DiscoverDefaultAdapters();
-#endif
-
-    if (webgpu_context->initialize(adapter_opts, required_limits, window, create_screen_swapchain)) {
-        spdlog::error("Could not initialize WebGPU context");
-        return 1;
-    }
-
-#ifdef XR_SUPPORT
     if (is_openxr_available && !xr_context->init(webgpu_context)) {
         spdlog::error("Could not initialize OpenXR context");
         is_openxr_available = false;
@@ -146,22 +171,9 @@ int Renderer::initialize(GLFWwindow* window, bool use_mirror_screen)
     WGPUCommandEncoderDescriptor encoder_desc = {};
     global_command_encoder = wgpuDeviceCreateCommandEncoder(webgpu_context->device, &encoder_desc);
 
-    RendererStorage::register_basic_surfaces();
-
     if (!irradiance_texture) {
         irradiance_texture = RendererStorage::get_texture("data/textures/environments/sky.hdr");
     }
-
-    Shader::set_custom_define("MAX_LIGHTS", MAX_LIGHTS);
-
-    eye_depth_textures = new Texture[EYE_COUNT];
-    multisample_textures = new Texture[EYE_COUNT];
-
-    timestamps_buffer = new uint64_t[maximum_query_sets];
-
-#ifndef __EMSCRIPTEN__
-    renderdoc_capture = new RenderdocCapture();
-#endif
 
     init_depth_buffers();
 
@@ -178,13 +190,37 @@ int Renderer::initialize(GLFWwindow* window, bool use_mirror_screen)
     }
 #endif
 
-    // Main 3D Camera
+    WGPUTextureFormat swapchain_format = is_openxr_available ? webgpu_context->xr_swapchain_format : webgpu_context->swapchain_format;
 
-    camera = new FlyoverCamera();
-    camera->set_perspective(glm::radians(45.0f), webgpu_context->render_width / static_cast<float>(webgpu_context->render_height), z_near, z_far);
-    camera->look_at(glm::vec3(0.0f, 0.2f, 0.8f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-    camera->set_mouse_sensitivity(0.003f);
-    camera->set_speed(0.5f);
+    WGPUColorTargetState color_target = {};
+    color_target.format = swapchain_format;
+    color_target.blend = nullptr;
+    color_target.writeMask = WGPUColorWriteMask_All;
+
+    RenderPipelineDescription desc = { .topology = WGPUPrimitiveTopology_TriangleStrip };
+
+    WGPUBlendState* blend_state = new WGPUBlendState;
+    blend_state->color = {
+            .operation = WGPUBlendOperation_Add,
+            .srcFactor = WGPUBlendFactor_SrcAlpha,
+            .dstFactor = WGPUBlendFactor_OneMinusSrcAlpha,
+    };
+    blend_state->alpha = {
+            .operation = WGPUBlendOperation_Add,
+            .srcFactor = WGPUBlendFactor_Zero,
+            .dstFactor = WGPUBlendFactor_One,
+    };
+
+    color_target.blend = blend_state;
+
+    desc.depth_write = WGPUOptionalBool_False;
+    desc.blending_enabled = true;
+    desc.sample_count = msaa_count;
+
+    gs_render_shader = RendererStorage::get_shader_from_source(shaders::gs_render::source, shaders::gs_render::path);
+    gs_render_pipeline.create_render_async(gs_render_shader, color_target, desc);
+
+    RendererStorage::register_basic_surfaces();
 
     // Orthographic camera for ui rendering
 
@@ -355,6 +391,11 @@ void Renderer::render()
     clear_renderables();
 }
 
+void Renderer::process_events()
+{
+    webgpu_context->process_events();
+}
+
 void Renderer::submit_global_command_encoder()
 {
     WGPUCommandBufferDescriptor cmd_buff_descriptor = {};
@@ -370,6 +411,38 @@ void Renderer::submit_global_command_encoder()
     wgpuCommandBufferRelease(commands);
     wgpuCommandEncoderRelease(global_command_encoder);
 
+}
+
+void Renderer::set_camera_type(eCameraType camera_type)
+{
+    this->camera_type = camera_type;
+
+    Camera* old_camera = camera;
+    if (camera_type == CAMERA_FLYOVER) {
+        camera = new FlyoverCamera();
+    }
+    else if (camera_type == CAMERA_ORBIT) {
+        camera = new OrbitCamera();
+    }
+
+    camera->set_perspective(glm::radians(45.0f), webgpu_context->render_width / static_cast<float>(webgpu_context->render_height), z_near, z_far);
+
+    if (old_camera) {
+        camera->look_at(old_camera->get_eye(), old_camera->get_center(), old_camera->get_up());
+    }
+    else {
+        camera->look_at(glm::vec3(0.0f, 0.2f, 0.8f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    }
+
+    camera->set_mouse_sensitivity(0.003f);
+    camera->set_speed(0.5f);
+
+    delete old_camera;
+}
+
+eCameraType Renderer::get_camera_type()
+{
+    return camera_type;
 }
 
 void Renderer::set_custom_pass_user_data(void* user_data)
@@ -469,6 +542,8 @@ void Renderer::render_screen(WGPUTextureView screen_surface_texture_view)
         if (custom_post_transparent_pass) {
             custom_post_transparent_pass(custom_pass_user_data, render_pass, 0);
         }
+
+        render_splats(render_pass, render_camera_bind_group);
 
         if (custom_pre_2d_pass) {
             custom_pre_2d_pass(custom_pass_user_data, render_pass, 0);
@@ -729,8 +804,13 @@ std::vector<float> Renderer::get_timestamps()
     return time_diffs;
 }
 
-void Renderer::set_msaa_count(uint8_t msaa_count)
+void Renderer::set_msaa_count(uint8_t msaa_count, bool is_initial_value)
 {
+    if (is_initial_value) {
+        this->msaa_count = msaa_count;
+        return;
+    }
+
     bool recreate = msaa_count != this->msaa_count && multisample_textures[0].get_texture() != nullptr;
 
     this->msaa_count = msaa_count;
@@ -978,7 +1058,10 @@ void Renderer::render_render_list(int list_index, WGPURenderPassEncoder render_p
         assert(pipeline);
 
         if (pipeline != prev_pipeline) {
-            pipeline->set(render_pass);
+            if (!pipeline->set(render_pass)) {
+                i += render_data.repeat;
+                continue;
+            }
         }
 
         // Not initialized
@@ -1060,6 +1143,32 @@ void Renderer::render_transparent(WGPURenderPassEncoder render_pass, const WGPUB
 #endif
 }
 
+void Renderer::render_splats(WGPURenderPassEncoder render_pass, const WGPUBindGroup& render_camera_bind_group, uint32_t camera_buffer_stride)
+{
+#ifndef NDEBUG
+    wgpuRenderPassEncoderPushDebugGroup(render_pass, "Transparent");
+#endif
+
+    for (GSNode* gs_node : gs_scenes_list) {
+
+        if (!gs_render_pipeline.set(render_pass)) {
+            continue;
+        }
+
+        wgpuRenderPassEncoderSetBindGroup(render_pass, 0, gs_node->get_render_bindgroup(), 0, nullptr);
+        wgpuRenderPassEncoderSetBindGroup(render_pass, 1, render_camera_bind_group, 1, &camera_buffer_stride);
+
+        wgpuRenderPassEncoderSetVertexBuffer(render_pass, 0, gs_node->get_render_buffer(), 0, gs_node->get_splats_render_bytes_size());
+        wgpuRenderPassEncoderSetVertexBuffer(render_pass, 1, gs_node->get_ids_buffer(), 0, gs_node->get_ids_render_bytes_size());
+
+        wgpuRenderPassEncoderDraw(render_pass, 4, gs_node->get_splat_count(), 0, 0);
+    }
+
+#ifndef NDEBUG
+    wgpuRenderPassEncoderPopDebugGroup(render_pass);
+#endif
+}
+
 void Renderer::render_2D(WGPURenderPassEncoder render_pass, const WGPUBindGroup& render_camera_bind_group)
 {
 #ifndef NDEBUG
@@ -1095,9 +1204,15 @@ void Renderer::add_renderable(MeshInstance* mesh_instance, const glm::mat4x4& gl
     render_entity_list.push_back({ mesh_instance, global_matrix });
 }
 
+void Renderer::add_splat_scene(GSNode* gs_scene)
+{
+    gs_scenes_list.push_back(gs_scene);
+}
+
 void Renderer::clear_renderables()
 {
     render_entity_list.clear();
+    gs_scenes_list.clear();
 
     for (int i = 0; i < RENDER_LIST_SIZE; ++i) {
         render_list[i].clear();
@@ -1237,7 +1352,11 @@ void Renderer::render_mirror(WGPUTextureView screen_surface_texture_view)
             WGPURenderPassEncoder render_pass = wgpuCommandEncoderBeginRenderPass(global_command_encoder, &render_pass_descr);
 
             // Bind Pipeline
-            mirror_pipeline.set(render_pass);
+            if (!mirror_pipeline.set(render_pass)) {
+                wgpuRenderPassEncoderEnd(render_pass);
+                wgpuRenderPassEncoderRelease(render_pass);
+                return;
+            }
 
             // Set binding group
             wgpuRenderPassEncoderSetBindGroup(render_pass, 0, swapchain_bind_groups[xr_context->swapchains[0].image_index], 0, nullptr);
@@ -1249,7 +1368,6 @@ void Renderer::render_mirror(WGPUTextureView screen_surface_texture_view)
             wgpuRenderPassEncoderDraw(render_pass, 6, 1, 0, 0);
 
             wgpuRenderPassEncoderEnd(render_pass);
-
             wgpuRenderPassEncoderRelease(render_pass);
         }
     }
@@ -1281,7 +1399,7 @@ void Renderer::render_mirror(WGPUTextureView screen_surface_texture_view)
 
 void Renderer::init_camera_bind_group()
 {
-    xr_camera_buffer_stride = std::max(static_cast<uint32_t>(sizeof(sCameraData)), required_limits.limits.minUniformBufferOffsetAlignment);
+    xr_camera_buffer_stride = std::max(static_cast<uint32_t>(sizeof(sCameraData)), webgpu_context->required_limits.limits.minUniformBufferOffsetAlignment);
 
     camera_uniform.data = webgpu_context->create_buffer(xr_camera_buffer_stride * EYE_COUNT, WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform, nullptr, "camera_buffer");
     camera_uniform.binding = 0;

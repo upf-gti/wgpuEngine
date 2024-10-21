@@ -3,6 +3,7 @@
 #include "parse_obj.h"
 #include "parse_gltf.h"
 #include "parse_vdb.h"
+#include "parse_ply.h"
 
 #include "framework/nodes/mesh_instance_3d.h"
 
@@ -25,6 +26,10 @@ bool parse_scene(const char* scene_path, std::vector<Node*>& entities)
     else if (extension == "vdb") {
         spdlog::info("Parsing a VDB file (WIP)");
         parse_vdb(scene_path, entities);
+    }
+    else if (extension == "ply") {
+        spdlog::info("Parsing a PLY file");
+        parse_ply(scene_path, entities);
     }
     else {
         spdlog::error("Scene extension .{} not supported", extension);

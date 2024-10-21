@@ -48,9 +48,6 @@ static EM_BOOL on_web_display_size_changed(int event_type,
     engine->resize_window(ui_event->windowInnerWidth, ui_event->windowInnerHeight);
     return true;
 }
-
-#else
-void on_engine_initialized() {}
 #endif
 
 Engine* Engine::instance = nullptr;
@@ -90,6 +87,31 @@ int Engine::initialize(Renderer* renderer, sEngineConfiguration configuration)
     spdlog::set_pattern("[%^%l%$] %v");
     spdlog::set_level(spdlog::level::debug);
 
+    renderer->set_msaa_count(configuration.msaa_count, true);
+
+    this->renderer = renderer;
+    this->configuration = configuration;
+
+    IO::initialize();
+
+    current_time = glfwGetTime();
+
+    init_shader_watchers();
+
+    initialize_renderer();
+
+    spdlog::info("Engine initialized");
+
+    return 0;
+}
+
+int Engine::post_initialize()
+{
+    return 0;
+}
+
+bool Engine::initialize_renderer()
+{
 #ifdef __EMSCRIPTEN__
     int screen_width = canvas_get_width();
     int screen_height = canvas_get_height();
@@ -128,33 +150,15 @@ int Engine::initialize(Renderer* renderer, sEngineConfiguration configuration)
 
         window = glfwCreateWindow(screen_width, screen_height, "ROOMS", NULL, NULL);
 
-        glfwSetWindowTitle(window, "wgpuEngine");
+        glfwSetWindowTitle(window, configuration.window_title.c_str());
     }
 
-    this->renderer = renderer;
 
-    if(renderer->initialize(window, use_mirror_screen)) {
-        renderer->get_webgpu_context()->close_window();
-        spdlog::error("Could not initialize renderer");
-        return 1;
-    }
-
-    Input::init(window, renderer, use_glfw);
-    IO::initialize();
-
+    Input::init(window, use_mirror_screen, use_glfw);
     glfwSetWindowUserPointer(window, this);
     glfwSetFramebufferSizeCallback(window, resize_callback);
 
-    current_time = glfwGetTime();
-
-    init_imgui(window);
-    init_shader_watchers();
-
-    if (configuration.window_title.size()) {
-        glfwSetWindowTitle(renderer->get_glfw_window(), configuration.window_title.c_str());
-    }
-
-    spdlog::info("Engine initialized");
+    renderer->pre_initialize(window, use_mirror_screen);
 
     return 0;
 }
@@ -239,10 +243,6 @@ void Engine::clean()
 
 void Engine::start_loop()
 {
-    // Submit any initialization commands
-    renderer->submit_global_command_encoder();
-
-    on_engine_initialized();
 
 #ifdef __EMSCRIPTEN__
     emscripten_set_main_loop_arg(
@@ -256,6 +256,7 @@ void Engine::start_loop()
 
 #else
     while (!stop_game_loop) {
+
         on_frame();
 
         stop_game_loop = glfwWindowShouldClose(renderer->get_glfw_window());
@@ -299,6 +300,26 @@ Scene* Engine::get_main_scene()
 
 void Engine::on_frame()
 {
+    renderer->process_events();
+
+    if (!renderer->is_initialized()) {
+        if (!renderer->initialize()) {
+            renderer->post_initialize();
+            init_imgui(renderer->get_glfw_window());
+            renderer->set_camera_type(configuration.camera_type);
+            post_initialize();
+
+#ifdef __EMSCRIPTEN__
+            on_engine_initialized();
+#endif
+
+            // Submit any initialization commands
+            renderer->submit_global_command_encoder();
+        }
+
+        return;
+    }
+
     // Update stuff
 
     Input::update(delta_time);
@@ -358,9 +379,9 @@ void Engine::render_default_gui()
     {
         if (ImGui::BeginMenu("File"))
         {
-            if (ImGui::MenuItem("Open scene (.gltf, .glb, .obj, .vdb)"))
+            if (ImGui::MenuItem("Open scene (.gltf, .glb, .obj, .vdb. ply)"))
             {
-                std::vector<const char*> filter_patterns = { "*.gltf", "*.glb", "*.obj", "*.vdb"};
+                std::vector<const char*> filter_patterns = { "*.gltf", "*.glb", "*.obj", "*.vdb", "*.ply" };
                 char const* open_file_name = tinyfd_openFileDialog(
                     "Scene loader",
                     "",

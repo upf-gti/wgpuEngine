@@ -189,8 +189,8 @@ namespace ui {
             // Set in range min-max
             current_value = remap_range(current_value, 0.0f, 1.0f, min_value, max_value);
             // Make sure it reaches min, max values
-            if (fabsf(current_value - min_value) < 1e-4f) current_value = min_value;
-            else if (fabsf(current_value - max_value) < 1e-4f) current_value = max_value;
+            if (std::abs(current_value - min_value) < 1e-4f) current_value = min_value;
+            else if (std::abs(current_value - max_value) < 1e-4f) current_value = max_value;
 
             if (text_2d_value) {
                 text_2d_value->text_entity->set_text(value_to_string());
@@ -392,8 +392,8 @@ namespace ui {
             // Set in range min-max
             current_value = remap_range(static_cast<int>(normalized_value), 0, 100, min_value, max_value);
             // Make sure it reaches min, max values
-            if (fabsf(current_value - min_value) < 1e-4f) current_value = min_value;
-            else if (fabsf(current_value - max_value) < 1e-4f) current_value = max_value;
+            if (current_value < min_value) current_value = min_value;
+            else if (current_value > max_value) current_value = max_value;
 
             if (text_2d_value) {
                 text_2d_value->text_entity->set_text(value_to_string());

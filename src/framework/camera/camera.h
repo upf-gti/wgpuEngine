@@ -2,9 +2,14 @@
 
 #include "framework/math/math_utils.h"
 
+enum eCameraType {
+    CAMERA_ORBIT,
+    CAMERA_FLYOVER
+};
+
 class Camera {
 
-    enum eCameraType {
+    enum eCameraProjectionType {
         PERSPECTIVE,
         ORTHOGRAPHIC
     };
@@ -33,6 +38,8 @@ public:
     const glm::vec3& get_center() const { return center; }
     const glm::vec3& get_up() const { return up; }
 
+    void set_center(const glm::vec3& center) { this->center = center; }
+
     float get_speed() const { return speed; }
 
     const glm::mat4x4& get_view() const { return view; }
@@ -53,7 +60,7 @@ protected:
     float top;
     float bottom;
 
-    eCameraType type;
+    eCameraProjectionType type;
 
     glm::vec3 eye = {};
     glm::vec3 center = {};

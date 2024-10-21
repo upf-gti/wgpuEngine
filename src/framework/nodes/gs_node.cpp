@@ -113,7 +113,7 @@ void GSNode::initialize(uint32_t splat_count)
 
 void GSNode::render()
 {
-
+    Renderer::instance->add_splat_scene(this);
 }
 
 void GSNode::update(float delta_time)
@@ -127,6 +127,10 @@ void GSNode::update(float delta_time)
     compute_pass_desc.timestampWrites = nullptr;
 
     WGPUComputePassEncoder compute_pass = wgpuCommandEncoderBeginComputePass(command_encoder, &compute_pass_desc);
+
+    if (!covariance_calculated) {
+        calculate_covariance(compute_pass);
+    }
 
     calculate_basis(compute_pass);
     sort(compute_pass);
@@ -148,27 +152,26 @@ void GSNode::set_covariance_buffers(const std::vector<glm::quat>& rotations, con
     webgpu_context->update_buffer(std::get<WGPUBuffer>(scales_uniform.data), 0, scales.data(), sizeof(glm::vec4) * splat_count);
 }
 
-void GSNode::calculate_covariance()
+void GSNode::calculate_covariance(WGPUComputePassEncoder compute_pass)
 {
-    WGPUCommandEncoder command_encoder = Renderer::instance->get_global_command_encoder();
+    if (!covariance_pipeline.set(compute_pass)) {
+        return;
+    }
 
-    WGPUComputePassDescriptor compute_pass_desc = {};
-    compute_pass_desc.timestampWrites = nullptr;
-    WGPUComputePassEncoder compute_pass = wgpuCommandEncoderBeginComputePass(command_encoder, &compute_pass_desc);
-
-    covariance_pipeline.set(compute_pass);
     wgpuComputePassEncoderSetBindGroup(compute_pass, 0, covariance_bindgroup, 0, nullptr);
     wgpuComputePassEncoderDispatchWorkgroups(compute_pass, workgroup_size, 1, 1);
 
-    wgpuComputePassEncoderEnd(compute_pass);
-    wgpuComputePassEncoderRelease(compute_pass);
+    covariance_calculated = true;
 }
 
 void GSNode::calculate_basis(WGPUComputePassEncoder compute_pass)
 {
     uint32_t camera_stride_offset = 0;
 
-    basis_pipeline.set(compute_pass);
+    if (!basis_pipeline.set(compute_pass)) {
+        return;
+    }
+
     wgpuComputePassEncoderSetBindGroup(compute_pass, 0, basis_uniform_bindgroup, 0, nullptr);
     wgpuComputePassEncoderSetBindGroup(compute_pass, 1, Renderer::instance->get_compute_camera_bind_group(), 1, &camera_stride_offset);
     wgpuComputePassEncoderDispatchWorkgroups(compute_pass, workgroup_size, 1, 1);

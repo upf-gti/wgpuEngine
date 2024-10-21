@@ -19,6 +19,16 @@
 
 #ifdef XR_SUPPORT
 #include "xr/dawnxr/dawnxr.h"
+#include "xr/dawnxr/dawnxr_internal.h"
+
+#include "xr/openxr_context.h"
+
+#if defined(BACKEND_DX12)
+#include <dawn/native/D3D12Backend.h>
+#elif defined(BACKEND_VULKAN)
+#include "dawn/native/VulkanBackend.h"
+#endif
+
 #endif
 
 #ifdef __EMSCRIPTEN__
@@ -70,99 +80,62 @@ void PrintGLFWError(int code, const char* message) {
     spdlog::error("GLFW error: {} - {}", code, message);
 }
 
-WGPUAdapter requestAdapter(WGPUInstance instance, WGPURequestAdapterOptions const* options) {
+WGPUFuture WebGPUContext::request_adapter(OpenXRContext* xr_context, bool is_openxr_available)
+{
+    WGPURequestAdapterOptions adapter_opts = {};
 
-    struct UserData {
-        WGPUAdapter adapter = nullptr;
-        bool requestEnded = false;
-    };
-    UserData userData;
+    // To choose dedicated GPU on laptops
+    adapter_opts.powerPreference = WGPUPowerPreference_HighPerformance;
 
-    auto onAdapterRequestEnded = [](WGPURequestAdapterStatus status, WGPUAdapter adapter, char const* message, void* pUserData) {
-        UserData& userData = *reinterpret_cast<UserData*>(pUserData);
+#ifdef XR_SUPPORT
+
+#if defined(BACKEND_DX12)
+    adapter_opts.backendType = WGPUBackendType_D3D12;
+#elif defined(BACKEND_VULKAN)
+    dawn::native::vulkan::RequestAdapterOptionsOpenXRConfig adapter_opts_xr_config = {};
+    adapter_opts.backendType = WGPUBackendType_Vulkan;
+#endif
+
+    // Create internal vulkan instance
+    if (is_openxr_available) {
+
+#if defined(BACKEND_VULKAN)
+        dawnxr::internal::createVulkanOpenXRConfig(xr_context->instance, xr_context->system_id, (void**)&adapter_opts_xr_config.openXRConfig);
+        adapter_opts.nextInChain = reinterpret_cast<WGPUChainedStruct*>(&adapter_opts_xr_config);
+#endif
+    }
+    else {
+        spdlog::warn("XR not available, fallback to desktop mode");
+    }
+#endif
+
+    // request adapter
+    WGPURequestAdapterCallbackInfo2 adapter_callback_info = {};
+    adapter_callback_info.mode = WGPUCallbackMode_AllowProcessEvents;
+    adapter_callback_info.userdata1 = &adapter;
+    adapter_callback_info.callback = [](WGPURequestAdapterStatus status, WGPUAdapter adapter, char const* message, void* userdata1, void* userdata2) {
+        WGPUAdapter* out_adapter = reinterpret_cast<WGPUAdapter*>(userdata1);
         if (status == WGPURequestAdapterStatus_Success) {
-            userData.adapter = adapter;
+            *out_adapter = adapter;
         }
         else {
             spdlog::error("Could not get WebGPU adapter: {}", message);
         }
-        userData.requestEnded = true;
     };
 
     // Call to the WebGPU request adapter procedure
-    wgpuInstanceRequestAdapter(
+    return wgpuInstanceRequestAdapter2(
         instance,
-        options,
-        onAdapterRequestEnded,
-        (void*)&userData
+        &adapter_opts,
+        adapter_callback_info
     );
-
-#ifdef __EMSCRIPTEN__
-    while (!userData.requestEnded) {
-        emscripten_sleep(100);
-    }
-#endif
-
-    WGPUAdapterInfo adapter_info = {};
-    wgpuAdapterGetInfo(userData.adapter, &adapter_info);
-
-    //spdlog::info("VendorID: {0:x}", adapter_info.vendorID);
-    //spdlog::info("Vendor: {}", adapter_info.vendor);
-    spdlog::info("Architecture: {}", adapter_info.architecture);
-    //spdlog::info("DeviceID: {0:x}", adapter_info.deviceID);
-    spdlog::info("Name: {}", adapter_info.device);
-    spdlog::info("Driver description: {}\n", adapter_info.description);
-
-    //assert(userData.requestEnded);
-
-    return userData.adapter;
 }
 
-WGPUDevice requestDevice(WGPUAdapter adapter, WGPUDeviceDescriptor const* descriptor) {
-    struct UserData {
-        WGPUDevice device = nullptr;
-        bool requestEnded = false;
-    };
-    UserData userData;
-
-    auto onDeviceRequestEnded = [](WGPURequestDeviceStatus status, WGPUDevice device, char const* message, void* pUserData) {
-        UserData& userData = *reinterpret_cast<UserData*>(pUserData);
-        if (status == WGPURequestDeviceStatus_Success) {
-            userData.device = device;
-        }
-        else {
-            spdlog::error("Could not get WebGPU device: {}", message);
-        }
-        userData.requestEnded = true;
-    };
-
-    wgpuAdapterRequestDevice(
-        adapter,
-        descriptor,
-        onDeviceRequestEnded,
-        (void*)&userData
-    );
-
-#ifdef __EMSCRIPTEN__
-    while (!userData.requestEnded) {
-        emscripten_sleep(100);
-    }
-#endif
-
-    assert(userData.requestEnded);
-
-    return userData.device;
-}
-
-int WebGPUContext::initialize(WGPURequestAdapterOptions adapter_opts, WGPURequiredLimits required_limits, GLFWwindow* window, bool create_screen_swapchain)
+WGPUFuture WebGPUContext::request_device()
 {
-    WGPUAdapter adapter = requestAdapter(get_instance(), &adapter_opts);
-
     // Create device
     WGPUDeviceDescriptor device_desc = {};
     device_desc.label = get_string_view("My Device");
-
-    this->required_limits = required_limits;
 
     std::vector<WGPUFeatureName> required_features;
 
@@ -205,9 +178,45 @@ int WebGPUContext::initialize(WGPURequestAdapterOptions adapter_opts, WGPURequir
     chain_desc->sType = WGPUSType_DawnTogglesDescriptor;
     device_desc.nextInChain = chain_desc;
 #endif
-    
-    device = requestDevice(adapter, &device_desc);
 
+    // request device
+    {
+        WGPURequestDeviceCallbackInfo2 device_callback_info = {};
+        device_callback_info.mode = WGPUCallbackMode_AllowProcessEvents;
+        device_callback_info.userdata1 = &device;
+        device_callback_info.callback = [](WGPURequestDeviceStatus status, WGPUDevice device, char const* message, void* userdata1, void* userdata2) {
+            WGPUDevice* out_device = reinterpret_cast<WGPUDevice*>(userdata1);
+            if (status == WGPURequestDeviceStatus_Success) {
+                *out_device = device;
+            }
+            else {
+                spdlog::error("Could not get WebGPU device: {}", message);
+            }
+        };
+
+        return wgpuAdapterRequestDevice2(
+            adapter,
+            &device_desc,
+            device_callback_info
+        );
+    }
+}
+
+void WebGPUContext::print_device_info()
+{
+    WGPUAdapterInfo adapter_info = {};
+    wgpuAdapterGetInfo(adapter, &adapter_info);
+
+    //spdlog::info("VendorID: {0:x}", adapter_info.vendorID);
+    //spdlog::info("Vendor: {}", adapter_info.vendor);
+    spdlog::info("Architecture: {}", adapter_info.architecture);
+    //spdlog::info("DeviceID: {0:x}", adapter_info.deviceID);
+    spdlog::info("Name: {}", adapter_info.device);
+    spdlog::info("Driver description: {}\n", adapter_info.description);
+}
+
+int WebGPUContext::initialize(bool create_screen_swapchain)
+{
     wgpuDeviceGetLimits(device, &supported_limits);
 
 #ifdef __EMSCRIPTEN__
@@ -241,35 +250,33 @@ int WebGPUContext::initialize(WGPURequestAdapterOptions adapter_opts, WGPURequir
         create_swapchain(width, height);
     }
 
-    this->window = window;
-
     device_queue = wgpuDeviceGetQueue(device);
 
     {
         cubemap_mipmap_pipeline.mipmap_shader = RendererStorage::get_shader_from_source(shaders::cubemap_downsampler::source, shaders::cubemap_downsampler::path);
         cubemap_mipmap_pipeline.mipmap_pipeline = new Pipeline();
-        cubemap_mipmap_pipeline.mipmap_pipeline->create_compute_async(cubemap_mipmap_pipeline.mipmap_shader);
+        cubemap_mipmap_pipeline.mipmap_pipeline->create_compute(cubemap_mipmap_pipeline.mipmap_shader);
     }
 
     {
         panorama_to_cubemap_shader = RendererStorage::get_shader_from_source(shaders::panorama_to_cubemap::source, shaders::panorama_to_cubemap::path);
 
         panorama_to_cubemap_pipeline = new Pipeline();
-        panorama_to_cubemap_pipeline->create_compute_async(panorama_to_cubemap_shader);
+        panorama_to_cubemap_pipeline->create_compute(panorama_to_cubemap_shader);
     }
 
     {
         prefiltered_env_shader = RendererStorage::get_shader_from_source(shaders::prefilter_env::source, shaders::prefilter_env::path);
 
         prefiltered_env_pipeline = new Pipeline();
-        prefiltered_env_pipeline->create_compute_async(prefiltered_env_shader);
+        prefiltered_env_pipeline->create_compute(prefiltered_env_shader);
     }
 
     {
         brdf_lut_shader = RendererStorage::get_shader_from_source(shaders::brdf_lut_gen::source, shaders::brdf_lut_gen::path);
 
         brdf_lut_pipeline = new Pipeline();
-        brdf_lut_pipeline->create_compute_async(brdf_lut_shader);
+        brdf_lut_pipeline->create_compute(brdf_lut_shader);
 
         brdf_lut_texture = new Texture();
         brdf_lut_texture->create(WGPUTextureDimension_2D, WGPUTextureFormat_RG32Float, { 512, 512, 1 },
@@ -277,7 +284,6 @@ int WebGPUContext::initialize(WGPURequestAdapterOptions adapter_opts, WGPURequir
 
         generate_brdf_lut_texture();
     }
-
 
     is_initialized = true;
 
@@ -837,11 +843,13 @@ WebGPUContext::sMipmapPipeline WebGPUContext::get_mipmap_pipeline(WGPUTextureFor
 
 void WebGPUContext::process_events()
 {
-#ifndef __EMSCRIPTEN__
-    wgpuInstanceProcessEvents(get_instance());
-#else
-    emscripten_sleep(50);
-#endif
+    wgpuInstanceProcessEvents(instance);
+
+//#ifndef __EMSCRIPTEN__
+//    wgpuInstanceProcessEvents(instance);
+//#else
+//    emscripten_sleep(50);
+//#endif
 }
 
 //WGPURenderPipelineDescriptor WebGPUContext::create_render_pipeline_common(WGPUShaderModule render_shader_module, WGPUPipelineLayout pipeline_layout, const std::vector<WGPUVertexBufferLayout>& vertex_attributes, WGPUColorTargetState color_target, bool use_depth, bool depth_read, bool depth_write, WGPUCullMode cull_mode, WGPUPrimitiveTopology topology, uint8_t sample_count, const char* vs_entry_point, const char* fs_entry_point)
@@ -1010,7 +1018,7 @@ WGPURenderPipeline WebGPUContext::create_render_pipeline(WGPUShaderModule render
 }
 
 void WebGPUContext::create_render_pipeline_async(WGPUShaderModule render_shader_module, WGPUPipelineLayout pipeline_layout, const std::vector<WGPUVertexBufferLayout>& vertex_attributes,
-    WGPUColorTargetState color_target, WGPUCreateRenderPipelineAsyncCallback callback, void* userdata, const RenderPipelineDescription& description, std::vector< WGPUConstantEntry> constants)
+    WGPUColorTargetState color_target, WGPUCreateRenderPipelineAsyncCallbackInfo2 callback_info, const RenderPipelineDescription& description, std::vector< WGPUConstantEntry> constants)
 {
     WGPUVertexState vertex_state = {};
     vertex_state.module = render_shader_module;
@@ -1065,7 +1073,7 @@ void WebGPUContext::create_render_pipeline_async(WGPUShaderModule render_shader_
 
     pipeline_descr.fragment = &fragment_state;
 
-    wgpuDeviceCreateRenderPipelineAsync(device, &pipeline_descr, callback, userdata);
+    wgpuDeviceCreateRenderPipelineAsync2(device, &pipeline_descr, callback_info);
 }
 
 WGPUComputePipeline WebGPUContext::create_compute_pipeline(WGPUShaderModule compute_shader_module, WGPUPipelineLayout pipeline_layout,
@@ -1083,7 +1091,7 @@ WGPUComputePipeline WebGPUContext::create_compute_pipeline(WGPUShaderModule comp
 }
 
 void WebGPUContext::create_compute_pipeline_async(WGPUShaderModule compute_shader_module, WGPUPipelineLayout pipeline_layout,
-    WGPUCreateComputePipelineAsyncCallback callback, void* userdata, const char* entry_point, std::vector< WGPUConstantEntry> constants)
+    WGPUCreateComputePipelineAsyncCallbackInfo2 callback_info, const char* entry_point, std::vector< WGPUConstantEntry> constants)
 {
     WGPUComputePipelineDescriptor computePipelineDesc = {};
     computePipelineDesc.compute.nextInChain = nullptr;
@@ -1093,7 +1101,7 @@ void WebGPUContext::create_compute_pipeline_async(WGPUShaderModule compute_shade
     computePipelineDesc.compute.module = compute_shader_module;
     computePipelineDesc.layout = pipeline_layout;
 
-   wgpuDeviceCreateComputePipelineAsync(device, &computePipelineDesc, callback, userdata);
+   wgpuDeviceCreateComputePipelineAsync2(device, &computePipelineDesc, callback_info);
 }
 
 WGPUVertexBufferLayout WebGPUContext::create_vertex_buffer_layout(const std::vector<WGPUVertexAttribute>& vertex_attributes, uint64_t stride, WGPUVertexStepMode step_mode)

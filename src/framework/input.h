@@ -57,7 +57,7 @@ class Input {
 
 public:
 
-    static void init(GLFWwindow* window, Renderer* renderer, bool use_glfw);
+    static void init(GLFWwindow* window, bool use_mirror_screen, bool use_glfw);
     static void update(float delta_time);
     static void center_mouse();
 

@@ -114,4 +114,10 @@ private:
     XrActionStateVector2f get_action_vector2f_State(XrAction targetAction, uint8_t controller);
 };
 
+#else
+
+struct OpenXRContext {
+
+};
+
 #endif

@@ -7,6 +7,8 @@
 #include "graphics/surface.h"
 #include "graphics/pipeline.h"
 
+#include "framework/camera/camera.h"
+
 #include "glm/mat4x4.hpp"
 
 #include "backends/imgui_impl_wgpu.h"
@@ -24,6 +26,7 @@ class RenderdocCapture;
 class RendererStorage;
 class MeshInstance;
 class MeshInstance3D;
+class GSNode;
 struct GLFWwindow;
 struct WebGPUContext;
 struct OpenXRContext;
@@ -32,10 +35,8 @@ struct sLightUniformData;
 class Renderer {
 
 protected:
-#ifdef XR_SUPPORT
-    OpenXRContext*  xr_context;
-#endif
 
+    OpenXRContext*  xr_context;
     WebGPUContext*  webgpu_context;
 
     std::function<void(void*, WGPURenderPassEncoder, uint32_t)> custom_pre_opaque_pass = nullptr;
@@ -91,9 +92,6 @@ protected:
     float z_near = 1000.0f;
     float z_far = 0.01f;
 
-    // Required device limits
-    WGPURequiredLimits required_limits = {};
-
     struct sUniformData {
         glm::mat4x4 model;
     };
@@ -113,6 +111,7 @@ protected:
     enum eRenderListType {
         RENDER_LIST_OPAQUE,
         RENDER_LIST_TRANSPARENT,
+        RENDER_LIST_SPLATS,
         RENDER_LIST_2D,
         RENDER_LIST_2D_TRANSPARENT,
         RENDER_LIST_SIZE
@@ -133,6 +132,7 @@ protected:
         glm::vec2 dummy;
     };
 
+    eCameraType camera_type = CAMERA_FLYOVER;
     sCameraData camera_data;
     sCameraData camera_2d_data;
 
@@ -150,6 +150,9 @@ protected:
 
     // Entities to be rendered this frame
     std::vector<sRenderListData> render_entity_list;
+
+    // Gaussian Splatting scenes to render
+    std::vector<GSNode*> gs_scenes_list;
 
     std::vector<sRenderData> render_list[RENDER_LIST_SIZE];
 
@@ -174,6 +177,8 @@ protected:
     Uniform lights_buffer;
     Uniform num_lights_buffer;
 
+    Pipeline gs_render_pipeline;
+    Shader* gs_render_shader = nullptr;
 
     WGPUQuerySet timestamp_query_set;
     uint8_t maximum_query_sets = 16;
@@ -196,6 +201,8 @@ protected:
     float exposure = 1.0f;
     float ibl_intensity = 1.0f;
 
+    bool initialized = false;
+
 public:
 
     // Singleton
@@ -204,13 +211,22 @@ public:
     Renderer();
     virtual ~Renderer();
 
-    virtual int initialize(GLFWwindow* window, bool use_mirror_screen = false);
+    virtual int pre_initialize(GLFWwindow* window, bool use_mirror_screen = false);
+    virtual int initialize();
+    virtual int post_initialize();
     virtual void clean();
+
+    bool is_initialized() { return initialized; }
     
     virtual void update(float delta_time);
     virtual void render();
 
+    void process_events();
+
     void submit_global_command_encoder();
+
+    void set_camera_type(eCameraType camera_type);
+    eCameraType get_camera_type();
 
     void set_custom_pass_user_data(void* user_data);
 
@@ -231,7 +247,7 @@ public:
     void resolve_query_set(WGPUCommandEncoder encoder, uint8_t first_query);
     std::vector<float>& get_last_frame_timestamps() { return last_frame_timestamps; }
 
-    void set_msaa_count(uint8_t msaa_count);
+    void set_msaa_count(uint8_t msaa_count, bool is_initial_value = false);
     uint8_t get_msaa_count();
 
     bool is_inside_frustum(const glm::vec3& minp, const glm::vec3& maxp) const;
@@ -239,6 +255,7 @@ public:
     void prepare_instancing(const glm::vec3& camera_position);
     void render_opaque(WGPURenderPassEncoder render_pass, const WGPUBindGroup& render_camera_bind_group, uint32_t camera_buffer_stride = 0);
     void render_transparent(WGPURenderPassEncoder render_pass, const WGPUBindGroup& render_camera_bind_group, uint32_t camera_buffer_stride = 0);
+    void render_splats(WGPURenderPassEncoder render_pass, const WGPUBindGroup& render_camera_bind_group, uint32_t camera_buffer_stride = 0);
     void render_2D(WGPURenderPassEncoder render_pass, const WGPUBindGroup& render_camera_bind_group);
 
     bool get_openxr_available() { return is_openxr_available; }
@@ -284,9 +301,10 @@ public:
 #endif
     WebGPUContext* get_webgpu_context();
 
-    void set_required_limits(const WGPURequiredLimits& required_limits) { this->required_limits = required_limits; }
+    void set_required_limits(const WGPURequiredLimits& required_limits) { webgpu_context->required_limits = required_limits; }
 
     void add_renderable(MeshInstance* mesh_instance, const glm::mat4x4& global_matrix);
+    void add_splat_scene(GSNode* gs_scene);
     void clear_renderables();
 
     void update_lights();
