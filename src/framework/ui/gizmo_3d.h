@@ -81,6 +81,7 @@ public:
 	void initialize(const eGizmoOp& new_type, const glm::vec3 &position = glm::vec3(0.0f));
 	void clean();
 
+    void set_enabled(bool enabled);
     void set_operation(const eGizmoOp& gizmo_use);
     void set_transform(const Transform& t);
 

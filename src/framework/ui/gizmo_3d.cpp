@@ -182,8 +182,16 @@ void Gizmo3D::set_transform(const Transform& t)
     transform = t;
 }
 
+void Gizmo3D::set_enabled(bool new_enabled)
+{
+    enabled = new_enabled;
+}
+
 void Gizmo3D::set_operation(const eGizmoOp& gizmo_type)
 {
+    // Force enabled true when selection an option?
+    set_enabled(true);
+
     if (xr_enabled) {
         operation = gizmo_type;
 
