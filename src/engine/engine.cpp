@@ -251,9 +251,6 @@ void Engine::start_loop()
 {
 
 #ifdef __EMSCRIPTEN__
-
-    on_engine_initialized();
-
     emscripten_set_main_loop_arg(
         [](void* user_data) {
             Engine* engine = reinterpret_cast<Engine*>(user_data);
@@ -318,6 +315,10 @@ void Engine::on_frame()
             init_imgui(renderer->get_glfw_window());
 
             post_initialize();
+
+#ifdef __EMSCRIPTEN__
+            on_engine_initialized();
+#endif
 
             // Submit any initialization commands
             renderer->submit_global_command_encoder();
