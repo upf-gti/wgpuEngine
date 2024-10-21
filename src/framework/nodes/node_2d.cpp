@@ -3,6 +3,7 @@
 #include "framework/input.h"
 #include "framework/math/intersections.h"
 #include "framework/ui/io.h"
+#include "framework/nodes/node_factory.h"
 
 #include "graphics/renderer.h"
 
@@ -18,6 +19,8 @@
 unsigned int Node2D::last_uid = 0;
 
 std::map<std::string, Node2D*> Node2D::all_widgets;
+
+REGISTER_NODE_CLASS(Node2D)
 
 Node2D::Node2D(const std::string& n, const glm::vec2& p, const glm::vec2& s) : size(s)
 {

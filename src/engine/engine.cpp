@@ -3,7 +3,6 @@
 #include "framework/input.h"
 #include "framework/utils/file_watcher.h"
 #include "framework/ui/io.h"
-#include "framework/nodes/default_node_factory.h"
 #include "framework/utils/tinyfiledialogs.h"
 #include "framework/nodes/mesh_instance_3d.h"
 #include "framework/parsers/parse_scene.h"

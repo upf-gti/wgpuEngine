@@ -3,8 +3,6 @@
 #include "framework/nodes/node.h"
 #include "scene_binary_format.h"
 
-#include "framework/nodes/default_node_factory.h"
-
 #include "engine/engine.h"
 
 #include <fstream>
@@ -124,7 +122,7 @@ void Scene::parse(const std::string& path)
         node_type.resize(node_type_size);
         binary_scene_file.read(&node_type[0], node_type_size);
 
-        Node* node = default_node_factory(node_type);
+        Node* node = NodeRegistry::get_instance()->create_node(node_type);
         node->parse(binary_scene_file);
         add_node(node);
     }

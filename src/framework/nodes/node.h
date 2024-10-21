@@ -143,33 +143,24 @@ public:
     }
 };
 
-class NodeFactory {
-public:
-
-    static NodeFactory* instance;
+class NodeRegistry {
 
     std::unordered_map<std::string, std::function<Node* ()>> registry;
 
-    NodeFactory();
+public:
 
-    void register_class(const std::string& name, std::function<Node* ()> constructor) {
-        registry[name] = constructor;
-    }
+    static NodeRegistry* instance;
 
-    Node* create_node(const std::string& name) {
-        if (registry.find(name) != registry.end()) {
-            return registry[name]();
-        }
-        return nullptr;
-    }
+    NodeRegistry();
 
-    static NodeFactory* get_instance() {
+    void register_class(const std::string& name, std::function<Node* ()> constructor);
+
+    Node* create_node(const std::string& name);
+
+    static NodeRegistry* get_instance() {
         if (instance == nullptr) {
-            instance = new NodeFactory();
+            instance = new NodeRegistry();
         }
         return instance;
     }
 };
-
-#define REGISTER_NODE_TYPE(node_type) \
-    NodeFactory::get_instance()->register_class(#node_type, []() -> Node* { return new node_type(); });

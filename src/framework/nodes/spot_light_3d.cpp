@@ -3,20 +3,15 @@
 #include "graphics/renderer.h"
 #include "graphics/renderer_storage.h"
 
+#include "framework/math/math_utils.h"
 #include "framework/nodes/mesh_instance_3d.h"
+#include "framework/nodes/node_factory.h"
 
 #include "shaders/mesh_forward.wgsl.gen.h"
 
-#include "framework/math/math_utils.h"
-
 #include "imgui.h"
 
-void SpotLight3D::create_debug_render_cone()
-{
-    float radius = range * sin(outer_cone_angle);
-    float height = sqrt(range * range - radius * radius);
-    debug_surface->create_cone(radius, height, 32);
-}
+REGISTER_NODE_CLASS(SpotLight3D)
 
 SpotLight3D::SpotLight3D() : Light3D()
 {
@@ -47,6 +42,13 @@ SpotLight3D::SpotLight3D() : Light3D()
 SpotLight3D::~SpotLight3D()
 {
     
+}
+
+void SpotLight3D::create_debug_render_cone()
+{
+    float radius = range * sin(outer_cone_angle);
+    float height = sqrt(range * range - radius * radius);
+    debug_surface->create_cone(radius, height, 32);
 }
 
 void SpotLight3D::render()

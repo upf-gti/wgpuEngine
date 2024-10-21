@@ -1,7 +1,11 @@
 #include "mesh_instance_3d.h"
 
 #include "graphics/renderer.h"
+
 #include "framework/animation/skeleton.h"
+#include "framework/nodes/node_factory.h"
+
+REGISTER_NODE_CLASS(MeshInstance3D)
 
 MeshInstance3D::MeshInstance3D() : Node3D()
 {

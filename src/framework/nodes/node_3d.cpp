@@ -1,9 +1,11 @@
 #include "node_3d.h"
 
 #include "imgui.h"
+
 #include "framework/utils/ImGuizmo.h"
 #include "framework/camera/camera.h"
 #include "framework/math/intersections.h"
+#include "framework/nodes/node_factory.h"
 
 #include "graphics/renderer.h"
 
@@ -13,6 +15,8 @@
 #include "spdlog/spdlog.h"
 
 #include <fstream>
+
+REGISTER_NODE_CLASS(Node3D)
 
 Node3D::Node3D()
 {

@@ -4,12 +4,14 @@
 #include "graphics/renderer_storage.h"
 
 #include "framework/nodes/mesh_instance_3d.h"
+#include "framework/nodes/node_factory.h"
+#include "framework/math/math_utils.h"
 
 #include "shaders/mesh_forward.wgsl.gen.h"
 
-#include "framework/math/math_utils.h"
-
 #include "imgui.h"
+
+REGISTER_NODE_CLASS(DirectionalLight3D)
 
 DirectionalLight3D::DirectionalLight3D() : Light3D()
 {

@@ -4,10 +4,13 @@
 #include "graphics/renderer_storage.h"
 
 #include "framework/math/math_utils.h"
+#include "framework/nodes/node_factory.h"
 
 #include "shaders/gaussian_splatting/gs_render.wgsl.gen.h"
 #include "shaders/gaussian_splatting/gs_covariance.wgsl.gen.h"
 #include "shaders/gaussian_splatting/gs_basis.wgsl.gen.h"
+
+REGISTER_NODE_CLASS(GSNode)
 
 GSNode::GSNode()
 {

@@ -1,11 +1,19 @@
 #include "animation_player.h"
 
 #include "graphics/renderer_storage.h"
+
 #include "framework/input.h"
+#include "framework/nodes/node_factory.h"
+#include "framework/nodes/skeleton_instance_3d.h"
 
 #include "spdlog/spdlog.h"
 
-#include "skeleton_instance_3d.h"
+REGISTER_NODE_CLASS(AnimationPlayer)
+
+AnimationPlayer::AnimationPlayer()
+{
+
+}
 
 AnimationPlayer::AnimationPlayer(const std::string& n)
 {

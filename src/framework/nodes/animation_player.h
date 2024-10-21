@@ -34,6 +34,7 @@ class AnimationPlayer : public Node3D
 
 public:
 
+    AnimationPlayer();
     AnimationPlayer(const std::string& name);
 
     void play(Animation* animation = nullptr, float custom_blend = -1.0f, float custom_speed = 1.0f, bool from_end = false);

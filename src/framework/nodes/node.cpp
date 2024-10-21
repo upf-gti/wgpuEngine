@@ -2,8 +2,9 @@
 
 #include "framework/input.h"
 #include "framework/utils/utils.h"
+#include "framework/nodes/node_factory.h"
 
-#include "default_node_factory.h"
+#include "node_factory.h"
 #include "node_binary_format.h"
 
 #include "engine/engine.h"
@@ -13,6 +14,8 @@
 std::unordered_map<std::string, std::vector<SignalType>> Node::mapping_signals;
 std::unordered_map<uint8_t, std::vector<FuncEmpty>> Node::controller_signals;
 uint32_t Node::last_node_id = 0;
+
+REGISTER_NODE_CLASS(Node)
 
 Node::Node()
 {
@@ -77,7 +80,7 @@ void Node::parse(std::ifstream& binary_scene_file)
         child_node_type.resize(node_type_size);
         binary_scene_file.read(&child_node_type[0], node_type_size);
 
-        Node* child = default_node_factory(node_type);
+        Node* child = NodeRegistry::get_instance()->create_node(node_type);
         child->parse(binary_scene_file);
         children.push_back(child);
     }
@@ -211,5 +214,38 @@ void Node::check_controller_signals()
 
         for (auto& callback : it.second)
             callback();
+    }
+}
+
+NodeRegistry* NodeRegistry::instance = nullptr;
+
+NodeRegistry::NodeRegistry()
+{
+    assert(instance == nullptr);
+    instance = this;
+}
+
+void NodeRegistry::register_class(const std::string& name, std::function<Node* ()> constructor)
+{
+    registry[name] = constructor;
+}
+
+Node* NodeRegistry::create_node(const std::string& name)
+{
+    std::string node_class = name;
+
+    // legacy for rooms
+    if (node_class == "SculptInstance") {
+        node_class = "SculptNode";
+    }
+
+    Node* node = nullptr;
+
+    if (registry.find(node_class) != registry.end()) {
+        return registry[node_class]();
+    }
+    else {
+        assert(0);
+        return nullptr;
     }
 }
