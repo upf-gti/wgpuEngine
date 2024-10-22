@@ -25,7 +25,7 @@ namespace ui {
         glm::vec2 item_margin = { 0.0f, 0.0f };
 
         Container2D() {};
-        Container2D(const std::string& name, const glm::vec2& p, const glm::vec2& s = { 0.0f, 0.0f }, const Color& c = colors::WHITE);
+        Container2D(const std::string& name, const glm::vec2& p, const glm::vec2& s = { 0.0f, 0.0f }, uint32_t flags = 0u, const Color& c = colors::WHITE);
 
         void update(float delta_time) override;
         bool on_input(sInputData data) override;
@@ -39,7 +39,7 @@ namespace ui {
     class HContainer2D : public Container2D {
     public:
         HContainer2D() {};
-        HContainer2D(const std::string& name, const glm::vec2& p, const Color& c = colors::WHITE);
+        HContainer2D(const std::string& name, const glm::vec2& p, uint32_t flags = 0u, const Color& c = colors::WHITE);
 
         void on_children_changed() override;
     };
@@ -48,7 +48,7 @@ namespace ui {
 
     public:
         VContainer2D() {};
-        VContainer2D(const std::string& name, const glm::vec2& p, const Color& c = colors::WHITE);
+        VContainer2D(const std::string& name, const glm::vec2& p, uint32_t flags = 0u, const Color& c = colors::WHITE);
 
         void on_children_changed() override;
     };
@@ -56,7 +56,7 @@ namespace ui {
     class CircleContainer2D : public Container2D {
     public:
         CircleContainer2D() {};
-        CircleContainer2D(const std::string& name, const glm::vec2& p, const Color& c = colors::GRAY);
+        CircleContainer2D(const std::string& name, const glm::vec2& p, uint32_t flags = 0u, const Color& c = colors::GRAY);
 
         void update(float delta_time) override;
         bool on_input(sInputData data) override;
@@ -66,7 +66,7 @@ namespace ui {
     class ItemGroup2D : public HContainer2D {
     public:
 
-        ItemGroup2D(const std::string& name, const glm::vec2& pos = { 0.0f, 0.0f }, const Color& color = colors::GRAY);
+        ItemGroup2D(const std::string& name, const glm::vec2& pos = { 0.0f, 0.0f }, uint32_t flags = 0u, const Color& color = colors::GRAY);
 
         float get_number_of_items();
         void set_number_of_items(float number);
@@ -77,7 +77,7 @@ namespace ui {
     class ComboButtons2D : public HContainer2D {
     public:
 
-        ComboButtons2D(const std::string& name, const glm::vec2& pos = { 0.0f, 0.0f }, const Color& color = colors::GRAY);
+        ComboButtons2D(const std::string& name, const glm::vec2& pos = { 0.0f, 0.0f }, uint32_t flags = 0u, const Color& color = colors::GRAY);
 
         void on_children_changed() override;
     };

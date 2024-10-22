@@ -36,6 +36,7 @@ namespace ui {
         DBL_CLICK = 1 << 13,
         LONG_CLICK = 1 << 14,
         HIDDEN = 1 << 15,
-        CONFIRM_BUTTON = 1 << 16
+        CONFIRM_BUTTON = 1 << 16,
+        CREATE_3D = 1 << 17
     };
 }

@@ -22,8 +22,8 @@ namespace ui {
     *	Containers
     */
 
-    Container2D::Container2D(const std::string& name, const glm::vec2& pos, const glm::vec2& s, const Color& col)
-        : Panel2D(name, pos, s, col)
+    Container2D::Container2D(const std::string& name, const glm::vec2& pos, const glm::vec2& s, uint32_t flags, const Color& col)
+        : Panel2D(name, pos, s, flags, col)
     {
         class_type = CONTAINER;
 
@@ -97,8 +97,8 @@ namespace ui {
         fixed_size = new_size;
     }
 
-    HContainer2D::HContainer2D(const std::string& name, const glm::vec2& pos, const Color& col)
-        : Container2D(name, pos, { 0.0f, 0.0f }, col)
+    HContainer2D::HContainer2D(const std::string& name, const glm::vec2& pos, uint32_t flags, const Color& color)
+        : Container2D(name, pos, { 0.0f, 0.0f }, flags, color)
     {
         class_type = Node2DClassType::HCONTAINER;
     }
@@ -158,8 +158,8 @@ namespace ui {
         Container2D::on_children_changed();
     }
 
-    VContainer2D::VContainer2D(const std::string& name, const glm::vec2& pos, const Color& col)
-        : Container2D(name, pos, { 0.0f, 0.0f }, col)
+    VContainer2D::VContainer2D(const std::string& name, const glm::vec2& pos, uint32_t flags, const Color& color)
+        : Container2D(name, pos, { 0.0f, 0.0f }, flags, color)
     {
         class_type = Node2DClassType::VCONTAINER;
 
@@ -215,8 +215,8 @@ namespace ui {
         Container2D::on_children_changed();
     }
 
-    CircleContainer2D::CircleContainer2D(const std::string& name, const glm::vec2& pos, const Color& col)
-        : Container2D(name, pos, col)
+    CircleContainer2D::CircleContainer2D(const std::string& name, const glm::vec2& pos, uint32_t flags, const Color& color)
+        : Container2D(name, pos, { 0.0f, 0.0f }, flags, color)
     {
         class_type = Node2DClassType::SELECTOR;
 
@@ -321,8 +321,8 @@ namespace ui {
     *   Widget Group
     */
 
-    ItemGroup2D::ItemGroup2D(const std::string& name, const glm::vec2& pos, const Color& color)
-        : HContainer2D(name, pos, color) {
+    ItemGroup2D::ItemGroup2D(const std::string& name, const glm::vec2& pos, uint32_t flags, const Color& color)
+        : HContainer2D(name, pos, flags, color) {
 
         class_type = Node2DClassType::GROUP;
 
@@ -388,8 +388,8 @@ namespace ui {
     *   Combo buttons
     */
 
-    ComboButtons2D::ComboButtons2D(const std::string& name, const glm::vec2& pos, const Color& color)
-        : HContainer2D(name, pos, color) {
+    ComboButtons2D::ComboButtons2D(const std::string& name, const glm::vec2& pos, uint32_t flags, const Color& color)
+        : HContainer2D(name, pos, flags, color) {
 
         class_type = Node2DClassType::COMBO;
 

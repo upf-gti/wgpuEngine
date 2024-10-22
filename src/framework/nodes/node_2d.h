@@ -72,7 +72,7 @@ public:
     sUIData ui_data;
 
     Node2D() : Node2D("unnamed", { 0.0f, 0.0f }, { 0.0f, 0.0f }) {};
-    Node2D(const std::string& name, const glm::vec2& p, const glm::vec2& s);
+    Node2D(const std::string& name, const glm::vec2& p, const glm::vec2& s, uint32_t parameter_flags = 0u);
 	virtual ~Node2D();
 
     virtual void add_child(Node2D* child);

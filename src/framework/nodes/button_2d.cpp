@@ -35,7 +35,7 @@ namespace ui {
         : Panel2D(sg, pos, size) { }
 
     Button2D::Button2D(const std::string& sg, const Color& col, uint32_t flags, const glm::vec2& pos, const glm::vec2& size)
-        : Panel2D(sg, pos, size, col) {
+        : Panel2D(sg, pos, size, flags, col) {
 
         class_type = Node2DClassType::BUTTON;
 

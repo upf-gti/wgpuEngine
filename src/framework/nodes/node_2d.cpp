@@ -5,6 +5,7 @@
 #include "framework/ui/io.h"
 #include "framework/nodes/node_factory.h"
 #include "framework/nodes/viewport_3d.h"
+#include "framework/ui/ui_utils.h"
 
 #include "graphics/renderer.h"
 
@@ -23,7 +24,7 @@ std::map<std::string, Node2D*> Node2D::all_widgets;
 
 REGISTER_NODE_CLASS(Node2D)
 
-Node2D::Node2D(const std::string& n, const glm::vec2& p, const glm::vec2& s) : size(s)
+Node2D::Node2D(const std::string& n, const glm::vec2& p, const glm::vec2& s, uint32_t parameter_flags) : size(s)
 {
     type = NodeType::NODE_2D;
 
@@ -35,7 +36,7 @@ Node2D::Node2D(const std::string& n, const glm::vec2& p, const glm::vec2& s) : s
 
     set_position(p);
 
-    if (Renderer::instance->get_openxr_available()) {
+    if ((parameter_flags & ui::CREATE_3D) && Renderer::instance->get_openxr_available()) {
         xr_viewport_3d = new Viewport3D(this);
         xr_viewport_3d->set_active(true);
     }
@@ -46,6 +47,10 @@ Node2D::~Node2D()
     release();
 
     all_widgets.erase(name);
+
+    if (xr_viewport_3d) {
+        delete xr_viewport_3d;
+    }
 }
 
 void Node2D::add_child(Node2D* child)
@@ -63,7 +68,7 @@ void Node2D::add_child(Node2D* child)
     }
 
     // Disable 2d if rendering in xr
-    if (xr_viewport_3d) {
+    if (Renderer::instance->get_openxr_available()) {
         child->disable_2d();
     }
 

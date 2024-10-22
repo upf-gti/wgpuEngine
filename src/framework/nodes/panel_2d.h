@@ -31,8 +31,8 @@ namespace ui {
         MeshInstance* quad_mesh = nullptr;
 
         Panel2D() {};
-        Panel2D(const std::string& name, const glm::vec2& p, const glm::vec2& s, const Color& c = colors::WHITE);
-        Panel2D(const std::string& name, const std::string& image_path, const glm::vec2& p, const glm::vec2& s, const Color& c = colors::WHITE);
+        Panel2D(const std::string& name, const glm::vec2& p, const glm::vec2& s, uint32_t flags = 0u, const Color& c = colors::WHITE);
+        Panel2D(const std::string& name, const std::string& image_path, const glm::vec2& p, const glm::vec2& s, uint32_t flags, const Color& c = colors::WHITE);
 
         virtual ~Panel2D();
 

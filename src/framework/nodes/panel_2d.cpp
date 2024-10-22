@@ -26,11 +26,11 @@ namespace ui {
     *	Panel
     */
 
-    Panel2D::Panel2D(const std::string& name, const glm::vec2& pos, const glm::vec2& size, const Color& col)
-        : Panel2D(name, "", pos, size, col) { }
+    Panel2D::Panel2D(const std::string& name, const glm::vec2& pos, const glm::vec2& size, uint32_t flags, const Color& col)
+        : Panel2D(name, "", pos, size, flags, col) { }
 
-    Panel2D::Panel2D(const std::string& name, const std::string& image_path, const glm::vec2& p, const glm::vec2& s, const Color& c)
-        : Node2D(name, p, s), color(c)
+    Panel2D::Panel2D(const std::string& name, const std::string& image_path, const glm::vec2& p, const glm::vec2& s, uint32_t flags, const Color& c)
+        : Node2D(name, p, s, flags), color(c)
     {
         class_type = Node2DClassType::PANEL;
 
@@ -416,7 +416,7 @@ namespace ui {
     { }
 
     XRPanel::XRPanel(const std::string& name, const std::string& image_path, const glm::vec2& p, const glm::vec2& s, uint32_t flags, const Color& c)
-        : Panel2D(name, image_path, p, s, c)
+        : Panel2D(name, image_path, p, s, flags, c)
     {
         Surface* quad_surface = quad_mesh->get_surface(0);
         quad_surface->create_quad(size.x, size.y, true);
@@ -807,7 +807,7 @@ namespace ui {
         : ColorPicker2D(sg, { 0.0f, 0.0f }, glm::vec2(PICKER_SIZE), c, 0) {}
 
     ColorPicker2D::ColorPicker2D(const std::string& sg, const glm::vec2& pos, const glm::vec2& size, const Color& c, uint32_t flags)
-        : Panel2D(sg, pos, size, c)
+        : Panel2D(sg, pos, size, flags, c)
     {
         class_type = Node2DClassType::COLOR_PICKER;
 
