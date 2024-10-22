@@ -713,7 +713,10 @@ namespace ui {
         {
             if (!on_pressed()) {
                 Node::emit_signal(name, (void*)this);
-                selected = this;
+
+                if (parameter_flags & ui::TEXT_SELECTABLE) {
+                    selected = this;
+                }
             }
         }
 

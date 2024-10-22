@@ -30,6 +30,7 @@ TrackType Interpolator::interpolate(const std::vector<Keyframe>& keyframes, floa
     }
 
     assert(0);
+    return TrackType();
 }
 
 TrackType Interpolator::step(const std::vector<Keyframe>& keyframes, int frame_idx, bool looping)

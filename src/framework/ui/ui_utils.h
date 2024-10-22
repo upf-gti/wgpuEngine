@@ -30,11 +30,12 @@ namespace ui {
         CURVE_INV_POW = 1 << 7,
         TEXT_CENTERED = 1 << 8,
         TEXT_EVENTS = 1 << 9,
-        SKIP_TEXT_RECT = 1 << 10,
-        SCROLLABLE = 1 << 11,
-        DBL_CLICK = 1 << 12,
-        LONG_CLICK = 1 << 13,
-        HIDDEN = 1 << 14,
-        CONFIRM_BUTTON = 1 << 15
+        TEXT_SELECTABLE = 1 << 10,
+        SKIP_TEXT_RECT = 1 << 11,
+        SCROLLABLE = 1 << 12,
+        DBL_CLICK = 1 << 13,
+        LONG_CLICK = 1 << 14,
+        HIDDEN = 1 << 15,
+        CONFIRM_BUTTON = 1 << 16
     };
 }
