@@ -1,9 +1,10 @@
 #pragma once
 
-#include "node_2d.h"
 #include "mesh_instance_3d.h"
 #include "graphics/material.h"
 #include "graphics/surface.h"
+
+class Node2D;
 
 /*
 *   This 3D Node allows to use a 2D UI in 3D

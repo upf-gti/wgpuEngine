@@ -4,6 +4,7 @@
 #include "framework/math/intersections.h"
 #include "framework/ui/io.h"
 #include "framework/nodes/node_factory.h"
+#include "framework/nodes/viewport_3d.h"
 
 #include "graphics/renderer.h"
 
@@ -33,6 +34,11 @@ Node2D::Node2D(const std::string& n, const glm::vec2& p, const glm::vec2& s) : s
     all_widgets[name] = this;
 
     set_position(p);
+
+    if (Renderer::instance->get_openxr_available()) {
+        xr_viewport_3d = new Viewport3D(this);
+        xr_viewport_3d->set_active(true);
+    }
 }
 
 Node2D::~Node2D()
@@ -54,6 +60,11 @@ void Node2D::add_child(Node2D* child)
     if (it != children.end()) {
         spdlog::error("Entity is already one of the children!");
         return;
+    }
+
+    // Disable 2d if rendering in xr
+    if (xr_viewport_3d) {
+        child->disable_2d();
     }
 
     child->parent = this;
@@ -86,6 +97,11 @@ void Node2D::on_children_changed()
 
 void Node2D::render()
 {
+    if (xr_viewport_3d) {
+        xr_viewport_3d->render();
+        return;
+    }
+
     if (!visibility)
         return;
 
@@ -144,6 +160,16 @@ bool Node2D::set_visibility(bool value, bool propagate)
 void Node2D::set_viewport_model(glm::mat4x4 model)
 {
     viewport_model = model;
+}
+
+void Node2D::set_xr_transform(const Transform& transform)
+{
+    if (xr_viewport_3d) {
+        xr_viewport_3d->set_transform(transform);
+    }
+    else {
+        assert(0 && "Setting transform in non-XR mode!");
+    }
 }
 
 void Node2D::set_priority(uint8_t priority)

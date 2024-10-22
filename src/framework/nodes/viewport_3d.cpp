@@ -2,6 +2,7 @@
 
 #include "graphics/renderer.h"
 
+#include "framework/nodes/node_2d.h"
 #include "framework/parsers/parse_scene.h"
 #include "framework/input.h"
 

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "framework/nodes/node.h"
+#include "framework/math/transform.h"
 
 #include "graphics/renderer_storage.h"
 
@@ -46,6 +47,8 @@ struct sInputData {
     float ray_distance = -1.0f;
 };
 
+class Viewport3D;
+
 class Node2D : public Node {
 
 protected:
@@ -62,6 +65,7 @@ protected:
     glm::vec2   scaling = { 1.0f, 1.0f };
 
     glm::mat4x4 viewport_model = glm::mat4x4(1.0f);
+    Viewport3D* xr_viewport_3d = nullptr;
 
 public:
 
@@ -91,6 +95,7 @@ public:
 	void scale(glm::vec2 scale);
 
     Node2D* get_parent() const { return parent; }
+    Viewport3D* get_xr_viewport() { return xr_viewport_3d; };
 	const glm::vec2 get_local_translation() const;
     const glm::vec2 get_translation() const;
     const glm::vec2 get_scale() const;
@@ -106,6 +111,7 @@ public:
 	void set_position(const glm::vec2& translation);
     void set_model(const glm::mat3x3& _model);
     void set_viewport_model(glm::mat4x4 model);
+    void set_xr_transform(const Transform& transform);
     virtual void set_priority(uint8_t priority);
 
     static std::map<std::string, Node2D*> all_widgets;
