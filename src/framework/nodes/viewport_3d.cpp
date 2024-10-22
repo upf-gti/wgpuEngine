@@ -21,15 +21,6 @@ void Viewport3D::set_viewport_size(const glm::vec2& new_size)
     viewport_size = new_size;
 }
 
-void Viewport3D::render()
-{
-    if (!active) {
-        return;
-    }
-
-    root->render();
-}
-
 void Viewport3D::update(float delta_time)
 {
     if (!active) {
@@ -53,6 +44,4 @@ void Viewport3D::update(float delta_time)
     root->scale(1.0f / glm::vec2(width, height * ar));
 
     root->set_viewport_model(get_global_model());
-
-    root->update(delta_time);
 }

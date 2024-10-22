@@ -23,7 +23,6 @@ public:
     Viewport3D(Node2D* root_2d);
 	~Viewport3D();
 
-	virtual void render() override;
 	virtual void update(float delta_time) override;
 
     void set_viewport_size(const glm::vec2& new_size);

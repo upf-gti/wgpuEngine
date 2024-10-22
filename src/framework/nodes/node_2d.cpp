@@ -102,11 +102,6 @@ void Node2D::on_children_changed()
 
 void Node2D::render()
 {
-    if (xr_viewport_3d) {
-        xr_viewport_3d->render();
-        return;
-    }
-
     if (!visibility)
         return;
 
@@ -117,6 +112,10 @@ void Node2D::update(float delta_time)
 {
     if (!visibility)
         return;
+
+    if (xr_viewport_3d) {
+        xr_viewport_3d->update(delta_time);
+    }
 
     Node::update(delta_time);
 }
@@ -173,7 +172,7 @@ void Node2D::set_xr_transform(const Transform& transform)
         xr_viewport_3d->set_transform(transform);
     }
     else {
-        assert(0 && "Setting transform in non-XR mode!");
+        assert(0 && "Setting transform in non-XR mode! Use ui::CREATE_3D flag when creating Node2D.");
     }
 }
 
