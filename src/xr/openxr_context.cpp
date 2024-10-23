@@ -928,7 +928,10 @@ void OpenXRContext::apply_haptics(uint8_t controller, float amplitude, float dur
     hapticActionInfo.action = input_state.vibrateAction;
     hapticActionInfo.subactionPath = input_state.handSubactionPath[controller];
 
-    xrApplyHapticFeedback(session, &hapticActionInfo, reinterpret_cast<XrHapticBaseHeader*>(&vibration));
+    XrResult result = xrApplyHapticFeedback(session, &hapticActionInfo, reinterpret_cast<XrHapticBaseHeader*>(&vibration));
+    if (result != XR_SUCCESS) {
+        spdlog::error("Vibration Error: OPENXR Error {}", static_cast<int>(result));
+    }
 }
 
 void OpenXRContext::stop_haptics(uint8_t controller)
