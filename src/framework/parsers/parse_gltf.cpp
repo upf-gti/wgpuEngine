@@ -30,7 +30,7 @@
 
 #include "spdlog/spdlog.h"
 
-void create_material_texture(const tinygltf::Model& model, int tex_index, Texture** texture, bool is_srgb = false)
+void create_material_texture(const tinygltf::Model& model, int tex_index, Texture** texture, bool is_srgb = false, bool fill_texture_data = false)
 {
     const tinygltf::Texture& tex = model.textures[tex_index];
 
@@ -62,12 +62,23 @@ void create_material_texture(const tinygltf::Model& model, int tex_index, Textur
         if (Texture::convert_to_rgba8unorm(image.width, image.height, texture_format, (void*)image.image.data(), converted_texture)) {
             *texture = new Texture();
             (*texture)->load_from_data(image.uri, WGPUTextureDimension_2D, image.width, image.height, 1, converted_texture, true, is_srgb ? WGPUTextureFormat_RGBA8UnormSrgb : WGPUTextureFormat_RGBA8Unorm);
+
+            if (fill_texture_data) {
+                std::vector<uint8_t>& texture_data = (*texture)->get_texture_data();
+                texture_data.assign(converted_texture, converted_texture + image.width * image.height);
+            }
+
             delete[] converted_texture;
         }
     }
     else {
         *texture = new Texture();
         (*texture)->load_from_data(image.uri, WGPUTextureDimension_2D, image.width, image.height, 1, (void*)image.image.data(), true, is_srgb ? WGPUTextureFormat_RGBA8UnormSrgb : WGPUTextureFormat_RGBA8Unorm);
+
+        if (fill_texture_data) {
+            std::vector<uint8_t>& texture_data = (*texture)->get_texture_data();
+            texture_data.assign(image.image.data(), image.image.data() + image.width * image.height);
+        }
     }
 
     if (tex.sampler != -1)
@@ -117,7 +128,7 @@ void read_transform(const tinygltf::Node& node, Transform& transform)
     }
 }
 
-void read_mesh(const tinygltf::Model& model, const tinygltf::Node& node, Node3D* entity, std::map<uint32_t, Texture*>& texture_cache)
+void read_mesh(const tinygltf::Model& model, const tinygltf::Node& node, Node3D* entity, std::map<uint32_t, Texture*>& texture_cache, bool fill_surface_data)
 {
     const tinygltf::Mesh& mesh = model.meshes[node.mesh];
     uint32_t joints_count = 0;
@@ -143,11 +154,16 @@ void read_mesh(const tinygltf::Model& model, const tinygltf::Node& node, Node3D*
 
         bool has_tangents = false;
 
-        std::vector<InterleavedData> vertices;
+        std::vector<sInterleavedData> vertices;
 
         const tinygltf::Primitive& primitive = mesh.primitives[primitive_idx];
 
         size_t index_data_size = 0;
+        sSurfaceData* surface_data = nullptr;
+
+        if (fill_surface_data) {
+            surface_data = new sSurfaceData();
+        }
 
         bool uses_indices = primitive.indices >= 0;
 
@@ -234,6 +250,10 @@ void read_mesh(const tinygltf::Model& model, const tinygltf::Node& node, Node3D*
             }
 
             surface->create_index_buffer(indices);
+
+            if (fill_surface_data) {
+                surface_data->indices = indices;
+            }
         }
 
         for (auto& attrib : primitive.attributes) {
@@ -278,8 +298,19 @@ void read_mesh(const tinygltf::Model& model, const tinygltf::Node& node, Node3D*
 
             size_t buffer_start = accessor.byteOffset + buffer_view.byteOffset;
             size_t buffer_end = stride * accessor.count + buffer_start;
+            size_t buffer_size = (buffer_end - buffer_start) / stride;
 
-            vertices.resize((buffer_end - buffer_start) / stride);
+            vertices.resize(buffer_size);
+
+            if (fill_surface_data) {
+                surface_data->vertices.resize(buffer_size);
+                surface_data->uvs.resize(buffer_size);
+                surface_data->normals.resize(buffer_size);
+                surface_data->tangents.resize(buffer_size);
+                surface_data->colors.resize(buffer_size);
+                surface_data->weights.resize(buffer_size);
+                surface_data->joints.resize(buffer_size);
+            }
 
             for (size_t buffer_idx = buffer_start; buffer_idx < buffer_end; buffer_idx += stride) {
                 if (vertex_idx >= vertices.size())
@@ -293,24 +324,40 @@ void read_mesh(const tinygltf::Model& model, const tinygltf::Node& node, Node3D*
                     // For AABB
                     min_pos = glm::min(position, min_pos);
                     max_pos = glm::max(position, max_pos);
+
+                    if (fill_surface_data) {
+                        surface_data->vertices[vertex_idx] = position;
+                    }
                 }
 
                 // normal
                 if (attrib.first[0] == 'N') {
                     glm::vec3& normal = vertices[vertex_idx].normal;
                     memcpy(&normal[0], &buffer.data[buffer_idx], sizeof(float) * 3);
+
+                    if (fill_surface_data) {
+                        surface_data->normals[vertex_idx] = normal;
+                    }
                 }
 
                 // uv
                 if (attrib.first == std::string("TEXCOORD_0")) {
                     glm::vec2& uv = vertices[vertex_idx].uv;
                     memcpy(&uv[0], &buffer.data[buffer_idx], sizeof(float) * 2);
+
+                    if (fill_surface_data) {
+                        surface_data->uvs[vertex_idx] = uv;
+                    }
                 }
 
                 // tangents
                 if (attrib.first[0] == 'T' && attrib.first[1] == 'A') {
                     glm::vec4& tangent = vertices[vertex_idx].tangent;
                     memcpy(&tangent[0], &buffer.data[buffer_idx], sizeof(float) * 4);
+
+                    if (fill_surface_data) {
+                        surface_data->tangents[vertex_idx] = tangent;
+                    }
                 }
 
                 // color
@@ -338,6 +385,10 @@ void read_mesh(const tinygltf::Model& model, const tinygltf::Node& node, Node3D*
                     default:
                         assert(0);
                     }
+
+                    if (fill_surface_data) {
+                        surface_data->colors[vertex_idx] = color;
+                    }
                 }
 
                 // joints (skinning)
@@ -361,6 +412,10 @@ void read_mesh(const tinygltf::Model& model, const tinygltf::Node& node, Node3D*
 
                     //Make sure that even the invalid nodes have a value of 0 (any negative joint indices will break the skinning implementation)
                     joints = glm::max(glm::ivec4(0), joints) + static_cast<int32_t>(joints_count);
+
+                    if (fill_surface_data) {
+                        surface_data->joints[vertex_idx] = joints;
+                    }
                 }
 
                 // weights (skinning)
@@ -390,6 +445,10 @@ void read_mesh(const tinygltf::Model& model, const tinygltf::Node& node, Node3D*
                     weights = glm::clamp(weights, 0.0f, 1.0f);
                     weights /= sum;
                     //weights.w = 0;
+
+                    if (fill_surface_data) {
+                        surface_data->weights[vertex_idx] = weights;
+                    }
                 }
 
                 if (attrib.first == std::string("JOINTS_1") || attrib.first == std::string("WEIGHTS_1")) {
@@ -404,6 +463,8 @@ void read_mesh(const tinygltf::Model& model, const tinygltf::Node& node, Node3D*
         glm::vec3 aabb_position = min_pos + aabb_half_size;
 
         surface->set_aabb({ aabb_position, aabb_half_size });
+
+        surface->set_surface_data(surface_data);
 
         switch (primitive.mode) {
         case TINYGLTF_MODE_TRIANGLES:
@@ -444,7 +505,7 @@ void read_mesh(const tinygltf::Model& model, const tinygltf::Node& node, Node3D*
                 }
                 else {
                     Texture* diffuse_texture;
-                    create_material_texture(model, pbrMetallicRoughness.baseColorTexture.index, &diffuse_texture, true);
+                    create_material_texture(model, pbrMetallicRoughness.baseColorTexture.index, &diffuse_texture, true, fill_surface_data);
                     texture_cache[pbrMetallicRoughness.baseColorTexture.index] = diffuse_texture;
                     material->set_diffuse_texture(diffuse_texture);
                 }
@@ -692,7 +753,7 @@ void process_node_hierarchy(const tinygltf::Model& model, int parent_id, uint32_
 }
 
 void parse_model_nodes(tinygltf::Model& model, int parent_id, uint32_t node_id, Node3D* parent_node, Node3D* entity, std::map<std::string, Node3D*>& loaded_nodes, std::map<std::string, uint32_t>& name_repeats,
-    std::map<uint32_t, Texture*>& texture_cache, std::map<int, int>& hierarchy, std::vector<SkeletonInstance3D*>& skeleton_instances)
+    std::map<uint32_t, Texture*>& texture_cache, std::map<int, int>& hierarchy, std::vector<SkeletonInstance3D*>& skeleton_instances, bool fill_surface_data)
 {
     tinygltf::Node& node = model.nodes[node_id];
 
@@ -716,7 +777,7 @@ void parse_model_nodes(tinygltf::Model& model, int parent_id, uint32_t node_id, 
     }
 
     if (node.mesh >= 0 && node.mesh < model.meshes.size()) {
-        read_mesh(model, node, entity, texture_cache);
+        read_mesh(model, node, entity, texture_cache, fill_surface_data);
         AABB parent_aabb = merge_aabbs(entity->get_aabb(), parent_node->get_aabb());
         parent_node->set_aabb(parent_aabb);
     }
@@ -732,7 +793,7 @@ void parse_model_nodes(tinygltf::Model& model, int parent_id, uint32_t node_id, 
 
         process_node_hierarchy(model, node_id, child_id, entity, child_node, hierarchy, skeleton_instances);
 
-        parse_model_nodes(model, node_id, child_id, entity, child_node, loaded_nodes, name_repeats, texture_cache, hierarchy, skeleton_instances);
+        parse_model_nodes(model, node_id, child_id, entity, child_node, loaded_nodes, name_repeats, texture_cache, hierarchy, skeleton_instances, fill_surface_data);
     }
 };
 
@@ -1210,7 +1271,7 @@ void parse_model_animations(const tinygltf::Model& model, std::vector<SkeletonIn
     }
 }
 
-bool parse_gltf(const char* gltf_path, std::vector<Node*>& entities)
+bool parse_gltf(const char* gltf_path, std::vector<Node*>& entities, bool fill_surface_data)
 {
     tinygltf::TinyGLTF loader;
     tinygltf::Model model;
@@ -1276,7 +1337,7 @@ bool parse_gltf(const char* gltf_path, std::vector<Node*>& entities)
 
         process_node_hierarchy(model, -1, node_id, scene_root, entity, hierarchy, skeleton_instances);
 
-        parse_model_nodes(model, -1, node_id, scene_root, entity, loaded_nodes, name_repeats, texture_cache, hierarchy, skeleton_instances);
+        parse_model_nodes(model, -1, node_id, scene_root, entity, loaded_nodes, name_repeats, texture_cache, hierarchy, skeleton_instances, fill_surface_data);
     }
 
     if (model.skins.size()) {

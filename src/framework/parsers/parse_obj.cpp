@@ -73,9 +73,9 @@ void parse_obj(const char* obj_path, MeshInstance3D* entity_mesh, bool create_aa
 
         entity_mesh->add_surface(new_surface);
 
-        std::vector<InterleavedData> vertices;
+        std::vector<sInterleavedData> vertices;
 
-        InterleavedData vertex_data;
+        sInterleavedData vertex_data;
 
         glm::vec3 min_pos = { FLT_MAX, FLT_MAX, FLT_MAX };
         glm::vec3 max_pos = { -FLT_MAX, -FLT_MAX, -FLT_MAX };

@@ -26,6 +26,8 @@ class Texture : public Resource
 
     std::string path;
 
+    std::vector<uint8_t> texture_data; // optinal when loading
+
 public:
 
 	~Texture();
@@ -61,6 +63,9 @@ public:
     uint32_t get_width() const { return size.width; }
     uint32_t get_height() const { return size.height; }
     uint32_t get_array_layers() const { return size.depthOrArrayLayers; }
+
+    std::vector<uint8_t>& get_texture_data() { return texture_data; }
+    const std::vector<uint8_t>& get_texture_data() const { return texture_data; }
 
     WGPUTextureFormat get_format() const { return format; }
 

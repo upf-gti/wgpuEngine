@@ -20,7 +20,18 @@ namespace normals {
     const glm::vec3 nZ = glm::vec3(0.f, 0.f, -1.0);
 }
 
-struct InterleavedData {
+struct sSurfaceData {
+    std::vector<glm::vec3> vertices;
+    std::vector<uint32_t> indices;
+    std::vector<glm::vec2> uvs;
+    std::vector<glm::vec3> normals;
+    std::vector<glm::vec4> tangents;
+    std::vector<glm::vec3> colors;
+    std::vector<glm::vec4> weights;
+    std::vector<glm::ivec4> joints;
+};
+
+struct sInterleavedData {
     glm::vec3 position;
     glm::vec2 uv;
     glm::vec3 normal;
@@ -37,12 +48,14 @@ class Surface : public Resource
 
     Material* material = nullptr;
 
+    sSurfaceData* surface_data = nullptr; // optional when loading
+
     WGPUBuffer vertex_buffer = nullptr;
     WGPUBuffer index_buffer = nullptr;
 
     static Surface* quad_mesh;
 
-    std::vector<InterleavedData> generate_quad(float w = 1.f, float h = 1.f, const glm::vec3& position = { 0.f, 0.f, 0.f }, const glm::vec3& normal = { 0.f, 1.f, 0.f }, const glm::vec3& color = { 1.f, 1.f, 1.f }, bool flip_y = false);
+    std::vector<sInterleavedData> generate_quad(float w = 1.f, float h = 1.f, const glm::vec3& position = { 0.f, 0.f, 0.f }, const glm::vec3& normal = { 0.f, 1.f, 0.f }, const glm::vec3& color = { 1.f, 1.f, 1.f }, bool flip_y = false);
 
     AABB aabb;
 
@@ -56,6 +69,11 @@ public:
 
     Material* get_material();
     const Material* get_material() const;
+
+    void set_surface_data(sSurfaceData* surface_data);
+
+    const sSurfaceData* get_surface_data() const;
+    sSurfaceData* get_surface_data();
 
     const WGPUBuffer& get_vertex_buffer() const;
     const WGPUBuffer& get_index_buffer() const;
@@ -74,10 +92,10 @@ public:
     void create_arrow();
     void create_skybox();
 
-    void create_from_vertices(const std::vector<InterleavedData>& _vertices);
+    void create_from_vertices(const std::vector<sInterleavedData>& _vertices);
 
-    void update_vertex_buffer(const std::vector<InterleavedData>& _vertices);
-    void create_vertex_buffer(const std::vector<InterleavedData>& _vertices);
+    void update_vertex_buffer(const std::vector<sInterleavedData>& _vertices);
+    void create_vertex_buffer(const std::vector<sInterleavedData>& _vertices);
 
     void create_index_buffer(const std::vector<uint32_t>& indices);
 

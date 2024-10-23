@@ -108,13 +108,13 @@ void SkeletonInstance3D::update_helper()
 {
     Surface* s = get_surface(0);
 
-    std::vector<InterleavedData> vertices;
+    std::vector<sInterleavedData> vertices;
 
     size_t numJoints = skeleton->get_current_pose().size();
     Pose &pose = skeleton->get_current_pose();
 
     for (size_t i = 0; i < numJoints; ++i) {
-        InterleavedData data;
+        sInterleavedData data;
         data.position = pose.get_global_transform(i).get_position();
         vertices.push_back(data);
         if (pose.get_parent(i) >= 0) {

@@ -9,7 +9,7 @@
 
 #include "spdlog/spdlog.h"
 
-bool parse_scene(const char* scene_path, std::vector<Node*>& entities)
+bool parse_scene(const char* scene_path, std::vector<Node*>& entities, bool fill_surface_data)
 {
     std::string scene_path_str = std::string(scene_path);
     std::string extension = scene_path_str.substr(scene_path_str.find_last_of(".") + 1);
@@ -21,7 +21,7 @@ bool parse_scene(const char* scene_path, std::vector<Node*>& entities)
         return true;
     }
     else if (extension == "gltf" || extension == "glb") {
-        return parse_gltf(scene_path, entities);
+        return parse_gltf(scene_path, entities, fill_surface_data);
     }
     else if (extension == "vdb") {
         spdlog::info("Parsing a VDB file (WIP)");
@@ -39,7 +39,7 @@ bool parse_scene(const char* scene_path, std::vector<Node*>& entities)
     return false;
 }
 
-MeshInstance3D* parse_mesh(const char* mesh_path, bool create_aabb)
+MeshInstance3D* parse_mesh(const char* mesh_path, bool create_aabb, bool fill_surface_data)
 {
     std::string mesh_path_str = std::string(mesh_path);
     std::string extension = mesh_path_str.substr(mesh_path_str.find_last_of(".") + 1);
