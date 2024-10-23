@@ -105,7 +105,7 @@ struct FragmentOutput {
 }
 
 @fragment
-fn fs_main(in: VertexOutput) -> FragmentOutput {
+fn fs_main(in: VertexOutput, @builtin(front_facing) is_front_facing: bool) -> FragmentOutput {
 
     var out: FragmentOutput;
     var dummy = camera_data.eye;
@@ -180,6 +180,10 @@ fn fs_main(in: VertexOutput) -> FragmentOutput {
 #endif
 
 #endif
+
+    if (!is_front_facing) {
+        m.normal = -m.normal;
+    }
 
     var final_color : vec3f = vec3f(0.0);
 
