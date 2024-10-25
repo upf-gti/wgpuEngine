@@ -46,41 +46,32 @@ public:
 
     static Engine* instance;
 
-    static Engine* get_instance() { return instance; }
-
     Engine();
     ~Engine();
 
     virtual int initialize(Renderer* renderer, sEngineConfiguration configuration = {});
     virtual int post_initialize();
-
-    sEngineConfiguration get_configuration() { return configuration; }
-
-    Renderer* get_renderer() { return renderer; }
-
     virtual void clean();
 
     virtual void start_loop();
-
-    void add_node(Node* node);
-
-    bool get_openxr_available();
-    bool get_use_mirror_window();
-
-    virtual void set_main_scene(const std::string& scene_path);
-    Scene* get_main_scene();
-
     virtual void on_frame();
-
     virtual void update(float delta_time);
     virtual void render();
 
     virtual void render_default_gui();
     bool render_scene_tree_recursive(Node* entity);
+    void add_node(Node* node);
+    void resize_window(int width, int height);
+    void vibrate_hand(int controller, float amplitude, float duration);
 
+    static Engine* get_instance() { return instance; }
+    sEngineConfiguration get_configuration() { return configuration; }
+    Renderer* get_renderer() { return renderer; }
+    bool get_openxr_available();
+    bool get_use_mirror_window();
+    bool should_close();
+    Scene* get_main_scene();
     float get_delta_time() { return delta_time; }
 
-    void resize_window(int width, int height);
-
-    void vibrate_hand(int controller, float amplitude, float duration);
+    virtual void set_main_scene(const std::string& scene_path);
 };

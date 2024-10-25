@@ -283,6 +283,11 @@ bool Engine::get_use_mirror_window()
 #endif
 }
 
+bool Engine::should_close()
+{
+    return stop_game_loop;
+}
+
 void Engine::set_main_scene(const std::string& scene_path)
 {
     if (main_scene) {
