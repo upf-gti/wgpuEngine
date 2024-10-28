@@ -15,6 +15,8 @@ public:
     // Returns true if last ref
     bool unref();
 
+    virtual void on_delete();
+
     void set_name(const std::string& name);
     const std::string& get_name() const;
 
