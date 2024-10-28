@@ -251,10 +251,11 @@ void Node2D::release()
 {
     // Clear event listeners
     Node::unbind(name);
+    Node::unbind(name + "@changed");
+    Node::unbind(name + "@dbl_click");
     Node::unbind(name + "@pressed");
     Node::unbind(name + "@released");
-    Node::unbind(name + "@dbl_click");
-    Node::unbind(name + "@changed");
+    Node::unbind(name + "@selected");
 
     // Node::release();
 

@@ -127,9 +127,9 @@ public:
     template<typename T>
     static bool emit_signal(const std::string& name, T value) {
 
-        auto it = mapping_signals.find(name);
-        if (it == mapping_signals.end())
+        if (!mapping_signals.contains(name)) {
             return false;
+        }
 
         using FuncT = std::function<void(const std::string&, T)>;
 

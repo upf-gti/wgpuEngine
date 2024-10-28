@@ -191,11 +191,9 @@ void Node::bind(const std::string& name, SignalType callback)
 
 void Node::unbind(const std::string& name)
 {
-    auto it = mapping_signals.find(name);
-    if (it == mapping_signals.end())
-        return;
-
-    mapping_signals.erase(it);
+    if (mapping_signals.contains(name)) {
+        mapping_signals.erase(name);
+    }
 }
 
 void Node::bind_button(uint8_t button, FuncEmpty callback)
