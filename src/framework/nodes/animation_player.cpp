@@ -39,7 +39,7 @@ void AnimationPlayer::play(Animation* animation, float custom_blend, float custo
     }
 
     if (!root_node) {
-        root_node = get_parent();
+        root_node = get_parent<Node3D*>();
     }
 
     if (custom_blend >= 0.0f) {

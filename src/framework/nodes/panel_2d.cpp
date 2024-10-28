@@ -292,16 +292,16 @@ namespace ui {
     {
         // return;
 
-        auto parent = get_parent();
+        auto parent_2d = get_parent<Node2D*>();
 
-        if (!(parameter_flags & SCROLLABLE) || !parent) {
+        if (!(parameter_flags & SCROLLABLE) || !parent_2d) {
             return;
         }
 
         // Last chance..
-        parent = parent->get_parent();
+        parent_2d = parent_2d->get_parent<Node2D*>();
 
-        if (!parent || parent->get_class_type() != VCONTAINER) {
+        if (!parent_2d || parent_2d->get_class_type() != VCONTAINER) {
             return;
         }
 
@@ -310,9 +310,9 @@ namespace ui {
         set_visibility(true, false);
 
         float size_y = get_size().y;
-        float parent_size_y = parent->get_size().y;
+        float parent_size_y = parent_2d->get_size().y;
         float y = get_translation().y;
-        float parent_y = parent->get_translation().y;
+        float parent_y = parent_2d->get_translation().y;
         float y_min = parent_y;
         float y_max = parent_y + parent_size_y - size_y;
         // exceeds at the top
@@ -663,7 +663,7 @@ namespace ui {
     {
         update_scroll_view();
 
-        Node2D* parent = get_parent();
+        Node2D* parent = get_parent<Node2D*>();
 
         if ((parameter_flags & TEXT_CENTERED) && parent) {
             const glm::vec2& par_size = parent->get_size();

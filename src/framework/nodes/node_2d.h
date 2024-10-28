@@ -57,7 +57,7 @@ protected:
 
     uint32_t    uid = 0;
     uint8_t     class_type = Node2DClassType::UNDEFINED;
-    Node2D*     parent = nullptr;
+
     bool        visibility = true;
 	glm::mat3x3 model = glm::mat3x3(1.0f);
 
@@ -94,7 +94,6 @@ public:
     void rotate(const glm::quat& q);
 	void scale(glm::vec2 scale);
 
-    Node2D* get_parent() const { return parent; }
     Viewport3D* get_xr_viewport() { return xr_viewport_3d; };
 	const glm::vec2 get_local_translation() const;
     const glm::vec2 get_translation() const;

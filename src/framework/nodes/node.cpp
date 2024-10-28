@@ -9,6 +9,7 @@
 
 #include "engine/engine.h"
 
+#include "spdlog/spdlog.h"
 #include <fstream>
 
 std::unordered_map<std::string, std::vector<SignalType>> Node::mapping_signals;
@@ -22,6 +23,36 @@ Node::Node()
     node_type = "Node";
 
     name = "Node_" + std::to_string(last_node_id++);
+}
+
+void Node::add_child(Node* child)
+{
+    if (child->parent) {
+        child->parent->remove_child(child);
+    }
+
+    // Checks if it's already a child
+    auto it = std::find(children.begin(), children.end(), child);
+    if (it != children.end()) {
+        spdlog::error("Entity is already one of the children!");
+        return;
+    }
+
+    child->parent = this;
+    children.push_back(child);
+}
+
+void Node::remove_child(Node* child)
+{
+    // Checks if it's a child
+    auto it = std::find(children.begin(), children.end(), child);
+    if (it == children.end()) {
+        spdlog::error("Entity is not a child!!");
+        return;
+    }
+
+    children.erase(it);
+    child->parent = nullptr;
 }
 
 void Node::render()
@@ -80,9 +111,9 @@ void Node::parse(std::ifstream& binary_scene_file)
         child_node_type.resize(node_type_size);
         binary_scene_file.read(&child_node_type[0], node_type_size);
 
-        Node* child = NodeRegistry::get_instance()->create_node(node_type);
+        Node* child = NodeRegistry::get_instance()->create_node(child_node_type);
         child->parse(binary_scene_file);
-        children.push_back(child);
+        add_child(child);
     }
 }
 

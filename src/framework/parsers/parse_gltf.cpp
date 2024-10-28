@@ -1237,7 +1237,7 @@ void parse_model_animations(const tinygltf::Model& model, std::vector<SkeletonIn
             track->set_type(type);
             track->set_name(track_name);
 
-            Node3D* scene_parent = player->get_parent();
+            Node3D* scene_parent = player->get_parent<Node3D*>();
 
             // Check if it's a joint and has a skeleton and get the full path..
             if (skeleton && node_id >= 0) {
@@ -1245,8 +1245,8 @@ void parse_model_animations(const tinygltf::Model& model, std::vector<SkeletonIn
                 std::string parent_names = "";
                 Node3D* _node = skeleton_instance;
 
-                while (_node->get_parent() != scene_parent) {
-                    _node = _node->get_parent();
+                while (_node->get_parent<Node3D*>() != scene_parent) {
+                    _node = _node->get_parent<Node3D*>();
                     parent_names = _node->get_name() + "/" + parent_names;
                 }
 
