@@ -632,7 +632,7 @@ namespace ui {
 
         render_background = !(flags & SKIP_TEXT_RECT);
 
-        if (flags & SELECTED) {
+        if ((flags & TEXT_SELECTABLE) && (flags & SELECTED)) {
             selected = this;
         }
 
@@ -647,8 +647,13 @@ namespace ui {
 
         Surface* quad_surface = quad_mesh->get_surface(0);
         quad_surface->create_quad(size.x, size.y, true);
-
         quad_mesh->set_surface_material_override(quad_mesh->get_surface(0), material);
+
+        Node::bind(name + "@selected", [&](const std::string& signal, void* data) {
+            if (parameter_flags & TEXT_SELECTABLE) {
+                selected = this;
+            }
+        });
 
         auto webgpu_context = Renderer::instance->get_webgpu_context();
         RendererStorage::register_ui_widget(webgpu_context, material->get_shader_ref(), quad_mesh, ui_data, 3);
@@ -797,6 +802,21 @@ namespace ui {
         text_entity->get_surface_material(0)->set_priority(priority);
 
         Panel2D::set_priority(priority);
+    }
+
+    void Text2D::set_signal(const std::string& new_signal)
+    {
+        // Remove old events..
+        Node::unbind(name + "@selected");
+
+        Panel2D::set_signal(new_signal);
+
+        // Bind new ones
+        Node::bind(name + "@selected", [&](const std::string& signal, void* data) {
+            if (parameter_flags & TEXT_SELECTABLE) {
+                selected = this;
+            }
+        });
     }
 
     /*

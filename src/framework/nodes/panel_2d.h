@@ -52,7 +52,7 @@ namespace ui {
         void set_priority(uint8_t priority) override;
         void update_ui_data() override;
         void set_color(const Color& c);
-        void set_signal(const std::string& new_signal);
+        virtual void set_signal(const std::string& new_signal);
     };
 
     class Image2D : public Panel2D {
@@ -110,6 +110,9 @@ namespace ui {
         void set_text(const std::string& text);
         void disable_2d() override;
         void set_priority(uint8_t priority) override;
+        void set_signal(const std::string& new_signal) override;
+
+        static void select(Text2D* instance) { selected = instance; }
     };
 
     class ColorPicker2D : public Panel2D {
