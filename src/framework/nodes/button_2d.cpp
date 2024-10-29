@@ -429,28 +429,8 @@ namespace ui {
 
         // Submenu icon..
         {
-            submenu_mark = new TextureButton2D(sg + "_mark", "data/textures/more.png");
-            submenu_mark->set_priority(BUTTON_MARK);
-        }
-    }
-
-    void ButtonSubmenu2D::render()
-    {
-        TextureButton2D::render();
-
-        if (submenu_mark) {
-            submenu_mark->render();
-        }
-    }
-
-    void ButtonSubmenu2D::update(float delta_time)
-    {
-        TextureButton2D::update(delta_time);
-
-        if (submenu_mark) {
-            submenu_mark->set_model(get_global_model());
-            submenu_mark->scale(glm::vec3(0.6f, 0.6f, 1.0f));
-            submenu_mark->translate(glm::vec3(-get_size() * 0.15f, -1e-3f));
+            Image2D* submenu_mark = new Image2D("submenu_mark", "data/textures/more.png", { -8.f, -8.f }, { 32.0f, 32.0f }, BUTTON_MARK);
+            Node2D::add_child(submenu_mark);
         }
     }
 
