@@ -149,6 +149,24 @@ void Input::center_mouse()
 	mouse_position.y = (float)center_y;
 }
 
+bool Input::is_key_pressed(int key, bool stop_propagation)
+{
+    bool pressed = (keystate[key] == GLFW_PRESS);
+    if (stop_propagation) {
+        keystate[key] = GLFW_RELEASE;
+    }
+    return pressed;
+}
+
+bool Input::was_key_pressed(int key, bool stop_propagation)
+{
+    bool pressed = (prev_keystate[key] == GLFW_RELEASE && keystate[key] == GLFW_PRESS);
+    if (stop_propagation) {
+        keystate[key] = GLFW_RELEASE;
+    }
+    return pressed;
+}
+
 void Input::set_prev_state()
 {
     memcpy((void*)&prev_keystate, keystate, GLFW_KEY_LAST);
