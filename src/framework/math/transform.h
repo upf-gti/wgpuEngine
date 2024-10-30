@@ -13,7 +13,7 @@ class Transform {
 
     glm::mat4x4 model;
 
-    bool dirty = false;
+    bool dirty = true;
 
 public:
 
@@ -44,6 +44,7 @@ public:
     void rotate_world(const glm::quat& rotation_factor);
 
     const glm::mat4x4& get_model();
+    glm::vec3 get_front();
 
     static Transform identity();
     static Transform combine(const Transform& a, const Transform& b);

@@ -74,14 +74,6 @@ namespace ui {
         void on_children_changed() override;
     };
 
-    class ComboButtons2D : public HContainer2D {
-    public:
-
-        ComboButtons2D(const std::string& name, const glm::vec2& pos = { 0.0f, 0.0f }, uint32_t flags = 0u, const Color& color = colors::GRAY);
-
-        void on_children_changed() override;
-    };
-
     class ImageLabel2D : public HContainer2D {
 
         uint8_t mask = 0;

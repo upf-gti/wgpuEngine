@@ -33,6 +33,7 @@ enum Node2DClassType {
     IMAGE,
     PANEL_BUTTON,
     PANEL,
+    DRAGGABLE,
     UNDEFINED
 };
 

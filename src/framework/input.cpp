@@ -335,6 +335,15 @@ bool Input::was_grab_pressed(uint8_t controller)
 #endif
 }
 
+bool Input::was_grab_released(uint8_t controller)
+{
+#ifdef XR_SUPPORT
+    return openxr_context && prev_grab_state[controller] && (xr_data.grabState[controller].currentState < 0.5f);
+#else
+    return false;
+#endif
+}
+
 float Input::get_grab_value(uint8_t controller)
 {
 #ifdef XR_SUPPORT

@@ -111,6 +111,11 @@ const glm::mat4x4& Transform::get_model()
     return model;
 }
 
+glm::vec3 Transform::get_front()
+{
+    return -glm::normalize(get_model()[2]);
+}
+
 Transform Transform::identity()
 {
     Transform out;
