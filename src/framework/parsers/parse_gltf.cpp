@@ -627,6 +627,28 @@ void read_mesh(const tinygltf::Model& model, const tinygltf::Node& node, Node3D*
     entity_mesh->set_aabb(entity_aabb);
 }
 
+void create_camera(const tinygltf::Camera& gltf_camera, EntityCamera* camera_node)
+{
+    if (gltf_camera.type == "perspective") {
+        camera_node->set_perspective(
+            gltf_camera.perspective.yfov,
+            gltf_camera.perspective.aspectRatio,
+            gltf_camera.perspective.znear,
+            gltf_camera.perspective.zfar
+        );
+    }
+    else {
+        camera_node->set_orthographic(
+            0.0f,
+            gltf_camera.orthographic.xmag,
+            gltf_camera.orthographic.ymag,
+            0.0f,
+            gltf_camera.orthographic.znear,
+            gltf_camera.orthographic.zfar
+        );
+    }
+}
+
 void create_light(const tinygltf::Light& gltf_light, Light3D* light_node)
 {
     light_node->set_intensity(static_cast<float>(gltf_light.intensity));
@@ -684,6 +706,10 @@ Node3D* create_node_entity(uint32_t node_id, tinygltf::Model& model, std::map<st
     }
     else if (node.camera >= 0) {
         new_node = new EntityCamera();
+
+        const tinygltf::Camera& gltf_camera = model.cameras[node.camera];
+
+        create_camera(gltf_camera, static_cast<EntityCamera*>(new_node));
     }
     else if (node.light >= 0) {
 

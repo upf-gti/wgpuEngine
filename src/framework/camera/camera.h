@@ -38,6 +38,11 @@ public:
     const glm::vec3& get_center() const { return center; }
     const glm::vec3& get_up() const { return up; }
 
+    float get_fov() { return fov; }
+    float get_aspect() { return aspect; }
+    float get_near() { return z_near; }
+    float get_far() { return z_far; }
+
     void set_center(const glm::vec3& center) { this->center = center; }
 
     float get_speed() const { return speed; }
