@@ -76,10 +76,6 @@ Engine::~Engine()
     if (use_glfw) {
         glfwTerminate();
     }
-
-    if (main_scene) {
-        delete main_scene;
-    }
 }
 
 int Engine::initialize(Renderer* renderer, sEngineConfiguration configuration)
@@ -236,9 +232,13 @@ void Engine::init_shader_watchers()
 
 void Engine::clean()
 {
-    renderer->clean();
-
     Node2D::clean();
+
+    if (main_scene) {
+        delete main_scene;
+    }
+
+    renderer->clean();
 }
 
 void Engine::start_loop()
@@ -281,6 +281,11 @@ bool Engine::get_use_mirror_window()
 #else
     return false;
 #endif
+}
+
+bool Engine::should_close()
+{
+    return stop_game_loop;
 }
 
 void Engine::set_main_scene(const std::string& scene_path)

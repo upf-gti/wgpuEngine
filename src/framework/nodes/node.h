@@ -74,6 +74,7 @@ protected:
 
     NodeType type;
 
+    Node* parent = nullptr;
     std::vector<Node*> children;
 
     AABB aabb = {};
@@ -83,6 +84,9 @@ public:
 
     Node();
     virtual ~Node() {};
+
+    virtual void add_child(Node* child);
+    virtual void remove_child(Node* child);
 
     virtual void render();
     virtual void update(float delta_time);
@@ -96,6 +100,9 @@ public:
     std::string get_node_type() const { return node_type; }
     virtual std::vector<Node*>& get_children() { return children; }
     AABB get_aabb() const;
+
+    template <typename T = Node*>
+    T get_parent() const { return dynamic_cast<T>(parent); };
 
     virtual Node* get_node(std::vector<std::string>& path_tokens);
     Node* get_node(const std::string& path);
@@ -127,9 +134,9 @@ public:
     template<typename T>
     static bool emit_signal(const std::string& name, T value) {
 
-        auto it = mapping_signals.find(name);
-        if (it == mapping_signals.end())
+        if (!mapping_signals.contains(name)) {
             return false;
+        }
 
         using FuncT = std::function<void(const std::string&, T)>;
 

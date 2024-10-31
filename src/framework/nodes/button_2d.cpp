@@ -429,28 +429,8 @@ namespace ui {
 
         // Submenu icon..
         {
-            submenu_mark = new TextureButton2D(sg + "_mark", "data/textures/more.png");
-            submenu_mark->set_priority(BUTTON_MARK);
-        }
-    }
-
-    void ButtonSubmenu2D::render()
-    {
-        TextureButton2D::render();
-
-        if (submenu_mark) {
-            submenu_mark->render();
-        }
-    }
-
-    void ButtonSubmenu2D::update(float delta_time)
-    {
-        TextureButton2D::update(delta_time);
-
-        if (submenu_mark) {
-            submenu_mark->set_model(get_global_model());
-            submenu_mark->scale(glm::vec3(0.6f, 0.6f, 1.0f));
-            submenu_mark->translate(glm::vec3(-get_size() * 0.15f, -1e-3f));
+            Image2D* submenu_mark = new Image2D("submenu_mark", "data/textures/more.png", { -8.f, -8.f }, { 32.0f, 32.0f }, BUTTON_MARK);
+            Node2D::add_child(submenu_mark);
         }
     }
 
@@ -500,5 +480,48 @@ namespace ui {
     std::vector<Node*>& ButtonSelector2D::get_children()
     {
         return box->get_children();
+    }
+
+    /*
+   *   Combo buttons
+   */
+
+    ComboButtons2D::ComboButtons2D(const std::string& name, const glm::vec2& pos, uint32_t flags, const Color& color)
+        : HContainer2D(name, pos, flags, color) {
+
+        class_type = Node2DClassType::COMBO;
+
+        item_margin = glm::vec2(-6.0f);
+
+        Node::bind(name + "@changed", [&](const std::string& sg, void* data) {
+            std::string str = reinterpret_cast<const char*>(data);
+            Node::emit_signal(str + "@pressed", (void*)nullptr);
+        });
+    }
+
+    void ComboButtons2D::on_children_changed()
+    {
+        size_t child_count = get_children().size();
+
+        for (size_t i = 0; i < child_count; ++i)
+        {
+            Button2D* node_2d = static_cast<Button2D*>(get_children()[i]);
+
+            if (child_count == 1) {
+                node_2d->ui_data.num_group_items = ComboIndex::UNIQUE;
+            }
+            else if (child_count == 2) {
+                node_2d->ui_data.num_group_items = float(i == 0 ? ComboIndex::FIRST : ComboIndex::LAST);
+            }
+            else {
+                node_2d->ui_data.num_group_items = float(i == 0 ? ComboIndex::FIRST : (i == child_count - 1 ? ComboIndex::LAST : ComboIndex::MIDDLE));
+            }
+
+            node_2d->set_priority(Node2DClassType::COMBO_BUTTON);
+            node_2d->set_is_unique_selection(true);
+            node_2d->update_ui_data();
+        }
+
+        HContainer2D::on_children_changed();
     }
 }

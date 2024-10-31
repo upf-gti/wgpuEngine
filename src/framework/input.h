@@ -64,8 +64,8 @@ public:
     static void set_prev_state();
 
     // https://www.glfw.org/docs/3.3/group__keys.html
-    static bool is_key_pressed(int key) { return keystate[key] == GLFW_PRESS; }
-    static bool was_key_pressed(int key) { return prev_keystate[key] == GLFW_RELEASE && keystate[key] == GLFW_PRESS; }
+    static bool is_key_pressed(int key, bool stop_propagation = false);
+    static bool was_key_pressed(int key, bool stop_propagation = false);
 
     // https://www.glfw.org/docs/3.3/group__buttons.html
     static bool is_mouse_pressed(uint8_t button) { return buttons[button] == GLFW_PRESS; }
@@ -107,6 +107,7 @@ public:
 
     static bool is_grab_pressed(uint8_t controller);
     static bool was_grab_pressed(uint8_t controller);
+    static bool was_grab_released(uint8_t controller);
     static float get_grab_value(uint8_t controller);
 
     /*

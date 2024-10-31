@@ -2,8 +2,11 @@
 
 #include "framework/ui/ui_utils.h"
 #include "framework/colors.h"
-#include "graphics/mesh_instance.h"
 #include "framework/nodes/panel_2d.h"
+#include "framework/nodes/container_2d.h"
+
+#include "graphics/mesh_instance.h"
+
 #include "text.h"
 
 #include <functional>
@@ -12,9 +15,6 @@
 #include <vector>
 
 namespace ui {
-
-    class HContainer2D;
-    class CircleContainer2D;
 
     class Button2D : public Panel2D {
     public:
@@ -73,12 +73,8 @@ namespace ui {
 
         HContainer2D* box = nullptr;
 
-        TextureButton2D* submenu_mark = nullptr;
-
         ButtonSubmenu2D(const std::string& sg, const std::string& texture_path, uint32_t parameter_flags = 0, const glm::vec2& pos = { 0.0f, 0.0f }, const glm::vec2& size = glm::vec2(BUTTON_SIZE));
 
-        void render() override;
-        void update(float delta_time) override;
         void add_child(Node2D* child) override;
     };
 
@@ -91,5 +87,13 @@ namespace ui {
 
         void add_child(Node2D* child) override;
         std::vector<Node*>& get_children() override;
+    };
+
+    class ComboButtons2D : public HContainer2D {
+    public:
+
+        ComboButtons2D(const std::string& name, const glm::vec2& pos = { 0.0f, 0.0f }, uint32_t flags = 0u, const Color& color = colors::GRAY);
+
+        void on_children_changed() override;
     };
 }

@@ -22,11 +22,16 @@ bool Resource::unref()
     ref_count--;
 
     if (ref_count == 0u) {
-        delete this;
+        on_delete();
         return true;
     }
 
     return false;
+}
+
+void Resource::on_delete()
+{
+    delete this;
 }
 
 void Resource::set_name(const std::string& name)

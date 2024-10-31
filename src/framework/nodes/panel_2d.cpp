@@ -292,16 +292,16 @@ namespace ui {
     {
         // return;
 
-        auto parent = get_parent();
+        auto parent_2d = get_parent<Node2D*>();
 
-        if (!(parameter_flags & SCROLLABLE) || !parent) {
+        if (!(parameter_flags & SCROLLABLE) || !parent_2d) {
             return;
         }
 
         // Last chance..
-        parent = parent->get_parent();
+        parent_2d = parent_2d->get_parent<Node2D*>();
 
-        if (!parent || parent->get_class_type() != VCONTAINER) {
+        if (!parent_2d || parent_2d->get_class_type() != VCONTAINER) {
             return;
         }
 
@@ -310,9 +310,9 @@ namespace ui {
         set_visibility(true, false);
 
         float size_y = get_size().y;
-        float parent_size_y = parent->get_size().y;
+        float parent_size_y = parent_2d->get_size().y;
         float y = get_translation().y;
-        float parent_y = parent->get_translation().y;
+        float parent_y = parent_2d->get_translation().y;
         float y_min = parent_y;
         float y_max = parent_y + parent_size_y - size_y;
         // exceeds at the top
@@ -632,7 +632,7 @@ namespace ui {
 
         render_background = !(flags & SKIP_TEXT_RECT);
 
-        if (flags & SELECTED) {
+        if ((flags & TEXT_SELECTABLE) && (flags & SELECTED)) {
             selected = this;
         }
 
@@ -647,8 +647,13 @@ namespace ui {
 
         Surface* quad_surface = quad_mesh->get_surface(0);
         quad_surface->create_quad(size.x, size.y, true);
-
         quad_mesh->set_surface_material_override(quad_mesh->get_surface(0), material);
+
+        Node::bind(name + "@selected", [&](const std::string& signal, void* data) {
+            if (parameter_flags & TEXT_SELECTABLE) {
+                selected = this;
+            }
+        });
 
         auto webgpu_context = Renderer::instance->get_webgpu_context();
         RendererStorage::register_ui_widget(webgpu_context, material->get_shader_ref(), quad_mesh, ui_data, 3);
@@ -658,7 +663,7 @@ namespace ui {
     {
         update_scroll_view();
 
-        Node2D* parent = get_parent();
+        Node2D* parent = get_parent<Node2D*>();
 
         if ((parameter_flags & TEXT_CENTERED) && parent) {
             const glm::vec2& par_size = parent->get_size();
@@ -797,6 +802,21 @@ namespace ui {
         text_entity->get_surface_material(0)->set_priority(priority);
 
         Panel2D::set_priority(priority);
+    }
+
+    void Text2D::set_signal(const std::string& new_signal)
+    {
+        // Remove old events..
+        Node::unbind(name + "@selected");
+
+        Panel2D::set_signal(new_signal);
+
+        // Bind new ones
+        Node::bind(name + "@selected", [&](const std::string& signal, void* data) {
+            if (parameter_flags & TEXT_SELECTABLE) {
+                selected = this;
+            }
+        });
     }
 
     /*

@@ -439,7 +439,7 @@ bool Gizmo3D::update(glm::vec3& new_position, const glm::vec3& controller_positi
 
     new_position = transform.get_position();
 
-    return is_active;
+    return has_graved;
 }
 
 bool Gizmo3D::render()

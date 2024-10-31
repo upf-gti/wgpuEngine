@@ -18,8 +18,6 @@ class Node3D : public Node {
 
 protected:
 
-    Node3D* parent = nullptr;
-
     Transform transform = {};
 
     eColliderShape collider_shape = COLLIDER_SHAPE_AABB;
@@ -30,9 +28,6 @@ public:
 
     Node3D();
     virtual ~Node3D();
-
-    void add_child(Node3D* child);
-    void remove_child(Node3D* child);
 
     virtual void render() override;
     virtual void update(float delta_time) override;
@@ -52,7 +47,6 @@ public:
     virtual glm::mat4x4 get_global_model();
     glm::mat4x4 get_model();
     glm::quat get_rotation() const;
-    Node3D* get_parent() const;
     const Transform& get_transform() const;
 
     virtual void set_position(const glm::vec3& translation);

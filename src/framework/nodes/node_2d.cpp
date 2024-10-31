@@ -95,8 +95,9 @@ void Node2D::remove_child(Node2D* child)
 
 void Node2D::on_children_changed()
 {
-    if (parent) {
-        parent->on_children_changed();
+    auto parent_2d = dynamic_cast<Node2D*>(parent);
+    if (parent_2d) {
+        parent_2d->on_children_changed();
     }
 }
 
@@ -209,15 +210,19 @@ glm::mat3x3 Node2D::get_model() const
 
 glm::mat3x3 Node2D::get_global_model() const
 {
-	if (parent)
-		return parent->get_global_model() * model;
+    auto parent_2d = dynamic_cast<Node2D*>(parent);
+    if (parent_2d) {
+		return parent_2d->get_global_model() * model;
+    }
 	return model;
 }
 
 glm::mat4x4 Node2D::get_global_viewport_model() const
 {
-    if (parent)
-        return parent->get_global_viewport_model() * viewport_model;
+    auto parent_2d = dynamic_cast<Node2D*>(parent);
+    if (parent_2d) {
+        return parent_2d->get_global_viewport_model() * viewport_model;
+    }
     return viewport_model;
 }
 
@@ -251,10 +256,11 @@ void Node2D::release()
 {
     // Clear event listeners
     Node::unbind(name);
+    Node::unbind(name + "@changed");
+    Node::unbind(name + "@dbl_click");
     Node::unbind(name + "@pressed");
     Node::unbind(name + "@released");
-    Node::unbind(name + "@dbl_click");
-    Node::unbind(name + "@changed");
+    Node::unbind(name + "@selected");
 
     // Node::release();
 

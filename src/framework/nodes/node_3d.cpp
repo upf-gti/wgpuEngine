@@ -12,8 +12,6 @@
 #include <glm/gtc/type_ptr.hpp>
 #include "glm/gtx/quaternion.hpp"
 
-#include "spdlog/spdlog.h"
-
 #include <fstream>
 
 REGISTER_NODE_CLASS(Node3D)
@@ -36,36 +34,6 @@ Node3D::~Node3D()
     }
 
     children.clear();
-}
-
-void Node3D::add_child(Node3D* child)
-{
-    if (child->parent) {
-        child->parent->remove_child(child);
-    }
-
-    // Checks if it's already a child
-    auto it = std::find(children.begin(), children.end(), child);
-    if (it != children.end()) {
-        spdlog::error("Entity is already one of the children!");
-        return;
-    }
-
-    child->parent = this;
-    children.push_back(child);
-}
-
-void Node3D::remove_child(Node3D* child)
-{
-    // Checks if it's a child
-    auto it = std::find(children.begin(), children.end(), child);
-    if (it == children.end()) {
-        spdlog::error("Entity is not a child!!");
-        return;
-    }
-
-    children.erase(it);
-    child->parent = nullptr;
 }
 
 void Node3D::render()
@@ -209,7 +177,7 @@ const glm::vec3 Node3D::get_translation()
 glm::mat4x4 Node3D::get_global_model()
 {
     if (parent)
-        return parent->get_global_model() * transform.get_model();
+        return static_cast<Node3D*>(parent)->get_global_model() * transform.get_model();
     return transform.get_model();
 }
 
@@ -221,11 +189,6 @@ glm::mat4x4 Node3D::get_model()
 glm::quat Node3D::get_rotation() const
 {
     return transform.get_rotation();
-}
-
-Node3D* Node3D::get_parent() const
-{
-    return parent;
 }
 
 const Transform& Node3D::get_transform() const
