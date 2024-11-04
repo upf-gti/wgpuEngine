@@ -7,6 +7,7 @@
 #include "framework/math/intersections.h"
 #include "framework/input.h"
 #include "framework/nodes/text.h"
+#include "framework/nodes/button_2d.h"
 #include "framework/camera/camera.h"
 #include "framework/utils/utils.h"
 #include "framework/ui/io.h"
@@ -283,6 +284,27 @@ namespace ui {
             skip = true;
         }
 
+        // Close submenu when single press for buttons
+        else if(class_type == BUTTON || class_type == TEXTURE_BUTTON){
+
+            auto parent_2d = get_parent<Node2D*>();
+
+            if (parent_2d) {
+                // Get parent of the group..
+                if (parent_2d->get_class_type() == GROUP) {
+                    parent_2d = parent_2d->get_parent<Node2D*>();
+                }
+
+                // By now we should have the submenu box, so go up again
+                parent_2d = parent_2d->get_parent<Node2D*>();
+
+                ButtonSubmenu2D* submenu = dynamic_cast<ButtonSubmenu2D*>(parent_2d);
+                if (submenu && !(submenu->get_flags() & KEEP_SUBMENU_OPENED)) {
+                    submenu->box->set_visibility(false);
+                }
+            }
+        }
+
         last_release_time = now;
 
         return skip;
@@ -290,8 +312,6 @@ namespace ui {
 
     void Panel2D::update_scroll_view()
     {
-        // return;
-
         auto parent_2d = get_parent<Node2D*>();
 
         if (!(parameter_flags & SCROLLABLE) || !parent_2d) {

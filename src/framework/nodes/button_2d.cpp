@@ -97,7 +97,6 @@ namespace ui {
         update_ui_data();
 
         if (class_type == Node2DClassType::SUBMENU) {
-
             ButtonSubmenu2D* submenu = static_cast<ButtonSubmenu2D*>(this);
             submenu->box->set_visibility(false);
         }
@@ -218,11 +217,6 @@ namespace ui {
         update_ui_data();
 
         return true;
-    }
-
-    void Button2D::set_priority(uint8_t priority)
-    {
-        Panel2D::set_priority(priority);
     }
 
     TextureButton2D::TextureButton2D(const std::string& sg, const std::string& texture_path, uint32_t flags)

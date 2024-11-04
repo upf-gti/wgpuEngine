@@ -132,13 +132,24 @@ bool IO::any_focus()
     return (focused != nullptr);
 }
 
-bool IO::is_hover_type(uint32_t type)
+bool IO::is_hover_type(uint32_t type, uint32_t flag)
 {
     if (!any_hover()) {
         return false;
     }
 
-    return (hovered->get_class_type() == type);
+    ui::Panel2D* root = dynamic_cast<ui::Panel2D*>(hovered);
+    if (!root) {
+        return false;
+    }
+
+    bool result = (root->get_class_type() == type);
+
+    if (flag != 0u) {
+        result |= (root->get_flags() & flag);
+    }
+
+    return result;
 }
 
 bool IO::is_any_hover_type(const std::vector<uint32_t>& types)

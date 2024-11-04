@@ -10,7 +10,7 @@
 
 TextEntity::TextEntity(const std::string& _text, glm::vec2 _box_size, bool _wrap) : MeshInstance3D()
 {
-    font = Font::get("Lato");
+    font = Font::get("Mangaka");
     font->ref();
     text = _text;
     box_size = _box_size;

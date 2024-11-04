@@ -43,7 +43,7 @@ public:
     static bool equals_focus(Node2D* node);
     static bool any_focus();
 
-    static bool is_hover_type(uint32_t type);
+    static bool is_hover_type(uint32_t type, uint32_t flag = 0u);
     static bool is_any_hover_type(const std::vector<uint32_t>& types);
     static bool any_hover();
 

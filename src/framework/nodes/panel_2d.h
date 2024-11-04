@@ -53,6 +53,8 @@ namespace ui {
         void update_ui_data() override;
         void set_color(const Color& c);
         virtual void set_signal(const std::string& new_signal);
+
+        uint32_t get_flags() { return parameter_flags; }
     };
 
     class Image2D : public Panel2D {

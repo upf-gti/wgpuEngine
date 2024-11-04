@@ -43,7 +43,6 @@ namespace ui {
 
         void update(float delta_time) override;
         bool on_input(sInputData data) override;
-        void set_priority(uint8_t priority) override;
     };
 
     class TextureButton2D : public Button2D {
