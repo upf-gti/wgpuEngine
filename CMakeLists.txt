@@ -197,17 +197,19 @@ target_link_libraries(${PROJECT_NAME} PUBLIC glm)
 
 if (NOT EMSCRIPTEN)
 
-    # vulkan-headers
-    add_subdirectory(libraries/Vulkan-Headers)
-    target_link_libraries(${PROJECT_NAME} PUBLIC Vulkan-Headers)
+    if (NOT APPLE)
+        # vulkan-headers
+        add_subdirectory(libraries/Vulkan-Headers)
+        target_link_libraries(${PROJECT_NAME} PUBLIC Vulkan-Headers)
 
-    # openxr
-    add_subdirectory(libraries/openxr)
-    target_link_libraries(${PROJECT_NAME} PUBLIC openxr_loader)
-#    target_link_libraries(openxr_loader PUBLIC Vulkan-Headers)
-    set_property(TARGET openxr_loader PROPERTY FOLDER "External/OpenXR")
-    set_property(TARGET generate_openxr_header PROPERTY FOLDER "External/OpenXR")
-    set_property(TARGET xr_global_generated_files PROPERTY FOLDER "External/OpenXR")
+        # openxr
+        add_subdirectory(libraries/openxr)
+        target_link_libraries(${PROJECT_NAME} PUBLIC openxr_loader)
+    #    target_link_libraries(openxr_loader PUBLIC Vulkan-Headers)
+        set_property(TARGET openxr_loader PROPERTY FOLDER "External/OpenXR")
+        set_property(TARGET generate_openxr_header PROPERTY FOLDER "External/OpenXR")
+        set_property(TARGET xr_global_generated_files PROPERTY FOLDER "External/OpenXR")
+    endif()
 
     # glfw
     add_subdirectory(libraries/glfw)
