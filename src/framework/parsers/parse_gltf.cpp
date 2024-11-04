@@ -37,6 +37,8 @@ void create_material_texture(const tinygltf::Model& model, int tex_index, Textur
     if (tex.source < 0)
         return;
 
+    static uint32_t texture_idx = 0;
+
     const tinygltf::Image& image = model.images[tex.source];
 
     assert(image.component == 4);
@@ -63,9 +65,10 @@ void create_material_texture(const tinygltf::Model& model, int tex_index, Textur
             *texture = new Texture();
             (*texture)->load_from_data(image.uri, WGPUTextureDimension_2D, image.width, image.height, 1, converted_texture, true, is_srgb ? WGPUTextureFormat_RGBA8UnormSrgb : WGPUTextureFormat_RGBA8Unorm);
 
+
             if (fill_texture_data) {
                 std::vector<uint8_t>& texture_data = (*texture)->get_texture_data();
-                texture_data.assign(converted_texture, converted_texture + image.width * image.height);
+                texture_data.assign(converted_texture, converted_texture + image.width * image.height * 4);
             }
 
             delete[] converted_texture;
@@ -77,8 +80,16 @@ void create_material_texture(const tinygltf::Model& model, int tex_index, Textur
 
         if (fill_texture_data) {
             std::vector<uint8_t>& texture_data = (*texture)->get_texture_data();
-            texture_data.assign(image.image.data(), image.image.data() + image.width * image.height);
+            texture_data.assign(image.image.data(), image.image.data() + image.width * image.height * 4);
         }
+    }
+
+    if (image.name.empty()) {
+        (*texture)->set_name("texture_" + std::to_string(texture_idx));
+        texture_idx++;
+    }
+    else {
+        (*texture)->set_name(image.name);
     }
 
     if (tex.sampler != -1)

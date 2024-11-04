@@ -112,7 +112,7 @@ public:
     const std::unordered_map<std::string, AnimatableProperty>& get_animatable_properties() const;
 
     void set_type(NodeType new_type) { type = new_type; }
-    void set_name(std::string new_name) { name = new_name; }
+    void set_name(const std::string& new_name) { name = new_name; }
     virtual void set_aabb(const AABB& new_aabb) { aabb = new_aabb; }
 
     virtual void disable_2d();
