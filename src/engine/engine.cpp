@@ -349,12 +349,12 @@ void Engine::on_frame()
     ImGuizmo::SetOrthographic(false);
     ImGuizmo::BeginFrame();
 
-    IO::render();
-
     render();
 
     Input::set_mouse_wheel(0.0f, 0.0f);
     Input::set_prev_state();
+
+    IO::end_frame();
 }
 
 void Engine::update(float delta_time)

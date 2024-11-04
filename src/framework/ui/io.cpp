@@ -14,6 +14,7 @@
 #include "spdlog/spdlog.h"
 
 float IO::xr_ray_distance = 0.0f;
+float IO::last_xr_ray_distance = 0.0f;
 
 Node2D* IO::focused = nullptr;
 Node2D* IO::hovered = nullptr;
@@ -33,10 +34,9 @@ void IO::start_frame()
     set_xr_ray_distance(-1.0f);
 }
 
-void IO::render()
+void IO::end_frame()
 {
-    // Keyboard was here at first, leaving this as is because it can be used for somthing else..
-    // ...
+    last_xr_ray_distance = xr_ray_distance;
 }
 
 void IO::update(float delta_time)

@@ -269,14 +269,6 @@ void Node2D::release()
     }
 }
 
-Node2D* Node2D::get_widget_from_name(const std::string& name)
-{
-    if (all_widgets.count(name)) {
-        return all_widgets[name];
-    }
-    return nullptr;
-}
-
 void Node2D::clean()
 {
     std::vector<Node2D*> to_delete;

@@ -11,6 +11,7 @@ class IO {
     static std::vector<std::pair<Node2D*, sInputData>> frame_inputs;
 
     static float xr_ray_distance;
+    static float last_xr_ray_distance;
 
     static Node2D* focused;
     static Node2D* hovered;
@@ -22,7 +23,7 @@ public:
 
     static void initialize();
     static void start_frame();
-    static void render();
+    static void end_frame();
     static void update(float delta_time);
 
     static void set_xr_ray_distance(float d) { xr_ray_distance = d; };
@@ -52,7 +53,7 @@ public:
 
     static const glm::vec2& get_xr_position() { return xr_position; }
     static const glm::vec3& get_xr_world_position() { return xr_world_position; }
-    static const float get_xr_ray_distance() { return xr_ray_distance; }
+    static const float get_xr_ray_distance() { return last_xr_ray_distance; }
 
     /*
     *   Input management

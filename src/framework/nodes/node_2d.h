@@ -60,7 +60,7 @@ protected:
     uint8_t     class_type = Node2DClassType::UNDEFINED;
 
     bool        visibility = true;
-	glm::mat3x3 model = glm::mat3x3(1.0f);
+    glm::mat3x3 model = glm::mat3x3(1.0f);
 
     glm::vec2   size = { 0.0f, 0.0f };
     glm::vec2   scaling = { 1.0f, 1.0f };
@@ -74,15 +74,15 @@ public:
 
     Node2D() : Node2D("unnamed", { 0.0f, 0.0f }, { 0.0f, 0.0f }) {};
     Node2D(const std::string& name, const glm::vec2& p, const glm::vec2& s, uint32_t parameter_flags = 0u);
-	virtual ~Node2D();
+    virtual ~Node2D();
 
     virtual void add_child(Node2D* child);
     virtual void remove_child(Node2D* child);
     virtual void on_children_changed();
     virtual void update_ui_data() {};
 
-	virtual void render() override;
-	virtual void update(float delta_time) override;
+    virtual void render() override;
+    virtual void update(float delta_time) override;
 
     void release() override;
 
@@ -90,13 +90,13 @@ public:
     virtual bool on_input(sInputData data) { return false; };
     virtual bool on_pressed() { return false; };
 
-	void translate(const glm::vec2& translation);
-	void rotate(float angle);
+    void translate(const glm::vec2& translation);
+    void rotate(float angle);
     void rotate(const glm::quat& q);
-	void scale(glm::vec2 scale);
+    void scale(glm::vec2 scale);
 
     Viewport3D* get_xr_viewport() { return xr_viewport_3d; };
-	const glm::vec2 get_local_translation() const;
+    const glm::vec2 get_local_translation() const;
     const glm::vec2 get_translation() const;
     const glm::vec2 get_scale() const;
     virtual glm::mat3x3 get_global_model() const;
@@ -108,7 +108,7 @@ public:
     bool get_visibility() const;
 
     bool set_visibility(bool value, bool propagate = true);
-	void set_position(const glm::vec2& translation);
+    void set_position(const glm::vec2& translation);
     void set_model(const glm::mat3x3& _model);
     void set_viewport_model(glm::mat4x4 model);
     void set_xr_transform(const Transform& transform);
@@ -116,6 +116,13 @@ public:
 
     static std::map<std::string, Node2D*> all_widgets;
 
-    static Node2D* get_widget_from_name(const std::string& name);
+    template <typename T = Node2D*>
+    static T get_widget_from_name(const std::string& name) {
+        if (all_widgets.count(name)) {
+            return static_cast<T>(all_widgets[name]);
+        }
+        return nullptr;
+    }
+
     static void clean();
 };
