@@ -16,10 +16,21 @@
 
 namespace ui {
 
+    struct sButtonDescription {
+        std::string path = "";
+        uint32_t flags = 0u;
+        glm::vec2 position = glm::vec2(0.0f);
+        glm::vec2 size = glm::vec2(BUTTON_SIZE);
+        Color color = colors::WHITE;
+        std::string label = "";
+    };
+
     class Button2D : public Panel2D {
     public:
 
         Text2D* text_2d = nullptr;
+
+        std::string label = "";
 
         // Animations
         float target_scale = 1.0f;
@@ -33,9 +44,7 @@ namespace ui {
         bool is_color_button        = true;
 
         Button2D() {};
-        Button2D(const std::string& sg, const Color& color = colors::WHITE, uint32_t parameter_flags = 0);
-        Button2D(const std::string& sg, uint32_t parameter_flags, const glm::vec2& pos, const glm::vec2& size = glm::vec2(BUTTON_SIZE));
-        Button2D(const std::string& sg, const Color& color, uint32_t parameter_flags, const glm::vec2& pos, const glm::vec2& size = glm::vec2(BUTTON_SIZE));
+        Button2D(const std::string& signal, const sButtonDescription& desc);
 
         void set_disabled(bool value);
         void set_selected(bool value);
@@ -47,9 +56,7 @@ namespace ui {
 
     class TextureButton2D : public Button2D {
     public:
-
-        TextureButton2D(const std::string& sg, const std::string& texture_path, uint32_t parameter_flags = 0);
-        TextureButton2D(const std::string& sg, const std::string& texture_path, uint32_t parameter_flags, const glm::vec2& pos, const glm::vec2& size = glm::vec2(BUTTON_SIZE));
+        TextureButton2D(const std::string& signal, const sButtonDescription& desc);
     };
 
     class ConfirmButton2D : public TextureButton2D {
@@ -57,11 +64,11 @@ namespace ui {
         bool confirm_pending = false;
         std::string texture_path;
         float confirm_timer = 0.0f;
+        Text2D* confirm_text_2d = nullptr;
 
     public:
 
-        ConfirmButton2D(const std::string& sg, const std::string& texture_path, uint32_t parameter_flags = 0);
-        ConfirmButton2D(const std::string& sg, const std::string& texture_path, uint32_t parameter_flags, const glm::vec2& pos, const glm::vec2& size = glm::vec2(BUTTON_SIZE));
+        ConfirmButton2D(const std::string& signal, const sButtonDescription& desc);
 
         void update(float delta_time) override;
         bool on_input(sInputData data) override;
@@ -72,7 +79,7 @@ namespace ui {
 
         HContainer2D* box = nullptr;
 
-        ButtonSubmenu2D(const std::string& sg, const std::string& texture_path, uint32_t parameter_flags = 0, const glm::vec2& pos = { 0.0f, 0.0f }, const glm::vec2& size = glm::vec2(BUTTON_SIZE));
+        ButtonSubmenu2D(const std::string& signal, const sButtonDescription& desc);
 
         void add_child(Node2D* child) override;
     };
@@ -82,7 +89,7 @@ namespace ui {
 
         CircleContainer2D* box = nullptr;
 
-        ButtonSelector2D(const std::string& sg, const std::string& texture_path, uint32_t parameter_flags = 0, const glm::vec2& pos = { 0.0f, 0.0f }, const glm::vec2& size = glm::vec2(BUTTON_SIZE));
+        ButtonSelector2D(const std::string& signal, const sButtonDescription& desc);
 
         void add_child(Node2D* child) override;
         std::vector<Node*>& get_children() override;

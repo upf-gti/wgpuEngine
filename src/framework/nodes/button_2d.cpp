@@ -28,23 +28,17 @@ namespace ui {
     *	Buttons
     */
 
-    Button2D::Button2D(const std::string& sg, const Color& col, uint32_t flags)
-        : Button2D(sg, col, flags, { 0.0f, 0.0f }, glm::vec2(BUTTON_SIZE)) { }
-
-    Button2D::Button2D(const std::string& sg, uint32_t flags, const glm::vec2& pos, const glm::vec2& size)
-        : Panel2D(sg, pos, size) { }
-
-    Button2D::Button2D(const std::string& sg, const Color& col, uint32_t flags, const glm::vec2& pos, const glm::vec2& size)
-        : Panel2D(sg, pos, size, flags, col) {
+    Button2D::Button2D(const std::string& signal, const sButtonDescription& desc)
+        : Panel2D(signal, desc.path, desc.position, desc.size, desc.flags, desc.color) {
 
         class_type = Node2DClassType::BUTTON;
 
-        selected = flags & SELECTED;
-        disabled = flags & DISABLED;
-        is_unique_selection = flags & UNIQUE_SELECTION;
-        allow_toggle = flags & ALLOW_TOGGLE;
+        parameter_flags = desc.flags;
 
-        parameter_flags = flags;
+        selected = parameter_flags & SELECTED;
+        disabled = parameter_flags & DISABLED;
+        is_unique_selection = parameter_flags & UNIQUE_SELECTION;
+        allow_toggle = parameter_flags & ALLOW_TOGGLE;
 
         ui_data.is_color_button = is_color_button;
         ui_data.is_button_disabled = disabled;
@@ -69,7 +63,7 @@ namespace ui {
         // Selection styling visibility callback..
         Node::bind(name + "@pressed", [&](const std::string& signal, void* button) {
 
-            if (disabled)
+            if (disabled || (!is_unique_selection && !allow_toggle))
                 return;
 
             const bool last_value = selected;
@@ -83,11 +77,10 @@ namespace ui {
                     }
                 }
             }
-
             set_selected(allow_toggle ? !last_value : true);
         });
 
-        set_visibility(!(flags & HIDDEN));
+        set_visibility(!(parameter_flags & HIDDEN));
     }
 
     void Button2D::set_disabled(bool value)
@@ -219,28 +212,17 @@ namespace ui {
         return true;
     }
 
-    TextureButton2D::TextureButton2D(const std::string& sg, const std::string& texture_path, uint32_t flags)
-        : TextureButton2D(sg, texture_path, flags, { 0.0f, 0.0f }) { }
-
-    TextureButton2D::TextureButton2D(const std::string& sg, const std::string& texture_path, uint32_t flags, const glm::vec2& pos, const glm::vec2& size)
-        : Button2D(sg, flags, pos, size) {
+    TextureButton2D::TextureButton2D(const std::string& signal, const sButtonDescription& desc)
+        : Button2D(signal, desc) {
 
         class_type = Node2DClassType::TEXTURE_BUTTON;
 
+        label = desc.label;
+
         is_color_button = false;
-
-        selected = flags & SELECTED;
-        disabled = flags & DISABLED;
-        is_unique_selection = flags & UNIQUE_SELECTION;
-        allow_toggle = flags & ALLOW_TOGGLE;
-
-        parameter_flags = flags;
-
-        ui_data.is_selected = selected;
         ui_data.is_color_button = is_color_button;
-        ui_data.is_button_disabled = disabled;
-        ui_data.num_group_items = ComboIndex::UNIQUE;
-        ui_data.aspect_ratio = size.x / size.y;
+
+        auto old_material = quad_mesh->get_surface_material_override(quad_mesh->get_surface(0));
 
         Material* material = new Material();
         material->set_color({ 0.02f, 0.02f, 0.02f, 1.0f });
@@ -249,36 +231,22 @@ namespace ui {
         material->set_cull_type(CULL_BACK);
         material->set_transparency_type(ALPHA_BLEND);
         material->set_priority(class_type);
-        material->set_diffuse_texture(texture_path.size() ? RendererStorage::get_texture(texture_path, TEXTURE_STORAGE_UI) : nullptr);
+        material->set_diffuse_texture(desc.path.size() ? RendererStorage::get_texture(desc.path, TEXTURE_STORAGE_UI) : nullptr);
         material->set_shader(RendererStorage::get_shader_from_source(shaders::ui_button::source, shaders::ui_button::path, material));
 
         quad_mesh->set_surface_material_override(quad_mesh->get_surface(0), material);
 
         auto webgpu_context = Renderer::instance->get_webgpu_context();
+
+        if (old_material) {
+            delete old_material;
+            RendererStorage::delete_ui_widget(webgpu_context, quad_mesh);
+        }
+
         RendererStorage::register_ui_widget(webgpu_context, material->get_shader_ref(), quad_mesh, ui_data, 3);
 
-        // Selection styling visibility callback..
-        Node::bind(name + "@pressed", [&](const std::string& signal, void* button) {
-
-            if (disabled || (!is_unique_selection && !allow_toggle))
-                return;
-
-            const bool last_value = selected;
-
-            // Unselect siblings
-            if (parent && !allow_toggle) {
-                for (auto c : parent->get_children()) {
-                    Button2D* b = dynamic_cast<Button2D*>(c);
-                    if (b) {
-                        b->set_selected(false);
-                    }
-                }
-            }
-            set_selected(allow_toggle ? !last_value : true);
-        });
-
         // Use label as background
-        if (!texture_path.size()) {
+        if (!desc.path.size()) {
             label_as_background = true;
             text_2d = new Text2D(name, {0.0f, size.y * 0.5f - 9.0f}, 18.f, SKIP_TEXT_RECT);
             float w = text_2d->text_entity->get_text_width(name);
@@ -287,41 +255,35 @@ namespace ui {
         }
 
         // Text label
-        else if (!(flags & SKIP_NAME)) {
+        else if (!(parameter_flags & SKIP_NAME)) {
             assert(name.size() > 0 && "No signal name size!");
 
             // Use a prettified text..
-            std::string pretty_name = name;
+            std::string pretty_name = label.size() ? label : name;
             to_camel_case(pretty_name);
             text_2d = new Text2D(pretty_name, { 0.f, size.y }, 18.f, TEXT_CENTERED);
             text_2d->set_visibility(false);
             add_child(text_2d);
         }
-
-        set_visibility(!(flags& HIDDEN));
     }
 
-    ConfirmButton2D::ConfirmButton2D(const std::string& sg, const std::string& texture_path, uint32_t flags)
-        : TextureButton2D(sg, texture_path, flags) { }
+    ConfirmButton2D::ConfirmButton2D(const std::string& signal, const sButtonDescription& desc)
+        : TextureButton2D(signal, desc) {
 
-    ConfirmButton2D::ConfirmButton2D(const std::string& sg, const std::string& texture_path, uint32_t flags, const glm::vec2& pos, const glm::vec2& size)
-        : TextureButton2D(sg, texture_path, flags, pos, size) {
+        texture_path = desc.path;
 
-        this->texture_path = texture_path;
-
-        text_2d = new Text2D("ok", { 0.0f, size.y * 0.5f - 9.0f }, 18.f, SKIP_TEXT_RECT);
-        float w = text_2d->text_entity->get_text_width("ok");
-        text_2d->translate({ size.x * 0.5f - w * 0.5f, 0.0f });
-        text_2d->set_visibility(false);
-        add_child(text_2d);
-
+        confirm_text_2d = new Text2D("ok", { 0.0f, size.y * 0.5f - 9.0f }, 18.f, SKIP_TEXT_RECT);
+        float w = confirm_text_2d->text_entity->get_text_width("ok");
+        confirm_text_2d->translate({ size.x * 0.5f - w * 0.5f, 0.0f });
+        confirm_text_2d->set_visibility(false);
+        add_child(confirm_text_2d);
     }
 
     void ConfirmButton2D::update(float delta_time)
     {
         Button2D::update(delta_time);
 
-        text_2d->set_visibility(confirm_pending);
+        confirm_text_2d->set_visibility(confirm_pending);
 
         if (confirm_pending) {
             confirm_timer += delta_time;
@@ -343,6 +305,10 @@ namespace ui {
             return true;
         }
 
+        if (text_2d) {
+            text_2d->set_visibility(true);
+        }
+
         Panel2D::on_input(data);
 
         // Internally, use on release mouse, not on press..
@@ -352,7 +318,7 @@ namespace ui {
 
                 if (confirm_pending) {
                     confirm_pending = false;
-                    text_2d->set_visibility(false);
+                    confirm_text_2d->set_visibility(false);
                     // Trigger callback
                     Node::emit_signal(name, (void*)this);
                     // Visibility stuff..
@@ -386,19 +352,19 @@ namespace ui {
     *   Widget Submenus
     */
 
-    ButtonSubmenu2D::ButtonSubmenu2D(const std::string& sg, const std::string& texture_path, uint32_t flags, const glm::vec2& pos, const glm::vec2& size)
-        : TextureButton2D(sg, texture_path, flags, pos, size) {
+    ButtonSubmenu2D::ButtonSubmenu2D(const std::string& signal, const sButtonDescription& desc)
+        : TextureButton2D(signal, desc) {
 
         class_type = Node2DClassType::SUBMENU;
 
-        box = new ui::HContainer2D("submenu_h_box_" + sg, { 0.0f, 0.0f });
+        box = new ui::HContainer2D("submenu_h_box_" + signal, { 0.0f, 0.0f });
         box->set_visibility(false);
         box->centered = true;
 
         Node2D::add_child(box);
 
         // use data with something to force visibility
-        Node::bind(sg + "@pressed", [&, box = box](const std::string& sg, void* data) {
+        Node::bind(signal + "@pressed", [&, box = box](const std::string& sg, void* data) {
 
             const bool last_value = box->get_visibility();
 
@@ -433,8 +399,8 @@ namespace ui {
         box->add_child(child);
     }
 
-    ButtonSelector2D::ButtonSelector2D(const std::string& sg, const std::string& texture_path, uint32_t flags, const glm::vec2& pos, const glm::vec2& size)
-        : TextureButton2D(sg, texture_path, flags, pos, size) {
+    ButtonSelector2D::ButtonSelector2D(const std::string& signal, const sButtonDescription& desc)
+        : TextureButton2D(signal, desc) {
 
         class_type = Node2DClassType::SELECTOR;
 
@@ -443,7 +409,7 @@ namespace ui {
 
         Node2D::add_child(box);
 
-        Node::bind(sg, [&, box = box](const std::string& sg, void* data) {
+        Node::bind(signal, [&, box = box](const std::string& sg, void* data) {
 
             bool new_value = !box->get_visibility();
 
