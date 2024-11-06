@@ -66,7 +66,7 @@ namespace ui {
     class ItemGroup2D : public HContainer2D {
     public:
 
-        ItemGroup2D(const std::string& name, const glm::vec2& pos = { 0.0f, 0.0f }, uint32_t flags = 0u, const Color& color = colors::GRAY);
+        ItemGroup2D(const std::string& name, uint32_t flags = 0u, const glm::vec2& pos = { 0.0f, 0.0f }, const Color& color = colors::GRAY);
 
         float get_number_of_items();
         void set_number_of_items(float number);

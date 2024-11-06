@@ -33,8 +33,6 @@ namespace ui {
 
         class_type = Node2DClassType::BUTTON;
 
-        parameter_flags = desc.flags;
-
         selected = parameter_flags & SELECTED;
         disabled = parameter_flags & DISABLED;
         is_unique_selection = parameter_flags & UNIQUE_SELECTION;
