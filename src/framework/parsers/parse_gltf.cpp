@@ -780,7 +780,7 @@ void process_node_hierarchy(const tinygltf::Model& model, int parent_id, uint32_
     }
 
     if (is_joint) {
-        entity->set_type(JOINT_3D);
+        entity->set_node_type("Joint3D");
     }
     else {
         parent_node->add_child(entity);
@@ -873,7 +873,7 @@ void parse_model_skins(Node3D* scene_root, tinygltf::Model& model, std::map<std:
                 const tinygltf::Node& parent = model.nodes[joint_root_parent_id];
                 assert(loaded_nodes.contains(parent.name));
                 parent_node = loaded_nodes[parent.name];
-                if (parent_node->get_type() != NodeType::JOINT_3D) {
+                if (parent_node->get_node_type() != "Joint3D") {
                     e = new SkeletonInstance3D();
                     parent_node->add_child(e);
                     skeleton_instances.push_back(e);
@@ -940,7 +940,7 @@ void parse_model_skins(Node3D* scene_root, tinygltf::Model& model, std::map<std:
 
             Node3D* joint_3d = new Node3D();
             joint_3d->set_name(node.name);
-            joint_3d->set_type(JOINT_3D);
+            joint_3d->set_node_type("Joint3D");
 
             joint_nodes.push_back(joint_3d);
 
