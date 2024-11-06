@@ -510,13 +510,14 @@ void Renderer::render_screen(WGPUTextureView screen_surface_texture_view)
         render_pass_descr.colorAttachments = &render_pass_color_attachment;
         render_pass_descr.depthStencilAttachment = &render_pass_depth_attachment;
 
+#ifndef __EMSCRIPTEN__
         std::vector<WGPURenderPassTimestampWrites> timestampWrites(1);
         timestampWrites[0].beginningOfPassWriteIndex = timestamp(global_command_encoder, "pre_render");
         timestampWrites[0].querySet = timestamp_query_set;
         timestampWrites[0].endOfPassWriteIndex = timestamp(global_command_encoder, "render");
 
         render_pass_descr.timestampWrites = timestampWrites.data();
-
+#endif
         // Create & fill the render pass (encoder)
         WGPURenderPassEncoder render_pass = wgpuCommandEncoderBeginRenderPass(global_command_encoder, &render_pass_descr);
 
@@ -783,13 +784,17 @@ void Renderer::init_multisample_textures()
 
 void Renderer::init_timestamp_queries()
 {
+#ifndef __EMSCRIPTEN__
     timestamp_query_set = webgpu_context->create_query_set(maximum_query_sets);
     timestamp_query_buffer = webgpu_context->create_buffer(sizeof(uint64_t) * maximum_query_sets, WGPUBufferUsage_QueryResolve | WGPUBufferUsage_Storage | WGPUBufferUsage_CopySrc | WGPUBufferUsage_CopyDst, nullptr);
+#endif
 }
 
 void Renderer::resolve_query_set(WGPUCommandEncoder encoder, uint8_t first_query)
 {
+#ifndef __EMSCRIPTEN__
     wgpuCommandEncoderResolveQuerySet(encoder, timestamp_query_set, first_query, query_index, timestamp_query_buffer, 0);
+#endif
 }
 
 std::vector<float> Renderer::get_timestamps()
