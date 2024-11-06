@@ -136,7 +136,9 @@ WGPUFuture WebGPUContext::request_device()
     std::vector<WGPUFeatureName> required_features;
 
     required_features.push_back(WGPUFeatureName_Float32Filterable);
+#if !defined(__EMSCRIPTEN__)
     required_features.push_back(WGPUFeatureName_TimestampQuery);
+#endif
 
     device_desc.requiredFeatureCount = required_features.size();
     device_desc.requiredFeatures = required_features.data();

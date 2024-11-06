@@ -465,7 +465,7 @@ bool OpenXRContext::check_vulkan_version(XrGraphicsRequirementsVulkanKHR* vulkan
 #if defined(BACKEND_DX12)
 bool OpenXRContext::check_dx12_version(XrGraphicsRequirementsD3D12KHR* dx12_reqs)
 {
-    spdlog::info("### D3D12 graphics requirements minFeatureLevel: {}", dx12_reqs->minFeatureLevel);
+    spdlog::info("### D3D12 graphics requirements minFeatureLevel: {}", static_cast<uint32_t>(dx12_reqs->minFeatureLevel));
     spdlog::info("### D3D12 graphics requirements adapterLuid: {} {}", dx12_reqs->adapterLuid.HighPart, dx12_reqs->adapterLuid.LowPart);
 
     return true;

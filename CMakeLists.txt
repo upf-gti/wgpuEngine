@@ -31,7 +31,7 @@ if(MSVC)
 
 endif()
 
-if (WIN32)
+if (WIN32 AND NOT WGPUENGINE_FORCE_DX12)
     set(DAWN_BUILD "STATIC" CACHE STRING "Choose between SRC or STATIC to build from source (slower, better debugging) or download an static library (faster)")
 else()
     set(DAWN_BUILD "SRC")
