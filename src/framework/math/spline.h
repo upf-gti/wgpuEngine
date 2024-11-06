@@ -6,17 +6,18 @@
 #include <functional>
 
 struct Knot {
-    glm::vec3 position;
-    glm::vec3 size;
+    glm::vec3 position = glm::vec3(0.0f);
+    glm::vec3 size = glm::vec3(0.0f);
+    glm::quat rotation = glm::identity<glm::quat>();
 };
 
-inline Knot operator+(const Knot& a, const Knot& b) { return { a.position + b.position, a.size + b.size }; }
-inline Knot operator-(const Knot& a, const Knot& b) { return { a.position - b.position, a.size - b.size }; }
-inline Knot operator*(const Knot& a, const Knot& b) { return { a.position * b.position, a.size * b.size }; }
-inline Knot operator/(const Knot& a, const Knot& b) { return { a.position / b.position, a.size / b.size }; }
+inline Knot operator+(const Knot& a, const Knot& b) { return { a.position + b.position, a.size + b.size, glm::slerp(a.rotation, b.rotation, 0.5f) }; }
+inline Knot operator-(const Knot& a, const Knot& b) { return { a.position - b.position, a.size - b.size, a.rotation * glm::inverse(b.rotation) }; }
+inline Knot operator*(const Knot& a, const Knot& b) { return { a.position * b.position, a.size * b.size, a.rotation * b.rotation }; }
+inline Knot operator/(const Knot& a, const Knot& b) { return { a.position / b.position, a.size / b.size, a.rotation * glm::inverse(b.rotation) }; }
 
-inline Knot operator*(float scalar, const Knot& b) { return { scalar * b.position, scalar * b.size }; }
-inline Knot operator*(const Knot& a, float scalar) { return { a.position * scalar, a.size * scalar }; }
+inline Knot operator*(float scalar, const Knot& b) { return { scalar * b.position, scalar * b.size, glm::slerp(glm::identity<glm::quat>(), b.rotation, scalar) }; }
+inline Knot operator*(const Knot& a, float scalar) { return { a.position * scalar, a.size * scalar, glm::slerp(glm::identity<glm::quat>(), a.rotation, scalar) }; }
 
 class Spline {
 
