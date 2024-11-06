@@ -35,9 +35,8 @@ namespace ui {
     public:
 
         Slider2D() {};
-        Slider2D(const std::string& name, const glm::vec2& p, const glm::vec2& s);
+        Slider2D(const std::string& name, const glm::vec2& p, const glm::vec2& s, uint32_t flags = 0);
 
-        void render() override;
         void set_disabled(bool new_disabled);
 
         template <typename T>

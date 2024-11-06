@@ -23,12 +23,6 @@ using FuncVec4 = std::function<void(const std::string&, glm::vec4)>;
 
 using SignalType = std::variant <FuncInt, FuncFloat, FuncString, FuncVec2, FuncVec3, FuncVec4, FuncVoid>;
 
-enum NodeType {
-    NODE_2D,
-    NODE_3D,
-    JOINT_3D
-};
-
 class Node {
 
     static std::unordered_map<std::string, std::vector<SignalType>> mapping_signals;
@@ -72,8 +66,6 @@ protected:
     std::string name;
     std::string node_type;
 
-    NodeType type;
-
     Node* parent = nullptr;
     std::vector<Node*> children;
 
@@ -96,7 +88,6 @@ public:
     virtual void parse(std::ifstream& binary_scene_file);
 
     std::string get_name() const { return name; }
-    NodeType get_type() const { return type; }
     std::string get_node_type() const { return node_type; }
     virtual std::vector<Node*>& get_children() { return children; }
     AABB get_aabb() const;
@@ -111,7 +102,7 @@ public:
     Node::AnimatableProperty get_animatable_property(const std::string& name);
     const std::unordered_map<std::string, AnimatableProperty>& get_animatable_properties() const;
 
-    void set_type(NodeType new_type) { type = new_type; }
+    void set_node_type(const std::string& new_type) { node_type = new_type; }
     void set_name(const std::string& new_name) { name = new_name; }
     virtual void set_aabb(const AABB& new_aabb) { aabb = new_aabb; }
 

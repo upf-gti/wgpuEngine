@@ -55,6 +55,8 @@ namespace ui {
         quad_mesh = new MeshInstance();
         quad_mesh->add_surface(quad_surface);
         quad_mesh->set_surface_material_override(quad_mesh->get_surface(0), material);
+
+        parameter_flags = flags;
     }
 
     Panel2D::~Panel2D()
@@ -393,7 +395,7 @@ namespace ui {
         : Image2D(name, image_path, { 0.0f, 0.0f }, s, priority) {}
 
     Image2D::Image2D(const std::string& name, const std::string& image_path, const glm::vec2& p, const glm::vec2& s, uint8_t priority, uint32_t flags)
-        : Panel2D(name, p, s)
+        : Panel2D(name, p, s, flags)
     {
         class_type = priority;
 
@@ -406,8 +408,6 @@ namespace ui {
         material->set_priority(class_type);
         material->set_diffuse_texture(RendererStorage::get_texture(image_path, TEXTURE_STORAGE_UI));
         material->set_shader(RendererStorage::get_shader_from_source(shaders::ui_texture::source, shaders::ui_texture::path, material));
-
-        parameter_flags = flags;
 
         quad_mesh->set_surface_material_override(quad_mesh->get_surface(0), material);
 
@@ -442,8 +442,6 @@ namespace ui {
         quad_surface->create_quad(size.x, size.y, true);
         // Use subdivided quad in case we use panels with curvature
         // quad_surface->create_subdivided_quad(size.x, size.y);
-
-        parameter_flags = flags;
 
         Material* material = quad_mesh->get_surface_material_override(quad_surface);
         material->set_type(MATERIAL_UI);
@@ -627,21 +625,20 @@ namespace ui {
     Text2D* Text2D::selected = nullptr;
 
     Text2D::Text2D(const std::string& _text, float scale, uint32_t flags)
-        : Text2D(_text, { 0.0f, 0.0f }, scale, flags, colors::WHITE)
+        : Text2D(_text, { 0.0f, 0.0f }, scale, flags, colors::BLACK)
     { }
 
     Text2D::Text2D(const std::string& _text, const glm::vec2& pos, float scale, uint32_t flags, const Color& color)
-        : Panel2D("no_signal", pos, {1.0f, 1.0f}) {
+        : Panel2D("no_signal", pos, {1.0f, 1.0f}, flags) {
 
         text_string = _text;
         text_scale = scale;
 
         class_type = Node2DClassType::TEXT_SHADOW;
-        parameter_flags = flags;
 
         text_entity = new TextEntity(text_string);
         text_entity->set_scale(text_scale);
-        text_entity->generate_mesh(color, true);
+        text_entity->generate_mesh(colors::WHITE, true);
         text_entity->get_surface_material(0)->set_priority(Node2DClassType::TEXT);
 
         float text_width = (float)text_entity->get_text_width(text_string);
@@ -650,14 +647,14 @@ namespace ui {
 
         ui_data.num_group_items = size.x;
 
-        render_background = !(flags & SKIP_TEXT_RECT);
+        render_background = !(parameter_flags & SKIP_TEXT_RECT);
 
-        if ((flags & TEXT_SELECTABLE) && (flags & SELECTED)) {
+        if ((parameter_flags & TEXT_SELECTABLE) && (parameter_flags & SELECTED)) {
             selected = this;
         }
 
         Material* material = new Material();
-        material->set_color(colors::WHITE);
+        material->set_color(color);
         material->set_type(MATERIAL_UI);
         material->set_is_2D(true);
         material->set_cull_type(CULL_BACK);
@@ -850,8 +847,6 @@ namespace ui {
         : Panel2D(sg, pos, size, flags, c)
     {
         class_type = Node2DClassType::COLOR_PICKER;
-
-        parameter_flags = flags;
 
         Material* material = new Material();
         material->set_type(MATERIAL_UI);

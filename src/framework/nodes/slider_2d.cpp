@@ -21,13 +21,8 @@
 
 namespace ui {
 
-    Slider2D::Slider2D(const std::string& sg, const glm::vec2& p, const glm::vec2& s)
-        : Panel2D(sg, p, s) { }
-
-    void Slider2D::render()
-    {
-        Panel2D::render();
-    }
+    Slider2D::Slider2D(const std::string& sg, const glm::vec2& p, const glm::vec2& s, uint32_t flags)
+        : Panel2D(sg, p, s, flags) { }
 
     void Slider2D::set_disabled(bool new_disabled)
     {
@@ -64,29 +59,27 @@ namespace ui {
         : FloatSlider2D(sg, texture_path, v, { 0.0f, 0.0f }, glm::vec2(BUTTON_SIZE), mode, flags, min, max, precision) {}
 
     FloatSlider2D::FloatSlider2D(const std::string& sg, const std::string& texture_path, float value, const glm::vec2& pos, const glm::vec2& size, int mode, uint32_t flags, float min, float max, int precision)
-        : Slider2D(sg, pos, size), original_value(value), current_value(value), min_value(min), max_value(max), precision(precision) {
+        : Slider2D(sg, pos, size, flags), original_value(value), current_value(value), min_value(min), max_value(max), precision(precision) {
 
         bool is_horizontal = (mode == SliderMode::HORIZONTAL);
 
-        flags |= DBL_CLICK;
+        parameter_flags |= DBL_CLICK;
 
         this->class_type = is_horizontal ? Node2DClassType::HSLIDER : Node2DClassType::VSLIDER;
         this->mode = mode;
 
-        disabled = flags & DISABLED;
+        disabled = parameter_flags & DISABLED;
 
         ui_data.num_group_items = is_horizontal ? 2.f : 1.f;
         ui_data.slider_max = max_value;
         ui_data.slider_min = min_value;
 
-        if (flags & CURVE_INV_POW) {
+        if (parameter_flags & CURVE_INV_POW) {
             ui_data.slider_max = 1.0f / glm::pow(2.0f, max_value);
             ui_data.slider_min = 1.0f / glm::pow(2.0f, min_value);
         }
 
         ui_data.is_button_disabled = disabled;
-
-        parameter_flags = flags;
 
         this->size = glm::vec2(size.x * ui_data.num_group_items, size.y);
 
@@ -126,14 +119,14 @@ namespace ui {
         {
             float text_scale = 18.0f;
 
-            if (!(flags & SKIP_NAME)) {
+            if (!(parameter_flags & SKIP_NAME)) {
                 std::string pretty_name = name;
                 to_camel_case(pretty_name);
                 text_2d = new Text2D(pretty_name, { 0.f, size.y }, text_scale, TEXT_CENTERED);
                 add_child(text_2d);
             }
 
-            if (!disabled && !(flags & SKIP_VALUE)) {
+            if (!disabled && !(parameter_flags & SKIP_VALUE)) {
                 std::string value_as_string = value_to_string();
                 text_2d_value = new Text2D(value_as_string, { 0.0f, -text_scale }, text_scale, TEXT_CENTERED);
                 add_child(text_2d_value);
@@ -268,29 +261,27 @@ namespace ui {
         : IntSlider2D(sg, texture_path, v, { 0.0f, 0.0f }, glm::vec2(BUTTON_SIZE), mode, flags, min, max) {}
 
     IntSlider2D::IntSlider2D(const std::string& sg, const std::string& texture_path, int v, const glm::vec2& pos, const glm::vec2& size, int mode, uint32_t flags, int min, int max)
-        : Slider2D(sg, pos, size), original_value(v), current_value(v), min_value(min), max_value(max) {
+        : Slider2D(sg, pos, size, flags), original_value(v), current_value(v), min_value(min), max_value(max) {
 
         bool is_horizontal = (mode == SliderMode::HORIZONTAL);
 
-        flags |= DBL_CLICK;
+        parameter_flags |= DBL_CLICK;
 
         this->class_type = is_horizontal ? Node2DClassType::HSLIDER : Node2DClassType::VSLIDER;
         this->mode = mode;
 
-        disabled = flags & DISABLED;
+        disabled = parameter_flags & DISABLED;
 
         ui_data.num_group_items = is_horizontal ? 2.f : 1.f;
         ui_data.slider_max = static_cast<float>(max_value);
         ui_data.slider_min = static_cast<float>(min_value);
 
-        if (flags & CURVE_INV_POW) {
+        if (parameter_flags & CURVE_INV_POW) {
             ui_data.slider_max = 1.0f / glm::pow(2.0f, static_cast<float>(max_value));
             ui_data.slider_min = 1.0f / glm::pow(2.0f, static_cast<float>(min_value));
         }
 
         ui_data.is_button_disabled = disabled;
-
-        parameter_flags = flags;
 
         this->size = glm::vec2(size.x * ui_data.num_group_items, size.y);
 
@@ -329,14 +320,14 @@ namespace ui {
         {
             float text_scale = 18.0f;
 
-            if (!(flags & SKIP_NAME)) {
+            if (!(parameter_flags & SKIP_NAME)) {
                 std::string pretty_name = name;
                 to_camel_case(pretty_name);
                 text_2d = new Text2D(pretty_name, { 0.f, size.y }, text_scale, TEXT_CENTERED);
                 add_child(text_2d);
             }
 
-            if (!disabled && !(flags & SKIP_VALUE)) {
+            if (!disabled && !(parameter_flags & SKIP_VALUE)) {
                 std::string value_as_string = value_to_string();
                 text_2d_value = new Text2D(value_as_string, { 0.0f, -text_scale }, text_scale, TEXT_CENTERED);
                 add_child(text_2d_value);

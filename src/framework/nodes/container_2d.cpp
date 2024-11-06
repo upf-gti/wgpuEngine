@@ -321,7 +321,7 @@ namespace ui {
     *   Widget Group
     */
 
-    ItemGroup2D::ItemGroup2D(const std::string& name, const glm::vec2& pos, uint32_t flags, const Color& color)
+    ItemGroup2D::ItemGroup2D(const std::string& name, uint32_t flags, const glm::vec2& pos, const Color& color)
         : HContainer2D(name, pos, flags, color) {
 
         class_type = Node2DClassType::GROUP;
@@ -344,6 +344,8 @@ namespace ui {
 
         padding = glm::vec2(GROUP_MARGIN);
         item_margin = glm::vec2(GROUP_MARGIN * 0.5f);
+
+        set_visibility(!(parameter_flags & HIDDEN));
 
         render_background = true;
     }

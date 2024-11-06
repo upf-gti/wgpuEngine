@@ -26,7 +26,7 @@ REGISTER_NODE_CLASS(Node2D)
 
 Node2D::Node2D(const std::string& n, const glm::vec2& p, const glm::vec2& s, uint32_t parameter_flags) : size(s)
 {
-    type = NodeType::NODE_2D;
+    node_type = "Node2D";
 
     uid = last_uid++;
 
