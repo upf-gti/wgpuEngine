@@ -6,6 +6,11 @@ set(WGPU_DIR_LIBS    "${WGPU_DIR_ROOT}/libraries")
 set(WGPU_DIR_SHADERS "${WGPU_DIR_ROOT}/data/shaders")
 
 project(webgpuEngine LANGUAGES C CXX)
+set(CXX_STANDARD_REQUIRED ON)
+
+# Comand line variables
+SET(WGPUENGINE_FORCE_DX12 OFF CACHE BOOL "Force a Dawn backend of DX12")
+SET(WGPUENGINE_DISABLE_XR OFF CACHE BOOL "Disable XR functionalities")
 
 # Enable multicore and simd compile on VS solution
 if(MSVC)
@@ -106,7 +111,7 @@ WGPU_SOURCES_APPEND(${WGPU_DIR_SOURCES}/graphics/kernels)
 WGPU_SOURCES_APPEND(${WGPU_DIR_SOURCES}/graphics/debug)
 WGPU_SOURCES_APPEND(${WGPU_DIR_SOURCES}/engine)
 
-if (NOT EMSCRIPTEN)
+if (NOT EMSCRIPTEN AND NOT WIN32 AND NOT UNIX)
     WGPU_SOURCES_APPEND(${WGPU_DIR_SOURCES}/xr)
     WGPU_SOURCES_APPEND(${WGPU_DIR_SOURCES}/xr/dawnxr)
 endif()
@@ -182,10 +187,12 @@ target_link_libraries(${PROJECT_NAME} PUBLIC webgpu)
 if(MSVC)
     set(GLM_ENABLE_SIMD_AVX2 ON)
 endif()
-
 add_subdirectory(libraries/glm)
 
-target_compile_definitions(glm PUBLIC GLM_FORCE_INTRINSICS)
+# TODO: remove when the fix for this in GLM is merged
+if (NOT APPLE)
+    target_compile_definitions(glm PUBLIC GLM_FORCE_INTRINSICS)
+endif()
 target_compile_definitions(glm PUBLIC GLM_ENABLE_EXPERIMENTAL)
 target_compile_definitions(glm PUBLIC GLM_FORCE_QUAT_DATA_XYZW)
 target_compile_definitions(glm PUBLIC GLM_FORCE_QUAT_CTOR_XYZW)
@@ -195,20 +202,43 @@ set_property(TARGET glm PROPERTY CXX_STANDARD 20)
 set_property(TARGET glm PROPERTY FOLDER "External/glm")
 target_link_libraries(${PROJECT_NAME} PUBLIC glm)
 
+if (EMSCRIPTEN)
+    target_compile_definitions(${PROJECT_NAME} PUBLIC "BACKEND_EMSCRIPTEN")
+elseif (APPLE)
+    target_compile_definitions(${PROJECT_NAME} PUBLIC "BACKEND_METAL")
+    target_compile_definitions(${PROJECT_NAME} PUBLIC "DAWN_ENABLE_METAL")
+else()
+    # WIN32 and Linux
+    if(WGPUENGINE_FORCE_DX12)
+        target_compile_definitions(${PROJECT_NAME} PUBLIC "BACKEND_DX12")
+    else()
+        target_compile_definitions(${PROJECT_NAME} PUBLIC "BACKEND_VULKAN")
+    endif()
+
+    if(NOT WGPUENGINE_DISABLE_XR)
+        target_compile_definitions(${PROJECT_NAME} PUBLIC "XR_SUPPORT")
+        target_compile_definitions(${PROJECT_NAME} PUBLIC "USE_MIRROR_WINDOW")
+    endif()
+endif()
+
 if (NOT EMSCRIPTEN)
 
     if (NOT APPLE)
-        # vulkan-headers
-        add_subdirectory(libraries/Vulkan-Headers)
-        target_link_libraries(${PROJECT_NAME} PUBLIC Vulkan-Headers)
+        if(NOT WGPUENGINE_FORCE_DX12)
+            # vulkan-headers
+            add_subdirectory(libraries/Vulkan-Headers)
+            target_link_libraries(${PROJECT_NAME} PUBLIC Vulkan-Headers)
+        endif()
 
-        # openxr
-        add_subdirectory(libraries/openxr)
-        target_link_libraries(${PROJECT_NAME} PUBLIC openxr_loader)
-    #    target_link_libraries(openxr_loader PUBLIC Vulkan-Headers)
-        set_property(TARGET openxr_loader PROPERTY FOLDER "External/OpenXR")
-        set_property(TARGET generate_openxr_header PROPERTY FOLDER "External/OpenXR")
-        set_property(TARGET xr_global_generated_files PROPERTY FOLDER "External/OpenXR")
+        if(NOT WGPUENGINE_DISABLE_XR)
+            # openxr
+            add_subdirectory(libraries/openxr)
+            target_link_libraries(${PROJECT_NAME} PUBLIC openxr_loader)
+            #target_link_libraries(openxr_loader PUBLIC Vulkan-Headers)
+            set_property(TARGET openxr_loader PROPERTY FOLDER "External/OpenXR")
+            set_property(TARGET generate_openxr_header PROPERTY FOLDER "External/OpenXR")
+            set_property(TARGET xr_global_generated_files PROPERTY FOLDER "External/OpenXR")
+        endif()
     endif()
 
     # glfw
@@ -278,6 +308,7 @@ add_library(imgui STATIC
     ${WGPU_DIR_LIBS}/imgui/imstb_truetype.h
 )
 
+set_property(TARGET imgui PROPERTY CXX_STANDARD 20)
 target_compile_definitions(imgui PUBLIC "IMGUI_IMPL_WEBGPU_BACKEND_DAWN")
 
 target_link_libraries(imgui PUBLIC glfw webgpu)

@@ -8,11 +8,7 @@
 
 #include "xr/dawnxr/dawnxr_internal.h"
 
-#if defined(BACKEND_DX12)
-#include <dawn/native/D3D12Backend.h>
-#elif defined(BACKEND_VULKAN)
-#include "dawn/native/VulkanBackend.h"
-#endif
+#include "graphics/backend_include.h"
 
 #endif
 
@@ -128,6 +124,7 @@ int Renderer::initialize()
     }
 #endif
 
+    // NOTE: breakpoint here for initial compute debugging in Metal
     if (webgpu_context->adapter && webgpu_context->device) {
         if (webgpu_context->initialize(create_screen_swapchain)) {
             spdlog::error("Could not initialize WebGPU context");
@@ -494,7 +491,7 @@ void Renderer::render_screen(WGPUTextureView screen_surface_texture_view)
         render_pass_color_attachment.loadOp = WGPULoadOp_Clear;
         render_pass_color_attachment.storeOp = WGPUStoreOp_Store;
         render_pass_color_attachment.depthSlice = WGPU_DEPTH_SLICE_UNDEFINED;
-        render_pass_color_attachment.clearValue = WGPUColor(clear_color.r, clear_color.g, clear_color.b, clear_color.a);
+        render_pass_color_attachment.clearValue = WGPUColor{clear_color.r, clear_color.g, clear_color.b, clear_color.a};
 
         // Prepate the depth attachment
         WGPURenderPassDepthStencilAttachment render_pass_depth_attachment = {};
@@ -561,6 +558,8 @@ void Renderer::render_screen(WGPUTextureView screen_surface_texture_view)
 
         //timestamp(global_command_encoder, "render");
 
+// TODO: remove the ifdef, IMGui brings a viewport issue that can not be fixed by setting the viewport via webgpu
+#ifndef BACKEND_METAL
         // render imgui
         {
             WGPURenderPassColorAttachment color_attachments = {};
@@ -577,11 +576,14 @@ void Renderer::render_screen(WGPUTextureView screen_surface_texture_view)
 
             WGPURenderPassEncoder pass = wgpuCommandEncoderBeginRenderPass(global_command_encoder, &render_pass_desc);
 
+            //wgpuRenderPassEncoderSetViewport(render_pass, 0.0f,0.0f,1600.0f,900.0f,0.0f,1.0f);
+
             ImGui_ImplWGPU_RenderDrawData(ImGui::GetDrawData(), pass);
 
             wgpuRenderPassEncoderEnd(pass);
             wgpuRenderPassEncoderRelease(pass);
         }
+#endif
     }
 }
 

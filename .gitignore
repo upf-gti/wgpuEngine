@@ -9,3 +9,4 @@ libraries/tiny_gltf/
 src/xr/dawnxr/
 *.gen.h
 .DS_Store
+**/.DS_Store

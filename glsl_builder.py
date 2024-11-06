@@ -36,6 +36,9 @@ def main(argv):
 
     processed_shader_path = "../../src/shaders/" + original_shader_path + ".gen.h"
 
+    processed_shader_path = Path(processed_shader_path)
+    processed_shader_path.parent.mkdir(exist_ok=True, parents=True)
+
     processed_shader_file = open(processed_shader_path, "w")
 
     preprocessed_shader = preprocess_includes(original_shader_file.read(), shader_directory + "/")

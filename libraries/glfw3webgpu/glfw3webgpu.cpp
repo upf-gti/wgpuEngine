@@ -110,14 +110,14 @@ WGPUSurface glfwGetWGPUSurface(WGPUInstance instance, GLFWwindow* window) {
         [ns_window.contentView setWantsLayer : YES] ;
         [ns_window.contentView setLayer : metal_layer] ;
 
-        WGPUSurfaceDescriptorFromMetalLayer fromMetalLayer;
+        WGPUSurfaceSourceMetalLayer fromMetalLayer;
         fromMetalLayer.chain.next = NULL;
-        fromMetalLayer.chain.sType = WGPUSType_SurfaceDescriptorFromMetalLayer;
+        fromMetalLayer.chain.sType = WGPUSType_SurfaceSourceMetalLayer;
         fromMetalLayer.layer = metal_layer;
 
         WGPUSurfaceDescriptor surfaceDescriptor;
         surfaceDescriptor.nextInChain = &fromMetalLayer.chain;
-        surfaceDescriptor.label = NULL;
+        surfaceDescriptor.label = { NULL , 0u};
 
         return wgpuInstanceCreateSurface(instance, &surfaceDescriptor);
     }

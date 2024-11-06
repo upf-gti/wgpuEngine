@@ -150,20 +150,8 @@ bool parse_vdb(const char* vdb_path, std::vector<Node*>& entities)
     std::string err;
     std::string warn;
 
-    // Open file
-    std::ifstream input_file(vdb_path, std::ios::binary | std::ios::ate); // ate changes the seek pointer to the end of the file
-
-    // tellg returns pos_type which is a fpos object with a `.operator streamoff()`.
-    const auto eof_position = static_cast<std::streamoff>(input_file.tellg());
-    auto buffer = std::vector<uint8_t>(eof_position);
-
-    // Change the seek pointer to the beginning
-    input_file.seekg(0, std::ios::beg);
-    // Copy all the bytes from from the the file into the vector named return
-    input_file.read(reinterpret_cast<char*>(buffer.data()), eof_position);
-
     easyVDB::OpenVDBReader* vdbReader = new easyVDB::OpenVDBReader();
-    vdbReader->read(buffer);
+    vdbReader->read(vdb_path);
 
     // create a texture
     Material* material = create_material_volume(vdbReader);

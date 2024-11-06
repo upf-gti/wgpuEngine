@@ -1,12 +1,11 @@
 #pragma once
 
 #if !defined(__EMSCRIPTEN__)
-#define XR_SUPPORT
-#define USE_MIRROR_WINDOW
+// NOTE: Uncomment this in order to force the XR Support
+// Otherwise only available on Windows
+//#define XR_SUPPORT
+//#define USE_MIRROR_WINDOW
 #endif
-
-#define BACKEND_VULKAN
-//#define BACKEND_DX12
 
 #ifdef __EMSCRIPTEN__
 #include <emscripten/emscripten.h>

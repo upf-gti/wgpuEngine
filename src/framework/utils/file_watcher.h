@@ -39,7 +39,7 @@ public:
                 return;
             }
 
-            for (auto& file : std::filesystem::recursive_directory_iterator(filepath)) {
+            for (auto& file : std::filesystem::recursive_directory_iterator(filepath, std::filesystem::directory_options::skip_permission_denied)) {
                 if (std::filesystem::is_regular_file(file)) {
                     paths[std::filesystem::relative(file.path()).string()] = std::filesystem::last_write_time(file);
                 }
@@ -70,7 +70,7 @@ public:
 
         for (const std::string& path_to_watch : paths_to_watch) {
             // Check if a file was Created or Modified
-            for (auto& file : std::filesystem::recursive_directory_iterator(path_to_watch)) {
+            for (auto& file : std::filesystem::recursive_directory_iterator(path_to_watch, std::filesystem::directory_options::skip_permission_denied)) {
                 auto current_file_last_write_time = std::filesystem::last_write_time(file);
 
                 std::string path_string = std::filesystem::relative(file.path()).string();

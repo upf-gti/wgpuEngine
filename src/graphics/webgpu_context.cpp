@@ -23,11 +23,7 @@
 
 #include "xr/openxr_context.h"
 
-#if defined(BACKEND_DX12)
-#include <dawn/native/D3D12Backend.h>
-#elif defined(BACKEND_VULKAN)
-#include "dawn/native/VulkanBackend.h"
-#endif
+#include "graphics/backend_include.h"
 
 #endif
 

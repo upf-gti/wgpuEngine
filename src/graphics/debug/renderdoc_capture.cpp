@@ -56,7 +56,7 @@ void RenderdocCapture::start_capture_frame()
 {
 #ifndef __EMSCRIPTEN__
     if (rdoc_api) {
-        rdoc_api->StartFrameCapture(NULL, NULL);
+        rdoc_api->StartFrameCapture(nullptr, nullptr);
         capture_started = true;
     }
     else {
@@ -69,7 +69,7 @@ void RenderdocCapture::end_capture_frame()
 {
 #ifndef __EMSCRIPTEN__
     if (rdoc_api) {
-        rdoc_api->EndFrameCapture(NULL, NULL);
+        rdoc_api->EndFrameCapture(nullptr, nullptr);
         capture_started = false;
     }
 #endif
