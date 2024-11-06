@@ -58,18 +58,25 @@ fn fs_main(in: VertexOutput) -> FragmentOutput {
     let d_selected : f32 = sdRoundedBox(pos, si, ra);
 
     var alpha : f32 = 1.0 - smoothstep(0.0, 0.04, d);
-    var alpha_selected : f32 = 1.0 - smoothstep(0.0, 0.04, d_selected);
+    var alpha_selected : f32 = 1.0 - smoothstep(0.0, 0.08, d_selected);
 
-    let selected_mask : f32 = (alpha_selected - alpha) * ui_data.is_selected;
-    var color_factor : f32 = select(0.01, 0.1, ui_data.hover_info.x > 0.0);
+    var selected_mask : f32 = (alpha_selected - alpha) * ui_data.is_selected;
+    selected_mask = mix(0.0, selected_mask, in.uv.x);
+    var color_factor : f32 = select(0.01, 0.05, ui_data.hover_info.x > 0.0);
     color_factor = mix(color_factor, 0.75, selected_mask);
 
-    let highlight_color : vec3f = mix(COLOR_HIGHLIGHT_LIGHT, COLOR_TERCIARY, uvs.x);
-    var final_color = mix(vec3f(color_factor), highlight_color, selected_mask);
+    var final_color = vec3f(color_factor);
+    if(length(in.color.rgb) > 0) {
+        final_color = mix(final_color, in.color.rgb, 1.0 - smoothstep(0.1, 0.4, (in.uv.x / (1.0 - in.uv.y)) * ui_data.aspect_ratio));
+    }
+
+    let highlight_color : vec3f = mix(COLOR_HIGHLIGHT_LIGHT, COLOR_TERCIARY, uvs.y);
+    final_color = mix(final_color, highlight_color, selected_mask);
 
     if (GAMMA_CORRECTION == 1) {
         final_color = pow(final_color, vec3f(1.0 / 2.2));
     }
+
 
     out.color = vec4f(final_color, alpha_selected);
 

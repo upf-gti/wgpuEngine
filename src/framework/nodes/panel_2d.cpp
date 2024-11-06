@@ -627,7 +627,7 @@ namespace ui {
     Text2D* Text2D::selected = nullptr;
 
     Text2D::Text2D(const std::string& _text, float scale, uint32_t flags)
-        : Text2D(_text, { 0.0f, 0.0f }, scale, flags, colors::WHITE)
+        : Text2D(_text, { 0.0f, 0.0f }, scale, flags, colors::BLACK)
     { }
 
     Text2D::Text2D(const std::string& _text, const glm::vec2& pos, float scale, uint32_t flags, const Color& color)
@@ -641,7 +641,7 @@ namespace ui {
 
         text_entity = new TextEntity(text_string);
         text_entity->set_scale(text_scale);
-        text_entity->generate_mesh(color, true);
+        text_entity->generate_mesh(colors::WHITE, true);
         text_entity->get_surface_material(0)->set_priority(Node2DClassType::TEXT);
 
         float text_width = (float)text_entity->get_text_width(text_string);
@@ -657,7 +657,7 @@ namespace ui {
         }
 
         Material* material = new Material();
-        material->set_color(colors::WHITE);
+        material->set_color(color);
         material->set_type(MATERIAL_UI);
         material->set_is_2D(true);
         material->set_cull_type(CULL_BACK);

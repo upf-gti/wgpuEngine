@@ -101,7 +101,7 @@ namespace ui {
         TextEntity* text_entity = nullptr;
 
         Text2D() {};
-        Text2D(const std::string& _text, const glm::vec2& pos, float scale = 16.f, uint32_t parameter_flags = 0, const Color& color = colors::WHITE);
+        Text2D(const std::string& _text, const glm::vec2& pos, float scale = 16.f, uint32_t parameter_flags = 0, const Color& color = colors::BLACK);
         Text2D(const std::string& _text, float scale = 16.f, uint32_t parameter_flags = 0);
 
         void render() override;
