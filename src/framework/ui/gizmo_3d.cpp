@@ -10,6 +10,7 @@
 #include <framework/math/intersections.h>
 #include <framework/math/math_utils.h>
 #include "framework/parsers/parse_scene.h"
+#include "framework/ui/io.h"
 
 #include "shaders/mesh_forward.wgsl.gen.h"
 
@@ -436,6 +437,8 @@ bool Gizmo3D::update(glm::vec3& new_position, const glm::vec3& controller_positi
     else {
         has_graved = false;
     }
+
+    IO::set_want_capture_input(is_active && has_graved);
 
     new_position = transform.get_position();
 

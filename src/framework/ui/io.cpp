@@ -10,8 +10,10 @@
 #include "graphics/renderer.h"
 
 #include <algorithm>
-
+#include "imgui.h"
 #include "spdlog/spdlog.h"
+
+bool IO::want_capture_input = false;
 
 float IO::xr_ray_distance = 0.0f;
 float IO::last_xr_ray_distance = 0.0f;
@@ -32,6 +34,8 @@ void IO::initialize()
 void IO::start_frame()
 {
     set_xr_ray_distance(-1.0f);
+
+    want_capture_input = false;
 }
 
 void IO::end_frame()
@@ -165,6 +169,12 @@ bool IO::is_any_hover_type(const std::vector<uint32_t>& types)
     }
 
     return false;
+}
+
+bool IO::get_want_capture_input()
+{
+    auto& io = ImGui::GetIO();
+    return io.WantCaptureMouse || want_capture_input;
 }
 
 bool IO::any_hover()

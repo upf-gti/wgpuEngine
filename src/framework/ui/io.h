@@ -10,6 +10,8 @@ class IO {
 
     static std::vector<std::pair<Node2D*, sInputData>> frame_inputs;
 
+    static bool want_capture_input;
+
     static float xr_ray_distance;
     static float last_xr_ray_distance;
 
@@ -33,6 +35,8 @@ public:
     static void set_focus(Node2D* node);
     static void set_hover(Node2D* node, const sInputData& data);
 
+    static void set_want_capture_input(bool value) { want_capture_input = value; };
+
     static void blur() {
         focused = nullptr;
         hovered = nullptr;
@@ -48,6 +52,7 @@ public:
     static bool is_any_hover_type(const std::vector<uint32_t>& types);
     static bool any_hover();
 
+    static bool get_want_capture_input();
     static Node2D* get_focus() { return focused; }
     static Node2D* get_hover() { return hovered; }
 
