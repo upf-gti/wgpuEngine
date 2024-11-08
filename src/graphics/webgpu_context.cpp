@@ -156,6 +156,8 @@ WGPUFuture WebGPUContext::request_device(const std::vector<WGPUFeatureName> requ
     enabled_toggles.push_back("disable_symbol_renaming");
     enabled_toggles.push_back("emit_hlsl_debug_symbols");
     enabled_toggles.push_back("use_user_defined_labels_in_backend");
+#else
+    enabled_toggles.push_back("skip_validation");
 #endif
 
     WGPUDawnTogglesDescriptor device_toggles_desc = {};
