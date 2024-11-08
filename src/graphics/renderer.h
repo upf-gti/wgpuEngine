@@ -203,6 +203,8 @@ protected:
 
     bool initialized = false;
 
+    std::vector<WGPUFeatureName> required_features = { };
+
 public:
 
     // Singleton
@@ -301,6 +303,7 @@ public:
 #endif
     WebGPUContext* get_webgpu_context();
 
+    void set_required_features(std::vector<WGPUFeatureName> new_required_features) { required_features = new_required_features; };
     void set_required_limits(const WGPURequiredLimits& required_limits) { webgpu_context->required_limits = required_limits; }
 
     void add_renderable(MeshInstance* mesh_instance, const glm::mat4x4& global_matrix);

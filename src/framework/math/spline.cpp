@@ -1,5 +1,7 @@
 #include "spline.h"
 
+#include <glm/gtx/quaternion.hpp>
+
 // Splines
 
 void Spline::add_knot(const Knot& new_knot)
@@ -190,6 +192,20 @@ void BezierSpline::compute_control_points(uint32_t segments)
 void BezierSpline::add_knot(const Knot& new_knot)
 {
     knots.push_back(new_knot);
+
+    size_t count = knots.size();
+    if (count > 1) {
+        for (uint32_t i = 0u; i < count - 1; ++i) {
+
+            Knot& knot = knots[i];
+            Knot& next_knot = knots[i + 1];
+
+            glm::vec3 forward = glm::normalize(next_knot.position - knot.position);
+            glm::vec3 reference_forward = glm::vec3(0.0f, 0.0f, -1.0f);
+            knot.rotation = glm::rotation(reference_forward, forward);
+        }
+    }
+
     dirty = true;
 }
 
@@ -225,10 +241,10 @@ void BezierSpline::for_each(std::function<void(const Knot&)> fn)
         if (density != 0u) {
             k_distance = glm::max(k_distance, distance / static_cast<float>(density));
         }
-        uint32_t number_of_edits = (uint32_t)glm::ceil(distance / k_distance);
+        uint32_t number_of_edits = 2;// (uint32_t)glm::ceil(distance / k_distance);
 
         for (int j = 0; j < number_of_edits; ++j) {
-            float t = static_cast<float>(j) / number_of_edits;
+            float t = static_cast<float>(j);// / number_of_edits;
             const Knot& point = start_point * (1.0f - t) + end_point * t;
             fn(point);
         }

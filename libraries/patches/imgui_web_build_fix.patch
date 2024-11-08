@@ -1,8 +1,8 @@
 diff --git a/backends/imgui_impl_wgpu.cpp b/backends/imgui_impl_wgpu.cpp
-index 95f1b0c63..a2311f933 100644
+index 075f7473..f6f146dd 100644
 --- a/backends/imgui_impl_wgpu.cpp
 +++ b/backends/imgui_impl_wgpu.cpp
-@@ -46,9 +46,9 @@
+@@ -47,9 +47,9 @@
      #error exactly one of IMGUI_IMPL_WEBGPU_BACKEND_DAWN or IMGUI_IMPL_WEBGPU_BACKEND_WGPU must be defined!
      #endif
  #else
@@ -15,70 +15,3 @@ index 95f1b0c63..a2311f933 100644
  #endif
  
  #include "imgui.h"
-@@ -261,13 +261,13 @@ static WGPUProgrammableStageDescriptor ImGui_ImplWGPU_CreateShaderModule(const c
-     ImGui_ImplWGPU_Data* bd = ImGui_ImplWGPU_GetBackendData();
- 
- #ifdef IMGUI_IMPL_WEBGPU_BACKEND_DAWN
--	WGPUShaderSourceWGSL wgsl_desc = {};
-+    WGPUShaderSourceWGSL wgsl_desc = {};
-     wgsl_desc.chain.sType = WGPUSType_ShaderSourceWGSL;
--	wgsl_desc.code = { wgsl_source, WGPU_STRLEN };
-+    wgsl_desc.code = { wgsl_source, WGPU_STRLEN };
- #else
--	WGPUShaderModuleWGSLDescriptor wgsl_desc = {};
-+    WGPUShaderModuleWGSLDescriptor wgsl_desc = {};
-     wgsl_desc.chain.sType = WGPUSType_ShaderModuleWGSLDescriptor;
--	wgsl_desc.code = wgsl_source;
-+    wgsl_desc.code = wgsl_source;
- #endif
- 
-     WGPUShaderModuleDescriptor desc = {};
-@@ -275,7 +275,7 @@ static WGPUProgrammableStageDescriptor ImGui_ImplWGPU_CreateShaderModule(const c
- 
-     WGPUProgrammableStageDescriptor stage_desc = {};
-     stage_desc.module = wgpuDeviceCreateShaderModule(bd->wgpuDevice, &desc);
--    stage_desc.entryPoint = "main";
-+    stage_desc.entryPoint = { "main", WGPU_STRLEN };
-     return stage_desc;
- }
- 
-@@ -387,7 +387,7 @@ void ImGui_ImplWGPU_RenderDrawData(ImDrawData* draw_data, WGPURenderPassEncoder
-         WGPUBufferDescriptor vb_desc =
-         {
-             nullptr,
--            "Dear ImGui Vertex buffer",
-+            { "Dear ImGui Vertex buffer", WGPU_STRLEN },
-             WGPUBufferUsage_CopyDst | WGPUBufferUsage_Vertex,
-             MEMALIGN(fr->VertexBufferSize * sizeof(ImDrawVert), 4),
-             false
-@@ -411,7 +411,7 @@ void ImGui_ImplWGPU_RenderDrawData(ImDrawData* draw_data, WGPURenderPassEncoder
-         WGPUBufferDescriptor ib_desc =
-         {
-             nullptr,
--            "Dear ImGui Index buffer",
-+            { "Dear ImGui Index buffer", WGPU_STRLEN },
-             WGPUBufferUsage_CopyDst | WGPUBufferUsage_Index,
-             MEMALIGN(fr->IndexBufferSize * sizeof(ImDrawIdx), 4),
-             false
-@@ -522,7 +522,7 @@ static void ImGui_ImplWGPU_CreateFontsTexture()
-     // Upload texture to graphics system
-     {
-         WGPUTextureDescriptor tex_desc = {};
--        tex_desc.label = "Dear ImGui Font Texture";
-+        tex_desc.label = { "Dear ImGui Font Texture", WGPU_STRLEN };
-         tex_desc.dimension = WGPUTextureDimension_2D;
-         tex_desc.size.width = width;
-         tex_desc.size.height = height;
-@@ -581,10 +581,11 @@ static void ImGui_ImplWGPU_CreateFontsTexture()
- static void ImGui_ImplWGPU_CreateUniformBuffer()
- {
-     ImGui_ImplWGPU_Data* bd = ImGui_ImplWGPU_GetBackendData();
-+    uint32_t sizett = MEMALIGN(sizeof(Uniforms), 16);
-     WGPUBufferDescriptor ub_desc =
-     {
-         nullptr,
--        "Dear ImGui Uniform buffer",
-+        { "Dear ImGui Uniform buffer", WGPU_STRLEN },
-         WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform,
-         MEMALIGN(sizeof(Uniforms), 16),
-         false

@@ -127,7 +127,7 @@ WGPUFuture WebGPUContext::request_adapter(OpenXRContext* xr_context, bool is_ope
     );
 }
 
-WGPUFuture WebGPUContext::request_device()
+WGPUFuture WebGPUContext::request_device(const std::vector<WGPUFeatureName> required_features)
 {
     // Create device
     WGPUDeviceDescriptor device_desc = {};
@@ -251,7 +251,11 @@ int WebGPUContext::initialize(bool create_screen_swapchain)
     device_queue = wgpuDeviceGetQueue(device);
 
     {
-        cubemap_mipmap_pipeline.mipmap_shader = RendererStorage::get_shader_from_source(shaders::cubemap_downsampler::source, shaders::cubemap_downsampler::path);
+        std::vector<std::string> defines;
+#if defined(BACKEND_METAL) || defined(BACKEND_EMSCRIPTEN)
+        defines.push_back("METAL_CUBEMAP_HACK");
+#endif
+        cubemap_mipmap_pipeline.mipmap_shader = RendererStorage::get_shader_from_source(shaders::cubemap_downsampler::source, shaders::cubemap_downsampler::path, defines);
         cubemap_mipmap_pipeline.mipmap_pipeline = new Pipeline();
         cubemap_mipmap_pipeline.mipmap_pipeline->create_compute(cubemap_mipmap_pipeline.mipmap_shader);
     }
@@ -264,7 +268,11 @@ int WebGPUContext::initialize(bool create_screen_swapchain)
     }
 
     {
-        prefiltered_env_shader = RendererStorage::get_shader_from_source(shaders::prefilter_env::source, shaders::prefilter_env::path);
+        std::vector<std::string> defines;
+#if defined(BACKEND_METAL) || defined(BACKEND_EMSCRIPTEN)
+        defines.push_back("METAL_CUBEMAP_HACK");
+#endif
+        prefiltered_env_shader = RendererStorage::get_shader_from_source(shaders::prefilter_env::source, shaders::prefilter_env::path, defines);
 
         prefiltered_env_pipeline = new Pipeline();
         prefiltered_env_pipeline->create_compute(prefiltered_env_shader);
@@ -675,6 +683,9 @@ void WebGPUContext::upload_texture(WGPUTexture texture, WGPUTextureDimension dim
         break;
     case WGPUTextureFormat_RGBA32Float:
         pixel_size = 4 * sizeof(float);
+        break;
+    case WGPUTextureFormat_RGBA32Sint:
+        pixel_size = 4 * sizeof(int32_t);
         break;
     default:
         assert(false);
