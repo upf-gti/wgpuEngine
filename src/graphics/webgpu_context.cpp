@@ -127,18 +127,11 @@ WGPUFuture WebGPUContext::request_adapter(OpenXRContext* xr_context, bool is_ope
     );
 }
 
-WGPUFuture WebGPUContext::request_device()
+WGPUFuture WebGPUContext::request_device(const std::vector<WGPUFeatureName> required_features)
 {
     // Create device
     WGPUDeviceDescriptor device_desc = {};
     device_desc.label = get_string_view("My Device");
-
-    std::vector<WGPUFeatureName> required_features;
-
-    required_features.push_back(WGPUFeatureName_Float32Filterable);
-#if !defined(__EMSCRIPTEN__)
-    required_features.push_back(WGPUFeatureName_TimestampQuery);
-#endif
 
     device_desc.requiredFeatureCount = required_features.size();
     device_desc.requiredFeatures = required_features.data();
@@ -683,6 +676,9 @@ void WebGPUContext::upload_texture(WGPUTexture texture, WGPUTextureDimension dim
         break;
     case WGPUTextureFormat_RGBA32Float:
         pixel_size = 4 * sizeof(float);
+        break;
+    case WGPUTextureFormat_RGBA32Sint:
+        pixel_size = 4 * sizeof(int32_t);
         break;
     default:
         assert(false);
