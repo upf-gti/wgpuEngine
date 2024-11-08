@@ -158,6 +158,7 @@ WGPUFuture WebGPUContext::request_device(const std::vector<WGPUFeatureName> requ
     enabled_toggles.push_back("use_user_defined_labels_in_backend");
 #else
     enabled_toggles.push_back("skip_validation");
+    enabled_toggles.push_back("disable_robustness");
 #endif
 
     WGPUDawnTogglesDescriptor device_toggles_desc = {};
