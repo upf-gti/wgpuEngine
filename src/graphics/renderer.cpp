@@ -44,7 +44,7 @@
 
 Renderer* Renderer::instance = nullptr;
 
-Renderer::Renderer()
+Renderer::Renderer(const sRendererConfiguration& config)
 {
     instance = this;
 
@@ -64,6 +64,9 @@ Renderer::Renderer()
     xr_context = new OpenXRContext();
     is_openxr_available = xr_context->create_instance();
 #endif
+
+    set_required_limits(config.required_limits);
+    set_required_features(config.features);
 }
 
 Renderer::~Renderer()

@@ -32,6 +32,28 @@ struct WebGPUContext;
 struct OpenXRContext;
 struct sLightUniformData;
 
+struct sRendererConfiguration {
+    WGPURequiredLimits required_limits = {};
+    std::vector<WGPUFeatureName> features;
+
+    sRendererConfiguration() {
+        required_limits.limits.maxVertexAttributes = 4;
+        required_limits.limits.maxVertexBuffers = 1;
+        required_limits.limits.maxBindGroups = 2;
+        required_limits.limits.maxUniformBuffersPerShaderStage = 1;
+        required_limits.limits.maxUniformBufferBindingSize = 65536;
+        required_limits.limits.minUniformBufferOffsetAlignment = 256;
+        required_limits.limits.minStorageBufferOffsetAlignment = 256;
+        required_limits.limits.maxComputeInvocationsPerWorkgroup = 256;
+        required_limits.limits.maxSamplersPerShaderStage = 1;
+        required_limits.limits.maxDynamicUniformBuffersPerPipelineLayout = 1;
+
+#if !defined(__EMSCRIPTEN__)
+        features.push_back(WGPUFeatureName_TimestampQuery);
+#endif
+    }
+};
+
 class Renderer {
 
 protected:
@@ -210,7 +232,7 @@ public:
     // Singleton
     static Renderer* instance;
 
-    Renderer();
+    Renderer(const sRendererConfiguration& config = {});
     virtual ~Renderer();
 
     virtual int pre_initialize(GLFWwindow* window, bool use_mirror_screen = false);
