@@ -103,6 +103,16 @@ void IO::set_hover(Node2D* node, const sInputData& data)
     xr_world_position = data.ray_intersection;
 }
 
+void IO::blur()
+{
+    hovered = nullptr;
+
+    // If r_trigger is pressed, we are still focusing something..
+    if (Input::get_trigger_value(HAND_RIGHT) <= 0.001f) {
+        focused = nullptr;
+    }
+}
+
 bool IO::is_hover_disabled()
 {
     if (!hovered) {

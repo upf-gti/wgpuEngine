@@ -37,10 +37,7 @@ public:
 
     static void set_want_capture_input(bool value) { want_capture_input = value; };
 
-    static void blur() {
-        focused = nullptr;
-        hovered = nullptr;
-    }
+    static void blur();
 
     static bool is_hover_disabled();
 
