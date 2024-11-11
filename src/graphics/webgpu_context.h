@@ -89,7 +89,7 @@ struct WebGPUContext {
 
     void                   create_instance();
     WGPUFuture             request_adapter(OpenXRContext* xr_context, bool is_openxr_available);
-    WGPUFuture             request_device();
+    WGPUFuture             request_device(const std::vector<WGPUFeatureName> required_features);
 
     void                   print_device_info();
 

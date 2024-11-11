@@ -105,8 +105,15 @@ fn compute(@builtin(global_invocation_id) id: vec3u)
 
         let NdotL : f32 = clamp(dot(N, L), 0.0, 1.0);
 
-        if (NdotL > 0.0)
+#ifdef METAL_CUBEMAP_HACK
+        let L_norm = normalize(L);
+        let can_sample_at_dir : bool = !(dot(L_norm, vec3f(0.0, -1.0, 0.0)) >= 0.999 || dot(L_norm, vec3f(0.0, 1.0, 0.0)) >= 0.9999);
+#else
+        let can_sample_at_dir : bool = true;
+#endif
+        if (NdotL > 0.0 && can_sample_at_dir)
         {
+
 			let D : f32 = DistributionGGX(NdotH, roughness4);
             let pdf : f32 = D * NdotH / (4.0 * NdotH) + 0.0001;
 

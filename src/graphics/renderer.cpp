@@ -111,7 +111,9 @@ int Renderer::initialize()
 
     if (webgpu_context->adapter && !webgpu_context->device) {
         if (device_future.id == 0) {
-            device_future = webgpu_context->request_device();
+            // The engine needs FloatFilterable as a default
+            required_features.push_back(WGPUFeatureName_Float32Filterable);
+            device_future = webgpu_context->request_device(required_features);
         }
         webgpu_context->process_events();
         return 1;
