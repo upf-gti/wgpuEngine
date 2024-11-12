@@ -26,7 +26,8 @@ AABB merge_aabbs(const AABB& AABB_0, const AABB& AABB_1)
     return { new_center, new_half_size };
 }
 
-bool AABB::initialized() const {
+bool AABB::initialized() const
+{
     return glm::any(glm::notEqual(center, glm::vec3(0.0f))) || glm::any(glm::notEqual(half_size, glm::vec3(0.0f)));
 }
 
@@ -66,4 +67,30 @@ AABB AABB::transform(const glm::mat4& mat) const
     glm::vec3 aabb_center = out_aabb_min + aabb_half_size;
 
     return { aabb_center, aabb_half_size };
-};
+}
+
+AABB AABB::rotate(const glm::quat& rotation) const
+{
+    const glm::quat& inv_rotation = glm::inverse(rotation);
+
+    const glm::vec3 axis[8] = { inv_rotation * glm::vec3(half_size.x,  half_size.y,  half_size.z),
+                                inv_rotation * glm::vec3(half_size.x,  half_size.y, -half_size.z),
+                                inv_rotation * glm::vec3(half_size.x, -half_size.y,  half_size.z),
+                                inv_rotation * glm::vec3(half_size.x, -half_size.y, -half_size.z),
+                                inv_rotation * glm::vec3(-half_size.x,  half_size.y,  half_size.z),
+                                inv_rotation * glm::vec3(-half_size.x,  half_size.y, -half_size.z),
+                                inv_rotation * glm::vec3(-half_size.x, -half_size.y,  half_size.z),
+                                inv_rotation * glm::vec3(-half_size.x, -half_size.y, -half_size.z) };
+
+    glm::vec3 new_min = glm::vec3(std::numeric_limits<float>::max());
+    glm::vec3 new_max = glm::vec3(std::numeric_limits<float>::lowest());
+
+    for (const glm::vec3& corner : axis) {
+        new_min = glm::min(new_min, corner);
+        new_max = glm::max(new_max, corner);
+    }
+
+    const glm::vec3 new_half_size = (new_max - new_min) * 0.5f;
+
+    return { center, new_half_size };
+}

@@ -2,6 +2,7 @@
 
 #include "glm/vec3.hpp"
 #include "glm/mat4x4.hpp"
+#include "glm/gtc/quaternion.hpp"
 
 struct AABB {
     glm::vec3 center = {};
@@ -18,6 +19,8 @@ struct AABB {
     **/
 
     AABB transform(const glm::mat4& mat) const;
+
+    AABB rotate(const glm::quat& rotation) const;
 };
 
 AABB merge_aabbs(const AABB& AABB_0, const AABB& AABB_1);
