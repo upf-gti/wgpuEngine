@@ -40,5 +40,6 @@ namespace ui {
         CREATE_3D = 1 << 17,
         KEEP_SUBMENU_OPENED = 1 << 18,
         CURVED_PANEL = 1 << 19,
+        FULLSCREEN = 1 << 20,
     };
 }

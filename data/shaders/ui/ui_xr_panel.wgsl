@@ -51,6 +51,7 @@ fn fs_main(in: VertexOutput) -> FragmentOutput {
 
     let is_hovered : bool = ui_data.hover_info.x > 0.0;
     let is_pressed : bool = ui_data.press_info.x > 0.0;
+    let ar = ui_data.aspect_ratio;
 
     var out: FragmentOutput;
 
@@ -65,45 +66,62 @@ fn fs_main(in: VertexOutput) -> FragmentOutput {
     corrected_uv = corrected_uv - (position / size) + 0.5;
     corrected_uv.y = corrected_uv.y;
 
+    let highlight_color : vec3f = mix(COLOR_TERCIARY, COLOR_HIGHLIGHT_LIGHT, pow(corrected_uv.y, 2.0));
+
 #ifdef ALBEDO_TEXTURE
     var color : vec4f = textureSample(albedo_texture, texture_sampler, corrected_uv);
 #else
     var color : vec4f = in.color;
 #endif
 
-    var final_color = select(color.rgb, COLOR_SECONDARY, is_button);
+    var final_color : vec3f;
+    var alpha : f32;
 
-    // center stuff
-    position -= vec2f(0.5);
-    
-    var ra : vec4f = vec4f(0.1);
-    var si : vec2f = vec2f(ui_data.aspect_ratio, 1.0) * size * global_scale;
-    ra = min(ra, min(vec4f(si.x), vec4f(si.y)));
-    var uvs = vec2f(in.uv.x, in.uv.y) - position;
-    var pos : vec2f = vec2(uvs * 2.0 - 1.0);
-    pos.x *= ui_data.aspect_ratio;
+    // full screen panel..
+    if(ar == -1.0) {
+        final_color = color.rgb;
 
-    let d : f32 = sdRoundedBox(pos, si, ra);
+        if (GAMMA_CORRECTION == 1) {
+            final_color = pow(final_color, vec3f(1.0 / 2.2));
+        }
 
-    if(is_hovered) {
-        final_color = mix(COLOR_TERCIARY, COLOR_HIGHLIGHT_LIGHT, pow(corrected_uv.y, 2.0));
+        alpha = color.a;
     }
+    else {
+        final_color = select(color.rgb, COLOR_SECONDARY, is_button);
 
-    if(is_pressed) {
-        final_color = COLOR_PRIMARY;
-    }
+        // center stuff
+        position -= vec2f(0.5);
 
-    if (GAMMA_CORRECTION == 1) {
-        final_color = pow(final_color, vec3f(1.0 / 2.2));
-    }
+        var ra : vec4f = vec4f(0.1);
+        var si : vec2f = vec2f(ar, 1.0) * size * global_scale;
+        ra = min(ra, min(vec4f(si.x), vec4f(si.y)));
+        var uvs = vec2f(in.uv.x, in.uv.y) - position;
+        var pos : vec2f = vec2(uvs * 2.0 - 1.0);
+        pos.x *= ar;
 
-    final_color = mix( final_color, vec3f(0.3), 1.0 - smoothstep(0.0, 0.01, abs(d)) );
+        let d : f32 = sdRoundedBox(pos, si, ra);
 
-    var alpha : f32 = (1.0 - smoothstep(0.0, 0.02, d)) * color.a;
+        if(is_hovered) {
+            final_color = highlight_color;
+        }
 
-    if(is_button) {
-        alpha += (1.0 - smoothstep(0.0, 0.015, abs(d)));
-        final_color = mix( final_color, vec3f(0.5), 1.0 - smoothstep(0.0, 0.015, abs(d)) );
+        if(is_pressed) {
+            final_color = COLOR_PRIMARY;
+        }
+
+        if (GAMMA_CORRECTION == 1) {
+            final_color = pow(final_color, vec3f(1.0 / 2.2));
+        }
+
+        final_color = mix( final_color, vec3f(0.3), 1.0 - smoothstep(0.0, 0.01, abs(d)) );
+
+        alpha = (1.0 - smoothstep(0.0, 0.02, d)) * color.a;
+
+        if(is_button) {
+            alpha += (1.0 - smoothstep(0.0, 0.0065, abs(d)));
+            final_color = mix( final_color, select(pow(highlight_color, vec3f(1.0 / 2.2)), COLOR_SECONDARY, is_hovered), 1.0 - smoothstep(0.0, 0.015, abs(d)) );
+        }
     }
 
     out.color = vec4f(final_color, alpha);

@@ -452,8 +452,11 @@ namespace ui {
         material->set_type(MATERIAL_UI);
         material->set_shader(RendererStorage::get_shader_from_source(shaders::ui_xr_panel::source, shaders::ui_xr_panel::path, material));
 
+        // Fullscreen in 2d mode only!
+        fullscreen = !Renderer::instance->get_openxr_available() && (flags & ui::FULLSCREEN);
+
         ui_data.xr_info = glm::vec4(1.0f, 1.0f, 0.5f, 0.5f);
-        ui_data.aspect_ratio = size.x / size.y;
+        ui_data.aspect_ratio = fullscreen ? -1.0f : size.x / size.y;
 
         auto webgpu_context = Renderer::instance->get_webgpu_context();
         RendererStorage::register_ui_widget(webgpu_context, material->get_shader_ref(), quad_mesh, ui_data, 3);
@@ -550,9 +553,8 @@ namespace ui {
             return;
 
         // reset event stuff..
-        ui_data.hover_info.x = 0.0f;
-        ui_data.hover_info.y = 0.0f;
-        ui_data.press_info.x = 0.0f;
+        ui_data.hover_info = { 0.0f, 0.0f };
+        ui_data.press_info = { 0.0f, 0.0f };
 
         // ignore focus process, doing it manually per button
         sInputData data = get_input_data(true);
@@ -579,7 +581,9 @@ namespace ui {
             }
         }
 
-        ui_data.aspect_ratio = size.x / size.y;
+        if (!fullscreen) {
+            ui_data.aspect_ratio = size.x / size.y;
+        }
 
         on_hover = false;
 
