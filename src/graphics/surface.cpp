@@ -169,8 +169,7 @@ std::vector<sInterleavedData> Surface::generate_quad(float w, float h, const glm
 void Surface::create_quad(float w, float h, bool flip_y, bool centered, const glm::vec3& color)
 {
     // Mesh has vertex data...
-    if (vertex_buffer)
-    {
+    if (vertex_buffer) {
         wgpuBufferDestroy(vertex_buffer);
     }
 
@@ -189,19 +188,19 @@ void Surface::create_quad(float w, float h, bool flip_y, bool centered, const gl
     create_vertex_buffer(vertices);
 }
 
-void Surface::create_subdivided_quad(float w, float h, uint32_t subdivisions, bool centered, const glm::vec3& color)
+void Surface::create_subdivided_quad(float w, float h, bool flip_y, uint32_t subdivisions, bool centered, const glm::vec3& color)
 {
     // Mesh has vertex data...
     if (vertex_buffer) {
         wgpuBufferDestroy(vertex_buffer);
     }
 
-    name = "subdiv_quad";
+    name = "subdivided_quad";
 
     std::vector<sInterleavedData> vertices;
 
-    float step_x = w / subdivisions;
-    float step_y = h / subdivisions;
+    float step_x = w / static_cast<float>(subdivisions);
+    float step_y = h / static_cast<float>(subdivisions);
 
     glm::vec3 origin = { -w * 0.5f, h * 0.5f, 0.0f };
 
@@ -214,7 +213,7 @@ void Surface::create_subdivided_quad(float w, float h, uint32_t subdivisions, bo
         for (int j = 0; j < subdivisions; ++j) {
 
             const glm::vec3& new_origin = origin + glm::vec3(j * step_x, -i * step_y, 0.0f) + glm::vec3(step_x * 0.5f, -step_y * 0.5f, 0.0f);
-            std::vector<sInterleavedData> vtxs = generate_quad(step_x, step_y, new_origin, normals::pZ, color);
+            std::vector<sInterleavedData> vtxs = generate_quad(step_x, step_y, new_origin, normals::pZ, color, flip_y);
 
             const glm::vec2& uv0 = { static_cast<float>(j) / subdivisions, static_cast<float>(i) / subdivisions };
             const glm::vec2& uv1 = { static_cast<float>(j + 1u) / subdivisions, static_cast<float>(i + 1u) / subdivisions };
@@ -224,7 +223,7 @@ void Surface::create_subdivided_quad(float w, float h, uint32_t subdivisions, bo
             vtxs[2].uv = glm::vec2(uv0.x, 1.0f - uv0.y);
 
             vtxs[3].uv = glm::vec2(uv1.x, 1.0f - uv0.y);
-            vtxs[4].uv = glm::vec2(uv1.x, 1.0f - uv1.y);;
+            vtxs[4].uv = glm::vec2(uv1.x, 1.0f - uv1.y);
             vtxs[5].uv = glm::vec2(uv0.x, 1.0f - uv1.y);
 
             vertices.insert(vertices.end(), vtxs.begin(), vtxs.end());
