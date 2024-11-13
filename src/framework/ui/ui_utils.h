@@ -39,5 +39,6 @@ namespace ui {
         CONFIRM_BUTTON = 1 << 16,
         CREATE_3D = 1 << 17,
         KEEP_SUBMENU_OPENED = 1 << 18,
+        CURVED_PANEL = 1 << 19,
     };
 }

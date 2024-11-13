@@ -77,7 +77,7 @@ namespace ui {
 
     public:
 
-        XRPanel(const std::string& name, const Color& c, const glm::vec2& p, const glm::vec2& s, uint32_t flags = 0);
+        XRPanel(const std::string& name, const glm::vec2& p, const glm::vec2& s, uint32_t flags = 0, const Color& c = colors::WHITE);
         XRPanel(const std::string& name, const std::string& image_path, const glm::vec2& p, const glm::vec2& s, uint32_t flags = 0, const Color& c = colors::WHITE);
 
         void update(float delta_time) override;

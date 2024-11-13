@@ -431,7 +431,7 @@ namespace ui {
     *   XRPanel
     */
 
-    XRPanel::XRPanel(const std::string& name, const Color& c, const glm::vec2& p, const glm::vec2& s, uint32_t flags)
+    XRPanel::XRPanel(const std::string& name, const glm::vec2& p, const glm::vec2& s, uint32_t flags, const Color& c)
         : XRPanel(name, "", p, s, flags, c)
     { }
 
@@ -439,14 +439,18 @@ namespace ui {
         : Panel2D(name, image_path, p, s, flags, c)
     {
         Surface* quad_surface = quad_mesh->get_surface(0);
-        quad_surface->create_quad(size.x, size.y, true);
+
         // Use subdivided quad in case we use panels with curvature
-        // quad_surface->create_subdivided_quad(size.x, size.y);
+        if (Renderer::instance->get_openxr_available() && (flags & CURVED_PANEL)) {
+            quad_surface->create_subdivided_quad(size.x, size.y, true);
+        }
+        else {
+            quad_surface->create_quad(size.x, size.y, true);
+        }
 
         Material* material = quad_mesh->get_surface_material_override(quad_surface);
         material->set_type(MATERIAL_UI);
         material->set_shader(RendererStorage::get_shader_from_source(shaders::ui_xr_panel::source, shaders::ui_xr_panel::path, material));
-        // material->shader = RendererStorage::get_shader("data/shaders/ui_xr_panel.wgsl", *material);
 
         ui_data.xr_info = glm::vec4(1.0f, 1.0f, 0.5f, 0.5f);
         ui_data.aspect_ratio = size.x / size.y;
@@ -457,8 +461,7 @@ namespace ui {
 
     sInputData XRPanel::get_input_data(bool ignore_focus)
     {
-        // Use flat panel quad for flat screen..
-        if (!Renderer::instance->get_openxr_available()) {
+        if (!Renderer::instance->get_openxr_available() || !(parameter_flags & CURVED_PANEL)) {
             return Panel2D::get_input_data(ignore_focus);
         }
 
@@ -494,36 +497,48 @@ namespace ui {
             false
         );
 
-        // ray_curved_quad it's not working well.. by nos using flat panels..
-        /*if (data.is_hovered) {
+        if (data.is_hovered) {
 
             glm::vec2 uv = glm::vec2(local_intersection_point) * 2.0f - 1.0f;
 
             float z_offset = 0.15f * (1.0f - (fabsf(uv.x * uv.x) * 0.5f + 0.5f));
 
             intersection_point += ray_direction * z_offset;
-        }*/
+        }
+
+        data.ray_intersection = intersection_point;
+        data.ray_distance = glm::length(ray_origin - intersection_point);
+
+        glm::vec2 local_pos = glm::vec2(local_intersection_point) / get_scale();
+        data.local_position = glm::vec2(local_pos.x, size.y - local_pos.y);
 
         data.was_pressed = data.is_hovered && was_input_pressed();
 
         if (data.was_pressed) {
             pressed_inside = true;
         }
+
         data.was_released = was_input_released();
 
         if (data.was_released) {
             pressed_inside = false;
         }
+
         data.is_pressed = pressed_inside && is_input_pressed();
-
-        data.ray_intersection = intersection_point;
-        data.ray_distance = collision_dist;
-
-        glm::vec2 local_pos = glm::vec2(local_intersection_point) / get_scale();
-        data.local_position = glm::vec2(local_pos.x, size.y - local_pos.y);
 
         if (!on_hover && data.is_hovered) {
             data.was_hovered = true;
+        }
+
+        // Few logic for managing focus
+
+        if (!ignore_focus) {
+
+            if (data.was_pressed) {
+                IO::set_focus(this);
+            }
+
+            data.is_pressed &= IO::equals_focus(this);
         }
 
         return data;
@@ -605,7 +620,7 @@ namespace ui {
 
     void XRPanel::add_button(const std::string& signal, const std::string& texture_path, const glm::vec2& p, const glm::vec2& s, const Color& c)
     {
-        XRPanel* new_button = new XRPanel(signal, texture_path, { 0.0f, 0.0f }, size);
+        XRPanel* new_button = new XRPanel(signal, texture_path, { 0.0f, 0.0f }, size, ui::CURVED_PANEL);
         add_child(new_button);
 
         new_button->set_priority(PANEL_BUTTON);

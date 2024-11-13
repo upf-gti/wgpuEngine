@@ -25,13 +25,13 @@ fn vs_main(in: VertexInput) -> VertexOutput {
     let instance_data : RenderMeshData = mesh_data.data[in.instance_id];
     var out: VertexOutput;
 
-    // let curvature : f32 = 0.15;
-    // let uv_centered : vec2f = in.uv * vec2f(2.0) - vec2f(1.0);
-    // let curve_factor : f32 = 1.0 - (abs(uv_centered.x * uv_centered.x) * 0.5 + 0.5);
-    // var curved_pos : vec3f = in.position;
-    // curved_pos.z -= curvature * curve_factor;
+    let curvature : f32 = 0.15;
+    let uv_centered : vec2f = in.uv * vec2f(2.0) - vec2f(1.0);
+    let curve_factor : f32 = 1.0 - (abs(uv_centered.x * uv_centered.x) * 0.5 + 0.5);
+    var curved_pos : vec3f = in.position;
+    curved_pos.z += curvature * curve_factor;
 
-    var world_position : vec4f = instance_data.model * vec4f(in.position, 1.0);
+    var world_position : vec4f = instance_data.model * vec4f(curved_pos, 1.0);
     out.world_position = world_position.xyz;
     out.position = camera_data.view_projection * world_position;
     out.uv = in.uv; // forward to the fragment shader
