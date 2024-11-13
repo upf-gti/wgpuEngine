@@ -21,9 +21,11 @@ DirectionalLight3D::DirectionalLight3D() : Light3D()
 
     debug_mesh_v = new MeshInstance3D();
     debug_mesh_v->set_frustum_culling_enabled(false);
+    debug_mesh_v->rotate(glm::rotate(transform.get_rotation(), static_cast<float>(PI / 2.0f), glm::vec3(0.0f, 1.0, 0.0)));
 
     debug_mesh_h = new MeshInstance3D();
     debug_mesh_h->set_frustum_culling_enabled(false);
+    debug_mesh_h->rotate(glm::rotate(transform.get_rotation(), static_cast<float>(PI / 2.0f), glm::vec3(0.0f, 1.0, 0.0)));
     debug_mesh_h->rotate(glm::rotate(transform.get_rotation(), static_cast<float>(PI / 2.0f), glm::vec3(1.0f, 0.0, 0.0)));
 
     Surface* debug_surface = new Surface();

@@ -660,30 +660,47 @@ void create_camera(const tinygltf::Camera& gltf_camera, EntityCamera* camera_nod
     }
 }
 
-void create_light(const tinygltf::Light& gltf_light, Light3D* light_node)
+void create_light(const tinygltf::Light& gltf_light, Node3D** light_node)
 {
-    light_node->set_intensity(static_cast<float>(gltf_light.intensity));
+    std::string light_type = gltf_light.type;
 
-    // Blender exports 0.0 if no custom distance is used.. so keep -1 as range
-    if (gltf_light.range != 0.0f) {
-        light_node->set_range(static_cast<float>(gltf_light.range));
+    if (light_type == "spot") {
+        SpotLight3D* new_spot = new SpotLight3D();
+        new_spot->set_inner_cone_angle(static_cast<float>(gltf_light.spot.innerConeAngle));
+        new_spot->set_outer_cone_angle(static_cast<float>(gltf_light.spot.outerConeAngle));
+        *light_node = new_spot;
     }
-    if (gltf_light.color.size()) {
-        light_node->set_color({ static_cast<float>(gltf_light.color[0]), static_cast<float>(gltf_light.color[1]), static_cast<float>(gltf_light.color[2]) });
+    else if (light_type == "point") {
+        OmniLight3D* new_omni = new OmniLight3D();
+        *light_node = new_omni;
     }
-
-    if (light_node->get_type() == LIGHT_SPOT) {
-        static_cast<SpotLight3D*>(light_node)->set_inner_cone_angle(static_cast<float>(gltf_light.spot.innerConeAngle));
-        static_cast<SpotLight3D*>(light_node)->set_outer_cone_angle(static_cast<float>(gltf_light.spot.outerConeAngle));
-    }
-    else if (light_node->get_type() == LIGHT_OMNI) {
-        // ..
-    }
-    else if (light_node->get_type() == LIGHT_DIRECTIONAL) {
-        // ..
+    else if (light_type == "directional") {
+        DirectionalLight3D* new_directional = new DirectionalLight3D();
+        *light_node = new_directional;
     }
     else {
         assert(0);
+        return;
+    }
+
+    Light3D* light = static_cast<Light3D*>(*light_node);
+
+    float light_intensity = static_cast<float>(gltf_light.intensity);
+
+    // TODO: fix this hack if we ever implement physical light units
+    // this makes blender lights look ok'ish
+    if (light_intensity > 100.0) {
+        light_intensity /= 100.0f;
+    }
+
+    light->set_intensity(light_intensity);
+
+    // Blender exports 0.0 if no custom distance is used.. so keep -1 as range
+    if (gltf_light.range != 0.0f) {
+        light->set_range(static_cast<float>(gltf_light.range));
+    }
+    if (gltf_light.color.size()) {
+        light->set_color({ static_cast<float>(gltf_light.color[0]), static_cast<float>(gltf_light.color[1]), static_cast<float>(gltf_light.color[2]) });
     }
 }
 
@@ -723,21 +740,8 @@ Node3D* create_node_entity(uint32_t node_id, tinygltf::Model& model, std::map<st
         create_camera(gltf_camera, static_cast<EntityCamera*>(new_node));
     }
     else if (node.light >= 0) {
-
         const tinygltf::Light& gltf_light = model.lights[node.light];
-        std::string light_type = gltf_light.type;
-
-        if (light_type == "spot") {
-            new_node = new SpotLight3D();
-        }
-        else if (light_type == "point") {
-            new_node = new OmniLight3D();
-        }
-        else {
-            new_node = new DirectionalLight3D();
-        }
-
-        create_light(gltf_light, static_cast<Light3D*>(new_node));
+        create_light(gltf_light, &new_node);
     }
     else {
         new_node = new Node3D();
