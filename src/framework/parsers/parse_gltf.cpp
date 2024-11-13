@@ -542,7 +542,7 @@ void read_mesh(const tinygltf::Model& model, const tinygltf::Node& node, Node3D*
             }
 
             material->set_roughness(static_cast<float>(pbrMetallicRoughness.roughnessFactor));
-            material->set_metalness(static_cast<float>(pbrMetallicRoughness.metallicFactor));
+            material->set_metallic(static_cast<float>(pbrMetallicRoughness.metallicFactor));
 
             if (gltf_material.normalTexture.index >= 0) {
                 if (texture_cache.contains(gltf_material.normalTexture.index)) {
@@ -605,7 +605,7 @@ void read_mesh(const tinygltf::Model& model, const tinygltf::Node& node, Node3D*
             // create default material
             material->set_color(glm::vec4(1.0f));
             material->set_roughness(1.0f);
-            material->set_metalness(0.0f);
+            material->set_metallic(0.0f);
         }
 
         if (entity_mesh->is_skinned) {

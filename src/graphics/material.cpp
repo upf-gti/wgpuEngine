@@ -10,7 +10,7 @@ Material::Material()
 {
     properties["color"] = &color;
     properties["roughness"] = &roughness;
-    properties["metalness"] = &metalness;
+    properties["metallic"] = &metallic;
     properties["occlusion"] = &occlusion;
     properties["emissive"] = &emissive;
     properties["alpha_mask"] = &alpha_mask;
@@ -51,9 +51,9 @@ void Material::set_roughness(float roughness)
     dirty_flags |= eMaterialProperties::PROP_OCLUSSION_ROUGHNESS_METALLIC;
 }
 
-void Material::set_metalness(float metalness)
+void Material::set_metallic(float metallic)
 {
-    this->metalness = metalness;
+    this->metallic = metallic;
     dirty_flags |= eMaterialProperties::PROP_OCLUSSION_ROUGHNESS_METALLIC;
 }
 
@@ -230,9 +230,9 @@ float Material::get_roughness() const
     return roughness;
 }
 
-float Material::get_metalness() const
+float Material::get_metallic() const
 {
-    return metalness;
+    return metallic;
 }
 
 float Material::get_occlusion() const
@@ -399,7 +399,7 @@ void Material::render_gui()
         ImGui::Text("Metallic");
         ImGui::SameLine(200);
         ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
-        if (ImGui::DragFloat("##Metallic", &metalness, 0.01f, 0.0f, 1.0f)) {
+        if (ImGui::DragFloat("##Metallic", &metallic, 0.01f, 0.0f, 1.0f)) {
             dirty_flags |= eMaterialProperties::PROP_OCLUSSION_ROUGHNESS_METALLIC;
         }
 

@@ -74,7 +74,7 @@ public:
 
     void set_color(const glm::vec4& color);
     void set_roughness(float roughness);
-    void set_metalness(float metalness);
+    void set_metallic(float metallic);
     void set_occlusion(float occlusion);
     void set_emissive(const glm::vec3& emissive);
 
@@ -103,7 +103,7 @@ public:
 
     glm::vec4 get_color() const;
     float get_roughness() const;
-    float get_metalness() const;
+    float get_metallic() const;
     float get_occlusion() const;
     glm::vec3 get_emissive() const;
 
@@ -156,7 +156,7 @@ private:
 
     glm::vec4 color = { 1.0f, 1.0f, 1.0f, 1.0f };
     float roughness = 1.0f;
-    float metalness = 0.0f;
+    float metallic = 0.0f;
     float occlusion = 1.0f;
     glm::vec3 emissive = {};
     float alpha_mask = 0.5f;
