@@ -191,7 +191,7 @@ glm::quat Node3D::get_rotation() const
     return transform.get_rotation();
 }
 
-const Transform& Node3D::get_transform() const
+Transform& Node3D::get_transform()
 {
     return transform;
 }

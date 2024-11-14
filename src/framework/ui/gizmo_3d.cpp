@@ -165,17 +165,17 @@ void Gizmo3D::init_rotation_meshes()
 
 void Gizmo3D::clean()
 {
-    delete arrow_mesh_x;
-    delete arrow_mesh_y;
-    delete arrow_mesh_z;
+    if (arrow_mesh_x) delete arrow_mesh_x;
+    if (arrow_mesh_y) delete arrow_mesh_y;
+    if (arrow_mesh_z) delete arrow_mesh_z;
 
-    delete scale_sphere_mesh_x;
-    delete scale_sphere_mesh_y;
-    delete scale_sphere_mesh_z;
+    if (scale_sphere_mesh_x) delete scale_sphere_mesh_x;
+    if (scale_sphere_mesh_y) delete scale_sphere_mesh_y;
+    if (scale_sphere_mesh_z) delete scale_sphere_mesh_z;
 
-    delete wire_circle_mesh_x;
-    delete wire_circle_mesh_y;
-    delete wire_circle_mesh_z;
+    if (wire_circle_mesh_x) delete wire_circle_mesh_x;
+    if (wire_circle_mesh_y) delete wire_circle_mesh_y;
+    if (wire_circle_mesh_z) delete wire_circle_mesh_z;
 }
 
 void Gizmo3D::set_transform(const Transform& t)
