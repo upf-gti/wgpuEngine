@@ -93,7 +93,7 @@ public:
     AABB get_aabb() const;
 
     template <typename T = Node*>
-    T get_parent() const { return dynamic_cast<T>(parent); };
+    T get_parent() const { if (!parent) return nullptr;  return dynamic_cast<T>(parent); };
 
     virtual Node* get_node(std::vector<std::string>& path_tokens);
     Node* get_node(const std::string& path);

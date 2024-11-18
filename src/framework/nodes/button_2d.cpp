@@ -122,12 +122,14 @@ namespace ui {
         float current_scale = scaling.x;
         float f = glm::elasticEaseOut(glm::clamp(timer, 0.0f, 1.0f));
 
-        if (current_scale != target_scale) {
-            timer += delta_time;
-            scaling = glm::vec2(glm::lerp(1.0f, target_scale, f));
-        }
-        else {
-            timer = 0.0f;
+        if (!(parameter_flags & SKIP_HOVER_SCALE)) {
+            if (current_scale != target_scale) {
+                timer += delta_time;
+                scaling = glm::vec2(glm::lerp(1.0f, target_scale, f));
+            }
+            else {
+                timer = 0.0f;
+            }
         }
 
         update_scroll_view();

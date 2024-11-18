@@ -136,7 +136,7 @@ bool IO::is_focus_type(uint32_t type)
     return (focused->get_class_type() == type);
 }
 
-bool IO::equals_focus(Node2D* node)
+bool IO::is_focused(Node2D* node)
 {
     return (focused == node);
 }
@@ -144,6 +144,11 @@ bool IO::equals_focus(Node2D* node)
 bool IO::any_focus()
 {
     return (focused != nullptr);
+}
+
+bool IO::is_hovered(Node2D* node)
+{
+    return (hovered == node);
 }
 
 bool IO::is_hover_type(uint32_t type, uint32_t flag)

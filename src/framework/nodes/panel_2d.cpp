@@ -252,7 +252,7 @@ namespace ui {
                 IO::set_focus(this);
             }
 
-            data.is_pressed &= IO::equals_focus(this);
+            data.is_pressed &= IO::is_focused(this);
         }
 
         return data;
@@ -541,7 +541,7 @@ namespace ui {
                 IO::set_focus(this);
             }
 
-            data.is_pressed &= IO::equals_focus(this);
+            data.is_pressed &= IO::is_focused(this);
         }
 
         return data;
@@ -575,7 +575,7 @@ namespace ui {
                     IO::set_focus(this);
                 }
 
-                data.is_pressed &= IO::equals_focus(this);
+                data.is_pressed &= IO::is_focused(this);
 
                 IO::push_input(this, data);
             }

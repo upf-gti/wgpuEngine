@@ -99,7 +99,7 @@ fn fs_main(in: VertexOutput) -> FragmentOutput {
 #ifdef ALBEDO_TEXTURE
         let mask : f32 = color.a;
 #else
-        let mask : f32 = 1.0;
+        let mask : f32 = 0.0;
 #endif
 
     if(!is_disabled) {

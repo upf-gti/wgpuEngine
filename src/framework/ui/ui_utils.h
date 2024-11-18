@@ -35,11 +35,12 @@ namespace ui {
         SCROLLABLE = 1 << 12,
         DBL_CLICK = 1 << 13,
         LONG_CLICK = 1 << 14,
-        HIDDEN = 1 << 15,
-        CONFIRM_BUTTON = 1 << 16,
-        CREATE_3D = 1 << 17,
-        KEEP_SUBMENU_OPENED = 1 << 18,
-        CURVED_PANEL = 1 << 19,
-        FULLSCREEN = 1 << 20,
+        SKIP_HOVER_SCALE = 1 << 15,
+        HIDDEN = 1 << 16,
+        CONFIRM_BUTTON = 1 << 17,
+        CREATE_3D = 1 << 18,
+        KEEP_SUBMENU_OPENED = 1 << 19,
+        CURVED_PANEL = 1 << 20,
+        FULLSCREEN = 1 << 21,
     };
 }
