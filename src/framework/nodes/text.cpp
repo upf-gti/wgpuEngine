@@ -132,6 +132,7 @@ void TextEntity::generate_mesh(const Color& color, bool is_2D)
     material->set_is_2D(is_2D);
     material->set_type(MATERIAL_UNLIT);
     material->set_transparency_type(ALPHA_BLEND);
+    material->disable_depth_test();
 
     if (font) {
         material->set_diffuse_texture(font->textures[0]);

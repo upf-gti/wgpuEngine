@@ -450,6 +450,7 @@ namespace ui {
 
         Material* material = quad_mesh->get_surface_material_override(quad_surface);
         material->set_type(MATERIAL_UI);
+        material->disable_depth_test();
         material->set_shader(RendererStorage::get_shader_from_source(shaders::ui_xr_panel::source, shaders::ui_xr_panel::path, material));
 
         // Fullscreen in 2d mode only!
@@ -679,6 +680,7 @@ namespace ui {
         material->set_cull_type(CULL_BACK);
         material->set_transparency_type(ALPHA_BLEND);
         material->set_priority(class_type);
+        material->disable_depth_test();
         material->set_shader(RendererStorage::get_shader_from_source(shaders::ui_text_shadow::source, shaders::ui_text_shadow::path, material));
 
         Surface* quad_surface = quad_mesh->get_surface(0);
