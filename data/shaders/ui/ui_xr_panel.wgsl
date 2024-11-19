@@ -93,7 +93,7 @@ fn fs_main(in: VertexOutput) -> FragmentOutput {
         // center stuff
         position -= vec2f(0.5);
 
-        var ra : vec4f = vec4f(0.1);
+        var ra : vec4f = vec4f(0.1 * ar);
         var si : vec2f = vec2f(ar, 1.0) * size * global_scale;
         ra = min(ra, min(vec4f(si.x), vec4f(si.y)));
         var uvs = vec2f(in.uv.x, in.uv.y) - position;
@@ -114,7 +114,7 @@ fn fs_main(in: VertexOutput) -> FragmentOutput {
             final_color = pow(final_color, vec3f(1.0 / 2.2));
         }
 
-        final_color = mix( final_color, vec3f(0.3), 1.0 - smoothstep(0.0, 0.01, abs(d)) );
+        final_color = mix( vec3f(0.3), final_color, smoothstep(0.0, 0.01, abs(d)) );
 
         alpha = (1.0 - smoothstep(0.0, 0.02, d)) * color.a;
 
