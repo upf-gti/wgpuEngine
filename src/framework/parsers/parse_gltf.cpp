@@ -928,12 +928,11 @@ void parse_model_skins(Node3D* scene_root, tinygltf::Model& model, std::map<std:
 
         const float* ptr = reinterpret_cast<const float*>(buffer.data.data() + accessor.byteOffset + bufferView.byteOffset);
 
-
         rest_pose.resize(rest_pose.size() + num_joints);
         world_bind_transforms.resize(rest_pose.size());
         inverse_bind_matrices.resize(inverse_bind_matrices.size() + accessor.count);
 
-        //for each joint in the skin, get the inverse bind pose matrix
+        // For each joint in the skin, get the inverse bind pose matrix
         for (size_t i = 0; i < skin.joints.size(); i++) {
 
             size_t id = i + rest_pose.size() - num_joints;
@@ -958,7 +957,6 @@ void parse_model_skins(Node3D* scene_root, tinygltf::Model& model, std::map<std:
 
                 Transform transform = Transform::mat4_to_transform(model_matrix);
                 rest_pose.set_local_transform(id, transform);
-
                 joint_3d->set_transform(transform);
             }
             else {
@@ -972,13 +970,6 @@ void parse_model_skins(Node3D* scene_root, tinygltf::Model& model, std::map<std:
 
             int parent = -1;
 
-            //for (uint32_t j = 0; j < skin.joints.size(); j++) {
-            //    if (skin.joints[j] != hierarchy[skin.joints[i]]) {
-            //        continue;
-            //    }
-            //    parent = j + rest_pose.size() - num_joints;
-            //    break;
-            //}
             for (uint32_t j = 0; j < joint_indices.size(); j++) {
                 if (joint_indices[j] != hierarchy[skin.joints[i]]) {
                     continue;
@@ -1002,6 +993,7 @@ void parse_model_skins(Node3D* scene_root, tinygltf::Model& model, std::map<std:
         }
 
     }
+
     bind_pose = rest_pose;
 
     for (uint32_t i = 0; i < rest_pose.size(); ++i) {
@@ -1040,14 +1032,14 @@ void parse_model_skins(Node3D* scene_root, tinygltf::Model& model, std::map<std:
 
         bind_pose.set_local_transform(i, current);
     }
+
     Skeleton* skeleton = new Skeleton(rest_pose, bind_pose, joint_names, joint_indices);
     ///skeleton->set_name(skin.name);
 
     for (auto instance : skeleton_instances) {
 
         instance->set_name("Skeleton3D");
-        instance->set_skeleton(skeleton);
-        instance->set_joint_nodes(joint_nodes);
+        instance->set_skeleton(skeleton, joint_nodes);
 
         for (auto child : instance->get_children()) {
             MeshInstance* child_instance = dynamic_cast<MeshInstance*>(child);

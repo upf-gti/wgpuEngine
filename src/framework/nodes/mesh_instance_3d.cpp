@@ -24,7 +24,7 @@ void MeshInstance3D::set_aabb(const AABB& new_aabb)
 
 void MeshInstance3D::render()
 {
-    Renderer::instance->add_renderable(this, get_global_model());
+    Renderer::instance->add_renderable(this, get_global_transform().get_model());
 
     Node3D::render();
 }

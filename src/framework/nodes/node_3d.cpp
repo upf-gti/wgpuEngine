@@ -196,6 +196,14 @@ Transform& Node3D::get_transform()
     return transform;
 }
 
+Transform Node3D::get_global_transform()
+{
+    if (parent) {
+        return Transform::combine(static_cast<Node3D*>(parent)->get_global_transform(), transform);
+    }
+    return transform;
+}
+
 bool Node3D::test_ray_collision(const glm::vec3& ray_origin, const glm::vec3& ray_direction, float& distance)
 {
     const glm::vec3& center = aabb.center + transform.get_position();

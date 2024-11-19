@@ -6,20 +6,21 @@
 #include "framework/camera/camera.h"
 #include "framework/nodes/look_at_ik_3d.h"
 #include "framework/animation/skeleton.h"
-
+#include "framework/math/intersections.h"
+#include "framework/parsers/parse_obj.h"
 #include "imgui.h"
 #include "framework/utils/ImGuizmo.h"
 
 #include "shaders/mesh_forward.wgsl.gen.h"
 
-#include "framework/parsers/parse_obj.h"
-
 #include <glm/gtc/type_ptr.hpp>
 #include "spdlog/spdlog.h"
 
-SkeletonInstance3D::SkeletonInstance3D()
+SkeletonInstance3D::SkeletonInstance3D() : MeshInstance3D()
 {
     node_type = "SkeletonInstance3D";
+
+    collider_shape = COLLIDER_SHAPE_CUSTOM;
 
     set_frustum_culling_enabled(false);
 
@@ -30,25 +31,54 @@ SkeletonInstance3D::SkeletonInstance3D()
     joint_material->set_color(glm::vec4(1.0f));
     joint_material->set_shader(RendererStorage::get_shader_from_source(shaders::mesh_forward::source, shaders::mesh_forward::path));
 
+    Material* selected_joint_material = new Material();
+    selected_joint_material->set_depth_read(false);
+    selected_joint_material->set_priority(0);
+    selected_joint_material->set_transparency_type(ALPHA_BLEND);
+    selected_joint_material->set_color(glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
+    selected_joint_material->set_shader(RendererStorage::get_shader_from_source(shaders::mesh_forward::source, shaders::mesh_forward::path));
+
     joint_render_instance.set_frustum_culling_enabled(false);
+    selected_joint_render_instance.set_frustum_culling_enabled(false);
 
     joint_render_instance.add_surface(RendererStorage::get_surface("box"));
     joint_render_instance.set_surface_material_override(joint_render_instance.get_surface(0), joint_material);
+    selected_joint_render_instance.add_surface(RendererStorage::get_surface("box"));
+    selected_joint_render_instance.set_surface_material_override(selected_joint_render_instance.get_surface(0), selected_joint_material);
 }
 
-void SkeletonInstance3D::set_skeleton(Skeleton* s)
+void SkeletonInstance3D::set_skeleton(Skeleton* new_skeleton, const std::vector<Node3D*>& new_joint_nodes)
 {
-    skeleton = s;
+    bool is_root = new_joint_nodes.size();
+
+    if (is_root) {
+        joint_nodes = new_joint_nodes;
+    }
+
+    skeleton = new_skeleton;
 
     init_helper();
+
+    if (!is_root) {
+        return;
+    }
+
+    // Fill animatable properties from the entire skeleton for root nodes only!
+
+    uint32_t joint_count = new_skeleton->get_joints_count();
+
+    for (uint32_t i = 0u; i < joint_count; ++i) {
+        auto joint = joint_nodes[i];
+        animatable_properties[joint->get_name() + "$translation"] = { AnimatablePropertyType::FVEC3, &joint->get_transform().get_position_ref() };
+        animatable_properties[joint->get_name() + "$rotation"] = { AnimatablePropertyType::FVEC3, &joint->get_transform().get_rotation_ref() };
+        animatable_properties[joint->get_name() + "$scale"] = { AnimatablePropertyType::FVEC3, &joint->get_transform().get_scale_ref() };
+    }
 }
 
 void SkeletonInstance3D::update(float dt)
 {
     if (transform.is_dirty()) {
-
         update_pose_from_joints(dt);
-
         transform.set_dirty(false);
     }
 
@@ -59,32 +89,39 @@ void SkeletonInstance3D::update(float dt)
     update_helper();
 
     // Update GPU data
-    if (animated_uniform_data && invbind_uniform_data)
-    {
+    if (animated_uniform_data && invbind_uniform_data) {
         const std::vector<glm::mat4x4>& animated_matrices = get_animated_data();
         const std::vector<glm::mat4x4>& inv_bind_matrices = get_invbind_data();
         auto webgpu_context = Renderer::instance->get_webgpu_context();
         webgpu_context->update_buffer(std::get<WGPUBuffer>(animated_uniform_data->data), 0, animated_matrices.data(), sizeof(glm::mat4x4) * animated_matrices.size());
         webgpu_context->update_buffer(std::get<WGPUBuffer>(invbind_uniform_data->data), 0, inv_bind_matrices.data(), sizeof(glm::mat4x4) * inv_bind_matrices.size());
     }
+}
 
+void SkeletonInstance3D::render() {
+
+    Pose& pose = skeleton->get_current_pose();
+
+    const Transform& global_transform = get_global_transform();
+
+    for (size_t i = 0; i < joint_nodes.size(); ++i) {
+        Transform joint_global_transform = Transform::combine(global_transform, pose.get_global_transform(i));
+        joint_global_transform.set_scale(glm::vec3(0.025f));
+        Renderer::instance->add_renderable(i == selected_joint_idx ? &selected_joint_render_instance : &joint_render_instance, joint_global_transform.get_model());
+    }
+
+    MeshInstance3D::render();
 }
 
 void SkeletonInstance3D::update_pose_from_joints(float dt)
 {
     Pose& pose = skeleton->get_current_pose();
-    const std::vector<uint32_t>& indices = skeleton->get_joint_indices();
 
     for (size_t i = 0; i < joint_nodes.size(); ++i) {
         joint_nodes[i]->set_transform_dirty(true);
         joint_nodes[i]->update(dt);
         pose.set_local_transform(i, joint_nodes[i]->get_transform());
     }
-}
-
-void SkeletonInstance3D::set_joint_nodes(const std::vector<Node3D*>& new_joint_nodes)
-{
-    joint_nodes = new_joint_nodes;
 }
 
 Node* SkeletonInstance3D::get_node(std::vector<std::string>& path_tokens)
@@ -95,7 +132,6 @@ Node* SkeletonInstance3D::get_node(std::vector<std::string>& path_tokens)
     assert(path_tokens.size() == 1);
 
     for (Node3D* joint_node : joint_nodes) {
-
         if (joint_node->get_name() == path_tokens[0]) {
             return joint_node;
         }
@@ -110,10 +146,10 @@ void SkeletonInstance3D::update_helper()
 
     std::vector<sInterleavedData> vertices;
 
-    size_t numJoints = skeleton->get_current_pose().size();
-    Pose &pose = skeleton->get_current_pose();
+    Pose& pose = skeleton->get_current_pose();
+    size_t joint_count = pose.size();
 
-    for (size_t i = 0; i < numJoints; ++i) {
+    for (size_t i = 0; i < joint_count; ++i) {
         sInterleavedData data;
         data.position = pose.get_global_transform(i).get_position();
         vertices.push_back(data);
@@ -162,10 +198,43 @@ std::vector<glm::mat4x4> SkeletonInstance3D::get_invbind_data()
     return skeleton->get_inv_bind_pose();
 }
 
+const Transform& SkeletonInstance3D::get_selected_joint_transform()
+{
+    assert(selected_joint_idx != -1);
+    Pose& pose = skeleton->get_current_pose();
+    return Transform::mat4_to_transform(get_global_model() * pose.get_global_transform(selected_joint_idx).get_model());
+}
+
 void SkeletonInstance3D::set_uniform_data(Uniform* animated_u, Uniform* invbind_u)
 {
     animated_uniform_data = animated_u;
     invbind_uniform_data = invbind_u;
+}
+
+bool SkeletonInstance3D::test_ray_collision(const glm::vec3& ray_origin, const glm::vec3& ray_direction, float& distance)
+{
+    Pose& pose = skeleton->get_current_pose();
+
+    bool result = false;
+
+    float joint_distance = 1e9f;
+
+    // selected_joint_idx = -1;
+
+    const Transform& global_transform = get_global_transform();
+
+    for (size_t i = 0; i < joint_nodes.size(); ++i) {
+        Transform joint_global_transform = Transform::combine(global_transform, pose.get_global_transform(i));
+        if (intersection::ray_sphere(ray_origin, ray_direction, joint_global_transform.get_position(), 0.025f, joint_distance)) {
+            if (joint_distance < distance) {
+                result |= true;
+                selected_joint_idx = i;
+                distance = joint_distance;
+            }
+        }
+    }
+
+    return result;
 }
 
 void SkeletonInstance3D::recursive_tree_gui(Node* node) {
@@ -225,19 +294,6 @@ void SkeletonInstance3D::recursive_tree_gui(Node* node) {
 
         ImGui::TreePop();
     }
-}
-
-void SkeletonInstance3D::render() {
-
-    Pose& pose = skeleton->get_current_pose();
-
-    for (size_t i = 0; i < joint_nodes.size(); ++i) {
-        Transform joint_transform = pose.get_global_transform(i);
-        joint_transform.set_scale(glm::vec3(0.025f));
-        Renderer::instance->add_renderable(&joint_render_instance, get_global_model() * joint_transform.get_model());
-    }
-
-    MeshInstance3D::render();
 }
 
 void SkeletonInstance3D::render_gui()
