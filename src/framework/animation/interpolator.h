@@ -20,6 +20,7 @@ public:
 };
 
 enum class eInterpolationType {
+    UNSET,
     STEP,
     LINEAR,
     CUBIC
@@ -27,7 +28,7 @@ enum class eInterpolationType {
 
 class Interpolator {
 
-    eInterpolationType type = eInterpolationType::STEP;
+    eInterpolationType type = eInterpolationType::LINEAR;
 
     TrackType step(const std::vector<Keyframe>& keyframes, int frame_idx, bool looping);
     TrackType linear(const std::vector<Keyframe>& keyframes, float time, int frame_idx, bool looping);
@@ -54,6 +55,7 @@ class Interpolator {
 public:
 
     Interpolator();
+    Interpolator(eInterpolationType new_type);
 
     TrackType interpolate(const std::vector<Keyframe>& keyframes, float time, int frame_idx, bool looping);
 

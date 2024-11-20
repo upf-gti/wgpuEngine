@@ -71,7 +71,7 @@ void SkeletonInstance3D::update(float dt)
         transform.set_dirty(false);
     }
 
-    // Update child dones (i.e IK)
+    // Update child nodes (i.e IK)
     Node3D::update(dt);
 
     // Update skeleton mesh helper

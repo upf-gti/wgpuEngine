@@ -16,13 +16,6 @@ enum eBlendType : uint8_t {
     ANIMATION_BLEND_ADDITIVE
 };
 
-enum eLoopType : uint8_t {
-    ANIMATION_LOOP_NONE,
-    ANIMATION_LOOP_DEFAULT,
-    ANIMATION_LOOP_REVERSE,
-    ANIMATION_LOOP_PING_PONG
-};
-
 class Animation {
 
     static uint32_t last_animation_id;
@@ -52,7 +45,7 @@ public:
     void set_id_at_index(uint32_t index, int id);
 
     // Samples the animation clip at the provided time into the out reference
-    float sample(float time, uint32_t track_idx, uint8_t loop, void* out = nullptr);
+    float sample(float time, uint32_t track_idx, uint8_t loop, void* out = nullptr, eInterpolationType interpolation_type = eInterpolationType::UNSET);
 
     // Returns a transform track for the specified track position id
     Track* operator[](uint32_t index);

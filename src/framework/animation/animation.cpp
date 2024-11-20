@@ -9,7 +9,7 @@ Animation::Animation()
     end_time = 0.0f;
 }
 
-float Animation::sample(float time, uint32_t track_idx, uint8_t loop, void* out)
+float Animation::sample(float time, uint32_t track_idx, uint8_t loop, void* out, eInterpolationType interpolation_type)
 {
     if (get_duration() == 0.0f) {
         return 0.0f;
@@ -18,7 +18,7 @@ float Animation::sample(float time, uint32_t track_idx, uint8_t loop, void* out)
     time = adjust_time_to_fit_range(time, loop);
 
     Track* track = get_track(track_idx);
-    track->sample(time, loop, out);
+    track->sample(time, loop, out, interpolation_type);
 
     return time;
 }

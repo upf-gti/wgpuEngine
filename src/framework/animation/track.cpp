@@ -83,12 +83,20 @@ Keyframe& Track::add_keyframe(const Keyframe& k)
 }
 
 // call sample_constant, sample_linear, or sample_cubic, depending on the track type.
-TrackType Track::sample(float time, bool looping, void* out)
+TrackType Track::sample(float time, bool looping, void* out, eInterpolationType interpolation_type)
 {
     float track_time = adjust_time_to_fit_track(time, looping);
     int frame_idx = frame_index(time);
 
+    eInterpolationType prev_type = interpolator.get_type();
+
+    if (interpolation_type != eInterpolationType::UNSET) {
+        interpolator.set_type(interpolation_type);
+    }
+
     TrackType r = interpolator.interpolate(keyframes, track_time, frame_idx, looping);
+
+    interpolator.set_type(prev_type);
 
     if (out)
     {

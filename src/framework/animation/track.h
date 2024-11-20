@@ -15,6 +15,13 @@ enum eTrackType {
     TYPE_SCALE
 };
 
+enum eLoopType : uint8_t {
+    ANIMATION_LOOP_NONE,
+    ANIMATION_LOOP_DEFAULT,
+    ANIMATION_LOOP_REVERSE,
+    ANIMATION_LOOP_PING_PONG
+};
+
 // Collection of keyframes
 class Track {
 
@@ -56,6 +63,6 @@ public:
     Keyframe& add_keyframe(const Keyframe& k);
 
     // Prameters: time value, if the track is looping or not
-    TrackType sample(float time, bool looping, void* out = nullptr);
+    TrackType sample(float time, bool looping, void* out = nullptr, eInterpolationType interpolation_type = eInterpolationType::UNSET);
     Keyframe& operator[](uint32_t index);
 };

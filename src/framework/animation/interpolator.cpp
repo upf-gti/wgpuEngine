@@ -7,6 +7,11 @@ Interpolator::Interpolator()
     type = eInterpolationType::LINEAR;
 }
 
+Interpolator::Interpolator(eInterpolationType new_type)
+{
+    type = new_type;
+}
+
 eInterpolationType Interpolator::get_type()
 {
     return type;
