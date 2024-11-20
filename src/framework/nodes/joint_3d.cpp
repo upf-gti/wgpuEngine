@@ -53,14 +53,16 @@ Transform Joint3D::get_global_transform()
 *   Input is global transform -> has transform of skeleton instance + every joint from above
 *   It has to set local transform for the joint
 */
-void Joint3D::set_global_transform(const Transform& t)
+void Joint3D::set_global_transform(const Transform& new_transform)
 {
     // To joint space
-    Transform local_transform = Transform::combine(Transform::inverse(instance->get_global_transform()), t);
+    Transform local_transform = Transform::combine(Transform::inverse(instance->get_global_transform()), new_transform);
 
     // To local joint space
     int32_t parent_id = pose->get_parent(index);
-    local_transform = Transform::combine(Transform::inverse(pose->get_global_transform(parent_id)), local_transform);
+    if (parent_id >= 0) {
+        local_transform = Transform::combine(Transform::inverse(pose->get_global_transform(parent_id)), local_transform);
+    }
 
     set_transform(local_transform);
 }

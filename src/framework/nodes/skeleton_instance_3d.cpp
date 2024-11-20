@@ -59,7 +59,7 @@ void SkeletonInstance3D::set_skeleton(Skeleton* new_skeleton, const std::vector<
     for (uint32_t i = 0u; i < joint_count; ++i) {
         auto joint = joint_nodes[i];
         animatable_properties[joint->get_name() + "$translation"] = { AnimatablePropertyType::FVEC3, &joint->get_transform().get_position_ref() };
-        animatable_properties[joint->get_name() + "$rotation"] = { AnimatablePropertyType::FVEC3, &joint->get_transform().get_rotation_ref() };
+        animatable_properties[joint->get_name() + "$rotation"] = { AnimatablePropertyType::QUAT, &joint->get_transform().get_rotation_ref() };
         animatable_properties[joint->get_name() + "$scale"] = { AnimatablePropertyType::FVEC3, &joint->get_transform().get_scale_ref() };
     }
 }
@@ -111,12 +111,19 @@ Node* SkeletonInstance3D::get_node(std::vector<std::string>& path_tokens)
     if (path_tokens.size() == 0)
         return this;
 
-    assert(path_tokens.size() == 1);
+    // It's "skeleton_instance+joint"
+    if (path_tokens.size() == 2) {
+        path_tokens.erase(path_tokens.begin());
+    }
 
     for (Node3D* joint_node : joint_nodes) {
         if (joint_node->get_name() == path_tokens[0]) {
             return joint_node;
         }
+    }
+
+    if (name == path_tokens[0]) {
+        return this;
     }
 
     return nullptr;

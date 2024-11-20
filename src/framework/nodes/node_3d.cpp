@@ -155,7 +155,18 @@ void Node3D::set_scale(const glm::vec3& scale)
 void Node3D::set_transform(const Transform& new_transform)
 {
     transform = new_transform;
+    set_transform_dirty(true);
+}
 
+void Node3D::set_global_transform(const Transform& new_transform)
+{
+    Transform local_transform = new_transform;
+
+    if (parent) {
+        local_transform = Transform::combine(Transform::inverse(get_parent<Node3D*>()->get_global_transform()), local_transform);
+    }
+
+    set_transform(local_transform);
     set_transform_dirty(true);
 }
 
@@ -176,8 +187,9 @@ const glm::vec3 Node3D::get_translation()
 
 glm::mat4x4 Node3D::get_global_model()
 {
-    if (parent)
+    if (parent) {
         return static_cast<Node3D*>(parent)->get_global_model() * transform.get_model();
+    }
     return transform.get_model();
 }
 

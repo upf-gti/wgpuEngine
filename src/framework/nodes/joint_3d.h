@@ -25,7 +25,7 @@ public:
     void set_index(int32_t new_index) { index = new_index; }
     void set_pose(Pose* ref_pose) { pose = ref_pose; };
     void set_instance(SkeletonInstance3D* new_instance) { instance = new_instance; };
-    void set_global_transform(const Transform& t);
+    void set_global_transform(const Transform& new_transform) override;
 
     void render() override;
     void update_pose();

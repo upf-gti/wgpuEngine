@@ -151,9 +151,9 @@ Node* Node::get_node(std::vector<std::string>& path_tokens)
 
     for (Node* child : children) {
 
-        if (child->get_name() == path_tokens[0]) {
-            path_tokens.erase(path_tokens.begin());
-            return child->get_node(path_tokens);
+        Node* n = child->get_node(path_tokens);
+        if (n) {
+            return n->get_node(path_tokens);
         }
     }
 

@@ -53,8 +53,9 @@ public:
     virtual void set_position(const glm::vec3& translation);
     virtual void set_rotation(const glm::quat& rotation);
     virtual void set_scale(const glm::vec3& scale);
-    void set_transform_dirty(bool value);
+    virtual void set_global_transform(const Transform& new_transform);
     void set_transform(const Transform& new_transform);
+    void set_transform_dirty(bool value);
     void set_parent(Node3D* node);
 
     virtual bool test_ray_collision(const glm::vec3& ray_origin, const glm::vec3& ray_direction, float& distance, Node3D** out = nullptr);
