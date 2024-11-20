@@ -48,7 +48,7 @@ public:
     glm::mat4x4 get_model();
     glm::quat get_rotation() const;
     Transform& get_transform();
-    Transform get_global_transform();
+    virtual Transform get_global_transform();
 
     virtual void set_position(const glm::vec3& translation);
     virtual void set_rotation(const glm::quat& rotation);
@@ -57,7 +57,7 @@ public:
     void set_transform(const Transform& new_transform);
     void set_parent(Node3D* node);
 
-    virtual bool test_ray_collision(const glm::vec3& ray_origin, const glm::vec3& ray_direction, float& distance);
+    virtual bool test_ray_collision(const glm::vec3& ray_origin, const glm::vec3& ray_direction, float& distance, Node3D** out = nullptr);
 
     void clone(Node* new_node, bool copy = true) override;
 

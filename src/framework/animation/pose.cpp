@@ -87,13 +87,13 @@ Pose& Pose::operator=(const Pose& other)
 // get global matrices of the joints
 std::vector<glm::mat4> Pose::get_global_matrices()
 {
-    uint32_t numJoints = (uint32_t)size();
-    std::vector<glm::mat4> out(numJoints);
-    if (out.size() != numJoints) {
-        out.resize(numJoints);
+    uint32_t joints_count = (uint32_t)size();
+    std::vector<glm::mat4> out(joints_count);
+    if (out.size() != joints_count) {
+        out.resize(joints_count);
     }
 
-    for (uint32_t i = 0; i < numJoints; i++) {
+    for (uint32_t i = 0; i < joints_count; i++) {
         Transform t = get_global_transform(i);
         out[i] = Transform::transform_to_mat4(t);
     }

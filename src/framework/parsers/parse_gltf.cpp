@@ -14,6 +14,7 @@
 #include "framework/nodes/camera.h"
 #include "framework/nodes/mesh_instance_3d.h"
 #include "framework/nodes/skeleton_instance_3d.h"
+#include "framework/nodes/joint_3d.h"
 #include "framework/nodes/animation_player.h"
 #include "framework/nodes/directional_light_3d.h"
 #include "framework/nodes/spot_light_3d.h"
@@ -904,7 +905,7 @@ void parse_model_skins(Node3D* scene_root, tinygltf::Model& model, std::map<std:
     std::vector<glm::mat4> inverse_bind_matrices;
     std::vector<std::string> joint_names;
     std::vector<uint32_t> joint_indices;
-    std::vector<Node3D*> joint_nodes;
+    std::vector<Joint3D*> joint_nodes;
 
     for (size_t s = 0; s < model.skins.size(); s++) {
 
@@ -941,7 +942,7 @@ void parse_model_skins(Node3D* scene_root, tinygltf::Model& model, std::map<std:
             joint_names.push_back(node.name);
             joint_indices.push_back(skin.joints[i]);
 
-            Node3D* joint_3d = new Node3D();
+            Joint3D* joint_3d = new Joint3D();
             joint_3d->set_name(node.name);
             joint_3d->set_node_type("Joint3D");
 

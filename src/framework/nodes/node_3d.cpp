@@ -204,7 +204,7 @@ Transform Node3D::get_global_transform()
     return transform;
 }
 
-bool Node3D::test_ray_collision(const glm::vec3& ray_origin, const glm::vec3& ray_direction, float& distance)
+bool Node3D::test_ray_collision(const glm::vec3& ray_origin, const glm::vec3& ray_direction, float& distance, Node3D** out)
 {
     const glm::vec3& center = aabb.center + transform.get_position();
     const glm::vec3& half_size = aabb.half_size * transform.get_scale();
