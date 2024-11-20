@@ -173,22 +173,7 @@ namespace ui {
             glm::vec3 ray_origin;
             glm::vec3 ray_direction;
 
-            // Handle ray using VR controller
-            if (Renderer::instance->get_openxr_available()) {
-                // Ray
-                ray_origin = Input::get_controller_position(HAND_RIGHT, POSE_AIM);
-                const glm::mat4x4& select_hand_pose = Input::get_controller_pose(HAND_RIGHT, POSE_AIM);
-                ray_direction = get_front(select_hand_pose);
-            }
-            // Handle ray using mouse position
-            else {
-                Camera* camera = Renderer::instance->get_camera();
-                const glm::vec3& ray_dir = camera->screen_to_ray(Input::get_mouse_position());
-
-                // Ray
-                ray_origin = camera->get_eye();
-                ray_direction = glm::normalize(ray_dir);
-            }
+            Engine::instance->get_scene_ray(ray_origin, ray_direction);
 
             // Quad
             uint8_t priority = class_type;
@@ -472,9 +457,9 @@ namespace ui {
         sInputData data;
 
         // Ray
-        glm::vec3 ray_origin = Input::get_controller_position(HAND_RIGHT, POSE_AIM);
-        glm::mat4x4 select_hand_pose = Input::get_controller_pose(HAND_RIGHT, POSE_AIM);
-        glm::vec3 ray_direction = get_front(select_hand_pose);
+        glm::vec3 ray_origin;
+        glm::vec3 ray_direction;
+        Engine::instance->get_scene_ray(ray_origin, ray_direction);
 
         // Quad
         uint8_t priority = class_type;

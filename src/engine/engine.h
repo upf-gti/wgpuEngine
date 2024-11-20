@@ -72,6 +72,7 @@ public:
     bool should_close();
     Scene* get_main_scene();
     float get_delta_time() { return delta_time; }
+    void get_scene_ray(glm::vec3& ray_origin, glm::vec3& ray_direction);
 
     virtual void set_main_scene(const std::string& scene_path);
 };

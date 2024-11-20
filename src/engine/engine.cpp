@@ -303,6 +303,21 @@ Scene* Engine::get_main_scene()
     return main_scene;
 }
 
+void Engine::get_scene_ray(glm::vec3& ray_origin, glm::vec3& ray_direction)
+{
+    if (renderer->get_openxr_available()) {
+        ray_origin = Input::get_controller_position(HAND_RIGHT, POSE_AIM);
+        glm::mat4x4 select_hand_pose = Input::get_controller_pose(HAND_RIGHT, POSE_AIM);
+        ray_direction = get_front(select_hand_pose);
+    }
+    else {
+        Camera* camera = renderer->get_camera();
+        glm::vec3 ray_dir = camera->screen_to_ray(Input::get_mouse_position());
+        ray_origin = camera->get_eye();
+        ray_direction = glm::normalize(ray_dir);
+    }
+}
+
 void Engine::on_frame()
 {
     renderer->process_events();
