@@ -1338,6 +1338,18 @@ WGPUInstance WebGPUContext::get_instance()
 
 void WebGPUContext::create_swapchain(int width, int height)
 {
+    WGPUSurfaceCapabilities surface_capabilities;
+    wgpuSurfaceGetCapabilities(surface, adapter, &surface_capabilities);
+
+    bool support_mailbox_present = false;
+
+    for (uint32_t i = 0u; i < surface_capabilities.presentModeCount; i++) {
+        if (surface_capabilities.presentModes[i] == WGPUPresentMode_Mailbox) {
+            support_mailbox_present = true;
+            break;
+        }
+    }
+
     screen_width = width;
     screen_height = height;
 
@@ -1347,7 +1359,7 @@ void WebGPUContext::create_swapchain(int width, int height)
     surface_config.presentMode = WGPUPresentMode_Fifo;
 #else
     surface_config.usage = WGPUTextureUsage_RenderAttachment;
-    surface_config.presentMode = WGPUPresentMode_Mailbox;
+    surface_config.presentMode = (support_mailbox_present) ? WGPUPresentMode_Mailbox : WGPUPresentMode_Fifo;
 #endif
     surface_config.format = swapchain_format;
     surface_config.width = screen_width;
