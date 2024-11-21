@@ -9,6 +9,18 @@ void Spline::add_knot(const Knot& new_knot)
     knots.push_back(new_knot);
 }
 
+void Spline::remove_knot(uint32_t index)
+{
+    knots.erase(knots.begin() + index);
+}
+
+void Spline::pop_knot()
+{
+    if (!knots.empty()) {
+        knots.pop_back();
+    }
+}
+
 void Spline::clear()
 {
     knots.clear();
@@ -241,10 +253,10 @@ void BezierSpline::for_each(std::function<void(const Knot&)> fn)
         if (density != 0u) {
             k_distance = glm::max(k_distance, distance / static_cast<float>(density));
         }
-        uint32_t number_of_edits = 2;// (uint32_t)glm::ceil(distance / k_distance);
+        uint32_t number_of_edits = (uint32_t)glm::ceil(distance / k_distance);
 
         for (int j = 0; j < number_of_edits; ++j) {
-            float t = static_cast<float>(j);// / number_of_edits;
+            float t = static_cast<float>(j) / number_of_edits;
             const Knot& point = start_point * (1.0f - t) + end_point * t;
             fn(point);
         }

@@ -34,12 +34,14 @@ public:
     Spline() {};
 
     virtual void add_knot(const Knot& new_knot);
+    virtual void remove_knot(uint32_t index);
+    virtual void pop_knot();
 
     virtual void for_each(std::function<void(const Knot&)> fn) {}
 
     virtual void clear();
 
-    uint32_t count() const { return knots.size(); }
+    uint32_t size() const { return knots.size(); }
 
     void set_density(uint32_t new_density) { density = new_density; }
 };
