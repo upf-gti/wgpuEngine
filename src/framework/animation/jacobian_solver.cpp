@@ -7,14 +7,9 @@ Transform& JacobianSolver::operator[](uint32_t index)
     return ik_chain[index];
 }
 
-void JacobianSolver::add_revolute_joint(Transform T)
+void JacobianSolver::add_revolute_joint(const Transform& joint_transform)
 {
-    ik_chain.push_back(T);
-}
-
-Transform JacobianSolver::get_joint(uint32_t idx)
-{
-    return ik_chain[idx];
+    ik_chain.push_back(joint_transform);
 }
 
 void JacobianSolver::set_chain(const std::vector<Transform>& chain)
@@ -26,12 +21,12 @@ void JacobianSolver::set_chain(const std::vector<Transform>& chain)
 
 void JacobianSolver::set_rotation_axis()
 {
-    glm::vec3 local_axis = glm::vec3(0.f);
+    glm::vec3 local_axis = glm::vec3(0.0f);
 
-    for (int i = 0; i < ik_chain.size(); i++) {
+    for (uint32_t i = 0u; i < ik_chain.size(); ++i) {
 
-        Transform t = get_global_transform(i);
-        glm::quat inv_rot = inverse(t.get_rotation());
+        const Transform& t = get_global_transform(i);
+        const glm::quat& inv_rot = glm::inverse(t.get_rotation());
 
         local_axis = inv_rot * glm::vec3(1.f, 0.f, 0.f);
         local_axis_x_joint.push_back(local_axis);
@@ -46,13 +41,13 @@ void JacobianSolver::set_rotation_axis()
 
 bool JacobianSolver::solve(const Transform& target)
 {
-    uint32_t num_joints = ik_chain.size() - 1; // we don't need to compute the rotations for the end effector jont
+    uint32_t num_joints = ik_chain.size() - 1u; // we don't need to compute the rotations for the end effector jont
     glm::vec3 goal_pos = target.get_position();
 
-    // init the jacabi matrix (DoF * rotation axis)
-    std::vector<float> jacobi_mat((num_joints * 3) * 3); // nCol = num_joints * 3 (each joint rotates for each axis XYZ separately) and nRow = 3 (3 components)
+    // init the jacobi matrix (DoF * rotation axis)
+    std::vector<float> jacobi_mat((num_joints * 3u) * 3u); // nCol = num_joints * 3 (each joint rotates for each axis XYZ separately) and nRow = 3 (3 components)
 
-    for (uint32_t i = 0; i < num_steps; ++i) {
+    for (uint32_t i = 0u; i < num_steps; ++i) {
 
         // get end effector position
         glm::vec3 effector_pos = get_global_transform(num_joints).get_position();
@@ -60,9 +55,10 @@ bool JacobianSolver::solve(const Transform& target)
         // get the differential translation
         glm::vec3 diff_pos = goal_pos - effector_pos;
 
-        if (glm::length2(diff_pos) <= threshold * threshold) {
+        if (glm::length2(diff_pos) < threshold * threshold) {
             return true;
         }
+
         // build jacobi matrix as an array
         for (uint32_t joint_idx = 0; joint_idx < num_joints; joint_idx++) {
             // position of current joint in global
@@ -89,7 +85,7 @@ bool JacobianSolver::solve(const Transform& target)
 
             // Column Major, as our mat class
             jacobi_mat[joint_idx * 9] = cross_prod_x.x;
-            jacobi_mat[(joint_idx * 9) + 1] = cross_prod_x.y; // joint idx * n� axis per joint + each component position
+            jacobi_mat[(joint_idx * 9) + 1] = cross_prod_x.y; // joint idx * nº axis per joint + each component position
             jacobi_mat[(joint_idx * 9) + 2] = cross_prod_x.z;
 
             jacobi_mat[(joint_idx * 9) + 3] = cross_prod_y.x;
@@ -129,10 +125,8 @@ bool JacobianSolver::solve(const Transform& target)
 
             // combine all the rotations for each axis of the same joint
             glm::quat q = qz * qy * qx;
-            /*Transform new_joint_transform(glm::vec3(0.f), q, glm::vec3(1.f));
-            new_joint_transform = combine(joint_transform, new_joint_transform);*/
-            Transform new_joint_transform = joint_transform;
-            new_joint_transform.rotate(q);
+            Transform new_joint_transform(glm::vec3(0.0f), q, glm::vec3(1.0));
+            new_joint_transform = Transform::combine(joint_transform, new_joint_transform);
             set_global_transform(joint_idx, new_joint_transform);
         }
     }

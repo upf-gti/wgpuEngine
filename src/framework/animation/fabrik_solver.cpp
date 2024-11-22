@@ -4,12 +4,10 @@
 
 void FABRIKSolver::resize(size_t new_size)
 {
-    ik_chain.resize(new_size);
+    IKSolver::resize(new_size);
+
     world_chain.resize(new_size);
     lengths.resize(new_size);
-    joint_indices.resize(new_size);
-    joint_constraint_type.resize(new_size);
-    joint_constraint_value.resize(new_size);
 }
 
 void FABRIKSolver::ik_chain_to_world()
@@ -82,9 +80,12 @@ bool FABRIKSolver::solve(const Transform& target)
 {
     // Local variables and size check
     size_t chain_size = size();
-    if (chain_size == 0) { return false; }
-    uint32_t last = chain_size - 1;
-    float thresholdSq = threshold * threshold;
+    if (chain_size == 0) {
+        return false;
+    }
+
+    uint32_t last = chain_size - 1u;
+    float threshold_sq = threshold * threshold;
 
     ik_chain_to_world();
 
@@ -93,30 +94,27 @@ bool FABRIKSolver::solve(const Transform& target)
 
     // [CA] To do:
     // For each iteration of the algorithm:
-    for (int i = 0; i < num_steps; i++) {
-        // 1. Check if the end-effector has reached the goal
-        if (glm::length2(world_chain[last] - goal) <= thresholdSq) {
+    for (uint32_t i = 0; i < num_steps; i++) {
+
+        const glm::vec3& effector= world_chain[last];
+        if (glm::length2(goal - effector) < threshold_sq) {
             world_to_ik_chain();
             return true;
         }
-        // 2. Perform backward step
-        iterate_backward(goal);
-        // 3. Perform forward step
-        iterate_forward(base);
-        // 4. Apply constraints if required:
-        // 4.1. Convert the chain in local space
-        //world_to_ik_chain();
-        // 4.2. Apply constraints
 
-        // 4.3. Convert the chain in global space again
-        //ik_chain_to_world();
+        iterate_backward(goal);
+        iterate_forward(base);
+
+        world_to_ik_chain();
+
+        ik_chain_to_world();
     }
 
     // Convert the chain in local space again
     world_to_ik_chain();
 
-    // Last check if end-effector has reached the goal
-    if (glm::length2(world_chain[last] - goal) <= thresholdSq) {
+    const glm::vec3& effector = get_global_transform(last).get_position();
+    if (glm::length2(goal - effector) < threshold_sq) {
         return true;
     }
 

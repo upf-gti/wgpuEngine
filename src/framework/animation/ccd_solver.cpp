@@ -21,7 +21,7 @@ bool CCDSolver::solve(const Transform& target)
         if (glm::length2(goal - effector) < threshold_sq) {
             return true;
         }
-        for (uint32_t j = (uint32_t)chain_size - 2u; j >= 0u; --j) {
+        for (int j = chain_size - 2; j >= 0; --j) {
             effector = get_global_transform(last).get_position();
 
             const Transform world = get_global_transform(j);
@@ -59,7 +59,7 @@ bool CCDSolver::solve(const Transform& target)
     return false;
 }
 
-void CCDSolver::apply_ball_socket_constraint(int i, float limit)
+void CCDSolver::apply_ball_socket_constraint(int i, float limit_angle)
 {
     const glm::quat parent_rot = i == 0 ? aux_parent.get_rotation() : get_global_transform(i - 1).get_rotation();
     const glm::quat this_rot = get_global_transform(i).get_rotation();
@@ -68,9 +68,9 @@ void CCDSolver::apply_ball_socket_constraint(int i, float limit)
     const glm::vec3 this_dir = this_rot * glm::vec3(0.0f, 0.0f, 1.0f);
     float angle = Transform::get_angle_between_vectors(parent_dir, this_dir);
 
-    if (angle > glm::radians(limit)) {
-        const glm::vec3 correction = cross(parent_dir, this_dir);
-        const glm::quat world_space_rotation = parent_rot * angleAxis(glm::radians(limit), correction);
+    if (angle > glm::radians(limit_angle)) {
+        const glm::vec3 correction = glm::cross(parent_dir, this_dir);
+        const glm::quat world_space_rotation = parent_rot * glm::angleAxis(glm::radians(limit_angle), correction);
         if (i == 0) {
             ik_chain[i].set_rotation(world_space_rotation);
         }
