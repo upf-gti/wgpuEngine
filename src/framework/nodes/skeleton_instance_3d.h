@@ -22,9 +22,11 @@ public:
     SkeletonInstance3D();
 
     void update(float dt) override;
-    void update_pose_from_joints();
     void render() override;
     void render_gui() override;
+
+    void update_pose_from_joints();
+    void update_joints_from_pose();
 
     Skeleton* get_skeleton();
     Node* get_node(std::vector<std::string>& path_tokens) override;

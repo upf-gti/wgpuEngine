@@ -101,8 +101,16 @@ void SkeletonInstance3D::update_pose_from_joints()
     Pose& pose = skeleton->get_current_pose();
 
     for (size_t i = 0; i < joint_nodes.size(); ++i) {
-        joint_nodes[i]->set_transform_dirty(true);
         pose.set_local_transform(i, joint_nodes[i]->get_transform());
+    }
+}
+
+void SkeletonInstance3D::update_joints_from_pose()
+{
+    Pose& pose = skeleton->get_current_pose();
+
+    for (size_t i = 0; i < joint_nodes.size(); ++i) {
+        joint_nodes[i]->set_transform(pose.get_local_transform(i));
     }
 }
 
