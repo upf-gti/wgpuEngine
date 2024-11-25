@@ -86,7 +86,7 @@ public:
 
     void set_alpha_mask(float alpha_mask);
 
-    void disable_depth_test();
+    void set_depth_read_write(bool value);
     void set_depth_read(bool depth_read);
     void set_depth_write(bool depth_write);
     void set_use_skinning(bool use_skinning);

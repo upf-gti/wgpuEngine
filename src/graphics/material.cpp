@@ -157,10 +157,10 @@ void Material::set_alpha_mask(float alpha_mask)
     dirty_flags |= eMaterialProperties::PROP_ALPHA_MASK;
 }
 
-void Material::disable_depth_test()
+void Material::set_depth_read_write(bool value)
 {
-    set_depth_write(false);
-    set_depth_read(false);
+    set_depth_write(value);
+    set_depth_read(value);
 }
 
 void Material::set_depth_read(bool depth_read)

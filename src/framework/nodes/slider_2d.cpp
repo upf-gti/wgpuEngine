@@ -95,6 +95,7 @@ namespace ui {
         material->set_transparency_type(ALPHA_BLEND);
         material->set_priority(class_type);
         material->set_diffuse_texture(texture_path.size() > 0 ? RendererStorage::get_texture(texture_path, TEXTURE_STORAGE_UI) : nullptr);
+        material->set_depth_read_write(false);
         material->set_shader(RendererStorage::get_shader_from_source(shaders::ui_slider::source, shaders::ui_slider::path, material));
 
         Surface* quad_surface = quad_mesh->get_surface(0);
@@ -297,6 +298,7 @@ namespace ui {
         material->set_transparency_type(ALPHA_BLEND);
         material->set_priority(class_type);
         material->set_diffuse_texture(texture_path.size() > 0 ? RendererStorage::get_texture(texture_path, TEXTURE_STORAGE_UI) : nullptr);
+        material->set_depth_read_write(false);
         material->set_shader(RendererStorage::get_shader_from_source(shaders::ui_slider::source, shaders::ui_slider::path, material));
 
         Surface* quad_surface = quad_mesh->get_surface(0);

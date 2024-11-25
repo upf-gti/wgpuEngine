@@ -316,8 +316,8 @@ namespace ui {
 
         set_visibility(true, false);
 
-        float size_y = get_size().y;
-        float parent_size_y = parent_2d->get_size().y;
+        float size_y = (get_size() * get_scale()).y;
+        float parent_size_y = (parent_2d->get_size() * parent_2d->get_scale()).y;
         float y = get_translation().y;
         float parent_y = parent_2d->get_translation().y;
         float y_min = parent_y;
@@ -392,6 +392,7 @@ namespace ui {
         material->set_transparency_type(ALPHA_BLEND);
         material->set_priority(class_type);
         material->set_diffuse_texture(RendererStorage::get_texture(image_path, TEXTURE_STORAGE_UI));
+        material->set_depth_read_write(false);
         material->set_shader(RendererStorage::get_shader_from_source(shaders::ui_texture::source, shaders::ui_texture::path, material));
 
         quad_mesh->set_surface_material_override(quad_mesh->get_surface(0), material);
@@ -435,7 +436,7 @@ namespace ui {
 
         Material* material = quad_mesh->get_surface_material_override(quad_surface);
         material->set_type(MATERIAL_UI);
-        material->disable_depth_test();
+        material->set_depth_read_write(false);
         material->set_shader(RendererStorage::get_shader_from_source(shaders::ui_xr_panel::source, shaders::ui_xr_panel::path, material));
 
         // Fullscreen in 2d mode only!
@@ -665,7 +666,7 @@ namespace ui {
         material->set_cull_type(CULL_BACK);
         material->set_transparency_type(ALPHA_BLEND);
         material->set_priority(class_type);
-        material->disable_depth_test();
+        material->set_depth_read_write(false);
         material->set_shader(RendererStorage::get_shader_from_source(shaders::ui_text_shadow::source, shaders::ui_text_shadow::path, material));
 
         Surface* quad_surface = quad_mesh->get_surface(0);
@@ -860,6 +861,7 @@ namespace ui {
         material->set_cull_type(CULL_BACK);
         material->set_transparency_type(ALPHA_BLEND);
         material->set_priority(class_type);
+        material->set_depth_read_write(false);
         material->set_shader(RendererStorage::get_shader_from_source(shaders::ui_color_picker::source, shaders::ui_color_picker::path, material));
 
         color = Color(rgb2hsv(color), 1.0f);

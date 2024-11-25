@@ -3,9 +3,9 @@
 #include "framework/camera/camera.h"
 #include "framework/nodes/skeleton_instance_3d.h"
 #include "framework/math/transform.h"
-#include "framework/animation/fabrik_solver.h"
-#include "framework/animation/ccd_solver.h"
-#include "framework/animation/jacobian_solver.h"
+#include "framework/animation/solvers/fabrik_solver.h"
+#include "framework/animation/solvers/ccd_solver.h"
+#include "framework/animation/solvers/jacobian_solver.h"
 
 #include "graphics/renderer.h"
 

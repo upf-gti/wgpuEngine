@@ -51,7 +51,7 @@ namespace ui {
         material->set_cull_type(CULL_BACK);
         material->set_transparency_type(ALPHA_BLEND);
         material->set_priority(class_type);
-        material->disable_depth_test();
+        material->set_depth_read_write(false);
         material->set_shader(RendererStorage::get_shader_from_source(shaders::ui_button::source, shaders::ui_button::path, material));
 
         quad_mesh->set_surface_material_override(quad_mesh->get_surface(0), material);
@@ -155,7 +155,7 @@ namespace ui {
         ui_data.aspect_ratio = scale.x / scale.y;
 
         if (text_2d) {
-            text_2d->set_visibility(false || label_as_background);
+            text_2d->set_visibility(false || label_as_background, false);
         }
 
         target_scale = 1.0f;
@@ -176,7 +176,7 @@ namespace ui {
         }
 
         if (text_2d) {
-            text_2d->set_visibility(true);
+            text_2d->set_visibility(true, false);
         }
 
         Panel2D::on_input(data);
@@ -233,7 +233,7 @@ namespace ui {
         material->set_transparency_type(ALPHA_BLEND);
         material->set_priority(class_type);
         material->set_diffuse_texture(desc.path.size() ? RendererStorage::get_texture(desc.path, TEXTURE_STORAGE_UI) : nullptr);
-        material->disable_depth_test();
+        material->set_depth_read_write(false);
         material->set_shader(RendererStorage::get_shader_from_source(shaders::ui_button::source, shaders::ui_button::path, material));
 
         quad_mesh->set_surface_material_override(quad_mesh->get_surface(0), material);
@@ -285,7 +285,7 @@ namespace ui {
     {
         Button2D::update(delta_time);
 
-        confirm_text_2d->set_visibility(confirm_pending);
+        confirm_text_2d->set_visibility(confirm_pending, false);
 
         if (confirm_pending) {
             confirm_timer += delta_time;
@@ -308,7 +308,7 @@ namespace ui {
         }
 
         if (text_2d) {
-            text_2d->set_visibility(true);
+            text_2d->set_visibility(true, false);
         }
 
         Panel2D::on_input(data);
@@ -320,7 +320,7 @@ namespace ui {
 
                 if (confirm_pending) {
                     confirm_pending = false;
-                    confirm_text_2d->set_visibility(false);
+                    confirm_text_2d->set_visibility(false, false);
                     // Trigger callback
                     Node::emit_signal(name, (void*)this);
                     // Visibility stuff..
