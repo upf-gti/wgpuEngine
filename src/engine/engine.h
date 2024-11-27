@@ -61,7 +61,7 @@ public:
     virtual void render_default_gui();
     bool render_scene_tree_recursive(Node* entity);
     void add_node(Node* node);
-    void resize_window(int width, int height);
+    virtual void resize_window(int width, int height);
     void vibrate_hand(int controller, float amplitude, float duration);
 
     static Engine* get_instance() { return instance; }
