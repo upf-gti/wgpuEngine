@@ -2,9 +2,11 @@
 
 #include "graphics/renderer.h"
 #include "graphics/renderer_storage.h"
+#include "graphics/surface.h"
 
 #include "framework/camera/camera.h"
 #include "framework/nodes/look_at_ik_3d.h"
+#include "framework/nodes/skeleton_helper_3d.h"
 #include "framework/nodes/joint_3d.h"
 #include "framework/animation/skeleton.h"
 #include "framework/math/intersections.h"
@@ -21,13 +23,26 @@
 *   Skeleton Instance
 */
 
-SkeletonInstance3D::SkeletonInstance3D() : MeshInstance3D()
+SkeletonInstance3D::SkeletonInstance3D() : Node3D()
 {
     node_type = "SkeletonInstance3D";
 
     collider_shape = COLLIDER_SHAPE_CUSTOM;
+}
 
-    set_frustum_culling_enabled(false);
+SkeletonInstance3D::~SkeletonInstance3D()
+{
+    delete helper;
+
+    if (animated_uniform_data) {
+        animated_uniform_data->destroy();
+    }
+
+    if (invbind_uniform_data) {
+        invbind_uniform_data->destroy();
+    }
+
+    skeleton->unref();
 }
 
 void SkeletonInstance3D::set_skeleton(Skeleton* new_skeleton, const std::vector<Joint3D*>& new_joint_nodes)
@@ -40,13 +55,13 @@ void SkeletonInstance3D::set_skeleton(Skeleton* new_skeleton, const std::vector<
         for (auto j_node : joint_nodes) {
             j_node->set_index(idx++);
             j_node->set_pose(&new_skeleton->get_current_pose());
-            j_node->set_instance(this);
+            j_node->set_parent(this);
         }
     }
 
     skeleton = new_skeleton;
 
-    init_helper();
+    helper = new SkeletonHelper3D(skeleton, this);
 
     if (!is_root) {
         return;
@@ -64,7 +79,7 @@ void SkeletonInstance3D::set_skeleton(Skeleton* new_skeleton, const std::vector<
     }
 }
 
-void SkeletonInstance3D::update(float dt)
+void SkeletonInstance3D::update(float delta_time)
 {
     if (transform.is_dirty()) {
         update_pose_from_joints();
@@ -72,10 +87,10 @@ void SkeletonInstance3D::update(float dt)
     }
 
     // Update child nodes (i.e IK)
-    Node3D::update(dt);
+    Node3D::update(delta_time);
 
     // Update skeleton mesh helper
-    update_helper();
+    helper->update(delta_time);
 
     // Update GPU data
     if (animated_uniform_data && invbind_uniform_data) {
@@ -93,7 +108,9 @@ void SkeletonInstance3D::render()
         j->render();
     }
 
-    MeshInstance3D::render();
+    helper->render();
+
+    Node3D::render();
 }
 
 void SkeletonInstance3D::update_pose_from_joints()
@@ -111,6 +128,28 @@ void SkeletonInstance3D::update_joints_from_pose()
 
     for (size_t i = 0; i < joint_nodes.size(); ++i) {
         joint_nodes[i]->set_transform(pose.get_local_transform(i));
+    }
+}
+
+void SkeletonInstance3D::generate_joints_from_pose()
+{
+    Pose& pose = skeleton->get_rest_pose();
+    const auto& indices = skeleton->get_joint_indices();
+    const auto& names = skeleton->get_joint_names();
+    uint32_t joint_count = indices.size();
+
+    joint_nodes.resize(joint_count);
+
+    for (size_t i = 0; i < joint_count; i++) {
+
+        Joint3D* joint_3d = new Joint3D();
+        joint_3d->set_node_type("Joint3D");
+        joint_3d->set_name(names[i]);
+        joint_3d->set_index(i);
+        joint_3d->set_pose(&skeleton->get_current_pose());
+        joint_3d->set_parent(this);
+        joint_3d->set_transform(pose.get_local_transform(i));
+        joint_nodes[i] = joint_3d;
     }
 }
 
@@ -137,45 +176,6 @@ Node* SkeletonInstance3D::get_node(std::vector<std::string>& path_tokens)
     return nullptr;
 }
 
-void SkeletonInstance3D::update_helper()
-{
-    Surface* s = get_surface(0);
-
-    std::vector<sInterleavedData> vertices;
-
-    Pose& pose = skeleton->get_current_pose();
-    size_t joint_count = pose.size();
-
-    for (size_t i = 0; i < joint_count; ++i) {
-        sInterleavedData data;
-        data.position = pose.get_global_transform(i).get_position();
-        vertices.push_back(data);
-        if (pose.get_parent(i) >= 0) {
-            data.position = pose.get_global_transform(pose.get_parent(i)).get_position();
-        }
-        vertices.push_back(data);
-    }
-
-    s->update_vertex_buffer(vertices);
-}
-
-void SkeletonInstance3D::init_helper()
-{
-    Surface* s = new Surface();
-    s->set_name("Skeleton Helper");
-    add_surface(s);
-
-    update_helper();
-
-    Material* skeleton_material = new Material();
-    skeleton_material->set_color({ 1.0f, 0.0f, 0.0f, 1.0f });
-    skeleton_material->set_depth_read(false);
-    skeleton_material->set_priority(0);
-    skeleton_material->set_topology_type(eTopologyType::TOPOLOGY_LINE_LIST);
-    skeleton_material->set_shader(RendererStorage::get_shader_from_source(shaders::mesh_forward::source, shaders::mesh_forward::path, skeleton_material));
-
-    set_surface_material_override(s, skeleton_material);
-}
 
 Skeleton* SkeletonInstance3D::get_skeleton()
 {
@@ -213,7 +213,7 @@ bool SkeletonInstance3D::test_ray_collision(const glm::vec3& ray_origin, const g
 
     for (size_t i = 0; i < joint_nodes.size(); ++i) {
         Transform joint_global_transform = Transform::combine(global_transform, pose.get_global_transform(i));
-        if (intersection::ray_sphere(ray_origin, ray_direction, joint_global_transform.get_position(), 0.025f, joint_distance)) {
+        if (intersection::ray_sphere(ray_origin, ray_direction, joint_global_transform.get_position(), 0.01f, joint_distance)) {
             if (joint_distance < distance) {
                 distance = joint_distance;
                 result |= true;
