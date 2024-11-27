@@ -1,10 +1,9 @@
 #pragma once
 
-#include <string>
-
 #include "pose.h"
+#include "framework/resources/resource.h"
 
-class Skeleton
+class Skeleton : public Resource
 {
     std::string name = "";
 

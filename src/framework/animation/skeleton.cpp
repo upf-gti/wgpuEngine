@@ -2,12 +2,14 @@
 
 Skeleton::Skeleton()
 {
-
+    ref();
 }
 
 Skeleton::Skeleton(const Pose& rest, const Pose& bind, const std::vector<std::string>& names, const std::vector<uint32_t>& indices)
 {
     set(rest, bind, names, indices);
+
+    ref();
 }
 
 void Skeleton::set(const Pose& rest, const Pose& bind, const std::vector<std::string>& names, const std::vector<uint32_t>& indices)
