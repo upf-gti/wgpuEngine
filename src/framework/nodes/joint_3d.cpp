@@ -3,6 +3,7 @@
 #include "graphics/renderer.h"
 #include "graphics/renderer_storage.h"
 
+#include "framework/nodes/mesh_instance_3d.h"
 #include "framework/nodes/skeleton_instance_3d.h"
 #include "framework/parsers/parse_obj.h"
 
@@ -12,6 +13,8 @@
 
 Joint3D::Joint3D()
 {
+    node_type = "Joint3D";
+
     Material* material = new Material();
     material->set_depth_read(false);
     material->set_priority(0);
@@ -45,8 +48,8 @@ Joint3D::~Joint3D()
 
 Transform Joint3D::get_global_transform()
 {
-    assert(pose && instance);
-    return Transform::combine(instance->get_global_transform(), pose->get_global_transform(index));
+    assert(pose && parent);
+    return Transform::combine(get_parent<Node3D*>()->get_global_transform(), pose->get_global_transform(index));
 }
 
 /*
@@ -56,7 +59,7 @@ Transform Joint3D::get_global_transform()
 void Joint3D::set_global_transform(const Transform& new_transform)
 {
     // To joint space
-    Transform local_transform = Transform::combine(Transform::inverse(instance->get_global_transform()), new_transform);
+    Transform local_transform = Transform::combine(Transform::inverse(get_parent<Node3D*>()->get_global_transform()), new_transform);
 
     // To local joint space
     int32_t parent_id = pose->get_parent(index);
@@ -69,14 +72,8 @@ void Joint3D::set_global_transform(const Transform& new_transform)
 
 void Joint3D::render()
 {
-    assert(pose && instance);
-    Transform joint_global_transform = Transform::combine(instance->get_global_transform(), pose->get_global_transform(index));
-    joint_global_transform.set_scale(glm::vec3(0.025f));
+    assert(pose && parent);
+    Transform joint_global_transform = Transform::combine(get_parent<Node3D*>()->get_global_transform(), pose->get_global_transform(index));
+    joint_global_transform.set_scale(glm::vec3(0.01f));
     Renderer::instance->add_renderable(is_selected() ? selected_mesh_instance : mesh_instance, joint_global_transform.get_model());
-}
-
-void Joint3D::update_pose()
-{
-    assert(instance);
-    instance->update_pose_from_joints();
 }

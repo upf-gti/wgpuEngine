@@ -944,7 +944,6 @@ void parse_model_skins(Node3D* scene_root, tinygltf::Model& model, std::map<std:
 
             Joint3D* joint_3d = new Joint3D();
             joint_3d->set_name(node.name);
-            joint_3d->set_node_type("Joint3D");
 
             joint_nodes.push_back(joint_3d);
 
