@@ -38,4 +38,7 @@ public:
 
     void set_inner_cone_angle(float value);
     void set_outer_cone_angle(float value);
+
+    void serialize(std::ofstream& binary_scene_file) override;
+    void parse(std::ifstream& binary_scene_file) override;
 };

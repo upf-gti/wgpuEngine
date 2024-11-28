@@ -1,7 +1,10 @@
 #include "light_3d.h"
+
 #include "graphics/renderer.h"
+
 #include "imgui.h"
-#include "graphics/renderer.h"
+
+#include <fstream>
 
 Light3D::Light3D() : Node3D()
 {
@@ -100,4 +103,33 @@ void Light3D::set_fading_enabled(bool value)
 void Light3D::set_cast_shadows(bool value)
 {
     this->cast_shadows = value;
+}
+
+void Light3D::serialize(std::ofstream& binary_scene_file)
+{
+    Node3D::serialize(binary_scene_file);
+
+    /* TO serialize
+    // Fading
+    bool fading_enabled = false;
+    float fade_begin = 10.0f;
+    float fade_length = 1.0f;
+
+    // Shadows
+    bool cast_shadows = false;
+    float shadow_bias = 0.001f;
+    */
+
+    binary_scene_file.write(reinterpret_cast<char*>(&intensity), sizeof(float));
+    binary_scene_file.write(reinterpret_cast<char*>(&color), sizeof(glm::vec3));
+    binary_scene_file.write(reinterpret_cast<char*>(&range), sizeof(float));
+}
+
+void Light3D::parse(std::ifstream& binary_scene_file)
+{
+    Node3D::parse(binary_scene_file);
+
+    binary_scene_file.read(reinterpret_cast<char*>(&intensity), sizeof(float));
+    binary_scene_file.read(reinterpret_cast<char*>(&color), sizeof(glm::vec3));
+    binary_scene_file.read(reinterpret_cast<char*>(&range), sizeof(float));
 }

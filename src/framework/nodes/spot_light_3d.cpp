@@ -11,6 +11,8 @@
 
 #include "imgui.h"
 
+#include <fstream>
+
 REGISTER_NODE_CLASS(SpotLight3D)
 
 SpotLight3D::SpotLight3D() : Light3D()
@@ -123,6 +125,26 @@ void SpotLight3D::set_inner_cone_angle(float value)
 void SpotLight3D::set_outer_cone_angle(float value)
 {
     this->outer_cone_angle = value;
+
+    create_debug_render_cone();
+}
+
+void SpotLight3D::serialize(std::ofstream& binary_scene_file)
+{
+    Light3D::serialize(binary_scene_file);
+
+    binary_scene_file.write(reinterpret_cast<char*>(&inner_cone_angle), sizeof(float));
+    binary_scene_file.write(reinterpret_cast<char*>(&outer_cone_angle), sizeof(float));
+}
+
+void SpotLight3D::parse(std::ifstream& binary_scene_file)
+{
+    Light3D::parse(binary_scene_file);
+
+    binary_scene_file.read(reinterpret_cast<char*>(&inner_cone_angle), sizeof(float));
+    binary_scene_file.read(reinterpret_cast<char*>(&outer_cone_angle), sizeof(float));
+
+    debug_material->set_color(glm::vec4(color, 1.0f));
 
     create_debug_render_cone();
 }

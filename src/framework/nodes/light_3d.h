@@ -55,4 +55,7 @@ public:
     virtual void set_range(float value);
     void set_fading_enabled(bool value);
     void set_cast_shadows(bool value);
+
+    void serialize(std::ofstream& binary_scene_file) override;
+    void parse(std::ifstream& binary_scene_file) override;
 };

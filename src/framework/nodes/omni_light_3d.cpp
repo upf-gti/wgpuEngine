@@ -98,3 +98,13 @@ sLightUniformData OmniLight3D::get_uniform_data()
         .range = range
     };
 }
+
+void OmniLight3D::parse(std::ifstream& binary_scene_file)
+{
+    Light3D::parse(binary_scene_file);
+
+    debug_material->set_color(glm::vec4(color, 1.0f));
+
+    debug_mesh_v->set_scale(glm::vec3(range));
+    debug_mesh_h->set_scale(glm::vec3(range));
+}

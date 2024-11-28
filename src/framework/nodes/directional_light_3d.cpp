@@ -89,3 +89,10 @@ sLightUniformData DirectionalLight3D::get_uniform_data()
         .direction = -get_global_model()[2]
     };
 }
+
+void DirectionalLight3D::parse(std::ifstream& binary_scene_file)
+{
+    Light3D::parse(binary_scene_file);
+
+    debug_material->set_color(glm::vec4(color, 1.0f));
+}
