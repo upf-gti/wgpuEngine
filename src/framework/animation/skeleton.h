@@ -43,4 +43,7 @@ public:
 
     void set_current_pose(const Pose& pose);
     void set_name(const std::string& new_name) { name = new_name; };
+
+    void serialize(std::ofstream& binary_scene_file);
+    void parse(std::ifstream& binary_scene_file);
 };

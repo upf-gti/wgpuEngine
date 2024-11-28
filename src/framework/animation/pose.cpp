@@ -31,6 +31,7 @@ size_t Pose::size() const
 // set parent id
 void Pose::set_parent(size_t id, uint32_t parent_id)
 {
+    assert(id < parents.size());
     parents[id] = parent_id;
 }
 
@@ -43,6 +44,7 @@ int Pose::get_parent(size_t id)
 //set local transform of the joint
 void Pose::set_local_transform(size_t id, const Transform& transform)
 {
+    assert(id < joints.size());
     joints[id] = transform;
 }
 

@@ -47,7 +47,7 @@ SkeletonInstance3D::~SkeletonInstance3D()
 
 void SkeletonInstance3D::set_skeleton(Skeleton* new_skeleton, const std::vector<Joint3D*>& new_joint_nodes)
 {
-    bool is_root = new_joint_nodes.size();
+    bool is_root = !new_joint_nodes.empty();
 
     if (is_root) {
         joint_nodes = new_joint_nodes;
@@ -218,7 +218,7 @@ bool SkeletonInstance3D::test_ray_collision(const glm::vec3& ray_origin, const g
                 distance = joint_distance;
                 result |= true;
                 *out = joint_nodes[i];
-                (*out)->select();
+                Joint3D::selected_joint = static_cast<Joint3D*>(*out);
             }
         }
     }

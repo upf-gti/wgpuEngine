@@ -25,6 +25,7 @@ public:
 
 	int get_parent(size_t id);
     const std::vector<Transform>& get_joints() const { return joints; };
+    const std::vector<int>& get_parents() const { return parents; };
 
 	// Set the transformation for the joint given its id
 	void set_local_transform(size_t id, const Transform& transform);

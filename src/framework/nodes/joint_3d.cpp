@@ -11,6 +11,8 @@
 
 #include <glm/gtc/type_ptr.hpp>
 
+Joint3D* Joint3D::selected_joint = nullptr;
+
 Joint3D::Joint3D()
 {
     node_type = "Joint3D";
@@ -75,5 +77,6 @@ void Joint3D::render()
     assert(pose && parent);
     Transform joint_global_transform = Transform::combine(get_parent<Node3D*>()->get_global_transform(), pose->get_global_transform(index));
     joint_global_transform.set_scale(glm::vec3(0.01f));
-    Renderer::instance->add_renderable(is_selected() ? selected_mesh_instance : mesh_instance, joint_global_transform.get_model());
+    bool selected = (Joint3D::selected_joint == this);
+    Renderer::instance->add_renderable(selected ? selected_mesh_instance : mesh_instance, joint_global_transform.get_model());
 }

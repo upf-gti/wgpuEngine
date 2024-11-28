@@ -16,6 +16,8 @@ class Joint3D : public Node3D {
 
 public:
 
+    static Joint3D* selected_joint;
+
     Joint3D();
     ~Joint3D();
 

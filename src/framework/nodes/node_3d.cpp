@@ -182,7 +182,7 @@ const glm::vec3 Node3D::get_local_translation() const
 
 const glm::vec3 Node3D::get_translation()
 {
-    return get_global_model()[3];
+    return get_global_transform().get_position();
 }
 
 glm::mat4x4 Node3D::get_global_model()
