@@ -421,3 +421,20 @@ bool Input::was_thumbstick_touched(uint8_t controller)
 	return false;
 #endif
 }
+
+uint8_t Input::get_leading_thumbstick_axis(uint8_t controller)
+{
+#ifdef XR_SUPPORT
+    const glm::vec2& value = Input::get_thumbstick_value(controller);
+    const glm::vec2& abs_axis = glm::abs(value);
+    if (glm::abs(glm::length(abs_axis)) >= THUMBSTICK_DEADZONE) {
+        if (abs_axis.x > abs_axis.y) {
+            return THUMBSTICK_AXIS_X;
+        }
+        else {
+            return THUMBSTICK_AXIS_Y;
+        }
+    }
+#endif
+    return THUMBSTICK_NO_AXIS;
+}

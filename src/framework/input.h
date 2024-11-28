@@ -21,6 +21,11 @@
 class Renderer;
 struct OpenXRContext;
 
+#define THUMBSTICK_NO_AXIS 0u
+#define THUMBSTICK_AXIS_X 1u
+#define THUMBSTICK_AXIS_Y 2u
+#define THUMBSTICK_DEADZONE 0.01f
+
 class Input {
 
     // Mouse state
@@ -74,6 +79,7 @@ public:
     static glm::vec2 get_mouse_position() { return mouse_position; }
     static glm::vec2 get_mouse_delta() { return mouse_delta; }
     static float get_mouse_wheel_delta() { return mouse_wheel_delta; }
+    static uint8_t get_leading_thumbstick_axis(uint8_t controller);
 
     static void set_key_state(int key, uint8_t value);
     static void set_mouse_button(int button, uint8_t value);

@@ -107,8 +107,12 @@ void IO::blur()
 {
     hovered = nullptr;
 
-    // If r_trigger is pressed, we are still focusing something..
-    if (Input::get_trigger_value(HAND_RIGHT) <= 0.001f) {
+    // If actions are pressed, we are still focusing something..
+    bool should_remove_focus = Renderer::instance->get_openxr_available() ?
+        (Input::get_trigger_value(HAND_RIGHT) <= THUMBSTICK_DEADZONE) :
+        !Input::is_mouse_pressed(GLFW_MOUSE_BUTTON_LEFT);
+
+    if (should_remove_focus) {
         focused = nullptr;
     }
 }
