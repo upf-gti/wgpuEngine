@@ -48,7 +48,7 @@ public:
 
 struct BezierSpline : public Spline {
 
-    float knot_distance = 0.01f;
+    float knot_distance = 0.05f;
 
     bool dirty = true;
 
@@ -80,6 +80,10 @@ public:
         // no limit by default
         density = 0u;
     }
+
+    float get_knot_distance() { return knot_distance; }
+
+    void set_knot_distance(float new_distance) { knot_distance = new_distance; }
 
     void add_knot(const Knot& new_knot) override;
 
