@@ -41,10 +41,12 @@ public:
     void rotate(const glm::quat& rotation_factor);
     void scale(const glm::vec3& scale_factor);
 
-    void rotate_world(const glm::quat& rotation_factor);
+    void rotate_world(const glm::quat& rotation_delta);
+    void rotate_arround(const glm::quat& rotation, const glm::vec3 pivot);
 
     const glm::mat4x4& get_model();
     glm::vec3 get_front();
+    glm::vec3 get_up();
 
     static Transform identity();
     static Transform combine(const Transform& a, const Transform& b);

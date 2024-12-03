@@ -56,9 +56,16 @@ void Transform::scale(const glm::vec3& scale_factor)
     dirty = true;
 }
 
-void Transform::rotate_world(const glm::quat& rotation_factor)
+// Takes a delta world rotation, and applies it to the local rotation of the transform
+void Transform::rotate_world(const glm::quat& rotation_delta)
 {
-    rotate(glm::inverse(rotation_p) * rotation_factor * rotation_p);
+    rotate(glm::inverse(rotation_p) * rotation_delta * rotation_p);
+}
+
+void Transform::rotate_arround(const glm::quat& rotation, const glm::vec3 pivot) {
+    position_p = (position_p - pivot) * rotation + pivot;
+    rotation_p = rotation_p * rotation;
+    dirty = true;
 }
 
 const glm::vec3& Transform::get_position() const
@@ -114,6 +121,11 @@ const glm::mat4x4& Transform::get_model()
 glm::vec3 Transform::get_front()
 {
     return -glm::normalize(get_model()[2]);
+}
+
+glm::vec3 Transform::get_up()
+{
+    return glm::normalize(get_model() * glm::vec4(0.0f, 1.0f, 0.0f, 0.0f));
 }
 
 Transform Transform::identity()
