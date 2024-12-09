@@ -43,7 +43,8 @@ public:
     float get_near() { return z_near; }
     float get_far() { return z_far; }
 
-    void set_center(const glm::vec3& center) { this->center = center; }
+    void set_eye(const glm::vec3& eye) { this->eye = eye; update_view_matrix(); }
+    void set_center(const glm::vec3& center) { this->center = center; update_view_matrix(); }
 
     float get_speed() const { return speed; }
 

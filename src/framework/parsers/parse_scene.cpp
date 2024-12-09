@@ -9,7 +9,7 @@
 
 #include "spdlog/spdlog.h"
 
-bool parse_scene(const char* scene_path, std::vector<Node*>& entities, bool fill_surface_data)
+bool parse_scene(const char* scene_path, std::vector<Node*>& entities, bool fill_surface_data, Node3D* root)
 {
     std::string scene_path_str = std::string(scene_path);
     std::string extension = scene_path_str.substr(scene_path_str.find_last_of(".") + 1);
@@ -21,7 +21,7 @@ bool parse_scene(const char* scene_path, std::vector<Node*>& entities, bool fill
         return true;
     }
     else if (extension == "gltf" || extension == "glb") {
-        return parse_gltf(scene_path, entities, fill_surface_data);
+        return parse_gltf(scene_path, entities, fill_surface_data, root);
     }
     else if (extension == "vdb") {
         spdlog::info("Parsing a VDB file (WIP)");

@@ -33,6 +33,10 @@ EM_JS(void, on_engine_initialized, (), {
     loadApp();
 });
 
+EM_JS(void, on_end_frame, (), {
+    Module.Engine.onFrame();
+});
+
 EM_JS(int, canvas_get_width, (), {
   return canvas.clientWidth;
 });
@@ -365,6 +369,10 @@ void Engine::on_frame()
     ImGuizmo::BeginFrame();
 
     render();
+
+#ifdef __EMSCRIPTEN__
+    on_end_frame();
+#endif
 
     Input::set_mouse_wheel(0.0f, 0.0f);
     Input::set_prev_state();

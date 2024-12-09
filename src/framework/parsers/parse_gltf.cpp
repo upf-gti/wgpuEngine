@@ -3,6 +3,8 @@
 #include "glm/glm.hpp"
 
 #include "json.hpp"
+
+#define STBI_FAILURE_USERMSG
 #include "stb_image.h"
 
 #define TINYGLTF_IMPLEMENTATION
@@ -1304,7 +1306,7 @@ void parse_model_animations(const tinygltf::Model& model, std::vector<SkeletonIn
     }
 }
 
-bool parse_gltf(const char* gltf_path, std::vector<Node*>& entities, bool fill_surface_data)
+bool parse_gltf(const char* gltf_path, std::vector<Node*>& entities, bool fill_surface_data, Node3D* root)
 {
     tinygltf::TinyGLTF loader;
     tinygltf::Model model;
@@ -1356,9 +1358,11 @@ bool parse_gltf(const char* gltf_path, std::vector<Node*>& entities, bool fill_s
 
     std::filesystem::path path_filename = path.replace_extension().filename();
 
-    Node3D* scene_root = new Node3D();
-    scene_root->set_name(path_filename.string() + "_root");
-    entities.push_back(scene_root);
+    Node3D* scene_root = root ? root : new Node3D();
+    if (!root) {
+        scene_root->set_name(path_filename.string() + "_root");
+        entities.push_back(scene_root);
+    }
 
     for (size_t i = 0; i < gltf_scene->nodes.size(); ++i)
     {
