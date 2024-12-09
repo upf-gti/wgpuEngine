@@ -9,6 +9,7 @@
 #include "dawnxr/dawnxr.h"
 #include "framework/input_xr.h"
 
+
 #if defined(BACKEND_VULKAN)
 struct XrGraphicsRequirementsVulkanKHR;
 #elif defined(BACKEND_DX12)
@@ -17,7 +18,11 @@ struct XrGraphicsRequirementsD3D12KHR;
 
 struct WebGPUContext;
 
+class Transform;
+
 struct OpenXRContext {
+
+    Transform* root_transform = nullptr;
 
     /*
     * XR General

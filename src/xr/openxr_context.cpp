@@ -8,6 +8,8 @@
 
 #include "framework/input.h"
 
+#include "framework/math/transform.h"
+
 #include "graphics/webgpu_context.h"
 
 // we need an identity pose for creating spaces without offsets
@@ -1114,7 +1116,15 @@ void OpenXRContext::update()
         projection_views[i].fov = views[i].fov;
 
         per_view_data[i].position = glm::vec3(views[i].pose.position.x, views[i].pose.position.y, views[i].pose.position.z);
-        per_view_data[i].view_matrix = glm::inverse(parse_OpenXR_pose_to_glm(views[i].pose));
+
+        if (root_transform) {
+            const glm::mat4 root_model = root_transform->get_model();
+            per_view_data[i].position = root_model * glm::vec4(per_view_data[i].position, 1.0);
+            per_view_data[i].view_matrix = glm::inverse(root_model * parse_OpenXR_pose_to_glm(views[i].pose));
+        } else {
+            per_view_data[i].view_matrix = glm::inverse(parse_OpenXR_pose_to_glm(views[i].pose));
+        }
+
         per_view_data[i].projection_matrix = parse_OpenXR_projection_to_glm(views[i].fov, z_near, z_far);
 
         per_view_data[i].view_projection_matrix = per_view_data[i].projection_matrix * per_view_data[i].view_matrix;

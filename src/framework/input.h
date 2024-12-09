@@ -93,9 +93,9 @@ public:
     *	Poses
     */
 
-    static glm::vec3 get_controller_position(uint8_t controller, uint8_t type = POSE_GRIP);
+    static glm::vec3 get_controller_position(uint8_t controller, uint8_t type = POSE_GRIP, const bool apply_world_transform = true);
     static glm::quat get_controller_rotation(uint8_t controller, uint8_t type = POSE_GRIP);
-    static glm::mat4x4 get_controller_pose(uint8_t controller, uint8_t type = POSE_GRIP);
+    static glm::mat4x4 get_controller_pose(uint8_t controller, uint8_t type = POSE_GRIP, const bool apply_world_transform = true);
 
     /*
     *	Buttons
