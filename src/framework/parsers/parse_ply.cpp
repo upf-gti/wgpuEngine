@@ -8,11 +8,11 @@
 #include "glm/glm.hpp"
 #include "glm/gtc/quaternion.hpp"
 
-bool parse_ply(const char* ply_path, std::vector<Node*>& entities)
+bool PlyParser::parse(const char* file_path, std::vector<Node*>& entities, uint32_t flags)
 {
     GSNode* gs_node = new GSNode();
 
-    happly::PLYData ply_file(ply_path);
+    happly::PLYData ply_file(file_path);
 
     uint32_t splats_count = ply_file.getElement("vertex").count;
 

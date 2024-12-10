@@ -13,6 +13,13 @@ inline void hash_combine(std::size_t& seed, std::size_t v, const Rest... rest)
     (hash_combine(seed, rest), ...);
 }
 
+inline void hash_combine(std::size_t& seed, std::vector<std::size_t> vs)
+{
+    for (const auto& v : vs) {
+        hash_combine(seed, v);
+    }
+}
+
 struct RenderPipelineKey {
     const Shader* shader;
     WGPUColorTargetState color_target;

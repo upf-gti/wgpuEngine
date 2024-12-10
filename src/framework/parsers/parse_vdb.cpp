@@ -144,14 +144,14 @@ Material* create_material_volume(easyVDB::OpenVDBReader* vdbReader)
     return material;
 }
 
-bool parse_vdb(const char* vdb_path, std::vector<Node*>& entities)
+bool VdbParser::parse(const char* file_path, std::vector<Node*>& entities, uint32_t flags)
 {
     // loader
     std::string err;
     std::string warn;
 
     easyVDB::OpenVDBReader* vdbReader = new easyVDB::OpenVDBReader();
-    vdbReader->read(vdb_path);
+    vdbReader->read(file_path);
 
     // create a texture
     Material* material = create_material_volume(vdbReader);

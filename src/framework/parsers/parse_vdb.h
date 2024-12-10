@@ -1,7 +1,9 @@
 #pragma once
 
-#include <vector>
+#include "parser.h"
 
-class Node;
+class VdbParser : public Parser {
+public:
 
-bool parse_vdb(const char* vdb_path, std::vector<Node*>& entities);
+    bool parse(const char* file_path, std::vector<Node*>& entities, uint32_t flags = PARSE_DEFAULT) override;
+};
