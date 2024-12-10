@@ -113,11 +113,6 @@ void GSNode::initialize(uint32_t splat_count)
 
 void GSNode::render()
 {
-    Renderer::instance->add_splat_scene(this);
-}
-
-void GSNode::update(float delta_time)
-{
     WebGPUContext* webgpu_context = Renderer::instance->get_webgpu_context();
     webgpu_context->update_buffer(std::get<WGPUBuffer>(model_uniform.data), 0, &get_global_model()[0], sizeof(glm::mat4x4));
 
@@ -137,6 +132,12 @@ void GSNode::update(float delta_time)
 
     wgpuComputePassEncoderEnd(compute_pass);
     wgpuComputePassEncoderRelease(compute_pass);
+
+    Renderer::instance->add_splat_scene(this);
+}
+
+void GSNode::update(float delta_time)
+{
 }
 
 void GSNode::sort(WGPUComputePassEncoder compute_pass)
