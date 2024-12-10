@@ -3,6 +3,8 @@
 #include "glm/glm.hpp"
 
 #include "json.hpp"
+
+#define STBI_FAILURE_USERMSG
 #include "stb_image.h"
 
 #define TINYGLTF_IMPLEMENTATION
@@ -140,7 +142,7 @@ void read_transform(const tinygltf::Node& node, Transform& transform)
     }
 }
 
-void read_mesh(const tinygltf::Model& model, const tinygltf::Node& node, Node3D* entity, std::map<uint32_t, Texture*>& texture_cache, bool fill_surface_data)
+void read_mesh(const tinygltf::Model& model, const tinygltf::Node& node, Node3D* entity, std::map<uint32_t, Texture*>& texture_cache, std::map<int, Surface*>& mesh_cache, bool fill_surface_data)
 {
     const tinygltf::Mesh& mesh = model.meshes[node.mesh];
     uint32_t joints_count = 0;
@@ -160,15 +162,24 @@ void read_mesh(const tinygltf::Model& model, const tinygltf::Node& node, Node3D*
 
     for (size_t primitive_idx = 0; primitive_idx < mesh.primitives.size(); ++primitive_idx) {
 
+        const tinygltf::Primitive& primitive = mesh.primitives[primitive_idx];
+
+        GltfPrimitive gltf_primitive = { primitive.attributes, primitive.material, primitive.indices, primitive.mode };
+
+        auto hash = std::hash<GltfPrimitive>()(gltf_primitive);
+
+        if (mesh_cache.contains(hash)) {
+            Surface* surface = mesh_cache[hash];
+            entity_mesh->add_surface(surface);
+            continue;
+        }
+
         Surface* surface = new Surface();
+        mesh_cache[hash] = surface;
 
         Material* material = new Material();
 
-        bool has_tangents = false;
-
         std::vector<sInterleavedData> vertices;
-
-        const tinygltf::Primitive& primitive = mesh.primitives[primitive_idx];
 
         size_t index_data_size = 0;
         sSurfaceData* surface_data = nullptr;
@@ -643,20 +654,20 @@ void create_camera(const tinygltf::Camera& gltf_camera, EntityCamera* camera_nod
 {
     if (gltf_camera.type == "perspective") {
         camera_node->set_perspective(
-            gltf_camera.perspective.yfov,
-            gltf_camera.perspective.aspectRatio,
-            gltf_camera.perspective.znear,
-            gltf_camera.perspective.zfar
+            static_cast<float>(gltf_camera.perspective.yfov),
+            static_cast<float>(gltf_camera.perspective.aspectRatio),
+            static_cast<float>(gltf_camera.perspective.znear),
+            static_cast<float>(gltf_camera.perspective.zfar)
         );
     }
     else {
         camera_node->set_orthographic(
             0.0f,
-            gltf_camera.orthographic.xmag,
-            gltf_camera.orthographic.ymag,
+            static_cast<float>(gltf_camera.orthographic.xmag),
+            static_cast<float>(gltf_camera.orthographic.ymag),
             0.0f,
-            gltf_camera.orthographic.znear,
-            gltf_camera.orthographic.zfar
+            static_cast<float>(gltf_camera.orthographic.znear),
+            static_cast<float>(gltf_camera.orthographic.zfar)
         );
     }
 }
@@ -795,7 +806,7 @@ void process_node_hierarchy(const tinygltf::Model& model, int parent_id, uint32_
 }
 
 void parse_model_nodes(tinygltf::Model& model, int parent_id, uint32_t node_id, Node3D* parent_node, Node3D* entity, std::map<std::string, Node3D*>& loaded_nodes, std::map<std::string, uint32_t>& name_repeats,
-    std::map<uint32_t, Texture*>& texture_cache, std::map<int, int>& hierarchy, std::vector<SkeletonInstance3D*>& skeleton_instances, bool fill_surface_data)
+    std::map<uint32_t, Texture*>& texture_cache, std::map<int, Surface*>& mesh_cache, std::map<int, int>& hierarchy, std::vector<SkeletonInstance3D*>& skeleton_instances, bool fill_surface_data)
 {
     tinygltf::Node& node = model.nodes[node_id];
 
@@ -819,7 +830,7 @@ void parse_model_nodes(tinygltf::Model& model, int parent_id, uint32_t node_id, 
     }
 
     if (node.mesh >= 0 && node.mesh < model.meshes.size()) {
-        read_mesh(model, node, entity, texture_cache, fill_surface_data);
+        read_mesh(model, node, entity, texture_cache, mesh_cache, fill_surface_data);
         AABB parent_aabb = merge_aabbs(entity->get_aabb(), parent_node->get_aabb());
         parent_node->set_aabb(parent_aabb);
     }
@@ -835,7 +846,7 @@ void parse_model_nodes(tinygltf::Model& model, int parent_id, uint32_t node_id, 
 
         process_node_hierarchy(model, node_id, child_id, entity, child_node, hierarchy, skeleton_instances);
 
-        parse_model_nodes(model, node_id, child_id, entity, child_node, loaded_nodes, name_repeats, texture_cache, hierarchy, skeleton_instances, fill_surface_data);
+        parse_model_nodes(model, node_id, child_id, entity, child_node, loaded_nodes, name_repeats, texture_cache, mesh_cache, hierarchy, skeleton_instances, fill_surface_data);
     }
 };
 
@@ -1304,26 +1315,26 @@ void parse_model_animations(const tinygltf::Model& model, std::vector<SkeletonIn
     }
 }
 
-bool parse_gltf(const char* gltf_path, std::vector<Node*>& entities, bool fill_surface_data)
+bool GltfParser::parse(const char* file_path, std::vector<Node*>& entities, uint32_t flags)
 {
     tinygltf::TinyGLTF loader;
     tinygltf::Model model;
     std::string err;
     std::string warn;
 
-    std::filesystem::path path = std::filesystem::path(gltf_path);
+    std::filesystem::path path = std::filesystem::path(file_path);
 
     if (path.extension() == ".gltf")
     {
-        if (!loader.LoadASCIIFromFile(&model, &err, &warn, gltf_path)) {
-            spdlog::error("Could not load \"{}\": {}", gltf_path, err);
+        if (!loader.LoadASCIIFromFile(&model, &err, &warn, file_path)) {
+            spdlog::error("Could not load \"{}\": {}", file_path, err);
             return false;
         }
     }
     else
     {
-        if (!loader.LoadBinaryFromFile(&model, &err, &warn, gltf_path)) {
-            spdlog::error("Could not load binary \"{}\": {}", gltf_path, err);
+        if (!loader.LoadBinaryFromFile(&model, &err, &warn, file_path)) {
+            spdlog::error("Could not load binary \"{}\": {}", file_path, err);
             return false;
         }
     }
@@ -1347,18 +1358,21 @@ bool parse_gltf(const char* gltf_path, std::vector<Node*>& entities, bool fill_s
 
     std::map<std::string, Node3D*> loaded_nodes;
     std::map<std::string, uint32_t> name_repeats;
-    std::map<uint32_t, Texture*> texture_cache;
     std::map<int, int> hierarchy;
 
     std::vector<SkeletonInstance3D*> skeleton_instances;
 
     int entity_name_idx = 0;
 
+    bool fill_surface_data = (flags & PARSE_GLTF_FILL_SURFACE_DATA);
+
     std::filesystem::path path_filename = path.replace_extension().filename();
 
-    Node3D* scene_root = new Node3D();
-    scene_root->set_name(path_filename.string() + "_root");
-    entities.push_back(scene_root);
+    Node3D* scene_root = root ? root : new Node3D();
+    if (!root) {
+        scene_root->set_name(path_filename.string() + "_root");
+        entities.push_back(scene_root);
+    }
 
     for (size_t i = 0; i < gltf_scene->nodes.size(); ++i)
     {
@@ -1370,7 +1384,7 @@ bool parse_gltf(const char* gltf_path, std::vector<Node*>& entities, bool fill_s
 
         process_node_hierarchy(model, -1, node_id, scene_root, entity, hierarchy, skeleton_instances);
 
-        parse_model_nodes(model, -1, node_id, scene_root, entity, loaded_nodes, name_repeats, texture_cache, hierarchy, skeleton_instances, fill_surface_data);
+        parse_model_nodes(model, -1, node_id, scene_root, entity, loaded_nodes, name_repeats, texture_cache, mesh_cache, hierarchy, skeleton_instances, fill_surface_data);
     }
 
     if (model.skins.size()) {
@@ -1405,9 +1419,20 @@ bool parse_gltf(const char* gltf_path, std::vector<Node*>& entities, bool fill_s
 
     name_repeats.clear();
     loaded_nodes.clear();
-    texture_cache.clear();
     skeleton_instances.clear();
     hierarchy.clear();
 
+    if (flags & PARSE_GLTF_CLEAR_CACHE) {
+        clear_cache();
+    }
+
+    root = nullptr;
+
     return true;
+}
+
+void GltfParser::clear_cache()
+{
+    mesh_cache.clear();
+    texture_cache.clear();
 }

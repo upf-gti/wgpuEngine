@@ -1,7 +1,9 @@
 #pragma once
 
-#include <vector>
+#include "parser.h"
 
-class Node;
+class PlyParser : public Parser {
+public:
 
-bool parse_ply(const char* ply_path, std::vector<Node*>& entities);
+    bool parse(const char* file_path, std::vector<Node*>& entities, uint32_t flags = PARSE_DEFAULT) override;
+};

@@ -9,7 +9,7 @@
 
 #include "spdlog/spdlog.h"
 
-bool parse_scene(const char* scene_path, std::vector<Node*>& entities, bool fill_surface_data)
+bool parse_scene(const char* scene_path, std::vector<Node*>& entities, bool fill_surface_data, Node3D* root)
 {
     std::string scene_path_str = std::string(scene_path);
     std::string extension = scene_path_str.substr(scene_path_str.find_last_of(".") + 1);
@@ -20,23 +20,37 @@ bool parse_scene(const char* scene_path, std::vector<Node*>& entities, bool fill
         entities.push_back(parse_obj(scene_path));
         return true;
     }
-    else if (extension == "gltf" || extension == "glb") {
-        return parse_gltf(scene_path, entities, fill_surface_data);
+
+    Parser* parser = nullptr;
+    uint32_t flags = 0u;
+
+    if (extension == "gltf" || extension == "glb") {
+        spdlog::info("Parsing a GLTF/GLB file");
+        parser = new GltfParser();
+        static_cast<GltfParser*>(parser)->push_scene_root(root);
+        if (fill_surface_data) {
+            flags |= PARSE_GLTF_FILL_SURFACE_DATA;
+        }
     }
     else if (extension == "vdb") {
         spdlog::info("Parsing a VDB file (WIP)");
-        parse_vdb(scene_path, entities);
+        parser = new VdbParser();
     }
     else if (extension == "ply") {
         spdlog::info("Parsing a PLY file");
-        parse_ply(scene_path, entities);
+        parser = new PlyParser();
     }
     else {
         spdlog::error("Scene extension .{} not supported", extension);
         assert(0);
+        return false;
     }
 
-    return false;
+    bool res = parser->parse(scene_path, entities, flags);
+
+    delete parser;
+
+    return res;
 }
 
 MeshInstance3D* parse_mesh(const char* mesh_path, bool create_aabb, bool fill_surface_data)
