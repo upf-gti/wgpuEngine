@@ -9,7 +9,7 @@ class Font;
 
 class TextEntity : public MeshInstance3D {
 
-    std::vector<sInterleavedData> vertices;
+    sSurfaceData vertices;
 
     Font* font = nullptr;
 

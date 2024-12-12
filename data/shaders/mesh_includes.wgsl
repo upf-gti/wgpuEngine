@@ -2,12 +2,12 @@
 struct VertexInput {
     @builtin(instance_index) instance_id : u32,
     @location(0) position: vec3f,
-    @location(1) uv: vec2f,
-    @location(2) normal: vec3f,
-    @location(3) tangent: vec4f,
-    @location(4) color: vec3f,
-    @location(5) weights: vec4f,
-    @location(6) joints: vec4i
+#unique vertex @location(1) uv: vec2f,
+#unique vertex @location(2) normal: vec3f,
+#unique vertex @location(3) tangent: vec4f,
+#unique vertex @location(4) color: vec3f,
+#unique vertex @location(5) weights: vec4f,
+#unique vertex @location(6) joints: vec4i
 };
 
 struct VertexOutput {

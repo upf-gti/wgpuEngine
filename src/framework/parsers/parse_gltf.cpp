@@ -142,6 +142,29 @@ void read_transform(const tinygltf::Node& node, Transform& transform)
     }
 }
 
+void parse_attribute(tinygltf::Buffer const& buffer, uint32_t buffer_start, uint32_t buffer_end, uint32_t buffer_size, uint32_t stride, uint8_t* attribute_ptr, uint16_t attribute_byte_size, std::function<void(tinygltf::Buffer const& buffer, size_t buffer_idx, uint8_t** attribute_ptr)> custom_parse = nullptr)
+{
+    size_t vertex_idx = 0;
+
+    for (size_t buffer_idx = buffer_start; buffer_idx < buffer_end; buffer_idx += stride) {
+        if (vertex_idx >= buffer_size) {
+            assert(0);
+            break;
+        }
+
+        if (custom_parse) {
+            custom_parse(buffer, buffer_idx, &attribute_ptr);
+        }
+        else {
+            memcpy(attribute_ptr, &buffer.data[buffer_idx], attribute_byte_size);
+        }
+
+        attribute_ptr += attribute_byte_size;
+
+        vertex_idx++;
+    }
+}
+
 void read_mesh(const tinygltf::Model& model, const tinygltf::Node& node, Node3D* entity, std::map<uint32_t, Texture*>& texture_cache, std::map<int, Surface*>& mesh_cache, bool fill_surface_data)
 {
     const tinygltf::Mesh& mesh = model.meshes[node.mesh];
@@ -179,7 +202,7 @@ void read_mesh(const tinygltf::Model& model, const tinygltf::Node& node, Node3D*
 
         Material* material = new Material();
 
-        std::vector<sInterleavedData> vertices;
+        sSurfaceData vertices;
 
         size_t index_data_size = 0;
         sSurfaceData* surface_data = nullptr;
@@ -309,7 +332,6 @@ void read_mesh(const tinygltf::Model& model, const tinygltf::Node& node, Node3D*
                 assert(0);
             }
 
-            size_t vertex_idx = 0;
             size_t stride;
 
             if (buffer_view.byteStride == 0) {
@@ -323,8 +345,6 @@ void read_mesh(const tinygltf::Model& model, const tinygltf::Node& node, Node3D*
             size_t buffer_end = stride * accessor.count + buffer_start;
             size_t buffer_size = (buffer_end - buffer_start) / stride;
 
-            vertices.resize(buffer_size);
-
             if (fill_surface_data) {
                 surface_data->vertices.resize(buffer_size);
                 surface_data->uvs.resize(buffer_size);
@@ -335,159 +355,169 @@ void read_mesh(const tinygltf::Model& model, const tinygltf::Node& node, Node3D*
                 surface_data->joints.resize(buffer_size);
             }
 
-            for (size_t buffer_idx = buffer_start; buffer_idx < buffer_end; buffer_idx += stride) {
-                if (vertex_idx >= vertices.size())
-                    break;
+            // position
+            if (attrib.first[0] == 'P') {
+                vertices.vertices.resize(buffer_size);
 
-                // position
-                if (attrib.first[0] == 'P') {
-                    glm::vec3& position = vertices[vertex_idx].position;
-                    memcpy(&position[0], &buffer.data[buffer_idx], sizeof(float) * 3);
+                parse_attribute(buffer, buffer_start, buffer_end, buffer_size, stride, reinterpret_cast<uint8_t*>(&vertices.vertices[0]), sizeof(float) * 3);
 
-                    // For AABB
-                    min_pos = glm::min(position, min_pos);
-                    max_pos = glm::max(position, max_pos);
-
-                    if (fill_surface_data) {
-                        surface_data->vertices[vertex_idx] = position;
-                    }
-                }
-
-                // normal
-                if (attrib.first[0] == 'N') {
-                    glm::vec3& normal = vertices[vertex_idx].normal;
-                    memcpy(&normal[0], &buffer.data[buffer_idx], sizeof(float) * 3);
-
-                    if (fill_surface_data) {
-                        surface_data->normals[vertex_idx] = normal;
-                    }
-                }
-
-                // uv
-                if (attrib.first == std::string("TEXCOORD_0")) {
-                    glm::vec2& uv = vertices[vertex_idx].uv;
-                    memcpy(&uv[0], &buffer.data[buffer_idx], sizeof(float) * 2);
-
-                    if (fill_surface_data) {
-                        surface_data->uvs[vertex_idx] = uv;
-                    }
-                }
-
-                // tangents
-                if (attrib.first[0] == 'T' && attrib.first[1] == 'A') {
-                    glm::vec4& tangent = vertices[vertex_idx].tangent;
-                    memcpy(&tangent[0], &buffer.data[buffer_idx], sizeof(float) * 4);
-
-                    if (fill_surface_data) {
-                        surface_data->tangents[vertex_idx] = tangent;
-                    }
-                }
-
-                // color
-                if (attrib.first == std::string("COLOR_0")) {
-                    glm::vec3& color = vertices[vertex_idx].color;
-
-                    switch (accessor.componentType) {
-                    case TINYGLTF_COMPONENT_TYPE_FLOAT:
-                        memcpy(&color[0], &buffer.data[buffer_idx], sizeof(float) * 3);
-                        break;
-                    case TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE:
-                        glm::u8vec3 color_u8;
-                        memcpy(&color_u8[0], &buffer.data[buffer_idx], sizeof(uint8_t) * 3);
-                        vertices[vertex_idx].color.x = color_u8.x / 255.0f;
-                        vertices[vertex_idx].color.y = color_u8.y / 255.0f;
-                        vertices[vertex_idx].color.z = color_u8.z / 255.0f;
-                        break;
-                    case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT:
-                        glm::u16vec3 color_u16;
-                        memcpy(&color_u16[0], &buffer.data[buffer_idx], sizeof(uint16_t) * 3);
-                        vertices[vertex_idx].color.x = color_u16.x / 65535.0f;
-                        vertices[vertex_idx].color.y = color_u16.y / 65535.0f;
-                        vertices[vertex_idx].color.z = color_u16.z / 65535.0f;
-                        break;
-                    default:
-                        assert(0);
-                    }
-
-                    if (fill_surface_data) {
-                        surface_data->colors[vertex_idx] = color;
-                    }
-                }
-
-                // joints (skinning)
-                if (attrib.first == std::string("JOINTS_0")) {
-                    glm::ivec4& joints = vertices[vertex_idx].joints;
-
-                    switch (accessor.componentType) {
-                    case TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE:
-                        glm::u8vec4 joints_u8;
-                        memcpy(&joints_u8[0], &buffer.data[buffer_idx], sizeof(uint8_t) * 4);
-                        joints = joints_u8;
-                        break;
-                    case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT:
-                        glm::u16vec4 joints_u16;
-                        memcpy(&joints_u16[0], &buffer.data[buffer_idx], sizeof(uint16_t) * 4);
-                        joints = joints_u16;
-                        break;
-                    default:
-                        assert(0);
-                    }
-
-                    //Make sure that even the invalid nodes have a value of 0 (any negative joint indices will break the skinning implementation)
-                    joints = glm::max(glm::ivec4(0), joints) + static_cast<int32_t>(joints_count);
-
-                    if (fill_surface_data) {
-                        surface_data->joints[vertex_idx] = joints;
-                    }
-                }
-
-                // weights (skinning)
-                if (attrib.first == std::string("WEIGHTS_0")) {
-                    glm::vec4& weights = vertices[vertex_idx].weights;
-
-                    switch (accessor.componentType) {
-                    case TINYGLTF_COMPONENT_TYPE_FLOAT:
-                        memcpy(&weights[0], &buffer.data[buffer_idx], sizeof(float) * 4);
-                        break;
-                    case TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE:
-                        glm::u8vec4 weights_u8;
-                        memcpy(&weights_u8[0], &buffer.data[buffer_idx], sizeof(uint8_t) * 4);
-                        weights = weights_u8;
-                        break;
-                    case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT:
-                        glm::u16vec4 weights_u16;
-                        memcpy(&weights_u16[0], &buffer.data[buffer_idx], sizeof(uint16_t) * 4);
-                        weights = weights_u16;
-                        break;
-                    default:
-                        assert(0);
-                    }
-
-                    //Make sure that even the invalid nodes have a value of 0 (any negative joint indices will break the skinning implementation)
-                    float sum = weights.x + weights.y + weights.z + weights.w;
-                    weights = glm::clamp(weights, 0.0f, 1.0f);
-                    weights /= sum;
-                    //weights.w = 0;
-
-                    if (fill_surface_data) {
-                        surface_data->weights[vertex_idx] = weights;
-                    }
-                }
-
-                if (attrib.first == std::string("JOINTS_1") || attrib.first == std::string("WEIGHTS_1")) {
-                    assert(0); // skinned supports only 4 joint influences for the moment
-                }
-                vertex_idx++;
+                // For AABB
+                //min_pos = glm::min(position, min_pos);
+                //max_pos = glm::max(position, max_pos);
             }
 
+            // normal
+            if (attrib.first[0] == 'N') {
+                vertices.normals.resize(buffer_size);
+
+                parse_attribute(buffer, buffer_start, buffer_end, buffer_size, stride, reinterpret_cast<uint8_t*>(&vertices.normals[0]), sizeof(float) * 3);
+            }
+
+            // uv
+            if (attrib.first == std::string("TEXCOORD_0")) {
+                vertices.uvs.resize(buffer_size);
+
+                parse_attribute(buffer, buffer_start, buffer_end, buffer_size, stride, reinterpret_cast<uint8_t*>(&vertices.uvs[0]), sizeof(float) * 2);
+            }
+
+            // tangents
+            if (attrib.first[0] == 'T' && attrib.first[1] == 'A') {
+                vertices.tangents.resize(buffer_size);
+
+                parse_attribute(buffer, buffer_start, buffer_end, buffer_size, stride, reinterpret_cast<uint8_t*>(&vertices.tangents[0]), sizeof(float) * 4);
+            }
+
+            // color
+            if (attrib.first == std::string("COLOR_0")) {
+                vertices.colors.resize(buffer_size);
+
+                switch (accessor.componentType) {
+                case TINYGLTF_COMPONENT_TYPE_FLOAT:
+                    parse_attribute(buffer, buffer_start, buffer_end, buffer_size, stride, reinterpret_cast<uint8_t*>(&vertices.colors[0]), sizeof(float) * 3);
+                    break;
+                case TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE:
+                    parse_attribute(buffer, buffer_start, buffer_end, buffer_size, stride, reinterpret_cast<uint8_t*>(&vertices.colors[0]), sizeof(float) * 3,
+                        [](tinygltf::Buffer const& buffer, size_t buffer_idx, uint8_t** attribute_ptr) {
+                            glm::u8vec3 color_u8;
+                            memcpy(&color_u8[0], &buffer.data[buffer_idx], sizeof(uint8_t) * 3);
+
+                            glm::vec3* color = reinterpret_cast<glm::vec3*>(*attribute_ptr);
+                            color->x = color_u8.x / 255.0f;
+                            color->y = color_u8.y / 255.0f;
+                            color->z = color_u8.z / 255.0f;
+                        }
+                    );
+                    break;
+                case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT:
+                    parse_attribute(buffer, buffer_start, buffer_end, buffer_size, stride, reinterpret_cast<uint8_t*>(&vertices.colors[0]), sizeof(float) * 3,
+                        [](tinygltf::Buffer const& buffer, size_t buffer_idx, uint8_t** attribute_ptr) {
+                            glm::u16vec3 color_u16;
+                            memcpy(&color_u16[0], &buffer.data[buffer_idx], sizeof(uint16_t) * 3);
+
+                            glm::vec3* color = reinterpret_cast<glm::vec3*>(*attribute_ptr);
+                            color->x = color_u16.x / 65535.0f;
+                            color->y = color_u16.y / 65535.0f;
+                            color->z = color_u16.z / 65535.0f;
+                        }
+                    );
+                    break;
+                default:
+                    assert(0);
+                }
+            }
+
+            // joints (skinning)
+            if (attrib.first == std::string("JOINTS_0")) {
+                vertices.joints.resize(buffer_size);
+
+                switch (accessor.componentType) {
+                case TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE:
+                    parse_attribute(buffer, buffer_start, buffer_end, buffer_size, stride, reinterpret_cast<uint8_t*>(&vertices.joints[0]), sizeof(uint32_t) * 4,
+                        [=](tinygltf::Buffer const& buffer, size_t buffer_idx, uint8_t** attribute_ptr) {
+
+                            glm::u8vec4 joints_u8;
+                            memcpy(&joints_u8[0], &buffer.data[buffer_idx], sizeof(uint8_t) * 4);
+
+                            glm::ivec4* joints = reinterpret_cast<glm::ivec4*>(*attribute_ptr);
+                            *joints = joints_u8;
+                            *joints += static_cast<uint32_t>(joints_count);
+                        }
+                    );
+                    break;
+                case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT:
+                    parse_attribute(buffer, buffer_start, buffer_end, buffer_size, stride, reinterpret_cast<uint8_t*>(&vertices.joints[0]), sizeof(uint32_t) * 4,
+                        [=](tinygltf::Buffer const& buffer, size_t buffer_idx, uint8_t** attribute_ptr) {
+
+                            glm::u16vec4 joints_u16;
+                            memcpy(&joints_u16[0], &buffer.data[buffer_idx], sizeof(uint16_t) * 4);
+
+                            glm::ivec4* joints = reinterpret_cast<glm::ivec4*>(*attribute_ptr);
+                            *joints = joints_u16;
+                            *joints += static_cast<int32_t>(joints_count);
+                        }
+                    );
+                    break;
+                default:
+                    assert(0);
+                }
+            }
+
+            // weights (skinning)
+            if (attrib.first == std::string("WEIGHTS_0")) {
+                vertices.weights.resize(buffer_size);
+
+                switch (accessor.componentType) {
+                case TINYGLTF_COMPONENT_TYPE_FLOAT:
+                    parse_attribute(buffer, buffer_start, buffer_end, buffer_size, stride, reinterpret_cast<uint8_t*>(&vertices.weights[0]), sizeof(float) * 4);
+                    break;
+                case TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE:
+                    parse_attribute(buffer, buffer_start, buffer_end, buffer_size, stride, reinterpret_cast<uint8_t*>(&vertices.weights[0]), sizeof(float) * 4,
+                        [](tinygltf::Buffer const& buffer, size_t buffer_idx, uint8_t** attribute_ptr) {
+                            glm::u8vec4 weights_u8;
+                            memcpy(&weights_u8[0], &buffer.data[buffer_idx], sizeof(uint8_t) * 4);
+
+                            glm::vec4* weights = reinterpret_cast<glm::vec4*>(*attribute_ptr);
+                            *weights = weights_u8;
+
+                            //Make sure that even the invalid nodes have a value of 0 (any negative joint indices will break the skinning implementation)
+                            float sum = weights->x + weights->y + weights->z + weights->w;
+                            *weights = glm::clamp(*weights, 0.0f, 1.0f);
+                            *weights /= sum;
+                            //weights.w = 0;
+                        }
+                    );
+                    break;
+                case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT:
+                    parse_attribute(buffer, buffer_start, buffer_end, buffer_size, stride, reinterpret_cast<uint8_t*>(&vertices.weights[0]), sizeof(float) * 4,
+                        [](tinygltf::Buffer const& buffer, size_t buffer_idx, uint8_t** attribute_ptr) {
+                            glm::u16vec4 weights_u16;
+                            memcpy(&weights_u16[0], &buffer.data[buffer_idx], sizeof(uint16_t) * 4);
+
+                            glm::vec4* weights = reinterpret_cast<glm::vec4*>(*attribute_ptr);
+                            *weights = weights_u16;
+
+                            //Make sure that even the invalid nodes have a value of 0 (any negative joint indices will break the skinning implementation)
+                            float sum = weights->x + weights->y + weights->z + weights->w;
+                            *weights = glm::clamp(*weights, 0.0f, 1.0f);
+                            *weights /= sum;
+                            //weights.w = 0;
+                        }
+                    );
+                    break;
+                default:
+                    assert(0);
+                }
+            }
+
+            if (attrib.first == std::string("JOINTS_1") || attrib.first == std::string("WEIGHTS_1")) {
+                assert(0); // skinned supports only 4 joint influences for the moment
+            }
         }
 
         glm::vec3 aabb_half_size = (max_pos - min_pos) * 0.5f;
         glm::vec3 aabb_position = min_pos + aabb_half_size;
 
         surface->set_aabb({ aabb_position, aabb_half_size });
-
-        surface->set_surface_data(surface_data);
 
         switch (primitive.mode) {
         case TINYGLTF_MODE_TRIANGLES:
@@ -636,7 +666,7 @@ void read_mesh(const tinygltf::Model& model, const tinygltf::Node& node, Node3D*
 
         surface->set_material(material);
 
-        surface->create_vertex_buffer(vertices);
+        surface->create_surface_data(vertices, fill_surface_data);
         surface->set_name("Surface_" + material->get_name());
         entity_mesh->add_surface(surface);
     }

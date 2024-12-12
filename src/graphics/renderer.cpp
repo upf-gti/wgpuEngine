@@ -1106,6 +1106,7 @@ void Renderer::render_render_list(int list_index, WGPURenderPassEncoder render_p
 
         // Set vertex buffer while encoding the render pass
         wgpuRenderPassEncoderSetVertexBuffer(render_pass, 0, render_data.surface->get_vertex_buffer(), 0, render_data.surface->get_vertices_byte_size());
+        wgpuRenderPassEncoderSetVertexBuffer(render_pass, 1, render_data.surface->get_vertex_data_buffer(), 0, render_data.surface->get_interleaved_data_byte_size());
 
         WGPUBuffer index_buffer = render_data.surface->get_index_buffer();
 

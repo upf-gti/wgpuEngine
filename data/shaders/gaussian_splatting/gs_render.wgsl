@@ -20,7 +20,7 @@ struct CameraData {
 
 struct VertexInput {
     @location(0) position: vec2<f32>,
-    #unique instance @location(1) id: u32
+#unique instance @location(1) id: u32
 };
 
 struct VertexOutput {

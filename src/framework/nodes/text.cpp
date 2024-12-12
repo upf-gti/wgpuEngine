@@ -35,14 +35,10 @@ void TextEntity::append_char(glm::vec3 pos, Character& ch)
     float size = (float)font_scale / font->size;
     for (int k = 0; k < 6; ++k) {
 
-        sInterleavedData vertex = {
-            .position = (pos + glm::vec3(ch.vertices[k].x, ch.vertices[k].y, ch.vertices[k].z)) * size,
-            .uv = ch.uvs[k] / glm::vec2(font->scaleW, font->scaleH),
-            .normal = glm::vec3(0.f, 1.f, 0.f),
-            .color = { 1.0f, 1.0f, 1.0f }
-        };
-
-        vertices.push_back(vertex);
+        vertices.vertices.push_back((pos + glm::vec3(ch.vertices[k].x, ch.vertices[k].y, ch.vertices[k].z)) * size);
+        vertices.uvs.push_back(ch.uvs[k] / glm::vec2(font->scaleW, font->scaleH));
+        vertices.normals.push_back(glm::vec3(0.f, 1.f, 0.f));
+        vertices.colors.push_back({ 1.0f, 1.0f, 1.0f });
     }
 }
 
@@ -125,7 +121,7 @@ void TextEntity::generate_mesh(const Color& color, bool is_2D)
     }
 
     Surface* surface = new Surface();
-    surface->create_from_vertices(vertices);
+    surface->create_surface_data(vertices);
 
     Material* material = new Material();
     material->set_color(color);

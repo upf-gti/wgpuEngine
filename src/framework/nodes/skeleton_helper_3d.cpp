@@ -41,22 +41,23 @@ void SkeletonHelper3D::inner_update()
 {
     Surface* s = get_surface(0);
 
-    std::vector<sInterleavedData> vertices;
+    sSurfaceData vertices;
 
     Pose& pose = skeleton->get_current_pose();
     size_t joint_count = pose.size();
 
+    vertices.vertices.reserve(joint_count);
+
     for (size_t i = 0; i < joint_count; ++i) {
-        sInterleavedData data;
-        data.position = pose.get_global_transform(i).get_position();
-        vertices.push_back(data);
         if (pose.get_parent(i) >= 0) {
-            data.position = pose.get_global_transform(pose.get_parent(i)).get_position();
+            vertices.vertices.push_back(pose.get_global_transform(pose.get_parent(i)).get_position());
         }
-        vertices.push_back(data);
+        else {
+            vertices.vertices.push_back(pose.get_global_transform(i).get_position());
+        }
     }
 
-    s->update_vertex_buffer(vertices);
+    s->update_surface_data(vertices);
 }
 
 void SkeletonHelper3D::update(float dt)

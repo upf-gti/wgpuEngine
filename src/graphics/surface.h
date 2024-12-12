@@ -29,10 +29,14 @@ struct sSurfaceData {
     std::vector<glm::vec3> colors;
     std::vector<glm::vec4> weights;
     std::vector<glm::ivec4> joints;
+
+    uint32_t size() const;
+    void resize(uint32_t size);
+    void append(const sSurfaceData& surface_data);
+    void clear();
 };
 
 struct sInterleavedData {
-    glm::vec3 position;
     glm::vec2 uv;
     glm::vec3 normal;
     glm::vec4 tangent;
@@ -48,14 +52,15 @@ class Surface : public Resource
 
     Material* material = nullptr;
 
-    sSurfaceData* surface_data = nullptr; // optional when loading
+    sSurfaceData surface_data; // optional when loading
 
-    WGPUBuffer vertex_buffer = nullptr;
+    WGPUBuffer vertex_pos_buffer = nullptr;
+    WGPUBuffer vertex_data_buffer = nullptr;
     WGPUBuffer index_buffer = nullptr;
 
     static Surface* quad_mesh;
 
-    std::vector<sInterleavedData> generate_quad(float w = 1.f, float h = 1.f, const glm::vec3& position = { 0.f, 0.f, 0.f }, const glm::vec3& normal = { 0.f, 1.f, 0.f }, const glm::vec3& color = { 1.f, 1.f, 1.f }, bool flip_y = false);
+    sSurfaceData generate_quad(float w = 1.f, float h = 1.f, const glm::vec3& position = { 0.f, 0.f, 0.f }, const glm::vec3& normal = { 0.f, 1.f, 0.f }, const glm::vec3& color = { 1.f, 1.f, 1.f }, bool flip_y = false);
 
     AABB aabb;
 
@@ -70,12 +75,11 @@ public:
     Material* get_material();
     const Material* get_material() const;
 
-    void set_surface_data(sSurfaceData* surface_data);
-
-    const sSurfaceData* get_surface_data() const;
-    sSurfaceData* get_surface_data();
+    const sSurfaceData& get_surface_data() const;
+    sSurfaceData& get_surface_data();
 
     const WGPUBuffer& get_vertex_buffer() const;
+    const WGPUBuffer& get_vertex_data_buffer() const;
     const WGPUBuffer& get_index_buffer() const;
 
     void create_axis(float s = 1.f);
@@ -92,15 +96,17 @@ public:
     void create_arrow();
     void create_skybox();
 
-    void create_from_vertices(const std::vector<sInterleavedData>& _vertices);
+    std::vector<sInterleavedData> create_interleaved_data(const sSurfaceData& vertices_data);
 
-    void update_vertex_buffer(const std::vector<sInterleavedData>& _vertices);
-    void create_vertex_buffer(const std::vector<sInterleavedData>& _vertices);
+    void update_vertex_buffer(const std::vector<glm::vec3>& vertices);
+    void update_surface_data(const sSurfaceData& vertices_data, bool store_data = false);
+    void create_surface_data(const sSurfaceData& vertices_data, bool store_data = false);
 
     void create_index_buffer(const std::vector<uint32_t>& indices);
 
     uint32_t get_vertex_count() const;
     uint64_t get_vertices_byte_size() const;
+    uint64_t get_interleaved_data_byte_size() const;
 
     uint32_t get_index_count() const;
     uint64_t get_indices_byte_size() const;

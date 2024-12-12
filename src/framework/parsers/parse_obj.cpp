@@ -73,9 +73,7 @@ void parse_obj(const char* obj_path, MeshInstance3D* entity_mesh, bool create_aa
 
         entity_mesh->add_surface(new_surface);
 
-        std::vector<sInterleavedData> vertices;
-
-        sInterleavedData vertex_data;
+        sSurfaceData vertices;
 
         glm::vec3 min_pos = { FLT_MAX, FLT_MAX, FLT_MAX };
         glm::vec3 max_pos = { -FLT_MAX, -FLT_MAX, -FLT_MAX };
@@ -89,50 +87,37 @@ void parse_obj(const char* obj_path, MeshInstance3D* entity_mesh, bool create_aa
             for (size_t v = 0; v < fv; v++) {
 
                 tinyobj::index_t idx = shapes[s].mesh.indices[index_offset + v];
-                vertex_data.position.x = attrib.vertices[3 * size_t(idx.vertex_index) + 0];
-                vertex_data.position.y = attrib.vertices[3 * size_t(idx.vertex_index) + 1];
-                vertex_data.position.z = attrib.vertices[3 * size_t(idx.vertex_index) + 2];
+                vertices.vertices.push_back({
+                    attrib.vertices[3 * size_t(idx.vertex_index) + 0],
+                    attrib.vertices[3 * size_t(idx.vertex_index) + 1],
+                    attrib.vertices[3 * size_t(idx.vertex_index) + 2]
+                });
 
                 if (idx.normal_index >= 0) {
-                    vertex_data.normal.x = attrib.normals[3 * size_t(idx.normal_index) + 0];
-                    vertex_data.normal.y = attrib.normals[3 * size_t(idx.normal_index) + 1];
-                    vertex_data.normal.z = attrib.normals[3 * size_t(idx.normal_index) + 2];
+                    vertices.normals.push_back({
+                        attrib.normals[3 * size_t(idx.normal_index) + 0],
+                        attrib.normals[3 * size_t(idx.normal_index) + 1],
+                        attrib.normals[3 * size_t(idx.normal_index) + 2]
+                    });
                 }
 
                 if (idx.texcoord_index >= 0) {
-                    vertex_data.uv.x = attrib.texcoords[2 * size_t(idx.texcoord_index) + 0];
-                    vertex_data.uv.y = 1.0f - attrib.texcoords[2 * size_t(idx.texcoord_index) + 1];
+                    vertices.uvs.push_back({
+                        attrib.texcoords[2 * size_t(idx.texcoord_index) + 0],
+                        1.0f - attrib.texcoords[2 * size_t(idx.texcoord_index) + 1],
+                    });
                 }
 
-                vertex_data.color.x = attrib.colors[3 * size_t(idx.vertex_index) + 0];
-                vertex_data.color.y = attrib.colors[3 * size_t(idx.vertex_index) + 1];
-                vertex_data.color.z = attrib.colors[3 * size_t(idx.vertex_index) + 2];
+                vertices.colors.push_back({
+                    attrib.colors[3 * size_t(idx.vertex_index) + 0],
+                    attrib.colors[3 * size_t(idx.vertex_index) + 1],
+                    attrib.colors[3 * size_t(idx.vertex_index) + 2]
+                });
 
-                vertices.push_back(vertex_data);
+                const glm::vec3& last_position = vertices.vertices.back();
 
-                glm::bvec3 less_than = glm::lessThan(vertex_data.position, min_pos);
-
-                if (less_than.x) {
-                    min_pos.x = vertex_data.position.x;
-                }
-                if (less_than.y) {
-                    min_pos.y = vertex_data.position.y;
-                }
-                if (less_than.z) {
-                    min_pos.z = vertex_data.position.z;
-                }
-
-                glm::bvec3 greater_than = glm::greaterThan(vertex_data.position, max_pos);
-
-                if (greater_than.x) {
-                    max_pos.x = vertex_data.position.x;
-                }
-                if (greater_than.y) {
-                    max_pos.y = vertex_data.position.y;
-                }
-                if (greater_than.z) {
-                    max_pos.z = vertex_data.position.z;
-                }
+                min_pos = glm::min(last_position, min_pos);
+                max_pos = glm::max(last_position, max_pos);
             }
 
             index_offset += fv;
@@ -147,7 +132,7 @@ void parse_obj(const char* obj_path, MeshInstance3D* entity_mesh, bool create_aa
             new_surface->set_aabb(aabb);
         }
 
-        new_surface->create_vertex_buffer(vertices);
+        new_surface->create_surface_data(vertices);
     }
 
     AABB entity_aabb;

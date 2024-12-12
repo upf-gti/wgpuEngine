@@ -207,7 +207,7 @@ bool Shader::parse_preprocessor_line(std::istringstream& string_stream, std::str
 
         std::string step_mode_str = tokens[1];
         uint8_t location = tokens[2].at(10) - '0';
-        WGPUVertexStepMode step_mode;
+        WGPUVertexStepMode step_mode = WGPUVertexStepMode_Undefined;
 
         if (step_mode_str == "vertex") {
             step_mode = WGPUVertexStepMode_Vertex;
@@ -218,9 +218,9 @@ bool Shader::parse_preprocessor_line(std::istringstream& string_stream, std::str
 
         unique_vertex_buffers[location] = step_mode;
 
-        shader_content.replace(line_pos, tag.length() + tokens[2].length() + 1, "");
+        shader_content.replace(line_pos, tag.length() + tokens[1].length() + 1, "");
 
-        line_pos += line.length() - (tag.length() + tokens[2].length() + 1);
+        line_pos += line.length() - (tag.length() + tokens[1].length() + 1);
     }
     else if (tag == "#ifdef") {
 
