@@ -50,3 +50,14 @@ fn rotate_point_quat(position : vec3f, rotation : vec4f) -> vec3f
     //return position + 2.0 * cross_cross(rotation, position); //cross(rotation.xyz, cross(rotation.xyz, position) + rotation.w * position);
     return position + 2.0 * cross(rotation.xyz, cross(rotation.xyz, position) + rotation.w * position);
 }
+
+// iquilez: https://www.shadertoy.com/view/3s33zj
+// Use to transform normals with transformation of arbitrary
+// non-uniform scales (including negative) and skewing. The
+// code assumes the last column of m is [0,0,0,1].
+fn adjoint( m : mat4x4f ) -> mat3x3f
+{
+    return mat3x3(cross(m[1].xyz, m[2].xyz),
+                  cross(m[2].xyz, m[0].xyz),
+                  cross(m[0].xyz, m[1].xyz));
+}

@@ -2,6 +2,7 @@
 #include pbr_functions.wgsl
 #include tonemappers.wgsl
 #include pbr_material.wgsl
+#include math.wgsl
 
 #define MAX_LIGHTS
 
@@ -90,7 +91,9 @@ fn vs_main(in: VertexInput) -> VertexOutput {
     out.uv = in.uv; // forward to the fragment shader
     out.color = vec4f(in.color, 1.0) * albedo;
 
-    out.normal = normalize((instance_data.model * normals).xyz);
+    // incorrect with scaling/non-uniform scaling
+    //out.normal = normalize((instance_data.model * normals).xyz);
+    out.normal = normalize(adjoint(instance_data.model) * normals.xyz);
 
 #ifdef HAS_TANGENTS
     out.tangent = normalize((instance_data.model * vec4(in.tangent.xyz, 0.0)).xyz);
