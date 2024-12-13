@@ -9,6 +9,8 @@
 #include "glm/vec3.hpp"
 #include "glm/vec4.hpp"
 
+#include "mikktspace.h"
+
 #include <string>
 
 namespace normals {
@@ -107,6 +109,16 @@ public:
     uint32_t get_vertex_count() const;
     uint64_t get_vertices_byte_size() const;
     uint64_t get_interleaved_data_byte_size() const;
+
+    // Tangent generation
+    static int mikkt_get_num_faces(const SMikkTSpaceContext* pContext);
+    static int mikkt_get_num_vertices_of_face(const SMikkTSpaceContext* pContext, const int iFace);
+    static void mikkt_get_position(const SMikkTSpaceContext* pContext, float fvPosOut[], const int iFace, const int iVert);
+    static void mikkt_get_normal(const SMikkTSpaceContext* pContext, float fvNormOut[], const int iFace, const int iVert);
+    static void mikkt_get_tex_coord(const SMikkTSpaceContext* pContext, float fvTexcOut[], const int iFace, const int iVert);
+    static void mikkt_set_tspace_basic(const SMikkTSpaceContext* pContext, const float fvTangent[], const float fSign, const int iFace, const int iVert);
+
+    bool generate_tangents(sSurfaceData* vertices_data);
 
     uint32_t get_index_count() const;
     uint64_t get_indices_byte_size() const;

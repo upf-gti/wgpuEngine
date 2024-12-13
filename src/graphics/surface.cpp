@@ -1076,8 +1076,6 @@ std::vector<sInterleavedData> Surface::create_interleaved_data(const sSurfaceDat
 
     for (uint32_t idx = 0; idx < vertices_data.size(); idx++) {
 
-
-
         interleaved_data.push_back({
             vertices_data.uvs.empty() ? glm::vec2(0.0f) : vertices_data.uvs[idx],
             vertices_data.normals.empty() ? glm::vec3(0.0f) : vertices_data.normals[idx],
@@ -1120,6 +1118,110 @@ uint32_t Surface::get_index_count() const
 uint64_t Surface::get_indices_byte_size() const
 {
     return index_count * sizeof(uint32_t);
+}
+
+int Surface::mikkt_get_num_faces(const SMikkTSpaceContext* pContext)
+{
+    sSurfaceData& triangle_data = *reinterpret_cast<sSurfaceData*>(pContext->m_pUserData);
+
+    if (!triangle_data.indices.empty()) {
+        return triangle_data.indices.size() / 3;
+    }
+    else {
+        return triangle_data.vertices.size() / 3;
+    }
+}
+
+int Surface::mikkt_get_num_vertices_of_face(const SMikkTSpaceContext* pContext, const int iFace)
+{
+    return 3; //always 3
+}
+
+void Surface::mikkt_get_position(const SMikkTSpaceContext* pContext, float fvPosOut[], const int iFace, const int iVert)
+{
+    sSurfaceData& triangle_data = *reinterpret_cast<sSurfaceData*>(pContext->m_pUserData);
+    if (!triangle_data.indices.empty()) {
+        uint32_t index = triangle_data.indices[iFace * 3 + iVert];
+        if (index < triangle_data.vertices.size()) {
+            memcpy(fvPosOut, &triangle_data.vertices[index], sizeof(glm::vec3));
+        }
+    }
+    else {
+        memcpy(fvPosOut, &triangle_data.vertices[iFace * 3 + iVert], sizeof(glm::vec3));
+    }
+}
+
+void Surface::mikkt_get_normal(const SMikkTSpaceContext* pContext, float fvNormOut[], const int iFace, const int iVert)
+{
+    sSurfaceData& triangle_data = *reinterpret_cast<sSurfaceData*>(pContext->m_pUserData);
+    if (!triangle_data.indices.empty()) {
+        uint32_t index = triangle_data.indices[iFace * 3 + iVert];
+        if (index < triangle_data.vertices.size()) {
+            memcpy(fvNormOut, &triangle_data.normals[index], sizeof(glm::vec3));
+        }
+    }
+    else {
+        memcpy(fvNormOut, &triangle_data.normals[iFace * 3 + iVert], sizeof(glm::vec3));
+    }
+}
+
+void Surface::mikkt_get_tex_coord(const SMikkTSpaceContext* pContext, float fvTexcOut[], const int iFace, const int iVert)
+{
+    sSurfaceData& triangle_data = *reinterpret_cast<sSurfaceData*>(pContext->m_pUserData);
+    if (!triangle_data.indices.empty()) {
+        uint32_t index = triangle_data.indices[iFace * 3 + iVert];
+        if (index < triangle_data.vertices.size()) {
+            memcpy(fvTexcOut, &triangle_data.uvs[index], sizeof(glm::vec2));
+        }
+    }
+    else {
+        memcpy(fvTexcOut, &triangle_data.uvs[iFace * 3 + iVert], sizeof(glm::vec2));
+    }
+}
+
+void Surface::mikkt_set_tspace_basic(const SMikkTSpaceContext* pContext, const float fvTangent[], const float fSign, const int iFace, const int iVert)
+{
+    sSurfaceData& triangle_data = *reinterpret_cast<sSurfaceData*>(pContext->m_pUserData);
+    glm::vec4* tangent = nullptr;
+    if (!triangle_data.indices.empty()) {
+        uint32_t index = triangle_data.indices[iFace * 3 + iVert];
+        if (index < triangle_data.vertices.size()) {
+            tangent = &triangle_data.tangents[index];
+        }
+    }
+    else {
+        tangent = &triangle_data.tangents[iFace * 3 + iVert];
+    }
+
+    if (tangent != nullptr) {
+        *tangent = glm::vec4(fvTangent[0], fvTangent[1], fvTangent[2], -fSign);
+    }
+}
+
+bool Surface::generate_tangents(sSurfaceData* vertices_data)
+{
+    vertices_data->tangents.resize(vertices_data->vertices.size());
+
+    SMikkTSpaceInterface mkif;
+    mkif.m_getNormal = mikkt_get_normal;
+    mkif.m_getNumFaces = mikkt_get_num_faces;
+    mkif.m_getNumVerticesOfFace = mikkt_get_num_vertices_of_face;
+    mkif.m_getPosition = mikkt_get_position;
+    mkif.m_getTexCoord = mikkt_get_tex_coord;
+    mkif.m_setTSpace = nullptr;
+    mkif.m_setTSpaceBasic = mikkt_set_tspace_basic;
+
+    SMikkTSpaceContext msc;
+    msc.m_pInterface = &mkif;
+    msc.m_pUserData = vertices_data;
+
+    if (!genTangSpaceDefault(&msc)) {
+        spdlog::error("Could not generate tangents for surface: {}", name);
+        vertices_data->tangents.clear();
+        return false;
+    }
+
+    return true;
 }
 
 void Surface::render_gui()

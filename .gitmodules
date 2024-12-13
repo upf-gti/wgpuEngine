@@ -25,3 +25,6 @@
 [submodule "libraries/Vulkan-Headers"]
 	path = libraries/Vulkan-Headers
 	url = https://github.com/KhronosGroup/Vulkan-Headers.git
+[submodule "libraries/mikktspace"]
+	path = libraries/mikktspace
+	url = https://github.com/mmikk/MikkTSpace.git

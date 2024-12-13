@@ -142,7 +142,7 @@ void read_transform(const tinygltf::Node& node, Transform& transform)
     }
 }
 
-void parse_attribute(tinygltf::Buffer const& buffer, uint32_t buffer_start, uint32_t buffer_end, uint32_t buffer_size, uint32_t stride, uint8_t* attribute_ptr, uint16_t attribute_byte_size, std::function<void(tinygltf::Buffer const& buffer, size_t buffer_idx, uint8_t** attribute_ptr)> custom_parse = nullptr)
+void parse_attribute(tinygltf::Buffer const& buffer, size_t buffer_start, size_t buffer_end, size_t buffer_size, size_t stride, uint8_t* attribute_ptr, uint16_t attribute_byte_size, std::function<void(tinygltf::Buffer const& buffer, size_t buffer_idx, uint8_t** attribute_ptr)> custom_parse = nullptr)
 {
     size_t vertex_idx = 0;
 
@@ -205,11 +205,6 @@ void read_mesh(const tinygltf::Model& model, const tinygltf::Node& node, Node3D*
         sSurfaceData vertices;
 
         size_t index_data_size = 0;
-        sSurfaceData* surface_data = nullptr;
-
-        if (fill_surface_data) {
-            surface_data = new sSurfaceData();
-        }
 
         bool uses_indices = primitive.indices >= 0;
 
@@ -217,8 +212,6 @@ void read_mesh(const tinygltf::Model& model, const tinygltf::Node& node, Node3D*
             tinygltf::BufferView const* indices_buffer_view = nullptr;
             tinygltf::Accessor const* index_accessor = nullptr;
             tinygltf::Buffer const* indices_buffer = nullptr;
-
-            std::vector<uint32_t> indices;
 
             index_accessor = &model.accessors[primitive.indices];
 
@@ -260,10 +253,10 @@ void read_mesh(const tinygltf::Model& model, const tinygltf::Node& node, Node3D*
 
             uint32_t index_idx = 0;
 
-            indices.resize((index_buffer_end - index_buffer_start) / index_stride);
+            vertices.indices.resize((index_buffer_end - index_buffer_start) / index_stride);
 
             for (size_t buffer_idx = index_buffer_start; buffer_idx < index_buffer_end; buffer_idx += index_stride) {
-                if (index_idx >= indices.size())
+                if (index_idx >= vertices.indices.size())
                     break;
 
                 uint32_t index = 0;
@@ -290,16 +283,12 @@ void read_mesh(const tinygltf::Model& model, const tinygltf::Node& node, Node3D*
                     assert(0);
                 }
 
-                indices[index_idx] = index;
+                vertices.indices[index_idx] = index;
 
                 index_idx++;
             }
 
-            surface->create_index_buffer(indices);
-
-            if (fill_surface_data) {
-                surface_data->indices = indices;
-            }
+            surface->create_index_buffer(vertices.indices);
         }
 
         for (auto& attrib : primitive.attributes) {
@@ -344,16 +333,6 @@ void read_mesh(const tinygltf::Model& model, const tinygltf::Node& node, Node3D*
             size_t buffer_start = accessor.byteOffset + buffer_view.byteOffset;
             size_t buffer_end = stride * accessor.count + buffer_start;
             size_t buffer_size = (buffer_end - buffer_start) / stride;
-
-            if (fill_surface_data) {
-                surface_data->vertices.resize(buffer_size);
-                surface_data->uvs.resize(buffer_size);
-                surface_data->normals.resize(buffer_size);
-                surface_data->tangents.resize(buffer_size);
-                surface_data->colors.resize(buffer_size);
-                surface_data->weights.resize(buffer_size);
-                surface_data->joints.resize(buffer_size);
-            }
 
             // position
             if (attrib.first[0] == 'P') {
@@ -546,6 +525,11 @@ void read_mesh(const tinygltf::Model& model, const tinygltf::Node& node, Node3D*
             assert(0);
         }
 
+        bool tangents_generated = false;
+        if (primitive.mode == TINYGLTF_MODE_TRIANGLES && !(vertices.normals.empty()) && vertices.tangents.empty()) {
+            tangents_generated = surface->generate_tangents(&vertices);
+        }
+
         if (primitive.material >= 0) {
 
             const tinygltf::Material& gltf_material = model.materials[primitive.material];
@@ -649,6 +633,9 @@ void read_mesh(const tinygltf::Model& model, const tinygltf::Node& node, Node3D*
                 material->set_alpha_mask(static_cast<float>(gltf_material.alphaCutoff));
                 material->set_transparency_type(ALPHA_MASK);
             }
+
+            material->set_transparency_type(ALPHA_MASK);
+
         }
         else {
             // create default material
@@ -665,7 +652,7 @@ void read_mesh(const tinygltf::Model& model, const tinygltf::Node& node, Node3D*
 
         std::vector<std::string> custom_defines;
 
-        if (primitive.attributes.contains("TANGENT")) {
+        if (tangents_generated || primitive.attributes.contains("TANGENT")) {
             custom_defines.push_back("HAS_TANGENTS");
         }
 
