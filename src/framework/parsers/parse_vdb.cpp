@@ -18,6 +18,8 @@
 #include <fstream>
 
 #include <openvdbReader.h>
+#include <bbox.h>
+#include <grid.h>
 
 Material* create_material_volume(easyVDB::OpenVDBReader* vdbReader)
 {

@@ -359,11 +359,18 @@ void read_mesh(const tinygltf::Model& model, const tinygltf::Node& node, Node3D*
             if (attrib.first[0] == 'P') {
                 vertices.vertices.resize(buffer_size);
 
-                parse_attribute(buffer, buffer_start, buffer_end, buffer_size, stride, reinterpret_cast<uint8_t*>(&vertices.vertices[0]), sizeof(float) * 3);
+                parse_attribute(buffer, buffer_start, buffer_end, buffer_size, stride, reinterpret_cast<uint8_t*>(&vertices.vertices[0]), sizeof(float) * 3,
+                    [&](tinygltf::Buffer const& buffer, size_t buffer_idx, uint8_t** attribute_ptr) {
 
-                // For AABB
-                //min_pos = glm::min(position, min_pos);
-                //max_pos = glm::max(position, max_pos);
+                        memcpy(*attribute_ptr, &buffer.data[buffer_idx], sizeof(float) * 3);
+
+                        glm::vec3* position = reinterpret_cast<glm::vec3*>(*attribute_ptr);
+
+                        // For AABB
+                        min_pos = glm::min(*position, min_pos);
+                        max_pos = glm::max(*position, max_pos);
+                    }
+                );
             }
 
             // normal

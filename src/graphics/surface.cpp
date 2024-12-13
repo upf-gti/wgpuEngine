@@ -1075,13 +1075,16 @@ std::vector<sInterleavedData> Surface::create_interleaved_data(const sSurfaceDat
     interleaved_data.reserve(vertices_data.size());
 
     for (uint32_t idx = 0; idx < vertices_data.size(); idx++) {
+
+
+
         interleaved_data.push_back({
             vertices_data.uvs.empty() ? glm::vec2(0.0f) : vertices_data.uvs[idx],
             vertices_data.normals.empty() ? glm::vec3(0.0f) : vertices_data.normals[idx],
             vertices_data.tangents.empty() ? glm::vec4(0.0f) : vertices_data.tangents[idx],
             vertices_data.colors.empty() ? glm::vec3(1.0f) : vertices_data.colors[idx],
             vertices_data.weights.empty() ? glm::vec4(0.0f) : vertices_data.weights[idx],
-            vertices_data.joints.empty() ? glm::ivec4(0.0) : vertices_data.joints[idx],
+            vertices_data.joints.empty() ? glm::ivec4(0) : vertices_data.joints[idx],
         });
     }
 
