@@ -49,6 +49,7 @@ void SkeletonHelper3D::inner_update()
     vertices.vertices.reserve(joint_count);
 
     for (size_t i = 0; i < joint_count; ++i) {
+        vertices.vertices.push_back(pose.get_global_transform(i).get_position());
         if (pose.get_parent(i) >= 0) {
             vertices.vertices.push_back(pose.get_global_transform(pose.get_parent(i)).get_position());
         }
