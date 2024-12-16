@@ -1376,6 +1376,7 @@ void Renderer::render_mirror(WGPUTextureView screen_surface_texture_view)
 
             // Set vertex buffer while encoding the render pass
             wgpuRenderPassEncoderSetVertexBuffer(render_pass, 0, quad_surface.get_vertex_buffer(), 0, quad_surface.get_vertices_byte_size());
+            wgpuRenderPassEncoderSetVertexBuffer(render_pass, 1, quad_surface.get_vertex_data_buffer(), 0, quad_surface.get_interleaved_data_byte_size());
 
             // Submit drawcall
             wgpuRenderPassEncoderDraw(render_pass, 6, 1, 0, 0);
