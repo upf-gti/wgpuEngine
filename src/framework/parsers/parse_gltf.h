@@ -52,6 +52,8 @@ public:
 
     bool parse(const char* file_path, std::vector<Node*>& entities, uint32_t flags = PARSE_DEFAULT) override;
 
+    bool read_data(int8_t* byte_array, uint32_t array_size, std::vector<Node*>& entities, uint32_t flags = PARSE_DEFAULT);
+
     void push_scene_root(Node3D* new_root) { root = new_root; };
 
     void clear_cache();
