@@ -43,7 +43,8 @@ void RendererStorage::register_material_bind_group(WebGPUContext* webgpu_context
             delete_material_bind_group(webgpu_context, material);
             const Shader* old_shader = material->get_shader();
             // TODO: try to cache shaders and use as resource
-            material->set_shader(get_shader_from_source(engine_shaders_refs[old_shader->get_path()], old_shader->get_path(), material));
+            auto& libraries = shader_library_references[old_shader->get_path()];
+            material->set_shader(get_shader_from_source(engine_shaders_refs[old_shader->get_path()], old_shader->get_path(), libraries, material));
         } else
         if (material->get_dirty_flags() & PROP_UPDATE_NEEDED) {
             update_material_bind_group(webgpu_context, mesh_instance, material);
@@ -366,17 +367,22 @@ Shader* RendererStorage::get_shader(const std::string& shader_path, const std::v
     return sh;
 }
 
-Shader* RendererStorage::get_shader_from_source(const char* source, const std::string& name, const Material* material, const std::vector<std::string>& custom_define_specializations)
+Shader* RendererStorage::get_shader_from_source(const char* source, const std::string& name,
+    const std::vector<std::string>& libraries,
+    const Material* material,
+    const std::vector<std::string>& custom_define_specializations)
 {
     std::vector<std::string> define_specializations = get_common_define_specializations(material);
 
     // concatenate
     define_specializations.insert(define_specializations.end(), custom_define_specializations.begin(), custom_define_specializations.end());
 
-    return get_shader_from_source(source, name, define_specializations);
+    return get_shader_from_source(source, name, libraries, define_specializations);
 }
 
-Shader* RendererStorage::get_shader_from_source(const char* source, const std::string& name, const std::vector<std::string>& custom_define_specializations)
+Shader* RendererStorage::get_shader_from_source(const char* source, const std::string& name,
+    const std::vector<std::string>& libraries,
+    const std::vector<std::string>& custom_define_specializations)
 {
     std::string specialized_name = name;
     for (const std::string& specialization : custom_define_specializations) {
@@ -390,7 +396,7 @@ Shader* RendererStorage::get_shader_from_source(const char* source, const std::s
 
     Shader* sh = new Shader();
 
-    if (!sh->load_from_source(source, name, specialized_name, custom_define_specializations)) {
+    if (!sh->load_from_source(source, name, libraries, specialized_name, custom_define_specializations)) {
         return nullptr;
     }
 
@@ -427,7 +433,8 @@ void RendererStorage::reload_shader(const std::string& shader_path)
 
 void RendererStorage::reload_engine_shader(const std::string& shader_path)
 {
-    std::string name = std::filesystem::path(shader_path).filename().string();
+    std::filesystem::path fs_shader_path = std::filesystem::path(shader_path);
+    std::string name = fs_shader_path.filename().string();
 
     // Check if already loaded
     for (auto& [shader_name, shader] : shaders) {
@@ -437,13 +444,20 @@ void RendererStorage::reload_engine_shader(const std::string& shader_path)
     }
 
     // If it is not a shader, check if it is a library
+    std::string folder = fs_shader_path.parent_path().string();
+    Shader::reload_engine_library(folder, name);
+
     auto it1 = shader_library_references.find(name);
     if (it1 != shader_library_references.end())
     {
-        for (auto& shader_name : shader_library_references[name]) {
-            if (shaders.contains(shader_name)) {
-                Shader* shader = shaders[shader_name];
-                shader->reload();
+        const std::vector<std::string> library_refs = shader_library_references[name];
+        shader_library_references.erase(it1);
+        for (auto& library_ref : library_refs) {
+            for (auto& [shader_to_reload_name, shader] : shaders) {
+                if (shader_to_reload_name.find(library_ref) != std::string::npos) {
+                    Shader* shader = shaders[shader_to_reload_name];
+                    shader->reload(fs_shader_path.parent_path().string() + "/" + library_ref);
+                }
             }
         }
     }

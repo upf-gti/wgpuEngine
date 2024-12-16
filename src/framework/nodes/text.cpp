@@ -134,7 +134,7 @@ void TextEntity::generate_mesh(const Color& color, bool is_2D)
         material->set_diffuse_texture(font->textures[0]);
     }
 
-    material->set_shader(RendererStorage::get_shader_from_source(shaders::sdf_fonts::source, shaders::sdf_fonts::path, surface->get_material()));
+    material->set_shader(RendererStorage::get_shader_from_source(shaders::sdf_fonts::source, shaders::sdf_fonts::path, shaders::sdf_fonts::libraries, surface->get_material()));
 
     surface->set_material(material);
 

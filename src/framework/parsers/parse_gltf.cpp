@@ -165,7 +165,7 @@ void parse_attribute(tinygltf::Buffer const& buffer, size_t buffer_start, size_t
     }
 }
 
-void read_mesh(const tinygltf::Model& model, const tinygltf::Node& node, Node3D* entity, std::map<uint32_t, Texture*>& texture_cache, std::map<int, Surface*>& mesh_cache, bool fill_surface_data)
+void read_mesh(const tinygltf::Model& model, const tinygltf::Node& node, Node3D* entity, std::map<uint32_t, Texture*>& texture_cache, std::map<size_t, Surface*>& mesh_cache, bool fill_surface_data)
 {
     const tinygltf::Mesh& mesh = model.meshes[node.mesh];
     uint32_t joints_count = 0;
@@ -189,7 +189,7 @@ void read_mesh(const tinygltf::Model& model, const tinygltf::Node& node, Node3D*
 
         GltfPrimitive gltf_primitive = { primitive.attributes, primitive.material, primitive.indices, primitive.mode };
 
-        auto hash = std::hash<GltfPrimitive>()(gltf_primitive);
+        size_t hash = std::hash<GltfPrimitive>()(gltf_primitive);
 
         if (mesh_cache.contains(hash)) {
             Surface* surface = mesh_cache[hash];
@@ -656,7 +656,7 @@ void read_mesh(const tinygltf::Model& model, const tinygltf::Node& node, Node3D*
             custom_defines.push_back("HAS_TANGENTS");
         }
 
-        material->set_shader(RendererStorage::get_shader_from_source(shaders::mesh_forward::source, shaders::mesh_forward::path, material, custom_defines));
+        material->set_shader(RendererStorage::get_shader_from_source(shaders::mesh_forward::source, shaders::mesh_forward::path, shaders::mesh_forward::libraries, material, custom_defines));
 
         surface->set_material(material);
 
@@ -830,7 +830,7 @@ void process_node_hierarchy(const tinygltf::Model& model, int parent_id, uint32_
 }
 
 void parse_model_nodes(tinygltf::Model& model, int parent_id, uint32_t node_id, Node3D* parent_node, Node3D* entity, std::map<std::string, Node3D*>& loaded_nodes, std::map<std::string, uint32_t>& name_repeats,
-    std::map<uint32_t, Texture*>& texture_cache, std::map<int, Surface*>& mesh_cache, std::map<int, int>& hierarchy, std::vector<SkeletonInstance3D*>& skeleton_instances, bool fill_surface_data)
+    std::map<uint32_t, Texture*>& texture_cache, std::map<size_t, Surface*>& mesh_cache, std::map<int, int>& hierarchy, std::vector<SkeletonInstance3D*>& skeleton_instances, bool fill_surface_data)
 {
     tinygltf::Node& node = model.nodes[node_id];
 

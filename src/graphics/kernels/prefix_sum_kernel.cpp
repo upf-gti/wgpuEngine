@@ -20,7 +20,7 @@ PrefixSumKernel::PrefixSumKernel(WGPUBuffer data, uint32_t data_byte_size, uint3
         spdlog::error("PrefixSumKernel: workgroup_size.x * workgroup_size.y must be a power of two");
     }
 
-    shader = RendererStorage::get_shader_from_source(shaders::prefix_sum::source, shaders::prefix_sum::path);
+    shader = RendererStorage::get_shader_from_source(shaders::prefix_sum::source, shaders::prefix_sum::path, shaders::prefix_sum::libraries);
 
     create_pass_recursive(data, data_byte_size, count);
 }

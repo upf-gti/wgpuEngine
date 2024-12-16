@@ -135,6 +135,7 @@ list(APPEND WGPU_SHADER_LIBS ${WGPU_DIR_SHADERS}/math.wgsl)
 list(APPEND WGPU_SHADER_LIBS ${WGPU_DIR_SHADERS}/mesh_includes.wgsl)
 list(APPEND WGPU_SHADER_LIBS ${WGPU_DIR_SHADERS}/pbr_functions.wgsl)
 list(APPEND WGPU_SHADER_LIBS ${WGPU_DIR_SHADERS}/pbr_material.wgsl)
+list(APPEND WGPU_SHADER_LIBS ${WGPU_DIR_SHADERS}/pbr_light.wgsl)
 list(APPEND WGPU_SHADER_LIBS ${WGPU_DIR_SHADERS}/tonemappers.wgsl)
 list(APPEND WGPU_SHADER_LIBS ${WGPU_DIR_SHADERS}/ui/ui_includes.wgsl)
 

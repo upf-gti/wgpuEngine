@@ -25,7 +25,7 @@ Environment3D::Environment3D() : MeshInstance3D()
     material->set_type(MATERIAL_UNLIT);
     material->set_depth_write(false);
     material->set_priority(20);
-    material->set_shader(RendererStorage::get_shader_from_source(shaders::mesh_texture_cube::source, shaders::mesh_texture_cube::path, material));
+    material->set_shader(RendererStorage::get_shader_from_source(shaders::mesh_texture_cube::source, shaders::mesh_texture_cube::path, shaders::mesh_texture_cube::libraries, material));
 
     Surface* surface = new Surface();
 

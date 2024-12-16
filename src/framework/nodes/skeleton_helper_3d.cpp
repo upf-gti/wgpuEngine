@@ -28,7 +28,7 @@ SkeletonHelper3D::SkeletonHelper3D(Skeleton* new_skeleton, Node3D* parent) : Mes
         skeleton_material->set_depth_read(false);
         skeleton_material->set_priority(0);
         skeleton_material->set_topology_type(eTopologyType::TOPOLOGY_LINE_LIST);
-        skeleton_material->set_shader(RendererStorage::get_shader_from_source(shaders::mesh_forward::source, shaders::mesh_forward::path, skeleton_material));
+        skeleton_material->set_shader(RendererStorage::get_shader_from_source(shaders::mesh_forward::source, shaders::mesh_forward::path, shaders::mesh_forward::libraries, skeleton_material));
         set_surface_material_override(s, skeleton_material);
 
         if (parent) {

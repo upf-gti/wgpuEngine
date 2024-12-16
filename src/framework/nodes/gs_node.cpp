@@ -16,10 +16,10 @@ GSNode::GSNode()
 {
     WebGPUContext* webgpu_context = Renderer::instance->get_webgpu_context();
 
-    covariance_shader = RendererStorage::get_shader_from_source(shaders::gs_covariance::source, shaders::gs_covariance::path);
+    covariance_shader = RendererStorage::get_shader_from_source(shaders::gs_covariance::source, shaders::gs_covariance::path, shaders::gs_covariance::libraries);
     covariance_pipeline.create_compute_async(covariance_shader);
 
-    basis_shader = RendererStorage::get_shader_from_source(shaders::gs_basis::source, shaders::gs_basis::path);
+    basis_shader = RendererStorage::get_shader_from_source(shaders::gs_basis::source, shaders::gs_basis::path, shaders::gs_basis::libraries);
     basis_pipeline.create_compute_async(basis_shader);
 }
 
@@ -89,7 +89,7 @@ void GSNode::initialize(uint32_t splat_count)
         basis_uniform.buffer_size = sizeof(glm::vec4) * splat_count;
 
         std::vector<Uniform*> uniforms = { &model_uniform, &centroid_uniform, &basis_uniform, &color_uniform };
-        render_bindgroup = webgpu_context->create_bind_group(uniforms, RendererStorage::get_shader_from_source(shaders::gs_render::source, shaders::gs_render::path), 0);
+        render_bindgroup = webgpu_context->create_bind_group(uniforms, RendererStorage::get_shader_from_source(shaders::gs_render::source, shaders::gs_render::path, shaders::gs_render::libraries), 0);
     }
 
     // Basis

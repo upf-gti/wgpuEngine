@@ -47,7 +47,7 @@ namespace ui {
             material->set_diffuse_texture(RendererStorage::get_texture(image_path, TEXTURE_STORAGE_UI));
         }
 
-        material->set_shader(RendererStorage::get_shader_from_source(shaders::mesh_forward::source, shaders::mesh_forward::path, material));
+        material->set_shader(RendererStorage::get_shader_from_source(shaders::mesh_forward::source, shaders::mesh_forward::path, shaders::mesh_forward::libraries, material));
 
         Surface* quad_surface = new Surface();
         quad_surface->create_quad(size.x, size.y, true);
@@ -393,7 +393,7 @@ namespace ui {
         material->set_priority(class_type);
         material->set_diffuse_texture(RendererStorage::get_texture(image_path, TEXTURE_STORAGE_UI));
         material->set_depth_read_write(false);
-        material->set_shader(RendererStorage::get_shader_from_source(shaders::ui_texture::source, shaders::ui_texture::path, material));
+        material->set_shader(RendererStorage::get_shader_from_source(shaders::ui_texture::source, shaders::ui_texture::path, shaders::ui_texture::libraries, material));
 
         quad_mesh->set_surface_material_override(quad_mesh->get_surface(0), material);
 
@@ -437,7 +437,7 @@ namespace ui {
         Material* material = quad_mesh->get_surface_material_override(quad_surface);
         material->set_type(MATERIAL_UI);
         material->set_depth_read_write(false);
-        material->set_shader(RendererStorage::get_shader_from_source(shaders::ui_xr_panel::source, shaders::ui_xr_panel::path, material));
+        material->set_shader(RendererStorage::get_shader_from_source(shaders::ui_xr_panel::source, shaders::ui_xr_panel::path, shaders::ui_xr_panel::libraries, material));
 
         // Fullscreen in 2d mode only!
         fullscreen = !Renderer::instance->get_openxr_available() && (flags & ui::FULLSCREEN);
@@ -667,7 +667,7 @@ namespace ui {
         material->set_transparency_type(ALPHA_BLEND);
         material->set_priority(class_type);
         material->set_depth_read_write(false);
-        material->set_shader(RendererStorage::get_shader_from_source(shaders::ui_text_shadow::source, shaders::ui_text_shadow::path, material));
+        material->set_shader(RendererStorage::get_shader_from_source(shaders::ui_text_shadow::source, shaders::ui_text_shadow::path, shaders::ui_text_shadow::libraries, material));
 
         Surface* quad_surface = quad_mesh->get_surface(0);
         quad_surface->create_quad(size.x, size.y, true);
@@ -862,7 +862,7 @@ namespace ui {
         material->set_transparency_type(ALPHA_BLEND);
         material->set_priority(class_type);
         material->set_depth_read_write(false);
-        material->set_shader(RendererStorage::get_shader_from_source(shaders::ui_color_picker::source, shaders::ui_color_picker::path, material));
+        material->set_shader(RendererStorage::get_shader_from_source(shaders::ui_color_picker::source, shaders::ui_color_picker::path, shaders::ui_color_picker::libraries, material));
 
         color = Color(rgb2hsv(color), 1.0f);
 

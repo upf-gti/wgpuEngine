@@ -16,8 +16,8 @@ RadixSortKernel::RadixSortKernel(WGPUBuffer keys_buffer, uint32_t keys_byte_size
     workgroup_count = ceil(count / static_cast<float>(threads_per_workgroup));
     prefix_block_workgroup_count = 4 * workgroup_count;
 
-    block_sum_shader = RendererStorage::get_shader_from_source(shaders::radix_sort::source, shaders::radix_sort::path);
-    reorder_shader = RendererStorage::get_shader_from_source(shaders::radix_sort_reorder::source, shaders::radix_sort_reorder::path);
+    block_sum_shader = RendererStorage::get_shader_from_source(shaders::radix_sort::source, shaders::radix_sort::path, shaders::radix_sort::libraries);
+    reorder_shader = RendererStorage::get_shader_from_source(shaders::radix_sort_reorder::source, shaders::radix_sort_reorder::path, shaders::radix_sort_reorder::libraries);
 
     create_pipelines();
 }

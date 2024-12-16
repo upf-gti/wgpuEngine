@@ -46,7 +46,7 @@ class GltfParser : public Parser {
 
     std::map<uint32_t, Texture*> texture_cache;
 
-    std::map<int, Surface*> mesh_cache;
+    std::map<size_t, Surface*> mesh_cache;
 
 public:
 

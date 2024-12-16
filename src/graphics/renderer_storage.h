@@ -74,10 +74,13 @@ public:
 
     static Shader* get_shader(const std::string& shader_path, const std::vector<std::string>& custom_define_specializations);
 
-    static Shader* get_shader_from_source(const char* source, const std::string& name, const Material* material = nullptr,
+    static Shader* get_shader_from_source(const char* source, const std::string& name,
+        const std::vector<std::string>& libraries,
+        const Material* material = nullptr,
         const std::vector<std::string>& custom_define_specializations = {});
 
     static Shader* get_shader_from_source(const char* source, const std::string& name,
+        const std::vector<std::string>& libraries,
         const std::vector<std::string>& custom_define_specializations);
 
     static void reload_shader(const std::string& shader_path);

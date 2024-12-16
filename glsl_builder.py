@@ -5,13 +5,19 @@ import os
 def preprocess_includes(shader_source, shader_directory):
     shader_lines = shader_source.splitlines()
 
+    shader_libs = ""
+
     for line_idx in range(len(shader_lines)):
         line_words = shader_lines[line_idx].split()
         if len(line_words) > 0 and line_words[0] == "#include":
             shader_include_path = line_words[1]
+            shader_libs += "\"" + shader_include_path + "\", "
             shader_include_file = open(shader_directory + shader_include_path, "r")
             shader_lines[line_idx] = shader_include_file.read()
             shader_include_file.close()
+
+    # remove last ", "
+    shader_libs = shader_libs[:-2]
 
     output = []
     for line in shader_lines:
@@ -19,7 +25,7 @@ def preprocess_includes(shader_source, shader_directory):
             output.append(",".join(str(ord(c)) for c in line))
             output.append("%s" % ord("\n"))
     output.append("0")
-    return ",".join(output)
+    return ",".join(output), shader_libs
 
 
 def main(argv):
@@ -41,15 +47,18 @@ def main(argv):
 
     processed_shader_file = open(processed_shader_path, "w")
 
-    preprocessed_shader = preprocess_includes(original_shader_file.read(), shader_directory + "/")
+    preprocessed_shader, shader_libs = preprocess_includes(original_shader_file.read(), shader_directory + "/")
 
     shader_name = Path(original_shader_path).stem
 
     generated_content = "//Generated file, do not modify!\n"
     generated_content += "#pragma once\n\n"
+    generated_content += "#include <string>\n"
+    generated_content += "#include <vector>\n\n"
     generated_content += "namespace shaders {\n\n"
     generated_content += "struct " + shader_name + " {\n\n"
     generated_content += "inline static const char path[] = \"" + original_shader_path + "\";\n"
+    generated_content += "inline static const std::vector<std::string> libraries = {" + shader_libs + "};\n"
     generated_content += "inline static const char source[] = " 
 
     generated_content += "{\n%s\n\t\t};" % preprocessed_shader

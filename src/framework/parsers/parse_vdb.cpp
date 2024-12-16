@@ -26,7 +26,7 @@ Material* create_material_volume(easyVDB::OpenVDBReader* vdbReader)
     Material* material = new Material();
     material->set_transparency_type(ALPHA_BLEND);
     material->set_type(MATERIAL_UNLIT);
-    material->set_shader(RendererStorage::get_shader_from_source(shaders::volumetrics::source, shaders::volumetrics::path, material));
+    material->set_shader(RendererStorage::get_shader_from_source(shaders::volumetrics::source, shaders::volumetrics::path, shaders::volumetrics::libraries, material));
 
     uint32_t resolution = 100;
     float radius = 3.0;

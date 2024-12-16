@@ -18,7 +18,9 @@ public:
 	~Shader();
 
     bool load_from_file(const std::string& shader_path, const std::string& specialized_path = "", std::vector<std::string> define_specializations = {});
-    bool load_from_source(const std::string& shader_source, const std::string& name, const std::string& specialized_path = "", std::vector<std::string> define_specializations = {});
+    bool load_from_source(const std::string& shader_source, const std::string& name,
+        const std::vector<std::string>& libraries,
+        const std::string& specialized_path = "", std::vector<std::string> define_specializations = {});
 
 	void reload(const std::string& engine_shader_path = "");
 
@@ -33,6 +35,8 @@ public:
 	const std::vector<WGPUVertexBufferLayout>& get_vertex_buffer_layouts() const { return vertex_buffer_layouts; }
 
     const WGPUPipelineLayout get_pipeline_layout() const { return pipeline_layout; }
+
+    static void reload_engine_library(const std::string& folder, const std::string& engine_library);
 
 	std::string get_path() const { return path; }
 
@@ -50,7 +54,7 @@ private:
     std::string delete_until_tags(std::istringstream& string_stream, std::string& shader_content, std::streampos& line_pos, std::string& line, const std::string& _directory, const std::vector<std::string>& tags);
     std::string continue_until_tags(std::istringstream& string_stream, std::string& shader_content, std::streampos& line_pos, std::string& line, const std::string& _directory, const std::vector<std::string>& tags);
 
-    bool load(std::string& shader_source, const std::string& specialized_name = "", std::vector<std::string> define_specializations = {});
+    bool load(std::string& shader_source, std::vector<std::string> define_specializations = {});
 
 	std::string path;
 	std::string specialized_path;
@@ -66,7 +70,10 @@ private:
 	// Pipeline that uses this shader
 	Pipeline* pipeline_ref = nullptr;
 
-    static std::unordered_map<std::string, const char*> engine_libraries;
+    static std::unordered_map<std::string, std::string> engine_libraries;
+
+    // Library names used for reload
+    std::vector<std::string> libraries;
 
     bool loaded_from_file = false;
 

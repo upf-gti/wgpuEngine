@@ -23,7 +23,7 @@
 #include "shaders/mesh_includes.wgsl.gen.h"
 
 std::unordered_map<std::string, custom_define_type> Shader::custom_defines;
-std::unordered_map<std::string, const char*> Shader::engine_libraries;
+std::unordered_map<std::string, std::string> Shader::engine_libraries;
 
 Shader::Shader()
 {
@@ -71,12 +71,15 @@ bool Shader::load_from_file(const std::string& shader_path, const std::string& s
 		return false;
     }
 
-	return load(shader_content, specialized_path, define_specializations);
+	return load(shader_content, define_specializations);
 }
 
-bool Shader::load_from_source(const std::string& shader_source, const std::string& name, const std::string& specialized_path, std::vector<std::string> define_specializations)
+bool Shader::load_from_source(const std::string& shader_source, const std::string& name,
+    const std::vector<std::string>& libraries,
+    const std::string& specialized_path, std::vector<std::string> define_specializations)
 {
     path = name;
+    this->libraries = libraries;
 
     if (!specialized_path.empty()) {
         this->specialized_path = specialized_path;
@@ -91,7 +94,19 @@ bool Shader::load_from_source(const std::string& shader_source, const std::strin
 
     std::string shader_source_copy = shader_source;
 
-    return load(shader_source_copy, specialized_path, define_specializations);
+    if (!libraries.empty()) {
+
+        auto& library_references = RendererStorage::instance->shader_library_references;
+        for (const std::string& library : libraries) {
+            auto& references = library_references[library];
+            if (!std::count(references.begin(), references.end(), name))
+            {
+                library_references[library].push_back(path);
+            }
+        }
+    }
+
+    return load(shader_source_copy, define_specializations);
 }
 
 bool Shader::parse_preprocessor(std::string &shader_content, const std::string &shader_path)
@@ -143,9 +158,11 @@ bool Shader::parse_preprocessor_line(std::istringstream& string_stream, std::str
 
         auto& references = library_references[include_path];
 
-        if (!std::count(references.begin(), references.end(), specialized_path))
+        std::string shader_filename = std::filesystem::path(path).filename().string();
+
+        if (!std::count(references.begin(), references.end(), shader_filename))
         {
-            library_references[include_path].push_back(specialized_path);
+            library_references[include_path].push_back(shader_filename);
         }
 
         //std::cout << " [" << include_name << "]";
@@ -357,7 +374,7 @@ std::string Shader::continue_until_tags(std::istringstream& string_stream, std::
     return "";
 }
 
-bool Shader::load(std::string& shader_source, const std::string& specialized_name, std::vector<std::string> define_specializations)
+bool Shader::load(std::string& shader_source, std::vector<std::string> define_specializations)
 {
     std::string& shader_source_processed = shader_source;
 
@@ -402,6 +419,19 @@ bool Shader::load(std::string& shader_source, const std::string& specialized_nam
     webgpu_context->process_events();
 
     return loaded;
+}
+
+void Shader::reload_engine_library(const std::string& folder, const std::string& engine_library)
+{
+    if (engine_libraries.contains(engine_library)) {
+        std::string shader_content;
+        if (!read_file(folder + "/" + engine_library, shader_content)) {
+            spdlog::error("\tError reading engine shader library");
+            return;
+        }
+
+        engine_libraries[engine_library] = shader_content;
+    }
 }
 
 void Shader::set_custom_define(const std::string& define_name, custom_define_type value)
@@ -716,7 +746,7 @@ void Shader::reload(const std::string& engine_shader_path)
         load_from_file(engine_shader_path.empty() ? path : engine_shader_path, specialized_path, define_specializations);
     } else
     if (RendererStorage::engine_shaders_refs.contains(path)) {
-        load_from_source(RendererStorage::engine_shaders_refs[path], path, specialized_path, define_specializations);
+        load_from_source(RendererStorage::engine_shaders_refs[path], path, libraries, specialized_path, define_specializations);
     }
 
     if (pipeline_ref) {

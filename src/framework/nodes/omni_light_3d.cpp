@@ -35,7 +35,7 @@ OmniLight3D::OmniLight3D() : Light3D()
     debug_material->set_color(glm::vec4(color, 1.0f));
     debug_material->set_type(MATERIAL_UNLIT);
     debug_material->set_topology_type(TOPOLOGY_LINE_STRIP);
-    debug_material->set_shader(RendererStorage::get_shader_from_source(shaders::mesh_forward::source, shaders::mesh_forward::path, debug_material));
+    debug_material->set_shader(RendererStorage::get_shader_from_source(shaders::mesh_forward::source, shaders::mesh_forward::path, shaders::mesh_forward::libraries, debug_material));
     debug_surface->set_material(debug_material);
 
     debug_mesh_v->add_surface(debug_surface);

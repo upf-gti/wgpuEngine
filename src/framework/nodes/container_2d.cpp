@@ -34,7 +34,7 @@ namespace ui {
         material->set_priority(class_type);
         material->set_cull_type(CULL_BACK);
         material->set_depth_read_write(false);
-        material->set_shader(RendererStorage::get_shader_from_source(shaders::mesh_forward::source, shaders::mesh_forward::path, material));
+        material->set_shader(RendererStorage::get_shader_from_source(shaders::mesh_forward::source, shaders::mesh_forward::path, shaders::mesh_forward::libraries, material));
 
         quad_mesh->set_surface_material_override(quad_mesh->get_surface(0), material);
 
@@ -229,7 +229,7 @@ namespace ui {
         material->set_priority(class_type);
         material->set_transparency_type(ALPHA_BLEND);
         material->set_depth_read_write(false);
-        material->set_shader(RendererStorage::get_shader_from_source(shaders::ui_selector::source, shaders::ui_selector::path, material));
+        material->set_shader(RendererStorage::get_shader_from_source(shaders::ui_selector::source, shaders::ui_selector::path, shaders::ui_selector::libraries, material));
 
         quad_mesh->set_surface_material_override(quad_mesh->get_surface(0), material);
 
@@ -338,7 +338,7 @@ namespace ui {
         material->set_priority(class_type);
         material->set_transparency_type(ALPHA_BLEND);
         material->set_depth_read_write(false);
-        material->set_shader(RendererStorage::get_shader_from_source(shaders::ui_group::source, shaders::ui_group::path, material));
+        material->set_shader(RendererStorage::get_shader_from_source(shaders::ui_group::source, shaders::ui_group::path, shaders::ui_group::libraries, material));
 
         quad_mesh->set_surface_material_override(quad_mesh->get_surface(0), material);
 

@@ -66,7 +66,7 @@ void parse_obj(const char* obj_path, MeshInstance3D* entity_mesh, bool create_aa
                 }
             }
 
-            material->set_shader(RendererStorage::get_shader_from_source(shaders::mesh_forward::source, shaders::mesh_forward::path, material));
+            material->set_shader(RendererStorage::get_shader_from_source(shaders::mesh_forward::source, shaders::mesh_forward::path, shaders::mesh_forward::libraries, material));
 
             new_surface->set_material(material);
         }

@@ -219,7 +219,7 @@ int Renderer::post_initialize()
     desc.blending_enabled = true;
     desc.sample_count = msaa_count;
 
-    gs_render_shader = RendererStorage::get_shader_from_source(shaders::gs_render::source, shaders::gs_render::path);
+    gs_render_shader = RendererStorage::get_shader_from_source(shaders::gs_render::source, shaders::gs_render::path, shaders::gs_render::libraries);
     gs_render_pipeline.create_render_async(gs_render_shader, color_target, desc);
 
     RendererStorage::register_basic_surfaces();
@@ -742,7 +742,7 @@ void Renderer::init_lighting_bind_group()
     num_lights_buffer.buffer_size = sizeof(int);
 
     std::vector<Uniform*> uniforms = { &irradiance_texture_uniform, &brdf_lut_uniform, &ibl_sampler_uniform, &lights_buffer, &num_lights_buffer };
-    lighting_bind_group = webgpu_context->create_bind_group(uniforms, RendererStorage::get_shader_from_source(shaders::mesh_forward::source, shaders::mesh_forward::path), 3);
+    lighting_bind_group = webgpu_context->create_bind_group(uniforms, RendererStorage::get_shader_from_source(shaders::mesh_forward::source, shaders::mesh_forward::path, shaders::mesh_forward::libraries), 3);
 }
 
 void Renderer::init_depth_buffers()
@@ -930,7 +930,7 @@ void Renderer::prepare_instancing(const glm::vec3& camera_position)
                 if (equal_priority && equal_shader && equal_diffuse && equal_normal && equal_metallic_rougness && lhs_mat->get_emissive_texture() > rhs_mat->get_emissive_texture()) return true;
 
                 return false;
-            });
+                });
         }
         //else {
         //    // Sort transparent render_list by distance to camera
@@ -1093,9 +1093,9 @@ void Renderer::render_render_list(int list_index, WGPURenderPassEncoder render_p
             }
         }
 
-//#ifndef NDEBUG
-//        wgpuRenderPassEncoderPushDebugGroup(render_pass, render_data.surface->get_name().c_str());
-//#endif
+        //#ifndef NDEBUG
+        //        wgpuRenderPassEncoderPushDebugGroup(render_pass, render_data.surface->get_name().c_str());
+        //#endif
 
         if (material->get_type() == MATERIAL_UI) {
             WGPUBindGroup ui_bind_group = renderer_storage->get_ui_widget_bind_group(render_data.mesh_instance_ref);
@@ -1120,9 +1120,9 @@ void Renderer::render_render_list(int list_index, WGPURenderPassEncoder render_p
         }
 
 
-//#ifndef NDEBUG
-//        wgpuRenderPassEncoderPopDebugGroup(render_pass);
-//#endif
+        //#ifndef NDEBUG
+        //        wgpuRenderPassEncoderPopDebugGroup(render_pass);
+        //#endif
 
         prev_pipeline = pipeline;
 
@@ -1306,7 +1306,7 @@ GLFWwindow* Renderer::get_glfw_window()
 
 void Renderer::init_mirror_pipeline()
 {
-    mirror_shader = RendererStorage::get_shader_from_source(shaders::quad_mirror::source, shaders::quad_mirror::path);
+    mirror_shader = RendererStorage::get_shader_from_source(shaders::quad_mirror::source, shaders::quad_mirror::path, shaders::quad_mirror::libraries);
 
     quad_surface.create_quad(2.0f, 2.0f);
 
@@ -1423,7 +1423,7 @@ void Renderer::init_camera_bind_group()
     camera_2d_uniform.buffer_size = sizeof(sCameraData);
 
     std::vector<Uniform*> uniforms = { &camera_uniform };
-    render_camera_bind_group = webgpu_context->create_bind_group(uniforms, RendererStorage::get_shader_from_source(shaders::mesh_forward::source, shaders::mesh_forward::path), 1);
+    render_camera_bind_group = webgpu_context->create_bind_group(uniforms, RendererStorage::get_shader_from_source(shaders::mesh_forward::source, shaders::mesh_forward::path, shaders::mesh_forward::libraries), 1);
 
     WGPUBindGroupLayoutEntry entry = {};
     entry.binding = 0;
@@ -1435,7 +1435,7 @@ void Renderer::init_camera_bind_group()
     compute_camera_bind_group = webgpu_context->create_bind_group(uniforms, compute_camera_bind_group_layout);
 
     uniforms = { &camera_2d_uniform };
-    render_camera_bind_group_2d = webgpu_context->create_bind_group(uniforms, RendererStorage::get_shader_from_source(shaders::mesh_forward::source, shaders::mesh_forward::path), 1);
+    render_camera_bind_group_2d = webgpu_context->create_bind_group(uniforms, RendererStorage::get_shader_from_source(shaders::mesh_forward::source, shaders::mesh_forward::path, shaders::mesh_forward::libraries), 1);
 }
 
 glm::vec3 Renderer::get_camera_eye()

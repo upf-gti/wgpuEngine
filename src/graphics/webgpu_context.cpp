@@ -251,13 +251,13 @@ int WebGPUContext::initialize(bool create_screen_swapchain)
 #if defined(BACKEND_METAL) || defined(BACKEND_EMSCRIPTEN)
         defines.push_back("METAL_CUBEMAP_HACK");
 #endif
-        cubemap_mipmap_pipeline.mipmap_shader = RendererStorage::get_shader_from_source(shaders::cubemap_downsampler::source, shaders::cubemap_downsampler::path, defines);
+        cubemap_mipmap_pipeline.mipmap_shader = RendererStorage::get_shader_from_source(shaders::cubemap_downsampler::source, shaders::cubemap_downsampler::path, shaders::cubemap_downsampler::libraries, defines);
         cubemap_mipmap_pipeline.mipmap_pipeline = new Pipeline();
         cubemap_mipmap_pipeline.mipmap_pipeline->create_compute(cubemap_mipmap_pipeline.mipmap_shader);
     }
 
     {
-        panorama_to_cubemap_shader = RendererStorage::get_shader_from_source(shaders::panorama_to_cubemap::source, shaders::panorama_to_cubemap::path);
+        panorama_to_cubemap_shader = RendererStorage::get_shader_from_source(shaders::panorama_to_cubemap::source, shaders::panorama_to_cubemap::path, shaders::panorama_to_cubemap::libraries);
 
         panorama_to_cubemap_pipeline = new Pipeline();
         panorama_to_cubemap_pipeline->create_compute(panorama_to_cubemap_shader);
@@ -268,14 +268,14 @@ int WebGPUContext::initialize(bool create_screen_swapchain)
 #if defined(BACKEND_METAL) || defined(BACKEND_EMSCRIPTEN)
         defines.push_back("METAL_CUBEMAP_HACK");
 #endif
-        prefiltered_env_shader = RendererStorage::get_shader_from_source(shaders::prefilter_env::source, shaders::prefilter_env::path, defines);
+        prefiltered_env_shader = RendererStorage::get_shader_from_source(shaders::prefilter_env::source, shaders::prefilter_env::path, shaders::prefilter_env::libraries, defines);
 
         prefiltered_env_pipeline = new Pipeline();
         prefiltered_env_pipeline->create_compute(prefiltered_env_shader);
     }
 
     {
-        brdf_lut_shader = RendererStorage::get_shader_from_source(shaders::brdf_lut_gen::source, shaders::brdf_lut_gen::path);
+        brdf_lut_shader = RendererStorage::get_shader_from_source(shaders::brdf_lut_gen::source, shaders::brdf_lut_gen::path, shaders::brdf_lut_gen::libraries);
 
         brdf_lut_pipeline = new Pipeline();
         brdf_lut_pipeline->create_compute(brdf_lut_shader);
@@ -835,7 +835,7 @@ WebGPUContext::sMipmapPipeline WebGPUContext::get_mipmap_pipeline(WGPUTextureFor
         assert(false);
     }
 
-    Shader* shader = RendererStorage::get_shader_from_source(shaders::mipmaps::source, shaders::mipmaps::path, { custom_define });
+    Shader* shader = RendererStorage::get_shader_from_source(shaders::mipmaps::source, shaders::mipmaps::path, shaders::mipmaps::libraries, { custom_define });
 
     Pipeline* pipeline = new Pipeline();
     pipeline->create_compute(shader);

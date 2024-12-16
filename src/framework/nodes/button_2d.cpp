@@ -52,7 +52,7 @@ namespace ui {
         material->set_transparency_type(ALPHA_BLEND);
         material->set_priority(class_type);
         material->set_depth_read_write(false);
-        material->set_shader(RendererStorage::get_shader_from_source(shaders::ui_button::source, shaders::ui_button::path, material));
+        material->set_shader(RendererStorage::get_shader_from_source(shaders::ui_button::source, shaders::ui_button::path, shaders::ui_button::libraries, material));
 
         quad_mesh->set_surface_material_override(quad_mesh->get_surface(0), material);
 
@@ -234,7 +234,7 @@ namespace ui {
         material->set_priority(class_type);
         material->set_diffuse_texture(desc.path.size() ? RendererStorage::get_texture(desc.path, TEXTURE_STORAGE_UI) : nullptr);
         material->set_depth_read_write(false);
-        material->set_shader(RendererStorage::get_shader_from_source(shaders::ui_button::source, shaders::ui_button::path, material));
+        material->set_shader(RendererStorage::get_shader_from_source(shaders::ui_button::source, shaders::ui_button::path, shaders::ui_button::libraries, material));
 
         quad_mesh->set_surface_material_override(quad_mesh->get_surface(0), material);
 
