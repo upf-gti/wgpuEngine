@@ -633,9 +633,6 @@ void read_mesh(const tinygltf::Model& model, const tinygltf::Node& node, Node3D*
                 material->set_alpha_mask(static_cast<float>(gltf_material.alphaCutoff));
                 material->set_transparency_type(ALPHA_MASK);
             }
-
-            material->set_transparency_type(ALPHA_MASK);
-
         }
         else {
             // create default material

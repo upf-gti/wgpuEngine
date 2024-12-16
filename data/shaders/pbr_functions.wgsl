@@ -2,15 +2,11 @@ const PI = 3.14159265359;
 
 fn V_SmithGGXCorrelated(NoV : f32, NoL : f32, roughness : f32) -> f32
 {
-    let a2 : f32 = pow(roughness, 4.0);
-    let GGXV : f32 = NoL * sqrt(NoV * NoV * (1.0 - a2) + a2);
+    let a2 : f32 = roughness * roughness;
     let GGXL : f32 = NoV * sqrt(NoL * NoL * (1.0 - a2) + a2);
+    let GGXV : f32 = NoL * sqrt(NoV * NoV * (1.0 - a2) + a2);
     let GGX : f32 = GGXV + GGXL;
-    if(GGX > 0.0)
-    {
-        return 0.5 / GGX;
-    }
-    return 0.0;
+    return (2 * NoL) / (GGXV + GGXL);
 }
 
 fn D_GGX(NdotH : f32, roughness : f32) -> f32
@@ -29,17 +25,19 @@ fn DistributionGGX(NdotH : f32, roughness4 : f32) -> f32 {
 }
 
 // https://github.com/KhronosGroup/glTF-Sample-Viewer/blob/main/source/shaders/ibl_filtering.frag#L217
-fn importance_sample_GGX(Xi : vec2f, roughness4 : f32) -> vec3f
-{	
-    let phi : f32 = 2.0 * PI * Xi.x;
-    let cos_theta : f32 = clamp(sqrt((1.0 - Xi.y) / (1.0 + (roughness4 - 1.0) * Xi.y)), 0.0, 1.0);
-    let sin_theta : f32 = sqrt(1.0 - cos_theta * cos_theta);
+fn importance_sample_GGX(Xi : vec2f, roughness : f32) -> vec3f 
+{
+    let a : f32 = roughness * roughness;
 
-    let H : vec3f = vec3f(
-        sin_theta * cos(phi), 
-        sin_theta * sin(phi), 
-        cos_theta
-    );
+    let phi : f32 = 2.0 * PI * Xi.x;
+    let cosTheta : f32 = sqrt((1.0 - Xi.y) / (1.0 + (a * a - 1.0) * Xi.y));
+    let sinTheta : f32 = sqrt(1.0 - cosTheta * cosTheta);
+
+    // from spherical coordinates to cartesian coordinates - halfway vector
+    var H : vec3f;
+    H.x = cos(phi) * sinTheta;
+    H.y = sin(phi) * sinTheta;
+    H.z = cosTheta;
 
     return H;
 }

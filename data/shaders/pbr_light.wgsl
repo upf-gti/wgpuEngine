@@ -135,6 +135,7 @@ fn get_indirect_light( m : PbrMaterial ) -> vec3f
     let lod : f32 = m.roughness * max_mipmap;
 
     // IBL
+    // https://github.com/Nadrin/PBR/blob/master/data/shaders/glsl/pbr_fs.glsl
     // Specular + Diffuse
 
     // Specular color
@@ -143,6 +144,13 @@ fn get_indirect_light( m : PbrMaterial ) -> vec3f
     let brdf_lut : vec2f = textureSampleLevel(brdf_lut_texture, sampler_clamp, brdf_coords, 0.0).rg;
     
     let specular_sample : vec3f = textureSampleLevel(irradiance_texture, sampler_clamp, m.reflected_dir, lod).rgb * camera_data.ibl_intensity;
+
+    // alternative for brdf_lut to avoid texture sample
+    // let c0 : vec4f = vec4f(-1.0, -0.0275, -0.572, 0.022);
+    // let c1 : vec4f = vec4f(1.0, 0.0425, 1.04, -0.04);
+    // let r : vec4f = m.roughness * c0 + c1;
+    // let a004 : f32 = min(r.x * r.x, exp2(-9.28 * n_dot_v)) * r.x + r.y;
+    // let brdf_lut : vec2f = vec2f(-1.04, 1.04) * a004 + r.zw;
 
     let fss_ess : vec3f = (m.f0 * brdf_lut.x + brdf_lut.y);
 

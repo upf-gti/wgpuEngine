@@ -99,7 +99,7 @@ fn compute(@builtin(global_invocation_id) id: vec3u)
     {
         let Xi : vec2f = Hammersley(i, SAMPLE_COUNT);
 
-        let H : vec3f = T * importance_sample_GGX(Xi, roughness4);
+        let H : vec3f = T * importance_sample_GGX(Xi, roughness);
 		let NdotH : f32 = dot(N, H);
         let L : vec3f = (2.0 * NdotH * H - N);
 
