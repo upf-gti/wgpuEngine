@@ -144,8 +144,7 @@ fn get_indirect_light( m : PbrMaterial ) -> vec3f
     
     let specular_sample : vec3f = textureSampleLevel(irradiance_texture, sampler_clamp, m.reflected_dir, lod).rgb * camera_data.ibl_intensity;
 
-    let k_s : vec3f = FresnelSchlickRoughness(n_dot_v, m.f0, m.roughness);
-    let fss_ess : vec3f = (k_s * brdf_lut.x + brdf_lut.y);
+    let fss_ess : vec3f = (m.f0 * brdf_lut.x + brdf_lut.y);
 
     let specular : vec3f = specular_sample * fss_ess;
 
@@ -153,11 +152,9 @@ fn get_indirect_light( m : PbrMaterial ) -> vec3f
     let irradiance : vec3f = textureSampleLevel(irradiance_texture, sampler_clamp, m.normal, max_mipmap).rgb * camera_data.ibl_intensity;
 
     // Diffuse color
-    let ems : f32 = (1.0 - (brdf_lut.x + brdf_lut.y));
-    let f_avg : vec3f = (m.f0 + (1.0 - m.f0) / 21.0);
-    let fms_ems : vec3f = ems * fss_ess * f_avg / (1.0 - f_avg * ems);
-    var diffuse : vec3f = m.c_diff * (1.0 - fss_ess + fms_ems);
-    diffuse = (fms_ems + diffuse) * irradiance;
+    let F : vec3f = FresnelSchlickRoughness(n_dot_v, m.f0, m.roughness);
+    let k_d : vec3f = mix(vec3(1.0) - F, vec3(0.0), m.metallic);
+    let diffuse : vec3f = k_d * m.albedo * irradiance;
 
     // Combine factors and add AO
     return (diffuse + specular) * m.ao;
