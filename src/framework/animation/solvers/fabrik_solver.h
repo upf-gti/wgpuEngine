@@ -14,5 +14,5 @@ protected:
 
 public:
     void resize(size_t new_size) override;
-    bool solve(const Transform& target);
+    bool solve(const Transform& target) override;
 };

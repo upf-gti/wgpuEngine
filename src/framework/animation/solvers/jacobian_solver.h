@@ -19,5 +19,5 @@ public:
     void set_chain(const std::vector<Transform>& chain);
     void set_rotation_axis();
 
-    bool solve(const Transform& target);
+    bool solve(const Transform& target) override;
 };

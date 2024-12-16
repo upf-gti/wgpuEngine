@@ -258,7 +258,7 @@ namespace ui {
     IntSlider2D::IntSlider2D(const std::string& sg, int v, int mode, uint32_t flags, int min, int max)
         : IntSlider2D(sg, "", v, { 0.0f, 0.0f }, glm::vec2(BUTTON_SIZE), mode, flags, min, max) {}
 
-    IntSlider2D::IntSlider2D(const std::string& sg, const std::string& texture_path, int v, int modeL, uint32_t flags, int min, int max)
+    IntSlider2D::IntSlider2D(const std::string& sg, const std::string& texture_path, int v, int mode, uint32_t flags, int min, int max)
         : IntSlider2D(sg, texture_path, v, { 0.0f, 0.0f }, glm::vec2(BUTTON_SIZE), mode, flags, min, max) {}
 
     IntSlider2D::IntSlider2D(const std::string& sg, const std::string& texture_path, int v, const glm::vec2& pos, const glm::vec2& size, int mode, uint32_t flags, int min, int max)
