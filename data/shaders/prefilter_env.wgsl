@@ -11,6 +11,7 @@ struct Uniforms {
 @group(0) @binding(1) var output_cubemap_texture: texture_storage_2d_array<rgba32float, write>;
 @group(0) @binding(2) var texture_sampler : sampler;
 #dynamic @group(0) @binding(3) var<uniform> uniforms: Uniforms;
+@group(0) @binding(4) var<uniform> face_size: u32;
 
 struct CubeMapUVL {
     uv: vec2f,
@@ -68,7 +69,7 @@ fn luma(color : vec3f) -> f32
 }
 
 // https://github.com/eliemichel/LearnWebGPU-Code/blob/step222/resources/compute-shader.wgsl#L448
-// https://github.com/KhronosGroup/glTF-Sample-Viewer/blob/main/source/shaders/ibl_filtering.frag#L283
+// https://github.com/KhronosGroup/glTF-Sample-Renderer/blob/e5646a2bf87b0871ba3f826fc2335fe117a11411/source/shaders/ibl_filtering.frag#L289
 @compute @workgroup_size(4, 4, 6)
 fn compute(@builtin(global_invocation_id) id: vec3u)
 {
@@ -78,7 +79,7 @@ fn compute(@builtin(global_invocation_id) id: vec3u)
 
     let roughness = f32(uniforms.current_mip_level) / f32(uniforms.mip_level_count - 1);
 
-    let output_dimensions = textureDimensions(output_cubemap_texture).xy;
+    let output_dimensions = vec2<u32>(face_size);
     var uv = vec2f(id.xy) / vec2f(output_dimensions - 1u);
 
     var N = normalize(directionFromCubeMapUVL(CubeMapUVL(uv, layer)));

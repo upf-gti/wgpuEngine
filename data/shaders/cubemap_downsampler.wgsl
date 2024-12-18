@@ -21,6 +21,7 @@
 @group(0) @binding(0) var input_cubemap_texture: texture_cube<f32>;
 @group(0) @binding(1) var output_cubemap_texture: texture_storage_2d_array<rgba32float, write>;
 @group(0) @binding(2) var texture_sampler : sampler;
+@group(0) @binding(3) var<uniform> face_size: u32;
 
 #ifdef METAL_CUBEMAP_HACK
 var<private> texture_dim : f32 = 0.0;
@@ -107,10 +108,8 @@ fn calcWeight(u : f32, v : f32) -> f32
 
 fn compute(@builtin(global_invocation_id) id: vec3<u32>) {
 
-	let dim : vec2u = textureDimensions(output_cubemap_texture).xy;
-	let face_size : u32 = dim.x;
 #ifdef METAL_CUBEMAP_HACK
-	texture_dim = f32(dim.x);
+	texture_dim = f32(face_size);
 #endif
 
 	if (id.x < face_size && id.y < face_size) {

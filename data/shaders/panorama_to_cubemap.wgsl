@@ -5,17 +5,11 @@
 @group(0) @binding(2) var texture_sampler : sampler;
 
 // From https://github.com/eliemichel/LearnWebGPU-Code/blob/step220/resources/compute-shader.wgsl
+fn directionFromCubeMapUVL(uv: vec2f, layer : u32) -> vec3f {
 
-struct CubeMapUVL {
-    uv: vec2f,
-    layer: u32,
-}
-
-fn directionFromCubeMapUVL(uvl: CubeMapUVL) -> vec3f {
-
-    let uvx = 2.0 * uvl.uv.x - 1.0;
-    let uvy = 2.0 * uvl.uv.y - 1.0;
-    switch (uvl.layer) {
+    let uvx = 2.0 * uv.x - 1.0;
+    let uvy = 2.0 * uv.y - 1.0;
+    switch (layer) {
         case 0u {
             return vec3f(1.0, uvy, -uvx);
         }
@@ -39,7 +33,6 @@ fn directionFromCubeMapUVL(uvl: CubeMapUVL) -> vec3f {
         }
     }
 }
-
 fn textureGatherWeights_2df(t: texture_2d<f32>, uv: vec2f) -> vec2f {
     let dim = textureDimensions(t).xy;
     let scaled_uv = uv * vec2f(dim);
@@ -59,7 +52,7 @@ fn compute(@builtin(global_invocation_id) id: vec3<u32>) {
 
     let uv = vec2f(id.xy) / vec2f(output_dimensions);
 
-    let direction = normalize(directionFromCubeMapUVL(CubeMapUVL(uv, layer)));
+    let direction = normalize(directionFromCubeMapUVL(uv, layer));
 
     let phi = 0.5 + 0.5 * atan2(-direction.x, direction.z) / M_PI;
     let theta = 1.0 - acos(direction.y) / M_PI;

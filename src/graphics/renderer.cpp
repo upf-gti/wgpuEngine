@@ -584,7 +584,11 @@ void Renderer::render_screen(WGPUTextureView screen_surface_texture_view)
 
             //wgpuRenderPassEncoderSetViewport(render_pass, 0.0f,0.0f,1600.0f,900.0f,0.0f,1.0f);
 
+            wgpuRenderPassEncoderPushDebugGroup(pass, "ImGui");
+
             ImGui_ImplWGPU_RenderDrawData(ImGui::GetDrawData(), pass);
+
+            wgpuRenderPassEncoderPopDebugGroup(pass);
 
             wgpuRenderPassEncoderEnd(pass);
             wgpuRenderPassEncoderRelease(pass);

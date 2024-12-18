@@ -553,6 +553,8 @@ void WebGPUContext::create_cubemap_mipmaps(WGPUTexture texture, WGPUExtent3D tex
     compute_pass_desc.timestampWrites = nullptr;
     WGPUComputePassEncoder compute_pass = wgpuCommandEncoderBeginComputePass(command_encoder, &compute_pass_desc);
 
+    wgpuComputePassEncoderPushDebugGroup(compute_pass, "Create Cubemap Mipmaps");
+
     Uniform sampler;
     sampler.data = create_sampler(WGPUAddressMode_ClampToEdge, WGPUAddressMode_ClampToEdge, WGPUAddressMode_ClampToEdge, WGPUFilterMode_Linear, WGPUFilterMode_Linear);
     sampler.binding = 2;
@@ -567,6 +569,8 @@ void WebGPUContext::create_cubemap_mipmaps(WGPUTexture texture, WGPUExtent3D tex
 
     std::vector<WGPUTextureView> texture_mip_views_write;
     texture_mip_views_write.reserve(texture_mip_sizes.size());
+
+    Uniform mipmaps_face_size_uniforms[5];
 
     for (uint32_t level = 0; level < texture_mip_sizes.size(); ++level)
     {
@@ -586,6 +590,11 @@ void WebGPUContext::create_cubemap_mipmaps(WGPUTexture texture, WGPUExtent3D tex
                 previous_size.height / 2,
                 previous_size.depthOrArrayLayers / 2
             };
+
+            uint32_t idx = level - 1;
+            mipmaps_face_size_uniforms[idx].data = create_buffer(sizeof(uint32_t), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform, &texture_mip_sizes[level].width, "mipmap_face_size");
+            mipmaps_face_size_uniforms[idx].buffer_size = sizeof(uint32_t);
+            mipmaps_face_size_uniforms[idx].binding = 3;
         }
     }
 
@@ -601,7 +610,7 @@ void WebGPUContext::create_cubemap_mipmaps(WGPUTexture texture, WGPUExtent3D tex
         output_view.data = texture_mip_views_write[nextLevel];
         output_view.binding = 1;
 
-        std::vector<Uniform*> uniforms = { &source_view, &output_view, &sampler };
+        std::vector<Uniform*> uniforms = { &source_view, &output_view, &sampler, &mipmaps_face_size_uniforms[nextLevel - 1]};
         WGPUBindGroup mipmaps_bind_group = create_bind_group(uniforms, cubemap_mipmap_pipeline.mipmap_shader, 0);
 
         wgpuComputePassEncoderSetBindGroup(compute_pass, 0, mipmaps_bind_group, 0, nullptr);
@@ -625,6 +634,8 @@ void WebGPUContext::create_cubemap_mipmaps(WGPUTexture texture, WGPUExtent3D tex
         wgpuTextureViewRelease(texture_view);
     }
 
+    wgpuComputePassEncoderPopDebugGroup(compute_pass);
+
     // Finalize compute_raymarching pass
     wgpuComputePassEncoderEnd(compute_pass);
 
@@ -646,6 +657,11 @@ void WebGPUContext::create_cubemap_mipmaps(WGPUTexture texture, WGPUExtent3D tex
     if (!custom_command_encoder) {
         wgpuQueueRelease(mipmap_queue);
     }
+
+    //for (int i = 0; i < mip_level_count - 1; ++i) {
+    //    mipmaps_face_size_uniforms->destroy();
+    //}
+
 }
 
 void WebGPUContext::upload_texture(WGPUTexture texture, WGPUTextureDimension dimension, WGPUExtent3D texture_size, uint32_t mip_level, WGPUTextureFormat format, const void* data, WGPUOrigin3D origin)
@@ -1184,10 +1200,16 @@ void WebGPUContext::generate_prefiltered_env_texture(Texture* prefiltered_env_te
     cubemap_texture.create(WGPUTextureDimension_2D, WGPUTextureFormat_RGBA32Float, { ENVIRONMENT_RESOLUTION, ENVIRONMENT_RESOLUTION, 6 },
         static_cast<WGPUTextureUsage>(WGPUTextureUsage_StorageBinding | WGPUTextureUsage_TextureBinding | WGPUTextureUsage_CopySrc), 6, 1, nullptr);
 
+    Uniform mipmaps_face_size_uniforms[5];
     Uniform cubemap_mipmaps_uniforms[5];
     for (int i = 0; i < 5; ++i) {
         cubemap_mipmaps_uniforms[i].data = prefiltered_env_texture->get_view(WGPUTextureViewDimension_2DArray, i + 1, 1, 0, 6);
         cubemap_mipmaps_uniforms[i].binding = 1;
+
+        uint32_t face_size = prefiltered_env_texture->get_width() / (2 + i * 2);
+        mipmaps_face_size_uniforms[i].data = create_buffer(sizeof(uint32_t), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform, &face_size, "face_size");
+        mipmaps_face_size_uniforms[i].buffer_size = sizeof(uint32_t);
+        mipmaps_face_size_uniforms[i].binding = 4;
     }
 
     Uniform cubemap_all_faces_output_uniform;
@@ -1233,6 +1255,8 @@ void WebGPUContext::generate_prefiltered_env_texture(Texture* prefiltered_env_te
         compute_pass_desc.timestampWrites = nullptr;
         WGPUComputePassEncoder compute_pass = wgpuCommandEncoderBeginComputePass(command_encoder, &compute_pass_desc);
 
+        wgpuComputePassEncoderPushDebugGroup(compute_pass, "Panorama to Cubemap");
+
         panorama_to_cubemap_pipeline->set(compute_pass);
 
         uint32_t invocationCountX = cubemap_texture.get_width();
@@ -1247,6 +1271,8 @@ void WebGPUContext::generate_prefiltered_env_texture(Texture* prefiltered_env_te
         wgpuComputePassEncoderDispatchWorkgroups(compute_pass, workgroupCountX, workgroupCountY, 1);
 
         wgpuBindGroupRelease(bind_group);
+
+        wgpuComputePassEncoderPopDebugGroup(compute_pass);
 
         // Finalize compute_raymarching pass
         wgpuComputePassEncoderEnd(compute_pass);
@@ -1264,7 +1290,7 @@ void WebGPUContext::generate_prefiltered_env_texture(Texture* prefiltered_env_te
         WGPUBindGroup bind_groups[5];
 
         for (uint32_t i = 0; i < 5; ++i) {
-            std::vector<Uniform*> uniforms = { &cubemap_all_input_output_uniform, &cubemap_mipmaps_uniforms[i], &sampler, &current_level_uniform };
+            std::vector<Uniform*> uniforms = { &cubemap_all_input_output_uniform, &cubemap_mipmaps_uniforms[i], &sampler, &current_level_uniform, &mipmaps_face_size_uniforms[i]};
             bind_groups[i] = create_bind_group(uniforms, prefiltered_env_shader, 0);
         }
 
@@ -1279,6 +1305,8 @@ void WebGPUContext::generate_prefiltered_env_texture(Texture* prefiltered_env_te
         WGPUComputePassDescriptor compute_pass_desc = {};
         compute_pass_desc.timestampWrites = nullptr;
         WGPUComputePassEncoder compute_pass = wgpuCommandEncoderBeginComputePass(command_encoder, &compute_pass_desc);
+
+        wgpuComputePassEncoderPushDebugGroup(compute_pass, "Prefilter Cubemap");
 
         prefiltered_env_pipeline->set(compute_pass);
 
@@ -1306,6 +1334,8 @@ void WebGPUContext::generate_prefiltered_env_texture(Texture* prefiltered_env_te
             wgpuBindGroupRelease(bind_groups[i]);
         }
 
+        wgpuComputePassEncoderPopDebugGroup(compute_pass);
+
         // Finalize compute_raymarching pass
         wgpuComputePassEncoderEnd(compute_pass);
 
@@ -1324,6 +1354,17 @@ void WebGPUContext::generate_prefiltered_env_texture(Texture* prefiltered_env_te
     wgpuCommandEncoderRelease(command_encoder);
 
     wgpuQueueRelease(prefilter_queue);
+
+    for (int i = 0; i < 5; ++i) {
+        cubemap_mipmaps_uniforms[i].destroy();
+        mipmaps_face_size_uniforms[i].destroy();
+    }
+
+    cubemap_all_faces_output_uniform.destroy();
+    cubemap_all_input_output_uniform.destroy();
+    sampler.destroy();
+    hdr_uniform.destroy();
+    current_level_uniform.destroy();
 }
 
 void WebGPUContext::update_buffer(WGPUBuffer buffer, uint64_t buffer_offset, void const* data, size_t size)
