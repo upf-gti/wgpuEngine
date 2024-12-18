@@ -1206,7 +1206,7 @@ void WebGPUContext::generate_prefiltered_env_texture(Texture* prefiltered_env_te
         cubemap_mipmaps_uniforms[i].data = prefiltered_env_texture->get_view(WGPUTextureViewDimension_2DArray, i + 1, 1, 0, 6);
         cubemap_mipmaps_uniforms[i].binding = 1;
 
-        uint32_t face_size = prefiltered_env_texture->get_width() / (2 + i * 2);
+        uint32_t face_size = prefiltered_env_texture->get_width() / (2 << i);
         mipmaps_face_size_uniforms[i].data = create_buffer(sizeof(uint32_t), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform, &face_size, "face_size");
         mipmaps_face_size_uniforms[i].buffer_size = sizeof(uint32_t);
         mipmaps_face_size_uniforms[i].binding = 4;
