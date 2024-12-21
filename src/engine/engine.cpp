@@ -378,6 +378,8 @@ void Engine::on_frame()
     Input::set_prev_state();
 
     IO::end_frame();
+
+    renderer->increase_frame_counter();
 }
 
 void Engine::update(float delta_time)

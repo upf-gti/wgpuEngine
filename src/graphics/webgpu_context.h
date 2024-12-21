@@ -136,6 +136,7 @@ struct WebGPUContext {
     void                   update_buffer(WGPUBuffer buffer, uint64_t buffer_offset, void const* data, size_t size);
 
     void                   read_buffer(WGPUBuffer buffer, size_t size, void* output_data);
+    void                   read_buffer_async(WGPUBuffer buffer, size_t size, const std::function<void(const void* output_buffer, void* userdata)>& read_callback, void* read_userdata);
 
     sMipmapPipeline        get_mipmap_pipeline(WGPUTextureFormat texture_format);
 

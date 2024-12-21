@@ -583,6 +583,7 @@ void Surface::create_sphere(float r, uint32_t segments, uint32_t rings, const gl
             vtxs.vertices[vtx_counter] = glm::vec3(x0, y0, z0);
             vtxs.uvs[vtx_counter] = glm::vec2((float)seg / (float)segments, (float)ring / (float)rings);
             vtxs.normals[vtx_counter] = glm::normalize(glm::vec3(x0, y0, z0));
+            vtxs.colors[vtx_counter] = glm::vec3(1.0f);
 
             vtx_counter++;
 
@@ -615,6 +616,7 @@ void Surface::create_sphere(float r, uint32_t segments, uint32_t rings, const gl
         vertices.vertices[i] = vtxs.vertices[indices[i]];
         vertices.uvs[i] = vtxs.uvs[indices[i]];
         vertices.normals[i] = vtxs.normals[indices[i]];
+        vertices.colors[i] = vtxs.colors[indices[i]];
     }
 
     spdlog::trace("Sphere mesh created ({} vertices)", vertices.size());
@@ -641,10 +643,11 @@ void Surface::create_cone(float r, float h, uint32_t segments, const glm::vec3& 
     float normal_y = r / h;
     uint32_t vtx_counter = 0;
 
-    auto add_vertex = [&](const glm::vec3& p, const glm::vec3& n, const glm::vec2& uv) {
+    auto add_vertex = [&](const glm::vec3& p, const glm::vec3& n, const glm::vec2& uv, const glm::vec3& color = glm::vec3(1.0f)) {
         vertices.vertices[vtx_counter] = p;
         vertices.normals[vtx_counter] = n;
         vertices.uvs[vtx_counter] = uv;
+        vertices.colors[vtx_counter] = color;
         vtx_counter++;
     };
 
@@ -706,10 +709,11 @@ void Surface::create_cylinder(float r, float h, uint32_t segments, bool capped, 
     float deltaAngle = pi2 / float(segments);
     uint32_t vtx_counter = 0;
 
-    auto add_vertex = [&](const glm::vec3& p, const glm::vec3& n, const glm::vec2& uv) {
+    auto add_vertex = [&](const glm::vec3& p, const glm::vec3& n, const glm::vec2& uv, const glm::vec3& color = glm::vec3(1.0f)) {
         vertices.vertices[vtx_counter] = p;
         vertices.normals[vtx_counter] = n;
         vertices.uvs[vtx_counter] = uv;
+        vertices.colors[vtx_counter] = color;
         vtx_counter++;
     };
 
@@ -825,6 +829,7 @@ void Surface::create_capsule(float r, float h, uint32_t segments, uint32_t rings
             vtxs.vertices[vtx_counter] = glm::vec3(x0, 0.5f * h + y0, z0);
             vtxs.uvs[vtx_counter] = glm::vec2((float)seg / (float)segments, (float)ring / (float)rings * sphere_ratio);
             vtxs.normals[vtx_counter] = glm::normalize(glm::vec3(x0, y0, z0));
+            vtxs.colors[vtx_counter] = color;
             vtx_counter++;
 
             // each vertex (except the last) has six indices pointing to it
@@ -853,6 +858,7 @@ void Surface::create_capsule(float r, float h, uint32_t segments, uint32_t rings
             vtxs.vertices[vtx_counter] = glm::vec3(x0, 0.5f * h - i * deltah, z0);
             vtxs.uvs[vtx_counter] = glm::vec2(j / (float)segments, (i / float(num_height_seg)) * cylinder_ratio + sphere_ratio);
             vtxs.normals[vtx_counter] = glm::normalize(glm::vec3(x0, 0, z0));
+            vtxs.colors[vtx_counter] = color;
             vtx_counter++;
 
             indices[idx_counter++] = (offset + segments + 1);
@@ -883,6 +889,7 @@ void Surface::create_capsule(float r, float h, uint32_t segments, uint32_t rings
             vtxs.vertices[vtx_counter] = glm::vec3(x0, -0.5f * h + y0, z0);
             vtxs.uvs[vtx_counter] = glm::vec2((float)seg / (float)segments, (float)ring / (float)rings * sphere_ratio + cylinder_ratio + sphere_ratio);
             vtxs.normals[vtx_counter] = glm::normalize(glm::vec3(x0, y0, z0));
+            vtxs.colors[vtx_counter] = color;
             vtx_counter++;
 
             if (ring != rings)
@@ -904,6 +911,7 @@ void Surface::create_capsule(float r, float h, uint32_t segments, uint32_t rings
         vertices.vertices[i] = vtxs.vertices[indices[i]];
         vertices.uvs[i] = vtxs.uvs[indices[i]];
         vertices.normals[i] = vtxs.normals[indices[i]];
+        vertices.colors[i] = vtxs.colors[indices[i]];
     }
 
     spdlog::trace("Capsule mesh created ({} vertices)", vertices.size());
@@ -950,6 +958,7 @@ void Surface::create_torus(float r, float ir, uint32_t segments_section, uint32_
             vtxs.vertices[vtx_counter] = v;
             vtxs.uvs[vtx_counter] = glm::vec2(i / (float)segments_circle, j / (float)segments_section);
             vtxs.normals[vtx_counter] = glm::normalize(v - c);
+            vtxs.colors[vtx_counter] = color;
             vtx_counter++;
 
             if (i != segments_circle)
@@ -971,6 +980,7 @@ void Surface::create_torus(float r, float ir, uint32_t segments_section, uint32_
         vertices.vertices[i] = vtxs.vertices[indices[i]];
         vertices.uvs[i] = vtxs.uvs[indices[i]];
         vertices.normals[i] = vtxs.normals[indices[i]];
+        vertices.colors[i] = vtxs.colors[indices[i]];
     }
 
     spdlog::trace("Torus mesh created ({} vertices)", vertices.size());
@@ -989,6 +999,7 @@ void Surface::create_circle(float radius, uint32_t segments)
     for (float currAngle = 0.0f; currAngle <= 2.0f * PI + increment; currAngle += increment)
     {
         vertices.vertices.push_back( glm::vec3(radius * cos(currAngle), radius * sin(currAngle), 0) );
+        vertices.colors.push_back( glm::vec3(1.0f) );
     }
 
     spdlog::trace("Circle mesh created ({} vertices)", vertices.size());
@@ -1000,16 +1011,25 @@ void Surface::create_arrow()
 {
     name = "arrow";
 
-    sSurfaceData vertices;
 
-    vertices.vertices.push_back( glm::vec3(1.0f, 0.0f, 0.0f) );
-    vertices.vertices.push_back( glm::vec3(0.6f, 0.25f, 0.0f) );
-    vertices.vertices.push_back( glm::vec3(0.6f, 0.1f, 0.0f) );
-    vertices.vertices.push_back( glm::vec3(0.0f, 0.1f, 0.0f) );
-    vertices.vertices.push_back( glm::vec3(0.0f, -0.1f, 0.0f) );
-    vertices.vertices.push_back( glm::vec3(0.6f, -0.1f, 0.0f) );
-    vertices.vertices.push_back( glm::vec3(0.6f, -0.25f, 0.0f) );
-    vertices.vertices.push_back( glm::vec3(1.0f, 0.0f, 0.0f) );
+    sSurfaceData vertices;
+    vertices.resize(8);
+
+    uint32_t vtx_counter = 0;
+    auto add_vertex = [&](const glm::vec3& p, const glm::vec3& color = glm::vec3(1.0f)) {
+        vertices.vertices[vtx_counter] = p;
+        vertices.colors[vtx_counter] = color;
+        vtx_counter++;
+    };
+
+    add_vertex(glm::vec3(1.0f, 0.0f, 0.0f));
+    add_vertex(glm::vec3(0.6f, 0.25f, 0.0f));
+    add_vertex(glm::vec3(0.6f, 0.1f, 0.0f));
+    add_vertex(glm::vec3(0.0f, 0.1f, 0.0f));
+    add_vertex(glm::vec3(0.0f, -0.1f, 0.0f));
+    add_vertex(glm::vec3(0.6f, -0.1f, 0.0f));
+    add_vertex(glm::vec3(0.6f, -0.25f, 0.0f));
+    add_vertex(glm::vec3(1.0f, 0.0f, 0.0f));
 
     spdlog::trace("Circle mesh created ({} vertices)", vertices.size());
 
@@ -1021,50 +1041,57 @@ void Surface::create_skybox()
     name = "skybox";
 
     sSurfaceData vertices;
-
     vertices.vertices.resize(36);
+    vertices.colors.resize(36);
 
-    vertices.vertices[0] = { -1.0f, 1.0f, -1.0f };
-    vertices.vertices[1] = { -1.0f, -1.0f, -1.0f };
-    vertices.vertices[2] = {  1.0f, -1.0f, -1.0f };
-    vertices.vertices[3] = {  1.0f, -1.0f, -1.0f };
-    vertices.vertices[4] = {  1.0f,  1.0f, -1.0f };
-    vertices.vertices[5] = { -1.0f,  1.0f, -1.0f };
+    uint32_t vtx_counter = 0;
+    auto add_vertex = [&](const glm::vec3& p, const glm::vec3& color = glm::vec3(1.0f)) {
+        vertices.vertices[vtx_counter] = p;
+        vertices.colors[vtx_counter] = color;
+        vtx_counter++;
+    };
 
-    vertices.vertices[6] = { -1.0f, -1.0f,  1.0f };
-    vertices.vertices[7] = { -1.0f, -1.0f, -1.0f };
-    vertices.vertices[8] = { -1.0f,  1.0f, -1.0f };
-    vertices.vertices[9] = { -1.0f,  1.0f, -1.0f };
-    vertices.vertices[10] = { -1.0f,  1.0f,  1.0f };
-    vertices.vertices[11] = { -1.0f, -1.0f,  1.0f };
+    add_vertex({ -1.0f, 1.0f, -1.0f } );
+    add_vertex({ -1.0f, -1.0f, -1.0f } );
+    add_vertex({  1.0f, -1.0f, -1.0f } );
+    add_vertex({  1.0f, -1.0f, -1.0f } );
+    add_vertex({  1.0f,  1.0f, -1.0f } );
+    add_vertex({ -1.0f,  1.0f, -1.0f } );
 
-    vertices.vertices[12] = { 1.0f, -1.0f, -1.0f };
-    vertices.vertices[13] = { 1.0f, -1.0f,  1.0f };
-    vertices.vertices[14] = { 1.0f,  1.0f,  1.0f };
-    vertices.vertices[15] = { 1.0f,  1.0f,  1.0f };
-    vertices.vertices[16] = { 1.0f,  1.0f, -1.0f };
-    vertices.vertices[17] = { 1.0f, -1.0f, -1.0f };
+    add_vertex({ -1.0f, -1.0f,  1.0f } );
+    add_vertex({ -1.0f, -1.0f, -1.0f } );
+    add_vertex({ -1.0f,  1.0f, -1.0f } );
+    add_vertex({ -1.0f,  1.0f, -1.0f } );
+    add_vertex( { -1.0f,  1.0f,  1.0f } );
+    add_vertex( { -1.0f, -1.0f,  1.0f } );
 
-    vertices.vertices[18] = { -1.0f, -1.0f,  1.0f };
-    vertices.vertices[19] = { -1.0f,  1.0f,  1.0f };
-    vertices.vertices[20] = {  1.0f,  1.0f,  1.0f };
-    vertices.vertices[21] = {  1.0f,  1.0f,  1.0f };
-    vertices.vertices[22] = {  1.0f, -1.0f,  1.0f };
-    vertices.vertices[23] = { -1.0f, -1.0f,  1.0f };
+    add_vertex( { 1.0f, -1.0f, -1.0f } );
+    add_vertex( { 1.0f, -1.0f,  1.0f } );
+    add_vertex( { 1.0f,  1.0f,  1.0f } );
+    add_vertex( { 1.0f,  1.0f,  1.0f } );
+    add_vertex( { 1.0f,  1.0f, -1.0f } );
+    add_vertex( { 1.0f, -1.0f, -1.0f } );
 
-    vertices.vertices[24] = { -1.0f,  1.0f, -1.0f };
-    vertices.vertices[25] = { 1.0f,  1.0f, -1.0f };
-    vertices.vertices[26] = { 1.0f,  1.0f,  1.0f };
-    vertices.vertices[27] = { 1.0f,  1.0f,  1.0f };
-    vertices.vertices[28] = { -1.0f,  1.0f,  1.0f };
-    vertices.vertices[29] = { -1.0f,  1.0f, -1.0f };
+    add_vertex( { -1.0f, -1.0f,  1.0f } );
+    add_vertex( { -1.0f,  1.0f,  1.0f } );
+    add_vertex( {  1.0f,  1.0f,  1.0f } );
+    add_vertex( {  1.0f,  1.0f,  1.0f } );
+    add_vertex( {  1.0f, -1.0f,  1.0f } );
+    add_vertex( { -1.0f, -1.0f,  1.0f } );
 
-    vertices.vertices[30] = { -1.0f, -1.0f, -1.0f };
-    vertices.vertices[31] = { -1.0f, -1.0f,  1.0f };
-    vertices.vertices[32] = {  1.0f, -1.0f, -1.0f };
-    vertices.vertices[33] = {  1.0f, -1.0f, -1.0f };
-    vertices.vertices[34] = { -1.0f, -1.0f,  1.0f };
-    vertices.vertices[35] = { 1.0f, -1.0f,  1.0f };
+    add_vertex( { -1.0f,  1.0f, -1.0f } );
+    add_vertex( { 1.0f,  1.0f, -1.0f } );
+    add_vertex( { 1.0f,  1.0f,  1.0f } );
+    add_vertex( { 1.0f,  1.0f,  1.0f } );
+    add_vertex( { -1.0f,  1.0f,  1.0f } );
+    add_vertex( { -1.0f,  1.0f, -1.0f } );
+
+    add_vertex( { -1.0f, -1.0f, -1.0f } );
+    add_vertex( { -1.0f, -1.0f,  1.0f } );
+    add_vertex( {  1.0f, -1.0f, -1.0f } );
+    add_vertex( {  1.0f, -1.0f, -1.0f } );
+    add_vertex( { -1.0f, -1.0f,  1.0f } );
+    add_vertex( { 1.0f, -1.0f,  1.0f } );
 
     create_surface_data(vertices);
 }

@@ -831,6 +831,58 @@ void WebGPUContext::read_buffer(WGPUBuffer buffer, size_t size, void* output_dat
     wgpuBufferRelease(output_buffer);
 }
 
+void WebGPUContext::read_buffer_async(WGPUBuffer buffer, size_t size, const std::function<void(const void* output_buffer, void* userdata)>& read_callback, void* read_userdata)
+{
+    WGPUBuffer output_buffer = create_buffer(size, WGPUBufferUsage_CopyDst | WGPUBufferUsage_MapRead, nullptr, "read_buffer");
+
+    WGPUCommandEncoder encoder = wgpuDeviceCreateCommandEncoder(device, {});
+
+    wgpuCommandEncoderCopyBufferToBuffer(encoder, buffer, 0, output_buffer, 0, size);
+
+    WGPUCommandBufferDescriptor cmd_buff_descriptor = {};
+    cmd_buff_descriptor.nextInChain = NULL;
+    cmd_buff_descriptor.label = { "read buffer command", WGPU_STRLEN };
+
+    WGPUCommandBuffer commands = wgpuCommandEncoderFinish(encoder, &cmd_buff_descriptor);
+
+    wgpuQueueSubmit(device_queue, 1, &commands);
+
+    wgpuCommandBufferRelease(commands);
+    wgpuCommandEncoderRelease(encoder);
+
+    struct BufferData {
+        WGPUBuffer output_buffer = nullptr;
+        size_t buffer_size = 0;
+        std::function<void(const void*, void*)> read_callback;
+        void* read_userdata;
+    };
+
+    BufferData* userdata = new BufferData();
+    userdata->output_buffer = output_buffer;
+    userdata->buffer_size = size;
+    userdata->read_callback = read_callback;
+    userdata->read_userdata = read_userdata;
+
+    WGPUBufferMapCallback callback = [](WGPUBufferMapAsyncStatus status, void* userdata) {
+
+        BufferData* buffer_data = reinterpret_cast<BufferData*>(userdata);
+
+        if (status == WGPUBufferMapAsyncStatus_Success) {
+            const void* read_data = wgpuBufferGetConstMappedRange(buffer_data->output_buffer, 0, buffer_data->buffer_size);
+            buffer_data->read_callback(read_data, buffer_data->read_userdata);
+            wgpuBufferUnmap(buffer_data->output_buffer);
+        }
+        else {
+            //spdlog::error("Error reading buffer: {}", message);
+        }
+
+        wgpuBufferRelease(buffer_data->output_buffer);
+        delete buffer_data;
+    };
+
+    wgpuBufferMapAsync(output_buffer, WGPUMapMode_Read, 0, size, callback, userdata);
+}
+
 WebGPUContext::sMipmapPipeline WebGPUContext::get_mipmap_pipeline(WGPUTextureFormat texture_format)
 {
     if (mipmap_pipelines.contains(texture_format)) {
@@ -1206,7 +1258,7 @@ void WebGPUContext::generate_prefiltered_env_texture(Texture* prefiltered_env_te
         cubemap_mipmaps_uniforms[i].data = prefiltered_env_texture->get_view(WGPUTextureViewDimension_2DArray, i + 1, 1, 0, 6);
         cubemap_mipmaps_uniforms[i].binding = 1;
 
-        uint32_t face_size = prefiltered_env_texture->get_width() / (2 + i * 2);
+        uint32_t face_size = prefiltered_env_texture->get_width() / (2 << i);
         mipmaps_face_size_uniforms[i].data = create_buffer(sizeof(uint32_t), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform, &face_size, "face_size");
         mipmaps_face_size_uniforms[i].buffer_size = sizeof(uint32_t);
         mipmaps_face_size_uniforms[i].binding = 4;

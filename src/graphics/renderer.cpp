@@ -90,8 +90,6 @@ int Renderer::pre_initialize(GLFWwindow* window, bool use_mirror_screen)
     eye_depth_textures = new Texture[EYE_COUNT];
     multisample_textures = new Texture[EYE_COUNT];
 
-    timestamps_buffer = new uint64_t[maximum_query_sets];
-
 #ifndef __EMSCRIPTEN__
     renderdoc_capture = new RenderdocCapture();
 #endif
@@ -273,7 +271,6 @@ void Renderer::clean()
     delete renderer_storage;
     delete[] eye_depth_textures;
     delete[] multisample_textures;
-    delete[] timestamps_buffer;
 
     //delete selected_mesh_aabb;
 
@@ -389,6 +386,11 @@ void Renderer::render()
         wgpuSurfacePresent(webgpu_context->surface);
     }
 #endif
+
+    if (timestamps_requested) {
+        get_timestamps();
+        timestamps_requested = false;
+    }
 
     clear_renderables();
 }
@@ -806,18 +808,28 @@ void Renderer::resolve_query_set(WGPUCommandEncoder encoder, uint8_t first_query
 #endif
 }
 
-std::vector<float> Renderer::get_timestamps()
+void Renderer::get_timestamps()
 {
-    webgpu_context->read_buffer(timestamp_query_buffer, sizeof(uint64_t) * maximum_query_sets, timestamps_buffer);
+    auto read_callback = [&](const void* output_buffer, void* user_data) {
+        const uint64_t* timestamps_buffer = reinterpret_cast<const uint64_t*>(output_buffer);
+        uint8_t* query_index_cpy = static_cast<uint8_t*>(user_data);
 
-    std::vector<float> time_diffs;
-    for (int i = 0; i < query_index; i += 2) {
-        uint64_t diff = timestamps_buffer[i + 1] - timestamps_buffer[i];
-        float milliseconds = (float)diff * 1e-6;
-        time_diffs.push_back(milliseconds);
-    }
+        std::vector<float> time_diffs;
+        for (int i = 0; i < *query_index_cpy; i += 2) {
+            uint64_t diff = timestamps_buffer[i + 1] - timestamps_buffer[i];
+            float milliseconds = (float)diff * 1e-6;
+            time_diffs.push_back(milliseconds);
+        }
 
-    return time_diffs;
+        last_frame_timestamps = time_diffs;
+
+        delete query_index_cpy;
+    };
+
+    // copy query_index, otherwise it'd have been already modified when reading
+    uint8_t* query_index_cpy = new uint8_t();
+    *query_index_cpy = query_index;
+    webgpu_context->read_buffer_async(timestamp_query_buffer, sizeof(uint64_t) * maximum_query_sets, read_callback, query_index_cpy);
 }
 
 void Renderer::set_msaa_count(uint8_t msaa_count, bool is_initial_value)
@@ -1208,7 +1220,7 @@ bool Renderer::is_inside_frustum(const glm::vec3& minp, const glm::vec3& maxp) c
 
 uint8_t Renderer::timestamp(WGPUCommandEncoder encoder, const char* label)
 {
-    //wgpuCommandEncoderWriteTimestamp(encoder, timestamp_query_set, query_index);
+    wgpuCommandEncoderWriteTimestamp(encoder, timestamp_query_set, query_index);
     queries_label_map[query_index] = std::string(label);
 
     assert(query_index + 1 < maximum_query_sets);
@@ -1240,7 +1252,6 @@ void Renderer::clear_renderables()
     }
 
     num_lights = 0;
-
     query_index = 0;
 }
 

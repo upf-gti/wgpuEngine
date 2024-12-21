@@ -162,7 +162,7 @@ protected:
 
     void init_camera_bind_group();
 
-    std::vector<float> get_timestamps();
+    void get_timestamps();
 
     std::vector<sUniformData> instance_data[RENDER_LIST_SIZE];
     Uniform	instance_data_uniform[RENDER_LIST_SIZE];
@@ -204,12 +204,12 @@ protected:
 
     WGPUQuerySet timestamp_query_set;
     uint8_t maximum_query_sets = 16;
-    uint64_t* timestamps_buffer;
 
     WGPUBuffer timestamp_query_buffer;
     uint8_t query_index = 0;
     std::map<uint8_t, std::string> queries_label_map;
     std::vector<float> last_frame_timestamps;
+    bool timestamps_requested = false;
 
     bool frustum_camera_paused = false;
     bool debug_this_frame = false;
@@ -226,6 +226,8 @@ protected:
     bool initialized = false;
 
     std::vector<WGPUFeatureName> required_features = { };
+
+    uint32_t frame_counter = 0;
 
 public:
 
@@ -254,6 +256,9 @@ public:
 
     void set_custom_pass_user_data(void* user_data);
 
+    void increase_frame_counter() { frame_counter++; }
+    uint32_t get_frame_counter() { return frame_counter; }
+
     void init_lighting_bind_group();
     WGPUBindGroup get_lighting_bind_group() { return lighting_bind_group; }
     WGPUBindGroup get_render_camera_bind_group() { return render_camera_bind_group; }
@@ -265,6 +270,8 @@ public:
 
     void set_frustum_camera_paused(bool value);
     bool get_frustum_camera_paused();
+
+    void request_timestamps() { timestamps_requested = true; }
 
     WGPUCommandEncoder get_global_command_encoder() { return global_command_encoder; }
 
