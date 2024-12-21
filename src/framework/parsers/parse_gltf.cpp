@@ -526,7 +526,7 @@ void read_mesh(const tinygltf::Model& model, const tinygltf::Node& node, Node3D*
         }
 
         bool tangents_generated = false;
-        if (primitive.mode == TINYGLTF_MODE_TRIANGLES && !(vertices.normals.empty()) && vertices.tangents.empty()) {
+        if (primitive.mode == TINYGLTF_MODE_TRIANGLES && !(vertices.uvs.empty()) && !(vertices.normals.empty()) && vertices.tangents.empty()) {
             tangents_generated = surface->generate_tangents(&vertices);
         }
 
@@ -1081,12 +1081,14 @@ void parse_model_skins(Node3D* scene_root, tinygltf::Model& model, std::map<std:
     }
 }
 
-void get_scalar_values(std::vector<TrackType>& out, uint32_t component_size, const tinygltf::Model& model, int accessor_idx)
+uint32_t get_scalar_values(std::vector<TrackType>& out, const tinygltf::Model& model, int accessor_idx, bool is_quaternion)
 {
     uint32_t size;
     const tinygltf::Accessor& accessor = model.accessors[accessor_idx];
     const tinygltf::BufferView& buffer_view = model.bufferViews[accessor.bufferView];
     const tinygltf::Buffer& buffer = model.buffers[buffer_view.buffer];
+
+    uint32_t component_size = 1;
 
     if (accessor.type != TINYGLTF_TYPE_SCALAR) {
         component_size = accessor.type;
@@ -1138,16 +1140,29 @@ void get_scalar_values(std::vector<TrackType>& out, uint32_t component_size, con
                 out[id++] = *(float*)&buffer.data[i];
                 break;
             }
-            case 3: // translate/scale
+            case 2:
+            {
+                glm::vec2 v = { *(float*)&buffer.data[i] , *(float*)&buffer.data[i + 4] };
+                out[id++] = v;
+                break;
+            }
+            case 3:
             {
                 glm::vec3 v = { *(float*)&buffer.data[i] , *(float*)&buffer.data[i + 4] , *(float*)&buffer.data[i + 8] };
                 out[id++] = v;
                 break;
             }
-            case 4: // rotation (quat)
+            case 4:
             {
-                glm::quat q = { *(float*)&buffer.data[i] , *(float*)&buffer.data[i + 4] , *(float*)&buffer.data[i + 8], *(float*)&buffer.data[i + 12] };
-                out[id++] = q;
+                if (is_quaternion) {
+                    glm::quat q = { *(float*)&buffer.data[i] , *(float*)&buffer.data[i + 4] , *(float*)&buffer.data[i + 8], *(float*)&buffer.data[i + 12] };
+                    out[id++] = q;
+                }
+                else {
+                    glm::vec4 v = { *(float*)&buffer.data[i] , *(float*)&buffer.data[i + 4] , *(float*)&buffer.data[i + 8], *(float*)&buffer.data[i + 12] };
+                    out[id++] = v;
+                }
+
                 break;
             }
             }
@@ -1157,10 +1172,12 @@ void get_scalar_values(std::vector<TrackType>& out, uint32_t component_size, con
             assert(0);
         }
     }
+
+    return component_size;
 }
 
 // converts a glTF animation channel into a VectorTrack or a QuaternionTrack
-void track_from_channel(Track& result, const tinygltf::AnimationChannel& channel, const tinygltf::AnimationSampler& sampler, const tinygltf::Model& model)
+void track_from_channel(Track& track, const tinygltf::AnimationChannel& channel, const tinygltf::AnimationSampler& sampler, const tinygltf::Model& model, bool is_quaternion)
 {
     eInterpolationType interpolation;
 
@@ -1178,22 +1195,20 @@ void track_from_channel(Track& result, const tinygltf::AnimationChannel& channel
         assert(0);
     }
 
-    Interpolator& interpolator = result.get_interpolator();
+    Interpolator& interpolator = track.get_interpolator();
     interpolator.set_type(interpolation);
 
     // convert sampler input and output accessors into linear arrays of floating-point numbers
     std::vector<TrackType> time; // times 
-    get_scalar_values(time, 1, model, sampler.input);
-
-    uint32_t stride = result.get_stride();
+    get_scalar_values(time, model, sampler.input, false);
 
     std::vector<TrackType> values; // values
-    get_scalar_values(values, stride, model, sampler.output);
+    uint32_t component_size = get_scalar_values(values, model, sampler.output, is_quaternion);
 
     size_t num_frames = time.size();
 
     // Resize the track to have enough room to store all the frames
-    result.resize(num_frames);
+    track.resize(num_frames);
 
     // Deal with in and out tangents for cubic interpolations
     bool is_sampler_cubic = (interpolation == eInterpolationType::CUBIC);
@@ -1201,7 +1216,7 @@ void track_from_channel(Track& result, const tinygltf::AnimationChannel& channel
     // Parse the time and value arrays into frame structures
     for (size_t baseIndex = 0; baseIndex < num_frames; ++baseIndex) {
 
-        Keyframe& frame = result[baseIndex];
+        Keyframe& frame = track[baseIndex];
         frame.time = std::get<float>(time[baseIndex]);
 
         // offset used to deal with cubic tracks since the input and output tangents are as large as the number of components
@@ -1280,29 +1295,33 @@ void parse_model_animations(const tinygltf::Model& model, std::vector<SkeletonIn
 
             Track* track = new_animation->add_track(node_id);
 
-            eTrackType type = eTrackType::TYPE_UNDEFINED;
-
-            if (channel.target_path == "translation") {
-                type = eTrackType::TYPE_POSITION;
+            std::string track_path;
+            if (channel.target_path == "pointer") {
+                auto it = channel.target_extensions.find("KHR_animation_pointer");
+                if (it != channel.target_extensions.end()) {
+                    tinygltf::Value extension_value = it->second.Get("pointer");
+                    track_path = extension_value.Get<std::string>();
+                }
             }
-            else if (channel.target_path == "scale") {
-                type = eTrackType::TYPE_SCALE;
+            else {
+                track_path = channel.target_path;
             }
-            else if (channel.target_path == "rotation") {
-                type = eTrackType::TYPE_ROTATION;
-            }
-            else if (channel.target_path == "weight") {
-                type = eTrackType::TYPE_FLOAT;
-            }
-
-            const tinygltf::Node& node = model.nodes[channel.target_node];
-
-            std::string track_name = node.name + "/" + channel.target_path;
-
-            track->set_type(type);
-            track->set_name(track_name);
 
             Node3D* scene_parent = player->get_parent<Node3D*>();
+
+            std::string tree_path;
+            std::string track_name;
+            if (channel.target_node != -1) {
+                const tinygltf::Node& node = model.nodes[channel.target_node];
+
+                tree_path = scene_parent->find_path(node.name);
+                track_name = node.name + "/" + track_path;
+            }
+            else {
+                track_name = track_path;
+            }
+
+            track->set_name(track_name);
 
             // Check if it's a joint and has a skeleton and get the full path..
             if (skeleton && node_id >= 0) {
@@ -1318,11 +1337,10 @@ void parse_model_animations(const tinygltf::Model& model, std::vector<SkeletonIn
                 track->set_path(parent_names + skeleton_instance->get_name() + "/" + track_name);
             }
             else {
-                // track->set_path("/" + channel.target_path);
-                track->set_path(scene_parent->find_path(node.name) + channel.target_path);
+                track->set_path(tree_path + track_path);
             }
 
-            track_from_channel(*track, channel, sampler, model);
+            track_from_channel(*track, channel, sampler, model, channel.target_path == "rotation");
         }
 
         new_animation->set_name(animation.name);

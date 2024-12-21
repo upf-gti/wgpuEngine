@@ -48,25 +48,6 @@ const std::string& Track::get_path()
     return path;
 }
 
-uint8_t Track::get_stride()
-{
-    switch (type) {
-
-    case eTrackType::TYPE_FLOAT:
-        return 1;
-
-    case eTrackType::TYPE_VECTOR3: case eTrackType::TYPE_POSITION: case eTrackType::TYPE_SCALE:
-        return 3;
-
-    case eTrackType::TYPE_QUAT: case eTrackType::TYPE_ROTATION:
-        return 4;
-    }
-
-    assert(0);
-
-    return 0;
-}
-
 Keyframe& Track::get_keyframe(uint32_t index)
 {
     if (index >= keyframes.size()) {

@@ -91,21 +91,16 @@ void AnimationPlayer::generate_track_data()
             spdlog::warn("{} node not found", track_path);
         }
        
-        int count = 1;
         int type = -1;
         if (animation->get_track(i)->get_type() == eTrackType::TYPE_POSITION) {
             type = 0;
-            count = 3;
         }
         else if (animation->get_track(i)->get_type() == eTrackType::TYPE_ROTATION) {
             type = 1;
-            count = 4;
         }
         else if (animation->get_track(i)->get_type() == eTrackType::TYPE_SCALE) {
             type = 2;
-            count = 3;
         }
-        const int c = count;
 
         std::vector<ImVec2> points[4];
         timeline.curve_editor.SetPointsCount(animation->get_track(i)->size());

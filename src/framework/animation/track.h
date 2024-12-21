@@ -6,6 +6,7 @@
 enum eTrackType {
     TYPE_UNDEFINED,
     TYPE_FLOAT, // Set a value in a property, can be interpolated.
+    TYPE_VECTOR2, // Vector3 track, can be compressed.
     TYPE_VECTOR3, // Vector3 track, can be compressed.
     TYPE_VECTOR4,
     TYPE_QUAT, // Quaternion track, can be compressed.
@@ -50,7 +51,6 @@ public:
     const std::string& get_path();
     Keyframe& get_keyframe(uint32_t index);
     Interpolator& get_interpolator() { return interpolator; }
-    uint8_t get_stride();
 
     void set_id(int id);
     void set_type(eTrackType new_type) { type = new_type; };
