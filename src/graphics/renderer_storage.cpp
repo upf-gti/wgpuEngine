@@ -423,10 +423,12 @@ void RendererStorage::reload_shader(const std::string& shader_path)
     if (it1 != shader_library_references.end())
     {
         for (auto& shader_name : shader_library_references[shader_path]) {
-            if (shaders.contains(shader_name)) {
-                Shader* shader = shaders[shader_name];
-                shader->reload();
+            for (auto& cached_shader : shaders) {
+                if (cached_shader.second->get_path().find(shader_name) != std::string::npos) {
+                    cached_shader.second->reload();
+                }
             }
+
         }
     }
 }
@@ -455,8 +457,14 @@ void RendererStorage::reload_engine_shader(const std::string& shader_path)
         for (auto& library_ref : library_refs) {
             for (auto& [shader_to_reload_name, shader] : shaders) {
                 if (shader_to_reload_name.find(library_ref) != std::string::npos) {
-                    Shader* shader = shaders[shader_to_reload_name];
-                    shader->reload(fs_shader_path.parent_path().string() + "/" + library_ref);
+                    if (shader->is_loaded_from_file()) {
+                        // project shader
+                        shader->reload();
+                    }
+                    else {
+                        // engine shader
+                        shader->reload(fs_shader_path.parent_path().string() + "/" + library_ref);
+                    }
                 }
             }
         }

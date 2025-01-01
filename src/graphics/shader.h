@@ -44,6 +44,8 @@ public:
 
     static void set_custom_define(const std::string &define_name, custom_define_type value);
 
+    bool is_loaded_from_file() { return loaded_from_file; }
+
 private:
 
 	void get_reflection_data(const std::string& shader_content);
