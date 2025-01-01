@@ -191,6 +191,8 @@ fn fs_main(in: VertexOutput, @builtin(front_facing) is_front_facing: bool) -> Fr
     var final_color : vec3f = vec3f(0.0);
 
 #ifndef UNLIT_MATERIAL
+
+    m.n_dot_v = clamp(dot(m.normal, m.view_dir), 0.0, 1.0);
     m.reflected_dir = normalize(reflect(-m.view_dir, m.normal));
 
     m.roughness = max(m.roughness, 0.04);
@@ -199,8 +201,8 @@ fn fs_main(in: VertexOutput, @builtin(front_facing) is_front_facing: bool) -> Fr
     m.f90 = vec3f(1.0);
     m.specular_weight = 1.0;
 
-    final_color += get_indirect_light(m);
-    final_color += get_direct_light(m);
+    final_color += get_indirect_light(&m);
+    final_color += get_direct_light(&m);
     final_color += m.emissive;
 #else
     final_color += m.albedo;

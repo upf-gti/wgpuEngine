@@ -11,6 +11,7 @@ struct PbrMaterial
     metallic : f32,
     roughness : f32,
     ao : f32,
+    n_dot_v : f32,
     view_dir : vec3f,
     reflected_dir : vec3f
 };
