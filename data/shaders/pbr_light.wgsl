@@ -85,12 +85,10 @@ fn get_direct_light( m : PbrMaterial ) -> vec3f
 
     let NdotV : f32 = clamp(dot(n, v), 0.0, 1.0);
 
-    for (var i : u32 = 0; i < MAX_LIGHTS; i++)
-    {
-        if(i >= num_lights) {
-            break;
-        }
+    let num_lights_clamped : u32 = clamp(num_lights, 0, MAX_LIGHTS);
 
+    for (var i : u32 = 0; i < num_lights_clamped; i++)
+    {
         var light : Light = lights[i];
 
         var point_to_light : vec3f;
