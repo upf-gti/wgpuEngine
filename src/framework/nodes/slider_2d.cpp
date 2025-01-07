@@ -21,8 +21,11 @@
 
 namespace ui {
 
-    Slider2D::Slider2D(const std::string& sg, const glm::vec2& p, const glm::vec2& s, uint32_t flags)
-        : Panel2D(sg, p, s, flags) { }
+    Slider2D::Slider2D(const std::string& sg, const sSliderDescription& desc)
+        : Panel2D(sg, desc.position, desc.size, desc.flags)
+    {
+        data = desc.p_data;
+    }
 
     void Slider2D::set_disabled(bool new_disabled)
     {
@@ -52,14 +55,8 @@ namespace ui {
     *	FloatSlider
     */
 
-    FloatSlider2D::FloatSlider2D(const std::string& sg, float v, int mode, uint32_t flags, float min, float max, int precision)
-        : FloatSlider2D(sg, "", v, {0.0f, 0.0f}, glm::vec2(BUTTON_SIZE), mode, flags, min, max, precision) {}
-
-    FloatSlider2D::FloatSlider2D(const std::string& sg, const std::string& texture_path, float v, int mode, uint32_t flags, float min, float max, int precision)
-        : FloatSlider2D(sg, texture_path, v, { 0.0f, 0.0f }, glm::vec2(BUTTON_SIZE), mode, flags, min, max, precision) {}
-
-    FloatSlider2D::FloatSlider2D(const std::string& sg, const std::string& texture_path, float value, const glm::vec2& pos, const glm::vec2& size, int mode, uint32_t flags, float min, float max, int precision)
-        : Slider2D(sg, pos, size, flags), original_value(value), current_value(value), min_value(min), max_value(max), precision(precision) {
+    FloatSlider2D::FloatSlider2D(const std::string& sg, const sSliderDescription& desc)
+        : Slider2D(sg, desc), original_value(desc.fvalue), current_value(desc.fvalue), min_value(desc.fvalue_min), max_value(desc.fvalue_max), precision(desc.precision) {
 
         bool is_horizontal = (mode == SliderMode::HORIZONTAL);
 
@@ -94,7 +91,7 @@ namespace ui {
         material->set_cull_type(CULL_BACK);
         material->set_transparency_type(ALPHA_BLEND);
         material->set_priority(class_type);
-        material->set_diffuse_texture(texture_path.size() > 0 ? RendererStorage::get_texture(texture_path, TEXTURE_STORAGE_UI) : nullptr);
+        material->set_diffuse_texture(desc.path.size() > 0 ? RendererStorage::get_texture(desc.path, TEXTURE_STORAGE_UI) : nullptr);
         material->set_depth_read_write(false);
         material->set_shader(RendererStorage::get_shader_from_source(shaders::ui_slider::source, shaders::ui_slider::path, shaders::ui_slider::libraries, material));
 
@@ -105,6 +102,19 @@ namespace ui {
 
         auto webgpu_context = Renderer::instance->get_webgpu_context();
         RendererStorage::register_ui_widget(webgpu_context, material->get_shader_ref(), quad_mesh, ui_data, 3);
+
+        if (desc.p_data) {
+
+            float* f_data = reinterpret_cast<float*>(data);
+            current_value = *f_data;
+
+            Node::bind(name, (FuncFloat)[&](const std::string& signal, float value) {
+                if (data) {
+                    float* f_data = reinterpret_cast<float*>(data);
+                    *f_data = current_value;
+                }
+            });
+        }
 
         Node::bind(name + "@changed", (FuncFloat)[&](const std::string& signal, float value) {
             set_value(value);
@@ -255,14 +265,8 @@ namespace ui {
     *	IntSlider
     */
 
-    IntSlider2D::IntSlider2D(const std::string& sg, int v, int mode, uint32_t flags, int min, int max)
-        : IntSlider2D(sg, "", v, { 0.0f, 0.0f }, glm::vec2(BUTTON_SIZE), mode, flags, min, max) {}
-
-    IntSlider2D::IntSlider2D(const std::string& sg, const std::string& texture_path, int v, int mode, uint32_t flags, int min, int max)
-        : IntSlider2D(sg, texture_path, v, { 0.0f, 0.0f }, glm::vec2(BUTTON_SIZE), mode, flags, min, max) {}
-
-    IntSlider2D::IntSlider2D(const std::string& sg, const std::string& texture_path, int v, const glm::vec2& pos, const glm::vec2& size, int mode, uint32_t flags, int min, int max)
-        : Slider2D(sg, pos, size, flags), original_value(v), current_value(v), min_value(min), max_value(max) {
+    IntSlider2D::IntSlider2D(const std::string& sg, const sSliderDescription& desc)
+        : Slider2D(sg, desc), original_value(desc.ivalue), current_value(desc.ivalue), min_value(desc.ivalue_min), max_value(desc.ivalue_max) {
 
         bool is_horizontal = (mode == SliderMode::HORIZONTAL);
 
@@ -297,7 +301,7 @@ namespace ui {
         material->set_cull_type(CULL_BACK);
         material->set_transparency_type(ALPHA_BLEND);
         material->set_priority(class_type);
-        material->set_diffuse_texture(texture_path.size() > 0 ? RendererStorage::get_texture(texture_path, TEXTURE_STORAGE_UI) : nullptr);
+        material->set_diffuse_texture(desc.path.size() > 0 ? RendererStorage::get_texture(desc.path, TEXTURE_STORAGE_UI) : nullptr);
         material->set_depth_read_write(false);
         material->set_shader(RendererStorage::get_shader_from_source(shaders::ui_slider::source, shaders::ui_slider::path, shaders::ui_slider::libraries, material));
 
@@ -308,6 +312,19 @@ namespace ui {
 
         auto webgpu_context = Renderer::instance->get_webgpu_context();
         RendererStorage::register_ui_widget(webgpu_context, material->get_shader_ref(), quad_mesh, ui_data, 3);
+
+        if (desc.p_data) {
+
+            int* i_data = reinterpret_cast<int*>(data);
+            current_value = *i_data;
+
+            Node::bind(name, (FuncInt)[&](const std::string& signal, int value) {
+                if (data) {
+                    int* i_data = reinterpret_cast<int*>(data);
+                    *i_data = current_value;
+                }
+            });
+        }
 
         Node::bind(name + "@changed", (FuncInt)[&](const std::string& signal, int value) {
             set_value(value);

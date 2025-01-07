@@ -648,7 +648,7 @@ namespace ui {
         text_entity->get_surface_material(0)->set_priority(Node2DClassType::TEXT);
 
         float text_width = (float)text_entity->get_text_width(text_string);
-        size.x = std::max(text_width, 24.0f) + TEXT_SHADOW_MARGIN * text_scale;
+        size.x = std::max(text_width, 8.0f) + TEXT_SHADOW_MARGIN * text_scale;
         size.y = text_scale + TEXT_SHADOW_MARGIN * text_scale * 0.5f;
 
         ui_data.num_group_items = size.x;
@@ -797,7 +797,7 @@ namespace ui {
         text_entity->set_text(text);
 
         float text_width = (float)text_entity->get_text_width(text);
-        size.x = std::max(text_width, 24.0f) + TEXT_SHADOW_MARGIN * text_scale;
+        size.x = std::max(text_width, 8.0f) + TEXT_SHADOW_MARGIN * text_scale;
         size.y = text_scale + TEXT_SHADOW_MARGIN * text_scale * 0.5f;
 
         ui_data.num_group_items = size.x;

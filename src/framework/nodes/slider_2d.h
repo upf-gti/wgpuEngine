@@ -16,6 +16,22 @@ namespace ui {
         VERTICAL
     };
 
+    struct sSliderDescription {
+        std::string path = "";
+        float fvalue = 0.0f;
+        int ivalue = 0;
+        int mode = SliderMode::VERTICAL;
+        uint32_t flags = 0u;
+        float fvalue_min = 0.0f;
+        float fvalue_max = 1.0f;
+        int precision = 1;
+        int ivalue_min = 0;
+        int ivalue_max = 10;
+        void* p_data = nullptr;
+        glm::vec2 position = glm::vec2(0.0f);
+        glm::vec2 size = glm::vec2(BUTTON_SIZE);
+    };
+
     class Slider2D : public Panel2D {
     protected:
 
@@ -30,12 +46,14 @@ namespace ui {
         float target_hover_factor = 0.0f;
         float timer = 0.0f;
 
+        void* data = nullptr;
+
         virtual std::string value_to_string() = 0;
 
     public:
 
         Slider2D() {};
-        Slider2D(const std::string& name, const glm::vec2& p, const glm::vec2& s, uint32_t flags = 0);
+        Slider2D(const std::string& name, const sSliderDescription& desc);
 
         void set_disabled(bool new_disabled);
 
@@ -54,11 +72,7 @@ namespace ui {
 
     public:
 
-        FloatSlider2D() {};
-        FloatSlider2D(const std::string& sg, float v, int mode = SliderMode::VERTICAL, uint32_t flags = 0, float min = 0.0f, float max = 1.0f, int precision = 1);
-        FloatSlider2D(const std::string& sg, const std::string& texture_path, float v, int mode = SliderMode::VERTICAL, uint32_t flags = 0, float min = 0.0f, float max = 1.0f, int precision = 1);
-        FloatSlider2D(const std::string& sg, const std::string& texture_path, float v, const glm::vec2& pos, const glm::vec2& size = glm::vec2(BUTTON_SIZE),
-            int mode = SliderMode::VERTICAL, uint32_t flags = 0, float min = 0.0f, float max = 1.0f, int precision = 1);
+        FloatSlider2D(const std::string& sg, const sSliderDescription& desc);
 
         void update(float delta_time) override;
         bool on_input(sInputData data) override;
@@ -77,11 +91,7 @@ namespace ui {
 
     public:
 
-        IntSlider2D() {};
-        IntSlider2D(const std::string& sg, int v, int mode = SliderMode::VERTICAL, uint32_t flags = 0, int min = -10, int max = 10);
-        IntSlider2D(const std::string& sg, const std::string& texture_path, int v, int mode = SliderMode::VERTICAL, uint32_t flags = 0, int min = -10, int max = 10);
-        IntSlider2D(const std::string& sg, const std::string& texture_path, int v, const glm::vec2& pos, const glm::vec2& size = glm::vec2(BUTTON_SIZE),
-            int mode = SliderMode::VERTICAL, uint32_t flags = 0, int min = -10, int max = 10);
+        IntSlider2D(const std::string& sg, const sSliderDescription& desc);
 
         void update(float delta_time) override;
         bool on_input(sInputData data) override;
