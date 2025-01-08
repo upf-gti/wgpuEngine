@@ -77,6 +77,7 @@ public:
     virtual ~Node2D();
 
     virtual void add_child(Node2D* child);
+    virtual void add_childs(const std::vector<Node2D*>& childs);
     virtual void remove_child(Node2D* child);
     virtual void on_children_changed();
     virtual void update_ui_data() {};

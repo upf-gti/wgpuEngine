@@ -78,6 +78,13 @@ void Node2D::add_child(Node2D* child)
     on_children_changed();
 }
 
+void Node2D::add_childs(const std::vector<Node2D*>& childs)
+{
+    for (Node2D* child : childs) {
+        add_child(child);
+    }
+}
+
 void Node2D::remove_child(Node2D* child)
 {
     // Checks if it's a child
