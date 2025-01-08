@@ -1386,88 +1386,7 @@ bool GltfParser::parse(const char* file_path, std::vector<Node*>& entities, uint
         spdlog::error(err);
     }
 
-    const tinygltf::Scene* gltf_scene = nullptr;
-
-    if (model.defaultScene >= 0) {
-        gltf_scene = &model.scenes[model.defaultScene];
-    }
-    else {
-        gltf_scene = &model.scenes[0];
-    }
-
-    std::map<std::string, Node3D*> loaded_nodes;
-    std::map<std::string, uint32_t> name_repeats;
-    std::map<int, int> hierarchy;
-
-    std::vector<SkeletonInstance3D*> skeleton_instances;
-
-    int entity_name_idx = 0;
-
-    bool fill_surface_data = (flags & PARSE_GLTF_FILL_SURFACE_DATA);
-
-    std::filesystem::path path_filename = path.replace_extension().filename();
-
-    Node3D* scene_root = root ? root : new Node3D();
-    if (!root) {
-        scene_root->set_name(path_filename.string() + "_root");
-        entities.push_back(scene_root);
-    }
-
-    for (size_t i = 0; i < gltf_scene->nodes.size(); ++i)
-    {
-        uint32_t node_id = gltf_scene->nodes[i];
-
-        assert(node_id >= 0 && node_id < model.nodes.size());
-
-        Node3D* entity = create_node_entity(node_id, model, loaded_nodes, name_repeats);
-
-        process_node_hierarchy(model, -1, node_id, scene_root, entity, hierarchy, skeleton_instances);
-
-        parse_model_nodes(model, -1, node_id, scene_root, entity, loaded_nodes, name_repeats, texture_cache, mesh_cache, hierarchy, skeleton_instances, fill_surface_data);
-    }
-
-    if (model.skins.size()) {
-        parse_model_skins(scene_root, model, loaded_nodes, hierarchy, skeleton_instances);
-    }
-
-    if (model.animations.size()) {
-        AnimationPlayer* player = new AnimationPlayer("Animation Player");
-        //gltf_root->add_child(player);
-        std::vector<Node*>& nodes = scene_root->get_children();
-        player->set_parent(scene_root);
-        nodes.insert(nodes.begin(), player);
-
-        parse_model_animations(model, skeleton_instances, player);
-    }
-
-    // Clean unused nodes
-
-    for (auto instance : skeleton_instances) {
-        auto& joint_names = instance->get_skeleton()->get_joint_names();
-
-        for (auto& name : joint_names) {
-
-            if (!loaded_nodes.contains(name)) {
-                continue;
-            }
-
-            delete loaded_nodes[name];
-            loaded_nodes[name] = nullptr;
-        }
-    }
-
-    name_repeats.clear();
-    loaded_nodes.clear();
-    skeleton_instances.clear();
-    hierarchy.clear();
-
-    if (flags & PARSE_GLTF_CLEAR_CACHE) {
-        clear_cache();
-    }
-
-    root = nullptr;
-
-    return true;
+    return parse_model(&model, entities, flags);
 }
 
 bool GltfParser::read_data(int8_t* byte_array, uint32_t array_size, std::vector<Node*>& entities, uint32_t flags)
@@ -1490,13 +1409,19 @@ bool GltfParser::read_data(int8_t* byte_array, uint32_t array_size, std::vector<
         spdlog::error(err);
     }
 
+    return parse_model(&model, entities, flags);
+}
+
+bool GltfParser::parse_model(tinygltf::Model* model, std::vector<Node*>& entities, uint32_t flags)
+{
+    assert(model);
     const tinygltf::Scene* gltf_scene = nullptr;
 
-    if (model.defaultScene >= 0) {
-        gltf_scene = &model.scenes[model.defaultScene];
+    if (model->defaultScene >= 0) {
+        gltf_scene = &model->scenes[model->defaultScene];
     }
     else {
-        gltf_scene = &model.scenes[0];
+        gltf_scene = &model->scenes[0];
     }
 
     std::map<std::string, Node3D*> loaded_nodes;
@@ -1521,27 +1446,27 @@ bool GltfParser::read_data(int8_t* byte_array, uint32_t array_size, std::vector<
     {
         uint32_t node_id = gltf_scene->nodes[i];
 
-        assert(node_id >= 0 && node_id < model.nodes.size());
+        assert(node_id >= 0 && node_id < model->nodes.size());
 
-        Node3D* entity = create_node_entity(node_id, model, loaded_nodes, name_repeats);
+        Node3D* entity = create_node_entity(node_id, *model, loaded_nodes, name_repeats);
 
-        process_node_hierarchy(model, -1, node_id, scene_root, entity, hierarchy, skeleton_instances);
+        process_node_hierarchy(*model, -1, node_id, scene_root, entity, hierarchy, skeleton_instances);
 
-        parse_model_nodes(model, -1, node_id, scene_root, entity, loaded_nodes, name_repeats, texture_cache, mesh_cache, hierarchy, skeleton_instances, fill_surface_data);
+        parse_model_nodes(*model, -1, node_id, scene_root, entity, loaded_nodes, name_repeats, texture_cache, mesh_cache, hierarchy, skeleton_instances, fill_surface_data);
     }
 
-    if (model.skins.size()) {
-        parse_model_skins(scene_root, model, loaded_nodes, hierarchy, skeleton_instances);
+    if (model->skins.size()) {
+        parse_model_skins(scene_root, *model, loaded_nodes, hierarchy, skeleton_instances);
     }
 
-    if (model.animations.size()) {
+    if (model->animations.size()) {
         AnimationPlayer* player = new AnimationPlayer("Animation Player");
         //gltf_root->add_child(player);
         std::vector<Node*>& nodes = scene_root->get_children();
         player->set_parent(scene_root);
         nodes.insert(nodes.begin(), player);
 
-        parse_model_animations(model, skeleton_instances, player);
+        parse_model_animations(*model, skeleton_instances, player);
     }
 
     // Clean unused nodes
