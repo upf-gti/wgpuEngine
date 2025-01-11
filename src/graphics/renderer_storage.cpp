@@ -219,11 +219,12 @@ void RendererStorage::register_material_bind_group(WebGPUContext* webgpu_context
 
 WGPUBindGroup RendererStorage::get_material_bind_group(const Material* material)
 {
-    if (!material_bind_groups.contains(material)) {
+    auto it = material_bind_groups.find(material);
+    if (it == material_bind_groups.end()) {
         assert(false);
     }
 
-    return material_bind_groups[material].bind_group;
+    return it->second.bind_group;
 }
 
 void RendererStorage::delete_material_bind_group(WebGPUContext* webgpu_context, Material* material)

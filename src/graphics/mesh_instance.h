@@ -20,6 +20,8 @@ protected:
     std::vector<Surface*> surfaces;
     std::unordered_map<Surface*, Material*> material_overrides;
 
+    bool receive_shadows = true;
+
 public:
 
     MeshInstance();
@@ -31,6 +33,9 @@ public:
 
     void set_frustum_culling_enabled(bool enabled);
     bool get_frustum_culling_enabled();
+
+    bool set_receive_shadows(bool receive_shadows) { this->receive_shadows = receive_shadows; }
+    bool get_receive_shadows() { return receive_shadows; }
 
     Material* get_surface_material_override(Surface* surface);
 

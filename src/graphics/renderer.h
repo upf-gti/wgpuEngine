@@ -16,7 +16,7 @@
 #include <map>
 #include <string>
 
-#define MAX_LIGHTS 8
+#define MAX_LIGHTS 32
 
 class Camera;
 class Texture;
@@ -74,7 +74,7 @@ protected:
 
     WGPUCommandEncoder global_command_encoder;
 
-    Camera* camera = nullptr;
+    Camera* camera_3d = nullptr;
     Camera* camera_2d = nullptr;
 
     // Render meshes with material color
@@ -172,6 +172,7 @@ protected:
 
     // Entities to be rendered this frame
     std::vector<sRenderListData> render_entity_list;
+    uint32_t current_render_list_size = 32;
 
     // Gaussian Splatting scenes to render
     std::vector<GSNode*> gs_scenes_list;
@@ -199,6 +200,21 @@ protected:
     Uniform lights_buffer;
     Uniform num_lights_buffer;
 
+    // Shadows
+
+    Uniform view_projection_uniform;
+
+    struct sLightShadowData {
+        glm::mat4x4 view_projection;
+        // culled entities for this light
+        std::vector<sRenderData> shadow_entity_lists;
+    };
+
+    std::vector<sLightShadowData> light_shadow_data;
+
+    Pipeline shadow_pipeline;
+    Shader* shadow_shader = nullptr;
+
     Pipeline gs_render_pipeline;
     Shader* gs_render_shader = nullptr;
 
@@ -213,12 +229,6 @@ protected:
 
     bool frustum_camera_paused = false;
     bool debug_this_frame = false;
-
-    void render_screen(WGPUTextureView swapchain_view);
-
-#if defined(XR_SUPPORT)
-    void render_xr();
-#endif // XR_SUPPORT
 
     float exposure = 1.0f;
     float ibl_intensity = 1.0f;
@@ -246,6 +256,8 @@ public:
     
     virtual void update(float delta_time);
     virtual void render();
+
+    void render_camera(const Camera& camera, WGPUTextureView framebuffer_view, WGPUTextureView depth_view, uint32_t eye_idx = 0);
 
     void process_events();
 
@@ -349,5 +361,5 @@ public:
     void set_irradiance_texture(Texture* texture);
     Texture* get_irradiance_texture() { return irradiance_texture; }
 
-    Camera* get_camera() { return camera; }
+    Camera* get_camera() { return camera_3d; }
 };
