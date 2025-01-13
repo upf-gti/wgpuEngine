@@ -167,7 +167,7 @@ const std::vector<uint32_t>& Skeleton::get_joint_indices()
     return joint_ids;
 }
 
-uint32_t& Skeleton::get_joint_indices(uint32_t id)
+uint32_t Skeleton::get_joint_index(uint32_t id)
 {
     return joint_ids[id];
 }

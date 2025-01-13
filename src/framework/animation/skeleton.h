@@ -37,7 +37,7 @@ public:
     const std::vector<std::string>& get_joint_names();
     const std::vector<uint32_t>& get_joint_indices();
     std::string& get_joint_name(uint32_t id);
-    uint32_t& get_joint_indices(uint32_t id);
+    uint32_t get_joint_index(uint32_t id);
     uint32_t get_joints_count();
     const std::string& get_name() { return name; };
 

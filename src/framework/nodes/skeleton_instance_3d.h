@@ -12,6 +12,8 @@ class SkeletonInstance3D : public Node3D {
     Uniform* animated_uniform_data = nullptr;
     Uniform* invbind_uniform_data = nullptr;
 
+protected:
+
     std::vector<Joint3D*> joint_nodes;
 
     Skeleton* skeleton = nullptr;
@@ -30,7 +32,7 @@ public:
     void render_gui() override;
 
     void update_pose_from_joints();
-    void update_joints_from_pose();
+    virtual void update_joints_from_pose();
 
     Skeleton* get_skeleton();
     Node* get_node(std::vector<std::string>& path_tokens) override;
