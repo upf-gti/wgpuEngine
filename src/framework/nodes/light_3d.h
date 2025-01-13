@@ -1,5 +1,7 @@
 #pragma once
 
+#include "includes.h"
+
 #include "node_3d.h"
 
 #include "graphics/uniforms_structs.h"
@@ -31,6 +33,9 @@ protected:
     bool cast_shadows = false;
     float shadow_bias = 0.001f;
 
+    WGPUTexture shadow_depth_texture = nullptr;
+    WGPUTextureView shadow_depth_texture_view = nullptr;
+
 public:
 
     Light3D();
@@ -55,6 +60,9 @@ public:
     virtual void set_range(float value);
     void set_fading_enabled(bool value);
     void set_cast_shadows(bool value);
+
+    WGPUTexture get_shadow_depth_texture() { return shadow_depth_texture; }
+    WGPUTextureView get_shadow_depth_texture_view() { return shadow_depth_texture_view; }
 
     void serialize(std::ofstream& binary_scene_file) override;
     void parse(std::ifstream& binary_scene_file) override;

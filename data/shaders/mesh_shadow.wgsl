@@ -9,13 +9,26 @@ struct ShadowVertexInput {
 #endif
 };
 
+struct ShadowVertexOutput {
+  @location(0) shadowPos: vec3f,
+  @location(1) fragPos: vec3f,
+  @location(2) fragNorm: vec3f,
+
+  @builtin(position) Position: vec4f,
+}
+
 @group(0) @binding(0) var<storage, read> mesh_data : InstanceData;
-@group(1) @binding(0) var<uniform> light_view_projection : mat4x4f;
+#dynamic @group(1) @binding(0) var<uniform> camera_data : CameraData;
+
+#ifdef USE_SKINNING
+@group(2) @binding(10) var<storage, read> animated_matrices: array<mat4x4f>;
+@group(2) @binding(11) var<storage, read> inv_bind_matrices: array<mat4x4f>;
+#endif
 
 @vertex
-fn vs_main(in : ShadowVertexInput) -> @builtin(position) {
+fn vs_main(in : ShadowVertexInput) -> @builtin(position) vec4f {
 
-    var position = vec4f(position, 1.0);
+    var position = vec4f(in.position, 1.0);
 
 #ifdef USE_SKINNING
     var skin : mat4x4f = (animated_matrices[in.joints.x] * inv_bind_matrices[in.joints.x]) * in.weights.x;
@@ -28,5 +41,5 @@ fn vs_main(in : ShadowVertexInput) -> @builtin(position) {
 
     let instance_data : RenderMeshData = mesh_data.data[in.instance_id];
 
-    return scene.lightViewProjMatrix * instance_data.model * vec4(position, 1.0);
+    return camera_data.view_projection * instance_data.model * position;
 }

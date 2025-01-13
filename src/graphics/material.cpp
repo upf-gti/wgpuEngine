@@ -185,6 +185,11 @@ void Material::set_is_2D(bool is_2D)
     this->is_2D = is_2D;
 }
 
+void Material::set_fragment_write(bool fragment_write)
+{
+    this->fragment_write = fragment_write;
+}
+
 void Material::set_transparency_type(eTransparencyType transparency_type)
 {
     this->transparency_type = transparency_type;
@@ -299,6 +304,11 @@ bool Material::get_use_skinning() const
 bool Material::get_is_2D() const
 {
     return is_2D;
+}
+
+bool Material::get_fragment_write() const
+{
+    return fragment_write;
 }
 
 eTransparencyType Material::get_transparency_type() const

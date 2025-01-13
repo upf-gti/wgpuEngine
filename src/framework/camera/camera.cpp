@@ -59,6 +59,7 @@ void Camera::set_view(const glm::mat4x4& view, bool update_view_projection)
 {
     this->view = view;
 
+    // TODO: make if constexpr?
     if (update_view_projection) {
         view_projection = projection * view;
     }
@@ -68,6 +69,7 @@ void Camera::set_projection(const glm::mat4x4& projection, bool update_view_proj
 {
     this->projection = projection;
 
+    // TODO: make if constexpr?
     if (update_view_projection) {
         view_projection = projection * view;
     }
@@ -105,6 +107,11 @@ void Camera::update_projection_matrix()
     else
         projection = glm::perspective(fov, aspect, z_near, z_far);
 
+    view_projection = projection * view;
+}
+
+void Camera::update_view_projection_matrix()
+{
     view_projection = projection * view;
 }
 

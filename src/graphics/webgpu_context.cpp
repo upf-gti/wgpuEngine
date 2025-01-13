@@ -1144,7 +1144,9 @@ void WebGPUContext::create_render_pipeline_async(WGPUShaderModule render_shader_
             .alphaToCoverageEnabled = false
     };
 
-    pipeline_descr.fragment = &fragment_state;
+    if (description.has_fragment_state) {
+        pipeline_descr.fragment = &fragment_state;
+    }
 
     wgpuDeviceCreateRenderPipelineAsync2(device, &pipeline_descr, callback_info);
 }

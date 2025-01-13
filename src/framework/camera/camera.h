@@ -22,6 +22,7 @@ public:
 
     void update_view_matrix();
     void update_projection_matrix();
+    void update_view_projection_matrix();
 
     virtual void look_at(const glm::vec3& eye, const glm::vec3& center, const glm::vec3& up, bool reset_internals = true);
 
