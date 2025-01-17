@@ -223,7 +223,7 @@ int Renderer::post_initialize()
 
     shadow_material = new Material();
     shadow_material->set_type(MATERIAL_UNLIT);
-    shadow_material->set_cull_type(CULL_FRONT);
+    //shadow_material->set_cull_type(CULL_FRONT);
     shadow_material->set_fragment_write(false);
     shadow_material->set_shader(RendererStorage::get_shader_from_source(shaders::mesh_shadow::source, shaders::mesh_shadow::path, shaders::mesh_shadow::libraries, shadow_material));
 
@@ -352,7 +352,7 @@ void Renderer::render()
 
     update_lights();
 
-    render_shadow_maps();
+    //render_shadow_maps();
 
     camera_data.exposure = exposure;
     camera_data.ibl_intensity = ibl_intensity;
@@ -372,7 +372,7 @@ void Renderer::render()
 
         wgpuQueueWriteBuffer(webgpu_context->device_queue, std::get<WGPUBuffer>(camera_uniform.data), 0, &camera_data, sizeof(sCameraData));
 
-        render_camera(*camera_3d, render_lists, screen_surface_texture_view, eye_depth_texture_view[EYE_LEFT], render_instances_data, render_camera_bind_group, true, "forward_render");
+        render_camera(render_lists, screen_surface_texture_view, eye_depth_texture_view[EYE_LEFT], render_instances_data, render_camera_bind_group, true, "forward_render");
     }
     else {
 
@@ -402,9 +402,9 @@ void Renderer::render()
             camera_data.view = cameras[eye_idx].get_view();
             camera_data.projection = cameras[eye_idx].get_projection();
 
-            wgpuQueueWriteBuffer(webgpu_context->device_queue, std::get<WGPUBuffer>(camera_uniform.data), 0, &camera_data, sizeof(sCameraData));
+            wgpuQueueWriteBuffer(webgpu_context->device_queue, std::get<WGPUBuffer>(camera_uniform.data), eye_idx * camera_buffer_stride, &camera_data, sizeof(sCameraData));
 
-            render_camera(cameras[eye_idx], render_lists, swapchainData.images[swapchainData.image_index].textureView, eye_depth_texture_view[eye_idx], render_instances_data, render_camera_bind_group, true, "forward_render_xr", eye_idx);
+            render_camera(render_lists, swapchainData.images[swapchainData.image_index].textureView, eye_depth_texture_view[eye_idx], render_instances_data, render_camera_bind_group, true, "forward_render_xr", eye_idx, eye_idx);
 
             xr_context->release_swapchain(eye_idx);
         }
@@ -521,7 +521,7 @@ void Renderer::render()
     clear_renderables();
 }
 
-void Renderer::render_camera(const Camera& camera, const std::vector<std::vector<sRenderData>>& render_lists, WGPUTextureView framebuffer_view, WGPUTextureView depth_view,
+void Renderer::render_camera(const std::vector<std::vector<sRenderData>>& render_lists, WGPUTextureView framebuffer_view, WGPUTextureView depth_view,
     const sInstanceData& instance_data, WGPUBindGroup camera_bind_group, bool render_transparents, const std::string& pass_name, uint32_t eye_idx, uint32_t camera_offset)
 {
     {
@@ -1018,10 +1018,13 @@ void Renderer::render_shadow_maps()
 
     for (uint32_t light_idx = 0; light_idx < lights_with_shadow.size(); ++light_idx) {
         Light3D* light = lights_with_shadow[light_idx];
+
+        Transform global_transform = light->get_global_transform();
+
         Camera2D light_camera;
-        light_camera.set_orthographic(-10.0f, 10.0f, -10.0f, 10.0f, 7.5f, 1.0f);
-        light_camera.look_at(glm::vec3(-2.0f, 4.0f, -1.0f),
-            glm::vec3(0.0f, 0.0f, 0.0f),
+        light_camera.set_orthographic(-10.0f, 10.0f, -10.0f, 10.0f, 20.0f, 0.1f);
+        light_camera.look_at(global_transform.get_position(),
+            global_transform.get_position() + global_transform.get_front(),
             glm::vec3(0.0f, 1.0f, 0.0f));
 
         prepare_cull_instancing(light_camera, render_lists, shadow_instances_data, true);
@@ -1035,7 +1038,7 @@ void Renderer::render_shadow_maps()
 
         wgpuQueueWriteBuffer(webgpu_context->device_queue, std::get<WGPUBuffer>(shadow_camera_uniform.data), light_idx * camera_buffer_stride, &camera_data, sizeof(sCameraData));
 
-        render_camera(light_camera, render_lists, nullptr, light->get_shadow_depth_texture_view(), shadow_instances_data, shadow_camera_bind_group, false, "shadow_map", 0, light_idx);
+        render_camera(render_lists, nullptr, light->get_shadow_depth_texture_view(), shadow_instances_data, shadow_camera_bind_group, false, "shadow_map", 0, light_idx);
     }
 }
 
@@ -1130,33 +1133,33 @@ void Renderer::render_render_list(WGPURenderPassEncoder render_pass, const std::
     }
 }
 
-void Renderer::render_opaque(WGPURenderPassEncoder render_pass, const std::vector<std::vector<sRenderData>>& render_lists, const sInstanceData& instance_data, WGPUBindGroup render_camera_bind_group, uint32_t camera_buffer_stride)
+void Renderer::render_opaque(WGPURenderPassEncoder render_pass, const std::vector<std::vector<sRenderData>>& render_lists, const sInstanceData& instance_data, WGPUBindGroup camera_bind_group, uint32_t camera_buffer_stride)
 {
 #ifndef NDEBUG
     wgpuRenderPassEncoderPushDebugGroup(render_pass, "Opaque");
 #endif
 
-    render_render_list(render_pass, render_lists[RENDER_LIST_OPAQUE], RENDER_LIST_OPAQUE, instance_data, render_camera_bind_group, camera_buffer_stride);
+    render_render_list(render_pass, render_lists[RENDER_LIST_OPAQUE], RENDER_LIST_OPAQUE, instance_data, camera_bind_group, camera_buffer_stride);
 
 #ifndef NDEBUG
     wgpuRenderPassEncoderPopDebugGroup(render_pass);
 #endif
 }
 
-void Renderer::render_transparent(WGPURenderPassEncoder render_pass, const std::vector<std::vector<sRenderData>>& render_lists, const sInstanceData& instance_data, WGPUBindGroup render_camera_bind_group, uint32_t camera_buffer_stride)
+void Renderer::render_transparent(WGPURenderPassEncoder render_pass, const std::vector<std::vector<sRenderData>>& render_lists, const sInstanceData& instance_data, WGPUBindGroup camera_bind_group, uint32_t camera_buffer_stride)
 {
 #ifndef NDEBUG
     wgpuRenderPassEncoderPushDebugGroup(render_pass, "Transparent");
 #endif
 
-    render_render_list(render_pass, render_lists[RENDER_LIST_TRANSPARENT], RENDER_LIST_TRANSPARENT, instance_data, render_camera_bind_group, camera_buffer_stride);
+    render_render_list(render_pass, render_lists[RENDER_LIST_TRANSPARENT], RENDER_LIST_TRANSPARENT, instance_data, camera_bind_group, camera_buffer_stride);
 
 #ifndef NDEBUG
     wgpuRenderPassEncoderPopDebugGroup(render_pass);
 #endif
 }
 
-void Renderer::render_splats(WGPURenderPassEncoder render_pass, const std::vector<std::vector<sRenderData>>& render_lists, const sInstanceData& instance_data, WGPUBindGroup render_camera_bind_group, uint32_t camera_buffer_stride)
+void Renderer::render_splats(WGPURenderPassEncoder render_pass, const std::vector<std::vector<sRenderData>>& render_lists, const sInstanceData& instance_data, WGPUBindGroup camera_bind_group, uint32_t camera_buffer_stride)
 {
 #ifndef NDEBUG
     wgpuRenderPassEncoderPushDebugGroup(render_pass, "Gaussian Splats");
@@ -1169,7 +1172,7 @@ void Renderer::render_splats(WGPURenderPassEncoder render_pass, const std::vecto
         }
 
         wgpuRenderPassEncoderSetBindGroup(render_pass, 0, gs_node->get_render_bindgroup(), 0, nullptr);
-        wgpuRenderPassEncoderSetBindGroup(render_pass, 1, render_camera_bind_group, 1, &camera_buffer_stride);
+        wgpuRenderPassEncoderSetBindGroup(render_pass, 1, camera_bind_group, 1, &camera_buffer_stride);
 
         wgpuRenderPassEncoderSetVertexBuffer(render_pass, 0, gs_node->get_render_buffer(), 0, gs_node->get_splats_render_bytes_size());
         wgpuRenderPassEncoderSetVertexBuffer(render_pass, 1, gs_node->get_ids_buffer(), 0, gs_node->get_ids_render_bytes_size());
@@ -1182,15 +1185,15 @@ void Renderer::render_splats(WGPURenderPassEncoder render_pass, const std::vecto
 #endif
 }
 
-void Renderer::render_2D(WGPURenderPassEncoder render_pass, const std::vector<std::vector<sRenderData>>& render_lists, const sInstanceData& instance_data, WGPUBindGroup render_camera_bind_group)
+void Renderer::render_2D(WGPURenderPassEncoder render_pass, const std::vector<std::vector<sRenderData>>& render_lists, const sInstanceData& instance_data, WGPUBindGroup camera_bind_group)
 {
 #ifndef NDEBUG
     wgpuRenderPassEncoderPushDebugGroup(render_pass, "2D");
 #endif
 
-    render_render_list(render_pass, render_lists[RENDER_LIST_2D], RENDER_LIST_2D, instance_data, render_camera_bind_group);
+    render_render_list(render_pass, render_lists[RENDER_LIST_2D], RENDER_LIST_2D, instance_data, camera_bind_group);
 
-    render_render_list(render_pass, render_lists[RENDER_LIST_2D_TRANSPARENT], RENDER_LIST_2D_TRANSPARENT, instance_data, render_camera_bind_group);
+    render_render_list(render_pass, render_lists[RENDER_LIST_2D_TRANSPARENT], RENDER_LIST_2D_TRANSPARENT, instance_data, camera_bind_group);
 
 #ifndef NDEBUG
     wgpuRenderPassEncoderPopDebugGroup(render_pass);
