@@ -351,6 +351,7 @@ namespace ui {
         Material* material = quad_mesh->get_surface_material_override(quad_mesh->get_surface(0));
 
         material->set_is_2D(false);
+        material->set_depth_read(true);
 
         Node2D::disable_2d();
     }
@@ -815,6 +816,7 @@ namespace ui {
 
         if (material->get_is_2D()) {
             material->set_is_2D(false);
+            material->set_depth_read(true);
             //text_entity->generate_mesh(color, material->is_2D);
         }
 

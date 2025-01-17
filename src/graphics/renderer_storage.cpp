@@ -783,6 +783,7 @@ RenderPipelineKey RendererStorage::get_render_pipeline_key(Material* material)
 
     if (material->get_is_2D()) {
         description.depth_write = WGPUOptionalBool_False;
+        description.use_depth = false;
     }
     else {
         description.depth_write = material->get_depth_write() ? WGPUOptionalBool_True : WGPUOptionalBool_False;
