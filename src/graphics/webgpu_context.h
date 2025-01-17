@@ -25,6 +25,7 @@ struct RenderPipelineDescription {
 
     bool use_depth = true;
     bool depth_read = true;
+    bool has_fragment_state = true;
     WGPUOptionalBool depth_write = WGPUOptionalBool_True;
 
     WGPUCompareFunction depth_compare = WGPUCompareFunction_Greater;

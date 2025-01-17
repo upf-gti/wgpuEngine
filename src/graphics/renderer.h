@@ -16,7 +16,7 @@
 #include <map>
 #include <string>
 
-#define MAX_LIGHTS 8
+#define MAX_LIGHTS 32
 
 class Camera;
 class Texture;
@@ -74,18 +74,20 @@ protected:
 
     WGPUCommandEncoder global_command_encoder;
 
-    Camera* camera = nullptr;
+    Camera* camera_3d = nullptr;
     Camera* camera_2d = nullptr;
 
     // Render meshes with material color
     WGPUBindGroup render_camera_bind_group = nullptr;
+    WGPUBindGroup shadow_camera_bind_group = nullptr;
     WGPUBindGroup compute_camera_bind_group = nullptr;
     WGPUBindGroup render_camera_bind_group_2d = nullptr;
 
     Uniform camera_uniform;
     Uniform camera_2d_uniform;
+    Uniform shadow_camera_uniform;
 
-    uint32_t xr_camera_buffer_stride = 0;
+    uint32_t camera_buffer_stride = 0;
 
     Texture* irradiance_texture = nullptr;
 
@@ -128,6 +130,7 @@ protected:
         uint32_t repeat;
         glm::mat4x4 global_matrix;
         MeshInstance* mesh_instance_ref;
+        Material* material;
     };
 
     enum eRenderListType {
@@ -136,7 +139,13 @@ protected:
         RENDER_LIST_SPLATS,
         RENDER_LIST_2D,
         RENDER_LIST_2D_TRANSPARENT,
-        RENDER_LIST_SIZE
+        RENDER_LIST_COUNT
+    };
+
+    struct sInstanceData {
+        std::vector<sUniformData> instances_data[RENDER_LIST_COUNT];
+        Uniform	instances_data_uniforms[RENDER_LIST_COUNT];
+        WGPUBindGroup instances_bind_groups[RENDER_LIST_COUNT] = {};
     };
 
     struct sCameraData {
@@ -158,28 +167,26 @@ protected:
     sCameraData camera_data;
     sCameraData camera_2d_data;
 
-    void render_render_list(int list_index, WGPURenderPassEncoder render_pass, const WGPUBindGroup& render_camera_bind_group, uint32_t camera_buffer_stride = 0);
+    void render_shadow_maps();
+
+    void render_render_list(WGPURenderPassEncoder render_pass, const std::vector<sRenderData>& render_list, int list_index, const sInstanceData& instance_data, WGPUBindGroup camera_bind_group, uint32_t camera_buffer_stride = 0);
 
     void init_camera_bind_group();
 
     void get_timestamps();
 
-    std::vector<sUniformData> instance_data[RENDER_LIST_SIZE];
-    Uniform	instance_data_uniform[RENDER_LIST_SIZE];
+    sInstanceData render_instances_data;
+    sInstanceData shadow_instances_data;
 
     std::vector<sUIData> instance_ui_data;
     Uniform	instance_ui_data_uniform;
 
     // Entities to be rendered this frame
     std::vector<sRenderListData> render_entity_list;
+    uint32_t current_render_list_size = 32;
 
     // Gaussian Splatting scenes to render
     std::vector<GSNode*> gs_scenes_list;
-
-    std::vector<sRenderData> render_list[RENDER_LIST_SIZE];
-
-    // Bind group per shader
-    WGPUBindGroup bind_groups[RENDER_LIST_SIZE] = {};
 
     // Bind group for lighting
 
@@ -199,6 +206,13 @@ protected:
     Uniform lights_buffer;
     Uniform num_lights_buffer;
 
+    // Shadows
+
+    uint32_t shadow_uniform_buffer_size = MAX_LIGHTS;
+    std::vector<Light3D*> lights_with_shadow;
+
+    Material* shadow_material;
+
     Pipeline gs_render_pipeline;
     Shader* gs_render_shader = nullptr;
 
@@ -213,12 +227,6 @@ protected:
 
     bool frustum_camera_paused = false;
     bool debug_this_frame = false;
-
-    void render_screen(WGPUTextureView swapchain_view);
-
-#if defined(XR_SUPPORT)
-    void render_xr();
-#endif // XR_SUPPORT
 
     float exposure = 1.0f;
     float ibl_intensity = 1.0f;
@@ -246,6 +254,9 @@ public:
     
     virtual void update(float delta_time);
     virtual void render();
+
+    void render_camera(const std::vector<std::vector<sRenderData>>& render_lists, WGPUTextureView framebuffer_view, WGPUTextureView depth_view,
+        const sInstanceData& instance_data, WGPUBindGroup camera_bind_group, bool render_transparents = true, const std::string& pass_name = "", uint32_t eye_idx = 0, uint32_t camera_offset = 0);
 
     void process_events();
 
@@ -283,11 +294,11 @@ public:
 
     bool is_inside_frustum(const glm::vec3& minp, const glm::vec3& maxp) const;
 
-    void prepare_instancing(const glm::vec3& camera_position);
-    void render_opaque(WGPURenderPassEncoder render_pass, const WGPUBindGroup& render_camera_bind_group, uint32_t camera_buffer_stride = 0);
-    void render_transparent(WGPURenderPassEncoder render_pass, const WGPUBindGroup& render_camera_bind_group, uint32_t camera_buffer_stride = 0);
-    void render_splats(WGPURenderPassEncoder render_pass, const WGPUBindGroup& render_camera_bind_group, uint32_t camera_buffer_stride = 0);
-    void render_2D(WGPURenderPassEncoder render_pass, const WGPUBindGroup& render_camera_bind_group);
+    void prepare_cull_instancing(const Camera& camera, std::vector<std::vector<sRenderData>>& render_lists, sInstanceData& instances_data, bool is_shadow_pass = false);
+    void render_opaque(WGPURenderPassEncoder render_pass, const std::vector<std::vector<sRenderData>>& render_lists, const sInstanceData& instance_data, WGPUBindGroup camera_bind_group, uint32_t camera_buffer_stride = 0);
+    void render_transparent(WGPURenderPassEncoder render_pass, const std::vector<std::vector<sRenderData>>& render_lists, const sInstanceData& instance_data, WGPUBindGroup camera_bind_group, uint32_t camera_buffer_stride = 0);
+    void render_splats(WGPURenderPassEncoder render_pass, const std::vector<std::vector<sRenderData>>& render_lists, const sInstanceData& instance_data, WGPUBindGroup camera_bind_group, uint32_t camera_buffer_stride = 0);
+    void render_2D(WGPURenderPassEncoder render_pass, const std::vector<std::vector<sRenderData>>& render_lists, const sInstanceData& instance_data, WGPUBindGroup camera_bind_group);
 
     bool get_openxr_available() { return is_openxr_available; }
     bool get_use_mirror_screen() { return use_mirror_screen; }
@@ -349,5 +360,5 @@ public:
     void set_irradiance_texture(Texture* texture);
     Texture* get_irradiance_texture() { return irradiance_texture; }
 
-    Camera* get_camera() { return camera; }
+    Camera* get_camera() { return camera_3d; }
 };

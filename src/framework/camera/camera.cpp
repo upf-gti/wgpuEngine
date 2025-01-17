@@ -55,16 +55,29 @@ void Camera::look_at(const glm::vec3& eye, const glm::vec3& center, const glm::v
     update_view_matrix();
 }
 
-void Camera::set_view(const glm::mat4x4& view)
+void Camera::set_view(const glm::mat4x4& view, bool update_view_projection)
 {
     this->view = view;
-    view_projection = projection * view;
+
+    // TODO: make if constexpr?
+    if (update_view_projection) {
+        view_projection = projection * view;
+    }
 }
 
-void Camera::set_projection(const glm::mat4x4& projection)
+void Camera::set_projection(const glm::mat4x4& projection, bool update_view_projection)
 {
     this->projection = projection;
-    view_projection = projection * view;
+
+    // TODO: make if constexpr?
+    if (update_view_projection) {
+        view_projection = projection * view;
+    }
+}
+
+void Camera::set_view_projection(const glm::mat4x4& view_projection)
+{
+    this->view_projection = view_projection;
 }
 
 void Camera::set_eye(const glm::vec3& new_eye)
@@ -94,6 +107,11 @@ void Camera::update_projection_matrix()
     else
         projection = glm::perspective(fov, aspect, z_near, z_far);
 
+    view_projection = projection * view;
+}
+
+void Camera::update_view_projection_matrix()
+{
     view_projection = projection * view;
 }
 

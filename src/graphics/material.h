@@ -91,6 +91,7 @@ public:
     void set_depth_write(bool depth_write);
     void set_use_skinning(bool use_skinning);
     void set_is_2D(bool is_2D);
+    void set_fragment_write(bool fragment_write);
 
     void set_transparency_type(eTransparencyType transparency_type);
     void set_topology_type(eTopologyType topology_type);
@@ -126,6 +127,7 @@ public:
     bool get_depth_write() const;
     bool get_use_skinning() const;
     bool get_is_2D() const;
+    bool get_fragment_write() const;
 
     eTransparencyType get_transparency_type() const;
     eTopologyType get_topology_type() const;
@@ -166,6 +168,7 @@ private:
     bool depth_write = true;
     bool use_skinning = false;
     bool is_2D = false;
+    bool fragment_write = true;
 
     eTransparencyType transparency_type = ALPHA_OPAQUE;
     eTopologyType topology_type = TOPOLOGY_TRIANGLE_LIST;

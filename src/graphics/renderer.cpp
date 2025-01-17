@@ -23,6 +23,7 @@
 
 #include "shaders/mesh_forward.wgsl.gen.h"
 #include "shaders/AABB_shader.wgsl.gen.h"
+#include "shaders/mesh_shadow.wgsl.gen.h"
 
 #include "framework/parsers/parse_scene.h"
 #include "framework/nodes/mesh_instance_3d.h"
@@ -220,7 +221,16 @@ int Renderer::post_initialize()
     gs_render_shader = RendererStorage::get_shader_from_source(shaders::gs_render::source, shaders::gs_render::path, shaders::gs_render::libraries);
     gs_render_pipeline.create_render_async(gs_render_shader, color_target, desc);
 
+    shadow_material = new Material();
+    shadow_material->set_type(MATERIAL_UNLIT);
+    //shadow_material->set_cull_type(CULL_FRONT);
+    shadow_material->set_fragment_write(false);
+    shadow_material->set_shader(RendererStorage::get_shader_from_source(shaders::mesh_shadow::source, shaders::mesh_shadow::path, shaders::mesh_shadow::libraries, shadow_material));
+
     RendererStorage::register_basic_surfaces();
+
+    // set initial memory size to avoid resizing every push_back
+    current_render_list_size = 128;
 
     // Orthographic camera for ui rendering
 
@@ -266,11 +276,21 @@ void Renderer::clean()
 
     RendererStorage::clean_registered_pipelines();
 
+    wgpuBindGroupRelease(render_camera_bind_group);
+    wgpuBindGroupRelease(render_camera_bind_group_2d);
+    wgpuBindGroupRelease(shadow_camera_bind_group);
+
+    camera_uniform.destroy();
+    camera_2d_uniform.destroy();
+    shadow_camera_uniform.destroy();
+
     webgpu_context->destroy();
 
     delete renderer_storage;
     delete[] eye_depth_textures;
     delete[] multisample_textures;
+
+    delete shadow_material;
 
     //delete selected_mesh_aabb;
 
@@ -278,8 +298,8 @@ void Renderer::clean()
     delete renderdoc_capture;
 #endif
 
-    if (camera) {
-        delete camera;
+    if (camera_3d) {
+        delete camera_3d;
     }
 
     if (camera_2d) {
@@ -306,35 +326,16 @@ void Renderer::update(float delta_time)
     if (!is_openxr_available) {
         const auto& io = ImGui::GetIO();
         if (!io.WantCaptureMouse && !io.WantCaptureKeyboard && !IO::any_focus()) {
-            camera->update(delta_time);
+            camera_3d->update(delta_time);
         }
     }
     else {
-        camera->update(delta_time);
+        camera_3d->update(delta_time);
     }
 }
 
 void Renderer::render()
 {
-    glm::vec3 camera_position;
-
-    if (!is_openxr_available) {
-        if (!frustum_camera_paused) {
-            frustum_cull.set_view_projection(camera->get_view_projection());
-        }
-
-        camera_position = camera->get_eye();
-    }
-#ifdef XR_SUPPORT
-    else {
-        // TODO: use both eyes, only left eye for now
-        frustum_cull.set_view_projection(xr_context->per_view_data[0].view_projection_matrix);
-        camera_position = xr_context->per_view_data[0].position;
-    }
-#endif
-
-    prepare_instancing(camera_position);
-
     WGPUTextureView screen_surface_texture_view;
     WGPUSurfaceTexture screen_surface_texture;
 
@@ -349,19 +350,144 @@ void Renderer::render()
         screen_surface_texture_view = webgpu_context->create_texture_view(screen_surface_texture.texture, WGPUTextureViewDimension_2D, webgpu_context->swapchain_format);
     }
 
-    if (!is_openxr_available) {
-        render_screen(screen_surface_texture_view);
-    }
+    update_lights();
 
-#if defined(XR_SUPPORT)
-    if (is_openxr_available) {
-        render_xr();
+    //render_shadow_maps();
+
+    camera_data.exposure = exposure;
+    camera_data.ibl_intensity = ibl_intensity;
+    camera_data.screen_size = { webgpu_context->screen_width, webgpu_context->screen_height };
+
+    std::vector<std::vector<sRenderData>> render_lists(RENDER_LIST_COUNT);
+
+    if (!is_openxr_available) {
+        camera_data.right_controller_position = camera_data.eye;
+
+        prepare_cull_instancing(*camera_3d, render_lists, render_instances_data);
+
+        camera_data.eye = camera_3d->get_eye();
+        camera_data.view_projection = camera_3d->get_view_projection();
+        camera_data.view = camera_3d->get_view();
+        camera_data.projection = camera_3d->get_projection();
+
+        wgpuQueueWriteBuffer(webgpu_context->device_queue, std::get<WGPUBuffer>(camera_uniform.data), 0, &camera_data, sizeof(sCameraData));
+
+        render_camera(render_lists, screen_surface_texture_view, eye_depth_texture_view[EYE_LEFT], render_instances_data, render_camera_bind_group, true, "forward_render");
+    }
+    else {
+
+        xr_context->init_frame();
+
+        camera_data.right_controller_position = Input::get_controller_position(HAND_RIGHT);
+
+        // prepare eye cameras
+        Camera cameras[EYE_COUNT];
+        for (uint32_t eye_idx = 0; eye_idx < 2; eye_idx++) {
+            cameras[eye_idx].set_eye(xr_context->per_view_data[eye_idx].position);
+            cameras[eye_idx].set_view(xr_context->per_view_data[eye_idx].view_matrix, false);
+            cameras[eye_idx].set_projection(xr_context->per_view_data[eye_idx].projection_matrix, false);
+            cameras[eye_idx].set_view_projection(xr_context->per_view_data[eye_idx].view_projection_matrix);
+        }
+
+        // TODO: combine both eyes view projection, only cull with left eye for now
+        prepare_cull_instancing(cameras[EYE_LEFT], render_lists, render_instances_data);
+
+        for (uint32_t eye_idx = 0; eye_idx < 2; eye_idx++) {
+            const sSwapchainData& swapchainData = xr_context->swapchains[eye_idx];
+
+            xr_context->acquire_swapchain(eye_idx);
+
+            camera_data.eye = cameras[eye_idx].get_eye();
+            camera_data.view_projection = cameras[eye_idx].get_view_projection();
+            camera_data.view = cameras[eye_idx].get_view();
+            camera_data.projection = cameras[eye_idx].get_projection();
+
+            wgpuQueueWriteBuffer(webgpu_context->device_queue, std::get<WGPUBuffer>(camera_uniform.data), eye_idx * camera_buffer_stride, &camera_data, sizeof(sCameraData));
+
+            render_camera(render_lists, swapchainData.images[swapchainData.image_index].textureView, eye_depth_texture_view[eye_idx], render_instances_data, render_camera_bind_group, true, "forward_render_xr", eye_idx, eye_idx);
+
+            xr_context->release_swapchain(eye_idx);
+        }
 
         if (use_mirror_screen) {
             render_mirror(screen_surface_texture_view);
         }
     }
+
+    // Render 2D
+    if (!is_openxr_available || use_mirror_screen) {
+
+        camera_2d_data.eye = camera_2d->get_eye();
+        camera_2d_data.view_projection = camera_2d->get_view_projection();
+
+        camera_2d_data.exposure = exposure;
+        camera_2d_data.ibl_intensity = ibl_intensity;
+
+        wgpuQueueWriteBuffer(webgpu_context->device_queue, std::get<WGPUBuffer>(camera_2d_uniform.data), 0, &camera_2d_data, sizeof(sCameraData));
+
+        // Prepare the color attachment
+        WGPURenderPassColorAttachment render_pass_color_attachment = {};
+        render_pass_color_attachment.view = screen_surface_texture_view;
+
+        render_pass_color_attachment.loadOp = WGPULoadOp_Load;
+        render_pass_color_attachment.storeOp = WGPUStoreOp_Store;
+        render_pass_color_attachment.depthSlice = WGPU_DEPTH_SLICE_UNDEFINED;
+        render_pass_color_attachment.clearValue = WGPUColor{ clear_color.r, clear_color.g, clear_color.b, clear_color.a };
+
+        WGPURenderPassDescriptor render_pass_descr = {};
+        render_pass_descr.colorAttachmentCount = 1;
+        render_pass_descr.colorAttachments = &render_pass_color_attachment;
+        render_pass_descr.depthStencilAttachment = nullptr;
+
+        // Create & fill the render pass (encoder)
+        WGPURenderPassEncoder render_pass = wgpuCommandEncoderBeginRenderPass(global_command_encoder, &render_pass_descr);
+
+        if (custom_pre_2d_pass) {
+            custom_pre_2d_pass(custom_pass_user_data, render_pass, 0);
+        }
+
+        render_2D(render_pass, render_lists, render_instances_data, render_camera_bind_group_2d);
+
+        if (custom_post_2d_pass) {
+            custom_post_2d_pass(custom_pass_user_data, render_pass, 0);
+        }
+
+        wgpuRenderPassEncoderEnd(render_pass);
+        wgpuRenderPassEncoderRelease(render_pass);
+
+        ImGui::Render();
+
+// TODO: remove the ifdef, IMGui brings a viewport issue that can not be fixed by setting the viewport via webgpu
+#ifndef BACKEND_METAL
+    // render imgui
+        {
+            WGPURenderPassColorAttachment color_attachments = {};
+            color_attachments.view = screen_surface_texture_view;
+            color_attachments.loadOp = WGPULoadOp_Load;
+            color_attachments.storeOp = WGPUStoreOp_Store;
+            color_attachments.clearValue = { 0.0, 0.0, 0.0, 0.0 };
+            color_attachments.depthSlice = WGPU_DEPTH_SLICE_UNDEFINED;
+
+            WGPURenderPassDescriptor render_pass_desc = {};
+            render_pass_desc.colorAttachmentCount = 1;
+            render_pass_desc.colorAttachments = &color_attachments;
+            render_pass_desc.depthStencilAttachment = nullptr;
+
+            WGPURenderPassEncoder pass = wgpuCommandEncoderBeginRenderPass(global_command_encoder, &render_pass_desc);
+
+            //wgpuRenderPassEncoderSetViewport(render_pass, 0.0f,0.0f,1600.0f,900.0f,0.0f,1.0f);
+
+            wgpuRenderPassEncoderPushDebugGroup(pass, "ImGui");
+
+            ImGui_ImplWGPU_RenderDrawData(ImGui::GetDrawData(), pass);
+
+            wgpuRenderPassEncoderPopDebugGroup(pass);
+
+            wgpuRenderPassEncoderEnd(pass);
+            wgpuRenderPassEncoderRelease(pass);
+        }
 #endif
+    }
 
     submit_global_command_encoder();
 
@@ -395,6 +521,97 @@ void Renderer::render()
     clear_renderables();
 }
 
+void Renderer::render_camera(const std::vector<std::vector<sRenderData>>& render_lists, WGPUTextureView framebuffer_view, WGPUTextureView depth_view,
+    const sInstanceData& instance_data, WGPUBindGroup camera_bind_group, bool render_transparents, const std::string& pass_name, uint32_t eye_idx, uint32_t camera_offset)
+{
+    {
+        // Prepare the color attachment
+        WGPURenderPassColorAttachment render_pass_color_attachment = {};
+
+        if (framebuffer_view) {
+            if (msaa_count > 1) {
+                render_pass_color_attachment.view = multisample_textures_views[eye_idx];
+                render_pass_color_attachment.resolveTarget = framebuffer_view;
+            }
+            else {
+                render_pass_color_attachment.view = framebuffer_view;
+            }
+
+            render_pass_color_attachment.loadOp = WGPULoadOp_Clear;
+            render_pass_color_attachment.storeOp = WGPUStoreOp_Store;
+            render_pass_color_attachment.depthSlice = WGPU_DEPTH_SLICE_UNDEFINED;
+            render_pass_color_attachment.clearValue = WGPUColor{ clear_color.r, clear_color.g, clear_color.b, clear_color.a };
+        }
+
+        // Prepate the depth attachment
+        WGPURenderPassDepthStencilAttachment render_pass_depth_attachment = {};
+
+        if (depth_view) {
+            render_pass_depth_attachment.view = depth_view;
+            render_pass_depth_attachment.depthClearValue = 0.0f;
+            render_pass_depth_attachment.depthLoadOp = WGPULoadOp_Clear;
+            render_pass_depth_attachment.depthStoreOp = WGPUStoreOp_Store;
+            render_pass_depth_attachment.depthReadOnly = false;
+            render_pass_depth_attachment.stencilClearValue = 0; // Stencil config necesary, even if unused
+            render_pass_depth_attachment.stencilLoadOp = WGPULoadOp_Undefined;
+            render_pass_depth_attachment.stencilStoreOp = WGPUStoreOp_Undefined;
+            render_pass_depth_attachment.stencilReadOnly = true;
+        }
+
+        WGPURenderPassDescriptor render_pass_descr = {};
+        render_pass_descr.colorAttachmentCount = framebuffer_view ? 1 : 0;
+        render_pass_descr.colorAttachments = framebuffer_view ? &render_pass_color_attachment : nullptr;
+        render_pass_descr.depthStencilAttachment = depth_view ? &render_pass_depth_attachment : nullptr;
+
+#ifndef __EMSCRIPTEN__
+        std::vector<WGPURenderPassTimestampWrites> timestampWrites(1);
+        timestampWrites[0].beginningOfPassWriteIndex = timestamp(global_command_encoder, (pass_name + "_pre_render").c_str());
+        timestampWrites[0].querySet = timestamp_query_set;
+        timestampWrites[0].endOfPassWriteIndex = timestamp(global_command_encoder, (pass_name + "_render").c_str());
+
+        render_pass_descr.timestampWrites = timestampWrites.data();
+#endif
+        // Create & fill the render pass (encoder)
+        WGPURenderPassEncoder render_pass = wgpuCommandEncoderBeginRenderPass(global_command_encoder, &render_pass_descr);
+
+#ifndef NDEBUG
+        wgpuRenderPassEncoderPushDebugGroup(render_pass, pass_name.c_str());
+#endif
+
+        if (custom_pre_opaque_pass) {
+            custom_pre_opaque_pass(custom_pass_user_data, render_pass, camera_offset * camera_buffer_stride);
+        }
+
+        render_opaque(render_pass, render_lists, instance_data, camera_bind_group, camera_offset * camera_buffer_stride);
+
+        if (custom_post_opaque_pass) {
+            custom_post_opaque_pass(custom_pass_user_data, render_pass, camera_offset * camera_buffer_stride);
+        }
+
+        if (render_transparents) {
+            if (custom_pre_transparent_pass) {
+                custom_pre_transparent_pass(custom_pass_user_data, render_pass, camera_offset * camera_buffer_stride);
+            }
+
+            render_transparent(render_pass, render_lists, instance_data, camera_bind_group, camera_offset * camera_buffer_stride);
+
+            if (custom_post_transparent_pass) {
+                custom_post_transparent_pass(custom_pass_user_data, render_pass, camera_offset * camera_buffer_stride);
+            }
+
+            render_splats(render_pass, render_lists, instance_data, camera_bind_group, camera_offset * camera_buffer_stride);
+        }
+
+#ifndef NDEBUG
+        wgpuRenderPassEncoderPopDebugGroup(render_pass);
+#endif
+
+        wgpuRenderPassEncoderEnd(render_pass);
+
+        wgpuRenderPassEncoderRelease(render_pass);
+    }
+}
+
 void Renderer::process_events()
 {
     webgpu_context->process_events();
@@ -421,25 +638,25 @@ void Renderer::set_camera_type(eCameraType camera_type)
 {
     this->camera_type = camera_type;
 
-    Camera* old_camera = camera;
+    Camera* old_camera = camera_3d;
     if (camera_type == CAMERA_FLYOVER) {
-        camera = new FlyoverCamera();
+        camera_3d = new FlyoverCamera();
     }
     else if (camera_type == CAMERA_ORBIT) {
-        camera = new OrbitCamera();
+        camera_3d = new OrbitCamera();
     }
 
-    camera->set_perspective(glm::radians(45.0f), webgpu_context->render_width / static_cast<float>(webgpu_context->render_height), z_near, z_far);
+    camera_3d->set_perspective(glm::radians(45.0f), webgpu_context->render_width / static_cast<float>(webgpu_context->render_height), z_near, z_far);
 
     if (old_camera) {
-        camera->look_at(old_camera->get_eye(), old_camera->get_center(), old_camera->get_up());
+        camera_3d->look_at(old_camera->get_eye(), old_camera->get_center(), old_camera->get_up());
     }
     else {
-        camera->look_at(glm::vec3(0.0f, 0.2f, 0.8f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        camera_3d->look_at(glm::vec3(0.0f, 0.2f, 0.8f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
     }
 
-    camera->set_mouse_sensitivity(0.003f);
-    camera->set_speed(0.5f);
+    camera_3d->set_mouse_sensitivity(0.003f);
+    camera_3d->set_speed(0.5f);
 
     delete old_camera;
 }
@@ -453,254 +670,6 @@ void Renderer::set_custom_pass_user_data(void* user_data)
 {
     this->custom_pass_user_data = user_data;
 }
-
-void Renderer::render_screen(WGPUTextureView screen_surface_texture_view)
-{
-    // Update main 3d camera
-
-    camera_data.eye = camera->get_eye();
-    camera_data.view_projection = camera->get_view_projection();
-    camera_data.view = camera->get_view();
-    camera_data.projection = camera->get_projection();
-    camera_data.screen_size = { webgpu_context->screen_width, webgpu_context->screen_height };
-
-    // Use camera position as controller position
-    camera_data.right_controller_position = camera_data.eye;
-
-    camera_data.exposure = exposure;
-    camera_data.ibl_intensity = ibl_intensity;
-
-    wgpuQueueWriteBuffer(webgpu_context->device_queue, std::get<WGPUBuffer>(camera_uniform.data), 0, &camera_data, sizeof(sCameraData));
-
-    // Update 2d camera for UI
-
-    camera_2d_data.eye = camera_2d->get_eye();
-    camera_2d_data.view_projection = camera_2d->get_view_projection();
-
-    camera_2d_data.exposure = exposure;
-    camera_2d_data.ibl_intensity = ibl_intensity;
-
-    wgpuQueueWriteBuffer(webgpu_context->device_queue, std::get<WGPUBuffer>(camera_2d_uniform.data), 0, &camera_2d_data, sizeof(sCameraData));
-
-    ImGui::Render();
-
-    {
-        // Prepare the color attachment
-        WGPURenderPassColorAttachment render_pass_color_attachment = {};
-        if (msaa_count > 1) {
-            render_pass_color_attachment.view = multisample_textures_views[0];
-            render_pass_color_attachment.resolveTarget = screen_surface_texture_view;
-        }
-        else {
-            render_pass_color_attachment.view = screen_surface_texture_view;
-        }
-
-        render_pass_color_attachment.loadOp = WGPULoadOp_Clear;
-        render_pass_color_attachment.storeOp = WGPUStoreOp_Store;
-        render_pass_color_attachment.depthSlice = WGPU_DEPTH_SLICE_UNDEFINED;
-        render_pass_color_attachment.clearValue = WGPUColor{clear_color.r, clear_color.g, clear_color.b, clear_color.a};
-
-        // Prepate the depth attachment
-        WGPURenderPassDepthStencilAttachment render_pass_depth_attachment = {};
-        render_pass_depth_attachment.view = eye_depth_texture_view[EYE_LEFT];
-        render_pass_depth_attachment.depthClearValue = 0.0f;
-        render_pass_depth_attachment.depthLoadOp = WGPULoadOp_Clear;
-        render_pass_depth_attachment.depthStoreOp = WGPUStoreOp_Store;
-        render_pass_depth_attachment.depthReadOnly = false;
-        render_pass_depth_attachment.stencilClearValue = 0; // Stencil config necesary, even if unused
-        render_pass_depth_attachment.stencilLoadOp = WGPULoadOp_Undefined;
-        render_pass_depth_attachment.stencilStoreOp = WGPUStoreOp_Undefined;
-        render_pass_depth_attachment.stencilReadOnly = true;
-
-        WGPURenderPassDescriptor render_pass_descr = {};
-        render_pass_descr.colorAttachmentCount = 1;
-        render_pass_descr.colorAttachments = &render_pass_color_attachment;
-        render_pass_descr.depthStencilAttachment = &render_pass_depth_attachment;
-
-#ifndef __EMSCRIPTEN__
-        std::vector<WGPURenderPassTimestampWrites> timestampWrites(1);
-        timestampWrites[0].beginningOfPassWriteIndex = timestamp(global_command_encoder, "pre_render");
-        timestampWrites[0].querySet = timestamp_query_set;
-        timestampWrites[0].endOfPassWriteIndex = timestamp(global_command_encoder, "render");
-
-        render_pass_descr.timestampWrites = timestampWrites.data();
-#endif
-        // Create & fill the render pass (encoder)
-        WGPURenderPassEncoder render_pass = wgpuCommandEncoderBeginRenderPass(global_command_encoder, &render_pass_descr);
-
-        if (custom_pre_opaque_pass) {
-            custom_pre_opaque_pass(custom_pass_user_data, render_pass, 0);
-        }
-
-        render_opaque(render_pass, render_camera_bind_group);
-
-        if (custom_post_opaque_pass) {
-            custom_post_opaque_pass(custom_pass_user_data, render_pass, 0);
-        }
-
-        if (custom_pre_transparent_pass) {
-            custom_pre_transparent_pass(custom_pass_user_data, render_pass, 0);
-        }
-
-        render_transparent(render_pass, render_camera_bind_group);
-
-        if (custom_post_transparent_pass) {
-            custom_post_transparent_pass(custom_pass_user_data, render_pass, 0);
-        }
-
-        render_splats(render_pass, render_camera_bind_group);
-
-        if (custom_pre_2d_pass) {
-            custom_pre_2d_pass(custom_pass_user_data, render_pass, 0);
-        }
-
-        render_2D(render_pass, render_camera_bind_group_2d);
-
-        if (custom_post_2d_pass) {
-            custom_post_2d_pass(custom_pass_user_data, render_pass, 0);
-        }
-
-        wgpuRenderPassEncoderEnd(render_pass);
-
-        wgpuRenderPassEncoderRelease(render_pass);
-
-        //timestamp(global_command_encoder, "render");
-
-// TODO: remove the ifdef, IMGui brings a viewport issue that can not be fixed by setting the viewport via webgpu
-#ifndef BACKEND_METAL
-        // render imgui
-        {
-            WGPURenderPassColorAttachment color_attachments = {};
-            color_attachments.view = screen_surface_texture_view;
-            color_attachments.loadOp = WGPULoadOp_Load;
-            color_attachments.storeOp = WGPUStoreOp_Store;
-            color_attachments.clearValue = { 0.0, 0.0, 0.0, 0.0 };
-            color_attachments.depthSlice = WGPU_DEPTH_SLICE_UNDEFINED;
-
-            WGPURenderPassDescriptor render_pass_desc = {};
-            render_pass_desc.colorAttachmentCount = 1;
-            render_pass_desc.colorAttachments = &color_attachments;
-            render_pass_desc.depthStencilAttachment = nullptr;
-
-            WGPURenderPassEncoder pass = wgpuCommandEncoderBeginRenderPass(global_command_encoder, &render_pass_desc);
-
-            //wgpuRenderPassEncoderSetViewport(render_pass, 0.0f,0.0f,1600.0f,900.0f,0.0f,1.0f);
-
-            wgpuRenderPassEncoderPushDebugGroup(pass, "ImGui");
-
-            ImGui_ImplWGPU_RenderDrawData(ImGui::GetDrawData(), pass);
-
-            wgpuRenderPassEncoderPopDebugGroup(pass);
-
-            wgpuRenderPassEncoderEnd(pass);
-            wgpuRenderPassEncoderRelease(pass);
-        }
-#endif
-    }
-}
-
-#if defined(XR_SUPPORT)
-
-void Renderer::render_xr()
-{
-    xr_context->init_frame();
-
-    for (uint32_t i = 0; i < xr_context->view_count; ++i) {
-
-        xr_context->acquire_swapchain(i);
-
-        const sSwapchainData& swapchainData = xr_context->swapchains[i];
-
-        camera_data.eye = xr_context->per_view_data[i].position;
-        camera_data.view_projection = xr_context->per_view_data[i].view_projection_matrix;
-
-        camera_data.view = xr_context->per_view_data[i].view_matrix;
-        camera_data.projection = xr_context->per_view_data[i].projection_matrix;
-        camera_data.screen_size = { webgpu_context->render_width, webgpu_context->render_height };
-
-        camera_data.right_controller_position = Input::get_controller_position(HAND_RIGHT);
-
-        camera_data.exposure = exposure;
-        camera_data.ibl_intensity = ibl_intensity;
-
-        wgpuQueueWriteBuffer(webgpu_context->device_queue, std::get<WGPUBuffer>(camera_uniform.data), i * xr_camera_buffer_stride, &camera_data, sizeof(sCameraData));
-
-        {
-            // Prepare the color attachment
-            WGPURenderPassColorAttachment render_pass_color_attachment = {};
-            render_pass_color_attachment.view = swapchainData.images[swapchainData.image_index].textureView;
-
-            if (msaa_count > 1) {
-                render_pass_color_attachment.view = multisample_textures_views[i];
-                render_pass_color_attachment.resolveTarget = swapchainData.images[swapchainData.image_index].textureView;
-            }
-            else {
-                render_pass_color_attachment.view = swapchainData.images[swapchainData.image_index].textureView;
-            }
-
-            render_pass_color_attachment.loadOp = WGPULoadOp_Clear;
-            render_pass_color_attachment.storeOp = WGPUStoreOp_Store;
-            render_pass_color_attachment.depthSlice = WGPU_DEPTH_SLICE_UNDEFINED;
-            render_pass_color_attachment.clearValue = WGPUColor(clear_color.r, clear_color.g, clear_color.b, clear_color.a);
-
-            // Prepate the depth attachment
-            WGPURenderPassDepthStencilAttachment render_pass_depth_attachment = {};
-            render_pass_depth_attachment.view = eye_depth_texture_view[i];
-            render_pass_depth_attachment.depthClearValue = 0.0f;
-            render_pass_depth_attachment.depthLoadOp = WGPULoadOp_Clear;
-            render_pass_depth_attachment.depthStoreOp = WGPUStoreOp_Store;
-            render_pass_depth_attachment.depthReadOnly = false;
-            render_pass_depth_attachment.stencilClearValue = 0; // Stencil config necesary, even if unused
-            render_pass_depth_attachment.stencilLoadOp = WGPULoadOp_Undefined;
-            render_pass_depth_attachment.stencilStoreOp = WGPUStoreOp_Undefined;
-            render_pass_depth_attachment.stencilReadOnly = true;
-
-            WGPURenderPassDescriptor render_pass_descr = {};
-            render_pass_descr.colorAttachmentCount = 1;
-            render_pass_descr.colorAttachments = &render_pass_color_attachment;
-            render_pass_descr.depthStencilAttachment = &render_pass_depth_attachment;
-
-            // Create & fill the render pass (encoder)
-            WGPURenderPassEncoder render_pass = wgpuCommandEncoderBeginRenderPass(global_command_encoder, &render_pass_descr);
-
-            if (custom_pre_opaque_pass) {
-                custom_pre_opaque_pass(custom_pass_user_data, render_pass, i * xr_camera_buffer_stride);
-            }
-
-            render_opaque(render_pass, render_camera_bind_group, i * xr_camera_buffer_stride);
-
-            if (custom_post_opaque_pass) {
-                custom_post_opaque_pass(custom_pass_user_data, render_pass, i * xr_camera_buffer_stride);
-            }
-
-            if (custom_pre_transparent_pass) {
-                custom_pre_transparent_pass(custom_pass_user_data, render_pass, i * xr_camera_buffer_stride);
-            }
-
-            render_transparent(render_pass, render_camera_bind_group, i * xr_camera_buffer_stride);
-
-            if (custom_post_transparent_pass) {
-                custom_post_transparent_pass(custom_pass_user_data, render_pass, i * xr_camera_buffer_stride);
-            }
-
-            if (custom_pre_2d_pass) {
-                custom_pre_2d_pass(custom_pass_user_data, render_pass, i * xr_camera_buffer_stride);
-            }
-
-            render_2D(render_pass, render_camera_bind_group_2d);
-
-            if (custom_post_2d_pass) {
-                custom_post_2d_pass(custom_pass_user_data, render_pass, i * xr_camera_buffer_stride);
-            }
-
-            wgpuRenderPassEncoderEnd(render_pass);
-            wgpuRenderPassEncoderRelease(render_pass);
-        }
-
-        xr_context->release_swapchain(i);
-    }
-}
-#endif
 
 void Renderer::init_lighting_bind_group()
 {
@@ -866,9 +835,11 @@ uint8_t Renderer::get_msaa_count()
     return msaa_count;
 }
 
-void Renderer::prepare_instancing(const glm::vec3& camera_position)
+void Renderer::prepare_cull_instancing(const Camera& camera, std::vector<std::vector<sRenderData>>& render_lists, sInstanceData& instances_data, bool is_shadow_pass)
 {
-    update_lights();
+    if (!frustum_camera_paused) {
+        frustum_cull.set_view_projection(camera.get_view_projection());
+    }
 
     // Get all surfaces from entity meshes
     for (auto render_list_data : render_entity_list)
@@ -881,14 +852,23 @@ void Renderer::prepare_instancing(const glm::vec3& camera_position)
         for (Surface* surface : surfaces) {
 
             Material* material_override = mesh_instance->get_surface_material_override(surface);
-
             Material* material = material_override ? material_override : surface->get_material();
+
+            bool material_is_2d = material->get_is_2D();
+
+            if (is_shadow_pass) {
+                material = shadow_material;
+            }
 
             if (!material || !material->get_shader()) {
                 continue;
             }
 
-            if (!material->get_is_2D() && mesh_instance->get_frustum_culling_enabled()) {
+            if (is_shadow_pass && (!mesh_instance->get_receive_shadows() || material_is_2d || material->get_transparency_type() == ALPHA_BLEND)) {
+                continue;
+            }
+
+            if (!material_is_2d && mesh_instance->get_frustum_culling_enabled()) {
 
                 const AABB& surface_aabb = surface->get_aabb();
 
@@ -905,48 +885,36 @@ void Renderer::prepare_instancing(const glm::vec3& camera_position)
 
             eRenderListType list = RENDER_LIST_OPAQUE;
 
-            if (material->get_is_2D()) {
+            if (material_is_2d) {
                 list = material->get_transparency_type() == ALPHA_BLEND ? RENDER_LIST_2D_TRANSPARENT : RENDER_LIST_2D;
             }
             else if (material->get_transparency_type() == ALPHA_BLEND) {
                 list = RENDER_LIST_TRANSPARENT;
             }
 
-            render_list[list].push_back({ surface, 1, global_matrix, mesh_instance });
+            render_lists[list].push_back({ surface, 1, global_matrix, mesh_instance, material });
         }
     }
 
-    for (int i = 0; i < RENDER_LIST_SIZE; ++i) {
+    for (int i = 0; i < RENDER_LIST_COUNT; ++i) {
 
-        instance_data[i].clear();
-        instance_data[i].resize(render_list[i].size());
-
+        instances_data.instances_data[i].clear();
+        instances_data.instances_data[i].resize(render_lists[i].size());
 
         /*if (i != RENDER_LIST_TRANSPARENT)*/ {
             // Sort opaques render_list
-            std::sort(render_list[i].begin(), render_list[i].end(), [](auto& lhs, auto& rhs) {
+            std::sort(render_lists[i].begin(), render_lists[i].end(), [](auto& lhs, auto& rhs) {
 
-                Material* lhs_ov_mat = lhs.mesh_instance_ref->get_surface_material_override(lhs.surface);
-                Material* rhs_ov_mat = rhs.mesh_instance_ref->get_surface_material_override(rhs.surface);
-
-                Material* lhs_mat = lhs_ov_mat ? lhs_ov_mat : lhs.surface->get_material();
-                Material* rhs_mat = rhs_ov_mat ? rhs_ov_mat : rhs.surface->get_material();
+                Material* lhs_mat = lhs.material;
+                Material* rhs_mat = rhs.material;
 
                 bool equal_priority = lhs_mat->get_priority() == rhs_mat->get_priority();
-                bool equal_shader = lhs_mat->get_shader() == rhs_mat->get_shader();
-                bool equal_diffuse = lhs_mat->get_diffuse_texture() == rhs_mat->get_diffuse_texture();
-                bool equal_normal = lhs_mat->get_normal_texture() == rhs_mat->get_normal_texture();
-                bool equal_metallic_rougness = lhs_mat->get_metallic_roughness_texture() == rhs_mat->get_metallic_roughness_texture();
 
                 if (lhs_mat->get_priority() > rhs_mat->get_priority()) return true;
-                if (equal_priority && lhs_mat->get_shader() > rhs_mat->get_shader()) return true;
-                if (equal_priority && equal_shader && lhs_mat->get_diffuse_texture() > rhs_mat->get_diffuse_texture()) return true;
-                if (equal_priority && equal_shader && equal_diffuse && lhs_mat->get_normal_texture() > rhs_mat->get_normal_texture()) return true;
-                if (equal_priority && equal_shader && equal_diffuse && equal_normal && lhs_mat->get_metallic_roughness_texture() > rhs_mat->get_metallic_roughness_texture()) return true;
-                if (equal_priority && equal_shader && equal_diffuse && equal_normal && equal_metallic_rougness && lhs_mat->get_emissive_texture() > rhs_mat->get_emissive_texture()) return true;
+                if (equal_priority && lhs_mat > rhs_mat) return true;
 
                 return false;
-                });
+            });
         }
         //else {
         //    // Sort transparent render_list by distance to camera
@@ -966,115 +934,128 @@ void Renderer::prepare_instancing(const glm::vec3& camera_position)
         // Check instances
         {
             const Surface* prev_surface = nullptr;
-            Shader* prev_shader = nullptr;
-            glm::vec4 prev_color = {};
-            Texture* prev_diffuse = nullptr;
-            Texture* prev_normal = nullptr;
-            Texture* prev_metallic_roughness = nullptr;
-            Texture* prev_emissive = nullptr;
+            Material* prev_material = nullptr;
 
             uint32_t repeats = 0;
-            for (uint32_t j = 0; j < render_list[i].size(); ++j) {
+            for (uint32_t j = 0; j < render_lists[i].size(); ++j) {
 
-                const sRenderData& render_data = render_list[i][j];
+                const sRenderData& render_data = render_lists[i][j];
 
-                Material* material_override = render_data.mesh_instance_ref->get_surface_material_override(render_data.surface);
-
-                Material* material = material_override ? material_override : render_data.surface->get_material();
+                Material* material = render_data.material;
 
                 // Repeated MeshInstance3D, must be instanced
-                if (prev_surface == render_data.surface && prev_shader == material->get_shader() &&
-                    prev_color == material->get_color() &&
-                    prev_diffuse == material->get_diffuse_texture() &&
-                    prev_normal == material->get_normal_texture() &&
-                    prev_metallic_roughness == material->get_metallic_roughness_texture() &&
-                    prev_emissive == material->get_emissive_texture() &&
-                    !(material->get_is_2D())) {
+                if (prev_surface == render_data.surface && prev_material == material && !material->get_is_2D()) {
                     repeats++;
                 }
                 else {
                     if (repeats > 0) {
                         for (uint32_t k = 1; k <= repeats; k++) {
-                            render_list[i][j - k].repeat = k;
+                            render_lists[i][j - k].repeat = k;
                         }
                     }
                     repeats = 1;
                 }
 
                 prev_surface = render_data.surface;
-                prev_shader = material->get_shader_ref();
-                prev_color = material->get_color();
-                prev_diffuse = material->get_diffuse_texture();
-                prev_normal = material->get_normal_texture();
-                prev_metallic_roughness = material->get_metallic_roughness_texture();
-                prev_emissive = material->get_emissive_texture();
+                prev_material = material;
 
                 // Fill instance_data
-                instance_data[i][j] = { render_data.global_matrix };
+                instances_data.instances_data[i][j] = { render_data.global_matrix };
             }
 
             if (repeats > 0) {
                 for (uint32_t k = 1; k <= repeats; k++) {
-                    render_list[i][render_list[i].size() - k].repeat = k;
+                    render_lists[i][render_lists[i].size() - k].repeat = k;
                 }
             }
         }
 
         // Fill instance buffers
-        uint32_t instances = static_cast<uint32_t>(instance_data[i].size());
+        uint32_t instances = static_cast<uint32_t>(instances_data.instances_data[i].size());
 
-        if (instances > instance_data_uniform[i].buffer_size / sizeof(sUniformData)) {
+        if (instances > (instances_data.instances_data_uniforms[i].buffer_size / sizeof(sUniformData))) {
 
             //std::vector<sUniformData> default_data = { instances, { glm::mat4x4(1.0f), glm::vec4(1.0f) } };
 
-            instance_data_uniform[i].data = webgpu_context->create_buffer(sizeof(sUniformData) * instances, WGPUBufferUsage_CopyDst | WGPUBufferUsage_Storage, instance_data[i].data(), "instance_mesh_buffer");
-            instance_data_uniform[i].binding = 0;
-            instance_data_uniform[i].buffer_size = sizeof(sUniformData) * instances;
+            if (std::holds_alternative<WGPUBuffer>(instances_data.instances_data_uniforms[i].data)) {
+                wgpuBufferDestroy(std::get<WGPUBuffer>(instances_data.instances_data_uniforms[i].data));
+            }
+
+            instances_data.instances_data_uniforms[i].data = webgpu_context->create_buffer(sizeof(sUniformData) * instances, WGPUBufferUsage_CopyDst | WGPUBufferUsage_Storage, instances_data.instances_data[i].data(), "instance_mesh_buffer");
+            instances_data.instances_data_uniforms[i].binding = 0;
+            instances_data.instances_data_uniforms[i].buffer_size = sizeof(sUniformData) * instances;
 
             // Recreate bind groups
-            std::vector<Uniform*> uniforms = { &instance_data_uniform[i] };
+            std::vector<Uniform*> uniforms = { &instances_data.instances_data_uniforms[i] };
             Shader* prev_shader = nullptr;
-            for (uint32_t j = 0; j < render_list[i].size(); ) {
+            for (uint32_t j = 0; j < render_lists[i].size(); ) {
 
-                const sRenderData& render_data = render_list[i][j];
+                const sRenderData& render_data = render_lists[i][j];
 
-                const Material* material_override = render_data.mesh_instance_ref->get_surface_material_override(render_data.surface);
-
-                const Shader* shader = material_override ? material_override->get_shader() : render_data.surface->get_material()->get_shader_ref();
-
-                if (bind_groups[i]) {
-                    wgpuBindGroupRelease(bind_groups[i]);
+                if (instances_data.instances_bind_groups[i]) {
+                    wgpuBindGroupRelease(instances_data.instances_bind_groups[i]);
                 }
 
-                bind_groups[i] = webgpu_context->create_bind_group(uniforms, shader, 0);
+                instances_data.instances_bind_groups[i] = webgpu_context->create_bind_group(uniforms, render_data.material->get_shader(), 0);
 
                 j += render_data.repeat;
             }
 
+        } else
+        if (instances > 0) {
+            webgpu_context->update_buffer(std::get<WGPUBuffer>(instances_data.instances_data_uniforms[i].data), 0, instances_data.instances_data[i].data(), sizeof(sUniformData) * instances);
         }
-        else
-            if (instances > 0) {
-                webgpu_context->update_buffer(std::get<WGPUBuffer>(instance_data_uniform[i].data), 0, instance_data[i].data(), sizeof(sUniformData) * instances);
-            }
     }
 }
 
-void Renderer::render_render_list(int list_index, WGPURenderPassEncoder render_pass, const WGPUBindGroup& render_camera_bind_group, uint32_t camera_buffer_stride)
+void Renderer::render_shadow_maps()
+{
+    camera_data.exposure = exposure;
+    camera_data.ibl_intensity = ibl_intensity;
+    camera_data.screen_size = { webgpu_context->screen_width, webgpu_context->screen_height };
+
+    std::vector<std::vector<sRenderData>> render_lists(RENDER_LIST_COUNT);
+
+    for (uint32_t light_idx = 0; light_idx < lights_with_shadow.size(); ++light_idx) {
+        Light3D* light = lights_with_shadow[light_idx];
+
+        Transform global_transform = light->get_global_transform();
+
+        Camera2D light_camera;
+        light_camera.set_orthographic(-10.0f, 10.0f, -10.0f, 10.0f, 20.0f, 0.1f);
+        light_camera.look_at(global_transform.get_position(),
+            global_transform.get_position() + global_transform.get_front(),
+            glm::vec3(0.0f, 1.0f, 0.0f));
+
+        prepare_cull_instancing(light_camera, render_lists, shadow_instances_data, true);
+
+        // Update main 3d camera
+
+        camera_data.eye = light_camera.get_eye();
+        camera_data.view_projection = light_camera.get_view_projection();
+        camera_data.view = light_camera.get_view();
+        camera_data.projection = light_camera.get_projection();
+
+        wgpuQueueWriteBuffer(webgpu_context->device_queue, std::get<WGPUBuffer>(shadow_camera_uniform.data), light_idx * camera_buffer_stride, &camera_data, sizeof(sCameraData));
+
+        render_camera(render_lists, nullptr, light->get_shadow_depth_texture_view(), shadow_instances_data, shadow_camera_bind_group, false, "shadow_map", 0, light_idx);
+    }
+}
+
+void Renderer::render_render_list(WGPURenderPassEncoder render_pass, const std::vector<sRenderData>& render_list, int list_index, const sInstanceData& instance_data, WGPUBindGroup camera_bind_group, uint32_t camera_buffer_stride)
 {
     const Pipeline* prev_pipeline = nullptr;
 
-    wgpuRenderPassEncoderSetBindGroup(render_pass, 0, bind_groups[list_index], 0, nullptr);
-    wgpuRenderPassEncoderSetBindGroup(render_pass, 1, render_camera_bind_group, 1, &camera_buffer_stride);
+    wgpuRenderPassEncoderSetBindGroup(render_pass, 0, instance_data.instances_bind_groups[list_index], 0, nullptr);
+    wgpuRenderPassEncoderSetBindGroup(render_pass, 1, camera_bind_group, 1, &camera_buffer_stride);
 
     const Material* prev_material = nullptr;
 
-    for (int i = 0; i < render_list[list_index].size(); ) {
+    for (int i = 0; i < render_list.size(); ) {
 
-        const sRenderData& render_data = render_list[list_index][i];
+        const sRenderData& render_data = render_list[i];
 
-        const Material* material_override = render_data.mesh_instance_ref->get_surface_material_override(render_data.surface);
-
-        const Material* material = material_override ? material_override : render_data.surface->get_material();
+        const Material* material = render_data.material;
 
         if (!material) {
             assert(0);
@@ -1100,13 +1081,16 @@ void Renderer::render_render_list(int list_index, WGPURenderPassEncoder render_p
 
         // Set bind groups
 
-        if (material != prev_material) {
+        if (material != prev_material && (material->get_fragment_write() || (!material->get_fragment_write() && material->get_use_skinning())))
+        {
             wgpuRenderPassEncoderSetBindGroup(render_pass, 2, renderer_storage->get_material_bind_group(material), 0, nullptr);
-            prev_material = material;
 
-            if (material->get_type() == MATERIAL_PBR) {
+            if ((!prev_material && material->get_type() == MATERIAL_PBR) ||
+                (prev_material && prev_material->get_type() != MATERIAL_PBR && material->get_type() == MATERIAL_PBR)) {
                 wgpuRenderPassEncoderSetBindGroup(render_pass, 3, lighting_bind_group, 0, nullptr);
             }
+
+            prev_material = material;
         }
 
         //#ifndef NDEBUG
@@ -1122,7 +1106,10 @@ void Renderer::render_render_list(int list_index, WGPURenderPassEncoder render_p
 
         // Set vertex buffer while encoding the render pass
         wgpuRenderPassEncoderSetVertexBuffer(render_pass, 0, render_data.surface->get_vertex_buffer(), 0, render_data.surface->get_vertices_byte_size());
-        wgpuRenderPassEncoderSetVertexBuffer(render_pass, 1, render_data.surface->get_vertex_data_buffer(), 0, render_data.surface->get_interleaved_data_byte_size());
+
+        if (material->get_fragment_write()) {
+            wgpuRenderPassEncoderSetVertexBuffer(render_pass, 1, render_data.surface->get_vertex_data_buffer(), 0, render_data.surface->get_interleaved_data_byte_size());
+        }
 
         WGPUBuffer index_buffer = render_data.surface->get_index_buffer();
 
@@ -1146,36 +1133,36 @@ void Renderer::render_render_list(int list_index, WGPURenderPassEncoder render_p
     }
 }
 
-void Renderer::render_opaque(WGPURenderPassEncoder render_pass, const WGPUBindGroup& render_camera_bind_group, uint32_t camera_buffer_stride)
+void Renderer::render_opaque(WGPURenderPassEncoder render_pass, const std::vector<std::vector<sRenderData>>& render_lists, const sInstanceData& instance_data, WGPUBindGroup camera_bind_group, uint32_t camera_buffer_stride)
 {
 #ifndef NDEBUG
     wgpuRenderPassEncoderPushDebugGroup(render_pass, "Opaque");
 #endif
 
-    render_render_list(RENDER_LIST_OPAQUE, render_pass, render_camera_bind_group, camera_buffer_stride);
+    render_render_list(render_pass, render_lists[RENDER_LIST_OPAQUE], RENDER_LIST_OPAQUE, instance_data, camera_bind_group, camera_buffer_stride);
 
 #ifndef NDEBUG
     wgpuRenderPassEncoderPopDebugGroup(render_pass);
 #endif
 }
 
-void Renderer::render_transparent(WGPURenderPassEncoder render_pass, const WGPUBindGroup& render_camera_bind_group, uint32_t camera_buffer_stride)
+void Renderer::render_transparent(WGPURenderPassEncoder render_pass, const std::vector<std::vector<sRenderData>>& render_lists, const sInstanceData& instance_data, WGPUBindGroup camera_bind_group, uint32_t camera_buffer_stride)
 {
 #ifndef NDEBUG
     wgpuRenderPassEncoderPushDebugGroup(render_pass, "Transparent");
 #endif
 
-    render_render_list(RENDER_LIST_TRANSPARENT, render_pass, render_camera_bind_group, camera_buffer_stride);
+    render_render_list(render_pass, render_lists[RENDER_LIST_TRANSPARENT], RENDER_LIST_TRANSPARENT, instance_data, camera_bind_group, camera_buffer_stride);
 
 #ifndef NDEBUG
     wgpuRenderPassEncoderPopDebugGroup(render_pass);
 #endif
 }
 
-void Renderer::render_splats(WGPURenderPassEncoder render_pass, const WGPUBindGroup& render_camera_bind_group, uint32_t camera_buffer_stride)
+void Renderer::render_splats(WGPURenderPassEncoder render_pass, const std::vector<std::vector<sRenderData>>& render_lists, const sInstanceData& instance_data, WGPUBindGroup camera_bind_group, uint32_t camera_buffer_stride)
 {
 #ifndef NDEBUG
-    wgpuRenderPassEncoderPushDebugGroup(render_pass, "Transparent");
+    wgpuRenderPassEncoderPushDebugGroup(render_pass, "Gaussian Splats");
 #endif
 
     for (GSNode* gs_node : gs_scenes_list) {
@@ -1185,7 +1172,7 @@ void Renderer::render_splats(WGPURenderPassEncoder render_pass, const WGPUBindGr
         }
 
         wgpuRenderPassEncoderSetBindGroup(render_pass, 0, gs_node->get_render_bindgroup(), 0, nullptr);
-        wgpuRenderPassEncoderSetBindGroup(render_pass, 1, render_camera_bind_group, 1, &camera_buffer_stride);
+        wgpuRenderPassEncoderSetBindGroup(render_pass, 1, camera_bind_group, 1, &camera_buffer_stride);
 
         wgpuRenderPassEncoderSetVertexBuffer(render_pass, 0, gs_node->get_render_buffer(), 0, gs_node->get_splats_render_bytes_size());
         wgpuRenderPassEncoderSetVertexBuffer(render_pass, 1, gs_node->get_ids_buffer(), 0, gs_node->get_ids_render_bytes_size());
@@ -1198,15 +1185,15 @@ void Renderer::render_splats(WGPURenderPassEncoder render_pass, const WGPUBindGr
 #endif
 }
 
-void Renderer::render_2D(WGPURenderPassEncoder render_pass, const WGPUBindGroup& render_camera_bind_group)
+void Renderer::render_2D(WGPURenderPassEncoder render_pass, const std::vector<std::vector<sRenderData>>& render_lists, const sInstanceData& instance_data, WGPUBindGroup camera_bind_group)
 {
 #ifndef NDEBUG
     wgpuRenderPassEncoderPushDebugGroup(render_pass, "2D");
 #endif
 
-    render_render_list(RENDER_LIST_2D, render_pass, render_camera_bind_group);
+    render_render_list(render_pass, render_lists[RENDER_LIST_2D], RENDER_LIST_2D, instance_data, camera_bind_group);
 
-    render_render_list(RENDER_LIST_2D_TRANSPARENT, render_pass, render_camera_bind_group);
+    render_render_list(render_pass, render_lists[RENDER_LIST_2D_TRANSPARENT], RENDER_LIST_2D_TRANSPARENT, instance_data, camera_bind_group);
 
 #ifndef NDEBUG
     wgpuRenderPassEncoderPopDebugGroup(render_pass);
@@ -1230,6 +1217,11 @@ uint8_t Renderer::timestamp(WGPUCommandEncoder encoder, const char* label)
 
 void Renderer::add_renderable(MeshInstance* mesh_instance, const glm::mat4x4& global_matrix)
 {
+    if ((render_entity_list.size() + 1) >= current_render_list_size) {
+        current_render_list_size <<= 1;
+        render_entity_list.reserve(current_render_list_size);
+    }
+
     render_entity_list.push_back({ mesh_instance, global_matrix });
 }
 
@@ -1243,9 +1235,7 @@ void Renderer::clear_renderables()
     render_entity_list.clear();
     gs_scenes_list.clear();
 
-    for (int i = 0; i < RENDER_LIST_SIZE; ++i) {
-        render_list[i].clear();
-    }
+    lights_with_shadow.clear();
 
     for (int i = 0; i < MAX_LIGHTS; ++i) {
         lights_uniform_data[i] = {};
@@ -1270,6 +1260,12 @@ void Renderer::add_light(Light3D* new_light)
 {
     lights_uniform_data[num_lights] = new_light->get_uniform_data();
     num_lights++;
+
+    const LightType light_type = new_light->get_type();
+
+    if (light_type == LIGHT_DIRECTIONAL) {
+        lights_with_shadow.push_back(new_light);
+    }
 }
 
 void Renderer::resize_window(int width, int height)
@@ -1280,8 +1276,8 @@ void Renderer::resize_window(int width, int height)
         webgpu_context->render_width = webgpu_context->screen_width;
         webgpu_context->render_height = webgpu_context->screen_height;
 
-        if (camera) {
-            camera->set_perspective(glm::radians(45.0f), webgpu_context->render_width / static_cast<float>(webgpu_context->render_height), z_near, z_far);
+        if (camera_3d) {
+            camera_3d->set_perspective(glm::radians(45.0f), webgpu_context->render_width / static_cast<float>(webgpu_context->render_height), z_near, z_far);
         }
 
         if (camera_2d) {
@@ -1428,9 +1424,9 @@ void Renderer::render_mirror(WGPUTextureView screen_surface_texture_view)
 
 void Renderer::init_camera_bind_group()
 {
-    xr_camera_buffer_stride = std::max(static_cast<uint32_t>(sizeof(sCameraData)), webgpu_context->required_limits.limits.minUniformBufferOffsetAlignment);
+    camera_buffer_stride = std::max(static_cast<uint32_t>(sizeof(sCameraData)), webgpu_context->required_limits.limits.minUniformBufferOffsetAlignment);
 
-    camera_uniform.data = webgpu_context->create_buffer(xr_camera_buffer_stride * EYE_COUNT, WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform, nullptr, "camera_buffer");
+    camera_uniform.data = webgpu_context->create_buffer(camera_buffer_stride * EYE_COUNT, WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform, nullptr, "camera_buffer");
     camera_uniform.binding = 0;
     camera_uniform.buffer_size = sizeof(sCameraData);
 
@@ -1438,8 +1434,15 @@ void Renderer::init_camera_bind_group()
     camera_2d_uniform.binding = 0;
     camera_2d_uniform.buffer_size = sizeof(sCameraData);
 
+    shadow_camera_uniform.data = webgpu_context->create_buffer(camera_buffer_stride * shadow_uniform_buffer_size, WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform, nullptr, "shadow_camera_buffer");
+    shadow_camera_uniform.binding = 0;
+    shadow_camera_uniform.buffer_size = sizeof(sCameraData);
+
     std::vector<Uniform*> uniforms = { &camera_uniform };
     render_camera_bind_group = webgpu_context->create_bind_group(uniforms, RendererStorage::get_shader_from_source(shaders::mesh_forward::source, shaders::mesh_forward::path, shaders::mesh_forward::libraries), 1);
+
+    uniforms = { &shadow_camera_uniform };
+    shadow_camera_bind_group = webgpu_context->create_bind_group(uniforms, RendererStorage::get_shader_from_source(shaders::mesh_shadow::source, shaders::mesh_shadow::path, shaders::mesh_shadow::libraries), 1);
 
     WGPUBindGroupLayoutEntry entry = {};
     entry.binding = 0;
@@ -1462,7 +1465,7 @@ glm::vec3 Renderer::get_camera_eye()
     }
 #endif
 
-    return camera->get_eye();
+    return camera_3d->get_eye();
 }
 
 glm::vec3 Renderer::get_camera_front()

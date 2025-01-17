@@ -668,6 +668,8 @@ void read_mesh(const tinygltf::Model& model, const tinygltf::Node& node, Node3D*
         entity_aabb = merge_aabbs(entity_aabb, surface_aabb);
     }
 
+    entity_mesh->set_receive_shadows(true);
+
     entity_mesh->set_aabb(entity_aabb);
 }
 
@@ -727,6 +729,8 @@ void create_light(const tinygltf::Light& gltf_light, Node3D** light_node)
     }
 
     light->set_intensity(light_intensity);
+
+    light->set_cast_shadows(true);
 
     // Blender exports 0.0 if no custom distance is used.. so keep -1 as range
     if (gltf_light.range != 0.0f) {

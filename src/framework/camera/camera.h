@@ -22,6 +22,7 @@ public:
 
     void update_view_matrix();
     void update_projection_matrix();
+    void update_view_projection_matrix();
 
     virtual void look_at(const glm::vec3& eye, const glm::vec3& center, const glm::vec3& up, bool reset_internals = true);
 
@@ -30,8 +31,9 @@ public:
     void set_perspective(float fov, float aspect, float z_near, float z_far);
     void set_orthographic(float left, float right, float bottom, float top, float z_near, float z_far);
 
-    void set_view(const glm::mat4x4& view);
-    void set_projection(const glm::mat4x4& projection);
+    void set_view(const glm::mat4x4& view, bool update_view_projection = true);
+    void set_projection(const glm::mat4x4& projection, bool update_view_projection = true);
+    void set_view_projection(const glm::mat4x4& view_projection);
 
     void set_eye(const glm::vec3& new_eye);
     void set_center(const glm::vec3& new_center);

@@ -214,16 +214,19 @@ void RendererStorage::register_material_bind_group(WebGPUContext* webgpu_context
 
     material->reset_dirty_flags();
 
-    material_bind_groups[material].bind_group = webgpu_context->create_bind_group(uniforms, material->get_shader(), 2);
+    if (material->get_fragment_write() || (!material->get_fragment_write() && material->get_use_skinning())) {
+        material_bind_groups[material].bind_group = webgpu_context->create_bind_group(uniforms, material->get_shader(), 2);
+    }
 }
 
 WGPUBindGroup RendererStorage::get_material_bind_group(const Material* material)
 {
-    if (!material_bind_groups.contains(material)) {
+    auto it = material_bind_groups.find(material);
+    if (it == material_bind_groups.end()) {
         assert(false);
     }
 
-    return material_bind_groups[material].bind_group;
+    return it->second.bind_group;
 }
 
 void RendererStorage::delete_material_bind_group(WebGPUContext* webgpu_context, Material* material)
@@ -836,6 +839,7 @@ RenderPipelineKey RendererStorage::get_render_pipeline_key(Material* material)
 
     description.depth_read = material->get_depth_read();
     description.sample_count = Renderer::instance->get_msaa_count();
+    description.has_fragment_state = material->get_fragment_write();
 
     return { material->get_shader(), color_target, description, material->get_shader()->get_pipeline_layout() };
 }
