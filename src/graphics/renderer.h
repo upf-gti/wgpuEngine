@@ -61,14 +61,12 @@ protected:
     OpenXRContext*  xr_context;
     WebGPUContext*  webgpu_context;
 
-    std::function<void(void*, WGPURenderPassEncoder, uint32_t)> custom_pre_opaque_pass = nullptr;
-    std::function<void(void*, WGPURenderPassEncoder, uint32_t)> custom_post_opaque_pass = nullptr;
-
-    std::function<void(void*, WGPURenderPassEncoder, uint32_t)> custom_pre_transparent_pass = nullptr;
-    std::function<void(void*, WGPURenderPassEncoder, uint32_t)> custom_post_transparent_pass = nullptr;
-
-    std::function<void(void*, WGPURenderPassEncoder, uint32_t)> custom_pre_2d_pass = nullptr;
-    std::function<void(void*, WGPURenderPassEncoder, uint32_t)> custom_post_2d_pass = nullptr;
+    std::function<void(WGPURenderPassEncoder, WGPUBindGroup, void*, uint32_t)> custom_pre_opaque_pass = nullptr;
+    std::function<void(WGPURenderPassEncoder, WGPUBindGroup, void*, uint32_t)> custom_post_opaque_pass = nullptr;
+    std::function<void(WGPURenderPassEncoder, WGPUBindGroup, void*, uint32_t)> custom_pre_transparent_pass = nullptr;
+    std::function<void(WGPURenderPassEncoder, WGPUBindGroup, void*, uint32_t)> custom_post_transparent_pass = nullptr;
+    std::function<void(WGPURenderPassEncoder, WGPUBindGroup, void*, uint32_t)> custom_pre_2d_pass = nullptr;
+    std::function<void(WGPURenderPassEncoder, WGPUBindGroup, void*, uint32_t)> custom_post_2d_pass = nullptr;
 
     void* custom_pass_user_data = nullptr;
 
@@ -317,11 +315,14 @@ public:
 
     // For the XR mirror screen
 #if defined(USE_MIRROR_WINDOW)
-    void render_mirror(WGPUTextureView swapchain_view);
+    void render_mirror(WGPUTextureView screen_surface_texture_view, WGPUBindGroup displayed_fbo_bind_group);
     void init_mirror_pipeline();
+
+    void set_custom_mirror_fbo_bind_group(WGPUBindGroup fbo_bind_group) { custom_mirror_fbo_bind_group = fbo_bind_group; }
 
     Pipeline mirror_pipeline;
     Shader* mirror_shader = nullptr;
+    WGPUBindGroup custom_mirror_fbo_bind_group = nullptr;
 
     Uniform linear_sampler_uniform;
 

@@ -410,7 +410,7 @@ void Renderer::render()
         }
 
         if (use_mirror_screen) {
-            render_mirror(screen_surface_texture_view);
+            render_mirror(screen_surface_texture_view, custom_mirror_fbo_bind_group ? custom_mirror_fbo_bind_group : swapchain_bind_groups[xr_context->swapchains[0].image_index]);
         }
     }
 
@@ -443,13 +443,13 @@ void Renderer::render()
         WGPURenderPassEncoder render_pass = wgpuCommandEncoderBeginRenderPass(global_command_encoder, &render_pass_descr);
 
         if (custom_pre_2d_pass) {
-            custom_pre_2d_pass(custom_pass_user_data, render_pass, 0);
+            custom_pre_2d_pass(render_pass, render_camera_bind_group_2d, custom_pass_user_data, 0);
         }
 
         render_2D(render_pass, render_lists, render_instances_data, render_camera_bind_group_2d);
 
         if (custom_post_2d_pass) {
-            custom_post_2d_pass(custom_pass_user_data, render_pass, 0);
+            custom_post_2d_pass(render_pass, render_camera_bind_group_2d, custom_pass_user_data, 0);
         }
 
         wgpuRenderPassEncoderEnd(render_pass);
@@ -562,6 +562,7 @@ void Renderer::render_camera(const std::vector<std::vector<sRenderData>>& render
         render_pass_descr.colorAttachmentCount = framebuffer_view ? 1 : 0;
         render_pass_descr.colorAttachments = framebuffer_view ? &render_pass_color_attachment : nullptr;
         render_pass_descr.depthStencilAttachment = depth_view ? &render_pass_depth_attachment : nullptr;
+        render_pass_descr.label = { pass_name.c_str(), pass_name.length() };
 
 #ifndef __EMSCRIPTEN__
         std::vector<WGPURenderPassTimestampWrites> timestampWrites(1);
@@ -579,24 +580,24 @@ void Renderer::render_camera(const std::vector<std::vector<sRenderData>>& render
 #endif
 
         if (custom_pre_opaque_pass) {
-            custom_pre_opaque_pass(custom_pass_user_data, render_pass, camera_offset * camera_buffer_stride);
+            custom_pre_opaque_pass(render_pass, camera_bind_group, custom_pass_user_data, camera_offset * camera_buffer_stride);
         }
 
-        render_opaque(render_pass, render_lists, instance_data, camera_bind_group, camera_offset * camera_buffer_stride);
+        render_opaque(render_pass, render_lists, instance_data, camera_bind_group, camera_offset* camera_buffer_stride);
 
         if (custom_post_opaque_pass) {
-            custom_post_opaque_pass(custom_pass_user_data, render_pass, camera_offset * camera_buffer_stride);
+            custom_post_opaque_pass(render_pass, camera_bind_group, custom_pass_user_data, camera_offset * camera_buffer_stride);
         }
 
         if (render_transparents) {
             if (custom_pre_transparent_pass) {
-                custom_pre_transparent_pass(custom_pass_user_data, render_pass, camera_offset * camera_buffer_stride);
+                custom_pre_transparent_pass(render_pass, camera_bind_group, custom_pass_user_data, camera_offset * camera_buffer_stride);
             }
 
             render_transparent(render_pass, render_lists, instance_data, camera_bind_group, camera_offset * camera_buffer_stride);
 
             if (custom_post_transparent_pass) {
-                custom_post_transparent_pass(custom_pass_user_data, render_pass, camera_offset * camera_buffer_stride);
+                custom_post_transparent_pass(render_pass, camera_bind_group, custom_pass_user_data, camera_offset * camera_buffer_stride);
             }
 
             render_splats(render_pass, render_lists, instance_data, camera_bind_group, camera_offset * camera_buffer_stride);
@@ -1353,7 +1354,7 @@ void Renderer::init_mirror_pipeline()
     mirror_pipeline.create_render(mirror_shader, color_target, { .use_depth = false, .allow_msaa = false });
 }
 
-void Renderer::render_mirror(WGPUTextureView screen_surface_texture_view)
+void Renderer::render_mirror(WGPUTextureView screen_surface_texture_view, WGPUBindGroup displayed_fbo_bind_group)
 {
     ImGui::Render();
 
@@ -1383,7 +1384,7 @@ void Renderer::render_mirror(WGPUTextureView screen_surface_texture_view)
             }
 
             // Set binding group
-            wgpuRenderPassEncoderSetBindGroup(render_pass, 0, swapchain_bind_groups[xr_context->swapchains[0].image_index], 0, nullptr);
+            wgpuRenderPassEncoderSetBindGroup(render_pass, 0, displayed_fbo_bind_group, 0, nullptr);
 
             // Set vertex buffer while encoding the render pass
             wgpuRenderPassEncoderSetVertexBuffer(render_pass, 0, quad_surface.get_vertex_buffer(), 0, quad_surface.get_vertices_byte_size());
