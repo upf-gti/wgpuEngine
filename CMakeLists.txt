@@ -228,7 +228,13 @@ if (NOT EMSCRIPTEN)
     if (NOT APPLE)
         if(NOT WGPUENGINE_FORCE_DX12)
             # vulkan-headers
-            add_subdirectory(libraries/Vulkan-Headers)
+            string(TOUPPER ${DAWN_BUILD} DAWN_BUILD_U)
+
+            # Already included in dawn src
+            if (DAWN_BUILD_U STREQUAL "STATIC")
+                add_subdirectory(libraries/Vulkan-Headers)
+            endif()
+
             target_link_libraries(${PROJECT_NAME} PUBLIC Vulkan-Headers)
         endif()
 
