@@ -427,7 +427,13 @@ void Renderer::render()
 
         // Prepare the color attachment
         WGPURenderPassColorAttachment render_pass_color_attachment = {};
-        render_pass_color_attachment.view = screen_surface_texture_view;
+        if (msaa_count > 1) {
+            render_pass_color_attachment.view = multisample_textures_views[EYE_LEFT];
+            render_pass_color_attachment.resolveTarget = screen_surface_texture_view;
+        }
+        else {
+            render_pass_color_attachment.view = screen_surface_texture_view;
+        }
 
         render_pass_color_attachment.loadOp = WGPULoadOp_Load;
         render_pass_color_attachment.storeOp = WGPUStoreOp_Store;
