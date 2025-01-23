@@ -22,6 +22,7 @@ public:
     ~Joint3D();
 
     Transform get_global_transform() override;
+    int32_t get_index() { return index; }
 
     void set_index(int32_t new_index) { index = new_index; }
     void set_pose(Pose* ref_pose) { pose = ref_pose; };
