@@ -284,6 +284,20 @@ void Renderer::clean()
     camera_2d_uniform.destroy();
     shadow_camera_uniform.destroy();
 
+    for (int i = 0; i < RENDER_LIST_COUNT; ++i) {
+        render_instances_data.instances_data_uniforms[i].destroy();
+
+        if (render_instances_data.instances_bind_groups[i]) {
+            wgpuBindGroupRelease(render_instances_data.instances_bind_groups[i]);
+        }
+
+        shadow_instances_data.instances_data_uniforms[i].destroy();
+
+        if (shadow_instances_data.instances_bind_groups[i]) {
+            wgpuBindGroupRelease(shadow_instances_data.instances_bind_groups[i]);
+        }
+    }
+
     webgpu_context->destroy();
 
     delete renderer_storage;
