@@ -40,11 +40,6 @@ void Skeleton::set(const Pose& rest, const Pose& bind, const std::vector<std::st
 
 void Skeleton::serialize(std::ofstream& binary_scene_file)
 {
-    /*
-    Pose bind_pose;
-    Pose rest_pose;
-    */
-
     size_t name_size = name.size();
     binary_scene_file.write(reinterpret_cast<char*>(&name_size), sizeof(size_t));
     binary_scene_file.write(name.c_str(), name_size);

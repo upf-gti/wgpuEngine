@@ -1,7 +1,9 @@
 #include "track.h"
 
-#include <algorithm>
 #include "glm/gtx/compatibility.hpp"
+
+#include <algorithm>
+#include <fstream>
 
 Track::Track()
 {
@@ -60,6 +62,20 @@ Keyframe& Track::get_keyframe(uint32_t index)
 Keyframe& Track::add_keyframe(const Keyframe& k)
 {
     keyframes.push_back(k);
+
+    if (std::holds_alternative<float>(k.value)) {
+        type = eTrackType::TYPE_FLOAT;
+    }
+    else if (std::holds_alternative<glm::vec3>(k.value)) {
+        type = eTrackType::TYPE_VECTOR3;
+    }
+    else if (std::holds_alternative<glm::vec4>(k.value)) {
+        type = eTrackType::TYPE_VECTOR4;
+    }
+    else if (std::holds_alternative<glm::quat>(k.value)) {
+        type = eTrackType::TYPE_ROTATION;
+    }
+
     return keyframes.back();
 }
 
@@ -173,4 +189,130 @@ float Track::adjust_time_to_fit_track(float time, bool looping)
     }
 
     return time;
+}
+
+void Track::serialize(std::ofstream& binary_scene_file)
+{
+    size_t name_size = name.size();
+    binary_scene_file.write(reinterpret_cast<char*>(&name_size), sizeof(size_t));
+    binary_scene_file.write(name.c_str(), name_size);
+
+    size_t path_size = path.size();
+    binary_scene_file.write(reinterpret_cast<char*>(&path_size), sizeof(size_t));
+    binary_scene_file.write(path.c_str(), path_size);
+
+    binary_scene_file.write(reinterpret_cast<char*>(&id), sizeof(int));
+    binary_scene_file.write(reinterpret_cast<char*>(&type), sizeof(eTrackType));
+
+    eInterpolationType interpolator_type = interpolator.get_type();
+    binary_scene_file.write(reinterpret_cast<char*>(&interpolator_type), sizeof(eInterpolationType));
+
+    size_t keyframes_count = keyframes.size();
+    binary_scene_file.write(reinterpret_cast<char*>(&keyframes_count), sizeof(size_t));
+
+    for (uint32_t i = 0u; i < keyframes_count; ++i) {
+        const Keyframe& t = keyframes[i];
+
+        float time = t.time;
+        binary_scene_file.write(reinterpret_cast<char*>(&time), sizeof(float));
+
+        if (std::holds_alternative<float>(t.value)) {
+            float value = std::get<float>(t.value);
+            binary_scene_file.write(reinterpret_cast<char*>(&value), sizeof(float));
+        }
+        else if (std::holds_alternative<glm::vec3>(t.value)) {
+            glm::vec3 value = std::get<glm::vec3>(t.value);
+            binary_scene_file.write(reinterpret_cast<char*>(&value), sizeof(glm::vec3));
+        }
+        else if (std::holds_alternative<glm::vec4>(t.value)) {
+            glm::vec4 value = std::get<glm::vec4>(t.value);
+            binary_scene_file.write(reinterpret_cast<char*>(&value), sizeof(glm::vec4));
+        }
+        else if (std::holds_alternative<glm::quat>(t.value)) {
+            glm::quat value = std::get<glm::quat>(t.value);
+            binary_scene_file.write(reinterpret_cast<char*>(&value), sizeof(glm::quat));
+        }
+
+        if (std::holds_alternative<float>(t.in)) {
+            float in = std::get<float>(t.in);
+            binary_scene_file.write(reinterpret_cast<char*>(&in), sizeof(float));
+        }
+        else if (std::holds_alternative<glm::vec3>(t.in)) {
+            glm::vec3 in = std::get<glm::vec3>(t.in);
+            binary_scene_file.write(reinterpret_cast<char*>(&in), sizeof(glm::vec3));
+        }
+        else if (std::holds_alternative<glm::vec4>(t.in)) {
+            glm::vec4 in = std::get<glm::vec4>(t.in);
+            binary_scene_file.write(reinterpret_cast<char*>(&in), sizeof(glm::vec4));
+        }
+        else if (std::holds_alternative<glm::quat>(t.in)) {
+            glm::quat in = std::get<glm::quat>(t.in);
+            binary_scene_file.write(reinterpret_cast<char*>(&in), sizeof(glm::quat));
+        }
+
+        if (std::holds_alternative<float>(t.out)) {
+            float out = std::get<float>(t.out);
+            binary_scene_file.write(reinterpret_cast<char*>(&out), sizeof(float));
+        }
+        else if (std::holds_alternative<glm::vec3>(t.out)) {
+            glm::vec3 out = std::get<glm::vec3>(t.out);
+            binary_scene_file.write(reinterpret_cast<char*>(&out), sizeof(glm::vec3));
+        }
+        else if (std::holds_alternative<glm::vec4>(t.out)) {
+            glm::vec4 out = std::get<glm::vec4>(t.out);
+            binary_scene_file.write(reinterpret_cast<char*>(&out), sizeof(glm::vec4));
+        }
+        else if (std::holds_alternative<glm::quat>(t.out)) {
+            glm::quat out = std::get<glm::quat>(t.out);
+            binary_scene_file.write(reinterpret_cast<char*>(&out), sizeof(glm::quat));
+        }
+    }
+}
+
+void Track::parse(std::ifstream& binary_scene_file)
+{
+    size_t name_size = 0;
+    binary_scene_file.read(reinterpret_cast<char*>(&name_size), sizeof(size_t));
+    name.resize(name_size);
+    binary_scene_file.read(&name[0], name_size);
+
+    size_t path_size = 0;
+    binary_scene_file.read(reinterpret_cast<char*>(&path_size), sizeof(size_t));
+    path.resize(path_size);
+    binary_scene_file.read(&path[0], path_size);
+
+    binary_scene_file.read(reinterpret_cast<char*>(&id), sizeof(int));
+    binary_scene_file.read(reinterpret_cast<char*>(&type), sizeof(eTrackType));
+
+    eInterpolationType interpolator_type = eInterpolationType::UNSET;
+    binary_scene_file.read(reinterpret_cast<char*>(&interpolator_type), sizeof(eInterpolationType));
+    interpolator.set_type(interpolator_type);
+
+    size_t keyframes_count = 0;
+    binary_scene_file.read(reinterpret_cast<char*>(&keyframes_count), sizeof(size_t));
+    keyframes.resize(keyframes_count);
+
+    for (uint32_t i = 0u; i < keyframes_count; ++i) {
+        Keyframe& t = keyframes[i];
+
+        binary_scene_file.read(reinterpret_cast<char*>(&t.time), sizeof(float));
+
+        if (type == eTrackType::TYPE_FLOAT) {
+            binary_scene_file.read(reinterpret_cast<char*>(&t.value), sizeof(float));
+            
+        }
+        else if (type == eTrackType::TYPE_POSITION || type == eTrackType::TYPE_SCALE || type == eTrackType::TYPE_VECTOR3) {
+            binary_scene_file.read(reinterpret_cast<char*>(&t.value), sizeof(glm::vec3));
+        }
+        else if (type == eTrackType::TYPE_VECTOR4) {
+            binary_scene_file.read(reinterpret_cast<char*>(&t.value), sizeof(glm::vec4));
+        }
+        else if (type == eTrackType::TYPE_ROTATION) {
+            binary_scene_file.read(reinterpret_cast<char*>(&t.value), sizeof(glm::quat));
+        }
+
+        // TODO: Serialize also the type of tangents: for now in animation editor we always use "float"
+        binary_scene_file.read(reinterpret_cast<char*>(&t.in), sizeof(float));
+        binary_scene_file.read(reinterpret_cast<char*>(&t.out), sizeof(float));
+    }
 }
