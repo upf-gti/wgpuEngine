@@ -12,7 +12,6 @@ OrbitCamera::OrbitCamera() : Camera3D()
 void OrbitCamera::update(float delta_time)
 {
     bool pan_enabled = Input::is_mouse_pressed(GLFW_MOUSE_BUTTON_RIGHT) || Input::is_mouse_pressed(GLFW_MOUSE_BUTTON_MIDDLE);
-    bool orbiting = Input::is_mouse_pressed(GLFW_MOUSE_BUTTON_LEFT);
 
     glm::vec3 new_forward;
 

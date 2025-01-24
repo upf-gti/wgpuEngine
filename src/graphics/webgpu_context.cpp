@@ -983,12 +983,13 @@ void WebGPUContext::process_events()
 //    return pipeline_descr;
 //}
 
-WGPUPipelineLayout WebGPUContext::create_pipeline_layout(const std::vector<WGPUBindGroupLayout>& bind_group_layouts)
+WGPUPipelineLayout WebGPUContext::create_pipeline_layout(const std::vector<WGPUBindGroupLayout>& bind_group_layouts, const std::string& label)
 {
     WGPUPipelineLayoutDescriptor layout_descr = {};
     layout_descr.nextInChain = NULL;
     layout_descr.bindGroupLayoutCount = static_cast<uint32_t>(bind_group_layouts.size());
     layout_descr.bindGroupLayouts = (WGPUBindGroupLayout*)bind_group_layouts.data();
+    layout_descr.label = { label.c_str(), label.length() };
 
     return wgpuDeviceCreatePipelineLayout(device, &layout_descr);
 }

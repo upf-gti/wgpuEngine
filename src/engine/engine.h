@@ -14,6 +14,7 @@ struct sEngineConfiguration {
     std::string window_title = "wgpuEngine";
     eCameraType camera_type = CAMERA_FLYOVER;
     uint8_t msaa_count = 1;
+    bool fullscreen = false;
 };
 
 class Engine {

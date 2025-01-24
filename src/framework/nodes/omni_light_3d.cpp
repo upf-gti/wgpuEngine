@@ -50,8 +50,10 @@ OmniLight3D::~OmniLight3D()
 
 void OmniLight3D::render()
 {
+#ifndef NDEBUG
     Renderer::instance->add_renderable(debug_mesh_v, get_global_model() * debug_mesh_v->get_global_model());
     Renderer::instance->add_renderable(debug_mesh_h, get_global_model() * debug_mesh_h->get_global_model());
+#endif
 
     Light3D::render();
 }
