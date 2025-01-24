@@ -62,7 +62,7 @@ void PrefixSumKernel::create_pass_recursive(WGPUBuffer data, uint32_t data_byte_
     pipeline_data->block_sum_uniform.buffer_size = sizeof(uint32_t) * workgroup_count;
 
     std::vector<Uniform*> uniforms = { &pipeline_data->data_uniform, &pipeline_data->block_sum_uniform };
-    pipeline_data->bind_group = webgpu_context->create_bind_group(uniforms, shader, 0);
+    pipeline_data->bind_group = webgpu_context->create_bind_group(uniforms, shader, 0, "prefix_sum_bind_group");
 
     std::vector<WGPUConstantEntry> constants = {
         { nullptr, get_string_view("WORKGROUP_SIZE_X"), static_cast<double>(workgroup_size.x) },

@@ -113,7 +113,7 @@ struct WebGPUContext {
     WGPUBindGroupLayout    create_bind_group_layout(const std::vector<WGPUBindGroupLayoutEntry>& entries, char const* label = nullptr);
     WGPUBindGroup          create_bind_group(const std::vector<Uniform*>& uniforms, WGPUBindGroupLayout bind_group_layout, char const* label = nullptr);
     WGPUBindGroup          create_bind_group(const std::vector<Uniform*>& uniforms, const Shader* shader, uint16_t bind_group, char const* label = nullptr) const;
-    WGPUPipelineLayout     create_pipeline_layout(const std::vector<WGPUBindGroupLayout>& bind_group_layouts);
+    WGPUPipelineLayout     create_pipeline_layout(const std::vector<WGPUBindGroupLayout>& bind_group_layouts, const std::string& label = "");
 
     void                   copy_texture_to_texture(WGPUTexture texture_src, WGPUTexture texture_dst, uint32_t src_mipmap_level, uint32_t dst_mipmap_level, const WGPUExtent3D& copy_size, WGPUCommandEncoder custom_command_encoder = nullptr);
 

@@ -1457,6 +1457,8 @@ void Renderer::init_camera_bind_group()
     entry.buffer.hasDynamicOffset = true;
     entry.visibility = WGPUShaderStage_Compute;
 
+    uniforms = { &camera_uniform };
+
     WGPUBindGroupLayout compute_camera_bind_group_layout = webgpu_context->create_bind_group_layout({ entry });
     compute_camera_bind_group = webgpu_context->create_bind_group(uniforms, compute_camera_bind_group_layout);
 
