@@ -10,6 +10,8 @@ public:
 
     Camera3D() = default;
 
+    void apply_movement(const glm::vec2& movement);
+
     virtual void update(float delta_time);
 
     virtual void look_at(const glm::vec3& eye, const glm::vec3& center, const glm::vec3& up, bool reset_internals = true);
