@@ -148,7 +148,20 @@ bool Engine::initialize_renderer()
         glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
-        window = glfwCreateWindow(screen_width, screen_height, "ROOMS", NULL, NULL);
+        if (configuration.fullscreen) {
+            GLFWmonitor* monitor = glfwGetPrimaryMonitor();
+            const GLFWvidmode* mode = glfwGetVideoMode(monitor);
+
+            glfwWindowHint(GLFW_RED_BITS, mode->redBits);
+            glfwWindowHint(GLFW_GREEN_BITS, mode->greenBits);
+            glfwWindowHint(GLFW_BLUE_BITS, mode->blueBits);
+            glfwWindowHint(GLFW_REFRESH_RATE, mode->refreshRate);
+
+            window = glfwCreateWindow(mode->width, mode->height, "ROOMS", monitor, nullptr);
+        } else {
+            window = glfwCreateWindow(screen_width, screen_height, "ROOMS", nullptr, nullptr);
+        }
+
 
         glfwSetWindowTitle(window, configuration.window_title.c_str());
     }
@@ -427,6 +440,11 @@ void Engine::render_default_gui()
                     main_scene->add_nodes(entities);
                 }
             }
+
+            if (ImGui::MenuItem("Exit")) {
+                exit(0);
+            }
+
             ImGui::EndMenu();
         }
         ImGui::EndMainMenuBar();
