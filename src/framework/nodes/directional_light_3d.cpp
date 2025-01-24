@@ -50,9 +50,11 @@ DirectionalLight3D::~DirectionalLight3D()
 
 void DirectionalLight3D::render()
 {
+#ifndef NDEBUG
     // Use light transform to simplify rotation logic
     Renderer::instance->add_renderable(debug_mesh_v, get_global_model() * debug_mesh_v->get_global_model());
     Renderer::instance->add_renderable(debug_mesh_v, get_global_model() * debug_mesh_h->get_global_model());
+#endif
 
     Light3D::render();
 }
