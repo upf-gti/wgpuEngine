@@ -11,6 +11,7 @@
 
 #include <glm/gtc/type_ptr.hpp>
 #include "glm/gtx/quaternion.hpp"
+#include "glm/gtx/euler_angles.hpp"
 
 #include <fstream>
 
@@ -64,11 +65,24 @@ void Node3D::render_gui()
         glm::quat rotation = transform.get_rotation();
         glm::vec3 scale = transform.get_scale();
 
+        glm::mat4 m = glm::mat4_cast(rotation);
+
+        float y, p, r;
+        glm::extractEulerAngleYXZ(m, y, p, r);
+
+        // Package them as a vector for interface similarity with
+        // `glm::eulerAngles` (but the order is different!).
+        glm::vec3 euler_rotation = glm::vec3{ p, y, r };
+
         if (ImGui::DragFloat3("Translation", &position[0], 0.1f)) {
             set_position(position);
         }
 
-        if (ImGui::DragFloat4("Rotation", &rotation[0], 0.1f)) {
+        if (ImGui::DragFloat3("Rotation", &euler_rotation[0], 0.01f)) {
+            glm::vec3 delta_rot_euler = euler_rotation - glm::vec3{ p, y, r };
+            glm::quat delta_rot_quat = glm::quat(delta_rot_euler);
+
+            rotation = delta_rot_quat * rotation;
             set_rotation(rotation);
         }
 
