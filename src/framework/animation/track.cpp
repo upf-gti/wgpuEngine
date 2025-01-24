@@ -298,21 +298,33 @@ void Track::parse(std::ifstream& binary_scene_file)
         binary_scene_file.read(reinterpret_cast<char*>(&t.time), sizeof(float));
 
         if (type == eTrackType::TYPE_FLOAT) {
-            binary_scene_file.read(reinterpret_cast<char*>(&t.value), sizeof(float));
-            
+            float value = 0.0f;
+            binary_scene_file.read(reinterpret_cast<char*>(&value), sizeof(float));
+            t.value = value;
         }
         else if (type == eTrackType::TYPE_POSITION || type == eTrackType::TYPE_SCALE || type == eTrackType::TYPE_VECTOR3) {
-            binary_scene_file.read(reinterpret_cast<char*>(&t.value), sizeof(glm::vec3));
+            glm::vec3 value = {};
+            binary_scene_file.read(reinterpret_cast<char*>(&value), sizeof(glm::vec3));
+            t.value = value;
         }
         else if (type == eTrackType::TYPE_VECTOR4) {
-            binary_scene_file.read(reinterpret_cast<char*>(&t.value), sizeof(glm::vec4));
+            glm::vec4 value = {};
+            binary_scene_file.read(reinterpret_cast<char*>(&value), sizeof(glm::vec4));
+            t.value = value;
         }
         else if (type == eTrackType::TYPE_ROTATION) {
-            binary_scene_file.read(reinterpret_cast<char*>(&t.value), sizeof(glm::quat));
+            glm::quat value = {};
+            binary_scene_file.read(reinterpret_cast<char*>(&value), sizeof(glm::quat));
+            t.value = value;
         }
 
         // TODO: Serialize also the type of tangents: for now in animation editor we always use "float"
-        binary_scene_file.read(reinterpret_cast<char*>(&t.in), sizeof(float));
-        binary_scene_file.read(reinterpret_cast<char*>(&t.out), sizeof(float));
+        float in = 0.0f;
+        binary_scene_file.read(reinterpret_cast<char*>(&in), sizeof(float));
+        t.in = in;
+
+        float out = 0.0f;
+        binary_scene_file.read(reinterpret_cast<char*>(&out), sizeof(float));
+        t.out = out;
     }
 }
