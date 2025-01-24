@@ -1446,9 +1446,6 @@ void WebGPUContext::create_swapchain(int width, int height)
         }
     }
 
-    screen_width = width;
-    screen_height = height;
-
     WGPUSurfaceConfiguration surface_config = {};
 #ifdef __EMSCRIPTEN__
     surface_config.usage = WGPUTextureUsage_RenderAttachment | WGPUTextureUsage_TextureBinding;

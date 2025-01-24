@@ -667,7 +667,7 @@ void Renderer::set_camera_type(eCameraType camera_type)
         camera_3d = new OrbitCamera();
     }
 
-    camera_3d->set_perspective(glm::radians(45.0f), webgpu_context->render_width / static_cast<float>(webgpu_context->render_height), z_near, z_far);
+    camera_3d->set_perspective(glm::radians(45.0f), webgpu_context->screen_width / static_cast<float>(webgpu_context->screen_height), z_near, z_far);
 
     if (old_camera) {
         camera_3d->look_at(old_camera->get_eye(), old_camera->get_center(), old_camera->get_up());

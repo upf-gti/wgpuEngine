@@ -128,7 +128,7 @@ bool Engine::initialize_renderer()
     const bool use_xr = renderer->get_openxr_available();
     const bool use_mirror_screen = get_use_mirror_window();
 
-    if (use_xr) {
+    if (use_xr && !renderer->get_use_custom_mirror()) {
         // Keep XR aspect ratio
         screen_width = 992;
         screen_height = 1000;
@@ -148,6 +148,8 @@ bool Engine::initialize_renderer()
         glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
+        WebGPUContext* webgpu_context = renderer->get_webgpu_context();
+
         if (configuration.fullscreen) {
             GLFWmonitor* monitor = glfwGetPrimaryMonitor();
             const GLFWvidmode* mode = glfwGetVideoMode(monitor);
@@ -157,8 +159,14 @@ bool Engine::initialize_renderer()
             glfwWindowHint(GLFW_BLUE_BITS, mode->blueBits);
             glfwWindowHint(GLFW_REFRESH_RATE, mode->refreshRate);
 
+            webgpu_context->screen_width = mode->width;
+            webgpu_context->screen_height = mode->height;
+
             window = glfwCreateWindow(mode->width, mode->height, "ROOMS", monitor, nullptr);
         } else {
+            webgpu_context->screen_width = screen_width;
+            webgpu_context->screen_height = screen_height;
+
             window = glfwCreateWindow(screen_width, screen_height, "ROOMS", nullptr, nullptr);
         }
 

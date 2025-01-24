@@ -107,6 +107,7 @@ protected:
 
     bool is_openxr_available    = false;
     bool use_mirror_screen      = false;
+    bool use_custom_mirror      = true;
 
     glm::vec4 clear_color = { 0.0f, 0.0f, 0.0f, 1.0f };
 
@@ -279,6 +280,8 @@ public:
 
     void set_frustum_camera_paused(bool value);
     bool get_frustum_camera_paused();
+
+    bool get_use_custom_mirror() { return use_custom_mirror; }
 
     void request_timestamps() { timestamps_requested = true; }
 
