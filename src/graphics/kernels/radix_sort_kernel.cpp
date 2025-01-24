@@ -86,7 +86,7 @@ RadixSortKernel::PipelineData* RadixSortKernel::create_block_sum_pipeline(WGPUBu
 
     std::vector<Uniform*> uniforms = { &pipeline_data->in_keys_uniform, &pipeline_data->local_prefix_uniform, &pipeline_data->prefix_block_uniform };
 
-    pipeline_data->bind_group = webgpu_context->create_bind_group(uniforms, block_sum_shader, 0);
+    pipeline_data->bind_group = webgpu_context->create_bind_group(uniforms, block_sum_shader, 0, "radix_sort_block_sum_bind_group");
 
     std::vector<WGPUConstantEntry> constants = {
         { nullptr, get_string_view("WORKGROUP_SIZE_X"), static_cast<double>(workgroup_size.x) },
@@ -138,7 +138,7 @@ RadixSortKernel::PipelineData* RadixSortKernel::create_reorder_pipeline(WGPUBuff
         &pipeline_data->in_values_uniform, &pipeline_data->out_values_uniform
     };
 
-    pipeline_data->bind_group = webgpu_context->create_bind_group(uniforms, reorder_shader, 0);
+    pipeline_data->bind_group = webgpu_context->create_bind_group(uniforms, reorder_shader, 0, "radix_sort_reorder_bind_group");
 
     std::vector<WGPUConstantEntry> constants = {
         { nullptr, get_string_view("WORKGROUP_SIZE_X"), static_cast<double>(workgroup_size.x) },
@@ -174,6 +174,15 @@ void RadixSortKernel::create_buffers()
 RadixSortKernel::~RadixSortKernel()
 {
     for (PipelineData* pipeline_data : pipelines) {
+        pipeline_data->in_keys_uniform.destroy();
+        pipeline_data->in_values_uniform.destroy();
+        pipeline_data->local_prefix_uniform.destroy();
+        pipeline_data->out_keys_uniform.destroy();
+        pipeline_data->out_values_uniform.destroy();
+        pipeline_data->prefix_block_uniform.destroy();
+
+        wgpuBindGroupRelease(pipeline_data->bind_group);
+
         delete pipeline_data;
     }
 

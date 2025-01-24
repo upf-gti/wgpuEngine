@@ -725,7 +725,7 @@ void Shader::get_reflection_data(const std::string& shader_content)
 		entries.clear();
 	}
 
-    pipeline_layout = webgpu_context->create_pipeline_layout(bind_group_layouts);
+    pipeline_layout = webgpu_context->create_pipeline_layout(bind_group_layouts, path);
 }
 
 void Shader::reload(const std::string& engine_shader_path)
