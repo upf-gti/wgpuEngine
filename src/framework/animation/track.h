@@ -62,6 +62,9 @@ public:
 
     Keyframe& add_keyframe(const Keyframe& k);
 
+    void serialize(std::ofstream& binary_scene_file);
+    void parse(std::ifstream& binary_scene_file);
+
     // Prameters: time value, if the track is looping or not
     TrackType sample(float time, bool looping, void* out = nullptr, eInterpolationType interpolation_type = eInterpolationType::UNSET);
     Keyframe& operator[](uint32_t index);

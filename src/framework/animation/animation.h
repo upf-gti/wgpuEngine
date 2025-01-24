@@ -1,9 +1,10 @@
 #pragma once
-#include <vector>
-#include <string>
-#include <iostream>
 
 #include "track.h"
+
+#include "framework/resources/resource.h"
+
+#include <iostream>
 
 enum eAnimationType {
     ANIMATION_TYPE_UNDEFINED,
@@ -16,7 +17,7 @@ enum eBlendType : uint8_t {
     ANIMATION_BLEND_ADDITIVE
 };
 
-class Animation {
+class Animation : public Resource {
 
     static uint32_t last_animation_id;
 
@@ -66,8 +67,9 @@ public:
     eAnimationType get_type();
     bool is_reversed();
 
+    void serialize(std::ofstream& binary_scene_file);
+    void parse(std::ifstream& binary_scene_file);
+
     void set_type(eAnimationType new_type);
     void set_name(const std::string& new_name);
 };
-
-

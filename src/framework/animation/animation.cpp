@@ -1,5 +1,7 @@
 #include "animation.h"
 
+#include <fstream>
+
 uint32_t Animation::last_animation_id = 0;
 
 Animation::Animation()
@@ -172,6 +174,50 @@ eAnimationType Animation::get_type()
 bool Animation::is_reversed()
 {
     return reversed;
+}
+
+void Animation::serialize(std::ofstream& binary_scene_file)
+{
+    size_t name_size = name.size();
+    binary_scene_file.write(reinterpret_cast<char*>(&name_size), sizeof(size_t));
+    binary_scene_file.write(name.c_str(), name_size);
+
+    binary_scene_file.write(reinterpret_cast<char*>(&start_time), sizeof(float));
+    binary_scene_file.write(reinterpret_cast<char*>(&end_time), sizeof(float));
+    binary_scene_file.write(reinterpret_cast<char*>(&duration), sizeof(float));
+    binary_scene_file.write(reinterpret_cast<char*>(&reversed), sizeof(bool));
+    binary_scene_file.write(reinterpret_cast<char*>(&type), sizeof(eAnimationType));
+
+    size_t tracks_count = tracks.size();
+    binary_scene_file.write(reinterpret_cast<char*>(&tracks_count), sizeof(size_t));
+
+    for (uint32_t i = 0u; i < tracks_count; ++i) {
+        Track& t = tracks[i];
+        t.serialize(binary_scene_file);
+    }
+}
+
+void Animation::parse(std::ifstream& binary_scene_file)
+{
+    size_t name_size = 0;
+    binary_scene_file.read(reinterpret_cast<char*>(&name_size), sizeof(size_t));
+    name.resize(name_size);
+    binary_scene_file.read(&name[0], name_size);
+
+    binary_scene_file.read(reinterpret_cast<char*>(&start_time), sizeof(float));
+    binary_scene_file.read(reinterpret_cast<char*>(&end_time), sizeof(float));
+    binary_scene_file.read(reinterpret_cast<char*>(&duration), sizeof(float));
+    binary_scene_file.read(reinterpret_cast<char*>(&reversed), sizeof(bool));
+    binary_scene_file.read(reinterpret_cast<char*>(&type), sizeof(eAnimationType));
+
+    size_t tracks_count = 0;
+    binary_scene_file.read(reinterpret_cast<char*>(&tracks_count), sizeof(size_t));
+    tracks.resize(tracks_count);
+
+    for (uint32_t i = 0u; i < tracks_count; ++i) {
+        Track& t = tracks[i];
+        t.parse(binary_scene_file);
+    }
 }
 
 // setters
