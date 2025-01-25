@@ -156,19 +156,25 @@ namespace ui {
 
         sInputData data = get_input_data();
 
-        if (!disabled && data.is_hovered) {
-            IO::push_input(this, data);
+        if (!disabled) {
+
+            if (data.is_hovered) {
+                IO::push_input(this, data);
+            }
+
+            if (text_2d) {
+                text_2d->set_visibility(false);
+            }
+
+            if (text_2d_value) {
+                text_2d_value->set_visibility(false);
+            }
         }
 
         // Update uniforms
         ui_data.hover_info.x = 0.0f;
         ui_data.hover_info.y = 0.0f;
         ui_data.slider_value = current_value;
-
-        // Only appear on hover if slider is enabled..
-        if (!disabled && text_2d) {
-            text_2d->set_visibility(false);
-        }
 
         on_hover = false;
 
@@ -183,6 +189,10 @@ namespace ui {
 
         if (text_2d) {
             text_2d->set_visibility(true);
+        }
+
+        if (text_2d_value) {
+            text_2d_value->set_visibility(true);
         }
 
         if (data.is_pressed) {
@@ -222,7 +232,8 @@ namespace ui {
             Engine::instance->vibrate_hand(HAND_RIGHT, HOVER_HAPTIC_AMPLITUDE, HOVER_HAPTIC_DURATION);
         }
 
-        process_wheel_joystick<float>(1.0f / (powf(10.0f, static_cast<float>(precision))), 0.25f);
+        float multiplier = 1.0f / (powf(10.0f, static_cast<float>(precision)));
+        process_wheel_joystick<float>(multiplier, multiplier);
 
         on_hover = true;
 
@@ -365,19 +376,26 @@ namespace ui {
 
         sInputData data = get_input_data();
 
-        if (!disabled && data.is_hovered) {
-            IO::push_input(this, data);
+        // Only appear on hover if slider is enabled..
+        if (!disabled) {
+
+            if (data.is_hovered) {
+                IO::push_input(this, data);
+            }
+
+            if (text_2d) {
+                text_2d->set_visibility(false);
+            }
+
+            if (text_2d_value) {
+                text_2d_value->set_visibility(false);
+            }
         }
 
         // Update uniforms
         ui_data.hover_info.x = 0.0f;
         ui_data.hover_info.y = 0.0f;
         ui_data.slider_value = static_cast<float>(current_value);
-
-        // Only appear on hover if slider is enabled..
-        if (!disabled && text_2d) {
-            text_2d->set_visibility(false);
-        }
 
         on_hover = false;
 
@@ -392,6 +410,10 @@ namespace ui {
 
         if (text_2d) {
             text_2d->set_visibility(true);
+        }
+
+        if (text_2d_value) {
+            text_2d_value->set_visibility(true);
         }
 
         if (data.is_pressed) {
