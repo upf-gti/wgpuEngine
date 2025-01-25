@@ -20,7 +20,7 @@ public:
 	void resize(size_t size);
     size_t size() const;
 
-	void set_parent(size_t id, uint32_t parent_id);
+	void set_parent(size_t id, int parent_id);
     void set_joints(std::vector<Transform> new_joints) { joints = new_joints; };
 
 	int get_parent(size_t id);

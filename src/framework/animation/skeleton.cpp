@@ -44,7 +44,7 @@ void Skeleton::serialize(std::ofstream& binary_scene_file)
     binary_scene_file.write(reinterpret_cast<char*>(&name_size), sizeof(size_t));
     binary_scene_file.write(name.c_str(), name_size);
 
-    uint32_t joints_count = joint_ids.size();
+    size_t joints_count = joint_ids.size();
     binary_scene_file.write(reinterpret_cast<char*>(&joints_count), sizeof(size_t));
 
     std::vector<int>& joint_parents = const_cast<std::vector<int>&>(bind_pose.get_parents());
@@ -61,7 +61,7 @@ void Skeleton::serialize(std::ofstream& binary_scene_file)
         binary_scene_file.write(reinterpret_cast<char*>(&joint_id), sizeof(size_t));
         // Parent
         int parent_id = joint_parents[i];
-        binary_scene_file.write(reinterpret_cast<char*>(&parent_id), sizeof(size_t));
+        binary_scene_file.write(reinterpret_cast<char*>(&parent_id), sizeof(int));
         // Transform (bind pose)
         Transform t = joint_transforms_bind[i];
         binary_scene_file.write(reinterpret_cast<char*>(&(t.get_position_ref())), sizeof(glm::vec3));
@@ -82,8 +82,9 @@ void Skeleton::parse(std::ifstream& binary_scene_file)
     name.resize(name_size);
     binary_scene_file.read(&name[0], name_size);
 
-    uint32_t joints_count = 0;
+    size_t joints_count = 0;
     binary_scene_file.read(reinterpret_cast<char*>(&joints_count), sizeof(size_t));
+
     joint_ids.resize(joints_count);
     joint_names.resize(joints_count);
     bind_pose.resize(joints_count);
@@ -100,8 +101,8 @@ void Skeleton::parse(std::ifstream& binary_scene_file)
         binary_scene_file.read(reinterpret_cast<char*>(&joint_id), sizeof(size_t));
         joint_ids[i] = joint_id;
         // Parent
-        int parent_id = -1;
-        binary_scene_file.read(reinterpret_cast<char*>(&parent_id), sizeof(size_t));
+        int parent_id = 0;
+        binary_scene_file.read(reinterpret_cast<char*>(&parent_id), sizeof(int));
         bind_pose.set_parent(i, parent_id);
         rest_pose.set_parent(i, parent_id);
         // Transform (bind pose)

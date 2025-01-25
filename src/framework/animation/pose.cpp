@@ -29,7 +29,7 @@ size_t Pose::size() const
 }
 
 // set parent id
-void Pose::set_parent(size_t id, uint32_t parent_id)
+void Pose::set_parent(size_t id, int parent_id)
 {
     assert(id < parents.size());
     parents[id] = parent_id;
