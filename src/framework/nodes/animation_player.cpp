@@ -56,7 +56,7 @@ void AnimationPlayer::play(Animation* animation, float custom_blend, float custo
     current_animation_name = animation->get_name();
 
     // sequence with default values
-    timeline.frame_max = animation->get_track(0)->size();
+    imgui_timeline.frame_max = animation->get_track(0)->size();
     selected_track = -1;
 
     generate_track_data();
@@ -69,7 +69,7 @@ void AnimationPlayer::generate_track_data()
     Animation* animation = RendererStorage::get_animation(current_animation_name);
     uint32_t num_tracks = animation->get_track_count();
     track_data.resize(num_tracks);
-    timeline.tracks.clear();
+    imgui_timeline.tracks.clear();
 
     // Generate data from tracks
     for (uint32_t i = 0; i < num_tracks; ++i) {
@@ -103,7 +103,7 @@ void AnimationPlayer::generate_track_data()
         }
 
         std::vector<ImVec2> points[4];
-        timeline.curve_editor.SetPointsCount(animation->get_track(i)->size());
+        imgui_timeline.curve_editor.SetPointsCount(animation->get_track(i)->size());
         
         for (uint32_t j = 0; j < animation->get_track(i)->size(); j++) {
             if (type == 0 || type == 2) {
@@ -113,9 +113,9 @@ void AnimationPlayer::generate_track_data()
                 points[1].push_back(ImVec2(j, p.y));
                 points[2].push_back(ImVec2(j, p.z));
 
-                timeline.curve_editor.point_count[0] = points[0].size();
-                timeline.curve_editor.point_count[1] = points[1].size();
-                timeline.curve_editor.point_count[2] = points[2].size();
+                imgui_timeline.curve_editor.point_count[0] = points[0].size();
+                imgui_timeline.curve_editor.point_count[1] = points[1].size();
+                imgui_timeline.curve_editor.point_count[2] = points[2].size();
             }
             else if (type == 1) {
                 glm::quat p = std::get<glm::quat>(animation->get_track(i)->get_keyframe(j).value);
@@ -124,13 +124,13 @@ void AnimationPlayer::generate_track_data()
                 points[2].push_back(ImVec2(j, p.z));
                 points[3].push_back(ImVec2(j, p.w));
 
-                timeline.curve_editor.point_count[0] = points[0].size();
-                timeline.curve_editor.point_count[1] = points[1].size();
-                timeline.curve_editor.point_count[2] = points[2].size();
-                timeline.curve_editor.point_count[3] = points[3].size();
+                imgui_timeline.curve_editor.point_count[0] = points[0].size();
+                imgui_timeline.curve_editor.point_count[1] = points[1].size();
+                imgui_timeline.curve_editor.point_count[2] = points[2].size();
+                imgui_timeline.curve_editor.point_count[3] = points[3].size();
             }
         }
-        timeline.tracks.push_back(Timeline::TimelineTrack{ animation->get_track(i)->get_type(), 0, (int)animation->get_track(i)->size(), false, track_path, points });
+        imgui_timeline.tracks.push_back(ImGuiTimeline::TimelineTrack{ animation->get_track(i)->get_type(), 0, (int)animation->get_track(i)->size(), false, track_path, points });
     }
 }
 
@@ -236,7 +236,7 @@ void AnimationPlayer::render_gui()
         static int selected_entry = selected_track;
         static int first_frame = 0;
         static bool expanded = true;
-        int current_frame = playback * (timeline.frame_max - timeline.frame_min) / current_animation->get_duration();
+        int current_frame = playback * (imgui_timeline.frame_max - imgui_timeline.frame_min) / current_animation->get_duration();
         int new_current_frame = current_frame;
         // Control buttons
         ImGui::PushItemWidth(180);
@@ -266,9 +266,9 @@ void AnimationPlayer::render_gui()
 
         ImGui::PopItemWidth();
 
-        Sequencer(&timeline, &new_current_frame, &expanded, &selected_entry, &first_frame, ImSequencer::SEQUENCER_EDIT_STARTEND | ImSequencer::SEQUENCER_ADD | ImSequencer::SEQUENCER_DEL | ImSequencer::SEQUENCER_COPYPASTE | ImSequencer::SEQUENCER_CHANGE_FRAME);
+        Sequencer(&imgui_timeline, &new_current_frame, &expanded, &selected_entry, &first_frame, ImSequencer::SEQUENCER_EDIT_STARTEND | ImSequencer::SEQUENCER_ADD | ImSequencer::SEQUENCER_DEL | ImSequencer::SEQUENCER_COPYPASTE | ImSequencer::SEQUENCER_CHANGE_FRAME);
         if (new_current_frame != current_frame) {
-            playback = new_current_frame * current_animation->get_duration() / (timeline.frame_max - timeline.frame_min);
+            playback = new_current_frame * current_animation->get_duration() / (imgui_timeline.frame_max - imgui_timeline.frame_min);
             blender.update(playback, loop_type, track_data);
             root_node->set_transform_dirty(true);
         }
@@ -276,7 +276,7 @@ void AnimationPlayer::render_gui()
         // add a UI to edit that particular item
         if (selected_entry != -1)
         {            
-            const Timeline::TimelineTrack item = timeline.tracks[selected_entry];
+            const ImGuiTimeline::TimelineTrack& item = imgui_timeline.tracks[selected_entry];
             ImGui::Text("I am a %s, please edit me", TrackTypes[item.type].c_str());
             //std::cout << "I am a %s, please edit me ( " << TrackTypes[item.type].c_str() << " )" << std::endl;
             size_t last_idx = item.name.find_last_of('/');
@@ -292,7 +292,7 @@ void AnimationPlayer::render_gui()
                 if (selected_track != -1)
                 {
 
-                    node_path = timeline.tracks[selected_track].name;
+                    node_path = imgui_timeline.tracks[selected_track].name;
                     last_idx = node_path.find_last_of('/');
                     node_path = node_path.substr(0, last_idx);
 
@@ -307,6 +307,14 @@ void AnimationPlayer::render_gui()
     }
 
     ImGui::End();
+}
+
+void AnimationPlayer::set_playback_time(float time)
+{
+    playback = time;
+    playing = true; // hack to force update..
+    update(0.0f);
+    playing = false;
 }
 
 void AnimationPlayer::set_speed(float time)

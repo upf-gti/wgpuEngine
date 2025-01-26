@@ -124,7 +124,7 @@ private:
     }
 };
 
-struct Timeline : public ImSequencer::SequenceInterface
+struct ImGuiTimeline : public ImSequencer::SequenceInterface
 {
     // interface with sequencer
 
@@ -164,7 +164,7 @@ struct Timeline : public ImSequencer::SequenceInterface
     virtual size_t GetCustomHeight(int index) { return tracks[index].expanded ? 300 : 0; }
 
     // my datas
-    Timeline() : frame_min(0), frame_max(1000) {}
+    ImGuiTimeline() : frame_min(0), frame_max(1000) {}
     int frame_min, frame_max;
     ImVec2 selected_point = { -1, -1 };
 

@@ -3,7 +3,7 @@
 #include "node_3d.h"
 #include "framework/animation/blend_animation.h"
 
-#include "framework/ui/timeline.h"
+#include "framework/ui/imgui_timeline.h"
 
 class MeshInstance3D;
 
@@ -25,7 +25,7 @@ class AnimationPlayer : public Node3D
     uint8_t loop_type = ANIMATION_LOOP_DEFAULT;
 
     BlendAnimation blender;
-    Timeline timeline;
+    ImGuiTimeline imgui_timeline;
 
     std::vector<void*> track_data;
     int selected_track = -1;
@@ -46,6 +46,7 @@ public:
     void update(float delta_time) override;
     void render_gui() override;
 
+    void set_playback_time(float time);
     void set_speed(float time);
     void set_blend_time(float time);
     void set_loop_type(uint8_t new_loop_type);
