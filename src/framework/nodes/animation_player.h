@@ -37,8 +37,8 @@ public:
     AnimationPlayer();
     AnimationPlayer(const std::string& name);
 
-    void play(Animation* animation = nullptr, float custom_blend = -1.0f, float custom_speed = 1.0f, bool from_end = false);
-    void play(const std::string& animation_name = "", float custom_blend = -1.0f, float custom_speed = 1.0f, bool from_end = false);
+    void play(Animation* animation = nullptr, float start_time = 0.0f, float custom_blend = -1.0f, float custom_speed = 1.0f);
+    void play(const std::string& animation_name = "", float start_time = 0.0f, float custom_blend = -1.0f, float custom_speed = 1.0f);
     void pause();
     void resume();
     void stop(bool keep_state = false);
@@ -52,6 +52,7 @@ public:
     void set_loop_type(uint8_t new_loop_type);
     void set_root_node(Node3D* new_root_node);
 
+    float get_playback_time() { return playback; }
     float get_blend_time();
     float get_speed();
     uint8_t get_loop_type();

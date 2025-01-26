@@ -20,7 +20,7 @@ AnimationPlayer::AnimationPlayer(const std::string& n)
     name = n;
 }
 
-void AnimationPlayer::play(const std::string& animation_name, float custom_blend, float custom_speed, bool from_end)
+void AnimationPlayer::play(const std::string& animation_name, float start_time, float custom_blend, float custom_speed)
 {
     Animation* animation = RendererStorage::get_animation(animation_name);
     if (!animation) {
@@ -28,10 +28,10 @@ void AnimationPlayer::play(const std::string& animation_name, float custom_blend
         return;
     }
 
-    play(animation, custom_blend, custom_speed, from_end);
+    play(animation, start_time, custom_blend, custom_speed);
 }
 
-void AnimationPlayer::play(Animation* animation, float custom_blend, float custom_speed, bool from_end)
+void AnimationPlayer::play(Animation* animation, float start_time, float custom_blend, float custom_speed)
 {
     if (paused) {
         resume();
@@ -48,7 +48,7 @@ void AnimationPlayer::play(Animation* animation, float custom_blend, float custo
     }
     else {
         blender.play(animation);
-        playback = 0.0f;
+        playback = start_time;
     }
 
     speed = custom_speed;
