@@ -312,9 +312,10 @@ void AnimationPlayer::render_gui()
 void AnimationPlayer::set_playback_time(float time)
 {
     playback = time;
+    bool was_playing = playing;
     playing = true; // hack to force update..
     update(0.0f);
-    playing = false;
+    playing = was_playing;
 }
 
 void AnimationPlayer::set_speed(float time)
