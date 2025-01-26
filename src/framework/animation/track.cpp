@@ -59,6 +59,20 @@ Keyframe& Track::get_keyframe(uint32_t index)
     return keyframes[index];
 }
 
+Keyframe* Track::get_keyframe(float time)
+{
+    auto it = std::find_if(keyframes.begin(), keyframes.end(), [time](const Keyframe& kf) {
+        return std::abs(time - kf.time) < 0.00001f;
+    });
+
+    if (it == keyframes.end()) {
+        return nullptr;
+    }
+
+    uint32_t idx = it - keyframes.begin();
+    return &keyframes[idx];
+}
+
 Keyframe& Track::add_keyframe(const Keyframe& k)
 {
     keyframes.push_back(k);
@@ -77,6 +91,12 @@ Keyframe& Track::add_keyframe(const Keyframe& k)
     }
 
     return keyframes.back();
+}
+
+void Track::delete_keyframe(const Keyframe& k)
+{
+    int frame_idx = frame_index(k.time);
+    keyframes.erase(keyframes.begin() + frame_idx);
 }
 
 // call sample_constant, sample_linear, or sample_cubic, depending on the track type.
@@ -142,7 +162,7 @@ int Track::frame_index(float time)
     uint32_t size = (uint32_t)keyframes.size();
 
     if (size <= 1) {
-        return -1;
+        return 0;
     }
 
     for (int i = (int)size - 1; i >= 0; --i) {

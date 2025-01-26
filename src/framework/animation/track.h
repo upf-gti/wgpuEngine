@@ -50,6 +50,7 @@ public:
     const std::string& get_name();
     const std::string& get_path();
     Keyframe& get_keyframe(uint32_t index);
+    Keyframe* get_keyframe(float time);
     Interpolator& get_interpolator() { return interpolator; }
 
     void set_id(int id);
@@ -61,6 +62,7 @@ public:
     void resize(uint32_t size);
 
     Keyframe& add_keyframe(const Keyframe& k);
+    void delete_keyframe(const Keyframe& k);
 
     void serialize(std::ofstream& binary_scene_file);
     void parse(std::ifstream& binary_scene_file);
