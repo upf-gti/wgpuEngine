@@ -544,8 +544,14 @@ Surface* RendererStorage::get_surface(const std::string& mesh_path)
 
 void RendererStorage::register_animation(const std::string& animation_path, Animation* animation)
 {
-    // register in map
     animations[animation_path] = animation;
+}
+
+void RendererStorage::erase_animation(const std::string& animation_path)
+{
+    if (animations.contains(animation_path)) {
+        animations.erase(animation_path);
+    }
 }
 
 Animation* RendererStorage::get_animation(const std::string& animation_path)

@@ -97,6 +97,7 @@ public:
     static void reload_all_render_pipelines();
 
     static void register_animation(const std::string& animation_path, Animation* animation);
+    static void erase_animation(const std::string& animation_path);
     static Animation* get_animation(const std::string& animation_path);
 
     static void register_render_pipeline(Material* material);
