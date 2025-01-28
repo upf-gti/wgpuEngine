@@ -2,6 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
     <title>wgpuEngine Docs</title>
     <link rel="stylesheet" href="https://cdn.skypack.dev/lexgui/build/lexgui.css">
     <style>
@@ -15,7 +16,7 @@
 
         const mobile = navigator && /Android|iPhone/i.test(navigator.userAgent);
 
-        let url = "installation.html";
+        let url = "build.html";
 
         let iframe = document.createElement('iframe');
         iframe.id = iframe.name = 'viewer';
@@ -66,7 +67,7 @@
         function fillDocs( panel, branches_closed ) {
             panel.clear();
             panel.branch("Documentation", { closed: branches_closed });
-            panel.addTitle("Installation", {link: "installation.html", target: 'viewer'});
+            panel.addTitle("Build", {link: "build.html", target: 'viewer'});
             panel.addTitle("Getting started", {link: "getting_started.html", target: 'viewer'});
             panel.merge();
         }

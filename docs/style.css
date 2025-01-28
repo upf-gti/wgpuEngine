@@ -269,17 +269,16 @@ img {
 		font-size: 24px;
 		line-height: 32px;
 	}
-
 }
 
 /* mobile */
 
-@media all and ( max-width: 640px ) {
+@media all and (max-width: 600px) {
 
 	:root {
 		--page-padding: 16px;
 		--icon-size: 24px;
-		--font-size: 24px;
+		--font-size: 18px;
 	}
 
 	body {
@@ -287,14 +286,14 @@ img {
 	}
 
 	h1 {
-		font-size: 28px;
+		font-size: 24px;
 		line-height: 36px;
 		padding-right: 20px;
 		margin-top: 0;
 	}
 
 	h2 {
-		font-size: 24px;
+		font-size: 22px;
 		line-height: 32px;
 		margin-top: 24px;
 	}
@@ -304,6 +303,17 @@ img {
 		line-height: 28px;
 	}
 
+	ul {
+		text-align: left;
+	}
+
+	code {
+		font-size: 14px;
+	}
+
+	code:not(.inline) {
+		border-radius: 0px;
+	}
 }
 
 pre .str, code .str { color: #c38433; } /* string */
