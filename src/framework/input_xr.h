@@ -19,12 +19,12 @@ enum OPENXR_HANDS
     HAND_COUNT
 };
 
-enum {
+enum OPENXR_POSES {
     POSE_GRIP = 0,
     POSE_AIM
 };
 
-enum {
+enum OPENXR_BUTTONS {
     XR_BUTTON_A = 0,
     XR_BUTTON_B,
     XR_BUTTON_X,

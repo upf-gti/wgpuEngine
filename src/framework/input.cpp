@@ -196,7 +196,25 @@ void Input::set_mouse_wheel(float offset_x, float offset_y)
     mouse_wheel_delta = offset_y;
 }
 
-glm::vec3 Input::get_controller_position(uint8_t controller, uint8_t type, const bool apply_world_transform)
+glm::mat4x4 Input::get_controller_pose(uint8_t controller, uint8_t type, bool world_space)
+{
+#ifdef XR_SUPPORT
+    if (!openxr_context) return glm::mat4x4(1.0f);
+    glm::mat4 mat;
+    if (type == POSE_AIM) mat = xr_data.controllerAimPoseMatrices[controller];
+    else mat = xr_data.controllerGripPoseMatrices[controller];
+
+    if (openxr_context->root_transform && world_space) {
+        return (openxr_context->root_transform->get_model() * mat);
+    }
+
+    return mat;
+#else
+    return glm::mat4x4(1.f);
+#endif
+}
+
+glm::vec3 Input::get_controller_position(uint8_t controller, uint8_t type, bool world_space)
 {
 #ifdef XR_SUPPORT
 	if (!openxr_context) return {};
@@ -204,7 +222,7 @@ glm::vec3 Input::get_controller_position(uint8_t controller, uint8_t type, const
 	if (type == POSE_AIM) pos = xr_data.controllerAimPoses[controller].position;
     else pos = xr_data.controllerGripPoses[controller].position;
 
-    if (openxr_context->root_transform && apply_world_transform) {
+    if (openxr_context->root_transform && world_space) {
         return (openxr_context->root_transform->get_model() * glm::vec4(pos, 1.0f));
     }
     return pos;
@@ -221,24 +239,6 @@ glm::quat Input::get_controller_rotation(uint8_t controller, uint8_t type)
 	else return xr_data.controllerGripPoses[controller].orientation;
 #else
 	return {};
-#endif
-}
-
-glm::mat4x4 Input::get_controller_pose(uint8_t controller, uint8_t type, const bool apply_world_transform)
-{
-#ifdef XR_SUPPORT
-    if (!openxr_context) return glm::mat4x4(1.0f);
-    glm::mat4 mat;
-	if (type == POSE_AIM) mat = xr_data.controllerAimPoseMatrices[controller];
-	else mat = xr_data.controllerGripPoseMatrices[controller];
-
-    if (openxr_context->root_transform && apply_world_transform) {
-        return (openxr_context->root_transform->get_model() * mat);
-    }
-
-    return mat;
-#else
-	return glm::mat4x4(1.f);
 #endif
 }
 

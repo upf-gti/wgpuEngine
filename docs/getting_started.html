@@ -1,0 +1,68 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+    <title>wgpuEngine Docs</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v6.4.2/css/all.css">
+    <script type="text/javascript" src="docmaker.js"></script>
+</head>
+
+<body>
+
+<script type="text/javascript">
+
+MAKE_HEADER( "Getting Started", "h1", "getting-started" );
+
+MAKE_PARAGRAPH( `Let's start by looking at the most simple wgpuEngine program possible:` );
+
+MAKE_CODE( `#[kwd]int# #[mtd]main#()
+{
+    #[cls]Engine#* engine_instance = #[kwd]new# #[cls]Engine#();
+    #[cls]Renderer#* renderer_instance = #[kwd]new# #[cls]Renderer#();
+
+    #[cls]sEngineConfiguration# configuration = {
+        .window_width = 1600,
+        .window_height = 900,
+        .window_title = "wgpuEngine Test",
+        .msaa_count = 4
+    };
+
+    #[flw]if# (engine_instance->#[mtd]initialize#(renderer_instance, configuration)) {
+        #[com]// Exit application if misconfigured#
+        #[flw]return# 1;
+    }
+
+    engine->#[mtd]start_loop#();
+
+    engine->#[mtd]clean#();
+
+    #[kwd]delete# engine;
+    #[kwd]delete# renderer;
+
+    #[flw]return# 0;
+}
+` );
+
+MAKE_PARAGRAPH( `This program will just produce a screen with only a skymap, and some camera controls with the mouse and the WASD keys.` );
+MAKE_PARAGRAPH( `Even though from this stage you can start adding nodes and meshes to the scene, let's go step by step, and then introduce how the engine and its components should be used.` );
+
+MAKE_HEADER( "Engine & Renderer", "h2", "engine-renderer" );
+
+MAKE_PARAGRAPH( `In wgpuEngine the Engine side (scene management, application code) are detached from the Renderer (scene representation) by default. 
+Most projects will use our default renderer, that should cover most of the needs (more on this and expanding the renderer later); however most of the users 
+will need to build their own applications on top of the base application.` );
+MAKE_PARAGRAPH( `wgpuEngine is built around inheritance as a way to expand functionality from some base classes, and two of those are both the Engine and Render classes. 
+The base methods to inherit and that mark lifecycle of the Engine class are:` );
+MAKE_CODE_BULLET_LIST( [
+    ["int initialize(Renderer* render_instance, sEngineConfiguration config)", "Method called when initializing the Engine instance. Apart from providing a renderer and a configuration struct for the Engine base class, this method can be used for loading non-render related resources, like setting up scenes and application exclusive configurations."],
+    ["int post_initialize()", "This method is called automatically when the WebGPU context has been created successfully. Here you can start loading GPU/render related resources (textures, meshes that are stored on GPU memory, buffers, etc..). It is normally used for adding Nodes to scenes."],
+    ["void clean()", "Self explanatory, it will clean the Renderer and all the data from the base Engine class. You should use this for cleaning your own allocated in the heap resources, and exiting gracefully."],
+    ["void update(float delta_time)", "This method is called one per frame before the render method. Here you should handle all the logic and application changes, from the user input, in order to be presented for the user."],
+    ["void render()", "Method called when starting the render of a new frame. You can add your own render steps or logic here, and also toggle the ImGUI interface of the engine."]
+] );
+
+</script>
+
+</body>
+</html>

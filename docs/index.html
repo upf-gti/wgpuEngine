@@ -1,0 +1,75 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+    <title>wgpuEngine Docs</title>
+    <link rel="stylesheet" href="https://cdn.skypack.dev/lexgui/build/lexgui.css">
+    <style>
+        iframe { border: none; }
+    </style>
+</head>
+    <body></body>
+    <script type="module">
+
+        import { LX } from 'https://cdn.skypack.dev/lexgui/build/lexgui.module.js';
+
+        const mobile = navigator && /Android|iPhone/i.test(navigator.userAgent);
+
+        let url = "installation.html";
+
+        let iframe = document.createElement('iframe');
+        iframe.id = iframe.name = 'viewer';
+        iframe.src = url;
+        iframe.style.width = "100%";
+        iframe.style.height = "100%";
+
+        // Init library and get main area
+        let area = LX.init();
+
+        if( mobile )
+        {
+            area.root.style.borderRight = "2px solid gray";
+            area.addMenubar( m => {
+                m.add( "wgpuEngine", () => { });
+                m.setButtonIcon("Github", "fa-brands fa-github", () => {window.open("https://github.com/upf-gti/wgpuEngine/")}, { float: "left" });
+            });
+
+            // Split main area
+            area.split({ type: 'vertical', sizes: "auto", resize: false });
+            let [top, bottom] = area.sections;
+
+            let panel = top.addPanel();
+            fillDocs( panel, true );
+
+            bottom.root.appendChild(iframe);
+        }
+        else
+        {
+            // Split main area
+            area.split({sizes:["15%","85%"], resize: false});
+            let [left,right] = area.sections;
+
+            left.root.style.borderRight = "2px solid gray";
+            left.addMenubar( m => {
+                m.add( "wgpuEngine", () => { });
+                m.setButtonIcon("Github", "fa-brands fa-github", () => {window.open("https://github.com/upf-gti/wgpuEngine/")}, { float: "left" });
+            });
+
+            let panel = left.addPanel();
+            fillDocs( panel );
+
+            right.root.appendChild(iframe);
+        }
+
+        // **** **** **** **** **** **** **** **** **** **** **** **** 
+
+        function fillDocs( panel, branches_closed ) {
+            panel.clear();
+            panel.branch("Documentation", { closed: branches_closed });
+            panel.addTitle("Installation", {link: "../docs/installation.html", target: 'viewer'});
+            panel.addTitle("Getting started", {link: "../docs/getting_started.html", target: 'viewer'});
+            panel.merge();
+        }
+
+    </script>
+</html>

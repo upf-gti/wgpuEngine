@@ -79,7 +79,6 @@ public:
     static glm::vec2 get_mouse_position() { return mouse_position; }
     static glm::vec2 get_mouse_delta() { return mouse_delta; }
     static float get_mouse_wheel_delta() { return mouse_wheel_delta; }
-    static uint8_t get_leading_thumbstick_axis(uint8_t controller);
 
     static void set_key_state(int key, uint8_t value);
     static void set_mouse_button(int button, uint8_t value);
@@ -93,9 +92,9 @@ public:
     *	Poses
     */
 
-    static glm::vec3 get_controller_position(uint8_t controller, uint8_t type = POSE_GRIP, const bool apply_world_transform = true);
+    static glm::mat4x4 get_controller_pose(uint8_t controller, uint8_t type = POSE_GRIP, bool world_space = true);
+    static glm::vec3 get_controller_position(uint8_t controller, uint8_t type = POSE_GRIP, bool world_space = true);
     static glm::quat get_controller_rotation(uint8_t controller, uint8_t type = POSE_GRIP);
-    static glm::mat4x4 get_controller_pose(uint8_t controller, uint8_t type = POSE_GRIP, const bool apply_world_transform = true);
 
     /*
     *	Buttons
@@ -131,6 +130,7 @@ public:
     *	Thumbsticks
     */
 
+    static uint8_t get_leading_thumbstick_axis(uint8_t controller);
     static glm::vec2 get_thumbstick_value(uint8_t controller);
     static bool is_thumbstick_pressed(uint8_t controller);
     static bool was_thumbstick_pressed(uint8_t controller);
