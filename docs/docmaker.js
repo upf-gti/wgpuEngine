@@ -1,5 +1,10 @@
 // @jxarco
 
+const keywords = ['int', 'float', 'double', 'bool', 'char', 'wchar_t', 'const', 'static_cast', 'dynamic_cast', 'new', 'delete', 'void', 'true', 'false', 'auto', 'struct', 'typedef', 'nullptr', 
+    'NULL', 'unsigned', 'namespace'];
+
+const flow_control = ['for', 'if', 'else', 'return', 'continue', 'break', 'case', 'switch', 'while', 'using'];
+
 function MAKE_LINE_BREAK()
 {
     document.body.appendChild( document.createElement('br') );
@@ -32,18 +37,50 @@ function MAKE_CODE( string )
     let highlight = "";
     let content = "";
 
+    const getHTML = ( h, c ) => {
+        return `<span class="${ h }">${ c }</span>`;
+    };
+
     for( let i = 0; i < string.length; ++i )
     {
         let char = string[ i ];
 
-        if( char == '#' )
+        if( char == '@' )
         {
             const str = string.substr( i + 1 );
-            highlight = str.substr( 1, 3 );
-            content = str.substring( 5, str.indexOf( '#' ) );
-            const newText = `<span class="${ highlight }">${ content }</span>`;
-            string = string.replace( `#[${ highlight }]${ content }#`, newText );
-            i += ( newText.length - 1 );
+            let html = null;
+
+            // Highlight is specified
+            if( string[ i + 1] == '[' )
+            {
+                highlight = str.substr( 1, 3 );
+                content = str.substring( 5, str.indexOf( '@' ) );
+                html = getHTML( highlight, content );
+                string = string.replace( `@[${ highlight }]${ content }@`, html );
+            }
+            else
+            {
+                content = str.substring( 0, str.indexOf( '@' ) );
+
+                if( keywords.includes( content ) )
+                {
+                    highlight = "kwd";    
+                }
+                else if( flow_control.includes( content ) )
+                {
+                    highlight = "flw";    
+                }
+                else
+                {
+                    console.error( "ERROR[Code Parsing]: Unknown highlight type: " + content );
+                    return;
+                }
+
+                html = getHTML( highlight, content );
+                string = string.replace( `@${ content }@`, html );
+            }
+
+            i += ( html.length - 1 );
         }
     }
     

@@ -32,6 +32,14 @@ enum OPENXR_BUTTONS {
     XR_BUTTON_MENU,
 };
 
+enum OPENXR_THUMBSTICK_AXIS : uint8_t {
+    THUMBSTICK_NO_AXIS = 0,
+    THUMBSTICK_AXIS_X,
+    THUMBSTICK_AXIS_Y
+};
+
+#define THUMBSTICK_DEADZONE 0.01f
+
 #ifdef XR_SUPPORT
 
 struct XrActionStorage {

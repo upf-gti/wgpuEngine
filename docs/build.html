@@ -13,27 +13,27 @@
 
 <script type="text/javascript">
 
-    MAKE_HEADER( "wgpuEngine", "h1", "wgpuEngine" );
+MAKE_HEADER( "wgpuEngine", "h1", "wgpuEngine" );
 
-    MAKE_PARAGRAPH( `wgpuEngine is an open-source engine designed for creating desktop, XR (extended reality), and 3D web applications. Built on top of the newest graphics API WebGPU, 
-    it provides a cross-platform solution to render complex scenes, animations, and immersive experiences.`);
+MAKE_PARAGRAPH( `wgpuEngine is an open-source engine designed for creating desktop, XR (extended reality), and 3D web applications. Built on top of the newest graphics API WebGPU, 
+it provides a cross-platform solution to render complex scenes, animations, and immersive experiences.`);
 
-    MAKE_PARAGRAPH( `It uses Dawn, which provides WebGPU for desktop and web (via emscripten). We are still using a forked version until the official one adds XR support. 
-    For desktop XR it uses OpenXR. See ${ INLINE_LINK("Rooms", " https://github.com/upf-gti/rooms") } for an example of how to use this engine.` );
+MAKE_PARAGRAPH( `It uses Dawn, which provides WebGPU for desktop and web (via emscripten). We are still using a forked version until the official one adds XR support. 
+For desktop XR it uses OpenXR. See ${ INLINE_LINK("Rooms", " https://github.com/upf-gti/rooms") } for an example of how to use this engine.` );
 
-    MAKE_HEADER( "Build", "h1", "build" );
+MAKE_HEADER( "Build", "h1", "build" );
 
-    MAKE_PARAGRAPH( `You will need to install the following tools:` );
-    
-    MAKE_BULLET_LIST( [
-        INLINE_LINK("Git", "https://git-scm.com/"),
-        INLINE_LINK("CMake", "https://cmake.org/download/"),
-        INLINE_LINK("Python", "https://www.python.org/") + " (added to your PATH)"
-    ] );
+MAKE_PARAGRAPH( `You will need to install the following tools:` );
 
-    MAKE_PARAGRAPH( `and clone the ${ INLINE_LINK("Github repository", " https://github.com/upf-gti/wgpuEngine") }, also initializing the submodules:` );
+MAKE_BULLET_LIST( [
+    INLINE_LINK("Git", "https://git-scm.com/"),
+    INLINE_LINK("CMake", "https://cmake.org/download/"),
+    INLINE_LINK("Python", "https://www.python.org/") + " (added to your PATH)"
+] );
 
-    MAKE_CODE( `git clone https://github.com/upf-gti/rooms.git
+MAKE_PARAGRAPH( `and clone the ${ INLINE_LINK("Github repository", " https://github.com/upf-gti/wgpuEngine") }, also initializing the submodules:` );
+
+MAKE_CODE( `git clone https://github.com/upf-gti/rooms.git
 git submodule update --init --recursive
 ` );
 

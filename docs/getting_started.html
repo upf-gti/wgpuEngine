@@ -17,31 +17,31 @@ MAKE_HEADER( "Getting Started", "h1", "getting-started" );
 
 MAKE_PARAGRAPH( `Let's start by looking at the most simple wgpuEngine program possible:` );
 
-MAKE_CODE( `#[kwd]int# #[mtd]main#()
+MAKE_CODE( `@int@ @[mtd]main@()
 {
-    #[cls]Engine#* engine_instance = #[kwd]new# #[cls]Engine#();
-    #[cls]Renderer#* renderer_instance = #[kwd]new# #[cls]Renderer#();
+    @[cls]Engine@* engine_instance = @new@ @[cls]Engine@();
+    @[cls]Renderer@* renderer_instance = @new@ @[cls]Renderer@();
 
-    #[cls]sEngineConfiguration# configuration = {
+    @[cls]sEngineConfiguration@ configuration = {
         .window_width = 1600,
         .window_height = 900,
         .window_title = "wgpuEngine Test",
         .msaa_count = 4
     };
 
-    #[flw]if# (engine_instance->#[mtd]initialize#(renderer_instance, configuration)) {
-        #[com]// Exit application if misconfigured#
-        #[flw]return# 1;
+    @if@ (engine_instance->@[mtd]initialize@(renderer_instance, configuration)) {
+        @[com]// Exit application if misconfigured@
+        @return@ 1;
     }
 
-    engine->#[mtd]start_loop#();
+    engine->@[mtd]start_loop@();
 
-    engine->#[mtd]clean#();
+    engine->@[mtd]clean@();
 
-    #[kwd]delete# engine;
-    #[kwd]delete# renderer;
+    @delete@ engine;
+    @delete@ renderer;
 
-    #[flw]return# 0;
+    @return@ 0;
 }
 ` );
 
@@ -53,8 +53,10 @@ MAKE_HEADER( "Engine & Renderer", "h2", "engine-renderer" );
 MAKE_PARAGRAPH( `In wgpuEngine the Engine side (scene management, application code) are detached from the Renderer (scene representation) by default. 
 Most projects will use our default renderer, that should cover most of the needs (more on this and expanding the renderer later); however most of the users 
 will need to build their own applications on top of the base application.` );
+
 MAKE_PARAGRAPH( `wgpuEngine is built around inheritance as a way to expand functionality from some base classes, and two of those are both the Engine and Render classes. 
 The base methods to inherit and that mark lifecycle of the Engine class are:` );
+
 MAKE_CODE_BULLET_LIST( [
     ["int initialize(Renderer* render_instance, sEngineConfiguration config)", "Method called when initializing the Engine instance. Apart from providing a renderer and a configuration struct for the Engine base class, this method can be used for loading non-render related resources, like setting up scenes and application exclusive configurations."],
     ["int post_initialize()", "This method is called automatically when the WebGPU context has been created successfully. Here you can start loading GPU/render related resources (textures, meshes that are stored on GPU memory, buffers, etc..). It is normally used for adding Nodes to scenes."],
@@ -62,6 +64,22 @@ MAKE_CODE_BULLET_LIST( [
     ["void update(float delta_time)", "This method is called one per frame before the render method. Here you should handle all the logic and application changes, from the user input, in order to be presented for the user."],
     ["void render()", "Method called when starting the render of a new frame. You can add your own render steps or logic here, and also toggle the ImGUI interface of the engine."]
 ] );
+
+MAKE_PARAGRAPH( `On the ${ INLINE_CODE( "Renderer" ) } class, the base methods to inherit are quite similar:` );
+
+MAKE_CODE_BULLET_LIST( [
+    ["int initialize(sRendererConfiguration config)", "Method called when initializing the WebGPU context, from the configuration provided. The configuration determines the default required_limits and features of the wguEngine, and can be overloaded and expanded by the user"],
+    ["int post_initialize()", "This method is called automatically when the WebGPU context has been created successfully. You can start loading shaders and Pipelines and start creating bindgroups on this step"],
+    ["void clean()", "Self explanatory, it will clean the Renderer and all the data from the base class. You should use this for cleaning your own allocated GPU and heap resources, for exiting gracefully"],
+    ["void update(float delta_time)", "This method is called one per frame before the render method. You can start preparing the logic for your custom render options here"],
+    ["void render()", "Method called when starting the render of a new frame"]
+] );
+
+MAKE_HEADER( "Main loop", "h2", "main-loop" );
+
+MAKE_PARAGRAPH( `The method ${ INLINE_CODE( "start_loop" ) } will start the main application loop, configuring a new frame (with its own ${ INLINE_CODE( "update" ) } and ${ INLINE_CODE( "render" ) } calls) and 
+submitting it. This is handled automatically for the engine, and if you want to change this behavior, changing the order, adding extra logic or render passes, that can be done by overloading 
+the update & render functions of the engine, a scene or a node.` );
 
 </script>
 

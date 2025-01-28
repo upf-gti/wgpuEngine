@@ -21,11 +21,6 @@
 class Renderer;
 struct OpenXRContext;
 
-#define THUMBSTICK_NO_AXIS 0u
-#define THUMBSTICK_AXIS_X 1u
-#define THUMBSTICK_AXIS_Y 2u
-#define THUMBSTICK_DEADZONE 0.01f
-
 class Input {
 
     // Mouse state

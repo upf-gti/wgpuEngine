@@ -316,17 +316,14 @@ img {
 	}
 }
 
-pre .str, code .str { color: #c38433; } /* string */
+pre .str, code .str { color: #cd9c5d; } /* string */
 pre .kwd, code .kwd { color: #2194ce; } /* keyword */
 pre .com, code .com { color: #559c54; } /* comment */
 pre .cls, code .cls { color: #50c6a7; } /* class */
-pre .atn, code .atn { color: #d06adf; } /* literal */
 pre .mtd, code .mtd { color: #d9d99f; } /* method */
-
+pre .pre, code .pre { color: #9c9c9c; } /* preprocessor */
 pre .flw, code .flw { color: #d24aae; } /* control flow */
-pre .pun, code .pun { color: #888888; } /* punctuation */
-pre .pln, code .pln { color: #444444; } /* plaintext */
-pre .pln, code .pln { color: #aaaaaa; } /* plaintext */
+pre .enu, code .enu { color: #c0dec2; } /* enum */
 
 .desc {
 	color: var(--text-color-secondary);

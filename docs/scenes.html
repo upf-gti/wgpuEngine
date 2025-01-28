@@ -1,0 +1,69 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <title>wgpuEngine Docs</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v6.4.2/css/all.css">
+    <script type="text/javascript" src="docmaker.js"></script>
+</head>
+
+<body>
+
+<script type="text/javascript">
+
+MAKE_HEADER( "Creating a 3D Scene", "h1", "scenes" );
+
+MAKE_PARAGRAPH( `In wgpuEngine the class ${ INLINE_CODE( "Scene" ) } is meant to represent a compilation of nodes—a generic container for everything that a scene could have— in a space. 
+An ${ INLINE_CODE( "Engine" ) } instance can have as many scenes as you want, and you are responsible for setting and selecting the current scene.` );
+
+MAKE_PARAGRAPH( `The ${ INLINE_CODE( "Node" ) } class does not have a lot that you can do with it, however its derived classes are more interesting. 
+Here you can see most of the nodes supported in the engine:` );
+
+INSERT_IMAGE( "images/Node_scheme.png", "Node Inheritance Scheme" );
+
+MAKE_PARAGRAPH( `A ${ INLINE_CODE( "Node3D" ) } contains a 3D transform that details its position in the scene, so that all the nodes that inherit will have a position transform in the scene. 
+However, some nodes might need to overload its transform in runtime, like the ${ INLINE_CODE( "Camera" ) } node in VR mode that will follow the head of the user in the 3D space, or like the ${ INLINE_CODE( "Environment3D" ) } 
+that contains a skybox that is always following the camera.` );
+
+MAKE_PARAGRAPH( `If it's a ${ INLINE_CODE( "Node2D" ) }, it will contain a size and a relative position inside the 2D container node, that adds a 3D transform and position in the scene to the 2D elements.` );
+
+MAKE_PARAGRAPH( `Usually most of the nodes that you are going to use are ${ INLINE_CODE( "MeshInstance" ) } nodes. They contain a ${ INLINE_CODE( "Mesh" ) } (composed of one or more sub-meshes or 
+${ INLINE_CODE( "Surfaces" ) } as they are called in the engine), a ${ INLINE_CODE( "Material" ) } (that defines how it is going to be rendered to the screen), and a transform that positions and scales the mesh in the scene.` );
+
+MAKE_HEADER( "Importing scenes", "h2", "importing" );
+
+MAKE_PARAGRAPH( `wgpuEngine currently supports 3 formats for importing geometry data: .obj, .gtlf and .glb. Both .gltf and .glb are part of the glTF standard of scene description 
+(the only difference is that .gltf is stored in human-readable JSON format, and .glb is in binary format). This scene description format includes mesh geometry, material, and position. 
+obj just includes geometry and materials, so we prefer glb as the main import for the engine.
+` );
+
+MAKE_CODE( `@[pre]#include@ @[str]"framework/parsers/parse_gltf.h"@
+
+std::@[cls]vector@<@[cls]Node@*> parsed_entities;
+@[cls]GltfParser@ parser;
+
+parser.@[mtd]parse@(@[str]"data/meshes/our_scene.glb"@, parsed_entities);
+parser.@[mtd]parse@(@[str]"data/meshes/character.glb"@, parsed_entities);
+
+scene->@[mtd]add_node@(@static_cast@<@[cls]MeshInstance3D@*>(parsed_entities[0]));
+scene->@[mtd]add_node@(@static_cast@<@[cls]MeshInstance3D@*>(parsed_entities[1]));
+` );
+
+MAKE_PARAGRAPH( `In this snippet, we are loading inside a ${ INLINE_CODE( "Node" ) } pointer array all the nodes inside two GLB files, and they are just putting 2 entities inside the scene. 
+A glb/gltf can also be loaded directly to a scene.` );
+
+MAKE_HEADER( "Creating Mesh instances", "h2", "mesh-instances" );
+
+MAKE_PARAGRAPH( `You can also create a ${ INLINE_CODE( "MeshInstance3D" ) } by passing it a ${ INLINE_CODE( "Material" ) } and at least one ${ INLINE_CODE( "Surface" ) }.` );
+
+MAKE_PARAGRAPH( `The ${ INLINE_CODE( "Surface" ) } can be created from sending geometry in an array form (take into account that the vertex order and config needs to be maintained from our shaders, 
+unless you overload them). The ${ INLINE_CODE( "Surface" ) } class also provides 
+${ INLINE_LINK( "methods for creating simple primitives", "https://github.com/upf-gti/wgpuEngine/blob/630ce20973914a86006401d4a01ed90e9a88222c/src/graphics/surface.h#L87" ) } like 
+// quads, boxes, spheres, cones, cylinders, etc.` );
+
+</script>
+
+</body>
+</html>

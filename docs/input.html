@@ -1,0 +1,113 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <title>wgpuEngine Docs</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v6.4.2/css/all.css">
+    <script type="text/javascript" src="docmaker.js"></script>
+</head>
+
+<body>
+
+<script type="text/javascript">
+
+MAKE_HEADER( "Input", "h1", "input" );
+
+MAKE_PARAGRAPH( `The engine provides an Input class that serves as a centralized system to capture input from multiple devices, including XR controllers.` );
+
+MAKE_HEADER( "Keyboard & mouse", "h2", "keyboard-mouse" );
+
+MAKE_PARAGRAPH( `The following methods are available for the user:` );
+
+MAKE_CODE( `@bool@ @[mtd]is_key_pressed@(@int@ key, @bool@ stop_propagation = @false@);
+@bool@ @[mtd]was_key_pressed@(@int@ key, @bool@ stop_propagation = @false@);
+
+@bool@ @[mtd]is_mouse_pressed@(@[cls]uint8_t@ button);
+@bool@ @[mtd]was_mouse_pressed@(@[cls]uint8_t@ button);
+@bool@ @[mtd]was_mouse_released@(@[cls]uint8_t@ button);
+glm::@[cls]vec2@ @[mtd]get_mouse_position@();
+glm::@[cls]vec2@ @[mtd]get_mouse_delta@();
+@float@ @[mtd]get_mouse_wheel_delta@();
+` );
+
+MAKE_HEADER( "XR Controllers", "h2", "xr-controllers" );
+
+MAKE_PARAGRAPH( `The engine also offers different methods to get data from XR Controllers, specifically poses, buttons, grab buttons, triggers and thumbsticks.` );
+
+MAKE_CODE( `@[com]// Example: Getting right hand pose transform@
+glm::@[cls]mat4x4@ hand_right_pose = @[cls]Input@::@[mtd]get_controller_pose@(HAND_RIGHT);
+` );
+
+MAKE_HEADER( "Poses", "h3", "xr-poses" );
+
+MAKE_CODE( `glm::@[cls]mat4x4@ @[mtd]get_controller_pose@(@[cls]uint8_t@ controller, @[cls]uint8_t@ type, @bool@ world_space);
+glm::@[cls]vec3@ @[mtd]get_controller_position@(@[cls]uint8_t@ controller, @[cls]uint8_t@ type, @bool@ world_space);
+glm::@[cls]quat@ @[mtd]get_controller_rotation@(@[cls]uint8_t@ controller, @[cls]uint8_t@ type);
+` );
+
+MAKE_CODE_BULLET_LIST([
+    ["controller", `Specify controller id (${ INLINE_CODE( "HAND_LEFT" ) } or ${ INLINE_CODE( "HAND_RIGHT" ) }, from ${ INLINE_CODE( "OPENXR_HANDS" ) })`],
+    ["type", `Specify desired controller pose type id (${ INLINE_CODE( "POSE_GRIP" ) } or ${ INLINE_CODE( "POSE_AIM" ) }, from ${ INLINE_CODE( "OPENXR_POSES" ) })`],
+    ["world_space", `Specify if root transform of the XR context has to be applied to the retrieved data (default ${ INLINE_CODE( "true" ) })`]
+]);
+
+MAKE_HEADER( "Buttons", "h3", "xr-buttons" );
+
+MAKE_CODE( `@bool@ @[mtd]is_button_pressed@(@[cls]uint8_t@ button);
+@bool@ @[mtd]was_button_pressed@(@[cls]uint8_t@ button);
+@bool@ @[mtd]was_button_released@(@[cls]uint8_t@ button);
+@bool@ @[mtd]is_button_touched@(@[cls]uint8_t@ button);
+@bool@ @[mtd]was_button_touched@(@[cls]uint8_t@ button);
+` );
+
+MAKE_CODE_BULLET_LIST([
+    ["button", `Specify button id (from ${ INLINE_CODE( "OPENXR_BUTTONS" ) })`]
+]);
+
+MAKE_HEADER( "Grab buttons", "h3", "xr-grab-buttons" );
+
+MAKE_CODE( `@bool@ @[mtd]is_grab_pressed@(@[cls]uint8_t@ controller);
+@bool@ @[mtd]was_grab_pressed@(@[cls]uint8_t@ controller);
+@bool@ @[mtd]was_grab_released@(@[cls]uint8_t@ controller);
+@float@ @[mtd]get_grab_value@(@[cls]uint8_t@ controller);
+` );
+
+MAKE_CODE_BULLET_LIST([
+    ["controller", `Specify controller id (${ INLINE_CODE( "HAND_LEFT" ) } or ${ INLINE_CODE( "HAND_RIGHT" ) }, from ${ INLINE_CODE( "OPENXR_HANDS" ) })`]
+]);
+
+MAKE_HEADER( "Triggers", "h3", "xr-triggers" );
+
+MAKE_CODE( `@float@ @[mtd]get_trigger_value@(@[cls]uint8_t@ controller);
+@bool@ @[mtd]was_trigger_pressed@(@[cls]uint8_t@ controller);
+@bool@ @[mtd]was_trigger_released@(@[cls]uint8_t@ controller);
+@bool@ @[mtd]is_trigger_pressed@(@[cls]uint8_t@ controller);
+@bool@ @[mtd]is_trigger_touched@(@[cls]uint8_t@ controller);
+@bool@ @[mtd]was_trigger_touched@(@[cls]uint8_t@ controller);
+` );
+
+MAKE_CODE_BULLET_LIST([
+    ["controller", `Specify controller id (${ INLINE_CODE( "HAND_LEFT" ) } or ${ INLINE_CODE( "HAND_RIGHT" ) }, from ${ INLINE_CODE( "OPENXR_HANDS" ) })`]
+]);
+
+MAKE_HEADER( "Thumbsticks", "h3", "xr-thumbsticks" );
+
+MAKE_CODE( `@[cls]uint8_t@ @[mtd]get_leading_thumbstick_axis@(@[cls]uint8_t@ controller);
+glm::@[cls]vec2@ @[mtd]get_thumbstick_value@(@[cls]uint8_t@ controller);
+@bool@ @[mtd]is_thumbstick_pressed@(@[cls]uint8_t@ controller);
+@bool@ @[mtd]was_thumbstick_pressed@(@[cls]uint8_t@ controller);
+@bool@ @[mtd]is_thumbstick_touched@(@[cls]uint8_t@ controller);
+@bool@ @[mtd]was_thumbstick_touched@(@[cls]uint8_t@ controller);
+` );
+
+MAKE_CODE_BULLET_LIST([
+    ["controller", `Specify controller id (${ INLINE_CODE( "HAND_LEFT" ) } or ${ INLINE_CODE( "HAND_RIGHT" ) }, from ${ INLINE_CODE( "OPENXR_HANDS" ) })`],
+    ["get_leading_thumbstick_axis", `Returns a ${ INLINE_CODE( "OPENXR_THUMBSTICK_AXIS" ) }`]
+]);
+
+</script>
+
+</body>
+</html>
