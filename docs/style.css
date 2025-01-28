@@ -239,8 +239,8 @@ a.permalink {
 }
 
 img {
-	width: -webkit-fill-available;
-	height: -webkit-fill-available;
+	width: 100%;
+	/* height: -webkit-fill-available; */
 	margin: 16px calc(-1 * var(--page-padding)) ;
 	border-radius: 4px;	
 }

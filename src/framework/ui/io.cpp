@@ -109,7 +109,7 @@ void IO::blur()
 
     // If actions are pressed, we are still focusing something..
     bool should_remove_focus = Renderer::instance->get_openxr_available() ?
-        (Input::get_trigger_value(HAND_RIGHT) <= THUMBSTICK_DEADZONE) :
+        (Input::get_trigger_value(HAND_RIGHT) <= XR_THUMBSTICK_DEADZONE) :
         !Input::is_mouse_pressed(GLFW_MOUSE_BUTTON_LEFT);
 
     if (should_remove_focus) {
@@ -169,7 +169,8 @@ bool IO::is_hover_type(uint32_t type, uint32_t flag)
     bool result = (root->get_class_type() == type);
 
     if (flag != 0u) {
-        result |= (root->get_flags() & flag);
+        bool has_flag = (root->get_flags() & flag);
+        result |= has_flag;
     }
 
     return result;
