@@ -2,7 +2,6 @@
 
 #include "framework/input.h"
 #include "framework/utils/utils.h"
-#include "framework/nodes/node_factory.h"
 
 #include "node_factory.h"
 #include "node_binary_format.h"
@@ -21,6 +20,8 @@ REGISTER_NODE_CLASS(Node)
 Node::Node()
 {
     node_type = "Node";
+
+    scene_unique_id = generate_unique_id();
 
     name = "Node_" + std::to_string(last_node_id++);
 }
