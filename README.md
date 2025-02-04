@@ -129,3 +129,11 @@ cd build-web
 emcmake cmake -DCMAKE_BUILD_TYPE=Release ..
 cmake --build .
 ```
+
+## Support
+
+This project is being developed with partial financial support of:
+
+|  MAX-R Project (HORIZON) | Wi-XR Project (PID2021-123995NB-I00) |
+| --- | --- |
+| ![logomaxr](./docs/images/logo_maxr_main_sRGB.png#gh-light-mode-only) ![logomaxr](./docs/images/logo_maxr_main_sRGB_light.png#gh-dark-mode-only) | ![miciu](./docs/images/miciu-cofinanciadoUE-aei.png) |
