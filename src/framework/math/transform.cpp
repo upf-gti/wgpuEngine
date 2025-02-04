@@ -62,7 +62,8 @@ void Transform::rotate_world(const glm::quat& rotation_delta)
     rotate(glm::inverse(rotation_p) * rotation_delta * rotation_p);
 }
 
-void Transform::rotate_arround(const glm::quat& rotation, const glm::vec3 pivot) {
+void Transform::rotate_arround(const glm::quat& rotation, const glm::vec3 pivot)
+{
     position_p = (position_p - pivot) * rotation + pivot;
     rotation_p = rotation_p * rotation;
     dirty = true;
