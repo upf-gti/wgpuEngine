@@ -1,13 +1,14 @@
 # wgpuEngine
 
-`wgpuEngine` is an open-source engine designed for creating desktop, XR (extended reality), and 3D web applications. Built on top of the newest graphics API  WebGPU, it provides a cross-platform solution to render complex scenes, animations, and immersive experiences. 
+`wgpuEngine` is an open-source cross-platform engine designed for creating desktop, XR (extended reality), and 3D web applications. Built on top of the newest graphics API  WebGPU, it provides a solution to render complex scenes, animations, and immersive experiences. 
 
 It uses Dawn, which provides WebGPU for desktop and web (via [emscripten](https://emscripten.org/)). We are still using a [forked version](https://github.com/blitz-research/dawn) until the official one adds XR support. For desktop XR it uses OpenXR. 
 
 > [!IMPORTANT]
 > Web XR still not available until WebGPU and WebXR are integrated.
 
-See [Rooms](https://github.com/upf-gti/rooms) for an example of how to use this engine.
+The documentation is still in progress, but you can find it [here](https://upf-gti.github.io/wgpuEngine/)!
+For an example of how to use this engine, check out [Rooms](https://github.com/upf-gti/rooms)!
 
 ## Features
 
@@ -35,6 +36,14 @@ See [Rooms](https://github.com/upf-gti/rooms) for an example of how to use this 
     - 3D Text Rendering
     - 2D and 3D Gizmo ([ImGuizmo](https://github.com/CedricGuillemet/ImGuizmo) for 2D)
 
+## Roadmap
+
+- Shadow mapping
+- Support deferred rendering
+- Android support
+- Physics integration
+- Following expected WebGPU-WebXR interoperability, support web XR applications
+
 ## Quick start
 
 ```c++
@@ -60,7 +69,7 @@ int main()
 }
 ```
 
-To start creating your application, override the `Engine` class! You can also override the Renderer class to customize the render passes:
+To start creating your application, override the `Engine` class! You can also override the Renderer class to customize the following optional render passes:
 
 - custom_pre_opaque_pass, custom_post_opaque_pass
 - custom_pre_transparent_pass, custom_post_transparent_pass
@@ -73,6 +82,7 @@ Customize engine parameters using `sEngineConfiguration` when calling `Engine::i
 ```c++
 sEngineConfiguration engine_config = {
     .window_title = "Application",
+    .fullscren = false
 };
 
 if (engine->initialize(renderer, engine_config)) {
