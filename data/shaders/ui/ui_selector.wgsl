@@ -65,8 +65,9 @@ fn fs_main(in: VertexOutput) -> FragmentOutput {
     var button_radius : f32 = 0.39;
     var shadow : f32 = smoothstep(button_radius, 0.42, dist);
 
+    let is_selected : bool = (ui_data.flags & UI_DATA_SELECTED) == UI_DATA_SELECTED;
     let back_color = in.color.rgb;
-    let degree = ui_data.picker_color.r;
+    let degree = ui_data.data_vec.r;
     var final_color : vec3f = mix(COLOR_TERCIARY, COLOR_HIGHLIGHT_LIGHT, uvs.y);
 
     let triangle_size : f32 = 0.1;
@@ -81,7 +82,7 @@ fn fs_main(in: VertexOutput) -> FragmentOutput {
 
     var alpha_offset : f32 = 0.0;
 
-    if(ui_data.is_selected > 0.0) {
+    if(is_selected) {
         var clip_uvs : vec2f = in.uv * 2.0 - 1.0;
         clip_uvs.y *= -1.0;
 

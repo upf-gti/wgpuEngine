@@ -43,14 +43,15 @@ fn fs_main(in: VertexOutput) -> FragmentOutput {
 
     var dummy = camera_data.eye;
 
-    if(ui_data.range < 0.0 && in.uv.y < abs(ui_data.range) ) {
+    if(ui_data.clip_range < 0.0 && in.uv.y < abs(ui_data.clip_range) ) {
         discard;
     }
-    else if(ui_data.range > 0.0 && in.uv.y > ui_data.range ) {
+    else if(ui_data.clip_range > 0.0 && in.uv.y > ui_data.clip_range ) {
         discard;
     }
 
-    let hover_transition : f32 = pow(ui_data.hover_info.y, 3.0);
+    let is_hovered : bool = (ui_data.flags & UI_DATA_HOVERED) == UI_DATA_HOVERED;
+    let hover_transition : f32 = pow(ui_data.hover_time, 3.0);
     
     var out: FragmentOutput;
 
@@ -72,17 +73,17 @@ fn fs_main(in: VertexOutput) -> FragmentOutput {
 
     let d : f32 = sdRoundedBox(pos, si, ra);
 
-    let value = ui_data.slider_value;
-    let max_value = ui_data.slider_max;
-    let min_value = ui_data.slider_min;
+    let value = ui_data.data_value;
+    let min_value = ui_data.data_vec.x;
+    let max_value = ui_data.data_vec.y;
 
     // add gradient at the end to simulate the slider thumb
-    var axis = select( uvs.x, uvs.y, ui_data.num_group_items == 1.0 );
+    var axis = select( uvs.x, uvs.y, ui_data.data_vec.z == 1.0 );
 
     var mesh_color : vec3f = mix( COLOR_HIGHLIGHT_LIGHT, COLOR_TERCIARY, pow(axis, 1.5));
     mesh_color = mix(mesh_color, COLOR_PRIMARY, max(uvs.y - 0.65, 0.0));
 
-    if(ui_data.hover_info.x > 0.0) {
+    if(is_hovered) {
         mesh_color *= 1.5;
     }
 

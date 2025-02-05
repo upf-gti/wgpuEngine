@@ -142,10 +142,10 @@ fn fs_main(in: VertexOutput) -> FragmentOutput {
 
     var dummy = camera_data.eye;
 
-    if(ui_data.range < 0.0 && in.uv.y < abs(ui_data.range) ) {
+    if(ui_data.clip_range < 0.0 && in.uv.y < abs(ui_data.clip_range) ) {
         discard;
     }
-    else if(ui_data.range > 0.0 && in.uv.y > ui_data.range ) {
+    else if(ui_data.clip_range > 0.0 && in.uv.y > ui_data.clip_range ) {
         discard;
     }
 
@@ -158,7 +158,7 @@ fn fs_main(in: VertexOutput) -> FragmentOutput {
     var uvs : vec2f = in.uv * 2.0 - 1.0;
     uvs.y *= -1.0;
 
-    var current_color = ui_data.picker_color.rgb;
+    var current_color = ui_data.data_vec;
     let degree = current_color.r;
     var final_color : vec3f = hsv_to_rgb(current_color);
 

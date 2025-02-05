@@ -37,10 +37,10 @@ fn fs_main(in: VertexOutput) -> FragmentOutput {
 
     var uvs : vec2f = vec2f(in.uv.x, in.uv.y);
 
-    if(ui_data.range < 0.0 && uvs.y < abs(ui_data.range) ) {
+    if(ui_data.clip_range < 0.0 && uvs.y < abs(ui_data.clip_range) ) {
         discard;
     }
-    else if(ui_data.range > 0.0 && uvs.y > ui_data.range ) {
+    else if(ui_data.clip_range > 0.0 && uvs.y > ui_data.clip_range ) {
         discard;
     }
 
@@ -60,9 +60,11 @@ fn fs_main(in: VertexOutput) -> FragmentOutput {
     var alpha : f32 = 1.0 - smoothstep(0.0, 0.04, d);
     var alpha_selected : f32 = 1.0 - smoothstep(0.0, 0.08, d_selected);
 
-    var selected_mask : f32 = (alpha_selected - alpha) * ui_data.is_selected;
+    let is_selected : bool = (ui_data.flags & UI_DATA_SELECTED) == UI_DATA_SELECTED;
+    let is_hovered : bool = (ui_data.flags & UI_DATA_HOVERED) == UI_DATA_HOVERED;
+    var selected_mask : f32 = select(0.0, alpha_selected - alpha, is_selected);
     selected_mask = mix(0.0, selected_mask, in.uv.x);
-    var color_factor : f32 = select(0.01, 0.05, ui_data.hover_info.x > 0.0);
+    var color_factor : f32 = select(0.01, 0.05, is_hovered);
     color_factor = mix(color_factor, 0.75, selected_mask);
 
     var final_color = vec3f(color_factor);

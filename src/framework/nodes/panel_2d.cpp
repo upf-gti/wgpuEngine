@@ -312,7 +312,7 @@ namespace ui {
             return;
         }
 
-        ui_data.range = 1.0f;
+        ui_data.clip_range = 1.0f;
 
         set_visibility(true, false);
 
@@ -325,7 +325,7 @@ namespace ui {
         // exceeds at the top
         if (y < y_min) {
 
-            ui_data.range = glm::clamp((y - y_min) / size_y, -1.0f, -0.01f);
+            ui_data.clip_range = glm::clamp((y - y_min) / size_y, -1.0f, -0.01f);
 
             if (class_type == TEXT_SHADOW) {
                 set_visibility(false, false);
@@ -334,14 +334,14 @@ namespace ui {
         // exceeds at the bottom
         else if (y > y_max) {
 
-            ui_data.range = 1.0f - glm::clamp((y - y_max) / size_y, 0.0f, 0.99f);
+            ui_data.clip_range = 1.0f - glm::clamp((y - y_max) / size_y, 0.0f, 0.99f);
 
             if (class_type == TEXT_SHADOW) {
                 set_visibility(false, false);
             }
         }
 
-        if (glm::abs(ui_data.range) < 0.2f) {
+        if (glm::abs(ui_data.clip_range) < 0.2f) {
             set_visibility(false, false);
         }
     }
@@ -443,7 +443,8 @@ namespace ui {
         // Fullscreen in 2d mode only!
         fullscreen = !Renderer::instance->get_openxr_available() && (flags & ui::FULLSCREEN);
 
-        ui_data.xr_info = glm::vec4(1.0f, 1.0f, 0.5f, 0.5f);
+        ui_data.xr_size = glm::vec2(1.0f, 1.0f);
+        ui_data.xr_position = glm::vec2(0.5f, 0.5f);
         ui_data.aspect_ratio = fullscreen ? -1.0f : size.x / size.y;
 
         auto webgpu_context = Renderer::instance->get_webgpu_context();
@@ -541,8 +542,7 @@ namespace ui {
             return;
 
         // reset event stuff..
-        ui_data.hover_info = { 0.0f, 0.0f };
-        ui_data.press_info = { 0.0f, 0.0f };
+        ui_data.flags &= ~(UI_DATA_HOVERED | UI_DATA_PRESSED | UI_DATA_SELECTED);
 
         // ignore focus process, doing it manually per button
         sInputData data = get_input_data(true);
@@ -599,9 +599,12 @@ namespace ui {
         }
 
         // Update uniforms
-        ui_data.hover_info.x = 1.0f;
-        ui_data.hover_info.y = 1.0f;
-        ui_data.press_info.x = data.is_pressed ? 1.0f : 0.0f;
+        ui_data.flags |= UI_DATA_HOVERED;
+        ui_data.hover_time = 1.0f;
+
+        if (data.is_pressed) {
+            ui_data.flags |= UI_DATA_PRESSED;
+        }
 
         on_hover = true;
 
@@ -618,7 +621,8 @@ namespace ui {
         new_button->set_priority(PANEL_BUTTON);
 
         new_button->ui_data.aspect_ratio = s.x / s.y;
-        new_button->ui_data.xr_info = glm::clamp(glm::vec4(s / size, p / size), 0.0f, 1.0f);
+        new_button->ui_data.xr_size = glm::clamp(s / size, 0.0f, 1.0f);
+        new_button->ui_data.xr_position = glm::clamp(p / size, 0.0f, 1.0f);
 
         new_button->update_ui_data();
 
@@ -651,8 +655,6 @@ namespace ui {
         float text_width = (float)text_entity->get_text_width(text_string);
         size.x = std::max(text_width, 8.0f) + TEXT_SHADOW_MARGIN * text_scale;
         size.y = text_scale + TEXT_SHADOW_MARGIN * text_scale * 0.5f;
-
-        ui_data.num_group_items = size.x;
 
         render_background = !(parameter_flags & SKIP_TEXT_RECT);
 
@@ -717,12 +719,14 @@ namespace ui {
             }
 
             // Update uniforms
-            ui_data.hover_info.x = 0.0f;
-            ui_data.hover_info.y = 0.0f;
-            ui_data.is_selected = 0.0f;
+            ui_data.flags &= ~(UI_DATA_HOVERED | UI_DATA_PRESSED | UI_DATA_SELECTED);
+            ui_data.hover_time = 0.0f;
 
             on_hover = false;
-            ui_data.is_selected = (selected == this) ? 1.0f : 0.0f;
+
+            if (selected == this) {
+                ui_data.flags |= UI_DATA_SELECTED;
+            }
         }
 
         ui_data.aspect_ratio = size.x / size.y;
@@ -766,8 +770,8 @@ namespace ui {
         }
 
         // Update uniforms
-        ui_data.hover_info.x = 1.0f;
-        ui_data.hover_info.y = 1.0f;
+        ui_data.flags |= UI_DATA_HOVERED;
+        ui_data.hover_time = 1.0f;
 
         on_hover = true;
 
@@ -800,9 +804,6 @@ namespace ui {
         float text_width = (float)text_entity->get_text_width(text);
         size.x = std::max(text_width, 8.0f) + TEXT_SHADOW_MARGIN * text_scale;
         size.y = text_scale + TEXT_SHADOW_MARGIN * text_scale * 0.5f;
-
-        ui_data.num_group_items = size.x;
-        update_ui_data();
 
         Surface* quad_surface = quad_mesh->get_surface(0);
         quad_surface->create_quad(size.x, size.y, true);
@@ -906,8 +907,8 @@ namespace ui {
         }
 
         // Update uniforms
-        ui_data.hover_info.x = 0.0f;
-        ui_data.picker_color = color;
+        ui_data.flags &= ~(UI_DATA_HOVERED | UI_DATA_PRESSED | UI_DATA_SELECTED);
+        ui_data.data_vec = color;
 
         on_hover = false;
 
@@ -959,8 +960,8 @@ namespace ui {
         }
 
         // Update uniforms
-        ui_data.hover_info.x = 1.0f;
-        ui_data.picker_color = color;
+        ui_data.flags |= UI_DATA_HOVERED;
+        ui_data.data_vec = color;
 
         on_hover = true;
 

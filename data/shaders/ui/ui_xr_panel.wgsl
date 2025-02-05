@@ -49,17 +49,17 @@ fn fs_main(in: VertexOutput) -> FragmentOutput {
     
     var dummy = camera_data.eye;
 
-    let is_hovered : bool = ui_data.hover_info.x > 0.0;
-    let is_pressed : bool = ui_data.press_info.x > 0.0;
+    let is_hovered : bool = (ui_data.flags & UI_DATA_HOVERED) == UI_DATA_HOVERED;
+    let is_pressed : bool = (ui_data.flags & UI_DATA_PRESSED) == UI_DATA_PRESSED;
     let ar = ui_data.aspect_ratio;
 
     var out: FragmentOutput;
 
     let global_scale : f32 = 0.95;
-    let size : vec2f = ui_data.xr_info.xy;
+    let size : vec2f = ui_data.xr_size;
     let is_button : bool = size.x != 1.0;
     
-    var position : vec2f = ui_data.xr_info.zw;
+    var position : vec2f = ui_data.xr_position;
 
     var corrected_uv : vec2f = vec2f(in.uv.x, in.uv.y);
     corrected_uv = corrected_uv / size;

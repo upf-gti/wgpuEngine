@@ -39,7 +39,7 @@ fn fs_main(in: VertexOutput) -> FragmentOutput {
 
                          // tr   br   tl   bl
     var ra : vec4f = vec4f(0.98);
-    var si : vec2f = vec2f(0.98 * ui_data.num_group_items, 0.98);
+    var si : vec2f = vec2f(0.98 * ui_data.data_value, 0.98);
     ra = min(ra, min(vec4f(si.x), vec4f(si.y)));
 
     var uvs = vec2f(in.uv.x, 1.0 - in.uv.y);

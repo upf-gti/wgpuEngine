@@ -278,18 +278,18 @@ namespace ui {
         glm::vec2 axis_value = Input::get_thumbstick_value(HAND_LEFT);
 
         // Use this to render triangle marker or not
-        ui_data.is_selected = 0.0f;
+        ui_data.flags &= ~(UI_DATA_SELECTED);
 
         if (glm::length(axis_value) > 0.1f)
         {
-            ui_data.is_selected = 1.0f;
-            ui_data.picker_color.r = fmod(glm::degrees(atan2f(axis_value.y, axis_value.x)), 360.f);
+            ui_data.flags |= UI_DATA_SELECTED;
+            ui_data.data_vec.r = fmod(glm::degrees(atan2f(axis_value.y, axis_value.x)), 360.f);
 
             if (was_input_pressed()) {
 
                 auto& childs = get_children();
                 size_t child_count = childs.size();
-                float angle = ui_data.picker_color.r - 65.f;
+                float angle = ui_data.data_vec.r - 65.f;
                 if (angle < 0.0f) angle += 360.f;
                 size_t index = angle / 360.f * child_count;
                 assert(index >= 0 && index < child_count);
@@ -328,7 +328,7 @@ namespace ui {
 
         class_type = Node2DClassType::GROUP;
 
-        ui_data.num_group_items = 0;
+        ui_data.data_value = 0;
 
         Material* material = new Material();
         material->set_color(color);
@@ -355,12 +355,12 @@ namespace ui {
 
     float ItemGroup2D::get_number_of_items()
     {
-        return ui_data.num_group_items;
+        return ui_data.data_value;
     }
 
     void ItemGroup2D::set_number_of_items(float number)
     {
-        ui_data.num_group_items = number;
+        ui_data.data_value = number;
         ui_data.aspect_ratio = number;
 
         update_ui_data();
