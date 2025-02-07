@@ -38,10 +38,10 @@ namespace ui {
         is_unique_selection = parameter_flags & UNIQUE_SELECTION;
         allow_toggle = parameter_flags & ALLOW_TOGGLE;
 
-        ui_data.is_color_button = is_color_button;
-        ui_data.is_button_disabled = disabled;
-        ui_data.is_selected = selected;
-        ui_data.num_group_items = ComboIndex::UNIQUE;
+        ui_data.flags |= (is_color_button ? UI_DATA_COLOR_BUTTON : 0u);
+        ui_data.flags |= (disabled ? UI_DATA_DISABLED : 0u);
+        ui_data.flags |= (selected ? UI_DATA_SELECTED : 0u);
+        ui_data.data_value = ComboIndex::UNIQUE;
         ui_data.aspect_ratio = size.x / size.y;
 
         Material* material = new Material();
@@ -85,7 +85,11 @@ namespace ui {
     void Button2D::set_disabled(bool value)
     {
         disabled = value;
-        ui_data.is_button_disabled = disabled;
+        ui_data.flags &= ~(UI_DATA_DISABLED);
+        if (disabled) {
+            ui_data.flags |= UI_DATA_DISABLED;
+        }
+
         update_ui_data();
 
         if (class_type == Node2DClassType::SUBMENU) {
@@ -145,10 +149,12 @@ namespace ui {
         }
 
         // reset event stuff..
-        ui_data.hover_info.x = 0.0f;
-        ui_data.hover_info.y = glm::clamp(timer, 0.0f, 1.0f);
-        ui_data.is_selected = selected ? 1.f : 0.f;
-        ui_data.press_info.x = 0.0f;
+        ui_data.flags &= ~(UI_DATA_HOVERED | UI_DATA_PRESSED | UI_DATA_SELECTED);
+        ui_data.hover_time = glm::clamp(timer, 0.0f, 1.0f);
+
+        if (selected) {
+            ui_data.flags |= UI_DATA_SELECTED;
+        }
 
         glm::vec2 scale = size * get_scale() * (class_type != Node2DClassType::COMBO_BUTTON ? scaling : glm::vec2(scaling.x, 1.0f));
 
@@ -202,9 +208,12 @@ namespace ui {
         target_scale = 1.1f;
 
         // Update uniforms
-        ui_data.hover_info.x = 1.0f;
-        ui_data.hover_info.y = glm::lerp(0.0f, 1.0f, glm::clamp(scaling.x / target_scale, 0.0f, 1.0f));
-        ui_data.press_info.x = data.is_pressed ? 1.0f : 0.0f;
+        ui_data.flags |= UI_DATA_HOVERED;
+        ui_data.hover_time = glm::lerp(0.0f, 1.0f, glm::clamp(scaling.x / target_scale, 0.0f, 1.0f));
+
+        if (data.is_pressed) {
+            ui_data.flags |= UI_DATA_PRESSED;
+        }
 
         on_hover = true;
 
@@ -221,7 +230,8 @@ namespace ui {
         label = desc.label;
 
         is_color_button = false;
-        ui_data.is_color_button = is_color_button;
+
+        ui_data.flags &= ~(UI_DATA_COLOR_BUTTON);
 
         auto old_material = quad_mesh->get_surface_material_override(quad_mesh->get_surface(0));
 
@@ -339,9 +349,12 @@ namespace ui {
         target_scale = 1.1f;
 
         // Update uniforms
-        ui_data.hover_info.x = 1.0f;
-        ui_data.hover_info.y = glm::lerp(0.0f, 1.0f, glm::clamp(scaling.x / target_scale, 0.0f, 1.0f));
-        ui_data.press_info.x = data.is_pressed ? 1.0f : 0.0f;
+        ui_data.flags |= UI_DATA_HOVERED;
+        ui_data.hover_time = glm::lerp(0.0f, 1.0f, glm::clamp(scaling.x / target_scale, 0.0f, 1.0f));
+
+        if (data.is_pressed) {
+            ui_data.flags |= UI_DATA_PRESSED;
+        }
 
         on_hover = true;
 
@@ -470,13 +483,13 @@ namespace ui {
             Button2D* node_2d = static_cast<Button2D*>(get_children()[i]);
 
             if (child_count == 1) {
-                node_2d->ui_data.num_group_items = ComboIndex::UNIQUE;
+                node_2d->ui_data.data_value = ComboIndex::UNIQUE;
             }
             else if (child_count == 2) {
-                node_2d->ui_data.num_group_items = float(i == 0 ? ComboIndex::FIRST : ComboIndex::LAST);
+                node_2d->ui_data.data_value = float(i == 0 ? ComboIndex::FIRST : ComboIndex::LAST);
             }
             else {
-                node_2d->ui_data.num_group_items = float(i == 0 ? ComboIndex::FIRST : (i == child_count - 1 ? ComboIndex::LAST : ComboIndex::MIDDLE));
+                node_2d->ui_data.data_value = float(i == 0 ? ComboIndex::FIRST : (i == child_count - 1 ? ComboIndex::LAST : ComboIndex::MIDDLE));
             }
 
             node_2d->set_priority(Node2DClassType::COMBO_BUTTON);

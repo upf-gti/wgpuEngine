@@ -22,15 +22,17 @@ public:
 
     bool operator==(const Resource& other) const
     {
-        return id == other.id;
+        return scene_unique_id == other.scene_unique_id;
     }
 
     void* get_property(const std::string& name);
 
+    std::string get_scene_unique_id() const { return scene_unique_id; }
+
 private:
 
     uint32_t ref_count = 0;
-    intptr_t id = 0;
+    std::string scene_unique_id = "";
 
 protected:
 

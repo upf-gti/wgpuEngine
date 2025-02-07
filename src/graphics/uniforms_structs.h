@@ -17,30 +17,23 @@ struct sLightUniformData {
     float outer_cone_cos = 0.0f;
 };
 
+enum sUIDataFlags {
+    UI_DATA_HOVERED = 1 << 0,
+    UI_DATA_PRESSED = 1 << 1,
+    UI_DATA_SELECTED = 1 << 2,
+    UI_DATA_COLOR_BUTTON = 1 << 3,
+    UI_DATA_DISABLED = 1 << 4
+};
+
 struct sUIData {
-    // is_hovered / hover transition
-    glm::vec2 hover_info = { 0.f, 0.0f };
-    glm::vec2 press_info = { 0.0f, 0.0f };
-
-    glm::vec4 xr_info = { 0.0f, 0.0f, 0.0f, 0.0f };
-
+    uint32_t flags = 0u;
+    float hover_time = 0.0f;
     float aspect_ratio = 1.f;
+    float data_value = 0.0f; // generic data, slider value, group num items, combo buttons use this prop by now to the index in combo..
 
-    // Groups
-    float num_group_items = 2.0f; // combo buttons use this prop by now to the index in combo
-    // Buttons
-    float is_selected = 0.f;
-    float is_color_button = 0.f;
+    glm::vec3 data_vec = glm::vec3(1.f); // picker color, slider range(+slider_type at .z)..
+    float clip_range = 0.f; // inside/outside the node parent.. -1..1
 
-    // Color Picker
-    glm::vec3 picker_color = glm::vec3(1.f);
-    // inside/outside the node parent.. -1..1
-    float range = 0.f;
-
-    // Slider
-    float slider_value = 0.f;
-    float slider_max = 1.0f;
-    float slider_min = 0.0f;
-    // Disable buttons to use them as group icons
-    float is_button_disabled = 0.f;
+    glm::vec2 xr_size = { 0.0f, 0.0f };
+    glm::vec2 xr_position = { 0.0f, 0.0f };
 };

@@ -1,5 +1,7 @@
 #include "resource.h"
 
+#include "framework/utils/utils.h"
+
 #include "spdlog/spdlog.h"
 
 #include <cassert>
@@ -7,7 +9,9 @@
 Resource::Resource()
 {
     // TODO: set proper unique id for project save/load
-    id = reinterpret_cast<intptr_t>(this);
+    // id = reinterpret_cast<intptr_t>(this);
+
+    scene_unique_id = generate_unique_id();
 }
 
 void Resource::ref()

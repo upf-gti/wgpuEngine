@@ -396,17 +396,39 @@ void Renderer::render()
 
         // prepare eye cameras
         Camera cameras[EYE_COUNT];
-        for (uint32_t eye_idx = 0; eye_idx < 2; eye_idx++) {
+        for (uint32_t eye_idx = 0; eye_idx < EYE_COUNT; eye_idx++) {
             cameras[eye_idx].set_eye(xr_context->per_view_data[eye_idx].position);
             cameras[eye_idx].set_view(xr_context->per_view_data[eye_idx].view_matrix, false);
             cameras[eye_idx].set_projection(xr_context->per_view_data[eye_idx].projection_matrix, false);
             cameras[eye_idx].set_view_projection(xr_context->per_view_data[eye_idx].view_projection_matrix);
         }
 
-        // TODO: combine both eyes view projection, only cull with left eye for now
-        prepare_cull_instancing(cameras[EYE_LEFT], render_lists, render_instances_data);
+        Camera vr_camera;
+        vr_camera.set_eye((cameras[EYE_LEFT].get_eye() + cameras[EYE_RIGHT].get_eye()) * 0.5f);
 
-        for (uint32_t eye_idx = 0; eye_idx < 2; eye_idx++) {
+        // Interpolate view
+        {
+            glm::mat4 left_view = xr_context->per_view_data[EYE_LEFT].view_matrix;
+            glm::mat4 right_view = xr_context->per_view_data[EYE_RIGHT].view_matrix;
+            glm::mat4 combined_view = left_view * 0.5f + right_view * 0.5f;
+            vr_camera.set_view(combined_view, false);
+        }
+
+        // Set new FOV in projection
+        {
+            glm::mat4 left_proj = xr_context->per_view_data[EYE_LEFT].projection_matrix;
+            float aspect = left_proj[1][1] / left_proj[0][0];
+            if (!isnan(aspect)) {
+                float eye_fov = 2.0f * atan(1.0f / left_proj[1][1]);
+                float combined_eye_tan = tan(eye_fov / 2.0f) * 2.0f; // assuming same fov for both eyes
+                float combined_fov = 2.0f * atan(combined_eye_tan);
+                vr_camera.set_projection(glm::perspective(combined_fov, aspect, xr_context->z_near, xr_context->z_far));
+            }
+        }
+
+        prepare_cull_instancing(vr_camera, render_lists, render_instances_data);
+
+        for (uint32_t eye_idx = 0; eye_idx < EYE_COUNT; eye_idx++) {
             const sSwapchainData& swapchainData = xr_context->swapchains[eye_idx];
 
             xr_context->acquire_swapchain(eye_idx);

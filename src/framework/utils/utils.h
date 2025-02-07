@@ -35,3 +35,5 @@ bool read_file(const std::string & filename, std::string & content);
 
 // https://stackoverflow.com/a/8518855
 std::string dirname_of_file(const std::string& fname);
+
+std::string generate_unique_id(uint32_t num_characters = 6u);

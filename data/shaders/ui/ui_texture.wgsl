@@ -42,12 +42,12 @@ struct FragmentOutput {
 fn fs_main(in: VertexOutput) -> FragmentOutput {
     
     var dummy = camera_data.eye;
-    let dummy1 = ui_data.num_group_items;
+    let dummy1 = ui_data.data_value;
 
-    if(ui_data.range < 0.0 && in.uv.y < abs(ui_data.range) ) {
+    if(ui_data.clip_range < 0.0 && in.uv.y < abs(ui_data.clip_range) ) {
         discard;
     }
-    else if(ui_data.range > 0.0 && in.uv.y > ui_data.range ) {
+    else if(ui_data.clip_range > 0.0 && in.uv.y > ui_data.clip_range ) {
         discard;
     }
 

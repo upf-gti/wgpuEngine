@@ -27,7 +27,7 @@ class AnimationPlayer : public Node3D
     BlendAnimation blender;
     ImGuiTimeline imgui_timeline;
 
-    std::vector<void*> track_data;
+    std::vector<AnimatableProperty> track_data;
     int selected_track = -1;
 
     void generate_track_data();
@@ -47,15 +47,16 @@ public:
     void render_gui() override;
 
     void set_playback_time(float time);
-    void set_speed(float time);
-    void set_blend_time(float time);
-    void set_loop_type(uint8_t new_loop_type);
-    void set_root_node(Node3D* new_root_node);
+    void set_speed(float new_speed) { speed = new_speed; }
+    void set_blend_time(float new_blend_time) { blend_time = new_blend_time; }
+    void set_loop_type(uint8_t new_loop_type) { loop_type = new_loop_type; }
+    void set_root_node(Node3D* new_root_node) { root_node = new_root_node; };
 
     float get_playback_time() { return playback; }
-    float get_blend_time();
-    float get_speed();
-    uint8_t get_loop_type();
-    bool is_playing();
+    float get_blend_time() { return blend_time; }
+    float get_speed() { return speed; }
+    uint8_t get_loop_type() { return loop_type; }
+    bool is_playing() { return playing; }
+    bool is_paused() { return paused; }
 };
 

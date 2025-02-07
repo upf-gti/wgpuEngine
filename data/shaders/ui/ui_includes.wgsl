@@ -1,18 +1,21 @@
 struct UIData {
-    hover_info: vec2f,
-    press_info: vec2f,
-    xr_info: vec4f,
+    flags: u32,
+    hover_time : f32,
     aspect_ratio : f32,
-    num_group_items : f32,
-    is_selected : f32,
-    is_color_button : f32,
-    picker_color: vec3f,
-    range : f32,
-    slider_value : f32,
-    slider_max: f32,
-    slider_min: f32,
-    is_button_disabled : f32
+    data_value : f32,
+
+    data_vec : vec3f,
+    clip_range : f32,
+
+    xr_size : vec2f,
+    xr_position : vec2f
 };
+
+const UI_DATA_HOVERED: u32 = 1u << 0u;
+const UI_DATA_PRESSED: u32 = 1u << 1u;
+const UI_DATA_SELECTED: u32 = 1u << 2u;
+const UI_DATA_COLOR_BUTTON: u32 = 1u << 3u;
+const UI_DATA_DISABLED: u32 = 1u << 4u;
 
 const COLOR_PRIMARY         = pow(vec3f(0.976, 0.976, 0.976), vec3f(2.2));
 const COLOR_SECONDARY       = pow(vec3f(0.967, 0.882, 0.863), vec3f(2.2));

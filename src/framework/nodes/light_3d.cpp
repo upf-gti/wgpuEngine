@@ -10,7 +10,7 @@ Light3D::Light3D() : Node3D()
 {
     animatable_properties["intensity"] = { AnimatablePropertyType::FLOAT32, &intensity };
     animatable_properties["range"] = { AnimatablePropertyType::FLOAT32, &range };
-    animatable_properties["color"] = { AnimatablePropertyType::FVEC4, &color };
+    animatable_properties["color"] = { AnimatablePropertyType::FVEC4, &color, std::bind(&Light3D::on_set_color, this) };
 
     collider_shape = COLLIDER_SHAPE_SPHERE;
 }
@@ -101,6 +101,11 @@ void Light3D::set_range(float value)
 void Light3D::set_fading_enabled(bool value)
 {
     this->fading_enabled = value;
+}
+
+void Light3D::on_set_color()
+{
+    set_color(color);
 }
 
 void Light3D::set_cast_shadows(bool value)

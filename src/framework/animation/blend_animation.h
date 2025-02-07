@@ -3,6 +3,8 @@
 #include "animation.h"
 #include "pose.h"
 
+#include "framework/nodes/node.h"
+
 struct BlendTarget {
     Animation* animation = nullptr;
     float time = 0.0f;
@@ -26,7 +28,7 @@ public:
     void play(Animation* target);
     void stop();
     void fade_to(Animation* target, float fade_time);
-    float update(float current_time, uint8_t loop, std::vector<void*>& data);
+    float update(float current_time, uint8_t loop, std::vector<Node::AnimatableProperty>& data);
 
     void blend(Pose& output, Pose& a, Pose& b, float t);
     void add(Pose& output, Pose& in, Pose& add_pose, Pose& base);

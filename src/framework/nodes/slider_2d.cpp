@@ -25,12 +25,16 @@ namespace ui {
         : Panel2D(sg, desc.position, desc.size, desc.flags)
     {
         data = desc.p_data;
+        mode = desc.mode;
     }
 
     void Slider2D::set_disabled(bool new_disabled)
     {
         disabled = new_disabled;
-        ui_data.is_button_disabled = disabled;
+        ui_data.flags &= ~(UI_DATA_DISABLED);
+        if (disabled) {
+            ui_data.flags |= UI_DATA_DISABLED;
+        }
         update_ui_data();
     }
 
@@ -63,22 +67,21 @@ namespace ui {
         parameter_flags |= DBL_CLICK;
 
         this->class_type = is_horizontal ? Node2DClassType::HSLIDER : Node2DClassType::VSLIDER;
-        this->mode = mode;
 
         disabled = parameter_flags & DISABLED;
 
-        ui_data.num_group_items = is_horizontal ? 2.f : 1.f;
-        ui_data.slider_max = max_value;
-        ui_data.slider_min = min_value;
+        ui_data.data_vec = { min_value, max_value, is_horizontal ? 2.f : 1.f };
 
         if (parameter_flags & CURVE_INV_POW) {
-            ui_data.slider_max = 1.0f / glm::pow(2.0f, max_value);
-            ui_data.slider_min = 1.0f / glm::pow(2.0f, min_value);
+            ui_data.data_vec.x = 1.0f / glm::pow(2.0f, min_value);
+            ui_data.data_vec.y = 1.0f / glm::pow(2.0f, max_value);
         }
 
-        ui_data.is_button_disabled = disabled;
+        if (disabled) {
+            ui_data.flags |= UI_DATA_DISABLED;
+        }
 
-        this->size = glm::vec2(size.x * ui_data.num_group_items, size.y);
+        this->size = glm::vec2(size.x * ui_data.data_vec.z, size.y);
 
         ui_data.aspect_ratio = this->size.x / this->size.y;
 
@@ -172,9 +175,9 @@ namespace ui {
         }
 
         // Update uniforms
-        ui_data.hover_info.x = 0.0f;
-        ui_data.hover_info.y = 0.0f;
-        ui_data.slider_value = current_value;
+        ui_data.flags &= ~(UI_DATA_HOVERED | UI_DATA_PRESSED | UI_DATA_SELECTED);
+        ui_data.hover_time = 0.0f;
+        ui_data.data_value = current_value;
 
         on_hover = false;
 
@@ -240,9 +243,9 @@ namespace ui {
         hover_factor = glm::cubicEaseOut(glm::clamp(timer / 0.2f, 0.0f, 1.0f));
 
         // Update uniforms
-        ui_data.hover_info.x = 1.0f;
-        ui_data.hover_info.y = glm::clamp(hover_factor, 0.0f, 1.0f);
-        ui_data.slider_value = current_value;
+        ui_data.flags |= UI_DATA_HOVERED;
+        ui_data.hover_time = glm::clamp(hover_factor, 0.0f, 1.0f);
+        ui_data.data_value = current_value;
 
         update_ui_data();
 
@@ -284,22 +287,21 @@ namespace ui {
         parameter_flags |= DBL_CLICK;
 
         this->class_type = is_horizontal ? Node2DClassType::HSLIDER : Node2DClassType::VSLIDER;
-        this->mode = mode;
 
         disabled = parameter_flags & DISABLED;
 
-        ui_data.num_group_items = is_horizontal ? 2.f : 1.f;
-        ui_data.slider_max = static_cast<float>(max_value);
-        ui_data.slider_min = static_cast<float>(min_value);
+        ui_data.data_vec = { static_cast<float>(min_value), static_cast<float>(max_value), is_horizontal ? 2.f : 1.f };
 
         if (parameter_flags & CURVE_INV_POW) {
-            ui_data.slider_max = 1.0f / glm::pow(2.0f, static_cast<float>(max_value));
-            ui_data.slider_min = 1.0f / glm::pow(2.0f, static_cast<float>(min_value));
+            ui_data.data_vec.x = 1.0f / glm::pow(2.0f, static_cast<float>(min_value));
+            ui_data.data_vec.y = 1.0f / glm::pow(2.0f, static_cast<float>(max_value));
         }
 
-        ui_data.is_button_disabled = disabled;
+        if (disabled) {
+            ui_data.flags |= UI_DATA_DISABLED;
+        }
 
-        this->size = glm::vec2(size.x * ui_data.num_group_items, size.y);
+        this->size = glm::vec2(size.x * ui_data.data_vec.z, size.y);
 
         ui_data.aspect_ratio = this->size.x / this->size.y;
 
@@ -393,9 +395,9 @@ namespace ui {
         }
 
         // Update uniforms
-        ui_data.hover_info.x = 0.0f;
-        ui_data.hover_info.y = 0.0f;
-        ui_data.slider_value = static_cast<float>(current_value);
+        ui_data.flags &= ~(UI_DATA_HOVERED | UI_DATA_PRESSED | UI_DATA_SELECTED);
+        ui_data.hover_time = 0.0f;
+        ui_data.data_value = static_cast<float>(current_value);
 
         on_hover = false;
 
@@ -460,9 +462,9 @@ namespace ui {
         hover_factor = glm::cubicEaseOut(glm::clamp(timer / 0.2f, 0.0f, 1.0f));
 
         // Update uniforms
-        ui_data.hover_info.x = 1.0f;
-        ui_data.hover_info.y = glm::clamp(hover_factor, 0.0f, 1.0f);
-        ui_data.slider_value = static_cast<float>(current_value);
+        ui_data.flags |= UI_DATA_HOVERED;
+        ui_data.hover_time = glm::clamp(hover_factor, 0.0f, 1.0f);
+        ui_data.data_value = static_cast<float>(current_value);
 
         update_ui_data();
 

@@ -58,6 +58,7 @@ public:
     struct AnimatableProperty {
         AnimatablePropertyType property_type = AnimatablePropertyType::UNDEFINED;
         void* property = nullptr;
+        std::function<void()> fn = nullptr;
     };
 
 protected:
@@ -66,6 +67,8 @@ protected:
 
     std::string name;
     std::string node_type;
+
+    std::string scene_unique_id;
 
     Node* parent = nullptr;
     std::vector<Node*> children;
@@ -88,24 +91,24 @@ public:
     virtual void serialize(std::ofstream& binary_scene_file);
     virtual void parse(std::ifstream& binary_scene_file);
 
+    void set_node_type(const std::string& new_type) { node_type = new_type; }
+    void set_name(const std::string& new_name) { name = new_name; }
+    virtual void set_aabb(const AABB& new_aabb) { aabb = new_aabb; }
+
     std::string get_name() const { return name; }
     std::string get_node_type() const { return node_type; }
+    std::string get_scene_unique_id() const { return scene_unique_id; }
     virtual std::vector<Node*>& get_children() { return children; }
+    virtual Node* get_node(std::vector<std::string>& path_tokens);
     AABB get_aabb() const;
+    Node* get_node(const std::string& path);
+    Node::AnimatableProperty& get_animatable_property(const std::string& name);
+    const std::unordered_map<std::string, AnimatableProperty>& get_animatable_properties() const;
 
     template <typename T = Node*>
     T get_parent() const { if (!parent) return nullptr;  return dynamic_cast<T>(parent); };
 
-    virtual Node* get_node(std::vector<std::string>& path_tokens);
-    Node* get_node(const std::string& path);
     std::string find_path(const std::string& node_name, const std::string& current_path = "");
-
-    Node::AnimatableProperty get_animatable_property(const std::string& name);
-    const std::unordered_map<std::string, AnimatableProperty>& get_animatable_properties() const;
-
-    void set_node_type(const std::string& new_type) { node_type = new_type; }
-    void set_name(const std::string& new_name) { name = new_name; }
-    virtual void set_aabb(const AABB& new_aabb) { aabb = new_aabb; }
 
     virtual void disable_2d();
 

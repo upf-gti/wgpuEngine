@@ -2,7 +2,6 @@
 
 #include "framework/input.h"
 #include "framework/utils/utils.h"
-#include "framework/nodes/node_factory.h"
 
 #include "node_factory.h"
 #include "node_binary_format.h"
@@ -21,6 +20,8 @@ REGISTER_NODE_CLASS(Node)
 Node::Node()
 {
     node_type = "Node";
+
+    scene_unique_id = generate_unique_id();
 
     name = "Node_" + std::to_string(last_node_id++);
 }
@@ -166,13 +167,13 @@ Node* Node::get_node(const std::string& path)
     return get_node(path_tokens);
 }
 
-Node::AnimatableProperty Node::get_animatable_property(const std::string& name)
+Node::AnimatableProperty& Node::get_animatable_property(const std::string& name)
 {
-    if (animatable_properties.contains(name)) {
-        return animatable_properties[name];
+    if (!animatable_properties.contains(name)) {
+        assert(0);
     }
 
-    return {};
+    return animatable_properties[name];
 }
 
 const std::unordered_map<std::string, Node::AnimatableProperty>& Node::get_animatable_properties() const
