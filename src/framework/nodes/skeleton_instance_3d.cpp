@@ -45,6 +45,11 @@ SkeletonInstance3D::~SkeletonInstance3D()
     skeleton->unref();
 }
 
+void SkeletonInstance3D::initialize()
+{
+    helper->initialize();
+}
+
 void SkeletonInstance3D::set_skeleton(Skeleton* new_skeleton, const std::vector<Joint3D*>& new_joint_nodes)
 {
     bool is_root = !new_joint_nodes.empty();

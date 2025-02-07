@@ -92,6 +92,15 @@ void Surface::create_surface_data(const sSurfaceData& vertices_data, bool store_
 
     const std::vector<sInterleavedData>& interleaved_data = create_interleaved_data(vertices_data);
     vertex_data_buffer = webgpu_context->create_buffer(get_interleaved_data_byte_size(), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Vertex, interleaved_data.data(), ("vertex_data_buffer_" + name).c_str());
+
+    if (!vertices_data.indices.empty()) {
+        create_index_buffer(vertices_data.indices);
+    }
+}
+
+void Surface::set_surface_data(const sSurfaceData& vertices_data)
+{
+    surface_data = vertices_data;
 }
 
 void Surface::create_index_buffer(const std::vector<uint32_t>& indices)

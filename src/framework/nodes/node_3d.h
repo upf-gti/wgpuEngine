@@ -29,6 +29,8 @@ public:
     Node3D();
     virtual ~Node3D();
 
+    virtual void initialize() {};
+
     virtual void render() override;
     virtual void update(float delta_time) override;
     virtual void render_gui() override;

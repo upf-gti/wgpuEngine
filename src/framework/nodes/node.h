@@ -81,6 +81,8 @@ public:
     Node();
     virtual ~Node() {};
 
+    virtual void initialize() {};
+
     virtual void add_child(Node* child);
     virtual void remove_child(Node* child);
 

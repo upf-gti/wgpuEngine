@@ -14,27 +14,30 @@ SkeletonHelper3D::SkeletonHelper3D(Skeleton* new_skeleton, Node3D* parent) : Mes
 
     skeleton = new_skeleton;
 
-    {
-        set_frustum_culling_enabled(false);
-
-        Surface* s = new Surface();
-        s->set_name("Skeleton Helper");
-        add_surface(s);
-
-        inner_update();
-
-        Material* skeleton_material = new Material();
-        skeleton_material->set_color({ 1.0f, 0.0f, 0.0f, 1.0f });
-        skeleton_material->set_depth_read(false);
-        skeleton_material->set_priority(0);
-        skeleton_material->set_topology_type(eTopologyType::TOPOLOGY_LINE_LIST);
-        skeleton_material->set_shader(RendererStorage::get_shader_from_source(shaders::mesh_forward::source, shaders::mesh_forward::path, shaders::mesh_forward::libraries, skeleton_material));
-        set_surface_material_override(s, skeleton_material);
-
-        if (parent) {
-            set_parent(parent);
-        }
+    if (parent) {
+        set_parent(parent);
     }
+}
+
+void SkeletonHelper3D::initialize()
+{
+    MeshInstance3D::initialize();
+
+    set_frustum_culling_enabled(false);
+
+    Surface* s = new Surface();
+    s->set_name("Skeleton Helper");
+    add_surface(s);
+
+    inner_update();
+
+    Material* skeleton_material = new Material();
+    skeleton_material->set_color({ 1.0f, 0.0f, 0.0f, 1.0f });
+    skeleton_material->set_depth_read(false);
+    skeleton_material->set_priority(0);
+    skeleton_material->set_topology_type(eTopologyType::TOPOLOGY_LINE_LIST);
+    skeleton_material->set_shader(RendererStorage::get_shader_from_source(shaders::mesh_forward::source, shaders::mesh_forward::path, shaders::mesh_forward::libraries, skeleton_material));
+    set_surface_material_override(s, skeleton_material);
 }
 
 void SkeletonHelper3D::inner_update()

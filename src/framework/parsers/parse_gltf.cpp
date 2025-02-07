@@ -33,7 +33,12 @@
 
 #include "spdlog/spdlog.h"
 
-void create_material_texture(const tinygltf::Model& model, int tex_index, Texture** texture, bool is_srgb = false, bool fill_texture_data = false)
+void fill_texture_data_func(std::vector<uint8_t>& texture_data, const uint8_t* texture, uint32_t width, uint32_t height)
+{
+    texture_data.assign(texture, texture + width * height * 4);
+}
+
+void create_material_texture(const tinygltf::Model& model, int tex_index, Texture** texture, bool is_srgb = false, bool fill_texture_data = false, bool async_load = false)
 {
     const tinygltf::Texture& tex = model.textures[tex_index];
 
@@ -66,12 +71,14 @@ void create_material_texture(const tinygltf::Model& model, int tex_index, Textur
 
         if (Texture::convert_to_rgba8unorm(image.width, image.height, texture_format, (void*)image.image.data(), converted_texture)) {
             *texture = new Texture();
-            (*texture)->load_from_data(image.uri, WGPUTextureDimension_2D, image.width, image.height, 1, converted_texture, true, is_srgb ? WGPUTextureFormat_RGBA8UnormSrgb : WGPUTextureFormat_RGBA8Unorm);
+            (*texture)->set_texture_parameters(image.uri, WGPUTextureDimension_2D, image.width, image.height, 1, true, is_srgb ? WGPUTextureFormat_RGBA8UnormSrgb : WGPUTextureFormat_RGBA8Unorm);
 
+            if (async_load || fill_texture_data) {
+                fill_texture_data_func((*texture)->get_texture_data(), converted_texture, image.width, image.height);
+            }
 
-            if (fill_texture_data) {
-                std::vector<uint8_t>& texture_data = (*texture)->get_texture_data();
-                texture_data.assign(converted_texture, converted_texture + image.width * image.height * 4);
+            if (!async_load) {
+                (*texture)->load_from_data(converted_texture);
             }
 
             delete[] converted_texture;
@@ -79,11 +86,14 @@ void create_material_texture(const tinygltf::Model& model, int tex_index, Textur
     }
     else {
         *texture = new Texture();
-        (*texture)->load_from_data(image.uri, WGPUTextureDimension_2D, image.width, image.height, 1, (void*)image.image.data(), true, is_srgb ? WGPUTextureFormat_RGBA8UnormSrgb : WGPUTextureFormat_RGBA8Unorm);
+        (*texture)->set_texture_parameters(image.uri, WGPUTextureDimension_2D, image.width, image.height, 1, true, is_srgb ? WGPUTextureFormat_RGBA8UnormSrgb : WGPUTextureFormat_RGBA8Unorm);
 
-        if (fill_texture_data) {
-            std::vector<uint8_t>& texture_data = (*texture)->get_texture_data();
-            texture_data.assign(image.image.data(), image.image.data() + image.width * image.height * 4);
+        if (async_load || fill_texture_data) {
+            fill_texture_data_func((*texture)->get_texture_data(), image.image.data(), image.width, image.height);
+        }
+
+        if (!async_load) {
+            (*texture)->load_from_data((void*)image.image.data());
         }
     }
 
@@ -165,7 +175,7 @@ void parse_attribute(tinygltf::Buffer const& buffer, size_t buffer_start, size_t
     }
 }
 
-void read_mesh(const tinygltf::Model& model, const tinygltf::Node& node, Node3D* entity, std::map<uint32_t, Texture*>& texture_cache, std::map<size_t, Surface*>& mesh_cache, bool fill_surface_data)
+void read_mesh(const tinygltf::Model& model, const tinygltf::Node& node, Node3D* entity, std::map<uint32_t, Texture*>& texture_cache, std::map<size_t, Surface*>& mesh_cache, bool fill_surface_data, bool async_load)
 {
     const tinygltf::Mesh& mesh = model.meshes[node.mesh];
     uint32_t joints_count = 0;
@@ -287,8 +297,6 @@ void read_mesh(const tinygltf::Model& model, const tinygltf::Node& node, Node3D*
 
                 index_idx++;
             }
-
-            surface->create_index_buffer(vertices.indices);
         }
 
         for (auto& attrib : primitive.attributes) {
@@ -549,7 +557,7 @@ void read_mesh(const tinygltf::Model& model, const tinygltf::Node& node, Node3D*
                 }
                 else {
                     Texture* diffuse_texture;
-                    create_material_texture(model, pbrMetallicRoughness.baseColorTexture.index, &diffuse_texture, true, fill_surface_data);
+                    create_material_texture(model, pbrMetallicRoughness.baseColorTexture.index, &diffuse_texture, true, fill_surface_data, async_load);
                     texture_cache[pbrMetallicRoughness.baseColorTexture.index] = diffuse_texture;
                     material->set_diffuse_texture(diffuse_texture);
                 }
@@ -568,7 +576,7 @@ void read_mesh(const tinygltf::Model& model, const tinygltf::Node& node, Node3D*
                 }
                 else {
                     Texture* metallic_roughness_texture;
-                    create_material_texture(model, pbrMetallicRoughness.metallicRoughnessTexture.index, &metallic_roughness_texture);
+                    create_material_texture(model, pbrMetallicRoughness.metallicRoughnessTexture.index, &metallic_roughness_texture, false, false, async_load);
                     texture_cache[pbrMetallicRoughness.metallicRoughnessTexture.index] = metallic_roughness_texture;
                     material->set_metallic_roughness_texture(metallic_roughness_texture);
                 }
@@ -583,7 +591,7 @@ void read_mesh(const tinygltf::Model& model, const tinygltf::Node& node, Node3D*
                 }
                 else {
                     Texture* normal_texture;
-                    create_material_texture(model, gltf_material.normalTexture.index, &normal_texture);
+                    create_material_texture(model, gltf_material.normalTexture.index, &normal_texture, false, false, async_load);
                     texture_cache[gltf_material.normalTexture.index] = normal_texture;
                     material->set_normal_texture(normal_texture);
                 }
@@ -595,7 +603,7 @@ void read_mesh(const tinygltf::Model& model, const tinygltf::Node& node, Node3D*
                 }
                 else {
                     Texture* emissive_texture;
-                    create_material_texture(model, gltf_material.emissiveTexture.index, &emissive_texture, true);
+                    create_material_texture(model, gltf_material.emissiveTexture.index, &emissive_texture, true, false, async_load);
                     texture_cache[gltf_material.emissiveTexture.index] = emissive_texture;
                     material->set_emissive_texture(emissive_texture);
                 }
@@ -608,7 +616,7 @@ void read_mesh(const tinygltf::Model& model, const tinygltf::Node& node, Node3D*
                 }
                 else {
                     Texture* occlusion_texture;
-                    create_material_texture(model, gltf_material.occlusionTexture.index, &occlusion_texture, true);
+                    create_material_texture(model, gltf_material.occlusionTexture.index, &occlusion_texture, true, false, async_load);
                     texture_cache[gltf_material.occlusionTexture.index] = occlusion_texture;
                     material->set_occlusion_texture(occlusion_texture);
                 }
@@ -647,17 +655,23 @@ void read_mesh(const tinygltf::Model& model, const tinygltf::Node& node, Node3D*
 
         material->set_priority(1);
 
-        std::vector<std::string> custom_defines;
-
-        if (tangents_generated || primitive.attributes.contains("TANGENT")) {
-            custom_defines.push_back("HAS_TANGENTS");
-        }
-
-        material->set_shader(RendererStorage::get_shader_from_source(shaders::mesh_forward::source, shaders::mesh_forward::path, shaders::mesh_forward::libraries, material, custom_defines));
-
         surface->set_material(material);
 
-        surface->create_surface_data(vertices, fill_surface_data);
+        if (!async_load) {
+            surface->create_surface_data(vertices, fill_surface_data);
+
+            std::vector<std::string> custom_defines;
+
+            if (tangents_generated || primitive.attributes.contains("TANGENT")) {
+                custom_defines.push_back("HAS_TANGENTS");
+            }
+
+            material->set_shader(RendererStorage::get_shader_from_source(shaders::mesh_forward::source, shaders::mesh_forward::path, shaders::mesh_forward::libraries, material, custom_defines));
+        }
+        else {
+            surface->set_surface_data(vertices);
+        }
+
         surface->set_name("Surface_" + material->get_name());
         entity_mesh->add_surface(surface);
     }
@@ -695,7 +709,7 @@ void create_camera(const tinygltf::Camera& gltf_camera, EntityCamera* camera_nod
     }
 }
 
-void create_light(const tinygltf::Light& gltf_light, Node3D** light_node)
+void create_light(const tinygltf::Light& gltf_light, Node3D** light_node, bool async_load)
 {
     std::string light_type = gltf_light.type;
 
@@ -719,6 +733,10 @@ void create_light(const tinygltf::Light& gltf_light, Node3D** light_node)
     }
 
     Light3D* light = static_cast<Light3D*>(*light_node);
+
+    if (!async_load) {
+        light->create_debug_meshes();
+    }
 
     float light_intensity = static_cast<float>(gltf_light.intensity);
 
@@ -757,7 +775,7 @@ void register_node(std::string& name, Node3D* node, std::map<std::string, Node3D
     loaded_nodes[name] = node;
 }
 
-Node3D* create_node_entity(uint32_t node_id, tinygltf::Model& model, std::map<std::string, Node3D*>& loaded_nodes, std::map<std::string, uint32_t>& name_repeats)
+Node3D* create_node_entity(uint32_t node_id, tinygltf::Model& model, std::map<std::string, Node3D*>& loaded_nodes, std::map<std::string, uint32_t>& name_repeats, bool async_load)
 {
     tinygltf::Node& node = model.nodes[node_id];
 
@@ -778,7 +796,7 @@ Node3D* create_node_entity(uint32_t node_id, tinygltf::Model& model, std::map<st
     }
     else if (node.light >= 0) {
         const tinygltf::Light& gltf_light = model.lights[node.light];
-        create_light(gltf_light, &new_node);
+        create_light(gltf_light, &new_node, async_load);
     }
     else {
         new_node = new Node3D();
@@ -831,7 +849,7 @@ void process_node_hierarchy(const tinygltf::Model& model, int parent_id, uint32_
 }
 
 void parse_model_nodes(tinygltf::Model& model, int parent_id, uint32_t node_id, Node3D* parent_node, Node3D* entity, std::map<std::string, Node3D*>& loaded_nodes, std::map<std::string, uint32_t>& name_repeats,
-    std::map<uint32_t, Texture*>& texture_cache, std::map<size_t, Surface*>& mesh_cache, std::map<int, int>& hierarchy, std::vector<SkeletonInstance3D*>& skeleton_instances, bool fill_surface_data)
+    std::map<uint32_t, Texture*>& texture_cache, std::map<size_t, Surface*>& mesh_cache, std::map<int, int>& hierarchy, std::vector<SkeletonInstance3D*>& skeleton_instances, bool fill_surface_data, bool async_load)
 {
     tinygltf::Node& node = model.nodes[node_id];
 
@@ -855,7 +873,7 @@ void parse_model_nodes(tinygltf::Model& model, int parent_id, uint32_t node_id, 
     }
 
     if (node.mesh >= 0 && node.mesh < model.meshes.size()) {
-        read_mesh(model, node, entity, texture_cache, mesh_cache, fill_surface_data);
+        read_mesh(model, node, entity, texture_cache, mesh_cache, fill_surface_data, async_load);
         AABB parent_aabb = merge_aabbs(entity->get_aabb(), parent_node->get_aabb());
         parent_node->set_aabb(parent_aabb);
     }
@@ -867,15 +885,15 @@ void parse_model_nodes(tinygltf::Model& model, int parent_id, uint32_t node_id, 
 
         assert(child_id >= 0 && child_id < model.nodes.size());
 
-        Node3D* child_node = create_node_entity(child_id, model, loaded_nodes, name_repeats);
+        Node3D* child_node = create_node_entity(child_id, model, loaded_nodes, name_repeats, async_load);
 
         process_node_hierarchy(model, node_id, child_id, entity, child_node, hierarchy, skeleton_instances);
 
-        parse_model_nodes(model, node_id, child_id, entity, child_node, loaded_nodes, name_repeats, texture_cache, mesh_cache, hierarchy, skeleton_instances, fill_surface_data);
+        parse_model_nodes(model, node_id, child_id, entity, child_node, loaded_nodes, name_repeats, texture_cache, mesh_cache, hierarchy, skeleton_instances, fill_surface_data, async_load);
     }
 };
 
-void parse_model_skins(Node3D* scene_root, tinygltf::Model& model, std::map<std::string, Node3D*>& loaded_nodes, std::map<int, int>& hierarchy, std::vector<SkeletonInstance3D*>& skeleton_instances)
+void parse_model_skins(Node3D* scene_root, tinygltf::Model& model, std::map<std::string, Node3D*>& loaded_nodes, std::map<int, int>& hierarchy, std::vector<SkeletonInstance3D*>& skeleton_instances, bool async_load)
 {
     // Create skeleton instances first..
     {
@@ -1076,6 +1094,10 @@ void parse_model_skins(Node3D* scene_root, tinygltf::Model& model, std::map<std:
 
         instance->set_name("Skeleton3D");
         instance->set_skeleton(skeleton, joint_nodes);
+
+        if (!async_load) {
+            instance->initialize();
+        }
 
         for (auto child : instance->get_children()) {
             MeshInstance* child_instance = dynamic_cast<MeshInstance*>(child);
@@ -1452,15 +1474,15 @@ bool GltfParser::parse_model(tinygltf::Model* model, std::vector<Node*>& entitie
 
         assert(node_id >= 0 && node_id < model->nodes.size());
 
-        Node3D* entity = create_node_entity(node_id, *model, loaded_nodes, name_repeats);
+        Node3D* entity = create_node_entity(node_id, *model, loaded_nodes, name_repeats, async_future.valid());
 
         process_node_hierarchy(*model, -1, node_id, scene_root, entity, hierarchy, skeleton_instances);
 
-        parse_model_nodes(*model, -1, node_id, scene_root, entity, loaded_nodes, name_repeats, texture_cache, mesh_cache, hierarchy, skeleton_instances, fill_surface_data);
+        parse_model_nodes(*model, -1, node_id, scene_root, entity, loaded_nodes, name_repeats, texture_cache, mesh_cache, hierarchy, skeleton_instances, fill_surface_data, async_future.valid());
     }
 
     if (model->skins.size()) {
-        parse_model_skins(scene_root, *model, loaded_nodes, hierarchy, skeleton_instances);
+        parse_model_skins(scene_root, *model, loaded_nodes, hierarchy, skeleton_instances, async_future.valid());
     }
 
     if (model->animations.size()) {
@@ -1494,13 +1516,54 @@ bool GltfParser::parse_model(tinygltf::Model* model, std::vector<Node*>& entitie
     skeleton_instances.clear();
     hierarchy.clear();
 
-    if (flags & PARSE_GLTF_CLEAR_CACHE) {
+    if (flags & PARSE_GLTF_CLEAR_CACHE && !async_future.valid()) {
         clear_cache();
     }
 
     root = nullptr;
 
     return true;
+}
+
+void GltfParser::on_async_finished()
+{
+    for (auto texture : texture_cache) {
+        texture.second->load_from_data(texture.second->get_texture_data().data());
+    }
+
+    for (auto mesh: mesh_cache) {
+
+        sSurfaceData& surface_data = mesh.second->get_surface_data();
+        Material* material = mesh.second->get_material();
+
+        mesh.second->create_surface_data(surface_data, false);
+
+        std::vector<std::string> custom_defines;
+
+        if (!surface_data.tangents.empty()) {
+            custom_defines.push_back("HAS_TANGENTS");
+        }
+
+        material->set_shader(RendererStorage::get_shader_from_source(shaders::mesh_forward::source, shaders::mesh_forward::path, shaders::mesh_forward::libraries, material, custom_defines));
+    }
+
+    std::function<void(Node*)> recurse_tree = [&](Node* node) {
+
+        node->initialize();
+
+        if (!node->get_children().empty()) {
+            for (auto child : node->get_children()) {
+                recurse_tree(child);
+            }
+        }
+    };
+
+    // Each time we load entities, get vpet nodes and the cameras
+    for (auto node : async_entities) {
+        recurse_tree(node);
+    }
+
+    clear_cache();
 }
 
 void GltfParser::clear_cache()

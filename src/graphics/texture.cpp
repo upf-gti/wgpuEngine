@@ -144,23 +144,8 @@ void Texture::load_hdr(const std::string& texture_path)
 
 void Texture::load_from_data(const std::string& name, WGPUTextureDimension dimension, int width, int height, int array_layers, void* data, bool create_mipmaps, WGPUTextureFormat p_format)
 {
-    this->dimension = dimension;
-    this->format = p_format;
-    this->size = { (unsigned int)width, (unsigned int)height, (unsigned int)array_layers };
-    this->usage = static_cast<WGPUTextureUsage>(WGPUTextureUsage_TextureBinding | WGPUTextureUsage_CopyDst);
-    this->mipmaps = create_mipmaps ? std::bit_width(std::max(size.width, size.height)) : 1;
-
-    this->texture = webgpu_context->create_texture(dimension, format, size, usage, mipmaps, 1);
-
-    // Create mipmaps
-    if (create_mipmaps) {
-        generate_mipmaps(data);
-    }
-    else {
-        webgpu_context->upload_texture(texture, dimension, size, 0, format, data, {0, 0, 0});
-    }
-
-    RendererStorage::textures[name] = this;
+    set_texture_parameters(name, dimension, width, height, array_layers, create_mipmaps, p_format);
+    load_from_data(data);
 }
 
 void Texture::load_from_hdre(HDRE* hdre)
@@ -189,4 +174,28 @@ void Texture::load_from_hdre(HDRE* hdre)
 WGPUTextureView Texture::get_view(WGPUTextureViewDimension view_dimension, uint32_t base_mip_level, uint32_t mip_level_count, uint32_t base_array_layer, uint32_t array_layer_count) const
 {
     return webgpu_context->create_texture_view(texture, view_dimension, format, WGPUTextureAspect_All, base_mip_level, mip_level_count, base_array_layer, array_layer_count);
+}
+
+void Texture::set_texture_parameters(const std::string& name, WGPUTextureDimension dimension, int width, int height, int array_layers, bool create_mipmaps, WGPUTextureFormat p_format)
+{
+    this->dimension = dimension;
+    this->format = p_format;
+    this->size = { (unsigned int)width, (unsigned int)height, (unsigned int)array_layers };
+    this->usage = static_cast<WGPUTextureUsage>(WGPUTextureUsage_TextureBinding | WGPUTextureUsage_CopyDst);
+    this->mipmaps = create_mipmaps ? std::bit_width(std::max(size.width, size.height)) : 1;
+}
+
+void Texture::load_from_data(void* data)
+{
+    this->texture = webgpu_context->create_texture(dimension, format, size, usage, mipmaps, 1);
+
+    // Create mipmaps
+    if (mipmaps > 1) {
+        generate_mipmaps(data);
+    }
+    else {
+        webgpu_context->upload_texture(texture, dimension, size, 0, format, data, { 0, 0, 0 });
+    }
+
+    RendererStorage::textures[name] = this;
 }

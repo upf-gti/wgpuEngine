@@ -2,7 +2,7 @@
 
 #include "framework/nodes/node_3d.h"
 
-class Uniform;
+struct Uniform;
 class Skeleton;
 class SkeletonHelper3D;
 class Joint3D;
@@ -26,6 +26,8 @@ public:
 
     SkeletonInstance3D();
     ~SkeletonInstance3D();
+
+    virtual void initialize() override;
 
     void update(float delta_time) override;
     void render() override;

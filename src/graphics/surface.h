@@ -103,6 +103,7 @@ public:
     void update_vertex_buffer(const std::vector<glm::vec3>& vertices);
     void update_surface_data(const sSurfaceData& vertices_data, bool store_data = false);
     void create_surface_data(const sSurfaceData& vertices_data, bool store_data = false);
+    void set_surface_data(const sSurfaceData& vertices_data);
 
     void create_index_buffer(const std::vector<uint32_t>& indices);
 

@@ -41,4 +41,6 @@ public:
 
     void serialize(std::ofstream& binary_scene_file) override;
     void parse(std::ifstream& binary_scene_file) override;
+
+    void create_debug_meshes() override;
 };

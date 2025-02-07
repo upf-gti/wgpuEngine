@@ -49,10 +49,11 @@ class GltfParser : public Parser {
     Node3D* root = nullptr;
 
     std::map<uint32_t, Texture*> texture_cache;
-
     std::map<size_t, Surface*> mesh_cache;
 
     bool parse_model(tinygltf::Model* model, std::vector<Node*>& entities, uint32_t flags = PARSE_DEFAULT);
+
+    void on_async_finished() override;
 
 public:
 

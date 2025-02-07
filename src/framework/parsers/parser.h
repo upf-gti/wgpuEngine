@@ -17,9 +17,12 @@ enum eParseFlags {
 
 class Parser {
 
+protected:
     std::future<bool> async_future;
     std::function<void()> async_callback;
     std::vector<Node*> async_entities;
+
+    virtual void on_async_finished() {};
 
 public:
     virtual bool parse(const char* file_path, std::vector<Node*>& entities, uint32_t flags = PARSE_DEFAULT) { return false; };

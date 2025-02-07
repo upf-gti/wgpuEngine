@@ -73,4 +73,8 @@ public:
 
     void load_from_data(const std::string& name, WGPUTextureDimension dimension, int width, int height, int array_layers, void* data, bool create_mipmaps = true, WGPUTextureFormat p_format = WGPUTextureFormat_RGBA8Unorm);
     void load_from_hdre( HDRE* hdre );
+
+    void set_texture_parameters(const std::string& name, WGPUTextureDimension dimension, int width, int height, int array_layers, bool create_mipmaps = true, WGPUTextureFormat p_format = WGPUTextureFormat_RGBA8Unorm);
+
+    void load_from_data(void* data);
 };

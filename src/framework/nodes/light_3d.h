@@ -55,11 +55,15 @@ public:
     bool get_cast_shadows() { return cast_shadows; };
     float get_range() { return range; };
 
+    virtual void create_debug_meshes() = 0;
+
     virtual void set_color(glm::vec3 color);
     void set_intensity(float value);
     virtual void set_range(float value);
     void set_fading_enabled(bool value);
     void set_cast_shadows(bool value);
+
+    void create_shadow_data();
 
     void on_set_color();
 

@@ -1081,6 +1081,10 @@ void Renderer::render_shadow_maps()
 
         wgpuQueueWriteBuffer(webgpu_context->device_queue, std::get<WGPUBuffer>(shadow_camera_uniform.data), light_idx * camera_buffer_stride, &camera_data, sizeof(sCameraData));
 
+        if (!light->get_shadow_depth_texture()) {
+            light->create_shadow_data();
+        }
+
         render_camera(render_lists, nullptr, light->get_shadow_depth_texture_view(), shadow_instances_data, shadow_camera_bind_group, false, "shadow_map", 0, light_idx);
     }
 }
@@ -1305,6 +1309,10 @@ void Renderer::add_light(Light3D* new_light)
     num_lights++;
 
     const LightType light_type = new_light->get_type();
+
+    if (!new_light->get_cast_shadows()) {
+        return;
+    }
 
     if (light_type == LIGHT_DIRECTIONAL) {
         lights_with_shadow.push_back(new_light);

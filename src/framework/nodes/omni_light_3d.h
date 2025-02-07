@@ -27,4 +27,6 @@ public:
     sLightUniformData get_uniform_data() override;
 
     void parse(std::ifstream& binary_scene_file) override;
+
+    void create_debug_meshes() override;
 };

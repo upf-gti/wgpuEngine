@@ -18,7 +18,90 @@ OmniLight3D::OmniLight3D() : Light3D()
     type = LIGHT_OMNI;
     node_type = "OmniLight3D";
     name = node_type + "_" + std::to_string(last_node_id++);
+}
 
+OmniLight3D::~OmniLight3D()
+{
+    delete debug_mesh_v;
+    delete debug_mesh_h;
+}
+
+void OmniLight3D::render()
+{
+#ifndef NDEBUG
+    if (debug_material) {
+        Renderer::instance->add_renderable(debug_mesh_v, get_global_model() * debug_mesh_v->get_global_model());
+        Renderer::instance->add_renderable(debug_mesh_h, get_global_model() * debug_mesh_h->get_global_model());
+    }
+#endif
+
+    Light3D::render();
+}
+
+void OmniLight3D::render_gui()
+{
+    bool changed = false;
+
+    if (ImGui::TreeNodeEx("OmniLight3D"))
+    {
+        if (ImGui::SliderFloat("Range", &range, 0.f, 10.0f)) {
+            if (debug_material) {
+                debug_mesh_v->set_scale(glm::vec3(range));
+                debug_mesh_h->set_scale(glm::vec3(range));
+            }
+        }
+
+        ImGui::TreePop();
+    }
+
+    Light3D::render_gui();
+}
+
+void OmniLight3D::set_color(glm::vec3 color)
+{
+    if (debug_material) {
+        debug_material->set_color(glm::vec4(color, 1.0f));
+    }
+
+    Light3D::set_color(color);
+}
+
+void OmniLight3D::set_range(float value)
+{
+    if (debug_material) {
+        debug_mesh_v->set_scale(glm::vec3(value));
+        debug_mesh_h->set_scale(glm::vec3(value));
+    }
+
+    Light3D::set_range(value);
+}
+
+sLightUniformData OmniLight3D::get_uniform_data()
+{
+    return {
+        .position = get_translation(),
+        .type = type,
+        .color = color,
+        .intensity = intensity,
+        .range = range
+    };
+}
+
+void OmniLight3D::parse(std::ifstream& binary_scene_file)
+{
+    Light3D::parse(binary_scene_file);
+
+    if (debug_material)
+    {
+        debug_material->set_color(glm::vec4(color, 1.0f));
+
+        debug_mesh_v->set_scale(glm::vec3(range));
+        debug_mesh_h->set_scale(glm::vec3(range));
+    }
+}
+
+void OmniLight3D::create_debug_meshes()
+{
     debug_mesh_v = new MeshInstance3D();
     debug_mesh_v->set_frustum_culling_enabled(false);
     debug_mesh_v->set_scale(glm::vec3(range));
@@ -40,73 +123,4 @@ OmniLight3D::OmniLight3D() : Light3D()
 
     debug_mesh_v->add_surface(debug_surface);
     debug_mesh_h->add_surface(debug_surface);
-}
-
-OmniLight3D::~OmniLight3D()
-{
-    delete debug_mesh_v;
-    delete debug_mesh_h;
-}
-
-void OmniLight3D::render()
-{
-#ifndef NDEBUG
-    Renderer::instance->add_renderable(debug_mesh_v, get_global_model() * debug_mesh_v->get_global_model());
-    Renderer::instance->add_renderable(debug_mesh_h, get_global_model() * debug_mesh_h->get_global_model());
-#endif
-
-    Light3D::render();
-}
-
-void OmniLight3D::render_gui()
-{
-    bool changed = false;
-
-    if (ImGui::TreeNodeEx("OmniLight3D"))
-    {
-        if (ImGui::SliderFloat("Range", &range, 0.f, 10.0f)) {
-            debug_mesh_v->set_scale(glm::vec3(range));
-            debug_mesh_h->set_scale(glm::vec3(range));
-        }
-
-        ImGui::TreePop();
-    }
-
-    Light3D::render_gui();
-}
-
-void OmniLight3D::set_color(glm::vec3 color)
-{
-    debug_material->set_color(glm::vec4(color, 1.0f));
-
-    Light3D::set_color(color);
-}
-
-void OmniLight3D::set_range(float value)
-{
-    debug_mesh_v->set_scale(glm::vec3(value));
-    debug_mesh_h->set_scale(glm::vec3(value));
-
-    Light3D::set_range(value);
-}
-
-sLightUniformData OmniLight3D::get_uniform_data()
-{
-    return {
-        .position = get_translation(),
-        .type = type,
-        .color = color,
-        .intensity = intensity,
-        .range = range
-    };
-}
-
-void OmniLight3D::parse(std::ifstream& binary_scene_file)
-{
-    Light3D::parse(binary_scene_file);
-
-    debug_material->set_color(glm::vec4(color, 1.0f));
-
-    debug_mesh_v->set_scale(glm::vec3(range));
-    debug_mesh_h->set_scale(glm::vec3(range));
 }

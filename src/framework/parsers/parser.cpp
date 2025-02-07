@@ -15,6 +15,9 @@ bool Parser::poll_async()
 {
     // Poll to check if the task is done
     if (async_future.valid() && async_future.wait_for(std::chrono::milliseconds(1)) == std::future_status::ready) {
+
+        on_async_finished();
+
         async_callback();
         async_future.get();
         return true;

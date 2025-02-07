@@ -23,22 +23,6 @@ SpotLight3D::SpotLight3D() : Light3D()
 
     animatable_properties["inner_cone_angle"] = { AnimatablePropertyType::FLOAT32, &inner_cone_angle };
     animatable_properties["outer_cone_angle"] = { AnimatablePropertyType::FLOAT32, &outer_cone_angle };
-
-    debug_mesh = new MeshInstance3D();
-    debug_mesh->set_frustum_culling_enabled(false);
-    debug_mesh->set_scale(glm::vec3(range));
-
-    debug_surface = new Surface();
-    create_debug_render_cone();
-
-    debug_material = new Material();
-    debug_material->set_color(glm::vec4(color, 1.0f));
-    debug_material->set_type(MATERIAL_UNLIT);
-    debug_material->set_topology_type(TOPOLOGY_LINE_STRIP);
-    debug_material->set_shader(RendererStorage::get_shader_from_source(shaders::mesh_forward::source, shaders::mesh_forward::path, shaders::mesh_forward::libraries, debug_material));
-    debug_surface->set_material(debug_material);
-
-    debug_mesh->add_surface(debug_surface);
 }
 
 SpotLight3D::~SpotLight3D()
@@ -56,7 +40,9 @@ void SpotLight3D::create_debug_render_cone()
 void SpotLight3D::render()
 {
 #ifndef NDEBUG
-    Renderer::instance->add_renderable(debug_mesh, get_global_model() * debug_mesh->get_global_model());
+    if (debug_material) {
+        Renderer::instance->add_renderable(debug_mesh, get_global_model() * debug_mesh->get_global_model());
+    }
 #endif
 }
 
@@ -83,13 +69,17 @@ void SpotLight3D::render_gui()
     if (ImGui::TreeNodeEx("SpotLight3D"))
     {
         if (ImGui::SliderFloat("Range", &range, 0.f, 10.0f)) {
-            create_debug_render_cone();
+            if (debug_material) {
+                create_debug_render_cone();
+            }
         }
 
         ImGui::SliderFloat("Inner Angle", &inner_cone_angle, 0.f, pi_2);
 
         if (ImGui::SliderFloat("Outer Angle", &outer_cone_angle, 0.f, pi_2)) {
-            create_debug_render_cone();
+            if (debug_material) {
+                create_debug_render_cone();
+            }
         }
 
         ImGui::TreePop();
@@ -114,7 +104,9 @@ sLightUniformData SpotLight3D::get_uniform_data()
 
 void SpotLight3D::set_range(float value)
 {
-    create_debug_render_cone();
+    if (debug_material) {
+        create_debug_render_cone();
+    }
 
     Light3D::set_range(value);
 }
@@ -128,7 +120,9 @@ void SpotLight3D::set_outer_cone_angle(float value)
 {
     this->outer_cone_angle = value;
 
-    create_debug_render_cone();
+    if (debug_material) {
+        create_debug_render_cone();
+    }
 }
 
 void SpotLight3D::serialize(std::ofstream& binary_scene_file)
@@ -146,7 +140,27 @@ void SpotLight3D::parse(std::ifstream& binary_scene_file)
     binary_scene_file.read(reinterpret_cast<char*>(&inner_cone_angle), sizeof(float));
     binary_scene_file.read(reinterpret_cast<char*>(&outer_cone_angle), sizeof(float));
 
-    debug_material->set_color(glm::vec4(color, 1.0f));
+    if (debug_material) {
+        debug_material->set_color(glm::vec4(color, 1.0f));
+        create_debug_render_cone();
+    }
+}
 
+void SpotLight3D::create_debug_meshes()
+{
+    debug_mesh = new MeshInstance3D();
+    debug_mesh->set_frustum_culling_enabled(false);
+    debug_mesh->set_scale(glm::vec3(range));
+
+    debug_surface = new Surface();
     create_debug_render_cone();
+
+    debug_material = new Material();
+    debug_material->set_color(glm::vec4(color, 1.0f));
+    debug_material->set_type(MATERIAL_UNLIT);
+    debug_material->set_topology_type(TOPOLOGY_LINE_STRIP);
+    debug_material->set_shader(RendererStorage::get_shader_from_source(shaders::mesh_forward::source, shaders::mesh_forward::path, shaders::mesh_forward::libraries, debug_material));
+    debug_surface->set_material(debug_material);
+
+    debug_mesh->add_surface(debug_surface);
 }

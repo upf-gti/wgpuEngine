@@ -111,31 +111,37 @@ void Light3D::on_set_color()
 void Light3D::set_cast_shadows(bool value)
 {
     this->cast_shadows = value;
+}
 
-    if (cast_shadows && !shadow_depth_texture) {
-        WebGPUContext* webgpu_context = Renderer::instance->get_webgpu_context();
-
-        shadow_depth_texture = webgpu_context->create_texture(
-            WGPUTextureDimension_2D,
-            WGPUTextureFormat_Depth32Float,
-            { 1024, 1024, 1 },
-            WGPUTextureUsage_RenderAttachment | WGPUTextureUsage_TextureBinding,
-            1,
-            1
-        );
-
-        shadow_depth_texture_view = webgpu_context->create_texture_view(
-            shadow_depth_texture,
-            WGPUTextureViewDimension_2D,
-            WGPUTextureFormat_Depth32Float,
-            WGPUTextureAspect_All,
-            0,
-            1,
-            0,
-            1,
-            "shadow_map"
-        );
+void Light3D::create_shadow_data()
+{
+    if (shadow_depth_texture) {
+        wgpuTextureRelease(shadow_depth_texture);
+        wgpuTextureViewRelease(shadow_depth_texture_view);
     }
+
+    WebGPUContext* webgpu_context = Renderer::instance->get_webgpu_context();
+
+    shadow_depth_texture = webgpu_context->create_texture(
+        WGPUTextureDimension_2D,
+        WGPUTextureFormat_Depth32Float,
+        { 1024, 1024, 1 },
+        WGPUTextureUsage_RenderAttachment | WGPUTextureUsage_TextureBinding,
+        1,
+        1
+    );
+
+    shadow_depth_texture_view = webgpu_context->create_texture_view(
+        shadow_depth_texture,
+        WGPUTextureViewDimension_2D,
+        WGPUTextureFormat_Depth32Float,
+        WGPUTextureAspect_All,
+        0,
+        1,
+        0,
+        1,
+        "shadow_map"
+    );
 }
 
 void Light3D::serialize(std::ofstream& binary_scene_file)
