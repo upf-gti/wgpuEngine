@@ -25,6 +25,7 @@ namespace ui {
         : Panel2D(sg, desc.position, desc.size, desc.flags)
     {
         data = desc.p_data;
+        mode = desc.mode;
     }
 
     void Slider2D::set_disabled(bool new_disabled)
@@ -66,7 +67,6 @@ namespace ui {
         parameter_flags |= DBL_CLICK;
 
         this->class_type = is_horizontal ? Node2DClassType::HSLIDER : Node2DClassType::VSLIDER;
-        this->mode = mode;
 
         disabled = parameter_flags & DISABLED;
 
@@ -287,7 +287,6 @@ namespace ui {
         parameter_flags |= DBL_CLICK;
 
         this->class_type = is_horizontal ? Node2DClassType::HSLIDER : Node2DClassType::VSLIDER;
-        this->mode = mode;
 
         disabled = parameter_flags & DISABLED;
 
