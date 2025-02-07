@@ -58,6 +58,7 @@ public:
     struct AnimatableProperty {
         AnimatablePropertyType property_type = AnimatablePropertyType::UNDEFINED;
         void* property = nullptr;
+        std::function<void()> fn = nullptr;
     };
 
 protected:
@@ -101,7 +102,7 @@ public:
     virtual Node* get_node(std::vector<std::string>& path_tokens);
     AABB get_aabb() const;
     Node* get_node(const std::string& path);
-    Node::AnimatableProperty get_animatable_property(const std::string& name);
+    Node::AnimatableProperty& get_animatable_property(const std::string& name);
     const std::unordered_map<std::string, AnimatableProperty>& get_animatable_properties() const;
 
     template <typename T = Node*>

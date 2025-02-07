@@ -167,13 +167,13 @@ Node* Node::get_node(const std::string& path)
     return get_node(path_tokens);
 }
 
-Node::AnimatableProperty Node::get_animatable_property(const std::string& name)
+Node::AnimatableProperty& Node::get_animatable_property(const std::string& name)
 {
-    if (animatable_properties.contains(name)) {
-        return animatable_properties[name];
+    if (!animatable_properties.contains(name)) {
+        assert(0);
     }
 
-    return {};
+    return animatable_properties[name];
 }
 
 const std::unordered_map<std::string, Node::AnimatableProperty>& Node::get_animatable_properties() const

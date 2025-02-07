@@ -11,7 +11,7 @@ Animation::Animation()
     end_time = 0.0f;
 }
 
-float Animation::sample(float time, uint32_t track_idx, uint8_t loop, void* out, eInterpolationType interpolation_type)
+float Animation::sample(float time, uint32_t track_idx, uint8_t loop, Node::AnimatableProperty* out, eInterpolationType interpolation_type)
 {
     if (get_duration() == 0.0f) {
         return 0.0f;

@@ -85,7 +85,7 @@ void AnimationPlayer::generate_track_data()
         Node* node = root_node->get_node(node_path);
 
         if (node) {
-            track_data[i] = node->get_animatable_property(property_name).property;
+            track_data[i] = node->get_animatable_property(property_name);
         }
         else {
             spdlog::warn("{} node not found", track_path);
@@ -316,44 +316,4 @@ void AnimationPlayer::set_playback_time(float time)
     playing = true; // hack to force update..
     update(0.0f);
     playing = was_playing;
-}
-
-void AnimationPlayer::set_speed(float time)
-{
-    speed = time;
-}
-
-void AnimationPlayer::set_blend_time(float time)
-{
-    blend_time = time;
-}
-
-void AnimationPlayer::set_loop_type(uint8_t new_loop_type)
-{
-    loop_type = new_loop_type;
-}
-
-void AnimationPlayer::set_root_node(Node3D* new_root_node)
-{
-    this->root_node = new_root_node;
-}
-
-float AnimationPlayer::get_blend_time()
-{
-    return blend_time;
-}
-
-float AnimationPlayer::get_speed()
-{
-    return speed;
-}
-
-uint8_t AnimationPlayer::get_loop_type()
-{
-    return loop_type;
-}
-
-bool AnimationPlayer::is_playing()
-{
-    return playing;
 }

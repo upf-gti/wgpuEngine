@@ -61,6 +61,8 @@ public:
     void set_fading_enabled(bool value);
     void set_cast_shadows(bool value);
 
+    void on_set_color();
+
     WGPUTexture get_shadow_depth_texture() { return shadow_depth_texture; }
     WGPUTextureView get_shadow_depth_texture_view() { return shadow_depth_texture_view; }
 

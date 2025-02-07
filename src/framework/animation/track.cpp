@@ -101,7 +101,7 @@ void Track::delete_keyframe(int keyframe_idx)
 }
 
 // call sample_constant, sample_linear, or sample_cubic, depending on the track type.
-TrackType Track::sample(float time, bool looping, void* out, eInterpolationType interpolation_type)
+TrackType Track::sample(float time, bool looping, Node::AnimatableProperty* out, eInterpolationType interpolation_type)
 {
     float track_time = adjust_time_to_fit_track(time, looping);
     int frame_idx = frame_index(time);
@@ -118,23 +118,39 @@ TrackType Track::sample(float time, bool looping, void* out, eInterpolationType 
 
     if (out)
     {
+        void* property = out->property;
+
+        bool changed = false;
+
         // TODO: Support the rest of types..
 
         if (std::holds_alternative<float>(r)) {
-            float* p = reinterpret_cast<float*>(out);
+            float* p = reinterpret_cast<float*>(property);
+            float old_value = *p;
             *p = std::get<float>(r);
+            changed |= (old_value != *p);
         }
         else if (std::holds_alternative<glm::vec3>(r)) {
-            glm::vec3* p = reinterpret_cast<glm::vec3*>(out);
+            glm::vec3* p = reinterpret_cast<glm::vec3*>(property);
+            glm::vec3 old_value = *p;
             *p = std::get<glm::vec3>(r);
+            changed |= (old_value != *p);
         }
         else if (std::holds_alternative<glm::vec4>(r)) {
-            glm::vec4* p = reinterpret_cast<glm::vec4*>(out);
+            glm::vec4* p = reinterpret_cast<glm::vec4*>(property);
+            glm::vec4 old_value = *p;
             *p = std::get<glm::vec4>(r);
+            changed |= (old_value != *p);
         }
         else if (std::holds_alternative<glm::quat>(r)) {
-            glm::quat* p = reinterpret_cast<glm::quat*>(out);
+            glm::quat* p = reinterpret_cast<glm::quat*>(property);
+            glm::quat old_value = *p;
             *p = std::get<glm::quat>(r);
+            changed |= (old_value != *p);
+        }
+
+        if (changed && out->fn) {
+            out->fn();
         }
     }
 
