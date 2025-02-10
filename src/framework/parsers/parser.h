@@ -19,16 +19,31 @@ class Parser {
 
 protected:
     std::future<bool> async_future;
-    std::function<void()> async_callback;
-    std::vector<Node*> async_entities;
+    std::function<void(const std::vector<Node*>&, bool)> async_callback;
+    std::vector<Node*> async_nodes;
+
+    static std::vector<Parser*> async_parsers;
 
     virtual void on_async_finished() {};
 
 public:
     virtual bool parse(const char* file_path, std::vector<Node*>& entities, uint32_t flags = PARSE_DEFAULT) { return false; };
-    void parse_async(const char* file_path, std::function<void()> callback, uint32_t flags = PARSE_DEFAULT);
 
-    bool poll_async();
+    template<typename T>
+    static void parse_async(const char* file_path, std::function<void(const std::vector<Node*>&, bool)> callback, uint32_t flags = PARSE_DEFAULT);
 
-    std::vector<Node*> get_async_entities() { return async_entities; }
+    static void poll_async_parsers();
 };
+
+template<typename T>
+void Parser::parse_async(const char* file_path, std::function<void(const std::vector<Node*>&, bool)> callback, uint32_t flags)
+{
+    Parser* async_parser = new T();
+
+    async_parser->async_callback = callback;
+
+    // Start the async operation
+    async_parser->async_future = std::async(std::launch::async, &Parser::parse, async_parser, file_path, std::ref(async_parser->async_nodes), flags);
+
+    async_parsers.push_back(async_parser);
+}

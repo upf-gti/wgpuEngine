@@ -19,6 +19,8 @@
 
 #include "framework/utils/ImGuizmo.h"
 
+#include "framework/parsers/parser.h"
+
 #include "engine/scene.h"
 
 #include <GLFW/glfw3.h>
@@ -366,6 +368,8 @@ void Engine::on_frame()
     }
 
     // Update stuff
+
+    Parser::poll_async_parsers();
 
     Input::update(delta_time);
 

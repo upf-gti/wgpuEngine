@@ -3,25 +3,25 @@
 #include <chrono>
 #include <functional>
 
-void Parser::parse_async(const char* file_path, std::function<void()> callback, uint32_t flags)
+std::vector<Parser*> Parser::async_parsers;
+
+void Parser::poll_async_parsers()
 {
-    async_callback = callback;
+    std::vector<Parser*>::iterator it = async_parsers.begin();
+    while (it != async_parsers.end())
+    {
+        Parser* parser = *it;
+        if (parser->async_future.valid() && parser->async_future.wait_for(std::chrono::milliseconds(1)) == std::future_status::ready) {
 
-    // Start the async operation
-    async_future = std::async(std::launch::async, &Parser::parse, this, file_path, std::ref(async_entities), flags);
-}
+            parser->on_async_finished();
 
-bool Parser::poll_async()
-{
-    // Poll to check if the task is done
-    if (async_future.valid() && async_future.wait_for(std::chrono::milliseconds(1)) == std::future_status::ready) {
+            parser->async_callback(parser->async_nodes, parser->async_future.get());
 
-        on_async_finished();
-
-        async_callback();
-        async_future.get();
-        return true;
+            delete* it;
+            it = async_parsers.erase(it);
+        }
+        else {
+            it++;
+        }
     }
-
-    return false;
 }

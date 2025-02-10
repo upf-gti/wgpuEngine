@@ -1547,6 +1547,7 @@ void GltfParser::on_async_finished()
         material->set_shader(RendererStorage::get_shader_from_source(shaders::mesh_forward::source, shaders::mesh_forward::path, shaders::mesh_forward::libraries, material, custom_defines));
     }
 
+    // Initialize nodes after async parsing
     std::function<void(Node*)> recurse_tree = [&](Node* node) {
 
         node->initialize();
@@ -1558,8 +1559,7 @@ void GltfParser::on_async_finished()
         }
     };
 
-    // Each time we load entities, get vpet nodes and the cameras
-    for (auto node : async_entities) {
+    for (auto node : async_nodes) {
         recurse_tree(node);
     }
 
