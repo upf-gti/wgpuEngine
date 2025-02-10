@@ -1455,8 +1455,8 @@ void WebGPUContext::create_swapchain(int width, int height)
     surface_config.presentMode = (support_mailbox_present) ? WGPUPresentMode_Mailbox : WGPUPresentMode_Fifo;
 #endif
     surface_config.format = swapchain_format;
-    surface_config.width = screen_width;
-    surface_config.height = screen_height;
+    surface_config.width = width;
+    surface_config.height = height;
 
     surface_config.alphaMode = WGPUCompositeAlphaMode_Opaque;
     surface_config.device = device;
