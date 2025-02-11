@@ -73,11 +73,19 @@ int Track::get_keyframe_index(float time)
     return idx;
 }
 
-uint32_t Track::add_keyframe(const Keyframe& k)
+uint32_t Track::add_keyframe(const Keyframe& k, bool sort)
 {
-    uint32_t count = keyframes.size();
+    uint32_t idx = keyframes.size();
 
     keyframes.push_back(k);
+
+    if (sort) {
+        std::sort(keyframes.begin(), keyframes.end(), [](const Keyframe& key0, const Keyframe& key1) {
+            return key0.time < key1.time;
+        });
+
+        idx = get_keyframe_index(k.time);
+    }
 
     if (std::holds_alternative<float>(k.value)) {
         type = eTrackType::TYPE_FLOAT;
@@ -92,7 +100,7 @@ uint32_t Track::add_keyframe(const Keyframe& k)
         type = eTrackType::TYPE_ROTATION;
     }
 
-    return count;
+    return idx;
 }
 
 void Track::delete_keyframe(int keyframe_idx)
