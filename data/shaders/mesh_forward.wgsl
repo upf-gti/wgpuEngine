@@ -196,7 +196,7 @@ fn fs_main(in: VertexOutput, @builtin(front_facing) is_front_facing: bool) -> Fr
     m.reflected_dir = normalize(reflect(-m.view_dir, m.normal));
 
     m.roughness = max(m.roughness, 0.04);
-    m.c_diff = mix(m.albedo, vec3f(0.0), m.metallic);
+    m.diffuse = mix(m.albedo, vec3f(0.0), m.metallic);
     m.f0 = mix(vec3f(0.04), m.albedo, m.metallic);
     m.f90 = vec3f(1.0);
     m.specular_weight = 1.0;

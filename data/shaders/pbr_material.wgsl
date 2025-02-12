@@ -6,7 +6,7 @@ struct PbrMaterial
     emissive : vec3f,
     f0 : vec3f,
     f90 : vec3f,
-    c_diff : vec3f,
+    diffuse : vec3f,
     specular_weight: f32,
     metallic : f32,
     roughness : f32,
