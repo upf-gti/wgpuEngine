@@ -64,7 +64,7 @@ public:
     uint32_t size();
     void resize(uint32_t size);
 
-    uint32_t add_keyframe(const Keyframe& k);
+    uint32_t add_keyframe(const Keyframe& k, bool sort = false);
     void delete_keyframe(int keyframe_idx);
 
     void serialize(std::ofstream& binary_scene_file);
