@@ -5,6 +5,7 @@
 #include "spdlog/spdlog.h"
 
 #include "rapidjson/document.h"
+#include "rapidjson/istreamwrapper.h"
 
 rapidjson::Document load_json(const std::string& filename) {
 
@@ -18,7 +19,10 @@ rapidjson::Document load_json(const std::string& filename) {
             continue;
         }
 
-        j.Parse(filename.c_str());
+        rapidjson::IStreamWrapper isw(ifs);
+        rapidjson::Document document;
+
+        j.ParseStream(isw);
         if (j.HasParseError()) {
             ifs.close();
             spdlog::error("Failed to parse json file {}", filename);
