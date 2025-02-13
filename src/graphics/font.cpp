@@ -6,7 +6,7 @@
 #include <filesystem>
 namespace fs = std::filesystem;
 
-#include "json.hpp"
+#include "rapidjson/document.h"
 
 using namespace std::string_literals;
 
@@ -14,7 +14,6 @@ std::map<std::string, Font*> Font::s_fonts;
 
 Font::~Font()
 {
-    delete font_description;
 }
 
 Font* Font::get(const std::string& font_name)
@@ -33,16 +32,14 @@ Font* Font::get(const std::string& font_name)
 
 void Font::load(const std::string& font_name)
 {
-    font_description = new json();
-
-    json j = *font_description = load_json("data/fonts/" + font_name + "/" + font_name + ".json"); 
+    rapidjson::Document j = load_json("data/fonts/" + font_name + "/" + font_name + ".json");
 
     // Load all pages
     {   
-        auto font_pages = j["pages"];
-        for (std::string page : font_pages)
+        const rapidjson::Value& font_pages = j["pages"];
+        for (rapidjson::SizeType i = 0; i < font_pages.Size(); i++)
         {
-            fs::path page_path = fs::path(page);
+            fs::path page_path = fs::path(font_pages[i].GetString());
             page_path.replace_extension("png");
             std::string filename = "data/fonts/" + font_name + "/" + page_path.string();
 
@@ -53,50 +50,57 @@ void Font::load(const std::string& font_name)
 
     // Font info
     {
-        auto& info = j["info"];
-        face = info["face"];
-        size = info["size"];
-        bold = info["bold"];
-        italic = info["italic"];
+        const rapidjson::Value& info = j["info"];
+        face = info["face"].GetString();
+        size = info["size"].GetInt();
+        bold = info["bold"].GetInt();
+        italic = info["italic"].GetInt();
 
-        std::vector<std::string> font_charset = info["charset"];
-        charset.resize(font_charset.size());
-        for (auto& character : font_charset) {
-            charset.push_back(character[0]);
+        const rapidjson::Value& font_charset = info["charset"];
+        charset.resize(font_charset.Size());
+        for (rapidjson::SizeType i = 0; i < font_charset.Size(); i++)
+        {
+            charset.push_back(font_charset[i].GetString()[0]);
         }
 
-        unicode = info["unicode"];
-        stretchH = info["stretchH"];
-        smooth = info["smooth"];
-        aa = info["aa"];
-        padding = glm::vec4(info["padding"][0], info["padding"][1], info["padding"][2], info["padding"][3]);
-        spacing = glm::vec2(info["spacing"][0], info["spacing"][1]);
+        unicode = info["unicode"].GetInt();
+        stretchH = info["stretchH"].GetInt();
+        smooth = info["smooth"].GetInt();
+        aa = info["aa"].GetInt();
 
-        auto& common = j["common"];
+        const rapidjson::Value& j_padding = info["padding"].GetArray();
+        const rapidjson::Value& j_spacing = info["spacing"].GetArray();
 
-        lineHeight = common["lineHeight"];
-        base = common["base"];
-        scaleW = common["scaleW"];
-        scaleH = common["scaleH"];
-        pages = common["pages"];
-        packed = common["packed"];
-        alphaChnl = common["alphaChnl"];
-        redChnl = common["redChnl"];
-        greenChnl = common["greenChnl"];
-        blueChnl = common["blueChnl"];
+        padding = glm::vec4(j_padding[0].GetInt(), j_padding[1].GetInt(), j_padding[2].GetInt(), j_padding[3].GetInt());
+        spacing = glm::vec2(j_spacing[0].GetInt(), j_spacing[1].GetInt());
 
-        auto& distanceField = j["distanceField"];
-        df_range = distanceField["distanceRange"];
+        const rapidjson::Value& common = j["common"];
+
+        lineHeight = common["lineHeight"].GetInt();
+        base = common["base"].GetInt();
+        scaleW = common["scaleW"].GetInt();
+        scaleH = common["scaleH"].GetInt();
+        pages = common["pages"].GetInt();
+        packed = common["packed"].GetInt();
+        alphaChnl = common["alphaChnl"].GetInt();
+        redChnl = common["redChnl"].GetInt();
+        greenChnl = common["greenChnl"].GetInt();
+        blueChnl = common["blueChnl"].GetInt();
+
+        const rapidjson::Value& distanceField = j["distanceField"];
+        df_range = distanceField["distanceRange"].GetInt();
     }
 
     // Fill kernings multimap
     {
-        auto& _kernings = j["kernings"];
-        for (auto& kerning : _kernings) {
+        const rapidjson::Value& _kernings = j["kernings"];
+        for (rapidjson::SizeType i = 0; i < _kernings.Size(); i++)
+        {
+            const rapidjson::Value& kerning = _kernings[i];
             CKerning k;
-            k.first = kerning["first"];
-            k.second = kerning["second"];
-            k.amount = kerning["amount"];
+            k.first = kerning["first"].GetInt();
+            k.second = kerning["second"].GetInt();
+            k.amount = kerning["amount"].GetInt();
 
             kernings.insert({ k.first,k });
         }
@@ -104,20 +108,22 @@ void Font::load(const std::string& font_name)
 
     // Fill character map with all its properties
     {
-        auto _characters = j["chars"];
-        for (auto& character : _characters)
+        const rapidjson::Value& _characters = j["chars"];
+        for (rapidjson::SizeType i = 0; i < _characters.Size(); i++)
         {
+            const rapidjson::Value& character = _characters[i];
+
             Character new_character;
-            new_character.id = character.value("id", -1);
-            new_character.index = character.value("index", -1);
-            std::string c = character["char"];
+            new_character.id = character.HasMember("id") ? character["id"].GetInt() : -1;
+            new_character.index = character.HasMember("index") ? character["index"].GetInt() : -1;
+            std::string c = character["char"].GetString();
             new_character.character = c[0];
-            glm::vec2 pos = new_character.pos = glm::vec2(character["x"], character["y"]) + glm::vec2(0.5f);
-            glm::vec2 size = new_character.size = glm::vec2(character["width"], character["height"]);
-            glm::vec2 off = new_character.offset = glm::vec2(character["xoffset"], character["yoffset"]);
-            int  adv = new_character.xadvance = character["xadvance"];
-            int  chnl = new_character.chnl = character["chnl"];
-            int  pg = new_character.page = character["page"];
+            glm::vec2 pos = new_character.pos = glm::vec2(character["x"].GetInt(), character["y"].GetInt()) + glm::vec2(0.5f);
+            glm::vec2 size = new_character.size = glm::vec2(character["width"].GetInt(), character["height"].GetInt());
+            glm::vec2 off = new_character.offset = glm::vec2(character["xoffset"].GetInt(), character["yoffset"].GetInt());
+            int  adv = new_character.xadvance = character["xadvance"].GetInt();
+            int  chnl = new_character.chnl = character["chnl"].GetInt();
+            int  pg = new_character.page = character["page"].GetInt();
 
             //A:00 C:10
             //B:01 D:11

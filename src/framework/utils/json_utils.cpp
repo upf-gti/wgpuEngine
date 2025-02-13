@@ -4,11 +4,11 @@
 
 #include "spdlog/spdlog.h"
 
-#include "json.hpp"
+#include "rapidjson/document.h"
 
-json load_json(const std::string& filename) {
+rapidjson::Document load_json(const std::string& filename) {
 
-	json j;
+    rapidjson::Document j;
 
     while (true) {
 
@@ -18,8 +18,8 @@ json load_json(const std::string& filename) {
             continue;
         }
 
-        j = json::parse(ifs, nullptr, false);
-        if (j.is_discarded()) {
+        j.Parse(filename.c_str());
+        if (j.HasParseError()) {
             ifs.close();
             spdlog::error("Failed to parse json file {}", filename);
             continue;

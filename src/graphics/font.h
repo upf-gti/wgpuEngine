@@ -22,7 +22,6 @@ public:
 
     ~Font();
 
-    nlohmann::json* font_description = nullptr;
     std::vector<Texture*> textures;
     std::map<uint32_t, Character> characters;
     std::multimap<int, CKerning> kernings;

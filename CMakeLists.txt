@@ -62,21 +62,6 @@ FetchContent_Declare(
     DOWNLOAD_NO_EXTRACT TRUE
 )
 
-# download nlohmann_json
-FetchContent_Declare(
-    nlohmann_json
-    URL https://raw.githubusercontent.com/nlohmann/json/develop/single_include/nlohmann/json.hpp
-    DOWNLOAD_DIR ${WGPU_DIR_LIBS}/nlohmann_json
-    DOWNLOAD_NO_EXTRACT TRUE
-)
-
-FetchContent_Declare(
-    nlohmann_json_fwd
-    URL https://raw.githubusercontent.com/nlohmann/json/develop/single_include/nlohmann/json_fwd.hpp
-    DOWNLOAD_DIR ${WGPU_DIR_LIBS}/nlohmann_json
-    DOWNLOAD_NO_EXTRACT TRUE
-)
-
 # download tiny_gltf
 FetchContent_Declare(
     tiny_gltf
@@ -85,7 +70,7 @@ FetchContent_Declare(
     DOWNLOAD_NO_EXTRACT TRUE
 )
 
-FetchContent_MakeAvailable(tinyobjloader stb_image nlohmann_json nlohmann_json_fwd tiny_gltf)
+FetchContent_MakeAvailable(tinyobjloader stb_image tiny_gltf)
 
 # Sources
 macro(WGPU_SOURCES_APPEND)
@@ -273,8 +258,8 @@ target_include_directories(${PROJECT_NAME} PUBLIC ${WGPU_DIR_LIBS}/tinyobjloader
 # stb
 target_include_directories(${PROJECT_NAME} PUBLIC ${WGPU_DIR_LIBS}/stb)
 
-# nlohmann_json
-target_include_directories(${PROJECT_NAME} PUBLIC ${WGPU_DIR_LIBS}/nlohmann_json)
+# rapidjson
+target_include_directories(${PROJECT_NAME} PUBLIC ${WGPU_DIR_LIBS}/rapidjson/include)
 
 # tiny_gltf
 target_include_directories(${PROJECT_NAME} PUBLIC ${WGPU_DIR_LIBS}/tiny_gltf)

@@ -28,3 +28,6 @@
 [submodule "libraries/mikktspace"]
 	path = libraries/mikktspace
 	url = https://github.com/mmikk/MikkTSpace.git
+[submodule "libraries/rapidjson"]
+	path = libraries/rapidjson
+	url = https://github.com/Tencent/rapidjson

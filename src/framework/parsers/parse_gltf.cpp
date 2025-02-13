@@ -2,14 +2,19 @@
 
 #include "glm/glm.hpp"
 
-#include "json.hpp"
-
 #define STBI_FAILURE_USERMSG
 #include "stb_image.h"
 
+#include "rapidjson/document.h"
+#include "rapidjson/prettywriter.h"
+#include "rapidjson/rapidjson.h"
+#include "rapidjson/stringbuffer.h"
+#include "rapidjson/writer.h"
+
 #define TINYGLTF_IMPLEMENTATION
+#define TINYGLTF_USE_RAPIDJSON
+#define TINYGLTF_NO_INCLUDE_RAPIDJSON
 #define TINYGLTF_NO_INCLUDE_STB_IMAGE
-#define TINYGLTF_NO_INCLUDE_JSON
 #define TINYGLTF_NO_STB_IMAGE_WRITE
 #include "tiny_gltf.h"
 
@@ -30,6 +35,8 @@
 #include "engine/scene.h"
 
 #include "shaders/mesh_forward.wgsl.gen.h"
+
+#include <filesystem>
 
 #include "spdlog/spdlog.h"
 

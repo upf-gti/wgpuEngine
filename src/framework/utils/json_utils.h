@@ -1,7 +1,7 @@
 #pragma once
 
-#include "json_fwd.hpp"
+#include "rapidjson/fwd.h"
 
-using json = nlohmann::json;
+#include <string>
 
-json load_json(const std::string& filename);
+rapidjson::Document load_json(const std::string& filename);
