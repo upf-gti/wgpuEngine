@@ -388,6 +388,7 @@ void Renderer::render()
 
         render_camera(render_lists, screen_surface_texture_view, eye_depth_texture_view[EYE_LEFT], render_instances_data, render_camera_bind_group, true, "forward_render");
     }
+#ifdef XR_SUPPORT
     else {
 
         xr_context->init_frame();
@@ -449,6 +450,7 @@ void Renderer::render()
             render_mirror(screen_surface_texture_view, custom_mirror_fbo_bind_group ? custom_mirror_fbo_bind_group : swapchain_bind_groups[xr_context->swapchains[0].image_index]);
         }
     }
+#endif
 
     // Render 2D
     if (!is_openxr_available || use_mirror_screen) {
@@ -952,9 +954,11 @@ void Renderer::prepare_cull_instancing(const Camera& camera, std::vector<std::ve
                 Material* rhs_mat = rhs.material;
 
                 bool equal_priority = lhs_mat->get_priority() == rhs_mat->get_priority();
+                bool equal_surface = lhs.surface == rhs.surface;
 
                 if (lhs_mat->get_priority() > rhs_mat->get_priority()) return true;
-                if (equal_priority && lhs_mat > rhs_mat) return true;
+                if (equal_priority && lhs.surface > rhs.surface) return true;
+                if (equal_priority && equal_surface && lhs_mat > rhs_mat) return true;
 
                 return false;
             });

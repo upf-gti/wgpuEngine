@@ -253,7 +253,7 @@ void Engine::init_shader_watchers()
         default:
             spdlog::error("Shader reload: Unknown file status");
         }
-        });
+    });
 #endif
 }
 
@@ -586,6 +586,7 @@ bool Engine::render_scene_tree_recursive(Node* entity)
                 ImGui::CloseCurrentPopup();
                 ImGui::EndPopup();
                 ImGui::TreePop();
+                selected_node = nullptr;
                 Node::emit_signal("@node_deleted", (void*)entity);
                 return true;
             }

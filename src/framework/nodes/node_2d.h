@@ -76,7 +76,7 @@ public:
     Node2D(const std::string& name, const glm::vec2& p, const glm::vec2& s, uint32_t parameter_flags = 0u);
     virtual ~Node2D();
 
-    virtual void initialize() {};
+    virtual void initialize() override {};
 
     virtual void add_child(Node2D* child);
     virtual void add_childs(const std::vector<Node2D*>& childs);
