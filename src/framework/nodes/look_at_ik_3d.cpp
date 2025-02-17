@@ -43,44 +43,46 @@ void LookAtIK3D::set_distance(float distance)
 
 void LookAtIK3D::set_solver(uint32_t solver_type)
 {
-    if (solver == solver_type) {
+    if (solver == solver_type || !ik_solver) {
         return;
-    }
-
-    if (ik_solver) {
-        delete ik_solver;
     }
 
     const std::vector<Transform>& chain = ik_solver->get_chain();
     const std::vector<uint32_t>& indices = ik_solver->get_joint_indices();
+    IKSolver* new_ik_solver = nullptr;
 
     switch (solver_type) {
     case IKSolvers::CCD:
     {
-        ik_solver = new CCDSolver();
-        ik_solver->set_chain(chain);
-        ik_solver->set_joint_indices(indices);
+        new_ik_solver = new CCDSolver();
+        new_ik_solver->set_chain(chain);
+        new_ik_solver->set_joint_indices(indices);
         break;
     }
     case IKSolvers::FABRIK:
     {
-        ik_solver = new FABRIKSolver();
-        ik_solver->set_chain(chain);
-        ik_solver->set_joint_indices(indices);
+        new_ik_solver = new FABRIKSolver();
+        new_ik_solver->set_chain(chain);
+        new_ik_solver->set_joint_indices(indices);
         break;
     }
     case IKSolvers::JACOBIAN:
     {
-        ik_solver = new JacobianSolver();
-        ik_solver->set_chain(chain);
-        ik_solver->set_joint_indices(indices);
-        ((JacobianSolver*)ik_solver)->set_rotation_axis();
+        new_ik_solver = new JacobianSolver();
+        new_ik_solver->set_chain(chain);
+        new_ik_solver->set_joint_indices(indices);
+        ((JacobianSolver*)new_ik_solver)->set_rotation_axis();
         break;
     }
     }
 
-    ik_solver->set_num_steps(max_iterations);
-    ik_solver->set_threshold(min_distance);
+    new_ik_solver->set_num_steps(max_iterations);
+    new_ik_solver->set_threshold(min_distance);
+
+    // delete old solver
+    delete ik_solver;
+
+    ik_solver = new_ik_solver;
 }
 
 void LookAtIK3D::update(float delta_time)
