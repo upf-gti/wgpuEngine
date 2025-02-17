@@ -14,25 +14,20 @@
 
 #include "glm/gtc/type_ptr.hpp"
 
+LookAtIK3D::LookAtIK3D(SkeletonInstance3D* new_skeleton_instance)
+    : LookAtIK3D()
+{
+    skeleton_instance = new_skeleton_instance;
+}
+
 LookAtIK3D::LookAtIK3D()
 {
     ik_solver = new FABRIKSolver();
     ik_solver->set_num_steps(max_iterations);
     ik_solver->set_threshold(min_distance);
 
-    set_name(name);
+    node_type = "LookAtIK3D";
 }
-
-LookAtIK3D::LookAtIK3D(SkeletonInstance3D* in_skeleton_instance)
-{
-    skeleton_instance = in_skeleton_instance;
-
-    ik_solver = new FABRIKSolver();
-    ik_solver->set_num_steps(max_iterations);
-    ik_solver->set_threshold(min_distance);
-
-    set_name(name);
-};
 
 void LookAtIK3D::set_iterations(uint32_t iterations)
 {
@@ -40,34 +35,25 @@ void LookAtIK3D::set_iterations(uint32_t iterations)
     ik_solver->set_num_steps(max_iterations);
 }
 
-void LookAtIK3D::set_distance(float& distance)
+void LookAtIK3D::set_distance(float distance)
 {
     min_distance = distance;
     ik_solver->set_threshold(min_distance);
 }
 
-void LookAtIK3D::set_root(const std::string& node)
-{
-    root = node;
-}
-
-void LookAtIK3D::set_end_effector(const std::string& node)
-{
-    end_effector = node;
-}
-
-void LookAtIK3D::set_target(Transform transform)
-{
-    target = transform;
-}
-
 void LookAtIK3D::set_solver(uint32_t solver_type)
 {
-    if (solver == solver_type)
+    if (solver == solver_type) {
         return;
+    }
 
-    std::vector<Transform> chain = ik_solver->get_chain();
-    std::vector<uint32_t> indices = ik_solver->get_joint_indices();
+    if (ik_solver) {
+        delete ik_solver;
+    }
+
+    const std::vector<Transform>& chain = ik_solver->get_chain();
+    const std::vector<uint32_t>& indices = ik_solver->get_joint_indices();
+
     switch (solver_type) {
     case IKSolvers::CCD:
     {
@@ -92,56 +78,21 @@ void LookAtIK3D::set_solver(uint32_t solver_type)
         break;
     }
     }
+
     ik_solver->set_num_steps(max_iterations);
     ik_solver->set_threshold(min_distance);
-}
-
-void LookAtIK3D::set_skeleton_instance(SkeletonInstance3D* new_skeleton_instance)
-{
-    skeleton_instance = new_skeleton_instance;
-}
-
-
-uint32_t LookAtIK3D::get_iterations()
-{
-    return max_iterations;
-}
-
-float LookAtIK3D::get_distance()
-{
-    return min_distance;
-}
-
-const std::string& LookAtIK3D::get_root()
-{
-    return root;
-}
-
-const std::string& LookAtIK3D::get_end_effector()
-{
-    return end_effector;
-}
-
-const Transform& LookAtIK3D::get_target()
-{
-    return target;
-}
-
-uint32_t LookAtIK3D::get_solver()
-{
-    return solver;
 }
 
 void LookAtIK3D::update(float delta_time)
 {
     std::vector<Transform>& chain = ik_solver->get_chain();
-    if (!chain.size())
+    if (!chain.size()) {
         return;
+    }
 
-    std::vector<uint32_t> joints_ids = ik_solver->get_joint_indices();
+    const std::vector<uint32_t>& joints_ids = ik_solver->get_joint_indices();
 
     Skeleton* skeleton = skeleton_instance->get_skeleton();
-    std::vector<std::string> joint_names = skeleton->get_joint_names();
     Pose& current_pose = skeleton->get_current_pose();
 
     Transform global_transform = Transform::mat4_to_transform(skeleton_instance->get_global_model());
@@ -159,21 +110,19 @@ void LookAtIK3D::update(float delta_time)
     // Convert chain root transform from global scene space to local joint space
     Transform world_parent;
  
-    if(current_pose.get_parent(joints_ids[0]) > -1)
+    if (current_pose.get_parent(joints_ids[0]) > -1) {
         world_parent = current_pose.get_global_transform(current_pose.get_parent(joints_ids[0])); // Get joint's parent transform in pose space
+    }
 
     Transform world_child = ik_solver->get_local_transform(0); // Get root transform from IK chain (in global space) --> root is always in global space
     Transform local_child = Transform::combine(Transform::inverse(global_transform), world_child); // Convert root transform in pose space
     local_child = Transform::combine(Transform::inverse(world_parent), local_child); // Convert root transform in local space
     current_pose.set_local_transform(joints_ids[0], local_child);
 
-    //skeleton_instance->joint_nodes[joints_ids[0]]->set_transform(local_child);
-    for (uint32_t i = 1; i < joints_ids.size(); i++)
-    {
+    for (uint32_t i = 1; i < joints_ids.size(); i++) {
         local_child = ik_solver->get_local_transform(i);
         current_pose.set_local_transform(joints_ids[i], local_child);
     }
-
 }
 
 void LookAtIK3D::render_gui()
@@ -199,13 +148,13 @@ void LookAtIK3D::render_gui()
             if (skeleton_instance) {
                 Skeleton* skeleton = skeleton_instance->get_skeleton();
                 std::vector<std::string> joint_names = skeleton->get_joint_names();
-                if (ImGui::BeginCombo("Root", root.c_str()))
+                if (ImGui::BeginCombo("Root", root_name.c_str()))
                 {
                     for (auto& name : joint_names)
                     {
-                        bool is_selected = (root == name);
+                        bool is_selected = (root_name == name);
                         if (ImGui::Selectable(name.c_str(), is_selected)) {
-                            root = name;
+                            root_name = name;
                             end_effector = "";
                         }
                         if (is_selected) {
@@ -222,7 +171,7 @@ void LookAtIK3D::render_gui()
                         bool is_selected = (end_effector == name);
                         if (ImGui::Selectable(name.c_str(), is_selected)) {
                             end_effector = name;
-                            if (root != "") {
+                            if (root_name != "") {
                                 create_chain();
                             }
                         }
@@ -278,45 +227,46 @@ void LookAtIK3D::render_gui()
 
 void LookAtIK3D::create_chain()
 {
-    if (skeleton_instance) {
+    if (!skeleton_instance) {
+        return;
+    }
 
-        Skeleton* skeleton = skeleton_instance->get_skeleton();
-        std::vector<std::string> joint_names = skeleton->get_joint_names();
-        std::vector<Transform> chain;
-        std::vector<uint32_t> indices;
+    Skeleton* skeleton = skeleton_instance->get_skeleton();
+    const std::vector<std::string>& joint_names = skeleton->get_joint_names();
+    std::vector<Transform> chain;
+    std::vector<uint32_t> indices;
 
-        int end_effector_id = -1;
-        for (uint32_t i = 0; i < joint_names.size(); i++) {
-            if (joint_names[i] == end_effector) {
-                end_effector_id = i;
-                break;
-            }
+    int end_effector_id = -1;
+    for (uint32_t i = 0; i < joint_names.size(); i++) {
+        if (joint_names[i] == end_effector) {
+            end_effector_id = i;
+            break;
         }
+    }
 
-        Pose current_pose = skeleton->get_rest_pose();
-        uint32_t i = end_effector_id;
-        while(joint_names[i] != root) {
-            chain.push_back(current_pose.get_local_transform(i));
-            indices.push_back(i);
-            i = current_pose.get_parent(i);
-        }
-
-        // Convert root joint transform from pose space to global space
-        Transform global_transform = Transform::mat4_to_transform(skeleton_instance->get_global_model());
-        chain.push_back(Transform::combine(global_transform, current_pose.get_global_transform(i)));
+    Pose current_pose = skeleton->get_rest_pose();
+    uint32_t i = end_effector_id;
+    while(joint_names[i] != root_name) {
+        chain.push_back(current_pose.get_local_transform(i));
         indices.push_back(i);
+        i = current_pose.get_parent(i);
+    }
 
-        // Revert the chain in order to get the root joint as first element
-        std::reverse(chain.begin(), chain.end());
-        std::reverse(indices.begin(), indices.end());
-        ik_solver->set_chain(chain);
-        ik_solver->set_joint_indices(indices);
+    // Convert root joint transform from pose space to global space
+    Transform global_transform = Transform::mat4_to_transform(skeleton_instance->get_global_model());
+    chain.push_back(Transform::combine(global_transform, current_pose.get_global_transform(i)));
+    indices.push_back(i);
 
-        // Convert end effector position from pose space to global space and set it to the target
-        target.set_position(Transform::combine(global_transform, current_pose.get_global_transform(ik_solver->get_joint_indices()[chain.size() - 1])).get_position());
+    // Revert the chain in order to get the root joint as first element
+    std::reverse(chain.begin(), chain.end());
+    std::reverse(indices.begin(), indices.end());
+    ik_solver->set_chain(chain);
+    ik_solver->set_joint_indices(indices);
 
-        if (solver == IKSolvers::JACOBIAN) {
-            ((JacobianSolver*)ik_solver)->set_rotation_axis();
-        }
+    // Convert end effector position from pose space to global space and set it to the target
+    target.set_position(Transform::combine(global_transform, current_pose.get_global_transform(ik_solver->get_joint_indices()[chain.size() - 1])).get_position());
+
+    if (solver == IKSolvers::JACOBIAN) {
+        ((JacobianSolver*)ik_solver)->set_rotation_axis();
     }
 }
