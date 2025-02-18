@@ -110,7 +110,6 @@ You will need to install the following tools:
 - [Git](https://git-scm.com/)
 - [CMake](https://cmake.org/download/)
 - [Python](https://www.python.org/) (added to your PATH)
-- [Vulkan SDK](https://www.lunarg.com/vulkan-sdk/) (for Dawn native builds)
 
 and clone the Github repository, also initializing the submodules:
 
