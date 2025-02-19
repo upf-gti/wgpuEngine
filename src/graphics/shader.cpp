@@ -401,11 +401,11 @@ bool Shader::load(std::string& shader_source, std::vector<std::string> define_sp
         user_data.any_error = status != WGPUCompilationInfoRequestStatus_Success;
     };
 
-    WGPUCompilationInfoCallbackInfo2 callback_info = {};
+    WGPUCompilationInfoCallbackInfo callback_info = {};
     callback_info.callback = compilation_infocallback;
     callback_info.mode = WGPUCallbackMode_AllowSpontaneous;
     callback_info.userdata1 = &user_data;
-    wgpuShaderModuleGetCompilationInfo2(shader_module, callback_info);
+    wgpuShaderModuleGetCompilationInfo(shader_module, callback_info);
 #endif
 
     if (!user_data.any_error) {

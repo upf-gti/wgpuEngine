@@ -1,5 +1,5 @@
 diff --git a/backends/imgui_impl_wgpu.cpp b/backends/imgui_impl_wgpu.cpp
-index a81662d8..1bf6a115 100644
+index a81662d84..bff4261b1 100644
 --- a/backends/imgui_impl_wgpu.cpp
 +++ b/backends/imgui_impl_wgpu.cpp
 @@ -47,9 +47,9 @@
@@ -48,6 +48,24 @@ index a81662d8..1bf6a115 100644
      stage_desc.entryPoint = { "main", WGPU_STRLEN };
  #else
      stage_desc.entryPoint = "main";
+@@ -399,7 +393,7 @@ void ImGui_ImplWGPU_RenderDrawData(ImDrawData* draw_data, WGPURenderPassEncoder
+         {
+             nullptr,
+             "Dear ImGui Vertex buffer",
+-#ifdef IMGUI_IMPL_WEBGPU_BACKEND_DAWN
++#if defined(IMGUI_IMPL_WEBGPU_BACKEND_DAWN) || defined(__EMSCRIPTEN__)
+             WGPU_STRLEN,
+ #endif
+             WGPUBufferUsage_CopyDst | WGPUBufferUsage_Vertex,
+@@ -426,7 +420,7 @@ void ImGui_ImplWGPU_RenderDrawData(ImDrawData* draw_data, WGPURenderPassEncoder
+         {
+             nullptr,
+             "Dear ImGui Index buffer",
+-#ifdef IMGUI_IMPL_WEBGPU_BACKEND_DAWN
++#if defined(IMGUI_IMPL_WEBGPU_BACKEND_DAWN) || defined(__EMSCRIPTEN__)
+             WGPU_STRLEN,
+ #endif
+             WGPUBufferUsage_CopyDst | WGPUBufferUsage_Index,
 @@ -539,7 +533,7 @@ static void ImGui_ImplWGPU_CreateFontsTexture()
      // Upload texture to graphics system
      {
@@ -57,6 +75,15 @@ index a81662d8..1bf6a115 100644
          tex_desc.label = { "Dear ImGui Font Texture", WGPU_STRLEN };
  #else
          tex_desc.label = "Dear ImGui Font Texture";
+@@ -606,7 +600,7 @@ static void ImGui_ImplWGPU_CreateUniformBuffer()
+     {
+         nullptr,
+         "Dear ImGui Uniform buffer",
+-#ifdef IMGUI_IMPL_WEBGPU_BACKEND_DAWN
++#if defined(IMGUI_IMPL_WEBGPU_BACKEND_DAWN) || defined(__EMSCRIPTEN__)
+         WGPU_STRLEN,
+ #endif
+         WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform,
 @@ -672,9 +666,9 @@ bool ImGui_ImplWGPU_CreateDeviceObjects()
      // Vertex input configuration
      WGPUVertexAttribute attribute_desc[] =

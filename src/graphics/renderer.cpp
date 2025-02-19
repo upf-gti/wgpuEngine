@@ -521,11 +521,11 @@ void Renderer::render()
 
             //wgpuRenderPassEncoderSetViewport(render_pass, 0.0f,0.0f,1600.0f,900.0f,0.0f,1.0f);
 
-            wgpuRenderPassEncoderPushDebugGroup(pass, "ImGui");
+            webgpu_context->push_debug_group(pass, { "ImGui", WGPU_STRLEN });
 
             ImGui_ImplWGPU_RenderDrawData(ImGui::GetDrawData(), pass);
 
-            wgpuRenderPassEncoderPopDebugGroup(pass);
+            webgpu_context->pop_debug_group(pass);
 
             wgpuRenderPassEncoderEnd(pass);
             wgpuRenderPassEncoderRelease(pass);
@@ -609,7 +609,7 @@ void Renderer::render_camera(const std::vector<std::vector<sRenderData>>& render
         render_pass_descr.label = { pass_name.c_str(), pass_name.length() };
 
 #ifndef __EMSCRIPTEN__
-        std::vector<WGPURenderPassTimestampWrites> timestampWrites(1);
+        std::vector<WGPUPassTimestampWrites> timestampWrites(1);
         timestampWrites[0].beginningOfPassWriteIndex = timestamp(global_command_encoder, (pass_name + "_pre_render").c_str());
         timestampWrites[0].querySet = timestamp_query_set;
         timestampWrites[0].endOfPassWriteIndex = timestamp(global_command_encoder, (pass_name + "_render").c_str());
@@ -620,14 +620,14 @@ void Renderer::render_camera(const std::vector<std::vector<sRenderData>>& render
         WGPURenderPassEncoder render_pass = wgpuCommandEncoderBeginRenderPass(global_command_encoder, &render_pass_descr);
 
 #ifndef NDEBUG
-        wgpuRenderPassEncoderPushDebugGroup(render_pass, pass_name.c_str());
+        webgpu_context->push_debug_group(render_pass, { pass_name.c_str(), WGPU_STRLEN });
 #endif
 
         if (custom_pre_opaque_pass) {
             custom_pre_opaque_pass(render_pass, camera_bind_group, custom_pass_user_data, camera_offset * camera_buffer_stride);
         }
 
-        render_opaque(render_pass, render_lists, instance_data, camera_bind_group, camera_offset* camera_buffer_stride);
+        render_opaque(render_pass, render_lists, instance_data, camera_bind_group, camera_offset * camera_buffer_stride);
 
         if (custom_post_opaque_pass) {
             custom_post_opaque_pass(render_pass, camera_bind_group, custom_pass_user_data, camera_offset * camera_buffer_stride);
@@ -648,7 +648,7 @@ void Renderer::render_camera(const std::vector<std::vector<sRenderData>>& render
         }
 
 #ifndef NDEBUG
-        wgpuRenderPassEncoderPopDebugGroup(render_pass);
+        webgpu_context->pop_debug_group(render_pass);
 #endif
 
         wgpuRenderPassEncoderEnd(render_pass);
@@ -838,7 +838,7 @@ void Renderer::get_timestamps()
         last_frame_timestamps = time_diffs;
 
         delete query_index_cpy;
-    };
+        };
 
     // copy query_index, otherwise it'd have been already modified when reading
     uint8_t* query_index_cpy = new uint8_t();
@@ -961,7 +961,7 @@ void Renderer::prepare_cull_instancing(const Camera& camera, std::vector<std::ve
                 if (equal_priority && equal_surface && lhs_mat > rhs_mat) return true;
 
                 return false;
-            });
+                });
         }
         //else {
         //    // Sort transparent render_list by distance to camera
@@ -1048,10 +1048,11 @@ void Renderer::prepare_cull_instancing(const Camera& camera, std::vector<std::ve
                 j += render_data.repeat;
             }
 
-        } else
-        if (instances > 0) {
-            webgpu_context->update_buffer(std::get<WGPUBuffer>(instances_data.instances_data_uniforms[i].data), 0, instances_data.instances_data[i].data(), sizeof(sUniformData) * instances);
         }
+        else
+            if (instances > 0) {
+                webgpu_context->update_buffer(std::get<WGPUBuffer>(instances_data.instances_data_uniforms[i].data), 0, instances_data.instances_data[i].data(), sizeof(sUniformData) * instances);
+            }
     }
 }
 
@@ -1145,7 +1146,7 @@ void Renderer::render_render_list(WGPURenderPassEncoder render_pass, const std::
         }
 
         //#ifndef NDEBUG
-        //        wgpuRenderPassEncoderPushDebugGroup(render_pass, render_data.surface->get_name().c_str());
+        //        webgpu_context->push_debug_group(render_pass, render_data.surface->get_name().c_str());
         //#endif
 
         if (material->get_type() == MATERIAL_UI) {
@@ -1175,7 +1176,7 @@ void Renderer::render_render_list(WGPURenderPassEncoder render_pass, const std::
 
 
         //#ifndef NDEBUG
-        //        wgpuRenderPassEncoderPopDebugGroup(render_pass);
+        //        webgpu_context->pop_debug_group(render_pass);
         //#endif
 
         prev_pipeline = pipeline;
@@ -1187,33 +1188,33 @@ void Renderer::render_render_list(WGPURenderPassEncoder render_pass, const std::
 void Renderer::render_opaque(WGPURenderPassEncoder render_pass, const std::vector<std::vector<sRenderData>>& render_lists, const sInstanceData& instance_data, WGPUBindGroup camera_bind_group, uint32_t camera_buffer_stride)
 {
 #ifndef NDEBUG
-    wgpuRenderPassEncoderPushDebugGroup(render_pass, "Opaque");
+    webgpu_context->push_debug_group(render_pass, { "Opaque", WGPU_STRLEN });
 #endif
 
     render_render_list(render_pass, render_lists[RENDER_LIST_OPAQUE], RENDER_LIST_OPAQUE, instance_data, camera_bind_group, camera_buffer_stride);
 
 #ifndef NDEBUG
-    wgpuRenderPassEncoderPopDebugGroup(render_pass);
+    webgpu_context->pop_debug_group(render_pass);
 #endif
 }
 
 void Renderer::render_transparent(WGPURenderPassEncoder render_pass, const std::vector<std::vector<sRenderData>>& render_lists, const sInstanceData& instance_data, WGPUBindGroup camera_bind_group, uint32_t camera_buffer_stride)
 {
 #ifndef NDEBUG
-    wgpuRenderPassEncoderPushDebugGroup(render_pass, "Transparent");
+    webgpu_context->push_debug_group(render_pass, { "Transparent", WGPU_STRLEN });
 #endif
 
     render_render_list(render_pass, render_lists[RENDER_LIST_TRANSPARENT], RENDER_LIST_TRANSPARENT, instance_data, camera_bind_group, camera_buffer_stride);
 
 #ifndef NDEBUG
-    wgpuRenderPassEncoderPopDebugGroup(render_pass);
+    webgpu_context->pop_debug_group(render_pass);
 #endif
 }
 
 void Renderer::render_splats(WGPURenderPassEncoder render_pass, const std::vector<std::vector<sRenderData>>& render_lists, const sInstanceData& instance_data, WGPUBindGroup camera_bind_group, uint32_t camera_buffer_stride)
 {
 #ifndef NDEBUG
-    wgpuRenderPassEncoderPushDebugGroup(render_pass, "Gaussian Splats");
+    webgpu_context->push_debug_group(render_pass, { "Gaussian Splats", WGPU_STRLEN });
 #endif
 
     for (GSNode* gs_node : gs_scenes_list) {
@@ -1232,14 +1233,14 @@ void Renderer::render_splats(WGPURenderPassEncoder render_pass, const std::vecto
     }
 
 #ifndef NDEBUG
-    wgpuRenderPassEncoderPopDebugGroup(render_pass);
+    webgpu_context->pop_debug_group(render_pass);
 #endif
 }
 
 void Renderer::render_2D(WGPURenderPassEncoder render_pass, const std::vector<std::vector<sRenderData>>& render_lists, const sInstanceData& instance_data, WGPUBindGroup camera_bind_group)
 {
 #ifndef NDEBUG
-    wgpuRenderPassEncoderPushDebugGroup(render_pass, "2D");
+    webgpu_context->push_debug_group(render_pass, { "2D", WGPU_STRLEN });
 #endif
 
     render_render_list(render_pass, render_lists[RENDER_LIST_2D], RENDER_LIST_2D, instance_data, camera_bind_group);
@@ -1247,7 +1248,7 @@ void Renderer::render_2D(WGPURenderPassEncoder render_pass, const std::vector<st
     render_render_list(render_pass, render_lists[RENDER_LIST_2D_TRANSPARENT], RENDER_LIST_2D_TRANSPARENT, instance_data, camera_bind_group);
 
 #ifndef NDEBUG
-    wgpuRenderPassEncoderPopDebugGroup(render_pass);
+    webgpu_context->pop_debug_group(render_pass);
 #endif
 }
 

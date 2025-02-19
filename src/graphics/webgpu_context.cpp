@@ -43,9 +43,9 @@ WGPUStringView get_string_view(const char* str)
     return { str, strlen(str) };
 }
 
-void PrintDeviceError(WGPUErrorType errorType, const char* message, void* userdata) {
+void PrintDeviceError(WGPUDevice const* device, WGPUErrorType type, struct WGPUStringView message, void* userdata1, void* userdata2) {
     const char* errorTypeName = "";
-    switch (errorType) {
+    switch (type) {
     case WGPUErrorType_Validation:
         errorTypeName = "Validation";
         break;
@@ -55,20 +55,20 @@ void PrintDeviceError(WGPUErrorType errorType, const char* message, void* userda
     case WGPUErrorType_Unknown:
         errorTypeName = "Unknown";
         break;
-    case WGPUErrorType_DeviceLost:
-        errorTypeName = "Device lost";
+    case WGPUErrorType_Internal:
+        errorTypeName = "Internal";
         break;
     default:
         return;
     }
 
-    spdlog::error("{} error: {}", errorTypeName, message);
+    spdlog::error("{} error: {}", errorTypeName, message.data);
     // assert(0);
 }
 
-void DeviceLostCallback(WGPUDevice const* device, WGPUDeviceLostReason reason, const char* message, void*) {
+void DeviceLostCallback(WGPUDevice const* device, WGPUDeviceLostReason reason, struct WGPUStringView message, void* userdata1, void* userdata2) {
     if (reason != WGPUDeviceLostReason_Destroyed) {
-        spdlog::error("Device lost: {}", message);
+        spdlog::error("Device lost: {}", message.data);
     }
 }
 
@@ -106,21 +106,21 @@ WGPUFuture WebGPUContext::request_adapter(OpenXRContext* xr_context, bool is_ope
 #endif
 
     // request adapter
-    WGPURequestAdapterCallbackInfo2 adapter_callback_info = {};
+    WGPURequestAdapterCallbackInfo adapter_callback_info = {};
     adapter_callback_info.mode = WGPUCallbackMode_AllowProcessEvents;
     adapter_callback_info.userdata1 = &adapter;
-    adapter_callback_info.callback = [](WGPURequestAdapterStatus status, WGPUAdapter adapter, char const* message, void* userdata1, void* userdata2) {
+    adapter_callback_info.callback = [](WGPURequestAdapterStatus status, WGPUAdapter adapter, WGPUStringView message, void* userdata1, void* userdata2) {
         WGPUAdapter* out_adapter = reinterpret_cast<WGPUAdapter*>(userdata1);
         if (status == WGPURequestAdapterStatus_Success) {
             *out_adapter = adapter;
         }
         else {
-            spdlog::error("Could not get WebGPU adapter: {}", message);
+            spdlog::error("Could not get WebGPU adapter: {}", message.data);
         }
     };
 
     // Call to the WebGPU request adapter procedure
-    return wgpuInstanceRequestAdapter2(
+    return wgpuInstanceRequestAdapter(
         instance,
         &adapter_opts,
         adapter_callback_info
@@ -175,20 +175,20 @@ WGPUFuture WebGPUContext::request_device(const std::vector<WGPUFeatureName> requ
 
     // request device
     {
-        WGPURequestDeviceCallbackInfo2 device_callback_info = {};
+        WGPURequestDeviceCallbackInfo device_callback_info = {};
         device_callback_info.mode = WGPUCallbackMode_AllowProcessEvents;
         device_callback_info.userdata1 = &device;
-        device_callback_info.callback = [](WGPURequestDeviceStatus status, WGPUDevice device, char const* message, void* userdata1, void* userdata2) {
+        device_callback_info.callback = [](WGPURequestDeviceStatus status, WGPUDevice device, WGPUStringView message, void* userdata1, void* userdata2) {
             WGPUDevice* out_device = reinterpret_cast<WGPUDevice*>(userdata1);
             if (status == WGPURequestDeviceStatus_Success) {
                 *out_device = device;
             }
             else {
-                spdlog::error("Could not get WebGPU device: {}", message);
+                spdlog::error("Could not get WebGPU device: {}", message.data);
             }
         };
 
-        return wgpuAdapterRequestDevice2(
+        return wgpuAdapterRequestDevice(
             adapter,
             &device_desc,
             device_callback_info
@@ -203,10 +203,10 @@ void WebGPUContext::print_device_info()
 
     //spdlog::info("VendorID: {0:x}", adapter_info.vendorID);
     //spdlog::info("Vendor: {}", adapter_info.vendor);
-    spdlog::info("Architecture: {}", adapter_info.architecture);
+    spdlog::info("Architecture: {:.{}}", adapter_info.architecture.data, adapter_info.architecture.length);
     //spdlog::info("DeviceID: {0:x}", adapter_info.deviceID);
-    spdlog::info("Name: {}", adapter_info.device);
-    spdlog::info("Driver description: {}\n", adapter_info.description);
+    spdlog::info("Name: {:.{}}", adapter_info.device.data, adapter_info.device.length);
+    spdlog::info("Driver description: {:.{}}\n", adapter_info.description.data, adapter_info.description.length);
 }
 
 int WebGPUContext::initialize(bool create_screen_swapchain)
@@ -215,11 +215,9 @@ int WebGPUContext::initialize(bool create_screen_swapchain)
 
 #ifdef __EMSCRIPTEN__
 
-    wgpuDeviceSetUncapturedErrorCallback(device, PrintDeviceError, nullptr);
-
     // emscripten-specific extension not supported by webgpu.cpp
-    WGPUSurfaceSourceCanvasHTMLSelector_Emscripten canvDesc = {};
-    canvDesc.chain.sType = WGPUSType_SurfaceSourceCanvasHTMLSelector_Emscripten;
+    WGPUEmscriptenSurfaceSourceCanvasHTMLSelector canvDesc = {};
+    canvDesc.chain.sType = WGPUSType_EmscriptenSurfaceSourceCanvasHTMLSelector;
     canvDesc.selector = { "canvas", WGPU_STRLEN };
 
     WGPUSurfaceDescriptor surfDesc = {};
@@ -553,7 +551,7 @@ void WebGPUContext::create_cubemap_mipmaps(WGPUTexture texture, WGPUExtent3D tex
     compute_pass_desc.timestampWrites = nullptr;
     WGPUComputePassEncoder compute_pass = wgpuCommandEncoderBeginComputePass(command_encoder, &compute_pass_desc);
 
-    wgpuComputePassEncoderPushDebugGroup(compute_pass, "Create Cubemap Mipmaps");
+    push_debug_group(compute_pass, { "Create Cubemap Mipmaps", WGPU_STRLEN } );
 
     Uniform sampler;
     sampler.data = create_sampler(WGPUAddressMode_ClampToEdge, WGPUAddressMode_ClampToEdge, WGPUAddressMode_ClampToEdge, WGPUFilterMode_Linear, WGPUFilterMode_Linear);
@@ -634,7 +632,7 @@ void WebGPUContext::create_cubemap_mipmaps(WGPUTexture texture, WGPUExtent3D tex
         wgpuTextureViewRelease(texture_view);
     }
 
-    wgpuComputePassEncoderPopDebugGroup(compute_pass);
+    pop_debug_group(compute_pass);
 
     // Finalize compute_raymarching pass
     wgpuComputePassEncoderEnd(compute_pass);
@@ -805,11 +803,15 @@ void WebGPUContext::read_buffer(WGPUBuffer buffer, size_t size, void* output_dat
     userdata.buffer_size = size;
     userdata.data = output_data;
 
-    WGPUBufferMapCallback callback = [](WGPUBufferMapAsyncStatus status, void* userdata) {
+    WGPUBufferMapCallbackInfo callback_info;
+    callback_info.mode = WGPUCallbackMode_AllowProcessEvents;
+    callback_info.userdata1 = &userdata;
 
-        BufferData* buffer_data = reinterpret_cast<BufferData*>(userdata);
+    callback_info.callback = [](WGPUMapAsyncStatus status, struct WGPUStringView message, void* userdata1, void* userdata2) {
 
-        if (status == WGPUBufferMapAsyncStatus_Success) {
+        BufferData* buffer_data = reinterpret_cast<BufferData*>(userdata1);
+
+        if (status == WGPUMapAsyncStatus_Success) {
             memcpy(buffer_data->data, wgpuBufferGetConstMappedRange(buffer_data->output_buffer, 0, buffer_data->buffer_size), buffer_data->buffer_size);
             wgpuBufferUnmap(buffer_data->output_buffer);
         }
@@ -822,7 +824,7 @@ void WebGPUContext::read_buffer(WGPUBuffer buffer, size_t size, void* output_dat
     };
 
     bool finished = false;
-    wgpuBufferMapAsync(output_buffer, WGPUMapMode_Read, 0, size, callback, &userdata);
+    wgpuBufferMapAsync(output_buffer, WGPUMapMode_Read, 0, size, callback_info);
 
     while (!userdata.finished) {
         process_events();
@@ -863,11 +865,15 @@ void WebGPUContext::read_buffer_async(WGPUBuffer buffer, size_t size, const std:
     userdata->read_callback = read_callback;
     userdata->read_userdata = read_userdata;
 
-    WGPUBufferMapCallback callback = [](WGPUBufferMapAsyncStatus status, void* userdata) {
+    WGPUBufferMapCallbackInfo callback_info;
+    callback_info.mode = WGPUCallbackMode_AllowProcessEvents;
+    callback_info.userdata1 = &userdata;
 
-        BufferData* buffer_data = reinterpret_cast<BufferData*>(userdata);
+    callback_info.callback = [](WGPUMapAsyncStatus status, struct WGPUStringView message, void* userdata1, void* userdata2) {
 
-        if (status == WGPUBufferMapAsyncStatus_Success) {
+        BufferData* buffer_data = reinterpret_cast<BufferData*>(userdata1);
+
+        if (status == WGPUMapAsyncStatus_Success) {
             const void* read_data = wgpuBufferGetConstMappedRange(buffer_data->output_buffer, 0, buffer_data->buffer_size);
             buffer_data->read_callback(read_data, buffer_data->read_userdata);
             wgpuBufferUnmap(buffer_data->output_buffer);
@@ -880,7 +886,7 @@ void WebGPUContext::read_buffer_async(WGPUBuffer buffer, size_t size, const std:
         delete buffer_data;
     };
 
-    wgpuBufferMapAsync(output_buffer, WGPUMapMode_Read, 0, size, callback, userdata);
+    wgpuBufferMapAsync(output_buffer, WGPUMapMode_Read, 0, size, callback_info);
 }
 
 WebGPUContext::sMipmapPipeline WebGPUContext::get_mipmap_pipeline(WGPUTextureFormat texture_format)
@@ -912,6 +918,34 @@ WebGPUContext::sMipmapPipeline WebGPUContext::get_mipmap_pipeline(WGPUTextureFor
     mipmap_pipelines[texture_format] = mipmap_pipeline;
 
     return mipmap_pipeline;
+}
+
+void WebGPUContext::push_debug_group(WGPURenderPassEncoder render_pass, WGPUStringView label)
+{
+#ifndef __EMSCRIPTEN__
+    wgpuRenderPassEncoderPushDebugGroup(render_pass, label);
+#endif
+}
+
+void WebGPUContext::push_debug_group(WGPUComputePassEncoder compute_pass, WGPUStringView label)
+{
+#ifndef __EMSCRIPTEN__
+    wgpuComputePassEncoderPushDebugGroup(compute_pass, label);
+#endif
+}
+
+void WebGPUContext::pop_debug_group(WGPURenderPassEncoder render_pass)
+{
+#ifndef __EMSCRIPTEN__
+    wgpuRenderPassEncoderPopDebugGroup(render_pass);
+#endif
+}
+
+void WebGPUContext::pop_debug_group(WGPUComputePassEncoder compute_pass)
+{
+#ifndef __EMSCRIPTEN__
+    wgpuComputePassEncoderPopDebugGroup(compute_pass);
+#endif
 }
 
 void WebGPUContext::process_events()
@@ -1092,7 +1126,7 @@ WGPURenderPipeline WebGPUContext::create_render_pipeline(WGPUShaderModule render
 }
 
 void WebGPUContext::create_render_pipeline_async(WGPUShaderModule render_shader_module, WGPUPipelineLayout pipeline_layout, const std::vector<WGPUVertexBufferLayout>& vertex_attributes,
-    WGPUColorTargetState color_target, WGPUCreateRenderPipelineAsyncCallbackInfo2 callback_info, const RenderPipelineDescription& description, std::vector< WGPUConstantEntry> constants)
+    WGPUColorTargetState color_target, WGPUCreateRenderPipelineAsyncCallbackInfo callback_info, const RenderPipelineDescription& description, std::vector< WGPUConstantEntry> constants)
 {
     WGPUVertexState vertex_state = {};
     vertex_state.module = render_shader_module;
@@ -1149,7 +1183,7 @@ void WebGPUContext::create_render_pipeline_async(WGPUShaderModule render_shader_
         pipeline_descr.fragment = &fragment_state;
     }
 
-    wgpuDeviceCreateRenderPipelineAsync2(device, &pipeline_descr, callback_info);
+    wgpuDeviceCreateRenderPipelineAsync(device, &pipeline_descr, callback_info);
 }
 
 WGPUComputePipeline WebGPUContext::create_compute_pipeline(WGPUShaderModule compute_shader_module, WGPUPipelineLayout pipeline_layout,
@@ -1167,7 +1201,7 @@ WGPUComputePipeline WebGPUContext::create_compute_pipeline(WGPUShaderModule comp
 }
 
 void WebGPUContext::create_compute_pipeline_async(WGPUShaderModule compute_shader_module, WGPUPipelineLayout pipeline_layout,
-    WGPUCreateComputePipelineAsyncCallbackInfo2 callback_info, const char* entry_point, std::vector< WGPUConstantEntry> constants)
+    WGPUCreateComputePipelineAsyncCallbackInfo callback_info, const char* entry_point, std::vector< WGPUConstantEntry> constants)
 {
     WGPUComputePipelineDescriptor computePipelineDesc = {};
     computePipelineDesc.compute.nextInChain = nullptr;
@@ -1177,7 +1211,7 @@ void WebGPUContext::create_compute_pipeline_async(WGPUShaderModule compute_shade
     computePipelineDesc.compute.module = compute_shader_module;
     computePipelineDesc.layout = pipeline_layout;
 
-   wgpuDeviceCreateComputePipelineAsync2(device, &computePipelineDesc, callback_info);
+   wgpuDeviceCreateComputePipelineAsync(device, &computePipelineDesc, callback_info);
 }
 
 WGPUVertexBufferLayout WebGPUContext::create_vertex_buffer_layout(const std::vector<WGPUVertexAttribute>& vertex_attributes, uint64_t stride, WGPUVertexStepMode step_mode)
@@ -1310,7 +1344,7 @@ void WebGPUContext::generate_prefiltered_env_texture(Texture* prefiltered_env_te
         compute_pass_desc.timestampWrites = nullptr;
         WGPUComputePassEncoder compute_pass = wgpuCommandEncoderBeginComputePass(command_encoder, &compute_pass_desc);
 
-        wgpuComputePassEncoderPushDebugGroup(compute_pass, "Panorama to Cubemap");
+        push_debug_group(compute_pass, { "Panorama to Cubemap", WGPU_STRLEN });
 
         panorama_to_cubemap_pipeline->set(compute_pass);
 
@@ -1327,7 +1361,7 @@ void WebGPUContext::generate_prefiltered_env_texture(Texture* prefiltered_env_te
 
         wgpuBindGroupRelease(bind_group);
 
-        wgpuComputePassEncoderPopDebugGroup(compute_pass);
+        pop_debug_group(compute_pass);
 
         // Finalize compute_raymarching pass
         wgpuComputePassEncoderEnd(compute_pass);
@@ -1361,7 +1395,7 @@ void WebGPUContext::generate_prefiltered_env_texture(Texture* prefiltered_env_te
         compute_pass_desc.timestampWrites = nullptr;
         WGPUComputePassEncoder compute_pass = wgpuCommandEncoderBeginComputePass(command_encoder, &compute_pass_desc);
 
-        wgpuComputePassEncoderPushDebugGroup(compute_pass, "Prefilter Cubemap");
+        push_debug_group(compute_pass, { "Prefilter Cubemap", WGPU_STRLEN });
 
         prefiltered_env_pipeline->set(compute_pass);
 
@@ -1389,7 +1423,7 @@ void WebGPUContext::generate_prefiltered_env_texture(Texture* prefiltered_env_te
             wgpuBindGroupRelease(bind_groups[i]);
         }
 
-        wgpuComputePassEncoderPopDebugGroup(compute_pass);
+        pop_debug_group(compute_pass);
 
         // Finalize compute_raymarching pass
         wgpuComputePassEncoderEnd(compute_pass);
