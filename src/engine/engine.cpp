@@ -36,7 +36,7 @@ EM_JS(void, on_engine_initialized, (), {
 });
 
 EM_JS(void, on_end_frame, (), {
-    Module.Engine.onFrame();
+//    Module.Engine.onFrame();
 });
 
 EM_JS(int, canvas_get_width, (), {
@@ -100,9 +100,24 @@ int Engine::initialize(Renderer* renderer, sEngineConfiguration configuration)
 
     init_shader_watchers();
 
-    initialize_renderer();
+    pre_initialize_renderer();
 
     spdlog::info("Engine initialized");
+
+#ifdef __EMSCRIPTEN__
+
+    while (initialize_step()) {
+        renderer->process_events();
+        emscripten_sleep(1); // Allows browser to run events
+    }
+
+#else
+
+    while (initialize_step()) {
+        renderer->process_events();
+    }
+
+#endif
 
     return 0;
 }
@@ -112,7 +127,7 @@ int Engine::post_initialize()
     return 0;
 }
 
-bool Engine::initialize_renderer()
+bool Engine::pre_initialize_renderer()
 {
 #ifdef __EMSCRIPTEN__
     int screen_width = canvas_get_width();
@@ -184,6 +199,30 @@ bool Engine::initialize_renderer()
     renderer->pre_initialize(window, use_mirror_screen);
 
     return 0;
+}
+
+bool Engine::initialize_step()
+{
+    if (renderer->initialize()) {
+        // still not completed
+        return true;
+    }
+
+    // initialize completed
+
+    renderer->post_initialize();
+    init_imgui(renderer->get_glfw_window());
+    renderer->set_camera_type(configuration.camera_type);
+    post_initialize();
+
+#ifdef __EMSCRIPTEN__
+    on_engine_initialized();
+#endif
+
+    // submit any initialization commands
+    renderer->submit_global_command_encoder();
+
+    return false;
 }
 
 void Engine::init_imgui(GLFWwindow* window)
@@ -270,6 +309,7 @@ void Engine::clean()
 
 void Engine::start_loop()
 {
+    spdlog::info("Loop started");
 
 #ifdef __EMSCRIPTEN__
     emscripten_set_main_loop_arg(
@@ -348,24 +388,6 @@ void Engine::get_scene_ray(glm::vec3& ray_origin, glm::vec3& ray_direction)
 void Engine::on_frame()
 {
     renderer->process_events();
-
-    if (!renderer->is_initialized()) {
-        if (!renderer->initialize()) {
-            renderer->post_initialize();
-            init_imgui(renderer->get_glfw_window());
-            renderer->set_camera_type(configuration.camera_type);
-            post_initialize();
-
-#ifdef __EMSCRIPTEN__
-            on_engine_initialized();
-#endif
-
-            // Submit any initialization commands
-            renderer->submit_global_command_encoder();
-        }
-
-        return;
-    }
 
     // Update stuff
 

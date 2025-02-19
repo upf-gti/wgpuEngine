@@ -115,7 +115,23 @@ WGPUFuture WebGPUContext::request_adapter(OpenXRContext* xr_context, bool is_ope
             *out_adapter = adapter;
         }
         else {
-            spdlog::error("Could not get WebGPU adapter: {}", message.data);
+            std::string error_str = "";
+            switch (status) {
+            case WGPURequestAdapterStatus_Error:
+                error_str += "Error";
+                break;
+            case WGPURequestAdapterStatus_InstanceDropped:
+                error_str += "Instace Dropped";
+                break;
+            case WGPURequestAdapterStatus_Unavailable:
+                error_str += "Unavailable";
+                break;
+            default:
+                error_str += "Unknown";
+                break;
+            }
+
+            spdlog::error("Failed to get WebGPU adapter with \"{}\" status: {}", error_str, message.data);
         }
     };
 
