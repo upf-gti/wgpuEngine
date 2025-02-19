@@ -311,15 +311,10 @@ void WebGPUContext::destroy()
     if (!is_initialized)
         return;
 
-#ifdef XR_SUPPORT
-    wgpuInstanceRelease(instance);
-#else
-    wgpuInstanceRelease(instance);
-#endif
-
     wgpuSurfaceRelease(surface);
     wgpuDeviceDestroy(device);
     wgpuQueueRelease(device_queue);
+    wgpuInstanceRelease(instance);
 
     for (auto &mipmap_struct : mipmap_pipelines) {
         delete mipmap_struct.second.mipmap_pipeline;
@@ -883,7 +878,7 @@ void WebGPUContext::read_buffer_async(WGPUBuffer buffer, size_t size, const std:
 
     WGPUBufferMapCallbackInfo callback_info;
     callback_info.mode = WGPUCallbackMode_AllowProcessEvents;
-    callback_info.userdata1 = &userdata;
+    callback_info.userdata1 = userdata;
 
     callback_info.callback = [](WGPUMapAsyncStatus status, struct WGPUStringView message, void* userdata1, void* userdata2) {
 
