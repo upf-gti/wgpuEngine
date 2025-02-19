@@ -15,7 +15,11 @@ let instance_data : RenderMeshData = mesh_data.data[in.instance_id];
     var world_position = instance_data.model * vec4f(in.position, 1.0);
     out.world_position = world_position.xyz;
     out.position = camera_data.view_projection * world_position;
-    out.uv = in.uv; // forward to the fragment shader
+
+#ifdef UV_0
+    out.uv0 = in.uv0;
+#endif
+
     out.color = vec4(in.color, 1.0);
     out.normal = in.normal;
     return out;

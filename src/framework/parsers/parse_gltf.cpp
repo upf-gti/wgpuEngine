@@ -376,9 +376,15 @@ void read_mesh(const tinygltf::Model& model, const tinygltf::Node& node, Node3D*
 
             // uv
             if (attrib.first == std::string("TEXCOORD_0")) {
-                vertices.uvs.resize(buffer_size);
+                vertices.uvs1.resize(buffer_size);
 
-                parse_attribute(buffer, buffer_start, buffer_end, buffer_size, stride, reinterpret_cast<uint8_t*>(&vertices.uvs[0]), sizeof(float) * 2);
+                parse_attribute(buffer, buffer_start, buffer_end, buffer_size, stride, reinterpret_cast<uint8_t*>(&vertices.uvs1[0]), sizeof(float) * 2);
+            }
+
+            if (attrib.first == std::string("TEXCOORD_1")) {
+                vertices.uvs2.resize(buffer_size);
+
+                parse_attribute(buffer, buffer_start, buffer_end, buffer_size, stride, reinterpret_cast<uint8_t*>(&vertices.uvs2[0]), sizeof(float) * 2);
             }
 
             // tangents
@@ -541,7 +547,7 @@ void read_mesh(const tinygltf::Model& model, const tinygltf::Node& node, Node3D*
         }
 
         bool tangents_generated = false;
-        if (primitive.mode == TINYGLTF_MODE_TRIANGLES && !(vertices.uvs.empty()) && !(vertices.normals.empty()) && vertices.tangents.empty()) {
+        if (primitive.mode == TINYGLTF_MODE_TRIANGLES && !(vertices.uvs1.empty()) && !(vertices.normals.empty()) && vertices.tangents.empty()) {
             tangents_generated = surface->generate_tangents(&vertices);
         }
 
@@ -671,6 +677,14 @@ void read_mesh(const tinygltf::Model& model, const tinygltf::Node& node, Node3D*
 
             if (tangents_generated || primitive.attributes.contains("TANGENT")) {
                 custom_defines.push_back("HAS_TANGENTS");
+            }
+
+            if (!vertices.uvs1.empty()) {
+                custom_defines.push_back("UV_0");
+            }
+
+            if (!vertices.uvs2.empty()) {
+                custom_defines.push_back("UV_1");
             }
 
             material->set_shader(RendererStorage::get_shader_from_source(shaders::mesh_forward::source, shaders::mesh_forward::path, shaders::mesh_forward::libraries, material, custom_defines));

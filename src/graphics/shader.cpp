@@ -220,9 +220,12 @@ bool Shader::parse_preprocessor_line(std::istringstream& string_stream, std::str
 
         line_pos += line.length() - (tag.length() + 1);
     }
-    else if (tag.find("#unique") != std::string::npos) {
+    else if (tag.find("#vertex") != std::string::npos || tag.find("#instance") != std::string::npos) {
 
-        std::string step_mode_str = tokens[1];
+        std::string step_mode_str = tokens[0];
+
+        uint8_t buffer_idx = tokens[1].at(7) - '0';
+
         uint8_t location = tokens[2].at(10) - '0';
         WGPUVertexStepMode step_mode = WGPUVertexStepMode_Undefined;
 
@@ -233,7 +236,7 @@ bool Shader::parse_preprocessor_line(std::istringstream& string_stream, std::str
             step_mode = WGPUVertexStepMode_Instance;
         }
 
-        unique_vertex_buffers[location] = step_mode;
+        vertex_buffers[location] = { step_mode, buffer_idx };
 
         shader_content.replace(line_pos, tag.length() + tokens[1].length() + 1, "");
 
@@ -464,12 +467,12 @@ void Shader::get_reflection_data(const std::string& shader_content)
 		if (entry_point.stage == tint::inspector::PipelineStage::kVertex) {
 
 			uint64_t offset = 0;
-			uint64_t unique_offset = 0;
 
-            std::vector<WGPUVertexAttribute>	shared_buffer_vertex_attributes;
-            std::vector<WGPUVertexAttribute>	unique_buffer_vertex_attributes;
+            std::map<uint8_t, sVertexAttributeInfo> buffer_vertex_attributes;
 
-            WGPUVertexStepMode unique_step_mode = WGPUVertexStepMode_Vertex;
+            WGPUVertexStepMode step_mode = WGPUVertexStepMode_Vertex;
+
+            uint8_t previous_slot = 0;
 
 			for (const auto & input_variable : entry_point.input_variables) {
 				WGPUVertexAttribute vertex_attribute = {};
@@ -518,28 +521,28 @@ void Shader::get_reflection_data(const std::string& shader_content)
 					break;
 				}
 
-                if (!unique_vertex_buffers.contains(vertex_attribute.shaderLocation)) {
-                    vertex_attribute.offset = offset;
-                    offset += byte_size;
+                assert(vertex_buffers.contains(vertex_attribute.shaderLocation));
 
-                    shared_buffer_vertex_attributes.push_back(vertex_attribute);
+                sVertexBufferInfo info = vertex_buffers[vertex_attribute.shaderLocation];
+
+                if (info.buffer_slot != previous_slot) {
+                    offset = 0;
+                    previous_slot = info.buffer_slot;
                 }
-                else {
-                    vertex_attribute.offset = unique_offset;
-                    unique_offset += byte_size;
 
-                    unique_step_mode = unique_vertex_buffers[vertex_attribute.shaderLocation];
+                vertex_attribute.offset = offset;
+                offset += byte_size;
 
-                    unique_buffer_vertex_attributes.push_back(vertex_attribute);
-                }
+                step_mode = info.step_mode;
+
+                buffer_vertex_attributes[info.buffer_slot].step_mode = info.step_mode;
+                buffer_vertex_attributes[info.buffer_slot].stride = offset;
+                buffer_vertex_attributes[info.buffer_slot].vertex_attributes.push_back(vertex_attribute);
 			}
 
-            vertex_attributes.push_back(shared_buffer_vertex_attributes);
-			vertex_buffer_layouts.push_back(webgpu_context->create_vertex_buffer_layout(vertex_attributes.back(), offset, WGPUVertexStepMode_Vertex));
-
-            if (!unique_buffer_vertex_attributes.empty()) {
-                vertex_attributes.push_back(unique_buffer_vertex_attributes);
-                vertex_buffer_layouts.push_back(webgpu_context->create_vertex_buffer_layout(vertex_attributes.back(), unique_offset, unique_step_mode));
+            for (auto vertex_attribute : buffer_vertex_attributes) {
+                vertex_attributes.push_back(vertex_attribute.second.vertex_attributes);
+                vertex_buffer_layouts.push_back(webgpu_context->create_vertex_buffer_layout(vertex_attributes.back(), vertex_attribute.second.stride, vertex_attribute.second.step_mode));
             }
 		}
 

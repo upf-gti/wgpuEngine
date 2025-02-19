@@ -1155,11 +1155,21 @@ void Renderer::render_render_list(WGPURenderPassEncoder render_pass, const std::
             }
         }
 
+        uint32_t slot = 0;
+
         // Set vertex buffer while encoding the render pass
-        wgpuRenderPassEncoderSetVertexBuffer(render_pass, 0, render_data.surface->get_vertex_buffer(), 0, render_data.surface->get_vertices_byte_size());
+        wgpuRenderPassEncoderSetVertexBuffer(render_pass, slot++, render_data.surface->get_vertex_buffer(), 0, render_data.surface->get_vertices_byte_size());
+
+        if (render_data.surface->has_uv1_buffer()) {
+            wgpuRenderPassEncoderSetVertexBuffer(render_pass, slot++, render_data.surface->get_uv1_buffer(), 0, render_data.surface->get_uvs_byte_size());
+        }
+
+        if (render_data.surface->has_uv2_buffer()) {
+            wgpuRenderPassEncoderSetVertexBuffer(render_pass, slot++, render_data.surface->get_uv2_buffer(), 0, render_data.surface->get_uvs_byte_size());
+        }
 
         if (material->get_fragment_write()) {
-            wgpuRenderPassEncoderSetVertexBuffer(render_pass, 1, render_data.surface->get_vertex_data_buffer(), 0, render_data.surface->get_interleaved_data_byte_size());
+            wgpuRenderPassEncoderSetVertexBuffer(render_pass, slot++, render_data.surface->get_vertex_data_buffer(), 0, render_data.surface->get_interleaved_data_byte_size());
         }
 
         WGPUBuffer index_buffer = render_data.surface->get_index_buffer();
@@ -1172,7 +1182,6 @@ void Renderer::render_render_list(WGPURenderPassEncoder render_pass, const std::
         else {
             wgpuRenderPassEncoderDraw(render_pass, render_data.surface->get_vertex_count(), render_data.repeat, 0, i);
         }
-
 
         //#ifndef NDEBUG
         //        wgpuRenderPassEncoderPopDebugGroup(render_pass);

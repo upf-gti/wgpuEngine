@@ -1,23 +1,29 @@
 
 struct VertexInput {
     @builtin(instance_index) instance_id : u32,
-    @location(0) position: vec3f,
-#unique vertex @location(1) uv: vec2f,
-#unique vertex @location(2) normal: vec3f,
-#unique vertex @location(3) tangent: vec4f,
-#unique vertex @location(4) color: vec3f,
-#unique vertex @location(5) weights: vec4f,
-#unique vertex @location(6) joints: vec4i
+#vertex buffer(0) @location(0) position: vec3f,
+#ifdef UV_0
+#vertex buffer(1) @location(1) uv0: vec2f,
+#endif
+#ifdef UV_1
+#vertex buffer(2) @location(2) uv1: vec2f,
+#endif
+#vertex buffer(3) @location(3) normal: vec3f,
+#vertex buffer(3) @location(4) tangent: vec4f,
+#vertex buffer(3) @location(5) color: vec3f,
+#vertex buffer(3) @location(6) weights: vec4f,
+#vertex buffer(3) @location(7) joints: vec4i
 };
 
 struct VertexOutput {
     @builtin(position) position: vec4f,
-    @location(0) uv: vec2f,
-    @location(1) color: vec4f,
-    @location(2) world_position: vec3f,
-    @location(3) normal: vec3f,
-    @location(4) tangent : vec3f,
-    @location(5) bitangent : vec3f,
+    @location(0) uv0: vec2f,
+    @location(1) uv1: vec2f,
+    @location(2) color: vec4f,
+    @location(3) world_position: vec3f,
+    @location(4) normal: vec3f,
+    @location(5) tangent : vec3f,
+    @location(6) bitangent : vec3f,
 };
 
 struct RenderMeshData {

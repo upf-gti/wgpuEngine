@@ -79,9 +79,20 @@ private:
 
     bool loaded_from_file = false;
 
+    struct sVertexBufferInfo {
+        WGPUVertexStepMode step_mode;
+        uint8_t buffer_slot;
+    };
+
+    struct sVertexAttributeInfo {
+        std::vector<WGPUVertexAttribute> vertex_attributes;
+        WGPUVertexStepMode step_mode;
+        uint32_t stride;
+    };
+
     static std::unordered_map<std::string, custom_define_type> custom_defines;
     std::unordered_map<uint8_t, uint8_t> dynamic_bindings;
-    std::unordered_map<uint8_t, WGPUVertexStepMode> unique_vertex_buffers;
+    std::unordered_map<uint8_t, sVertexBufferInfo> vertex_buffers;
     std::vector<std::string> define_specializations;
 
 	bool loaded = false;

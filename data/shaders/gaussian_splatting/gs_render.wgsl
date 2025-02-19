@@ -19,8 +19,8 @@ struct CameraData {
 #dynamic @group(1) @binding(0) var<uniform> camera_data : CameraData;
 
 struct VertexInput {
-    @location(0) position: vec2<f32>,
-#unique instance @location(1) id: u32
+#vertex buffer(0) @location(0) position: vec2<f32>,
+#instance buffer(1) @location(1) id: u32
 };
 
 struct VertexOutput {

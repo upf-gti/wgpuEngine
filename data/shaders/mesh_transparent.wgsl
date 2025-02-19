@@ -14,7 +14,9 @@ fn vs_main(in: VertexInput) -> VertexOutput {
     let instance_data : RenderMeshData = mesh_data.data[in.instance_id];
 
     var out: VertexOutput;
-    out.uv = in.uv; // forward to the fragment shader
+#ifdef UV_0
+    out.uv0 = in.uv0;
+#endif
     out.color = vec4(in.color, 1.0) * albedo;
     out.normal = (instance_data.model * vec4f(in.normal, 0.0)).xyz;
 

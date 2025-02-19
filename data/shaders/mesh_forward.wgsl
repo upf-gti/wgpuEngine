@@ -88,7 +88,15 @@ fn vs_main(in: VertexInput) -> VertexOutput {
     var world_position = instance_data.model * position;
     out.world_position = world_position.xyz;
     out.position = camera_data.view_projection * world_position;
-    out.uv = in.uv; // forward to the fragment shader
+
+#ifdef UV_0
+    out.uv0 = in.uv0; // forward to the fragment shader
+#endif
+
+#ifdef UV_1
+    out.uv1 = in.uv1; // forward to the fragment shader
+#endif
+
     out.color = vec4f(in.color, 1.0) * albedo;
 
     // incorrect with scaling/non-uniform scaling
@@ -140,7 +148,7 @@ fn fs_main(in: VertexOutput, @builtin(front_facing) is_front_facing: bool) -> Fr
 #endif
 
 #ifdef EMISSIVE_TEXTURE
-    m.emissive = textureSample(emissive_texture, sampler_2d, in.uv).rgb * emissive;
+    m.emissive = textureSample(emissive_texture, sampler_2d, in.uv0).rgb * emissive;
 #else
     m.emissive = emissive;
 #endif
@@ -151,14 +159,14 @@ fn fs_main(in: VertexOutput, @builtin(front_facing) is_front_facing: bool) -> Fr
 #endif
 
 #ifdef OCLUSSION_TEXTURE
-    m.ao = textureSample(oclussion_texture, sampler_2d, in.uv).r;
+    m.ao = textureSample(oclussion_texture, sampler_2d, in.uv0).r;
     m.ao = m.ao * occlusion_roughness_metallic.r;
 #else
     m.ao = 1.0;
 #endif
 
 #ifdef METALLIC_ROUGHNESS_TEXTURE
-    var metal_rough : vec3f = textureSample(metallic_roughness_texture, sampler_2d, in.uv).rgb;
+    var metal_rough : vec3f = textureSample(metallic_roughness_texture, sampler_2d, in.uv0).rgb;
     m.roughness = metal_rough.g * occlusion_roughness_metallic.g;
     m.metallic = metal_rough.b * occlusion_roughness_metallic.b;
 #else
@@ -172,14 +180,14 @@ fn fs_main(in: VertexOutput, @builtin(front_facing) is_front_facing: bool) -> Fr
     m.view_dir = normalize(camera_data.eye - m.pos);
 
 #ifdef NORMAL_TEXTURE
-    var normal_color = textureSample(normal_texture, sampler_2d, in.uv).rgb * 2.0 - 1.0;
+    var normal_color = textureSample(normal_texture, sampler_2d, in.uv0).rgb * 2.0 - 1.0;
     // normal_color.y = -normal_color.y;
 
 #ifdef HAS_TANGENTS
     let TBN : mat3x3f = mat3x3f(in.tangent, in.bitangent, in.normal);
     m.normal = normalize(TBN * normal_color);
 #else
-    m.normal = perturb_normal(m.normal, m.view_dir, in.uv, normal_color);
+    m.normal = perturb_normal(m.normal, m.view_dir, in.uv0, normal_color);
 #endif
 
 #endif

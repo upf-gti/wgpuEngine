@@ -4,7 +4,9 @@
 fn vs_main(in: VertexInput) -> VertexOutput {
     var out: VertexOutput;
     out.position = vec4f(in.position, 1.0);
-    out.uv = in.uv; // forward to the fragment shader
+#ifdef UV_0
+    out.uv0 = in.uv0;
+#endif
     return out;
 }
 

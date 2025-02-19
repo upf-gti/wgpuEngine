@@ -50,27 +50,6 @@ void parse_obj(const char* obj_path, MeshInstance3D* entity_mesh, bool create_aa
 
         new_surface->set_name(shapes[s].name);
 
-        Material* material = new_surface->get_material();
-
-        if (!material) {
-
-            material = new Material();
-
-            if (!materials.empty()) {
-                uint32_t material_id = shapes[s].mesh.material_ids[0] == -1 ? 0 : shapes[s].mesh.material_ids[0];
-                if (materials[material_id].diffuse_texname.empty()) {
-                    material->set_color(glm::vec4(materials[material_id].diffuse[0], materials[material_id].diffuse[1], materials[material_id].diffuse[2], 1.0f));
-                }
-                else {
-                    material->set_diffuse_texture(RendererStorage::get_texture(obj_path_fs.parent_path().string() + "/" + materials[material_id].diffuse_texname, TEXTURE_STORAGE_SRGB));
-                }
-            }
-
-            material->set_shader(RendererStorage::get_shader_from_source(shaders::mesh_forward::source, shaders::mesh_forward::path, shaders::mesh_forward::libraries, material));
-
-            new_surface->set_material(material);
-        }
-
         entity_mesh->add_surface(new_surface);
 
         sSurfaceData vertices;
@@ -102,7 +81,7 @@ void parse_obj(const char* obj_path, MeshInstance3D* entity_mesh, bool create_aa
                 }
 
                 if (idx.texcoord_index >= 0) {
-                    vertices.uvs.push_back({
+                    vertices.uvs1.push_back({
                         attrib.texcoords[2 * size_t(idx.texcoord_index) + 0],
                         1.0f - attrib.texcoords[2 * size_t(idx.texcoord_index) + 1],
                     });
@@ -133,6 +112,33 @@ void parse_obj(const char* obj_path, MeshInstance3D* entity_mesh, bool create_aa
         }
 
         new_surface->create_surface_data(vertices);
+
+        std::vector<std::string> custom_defines;
+
+        if (!vertices.uvs1.empty()) {
+            custom_defines.push_back("UV_0");
+        }
+
+        Material* material = new_surface->get_material();
+
+        if (!material) {
+
+            material = new Material();
+
+            if (!materials.empty()) {
+                uint32_t material_id = shapes[s].mesh.material_ids[0] == -1 ? 0 : shapes[s].mesh.material_ids[0];
+                if (materials[material_id].diffuse_texname.empty()) {
+                    material->set_color(glm::vec4(materials[material_id].diffuse[0], materials[material_id].diffuse[1], materials[material_id].diffuse[2], 1.0f));
+                }
+                else {
+                    material->set_diffuse_texture(RendererStorage::get_texture(obj_path_fs.parent_path().string() + "/" + materials[material_id].diffuse_texname, TEXTURE_STORAGE_SRGB));
+                }
+            }
+
+            material->set_shader(RendererStorage::get_shader_from_source(shaders::mesh_forward::source, shaders::mesh_forward::path, shaders::mesh_forward::libraries, material, custom_defines));
+
+            new_surface->set_material(material);
+        }
     }
 
     AABB entity_aabb;

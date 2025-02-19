@@ -25,7 +25,8 @@ namespace normals {
 struct sSurfaceData {
     std::vector<glm::vec3> vertices;
     std::vector<uint32_t> indices;
-    std::vector<glm::vec2> uvs;
+    std::vector<glm::vec2> uvs1;
+    std::vector<glm::vec2> uvs2;
     std::vector<glm::vec3> normals;
     std::vector<glm::vec4> tangents;
     std::vector<glm::vec3> colors;
@@ -39,7 +40,6 @@ struct sSurfaceData {
 };
 
 struct sInterleavedData {
-    glm::vec2 uv;
     glm::vec3 normal;
     glm::vec4 tangent;
     glm::vec3 color = glm::vec3(1.0f);
@@ -57,6 +57,8 @@ class Surface : public Resource
     sSurfaceData surface_data; // optional when loading
 
     WGPUBuffer vertex_pos_buffer = nullptr;
+    WGPUBuffer vertex_uv1_buffer = nullptr;
+    WGPUBuffer vertex_uv2_buffer = nullptr;
     WGPUBuffer vertex_data_buffer = nullptr;
     WGPUBuffer index_buffer = nullptr;
 
@@ -81,8 +83,13 @@ public:
     sSurfaceData& get_surface_data();
 
     const WGPUBuffer& get_vertex_buffer() const;
+    const WGPUBuffer& get_uv1_buffer() const;
+    const WGPUBuffer& get_uv2_buffer() const;
     const WGPUBuffer& get_vertex_data_buffer() const;
     const WGPUBuffer& get_index_buffer() const;
+
+    bool has_uv1_buffer();
+    bool has_uv2_buffer();
 
     void create_axis(float s = 1.f);
     void create_quad(float w = 1.f, float h = 1.f, bool flip_y = false, bool centered = true, const glm::vec3& color = { 1.f, 1.f, 1.f });
@@ -109,6 +116,7 @@ public:
 
     uint32_t get_vertex_count() const;
     uint64_t get_vertices_byte_size() const;
+    uint64_t get_uvs_byte_size() const;
     uint64_t get_interleaved_data_byte_size() const;
 
     // Tangent generation

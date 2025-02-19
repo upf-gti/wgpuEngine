@@ -15,7 +15,9 @@ fn vs_main(in: VertexInput) -> VertexOutput {
     var world_position = instance_data.model * vec4f(in.position, 1.0);
     out.world_position = world_position.xyz;
     out.position = camera_data.view_projection * world_position;
-    out.uv = in.uv; // forward to the fragment shader
+#ifdef UV_0
+    out.uv0 = in.uv0;
+#endif
     out.color = vec4(in.color, 1.0) * albedo;
     out.normal = in.normal;
     return out;
@@ -60,14 +62,14 @@ fn fs_main(in: VertexOutput) -> FragmentOutput {
 
     var dummy = camera_data.eye;
 
-    let wrapped_uvs : vec2f = (in.uv * GRID_AREA_SIZE / GRID_QUAD_SIZE);
+    let wrapped_uvs : vec2f = (in.uv0 * GRID_AREA_SIZE / GRID_QUAD_SIZE);
 
     var out: FragmentOutput;
 
     out.color = vec4f(0.27, 0.27, 0.27, 1.0) *
                 pristine_grid(wrapped_uvs, vec2f(LINE_WIDTH));
 
-    out.color.a *= (1.0 - 2.0 * distance(vec2f(0.5), in.uv.xy));
+    out.color.a *= (1.0 - 2.0 * distance(vec2f(0.5), in.uv0.xy));
 
     return out;
 }

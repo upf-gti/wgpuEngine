@@ -36,7 +36,7 @@ void TextEntity::append_char(glm::vec3 pos, Character& ch)
     for (int k = 0; k < 6; ++k) {
 
         vertices.vertices.push_back((pos + glm::vec3(ch.vertices[k].x, ch.vertices[k].y, ch.vertices[k].z)) * size);
-        vertices.uvs.push_back(ch.uvs[k] / glm::vec2(font->scaleW, font->scaleH));
+        vertices.uvs1.push_back(ch.uvs[k] / glm::vec2(font->scaleW, font->scaleH));
         vertices.normals.push_back(glm::vec3(0.f, 1.f, 0.f));
         vertices.colors.push_back({ 1.0f, 1.0f, 1.0f });
     }
