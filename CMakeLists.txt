@@ -302,7 +302,10 @@ add_library(imgui STATIC
 )
 
 set_property(TARGET imgui PROPERTY CXX_STANDARD 20)
-target_compile_definitions(imgui PUBLIC "IMGUI_IMPL_WEBGPU_BACKEND_DAWN")
+
+if (NOT EMSCRIPTEN)
+    target_compile_definitions(imgui PUBLIC "IMGUI_IMPL_WEBGPU_BACKEND_DAWN")
+endif()
 
 target_link_libraries(imgui PUBLIC glfw webgpu)
 target_include_directories(imgui PUBLIC ${WGPU_DIR_LIBS}/imgui)
