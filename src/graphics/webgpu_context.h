@@ -120,11 +120,11 @@ struct WebGPUContext {
     WGPURenderPipeline     create_render_pipeline(WGPUShaderModule render_shader_module, WGPUPipelineLayout pipeline_layout, const std::vector<WGPUVertexBufferLayout>& vertex_attributes,
                                                   WGPUColorTargetState color_target, const RenderPipelineDescription& description, std::vector< WGPUConstantEntry> constants = {});
     void                   create_render_pipeline_async(WGPUShaderModule render_shader_module, WGPUPipelineLayout pipeline_layout, const std::vector<WGPUVertexBufferLayout>& vertex_attributes,
-                                                  WGPUColorTargetState color_target, WGPUCreateRenderPipelineAsyncCallbackInfo2 callback_info, const RenderPipelineDescription& description,
+                                                  WGPUColorTargetState color_target, WGPUCreateRenderPipelineAsyncCallbackInfo callback_info, const RenderPipelineDescription& description,
                                                   std::vector< WGPUConstantEntry> constants = {});
 
     WGPUComputePipeline    create_compute_pipeline(WGPUShaderModule compute_shader_module, WGPUPipelineLayout pipeline_layout, const char* entry_point = "compute", std::vector< WGPUConstantEntry> constants = {});
-    void                   create_compute_pipeline_async(WGPUShaderModule compute_shader_module, WGPUPipelineLayout pipeline_layout, WGPUCreateComputePipelineAsyncCallbackInfo2 callback_info,
+    void                   create_compute_pipeline_async(WGPUShaderModule compute_shader_module, WGPUPipelineLayout pipeline_layout, WGPUCreateComputePipelineAsyncCallbackInfo callback_info,
                                                   const char* entry_point = "compute", std::vector< WGPUConstantEntry> constants = {});
 
     WGPUVertexBufferLayout create_vertex_buffer_layout(const std::vector<WGPUVertexAttribute>& vertex_attributes, uint64_t stride, WGPUVertexStepMode step_mode);
@@ -140,6 +140,12 @@ struct WebGPUContext {
     void                   read_buffer_async(WGPUBuffer buffer, size_t size, const std::function<void(const void* output_buffer, void* userdata)>& read_callback, void* read_userdata);
 
     sMipmapPipeline        get_mipmap_pipeline(WGPUTextureFormat texture_format);
+
+    void                   push_debug_group(WGPURenderPassEncoder render_pass, WGPUStringView label);
+    void                   push_debug_group(WGPUComputePassEncoder compute_pass, WGPUStringView label);
+
+    void                   pop_debug_group(WGPURenderPassEncoder render_pass);
+    void                   pop_debug_group(WGPUComputePassEncoder compute_pass);
 
     void process_events();
 

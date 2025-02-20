@@ -22,7 +22,7 @@ Pipeline::~Pipeline()
     }
 }
 
-void render_pipeline_creation_callback(WGPUCreatePipelineAsyncStatus status, WGPURenderPipeline pipeline, char const* message, void* userdata1, void* userdata2)
+void render_pipeline_creation_callback(WGPUCreatePipelineAsyncStatus status, WGPURenderPipeline pipeline, struct WGPUStringView message, void* userdata1, void* userdata2)
 {
     Pipeline* render_pipeline = static_cast<Pipeline*>(userdata1);
     if (status == WGPUCreatePipelineAsyncStatus_Success) {
@@ -31,7 +31,7 @@ void render_pipeline_creation_callback(WGPUCreatePipelineAsyncStatus status, WGP
     }
 }
 
-void compute_pipeline_creation_callback(WGPUCreatePipelineAsyncStatus status, WGPUComputePipeline pipeline, char const* message, void* userdata1, void* userdata2)
+void compute_pipeline_creation_callback(WGPUCreatePipelineAsyncStatus status, WGPUComputePipeline pipeline, struct WGPUStringView message, void* userdata1, void* userdata2)
 {
     Pipeline* compute_pipeline = static_cast<Pipeline*>(userdata1);
     if (status == WGPUCreatePipelineAsyncStatus_Success) {
@@ -88,7 +88,7 @@ void Pipeline::create_render_async(Shader* shader, const WGPUColorTargetState& p
 
     spdlog::info("Compiling async render pipeline for shader {}", shader->get_path());
 
-    WGPUCreateRenderPipelineAsyncCallbackInfo2 callback_info = {};
+    WGPUCreateRenderPipelineAsyncCallbackInfo callback_info = {};
     callback_info.mode = WGPUCallbackMode_AllowProcessEvents;
     callback_info.callback = render_pipeline_creation_callback;
     callback_info.userdata1 = (void*)this;
@@ -120,7 +120,7 @@ void Pipeline::create_compute_async(Shader* shader, const char* entry_point, con
 
     spdlog::info("Compiling async compute pipeline for shader {}", shader->get_path());
 
-    WGPUCreateComputePipelineAsyncCallbackInfo2 callback_info = {};
+    WGPUCreateComputePipelineAsyncCallbackInfo callback_info = {};
     callback_info.mode = WGPUCallbackMode_AllowProcessEvents;
     callback_info.callback = compute_pipeline_creation_callback;
     callback_info.userdata1 = (void*)this;

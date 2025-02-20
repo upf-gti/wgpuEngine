@@ -7,11 +7,10 @@
 //#define USE_MIRROR_WINDOW
 #endif
 
+#include <webgpu/webgpu.h>
+
 #ifdef __EMSCRIPTEN__
 #include <emscripten/emscripten.h>
-#include <emscripten/html5_webgpu.h>
-#else
-#include <webgpu/webgpu.h>
 #endif
 
 enum eEYE {
