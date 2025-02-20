@@ -11,7 +11,7 @@ struct Knot {
     glm::quat rotation = glm::identity<glm::quat>();
 };
 
-inline Knot operator+(const Knot& a, const Knot& b) { return { a.position + b.position, a.size + b.size, glm::slerp(a.rotation, b.rotation, 0.5f) }; }
+inline Knot operator+(const Knot& a, const Knot& b) { return { a.position + b.position, a.size + b.size, a.rotation * b.rotation }; }
 inline Knot operator-(const Knot& a, const Knot& b) { return { a.position - b.position, a.size - b.size, a.rotation * glm::inverse(b.rotation) }; }
 inline Knot operator*(const Knot& a, const Knot& b) { return { a.position * b.position, a.size * b.size, a.rotation * b.rotation }; }
 inline Knot operator/(const Knot& a, const Knot& b) { return { a.position / b.position, a.size / b.size, a.rotation * glm::inverse(b.rotation) }; }
@@ -34,8 +34,10 @@ public:
     Spline() {};
 
     virtual void add_knot(const Knot& new_knot);
+    virtual Knot& get_knot(uint32_t index) { return knots[index]; }
     virtual void remove_knot(uint32_t index);
     virtual void pop_knot();
+
 
     virtual void for_each(std::function<void(const Knot&)> fn) {}
 

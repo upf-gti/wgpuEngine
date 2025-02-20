@@ -214,7 +214,7 @@ void BezierSpline::add_knot(const Knot& new_knot)
 
             glm::vec3 forward = glm::normalize(next_knot.position - knot.position);
             glm::vec3 reference_forward = glm::vec3(0.0f, 0.0f, -1.0f);
-            knot.rotation = glm::rotation(reference_forward, forward);
+            // knot.rotation = glm::rotation(reference_forward, forward);
         }
     }
 
