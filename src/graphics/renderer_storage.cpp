@@ -160,7 +160,7 @@ void RendererStorage::register_material_bind_group(WebGPUContext* webgpu_context
             WGPUFilterMode_Linear,
             WGPUMipmapFilterMode_Linear,
             static_cast<float>(texture_ref->get_mipmap_count()),
-            4
+            material->get_is_2D() ? 1 : 8
         );
         sampler_uniform->binding = 7;
         uniforms.push_back(sampler_uniform);
