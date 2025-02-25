@@ -41,13 +41,13 @@ protected:
 
     bool show_imgui = true;
 
+#ifdef __EMSCRIPTEN__
+    bool wasm_module_initialized = false;
+#endif
+
     bool pre_initialize_renderer();
 
     bool initialize_step();
-
-#ifdef __EMSCRIPTEN__
-    static void step_loop(void* arg);
-#endif
 
 public:
 

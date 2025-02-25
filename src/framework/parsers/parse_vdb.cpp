@@ -146,7 +146,7 @@ Material* create_material_volume(easyVDB::OpenVDBReader* vdbReader)
     return material;
 }
 
-bool VdbParser::parse(const char* file_path, std::vector<Node*>& entities, uint32_t flags)
+bool VdbParser::parse(std::string file_path, std::vector<Node*>& entities, uint32_t flags)
 {
     // loader
     std::string err;

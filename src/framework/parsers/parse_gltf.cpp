@@ -1387,7 +1387,7 @@ void parse_model_animations(const tinygltf::Model& model, std::vector<SkeletonIn
     }
 }
 
-bool GltfParser::parse(const char* file_path, std::vector<Node*>& entities, uint32_t flags)
+bool GltfParser::parse(std::string file_path, std::vector<Node*>& entities, uint32_t flags)
 {
     tinygltf::TinyGLTF loader;
     tinygltf::Model model;

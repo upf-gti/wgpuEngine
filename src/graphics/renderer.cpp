@@ -103,6 +103,10 @@ int Renderer::initialize()
     static WGPUFuture adapter_future = { 0 };
     static WGPUFuture device_future = { 0 };
 
+    if (initialized) {
+        return 0;
+    }
+
     if (!webgpu_context->adapter) {
         if (adapter_future.id == 0) {
             adapter_future = webgpu_context->request_adapter(xr_context, is_openxr_available);

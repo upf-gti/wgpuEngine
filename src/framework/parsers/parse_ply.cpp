@@ -8,7 +8,7 @@
 #include "glm/glm.hpp"
 #include "glm/gtc/quaternion.hpp"
 
-bool PlyParser::parse(const char* file_path, std::vector<Node*>& entities, uint32_t flags)
+bool PlyParser::parse(std::string file_path, std::vector<Node*>& entities, uint32_t flags)
 {
     GSNode* gs_node = new GSNode();
 

@@ -31,12 +31,18 @@
 #include <emscripten/html5.h>
 #include <emscripten/bind.h>
 
+EM_JS(void, on_engine_pre_initialized, (), {
+    onEnginePreInitialized();
+});
+
 EM_JS(void, on_engine_initialized, (), {
-    loadApp();
+    onEngineInitialized();
 });
 
 EM_JS(void, on_end_frame, (), {
-//    Module.Engine.onFrame();
+    if (Module.Engine.onFrame) {
+        Module.Engine.onFrame();
+    }
 });
 
 EM_JS(int, canvas_get_width, (), {
@@ -89,6 +95,10 @@ int Engine::initialize(Renderer* renderer, sEngineConfiguration configuration)
     spdlog::set_pattern("[%^%l%$] %v");
     spdlog::set_level(spdlog::level::debug);
 
+#ifdef __EMSCRIPTEN__
+    on_engine_pre_initialized();
+#endif
+
     renderer->set_msaa_count(configuration.msaa_count, true);
 
     this->renderer = renderer;
@@ -106,7 +116,7 @@ int Engine::initialize(Renderer* renderer, sEngineConfiguration configuration)
 
 #ifdef __EMSCRIPTEN__
 
-    while (initialize_step()) {
+    while (initialize_step() || !wasm_module_initialized) {
         renderer->process_events();
         emscripten_sleep(1); // Allows browser to run events
     }
@@ -118,6 +128,23 @@ int Engine::initialize(Renderer* renderer, sEngineConfiguration configuration)
     }
 
 #endif
+
+    // initialize completed
+
+    renderer->post_initialize();
+
+    init_imgui(renderer->get_glfw_window());
+
+    renderer->set_camera_type(configuration.camera_type);
+
+    post_initialize();
+
+#ifdef __EMSCRIPTEN__
+    on_engine_initialized();
+#endif
+
+    // submit any initialization commands
+    renderer->submit_global_command_encoder();
 
     return 0;
 }
@@ -203,26 +230,7 @@ bool Engine::pre_initialize_renderer()
 
 bool Engine::initialize_step()
 {
-    if (renderer->initialize()) {
-        // still not completed
-        return true;
-    }
-
-    // initialize completed
-
-    renderer->post_initialize();
-    init_imgui(renderer->get_glfw_window());
-    renderer->set_camera_type(configuration.camera_type);
-    post_initialize();
-
-#ifdef __EMSCRIPTEN__
-    on_engine_initialized();
-#endif
-
-    // submit any initialization commands
-    renderer->submit_global_command_encoder();
-
-    return false;
+    return renderer->initialize();
 }
 
 void Engine::init_imgui(GLFWwindow* window)
