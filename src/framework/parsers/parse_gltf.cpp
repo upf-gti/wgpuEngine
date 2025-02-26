@@ -1422,7 +1422,7 @@ bool GltfParser::parse(std::string file_path, std::vector<Node*>& entities, uint
     return parse_model(&model, entities, flags);
 }
 
-bool GltfParser::read_data(int8_t* byte_array, uint32_t array_size, std::vector<Node*>& entities, uint32_t flags)
+bool GltfParser::read_data(int8_t* byte_array, uint32_t array_size, Node* scene_root, std::vector<Node*>& entities, uint32_t flags)
 {
     tinygltf::TinyGLTF loader;
     tinygltf::Model model;
@@ -1440,6 +1440,10 @@ bool GltfParser::read_data(int8_t* byte_array, uint32_t array_size, std::vector<
 
     if (!err.empty()) {
         spdlog::error(err);
+    }
+
+    if (scene_root) {
+        push_scene_root(static_cast<Node3D*>(scene_root));
     }
 
     return parse_model(&model, entities, flags);
