@@ -130,6 +130,39 @@ double random_d(double min, double max)
     return (std::rand() / (RAND_MAX + 1.0)) * (max - min) + min;
 }
 
+glm::dvec3 random_direction()
+{
+    return glm::dvec3(random_d(), random_d(), random_d());
+}
+
+glm::dvec3 random_direction(double min, double max)
+{
+    return glm::dvec3(random_d(min, max), random_d(min, max), random_d(min, max));
+}
+
+glm::dvec3 random_unit_sphere_direction() {
+    while (true) {
+        glm::dvec3 p = random_direction(-1, 1);
+        double lensq = glm::length2(p);
+        if (1e-160 < lensq && lensq <= 1)
+            return p / sqrt(lensq);
+    }
+}
+
+glm::dvec3 random_unit_hemisphere_direction(const glm::dvec3& normal) {
+    glm::dvec3 on_unit_sphere = random_unit_sphere_direction();
+    if (glm::dot(on_unit_sphere, normal) > 0.0)
+        return on_unit_sphere;
+    else
+        return -on_unit_sphere;
+}
+
+bool is_direction_near_zero(const glm::dvec3& direction)
+{
+    auto s = 1e-8;
+    return (std::fabs(direction[0]) < s) && (std::fabs(direction[1]) < s) && (std::fabs(direction[2]) < s);
+}
+
 glm::vec3 get_front(const glm::mat4& pose) {
     return -glm::normalize(pose[2]);
 }

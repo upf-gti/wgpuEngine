@@ -4,6 +4,7 @@
 #include "glm/vec3.hpp"
 #include "glm/vec4.hpp"
 #include <glm/gtc/quaternion.hpp>
+#include <glm/gtx/norm.hpp>
 
 #include <string>
 
@@ -30,6 +31,15 @@ glm::vec3 hsv2rgb(glm::vec3 c);
 
 float random_f(float min = 0.0f, float max = 1.0f);
 double random_d(double min = 0.0, double max = 1.0);
+
+glm::dvec3 random_direction();
+glm::dvec3 random_direction(double min, double max);
+
+glm::dvec3 random_unit_sphere_direction();
+glm::dvec3 random_unit_hemisphere_direction(const glm::dvec3& normal);
+
+bool is_direction_near_zero(const glm::dvec3& direction);
+
 glm::vec3 get_front(const glm::mat4& pose);
 glm::vec3 get_perpendicular(const glm::vec3& v);
 
