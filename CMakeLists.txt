@@ -227,7 +227,7 @@ if (NOT EMSCRIPTEN)
             # openxr
             add_subdirectory(libraries/openxr)
             target_link_libraries(${PROJECT_NAME} PUBLIC openxr_loader)
-            target_link_libraries(openxr_loader PUBLIC Vulkan-Headers)
+            #target_link_libraries(openxr_loader PUBLIC Vulkan-Headers)
             set_property(TARGET openxr_loader PROPERTY FOLDER "External/OpenXR")
             set_property(TARGET generate_openxr_header PROPERTY FOLDER "External/OpenXR")
             set_property(TARGET xr_global_generated_files PROPERTY FOLDER "External/OpenXR")
