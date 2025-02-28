@@ -35,6 +35,10 @@ double random_d(double min = 0.0, double max = 1.0);
 glm::dvec3 random_direction();
 glm::dvec3 random_direction(double min, double max);
 
+glm::dvec3 random_color();
+glm::dvec3 random_color(double min, double max);
+
+glm::dvec3 random_point_in_unit_disk();
 glm::dvec3 random_unit_sphere_direction();
 glm::dvec3 random_unit_hemisphere_direction(const glm::dvec3& normal);
 

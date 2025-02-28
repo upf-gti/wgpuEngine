@@ -140,6 +140,24 @@ glm::dvec3 random_direction(double min, double max)
     return glm::dvec3(random_d(min, max), random_d(min, max), random_d(min, max));
 }
 
+glm::dvec3 random_color()
+{
+    return random_direction();
+}
+
+glm::dvec3 random_color(double min, double max)
+{
+    return random_direction(min, max);
+}
+
+glm::dvec3 random_point_in_unit_disk() {
+    while (true) {
+        glm::dvec3 p = glm::dvec3(random_d(-1, 1), random_d(-1, 1), 0.0);
+        if (glm::length2(p) <= 1)
+            return p;
+    }
+}
+
 glm::dvec3 random_unit_sphere_direction() {
     while (true) {
         glm::dvec3 p = random_direction(-1, 1);
