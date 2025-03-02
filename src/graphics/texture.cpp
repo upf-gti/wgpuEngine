@@ -171,6 +171,23 @@ void Texture::load_from_hdre(HDRE* hdre)
     }
 }
 
+void Texture::save_PPM_file(const char* file_dir) {
+    if (texture_data.size() > 0u) {
+        return;
+    }
+
+    FILE* file = fopen(file_dir, "w");
+
+    fprintf(file, "P3\n%d %d\n255\n", size.width, size.height);
+
+    float* raw_texture = (float*) texture_data.data();
+    uint32_t texture_size = (texture_data.size() / sizeof(float)) / 4u;
+
+    for (uint32_t i = 0u; i < texture_size; i++) {
+
+    }
+}
+
 WGPUTextureView Texture::get_view(WGPUTextureViewDimension view_dimension, uint32_t base_mip_level, uint32_t mip_level_count, uint32_t base_array_layer, uint32_t array_layer_count) const
 {
     return webgpu_context->create_texture_view(texture, view_dimension, format, WGPUTextureAspect_All, base_mip_level, mip_level_count, base_array_layer, array_layer_count);
@@ -198,4 +215,39 @@ void Texture::load_from_data(void* data)
     }
 
     RendererStorage::textures[name] = this;
+}
+
+void Texture::load_from_GPU_texture(WGPUCommandEncoder cmd_encoder, const WGPUTexture gpu_texture, const WGPUExtent3D in_size, const WGPUTextureFormat in_format) {
+    size = in_size;
+    format = in_format;
+
+    size_t buffer_size = size.width * size.height * size.depthOrArrayLayers * sizeof(float) * 4;
+
+    texture_data.resize(buffer_size);
+
+    gpu_texture_data_upload = webgpu_context->create_buffer(buffer_size, WGPUBufferUsage_CopyDst | WGPUBufferUsage_MapRead , nullptr, "buff_to_upload_tex");
+
+    WGPUTexelCopyBufferInfo buffer_copy = {
+        .layout = {
+            .offset = 0u,
+            .bytesPerRow = size.width * sizeof(float) * 4,
+            .rowsPerImage = size.height
+        },
+        .buffer = gpu_texture_data_upload
+    };
+
+    WGPUTexelCopyTextureInfo texel_copy = {
+        .texture = texture,
+        .mipLevel = 0u,
+        .origin = {0u, 0u, 0u},
+        .aspect = WGPUTextureAspect_All
+    };
+
+    wgpuCommandEncoderCopyTextureToBuffer(cmd_encoder, &texel_copy, &buffer_copy, &size);
+
+    webgpu_context->read_buffer_async(gpu_texture_data_upload, buffer_size * sizeof(float), [&](const void* output_buffer, void* user_data) {
+        memcpy(texture_data.data(), output_buffer, sizeof(buffer_size) * sizeof(float));
+        wgpuBufferDestroy(gpu_texture_data_upload);
+        gpu_texture_data_upload = nullptr;
+    }, nullptr);
 }

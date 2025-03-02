@@ -28,6 +28,7 @@ class Texture : public Resource
 
     std::vector<uint8_t> texture_data; // optinal when loading
 
+    WGPUBuffer  gpu_texture_data_upload = nullptr;
 public:
 
 	~Texture();
@@ -36,6 +37,8 @@ public:
 
     void load(const std::string& texture_path, bool is_srgb);
     void load_hdr(const std::string& texture_path);
+
+    void save_PPM_file(const char* file_dir);
 
 	void create(WGPUTextureDimension dimension, WGPUTextureFormat format, WGPUExtent3D size, WGPUTextureUsage usage, uint32_t mipmaps, uint8_t sample_count, const void* data);
 
@@ -77,4 +80,6 @@ public:
     void set_texture_parameters(const std::string& name, WGPUTextureDimension dimension, int width, int height, int array_layers, bool create_mipmaps = true, WGPUTextureFormat p_format = WGPUTextureFormat_RGBA8Unorm);
 
     void load_from_data(void* data);
+
+    void load_from_GPU_texture(WGPUCommandEncoder cmd_encoder, const WGPUTexture gpu_texture, const WGPUExtent3D in_size, const WGPUTextureFormat in_format);
 };
