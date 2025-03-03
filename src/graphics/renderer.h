@@ -236,6 +236,15 @@ protected:
 
     uint32_t frame_counter = 0;
 
+    struct sTextureToStoreCmd {
+        FILE* dst_file;
+        WGPUBuffer src_buffer;
+        size_t  copy_size;
+        WGPUExtent3D size;
+    };
+
+    std::vector<sTextureToStoreCmd> textures_to_store_list;
+
 public:
 
     // Singleton
@@ -365,4 +374,6 @@ public:
     Texture* get_irradiance_texture() { return irradiance_texture; }
 
     Camera* get_camera() { return camera_3d; }
+
+    void store_texture_to_disk(WGPUCommandEncoder cmd_encoder, const WGPUTexture gpu_texture, const WGPUExtent3D in_size, const char* file_dir);
 };

@@ -352,6 +352,7 @@ void Renderer::update(float delta_time)
     }
 }
 
+
 void Renderer::render()
 {
     WGPUTextureView screen_surface_texture_view;
@@ -366,6 +367,43 @@ void Renderer::render()
         }
 
         screen_surface_texture_view = webgpu_context->create_texture_view(screen_surface_texture.texture, WGPUTextureViewDimension_2D, webgpu_context->swapchain_format);
+    }
+
+    // Store the GPU buffers to CPU
+    while (textures_to_store_list.size() > 0u) {
+        sTextureToStoreCmd* to_store = new sTextureToStoreCmd();
+        *to_store = textures_to_store_list.back();
+        textures_to_store_list.pop_back();
+
+        webgpu_context->read_buffer_async(to_store->src_buffer,
+            to_store->copy_size * sizeof(uint8_t), [&](const void* output_buffer, void* user_data) {
+                sTextureToStoreCmd* copy_data = (sTextureToStoreCmd*) user_data;
+                uint8_t *raw_buffer = new uint8_t[copy_data->copy_size];
+                memcpy(raw_buffer, output_buffer, copy_data->copy_size * sizeof(uint8_t));
+                wgpuBufferDestroy(copy_data->src_buffer);
+
+                fprintf(copy_data->dst_file, "P3\n%d %d\n255\n", copy_data->size.width, copy_data->size.height);
+
+                for (uint32_t i = 0u; i < copy_data->size.height; i++) {
+                    for (uint32_t j = 0u; j < copy_data->size.width; j++) {
+
+                        const uint32_t idx = (j + copy_data->size.width * i) * 4u;
+
+                        fprintf(copy_data->dst_file,
+                            "%d %d %d\n",
+                            raw_buffer[idx + 2u],
+                            raw_buffer[idx + 1u],
+                            raw_buffer[idx]
+                        );
+                    }
+                }
+
+                fclose(copy_data->dst_file);
+
+                delete[] raw_buffer;
+                delete copy_data;
+            },
+            to_store);
     }
 
     update_lights();
@@ -455,6 +493,9 @@ void Renderer::render()
         }
     }
 #endif
+
+    // TEXTURE TO DISK STORAGE EXAMPLE
+    //store_texture_to_disk(global_command_encoder, screen_surface_texture.texture, { webgpu_context->screen_width, webgpu_context->screen_height, 1 }, "result.ppm");
 
     // Render 2D
     if (!is_openxr_available || use_mirror_screen) {
@@ -1543,4 +1584,40 @@ glm::vec3 Renderer::get_camera_front()
 
     Camera* camera = get_camera();
     return glm::normalize(camera->get_center() - camera->get_eye());
+}
+
+void Renderer::store_texture_to_disk(WGPUCommandEncoder cmd_encoder, const WGPUTexture gpu_texture, const WGPUExtent3D in_size, const char* file_dir) {
+    assert(in_size.depthOrArrayLayers == 1 && "Only supports for 2D textures");
+
+    size_t buffer_size = in_size.width * in_size.height * 4;
+
+    WGPUBuffer gpu_texture_data_upload = webgpu_context->create_buffer(buffer_size * sizeof(uint8_t) * 4, WGPUBufferUsage_CopyDst | WGPUBufferUsage_CopySrc, nullptr, "buff_to_upload_tex");
+
+    uint32_t p = in_size.width * sizeof(uint8_t) * in_size.height;
+
+    WGPUTexelCopyBufferInfo buffer_copy = {
+        .layout = {
+            .offset = 0u,
+            .bytesPerRow = in_size.width * sizeof(uint8_t) * 4,
+            .rowsPerImage = in_size.height
+        },
+        .buffer = gpu_texture_data_upload
+    };
+
+    WGPUTexelCopyTextureInfo texel_copy = {
+        .texture = gpu_texture,
+        .mipLevel = 0u,
+        .origin = {0u, 0u, 0u},
+        .aspect = WGPUTextureAspect_All
+    };
+
+    wgpuCommandEncoderCopyTextureToBuffer(cmd_encoder, &texel_copy, &buffer_copy, &in_size);
+
+    // Store it, for retreaving in the next frame
+    textures_to_store_list.push_back({
+        .dst_file = fopen(file_dir, "w"),
+        .src_buffer = gpu_texture_data_upload,
+        .copy_size = buffer_size,
+        .size = in_size
+    });
 }
