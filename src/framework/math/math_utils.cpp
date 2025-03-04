@@ -121,6 +121,10 @@ glm::vec3 rotate_point_by_quat(const glm::vec3& v, const glm::vec4& q) {
     return v + 2.0f * glm::cross(q_vect, glm::cross(q_vect, v) + q.w * v);
 }
 
+float random_i(int min, int max) {
+    return static_cast<int>(random_d(static_cast<double>(min), static_cast<double>(max + 1)));
+}
+
 float random_f(float min, float max) {
     return (std::rand() / (RAND_MAX + 1.0)) * (max - min) + min;
 }

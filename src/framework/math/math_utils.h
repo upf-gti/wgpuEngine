@@ -29,6 +29,7 @@ glm::quat get_quat_between_vec3(const glm::vec3& p1, const glm::vec3& p2);
 glm::vec3 rgb2hsv(glm::vec3 rgb);
 glm::vec3 hsv2rgb(glm::vec3 c);
 
+float random_i(int min = 0.0f, int max = 1.0f);
 float random_f(float min = 0.0f, float max = 1.0f);
 double random_d(double min = 0.0, double max = 1.0);
 
