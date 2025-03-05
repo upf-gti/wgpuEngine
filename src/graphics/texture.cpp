@@ -5,6 +5,7 @@
 #include "stb_image.h"
 
 #include <bit>
+#include <algorithm>
 
 #include "spdlog/spdlog.h"
 
@@ -108,7 +109,7 @@ bool Texture::convert_to_rgba8unorm(uint32_t width, uint32_t height, WGPUTexture
     return true;
 }
 
-void Texture::load(const std::string& texture_path, bool is_srgb)
+void Texture::load(const std::string& texture_path, bool is_srgb, bool upload_to_vram, bool store_texture_data)
 {
     int width, height, channels;
     unsigned char* data = stbi_load(texture_path.c_str(), &width, &height, &channels, 4);
@@ -118,7 +119,17 @@ void Texture::load(const std::string& texture_path, bool is_srgb)
 
     path = texture_path;
 
-    load_from_data(path, WGPUTextureDimension_2D, width, height, 1, data, true, is_srgb ? WGPUTextureFormat_RGBA8UnormSrgb : WGPUTextureFormat_RGBA8Unorm);
+    if (upload_to_vram) {
+        load_from_data(path, WGPUTextureDimension_2D, width, height, 1, data, true, is_srgb ? WGPUTextureFormat_RGBA8UnormSrgb : WGPUTextureFormat_RGBA8Unorm);
+    }
+
+    if (store_texture_data) {
+        texture_data.data.assign(data, data + width * height * 4);
+        texture_data.image_width = width;
+        texture_data.image_height = height;
+        texture_data.bytes_per_pixel = 4;
+        texture_data.bytes_per_scanline = texture_data.image_width * texture_data.bytes_per_pixel;
+    }
 
     stbi_image_free(data);
 
@@ -198,4 +209,15 @@ void Texture::load_from_data(void* data)
     }
 
     RendererStorage::textures[name] = this;
+}
+
+const unsigned char* sTextureData::pixel_data(uint32_t x, uint32_t y) const
+{
+    static unsigned char magenta[] = { 255, 0, 255 };
+    if (data.empty()) return magenta;
+
+    x = std::clamp(x, 0u, image_width);
+    y = std::clamp(y, 0u, image_height);
+
+    return data.data() + y * bytes_per_scanline + x * bytes_per_pixel;
 }

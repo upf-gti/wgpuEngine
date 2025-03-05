@@ -9,6 +9,16 @@
 
 #include "hdre.h"
 
+struct sTextureData {
+    std::vector<uint8_t> data;
+    uint8_t bytes_per_pixel = 0;
+    uint32_t bytes_per_scanline = 0;
+    uint32_t image_width = 0;
+    uint32_t image_height = 0;
+
+    const unsigned char* pixel_data(uint32_t x, uint32_t y) const;
+};
+
 class Texture : public Resource
 {
 
@@ -26,7 +36,7 @@ class Texture : public Resource
 
     std::string path;
 
-    std::vector<uint8_t> texture_data; // optinal when loading
+    sTextureData texture_data; // optional when loading
 
     WGPUBuffer  gpu_texture_data_upload = nullptr;
 public:
@@ -35,7 +45,7 @@ public:
 
 	static WebGPUContext* webgpu_context;
 
-    void load(const std::string& texture_path, bool is_srgb);
+    void load(const std::string& texture_path, bool is_srgb, bool upload_to_vram = true, bool store_texture_data = false);
     void load_hdr(const std::string& texture_path);
 
 	void create(WGPUTextureDimension dimension, WGPUTextureFormat format, WGPUExtent3D size, WGPUTextureUsage usage, uint32_t mipmaps, uint8_t sample_count, const void* data);
@@ -65,8 +75,8 @@ public:
     uint32_t get_height() const { return size.height; }
     uint32_t get_array_layers() const { return size.depthOrArrayLayers; }
 
-    std::vector<uint8_t>& get_texture_data() { return texture_data; }
-    const std::vector<uint8_t>& get_texture_data() const { return texture_data; }
+    sTextureData& get_texture_data() { return texture_data; }
+    const sTextureData& get_texture_data() const { return texture_data; }
 
     WGPUTextureFormat get_format() const { return format; }
 

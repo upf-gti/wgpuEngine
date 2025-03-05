@@ -40,9 +40,9 @@
 
 #include "spdlog/spdlog.h"
 
-void fill_texture_data_func(std::vector<uint8_t>& texture_data, const uint8_t* texture, uint32_t width, uint32_t height)
+void fill_texture_data_func(std::vector<uint8_t>& data, const uint8_t* texture, uint32_t width, uint32_t height)
 {
-    texture_data.assign(texture, texture + width * height * 4);
+    data.assign(texture, texture + width * height * 4);
 }
 
 void create_material_texture(const tinygltf::Model& model, int tex_index, Texture** texture, bool is_srgb = false, bool fill_texture_data = false, bool async_load = false)
@@ -80,8 +80,14 @@ void create_material_texture(const tinygltf::Model& model, int tex_index, Textur
             *texture = new Texture();
             (*texture)->set_texture_parameters(image.uri, WGPUTextureDimension_2D, image.width, image.height, 1, true, is_srgb ? WGPUTextureFormat_RGBA8UnormSrgb : WGPUTextureFormat_RGBA8Unorm);
 
+            sTextureData& texture_data = (*texture)->get_texture_data();
+            texture_data.image_width = image.width;
+            texture_data.image_height = image.height;
+            texture_data.bytes_per_pixel = 4;
+            texture_data.bytes_per_scanline = texture_data.image_width * texture_data.bytes_per_pixel;
+
             if (async_load || fill_texture_data) {
-                fill_texture_data_func((*texture)->get_texture_data(), converted_texture, image.width, image.height);
+                fill_texture_data_func(texture_data.data, converted_texture, image.width, image.height);
             }
 
             if (!async_load) {
@@ -95,8 +101,14 @@ void create_material_texture(const tinygltf::Model& model, int tex_index, Textur
         *texture = new Texture();
         (*texture)->set_texture_parameters(image.uri, WGPUTextureDimension_2D, image.width, image.height, 1, true, is_srgb ? WGPUTextureFormat_RGBA8UnormSrgb : WGPUTextureFormat_RGBA8Unorm);
 
+        sTextureData& texture_data = (*texture)->get_texture_data();
+        texture_data.image_width = image.width;
+        texture_data.image_height = image.height;
+        texture_data.bytes_per_pixel = 4;
+        texture_data.bytes_per_scanline = texture_data.image_width * texture_data.bytes_per_pixel;
+
         if (async_load || fill_texture_data) {
-            fill_texture_data_func((*texture)->get_texture_data(), image.image.data(), image.width, image.height);
+            fill_texture_data_func(texture_data.data, image.image.data(), image.width, image.height);
         }
 
         if (!async_load) {
@@ -1539,7 +1551,7 @@ bool GltfParser::parse_model(tinygltf::Model* model, std::vector<Node*>& entitie
 void GltfParser::on_async_finished()
 {
     for (auto texture : texture_cache) {
-        texture.second->load_from_data(texture.second->get_texture_data().data());
+        texture.second->load_from_data(texture.second->get_texture_data().data.data());
     }
 
     for (auto mesh: mesh_cache) {
