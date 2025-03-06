@@ -360,7 +360,7 @@ void Renderer::render()
     if (!is_openxr_available || use_mirror_screen) {
 
         wgpuSurfaceGetCurrentTexture(webgpu_context->surface, &screen_surface_texture);
-        if (screen_surface_texture.status != WGPUSurfaceGetCurrentTextureStatus_Success) {
+        if (screen_surface_texture.status != WGPUSurfaceGetCurrentTextureStatus_SuccessOptimal) {
             spdlog::error("Error getting swapchain texture");
             return;
         }
@@ -1486,7 +1486,7 @@ void Renderer::render_mirror(WGPUTextureView screen_surface_texture_view, WGPUBi
 
 void Renderer::init_camera_bind_group()
 {
-    camera_buffer_stride = std::max(static_cast<uint32_t>(sizeof(sCameraData)), webgpu_context->required_limits.limits.minUniformBufferOffsetAlignment);
+    camera_buffer_stride = std::max(static_cast<uint32_t>(sizeof(sCameraData)), webgpu_context->required_limits.minUniformBufferOffsetAlignment);
 
     camera_uniform.data = webgpu_context->create_buffer(camera_buffer_stride * EYE_COUNT, WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform, nullptr, "camera_buffer");
     camera_uniform.binding = 0;

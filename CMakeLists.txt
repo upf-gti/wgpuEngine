@@ -166,7 +166,6 @@ if (EMSCRIPTEN)
 endif()
 
 # dawn
-set_target_properties(${PROJECT_NAME} PROPERTIES VS_DEBUGGER_ENVIRONMENT "DAWN_DEBUG_BREAK_ON_ERROR=1")
 add_subdirectory(libraries/webgpu)
 target_link_libraries(${PROJECT_NAME} PUBLIC webgpu)
 
@@ -221,6 +220,8 @@ if (NOT EMSCRIPTEN)
             endif()
 
             target_link_libraries(${PROJECT_NAME} PUBLIC Vulkan-Headers)
+            set_property(TARGET Vulkan-Module PROPERTY FOLDER "External/VulkanModule")
+
         endif()
 
         if(NOT WGPUENGINE_DISABLE_XR)

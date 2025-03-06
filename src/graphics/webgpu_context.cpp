@@ -82,6 +82,11 @@ WGPUFuture WebGPUContext::request_adapter(OpenXRContext* xr_context, bool is_ope
 
     // To choose dedicated GPU on laptops
     adapter_opts.powerPreference = WGPUPowerPreference_HighPerformance;
+    adapter_opts.featureLevel = WGPUFeatureLevel_Core;
+
+    //WGPURequestAdapterWebXROptions webxr_options = {};
+    //webxr_options.xrCompatible = true;
+    //adapter_opts.nextInChain = reinterpret_cast<WGPUChainedStruct*>(&webxr_options);
 
 #ifdef XR_SUPPORT
 
@@ -677,13 +682,13 @@ void WebGPUContext::upload_texture(WGPUTexture texture, WGPUTextureDimension dim
 {
     WGPUQueue mipmap_queue = wgpuDeviceGetQueue(device);
 
-    WGPUImageCopyTexture destination = {};
+    WGPUTexelCopyTextureInfo destination = {};
     destination.texture = texture;
     destination.origin = origin;
     destination.aspect = WGPUTextureAspect_All;
     destination.mipLevel = mip_level;
 
-    WGPUTextureDataLayout source = {};
+    WGPUTexelCopyBufferLayout source = {};
     source.offset = 0;
 
     size_t byte_size = 0;
@@ -1041,12 +1046,12 @@ WGPUPipelineLayout WebGPUContext::create_pipeline_layout(const std::vector<WGPUB
 
 void WebGPUContext::copy_texture_to_texture(WGPUTexture texture_src, WGPUTexture texture_dst, uint32_t src_mipmap_level, uint32_t dst_mipmap_level, const WGPUExtent3D& copy_size, WGPUCommandEncoder custom_command_encoder)
 {
-    WGPUImageCopyTexture src_copy = {};
+    WGPUTexelCopyTextureInfo src_copy = {};
     src_copy.texture = texture_src;
     src_copy.mipLevel = src_mipmap_level;
     src_copy.aspect = WGPUTextureAspect_All;
 
-    WGPUImageCopyTexture dst_copy = {};
+    WGPUTexelCopyTextureInfo dst_copy = {};
     dst_copy.texture = texture_dst;
     dst_copy.mipLevel = dst_mipmap_level;
     dst_copy.aspect = WGPUTextureAspect_All;
@@ -1335,7 +1340,7 @@ void WebGPUContext::generate_prefiltered_env_texture(Texture* prefiltered_env_te
         uint32_t pad1;
     } prefilter_env_uniform_data;
 
-    uint32_t buffer_stride = std::max(static_cast<uint32_t>(sizeof(PrefilterEnvUniformData)), required_limits.limits.minUniformBufferOffsetAlignment);
+    uint32_t buffer_stride = std::max(static_cast<uint32_t>(sizeof(PrefilterEnvUniformData)), required_limits.minUniformBufferOffsetAlignment);
 
     Uniform current_level_uniform;
     current_level_uniform.data = create_buffer(buffer_stride * 6, WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform, nullptr, "previlter env uniform_data");

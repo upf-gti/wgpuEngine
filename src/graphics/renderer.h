@@ -33,20 +33,20 @@ struct OpenXRContext;
 struct sLightUniformData;
 
 struct sRendererConfiguration {
-    WGPURequiredLimits required_limits = {};
+    WGPULimits required_limits = {};
     std::vector<WGPUFeatureName> features;
 
     sRendererConfiguration() {
-        required_limits.limits.maxVertexAttributes = 4;
-        required_limits.limits.maxVertexBuffers = 1;
-        required_limits.limits.maxBindGroups = 2;
-        required_limits.limits.maxUniformBuffersPerShaderStage = 1;
-        required_limits.limits.maxUniformBufferBindingSize = 65536;
-        required_limits.limits.minUniformBufferOffsetAlignment = 256;
-        required_limits.limits.minStorageBufferOffsetAlignment = 256;
-        required_limits.limits.maxComputeInvocationsPerWorkgroup = 256;
-        required_limits.limits.maxSamplersPerShaderStage = 1;
-        required_limits.limits.maxDynamicUniformBuffersPerPipelineLayout = 1;
+        required_limits.maxVertexAttributes = 4;
+        required_limits.maxVertexBuffers = 1;
+        required_limits.maxBindGroups = 2;
+        required_limits.maxUniformBuffersPerShaderStage = 1;
+        required_limits.maxUniformBufferBindingSize = 65536;
+        required_limits.minUniformBufferOffsetAlignment = 256;
+        required_limits.minStorageBufferOffsetAlignment = 256;
+        required_limits.maxComputeInvocationsPerWorkgroup = 256;
+        required_limits.maxSamplersPerShaderStage = 1;
+        required_limits.maxDynamicUniformBuffersPerPipelineLayout = 1;
 
 #if !defined(__EMSCRIPTEN__)
         features.push_back(WGPUFeatureName_TimestampQuery);
@@ -348,7 +348,7 @@ public:
     WebGPUContext* get_webgpu_context();
 
     void set_required_features(std::vector<WGPUFeatureName> new_required_features) { required_features = new_required_features; };
-    void set_required_limits(const WGPURequiredLimits& required_limits) { webgpu_context->required_limits = required_limits; }
+    void set_required_limits(const WGPULimits& required_limits) { webgpu_context->required_limits = required_limits; }
 
     void add_renderable(MeshInstance* mesh_instance, const glm::mat4x4& global_matrix);
     void add_splat_scene(GSNode* gs_scene);

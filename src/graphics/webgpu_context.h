@@ -73,8 +73,8 @@ struct WebGPUContext {
     Shader*                 brdf_lut_shader;
     Texture*                brdf_lut_texture = nullptr;
 
-    WGPURequiredLimits      required_limits;
-    WGPUSupportedLimits     supported_limits;
+    WGPULimits              required_limits;
+    WGPULimits              supported_limits;
 
     bool                    is_initialized = false;
 
