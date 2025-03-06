@@ -15,6 +15,7 @@ struct sTextureData {
     uint32_t bytes_per_scanline = 0;
     uint32_t image_width = 0;
     uint32_t image_height = 0;
+    bool is_srgb = false;
 
     const unsigned char* pixel_data(uint32_t x, uint32_t y) const;
 };
@@ -81,6 +82,8 @@ public:
     WGPUTextureFormat get_format() const { return format; }
 
     WGPUExtent3D get_size() const { return size; }
+
+    bool is_srgb() const { return texture_data.is_srgb; }
 
     void load_from_data(const std::string& name, WGPUTextureDimension dimension, int width, int height, int array_layers, void* data, bool create_mipmaps = true, WGPUTextureFormat p_format = WGPUTextureFormat_RGBA8Unorm);
     void load_from_hdre( HDRE* hdre );

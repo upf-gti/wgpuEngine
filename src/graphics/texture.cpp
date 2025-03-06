@@ -98,6 +98,16 @@ bool Texture::convert_to_rgba8unorm(uint32_t width, uint32_t height, WGPUTexture
                 dst[pixel_pos + 3] = static_cast<uint8_t>((src_converted[pixel_pos + 3] / 65535.0f) * 255.0f);
                 break;
             }
+            case WGPUTextureFormat_RGBA8UnormSrgb:
+            {
+                uint8_t* src_converted = reinterpret_cast<uint8_t*>(src);
+                uint32_t pixel_pos = (j * 4) + (i * 4 * width);
+                dst[pixel_pos + 0] = std::pow(static_cast<uint8_t>((src_converted[pixel_pos + 0] / 255.0f) * 255.0f), 2.2);
+                dst[pixel_pos + 1] = std::pow(static_cast<uint8_t>((src_converted[pixel_pos + 1] / 255.0f) * 255.0f), 2.2);
+                dst[pixel_pos + 2] = std::pow(static_cast<uint8_t>((src_converted[pixel_pos + 2] / 255.0f) * 255.0f), 2.2);
+                dst[pixel_pos + 3] = std::pow(static_cast<uint8_t>((src_converted[pixel_pos + 3] / 255.0f) * 255.0f), 2.2);
+                break;
+            }
             default:
                 assert(false);
                 return false;
@@ -124,7 +134,18 @@ void Texture::load(const std::string& texture_path, bool is_srgb, bool upload_to
     }
 
     if (store_texture_data) {
-        texture_data.data.assign(data, data + width * height * 4);
+
+        if (is_srgb) {
+            uint8_t* converted_texture = new uint8_t[width * height * 4];
+            convert_to_rgba8unorm(width, height, WGPUTextureFormat_RGBA8UnormSrgb, data, converted_texture);
+            texture_data.data.assign(data, data + width * height * 4);
+            delete[] converted_texture;
+        }
+        else {
+            texture_data.data.assign(data, data + width * height * 4);
+        }
+
+        texture_data.is_srgb = is_srgb;
         texture_data.image_width = width;
         texture_data.image_height = height;
         texture_data.bytes_per_pixel = 4;

@@ -84,6 +84,7 @@ void create_material_texture(const tinygltf::Model& model, int tex_index, Textur
             texture_data.image_width = image.width;
             texture_data.image_height = image.height;
             texture_data.bytes_per_pixel = 4;
+            texture_data.is_srgb = is_srgb;
             texture_data.bytes_per_scanline = texture_data.image_width * texture_data.bytes_per_pixel;
 
             if (async_load || fill_texture_data) {
@@ -105,6 +106,7 @@ void create_material_texture(const tinygltf::Model& model, int tex_index, Textur
         texture_data.image_width = image.width;
         texture_data.image_height = image.height;
         texture_data.bytes_per_pixel = 4;
+        texture_data.is_srgb = is_srgb;
         texture_data.bytes_per_scanline = texture_data.image_width * texture_data.bytes_per_pixel;
 
         if (async_load || fill_texture_data) {
