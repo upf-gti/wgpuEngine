@@ -116,10 +116,14 @@ int Engine::initialize(Renderer* renderer, sEngineConfiguration configuration)
 
 #ifdef __EMSCRIPTEN__
 
+    spdlog::info("Initializing Renderer and WASM module...");
+
     while (initialize_step() || !wasm_module_initialized) {
         renderer->process_events();
         emscripten_sleep(1); // Allows browser to run events
     }
+
+    spdlog::info("WASM module initialized");
 
 #else
 
