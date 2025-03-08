@@ -220,7 +220,7 @@ if (NOT EMSCRIPTEN)
             endif()
 
             target_link_libraries(${PROJECT_NAME} PUBLIC Vulkan-Headers)
-            set_property(TARGET Vulkan-Module PROPERTY FOLDER "External/VulkanModule")
+            # set_property(TARGET Vulkan-Module PROPERTY FOLDER "External/VulkanModule")
 
         endif()
 
