@@ -76,9 +76,9 @@ bool OpenXRContext::init(WebGPUContext* webgpu_context)
 
     dawnxr::GraphicsBindingDawn binding = { .device = webgpu_context->device };
 
-    XrSessionCreateInfo xrCreateInfo = { 
-        .type = XR_TYPE_SESSION_CREATE_INFO, 
-        .next = &binding, 
+    XrSessionCreateInfo xrCreateInfo = {
+        .type = XR_TYPE_SESSION_CREATE_INFO,
+        .next = &binding,
         .systemId = system_id
     };
     dawnxr::createSession(instance, &xrCreateInfo, &session);
@@ -151,7 +151,7 @@ bool OpenXRContext::init(WebGPUContext* webgpu_context)
     XrReferenceSpaceCreateInfo play_space_create_info = {
         .type = XR_TYPE_REFERENCE_SPACE_CREATE_INFO,
         .referenceSpaceType = play_space_type, //play_space_type,
-        .poseInReferenceSpace = identity_pose 
+        .poseInReferenceSpace = identity_pose
     };
 
     result = xrCreateReferenceSpace(session, &play_space_create_info, &play_space);
@@ -177,6 +177,8 @@ bool OpenXRContext::init(WebGPUContext* webgpu_context)
         // projection_views[i].pose (and fov) have to be filled every frame in frame loop
     };
 
+    viewport = glm::ivec4(0, 0, viewconfig_views[0].recommendedImageRectWidth, viewconfig_views[0].recommendedImageRectHeight);
+
     if (Input::init_xr(this)) {
         spdlog::error("Can't initialize xr input");
         return 1;
@@ -196,7 +198,7 @@ void OpenXRContext::clean()
     for (uint32_t i = 0; i < view_count; ++i) {
         xrDestroySwapchain(swapchains[i].swapchain);
     }
-    
+
     xrDestroySpace(play_space);
     xrDestroySession(session);
     xrDestroyInstance(instance);
@@ -246,7 +248,7 @@ bool OpenXRContext::create_instance()
     bool dx12_ext = false;
 
     std::string extensions = "OpenXR extensions:\n";
-    for (const auto &ext : extensionProperties) {
+    for (const auto& ext : extensionProperties) {
         extensions += "\t " + std::string(ext.extensionName) + " " + std::to_string(ext.extensionVersion) + "\n";
 
         if (strcmp("XR_KHR_vulkan_enable2", ext.extensionName) == 0) {
@@ -339,8 +341,8 @@ bool OpenXRContext::create_instance()
 
     spdlog::info("Runtime Name: {}", instance_props.runtimeName);
     spdlog::info("Runtime Version: {}.{}.{}", XR_VERSION_MAJOR(instance_props.runtimeVersion),
-                                              XR_VERSION_MINOR(instance_props.runtimeVersion),
-                                              XR_VERSION_PATCH(instance_props.runtimeVersion));
+        XR_VERSION_MINOR(instance_props.runtimeVersion),
+        XR_VERSION_PATCH(instance_props.runtimeVersion));
 
     XrSystemGetInfo system_get_info = { .type = XR_TYPE_SYSTEM_GET_INFO, .next = NULL, .formFactor = XR_FORM_FACTOR_HEAD_MOUNTED_DISPLAY };
     result = xrGetSystem(instance, &system_get_info, &system_id);
@@ -383,6 +385,17 @@ bool OpenXRContext::end_session()
     }
 
     return true;
+}
+
+WGPUTextureView OpenXRContext::get_swapchain_view(uint8_t eye_idx)
+{
+    const sSwapchainData& swapchainData = swapchains[eye_idx];
+    return swapchainData.images[swapchainData.image_index].textureView;
+}
+
+uint32_t OpenXRContext::get_swapchain_image_index(uint8_t eye_idx)
+{
+    return swapchains[eye_idx].image_index;
 }
 
 void OpenXRContext::print_viewconfig_view_info()
@@ -465,7 +478,7 @@ bool OpenXRContext::check_vulkan_version(XrGraphicsRequirementsVulkanKHR* vulkan
 #endif
 
 #if defined(BACKEND_DX12)
-bool OpenXRContext::check_dx12_version(XrGraphicsRequirementsD3D12KHR* dx12_reqs)
+bool OpenOpenXRContext::check_dx12_version(XrGraphicsRequirementsD3D12KHR* dx12_reqs)
 {
     spdlog::info("### D3D12 graphics requirements minFeatureLevel: {}", static_cast<uint32_t>(dx12_reqs->minFeatureLevel));
     spdlog::info("### D3D12 graphics requirements adapterLuid: {} {}", dx12_reqs->adapterLuid.HighPart, dx12_reqs->adapterLuid.LowPart);
@@ -540,7 +553,7 @@ void OpenXRContext::init_actions(XrInputData& data)
 
     // Create actions.
     {
-        bool is_ok = true;   
+        bool is_ok = true;
 
         // Create an input action getting the left and right hand poses (aim)
         is_ok &= create_action(input_state.actionSet, input_state.handSubactionPath, HAND_COUNT,
@@ -657,12 +670,12 @@ void OpenXRContext::init_actions(XrInputData& data)
                 {input_state.aimPoseAction,     aimPosePath[HAND_RIGHT]},
                 {input_state.gripPoseAction,    gripPosePath[HAND_LEFT]},
                 {input_state.gripPoseAction,    gripPosePath[HAND_RIGHT]},
-               /* {input_state.quitAction,      menuClickPath[HAND_LEFT]},
-                {input_state.quitAction,        menuClickPath[HAND_RIGHT]},*/
-                {input_state.vibrateAction,     hapticPath[HAND_LEFT]},
-                {input_state.vibrateAction,     hapticPath[HAND_RIGHT]} };
+                /* {input_state.quitAction,      menuClickPath[HAND_LEFT]},
+                 {input_state.quitAction,        menuClickPath[HAND_RIGHT]},*/
+                 {input_state.vibrateAction,     hapticPath[HAND_LEFT]},
+                 {input_state.vibrateAction,     hapticPath[HAND_RIGHT]} };
 
-        XrInteractionProfileSuggestedBinding suggestedBindings { XR_TYPE_INTERACTION_PROFILE_SUGGESTED_BINDING };
+        XrInteractionProfileSuggestedBinding suggestedBindings{ XR_TYPE_INTERACTION_PROFILE_SUGGESTED_BINDING };
         suggestedBindings.interactionProfile = khrSimpleInteractionProfilePath;
         suggestedBindings.suggestedBindings = bindings.data();
         suggestedBindings.countSuggestedBindings = static_cast<uint32_t>(bindings.size());
@@ -672,7 +685,7 @@ void OpenXRContext::init_actions(XrInputData& data)
     {
         XrPath oculusTouchInteractionProfilePath;
         xrStringToPath(instance, "/interaction_profiles/oculus/touch_controller", &oculusTouchInteractionProfilePath);
-        std::vector<XrActionSuggestedBinding> bindings = { 
+        std::vector<XrActionSuggestedBinding> bindings = {
             {input_state.grabAction,            squeezeValuePath[HAND_LEFT]},
             {input_state.grabAction,            squeezeValuePath[HAND_RIGHT]},
             {input_state.aimPoseAction,         aimPosePath[HAND_LEFT]},
@@ -814,8 +827,8 @@ void OpenXRContext::init_actions(XrInputData& data)
 void OpenXRContext::poll_actions(XrInputData& data)
 {
     // Sync the actions 
-    std::vector<XrActiveActionSet> activeActionSets = { 
-        { input_state.actionSet, XR_NULL_PATH } 
+    std::vector<XrActiveActionSet> activeActionSets = {
+        { input_state.actionSet, XR_NULL_PATH }
     };
 
     XrActionsSyncInfo actionsSyncInfo = { .type = XR_TYPE_ACTIONS_SYNC_INFO,
@@ -843,16 +856,16 @@ void OpenXRContext::poll_actions(XrInputData& data)
 
     // [tdbe] Headset State. Use to detect status / user proximity / user presence / user engagement https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html#session-lifecycle
     data.headsetActivityState = session_state;
-    
+
     for (int i = 0u; i < HAND_COUNT; i++) {
-        
+
         // Aim Pose
         XrActionStatePose aimPoseState = get_action_pose_state(input_state.aimPoseAction, i);
         if (aimPoseState.isActive)
         {
             XrSpaceLocation spaceLocation{ .type = XR_TYPE_SPACE_LOCATION };
             result = xrLocateSpace(input_state.aimHandSpace[i], play_space, frame_state.predictedDisplayTime, &spaceLocation);
-            
+
             // Check that the position and orientation are valid and tracked
             constexpr XrSpaceLocationFlags checkFlags =
                 XR_SPACE_LOCATION_POSITION_VALID_BIT | XR_SPACE_LOCATION_POSITION_TRACKED_BIT |
@@ -899,7 +912,7 @@ void OpenXRContext::poll_actions(XrInputData& data)
             XrActionStateBoolean thumbStickTouchState = get_action_boolean_state(input_state.thumbstickTouchAction, i);
             data.thumbStickTouchState[i] = thumbStickTouchState;
         }
-        
+
         // Triggers State
         {
             XrActionStateFloat triggerValueState = get_action_float_state(input_state.triggerValueAction, i);
@@ -1121,7 +1134,8 @@ void OpenXRContext::update()
             const glm::mat4 root_model = root_transform->get_model();
             per_view_data[i].position = root_model * glm::vec4(per_view_data[i].position, 1.0);
             per_view_data[i].view_matrix = glm::inverse(root_model * parse_OpenXR_pose_to_glm(views[i].pose));
-        } else {
+        }
+        else {
             per_view_data[i].view_matrix = glm::inverse(parse_OpenXR_pose_to_glm(views[i].pose));
         }
 

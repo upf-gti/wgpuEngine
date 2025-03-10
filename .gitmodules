@@ -31,3 +31,6 @@
 [submodule "libraries/rapidjson"]
 	path = libraries/rapidjson
 	url = https://github.com/Tencent/rapidjson
+[submodule "libraries/emscripten-webxr"]
+	path = libraries/emscripten-webxr
+	url = https://github.com/upf-gti/emscripten-webxr.git

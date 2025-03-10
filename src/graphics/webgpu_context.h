@@ -10,7 +10,7 @@
 class Shader;
 class Pipeline;
 class Texture;
-struct OpenXRContext;
+struct XRContext;
 struct GLFWwindow;
 
 #define ENVIRONMENT_RESOLUTION 1024
@@ -89,7 +89,7 @@ struct WebGPUContext {
     void                   close_window();
 
     void                   create_instance();
-    WGPUFuture             request_adapter(OpenXRContext* xr_context, bool is_openxr_available);
+    WGPUFuture             request_adapter(XRContext* xr_context, bool is_openxr_available);
     WGPUFuture             request_device(const std::vector<WGPUFeatureName> required_features);
 
     void                   print_device_info();

@@ -1,14 +1,11 @@
 #pragma once
 
-#include <vector>
-#include <array>
-#include "includes.h"
+#include "xr_context.h"
 
 #ifdef XR_SUPPORT
 
 #include "dawnxr/dawnxr.h"
 #include "framework/input_xr.h"
-
 
 #if defined(BACKEND_VULKAN)
 struct XrGraphicsRequirementsVulkanKHR;
@@ -16,13 +13,7 @@ struct XrGraphicsRequirementsVulkanKHR;
 struct XrGraphicsRequirementsD3D12KHR;
 #endif
 
-struct WebGPUContext;
-
-class Transform;
-
-struct OpenXRContext {
-
-    Transform* root_transform = nullptr;
+struct OpenXRContext : public XRContext {
 
     /*
     * XR General
@@ -32,10 +23,10 @@ struct OpenXRContext {
     XrSystemId system_id;
     // Play space is usually local (head is origin, seated) or stage (room scale)
     XrSpace play_space;
-    bool initialized = false;
 
-    bool init(WebGPUContext* webgpu_context);
-    void clean();
+    bool init(WebGPUContext* webgpu_context) override;
+    void clean() override;
+
     bool create_instance();
     XrInstance* get_instance() { return &instance; }
 
@@ -58,12 +49,15 @@ struct OpenXRContext {
     XrSession session;
     XrSessionState session_state;
 
-    bool begin_session();
-    bool end_session();
+    bool begin_session() override;
+    bool end_session() override;
 
     /*
     * Render
     */
+
+    WGPUTextureView get_swapchain_view(uint8_t eye_idx) override;
+    uint32_t get_swapchain_image_index(uint8_t eye_idx) override;
 
     uint32_t view_count;
     XrFrameState frame_state{ XR_TYPE_FRAME_STATE };
@@ -77,7 +71,6 @@ struct OpenXRContext {
     std::vector<XrView> views;
     std::vector<XrViewConfigurationView> viewconfig_views;
     std::vector<XrCompositionLayerProjectionView> projection_views;
-    std::vector<sViewData> per_view_data;
     std::vector<int64_t> swapchain_formats;
 
     void init_frame();
@@ -91,7 +84,8 @@ struct OpenXRContext {
     * Debug & Errors
     */
 
-    void print_viewconfig_view_info();
+    void print_viewconfig_view_info() override;
+    void print_reference_spaces() override;
 
     int check_backend_requirements();
 
@@ -100,8 +94,6 @@ struct OpenXRContext {
 #elif defined(BACKEND_DX12)
     bool check_dx12_version(XrGraphicsRequirementsD3D12KHR* dx12_reqs);
 #endif
-
-    void print_reference_spaces();
 
 private:
     
@@ -121,7 +113,7 @@ private:
 
 #else
 
-struct OpenXRContext {
+struct XRContext {
 
 };
 

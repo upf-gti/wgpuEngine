@@ -19,7 +19,7 @@
 #include <GLFW/glfw3.h>
 
 class Renderer;
-struct OpenXRContext;
+struct XRContext;
 
 class Input {
 
@@ -80,7 +80,7 @@ public:
     static void set_mouse_wheel(float offset_x, float offset_y);
 
 #ifdef XR_SUPPORT
-    static bool init_xr(OpenXRContext* context);
+    static bool init_xr(XRContext* context);
 #endif
 
     /*

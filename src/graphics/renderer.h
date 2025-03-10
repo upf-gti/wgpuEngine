@@ -29,7 +29,7 @@ class MeshInstance3D;
 class GSNode;
 struct GLFWwindow;
 struct WebGPUContext;
-struct OpenXRContext;
+struct XRContext;
 struct sLightUniformData;
 
 struct sRendererConfiguration {
@@ -58,7 +58,7 @@ class Renderer {
 
 protected:
 
-    OpenXRContext*  xr_context;
+    XRContext*  xr_context;
     WebGPUContext*  webgpu_context;
 
     std::function<void(WGPURenderPassEncoder, WGPUBindGroup, void*, uint32_t)> custom_pre_opaque_pass = nullptr;
@@ -343,7 +343,7 @@ public:
     glm::vec4 get_clear_color() { return clear_color; }
 
 #ifdef XR_SUPPORT
-    OpenXRContext* get_openxr_context();
+    XRContext* get_xr_context();
 #endif
     WebGPUContext* get_webgpu_context();
 

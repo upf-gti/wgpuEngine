@@ -76,7 +76,7 @@ void PrintGLFWError(int code, const char* message) {
     spdlog::error("GLFW error: {} - {}", code, message);
 }
 
-WGPUFuture WebGPUContext::request_adapter(OpenXRContext* xr_context, bool is_openxr_available)
+WGPUFuture WebGPUContext::request_adapter(XRContext* xr_context, bool is_openxr_available)
 {
     WGPURequestAdapterOptions adapter_opts = {};
 
@@ -88,7 +88,9 @@ WGPUFuture WebGPUContext::request_adapter(OpenXRContext* xr_context, bool is_ope
     //webxr_options.xrCompatible = true;
     //adapter_opts.nextInChain = reinterpret_cast<WGPUChainedStruct*>(&webxr_options);
 
-#ifdef XR_SUPPORT
+#ifdef OPENXR_SUPPORT
+
+    OpenXRContext* openxr_context = static_cast<OpenXRContext*>(xr_context);
 
 #if defined(BACKEND_DX12)
     adapter_opts.backendType = WGPUBackendType_D3D12;
@@ -101,7 +103,7 @@ WGPUFuture WebGPUContext::request_adapter(OpenXRContext* xr_context, bool is_ope
     if (is_openxr_available) {
 
 #if defined(BACKEND_VULKAN)
-        dawnxr::internal::createVulkanOpenXRConfig(xr_context->instance, xr_context->system_id, (void**)&adapter_opts_xr_config.openXRConfig);
+        dawnxr::internal::createVulkanOpenXRConfig(openxr_context->instance, openxr_context->system_id, (void**)&adapter_opts_xr_config.openXRConfig);
         adapter_opts.nextInChain = reinterpret_cast<WGPUChainedStruct*>(&adapter_opts_xr_config);
 #endif
     }

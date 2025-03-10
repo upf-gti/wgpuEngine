@@ -664,9 +664,9 @@ void Engine::resize_window(int width, int height)
 
 void Engine::vibrate_hand(int controller, float amplitude, float duration)
 {
-#ifdef XR_SUPPORT
+#ifdef OPENXR_SUPPORT
     if (renderer->get_openxr_available()) {
-        auto openxr_context = renderer->get_openxr_context();
+        OpenXRContext* openxr_context = static_cast<OpenXRContext*>(renderer->get_xr_context());
         openxr_context->apply_haptics(controller, amplitude, duration);
     }
 #endif

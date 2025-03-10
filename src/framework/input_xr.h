@@ -64,13 +64,6 @@ struct XrInputPose {
     glm::vec3 position;
 };
 
-struct sViewData {
-    glm::vec3   position;
-    glm::mat4x4 projection_matrix;
-    glm::mat4x4 view_matrix;
-    glm::mat4x4 view_projection_matrix;
-};
-
 struct sSwapchainData {
     XrSwapchain swapchain = {};
     uint32_t    image_index = {};

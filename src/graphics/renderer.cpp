@@ -2,13 +2,17 @@
 
 #include "graphics/webgpu_context.h"
 
-#ifdef XR_SUPPORT
+#if defined(OPENXR_SUPPORT)
 
 #include "xr/openxr_context.h"
 
 #include "xr/dawnxr/dawnxr_internal.h"
 
 #include "graphics/backend_include.h"
+
+#elif defined(WEBXR_SUPPORT)
+
+#include "xr/webxr_context.h"
 
 #endif
 
@@ -61,9 +65,16 @@ Renderer::Renderer(const sRendererConfiguration& config)
     Surface::webgpu_context = webgpu_context;
     Texture::webgpu_context = webgpu_context;
 
-#ifdef XR_SUPPORT
-    xr_context = new OpenXRContext();
-    is_openxr_available = xr_context->create_instance();
+#if defined(OPENXR_SUPPORT)
+    OpenXRContext* openxr_context = new OpenXRContext();
+    is_openxr_available = openxr_context->create_instance();
+
+    xr_context = openxr_context;
+#elif defined(WEBXR_CONTEXT)
+    WebXRContext* webxr_context = new WebXRContext();
+    //is_openxr_available = openxr_context->create_instance();
+
+    xr_context = webxr_context;
 #endif
 
     set_required_limits(config.required_limits);
@@ -162,8 +173,8 @@ int Renderer::post_initialize()
     }
 
     if (is_openxr_available) {
-        webgpu_context->render_width = xr_context->viewconfig_views[0].recommendedImageRectWidth;
-        webgpu_context->render_height = xr_context->viewconfig_views[0].recommendedImageRectHeight;
+        webgpu_context->render_width = xr_context->viewport.z;
+        webgpu_context->render_height = xr_context->viewport.w;
     }
 #endif
 
@@ -434,8 +445,6 @@ void Renderer::render()
         prepare_cull_instancing(vr_camera, render_lists, render_instances_data);
 
         for (uint32_t eye_idx = 0; eye_idx < EYE_COUNT; eye_idx++) {
-            const sSwapchainData& swapchainData = xr_context->swapchains[eye_idx];
-
             xr_context->acquire_swapchain(eye_idx);
 
             camera_data.eye = cameras[eye_idx].get_eye();
@@ -445,13 +454,13 @@ void Renderer::render()
 
             wgpuQueueWriteBuffer(webgpu_context->device_queue, std::get<WGPUBuffer>(camera_uniform.data), eye_idx * camera_buffer_stride, &camera_data, sizeof(sCameraData));
 
-            render_camera(render_lists, swapchainData.images[swapchainData.image_index].textureView, eye_depth_texture_view[eye_idx], render_instances_data, render_camera_bind_group, true, "forward_render_xr", eye_idx, eye_idx);
+            render_camera(render_lists, xr_context->get_swapchain_view(eye_idx), eye_depth_texture_view[eye_idx], render_instances_data, render_camera_bind_group, true, "forward_render_xr", eye_idx, eye_idx);
 
             xr_context->release_swapchain(eye_idx);
         }
 
         if (use_mirror_screen) {
-            render_mirror(screen_surface_texture_view, custom_mirror_fbo_bind_group ? custom_mirror_fbo_bind_group : swapchain_bind_groups[xr_context->swapchains[0].image_index]);
+            render_mirror(screen_surface_texture_view, custom_mirror_fbo_bind_group ? custom_mirror_fbo_bind_group : swapchain_bind_groups[xr_context->get_swapchain_image_index(0)]);
         }
     }
 #endif
@@ -1359,7 +1368,7 @@ void Renderer::set_irradiance_texture(Texture* texture)
 }
 
 #ifdef XR_SUPPORT
-OpenXRContext* Renderer::get_openxr_context()
+XRContext* Renderer::get_xr_context()
 {
     return (is_openxr_available ? xr_context : nullptr);
 }
@@ -1375,7 +1384,7 @@ GLFWwindow* Renderer::get_glfw_window()
     return webgpu_context->window;
 };
 
-#if defined(XR_SUPPORT) && defined(USE_MIRROR_WINDOW)
+#if defined(USE_MIRROR_WINDOW)
 
 void Renderer::init_mirror_pipeline()
 {
@@ -1390,11 +1399,13 @@ void Renderer::init_mirror_pipeline()
     color_target.blend = nullptr;
     color_target.writeMask = WGPUColorWriteMask_All;
 
+    OpenXRContext* openxr_context = static_cast<OpenXRContext*>(xr_context);
+
     // Generate uniforms from the swapchain
-    for (uint8_t i = 0; i < xr_context->swapchains[0].images.size(); i++) {
+    for (uint8_t i = 0; i < openxr_context->swapchains[0].images.size(); i++) {
         Uniform swapchain_uni;
 
-        swapchain_uni.data = xr_context->swapchains[0].images[i].textureView;
+        swapchain_uni.data = openxr_context->swapchains[0].images[i].textureView;
         swapchain_uni.binding = 0;
 
         swapchain_uniforms.push_back(swapchain_uni);
