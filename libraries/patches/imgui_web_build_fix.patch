@@ -1,5 +1,5 @@
 diff --git a/backends/imgui_impl_wgpu.cpp b/backends/imgui_impl_wgpu.cpp
-index 3187be29a..6092e521c 100644
+index 3187be29a..8f9e7db6b 100644
 --- a/backends/imgui_impl_wgpu.cpp
 +++ b/backends/imgui_impl_wgpu.cpp
 @@ -60,7 +60,7 @@
@@ -7,7 +7,7 @@ index 3187be29a..6092e521c 100644
  #include <webgpu/webgpu.h>
  
 -#ifdef IMGUI_IMPL_WEBGPU_BACKEND_DAWN
-+#if  defined(IMGUI_IMPL_WEBGPU_BACKEND_DAWN) || defined(__EMSCRIPTEN__)
++#if defined(IMGUI_IMPL_WEBGPU_BACKEND_DAWN) || defined(__EMSCRIPTEN__)
  // Dawn renamed WGPUProgrammableStageDescriptor to WGPUComputeState (see: https://github.com/webgpu-native/webgpu-headers/pull/413)
  // Using type alias until WGPU adopts the same naming convention (#8369)
  using WGPUProgrammableStageDescriptor = WGPUComputeState;
