@@ -106,6 +106,9 @@ void WebXRContext::print_error(int error)
     case WEBXR_ERR_XRGPU_BINDING_UNSUPPORTED:
         spdlog::error("WebXR/WebGPU binding not supported on this device");
         break;
+    case WEBXR_ERR_IMMERSIVE_XR_UNSUPPORTED:
+        spdlog::error("Immersive VR not supported. Missing Headset?");
+        break;
     default:
         spdlog::error("Unknown WebXR error with code: {}", error);
     }
