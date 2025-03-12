@@ -182,10 +182,10 @@ endif()
 
 if(NOT WGPUENGINE_DISABLE_XR)
     target_compile_definitions(${PROJECT_NAME} PUBLIC "XR_SUPPORT")
+    target_compile_definitions(${PROJECT_NAME} PUBLIC "USE_MIRROR_WINDOW")
 
     if (NOT EMSCRIPTEN)
         target_compile_definitions(${PROJECT_NAME} PUBLIC "OPENXR_SUPPORT")
-        target_compile_definitions(${PROJECT_NAME} PUBLIC "USE_MIRROR_WINDOW")
     else()
         target_compile_definitions(${PROJECT_NAME} PUBLIC "WEBXR_SUPPORT")
     endif()

@@ -140,11 +140,10 @@ int Renderer::initialize()
     }
 
     bool create_screen_swapchain = true;
-#ifdef OPENXR_SUPPORT
+
     if (is_xr_available) {
         create_screen_swapchain = use_mirror_screen;
     }
-#endif
 
     // NOTE: breakpoint here for initial compute debugging in Metal
     if (webgpu_context->adapter && webgpu_context->device) {
@@ -203,7 +202,7 @@ int Renderer::post_initialize()
 
     init_timestamp_queries();
 
-#ifdef USE_MIRROR_WINDOW
+#if defined(OPENXR_SUPPORT) && defined(USE_MIRROR_WINDOW)
     if (is_xr_available) {
         init_mirror_pipeline();
     }
@@ -376,6 +375,7 @@ void Renderer::render()
         clear_renderables();
 
 #ifdef XR_SUPPORT
+        // TODO: use callback for webxr first frame instead
         if (is_xr_available) {
             glm::ivec4 viewport = xr_context->viewport;
 
@@ -385,6 +385,8 @@ void Renderer::render()
                 webgpu_context->render_height = viewport.w;
 
                 resize_window(viewport.z, viewport.w);
+
+                init_mirror_pipeline();
             }
         }
 #endif
@@ -1435,13 +1437,11 @@ void Renderer::init_mirror_pipeline()
     color_target.blend = nullptr;
     color_target.writeMask = WGPUColorWriteMask_All;
 
-    OpenXRContext* openxr_context = static_cast<OpenXRContext*>(xr_context);
-
     // Generate uniforms from the swapchain
-    for (uint8_t i = 0; i < openxr_context->swapchains[0].images.size(); i++) {
+    for (uint8_t i = 0; i < 2; i++) {
         Uniform swapchain_uni;
 
-        swapchain_uni.data = openxr_context->swapchains[0].images[i].textureView;
+        swapchain_uni.data = xr_context->get_swapchain_view(i);
         swapchain_uni.binding = 0;
 
         swapchain_uniforms.push_back(swapchain_uni);
