@@ -97,9 +97,15 @@ WGPU_SOURCES_APPEND(${WGPU_DIR_SOURCES}/graphics/kernels)
 WGPU_SOURCES_APPEND(${WGPU_DIR_SOURCES}/graphics/debug)
 WGPU_SOURCES_APPEND(${WGPU_DIR_SOURCES}/engine)
 
-if (NOT EMSCRIPTEN AND NOT APPLE AND NOT UNIX)
+if(NOT WGPUENGINE_DISABLE_XR)
     WGPU_SOURCES_APPEND(${WGPU_DIR_SOURCES}/xr)
-    WGPU_SOURCES_APPEND(${WGPU_DIR_SOURCES}/xr/dawnxr)
+
+    if (NOT EMSCRIPTEN AND NOT APPLE AND NOT UNIX)
+        WGPU_SOURCES_APPEND(${WGPU_DIR_SOURCES}/xr/openxr)
+        WGPU_SOURCES_APPEND(${WGPU_DIR_SOURCES}/xr/dawnxr)
+    else()
+        WGPU_SOURCES_APPEND(${WGPU_DIR_SOURCES}/xr/webxr)
+    endif()
 endif()
 
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${WGPU_SOURCES} ${WGPU_HEADERS})
@@ -147,8 +153,6 @@ if (MSVC)
     add_compile_options(/Zc:__cplusplus)
 endif()
 
-# INSTALL(FILES ${WGPU_HEADERS} DESTINATION ${CMAKE_BINARY_DIR})
-
 if (EMSCRIPTEN)
 
     add_compile_options(
@@ -163,7 +167,32 @@ if (EMSCRIPTEN)
     # needed to compile tint on web
     add_compile_options(-w)
 
+    target_compile_definitions(${PROJECT_NAME} PUBLIC "BACKEND_EMSCRIPTEN")
+elseif (APPLE)
+    target_compile_definitions(${PROJECT_NAME} PUBLIC "BACKEND_METAL")
+    target_compile_definitions(${PROJECT_NAME} PUBLIC "DAWN_ENABLE_METAL")
+else()
+    # WIN32 and Linux
+    if(WGPUENGINE_FORCE_DX12)
+        target_compile_definitions(${PROJECT_NAME} PUBLIC "BACKEND_DX12")
+    else()
+        target_compile_definitions(${PROJECT_NAME} PUBLIC "BACKEND_VULKAN")
+    endif()
 endif()
+
+if(NOT WGPUENGINE_DISABLE_XR)
+    target_compile_definitions(${PROJECT_NAME} PUBLIC "XR_SUPPORT")
+
+    if (NOT EMSCRIPTEN)
+        target_compile_definitions(${PROJECT_NAME} PUBLIC "OPENXR_SUPPORT")
+        target_compile_definitions(${PROJECT_NAME} PUBLIC "USE_MIRROR_WINDOW")
+    else()
+        target_compile_definitions(${PROJECT_NAME} PUBLIC "WEBXR_SUPPORT")
+    endif()
+endif()
+
+
+# INSTALL(FILES ${WGPU_HEADERS} DESTINATION ${CMAKE_BINARY_DIR})
 
 # dawn
 add_subdirectory(libraries/webgpu)
@@ -187,31 +216,6 @@ target_compile_definitions(glm PUBLIC GLM_FORCE_DEPTH_ZERO_TO_ONE)
 set_property(TARGET glm PROPERTY CXX_STANDARD 20)
 set_property(TARGET glm PROPERTY FOLDER "External/glm")
 target_link_libraries(${PROJECT_NAME} PUBLIC glm)
-
-if (EMSCRIPTEN)
-    target_compile_definitions(${PROJECT_NAME} PUBLIC "BACKEND_EMSCRIPTEN")
-elseif (APPLE)
-    target_compile_definitions(${PROJECT_NAME} PUBLIC "BACKEND_METAL")
-    target_compile_definitions(${PROJECT_NAME} PUBLIC "DAWN_ENABLE_METAL")
-else()
-    # WIN32 and Linux
-    if(WGPUENGINE_FORCE_DX12)
-        target_compile_definitions(${PROJECT_NAME} PUBLIC "BACKEND_DX12")
-    else()
-        target_compile_definitions(${PROJECT_NAME} PUBLIC "BACKEND_VULKAN")
-    endif()
-
-    if(NOT WGPUENGINE_DISABLE_XR)
-        target_compile_definitions(${PROJECT_NAME} PUBLIC "XR_SUPPORT")
-
-        if (NOT EMSCRIPTEN)
-            target_compile_definitions(${PROJECT_NAME} PUBLIC "OPENXR_SUPPORT")
-            target_compile_definitions(${PROJECT_NAME} PUBLIC "USE_MIRROR_WINDOW")
-        else()
-            target_compile_definitions(${PROJECT_NAME} PUBLIC "WEBXR_SUPPORT")
-        endif()
-    endif()
-endif()
 
 if (NOT EMSCRIPTEN)
 
@@ -259,6 +263,8 @@ else()
     target_link_libraries(${PROJECT_NAME} PUBLIC webxr)
 
 endif()
+
+target_include_directories(${PROJECT_NAME} PUBLIC libraries/emscripten-webxr)
 
 # easyVDB
 add_subdirectory(libraries/easyVDB)

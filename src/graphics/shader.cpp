@@ -180,7 +180,7 @@ bool Shader::parse_preprocessor_line(std::istringstream& string_stream, std::str
         Renderer* renderer = Renderer::instance;
 
         if (define_name == "GAMMA_CORRECTION") {
-            final_value = renderer->get_openxr_available() ? "0" : "1";
+            final_value = renderer->get_xr_available() ? "0" : "1";
         }
 
         for (const auto define : custom_defines) {

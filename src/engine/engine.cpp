@@ -10,7 +10,11 @@
 #include "graphics/renderer_storage.h"
 #include "graphics/renderer.h"
 
-#include "xr/openxr_context.h"
+#if defined(OPENXR_SUPPORT)
+#include "xr/openxr/openxr_context.h"
+#elif defined(WEBXR_SUPPORT)
+#include "xr/webxr/webxr_context.h"
+#endif
 
 #include "imgui.h"
 #include "imgui_internal.h"
@@ -173,7 +177,7 @@ bool Engine::pre_initialize_renderer()
     int screen_height = configuration.window_height;
 #endif
 
-    const bool use_xr = renderer->get_openxr_available();
+    const bool use_xr = renderer->get_xr_available();
     const bool use_mirror_screen = get_use_mirror_window();
 
     if (use_xr && !renderer->get_use_custom_mirror()) {
@@ -350,7 +354,7 @@ void Engine::add_node(Node* node)
 
 bool Engine::get_openxr_available()
 {
-    return renderer->get_openxr_available();
+    return renderer->get_xr_available();
 }
 
 bool Engine::get_use_mirror_window()
@@ -384,7 +388,7 @@ Scene* Engine::get_main_scene()
 
 void Engine::get_scene_ray(glm::vec3& ray_origin, glm::vec3& ray_direction)
 {
-    if (renderer->get_openxr_available()) {
+    if (renderer->get_xr_available()) {
         ray_origin = Input::get_controller_position(HAND_RIGHT, POSE_AIM);
         glm::mat4x4 select_hand_pose = Input::get_controller_pose(HAND_RIGHT, POSE_AIM);
         ray_direction = get_front(select_hand_pose);
@@ -653,7 +657,7 @@ bool Engine::render_scene_tree_recursive(Node* entity)
 
 void Engine::resize_window(int width, int height)
 {
-    if (!renderer->get_openxr_available()) {
+    if (!renderer->get_xr_available()) {
         ImGui_ImplWGPU_InvalidateDeviceObjects();
         renderer->resize_window(width, height);
         ImGui_ImplWGPU_CreateDeviceObjects();
@@ -665,7 +669,7 @@ void Engine::resize_window(int width, int height)
 void Engine::vibrate_hand(int controller, float amplitude, float duration)
 {
 #ifdef OPENXR_SUPPORT
-    if (renderer->get_openxr_available()) {
+    if (renderer->get_xr_available()) {
         OpenXRContext* openxr_context = static_cast<OpenXRContext*>(renderer->get_xr_context());
         openxr_context->apply_haptics(controller, amplitude, duration);
     }

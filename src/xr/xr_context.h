@@ -15,7 +15,36 @@ struct WebGPUContext;
 
 class Transform;
 
+// Small helper so we don't forget whether we treat 0 as left or right hand
+enum XR_HANDS
+{
+    HAND_LEFT = 0,
+    HAND_RIGHT = 1,
+    HAND_COUNT
+};
+
+enum XR_POSES {
+    POSE_GRIP = 0,
+    POSE_AIM
+};
+
+enum XR_BUTTONS {
+    XR_BUTTON_A = 0,
+    XR_BUTTON_B,
+    XR_BUTTON_X,
+    XR_BUTTON_Y,
+    XR_BUTTON_MENU,
+};
+
+enum XR_THUMBSTICK_AXIS : uint8_t {
+    XR_THUMBSTICK_NO_AXIS = 0,
+    XR_THUMBSTICK_AXIS_X,
+    XR_THUMBSTICK_AXIS_Y
+};
+
 struct XRContext {
+
+    virtual ~XRContext();
 
     Transform* root_transform = nullptr;
 
@@ -52,19 +81,13 @@ struct XRContext {
     */
 
     virtual WGPUTextureView get_swapchain_view(uint8_t eye_idx) = 0;
-    virtual uint32_t get_swapchain_image_index(uint8_t eye_idx) {};
+    virtual uint32_t get_swapchain_image_index(uint8_t eye_idx);
 
     // inverted for reverse-z
     float z_near = 1000.0f;
     float z_far = 0.01f;
 
     glm::ivec4 viewport;
-
-    //std::vector<sSwapchainData> swapchains;
-    //std::vector<XrView> views;
-    //std::vector<XrViewConfigurationView> viewconfig_views;
-    //std::vector<XrCompositionLayerProjectionView> projection_views;
-    //std::vector<int64_t> swapchain_formats;
 
     struct sViewData {
         glm::vec3   position;
@@ -75,10 +98,10 @@ struct XRContext {
 
     std::vector<sViewData> per_view_data;
 
-    virtual void init_frame() {};
-    virtual void acquire_swapchain(int swapchain_index) {};
-    virtual void release_swapchain(int swapchain_index) {};
-    virtual void end_frame() {};
+    virtual void init_frame();
+    virtual void acquire_swapchain(int swapchain_index);
+    virtual void release_swapchain(int swapchain_index);
+    virtual void end_frame();
 
     virtual void update() = 0;
 

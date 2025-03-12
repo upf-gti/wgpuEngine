@@ -1,6 +1,6 @@
 #include "openxr_context.h"
 
-#ifdef XR_SUPPORT
+#ifdef OPENXR_SUPPORT
 
 #include <cstdarg>
 
@@ -23,6 +23,9 @@ glm::mat4x4 parse_OpenXR_pose_to_glm(const XrInputPose& p);
 inline XrInputPose parse_OpenXR_pose_to_sPose(const XrPosef& xrPosef);
 glm::quat slerp(const glm::quat& start, const glm::quat& end, float percent);
 glm::vec3 slerp(const glm::vec3& start, const glm::vec3& end, float percent);
+
+OpenXRContext::~OpenXRContext() {
+}
 
 bool OpenXRContext::init(WebGPUContext* webgpu_context)
 {

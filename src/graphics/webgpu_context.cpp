@@ -17,11 +17,11 @@
 
 #include "spdlog/spdlog.h"
 
-#ifdef XR_SUPPORT
+#ifdef OPENXR_SUPPORT
 #include "xr/dawnxr/dawnxr.h"
 #include "xr/dawnxr/dawnxr_internal.h"
 
-#include "xr/openxr_context.h"
+#include "xr/openxr/openxr_context.h"
 
 #include "graphics/backend_include.h"
 
@@ -36,7 +36,13 @@
 #endif
 
 WGPUTextureFormat WebGPUContext::swapchain_format = WGPUTextureFormat_BGRA8Unorm;
+
+// TODO: this should be queried
+#if defined(OPENXR_SUPPORT)
 WGPUTextureFormat WebGPUContext::xr_swapchain_format = WGPUTextureFormat_BGRA8UnormSrgb;
+#elif defined(WEBXR_SUPPORT)
+WGPUTextureFormat WebGPUContext::xr_swapchain_format = WGPUTextureFormat_BGRA8Unorm;
+#endif
 
 WGPUStringView get_string_view(const char* str)
 {
@@ -84,9 +90,11 @@ WGPUFuture WebGPUContext::request_adapter(XRContext* xr_context, bool is_openxr_
     adapter_opts.powerPreference = WGPUPowerPreference_HighPerformance;
     adapter_opts.featureLevel = WGPUFeatureLevel_Core;
 
-    //WGPURequestAdapterWebXROptions webxr_options = {};
-    //webxr_options.xrCompatible = true;
-    //adapter_opts.nextInChain = reinterpret_cast<WGPUChainedStruct*>(&webxr_options);
+#ifdef WEBXR_SUPPORT
+    WGPURequestAdapterWebXROptions webxr_options = {};
+    webxr_options.xrCompatible = true;
+    adapter_opts.nextInChain = reinterpret_cast<WGPUChainedStruct*>(&webxr_options);
+#endif
 
 #ifdef OPENXR_SUPPORT
 
@@ -110,7 +118,7 @@ WGPUFuture WebGPUContext::request_adapter(XRContext* xr_context, bool is_openxr_
     else {
         spdlog::warn("XR not available, fallback to desktop mode");
     }
-#endif
+#endif // OPENXR_SUPPORT
 
     // request adapter
     WGPURequestAdapterCallbackInfo adapter_callback_info = {};

@@ -1,10 +1,12 @@
 #include "input.h"
 #include "graphics/renderer.h"
 
-#ifdef XR_SUPPORT
-#include "xr/openxr_context.h"
+#ifdef OPENXR_SUPPORT
+#include "xr/openxr/openxr_context.h"
 #include "framework/math/transform.h"
 #endif
+
+#include <glm/gtc/type_ptr.hpp>
 
 glm::vec2 Input::mouse_position; //last mouse position
 glm::vec2 Input::mouse_delta; //mouse movement in the last frame
@@ -25,8 +27,7 @@ bool Input::prev_grab_state[HAND_COUNT] = { false, false };
 GLFWwindow* Input::window = nullptr;
 bool Input::use_mirror_screen;
 
-#ifdef XR_SUPPORT
-XrInputData Input::xr_data;
+#ifdef OPENXR_SUPPORT
 OpenXRContext* xr_context = nullptr;
 #endif
 
@@ -83,30 +84,30 @@ bool Input::init_xr(XRContext* context)
 	XrMappedButtonState mb{ .name = "button_a", .hand = HAND_RIGHT };
 	mb.bind_click(instance, "/user/hand/right/input/a/click");
 	mb.bind_touch(instance, "/user/hand/right/input/a/touch");
-	xr_data.buttonsState.push_back(mb);
+    xr_context->xr_data.buttonsState.push_back(mb);
 
-	mb = { .name = "button_b", .hand = HAND_RIGHT };
-	mb.bind_click(instance, "/user/hand/right/input/b/click");
-	mb.bind_touch(instance, "/user/hand/right/input/b/touch");
-	xr_data.buttonsState.push_back(mb);
+    mb = { .name = "button_b", .hand = HAND_RIGHT };
+    mb.bind_click(instance, "/user/hand/right/input/b/click");
+    mb.bind_touch(instance, "/user/hand/right/input/b/touch");
+    xr_context->xr_data.buttonsState.push_back(mb);
 
-	mb = { .name = "button_x", .hand = HAND_LEFT };
-	mb.bind_click(instance, "/user/hand/left/input/x/click");
-	mb.bind_touch(instance, "/user/hand/left/input/x/touch");
-	xr_data.buttonsState.push_back(mb);
+    mb = { .name = "button_x", .hand = HAND_LEFT };
+    mb.bind_click(instance, "/user/hand/left/input/x/click");
+    mb.bind_touch(instance, "/user/hand/left/input/x/touch");
+    xr_context->xr_data.buttonsState.push_back(mb);
 
-	mb = { .name = "button_y", .hand = HAND_LEFT };
-	mb.bind_click(instance, "/user/hand/left/input/y/click");
-	mb.bind_touch(instance, "/user/hand/left/input/y/touch");
-	xr_data.buttonsState.push_back(mb); 
+    mb = { .name = "button_y", .hand = HAND_LEFT };
+    mb.bind_click(instance, "/user/hand/left/input/y/click");
+    mb.bind_touch(instance, "/user/hand/left/input/y/touch");
+    xr_context->xr_data.buttonsState.push_back(mb);
 
-	mb = { .name = "button_menu", .hand = HAND_LEFT };
-	mb.bind_click(instance, "/user/hand/left/input/menu/click");
-	xr_data.buttonsState.push_back(mb);
+    mb = { .name = "button_menu", .hand = HAND_LEFT };
+    mb.bind_click(instance, "/user/hand/left/input/menu/click");
+    xr_context->xr_data.buttonsState.push_back(mb);
 
-	xr_context->init_actions(xr_data);
+    xr_context->init_actions(xr_context->xr_data);
 
-	return 0;
+    return 0;
 }
 #endif
 
@@ -114,40 +115,40 @@ void Input::update(float delta_time)
 {
     glfwPollEvents();
 
-	// Mouse  state
-	if (use_glfw && window) {
+    // Mouse  state
+    if (use_glfw && window) {
 
-		double x, y;
-		glfwGetCursorPos(window, &x, &y);
-		mouse_delta.x = mouse_position.x - static_cast<float>(x);
-		mouse_delta.y = mouse_position.y - static_cast<float>(y);
+        double x, y;
+        glfwGetCursorPos(window, &x, &y);
+        mouse_delta.x = mouse_position.x - static_cast<float>(x);
+        mouse_delta.y = mouse_position.y - static_cast<float>(y);
 
-		mouse_position.x = static_cast<float>(x);
-		mouse_position.y = static_cast<float>(y);
-	}
-	
-#ifdef XR_SUPPORT
-	// Sync XR Controllers
-	if (!xr_context)
-		return;
+        mouse_position.x = static_cast<float>(x);
+        mouse_position.y = static_cast<float>(y);
+    }
 
-	xr_context->poll_actions(xr_data);
+#ifdef OPENXR_SUPPORT
+    // Sync XR Controllers
+    if (!xr_context)
+        return;
+
+    xr_context->poll_actions(xr_context->xr_data);
 #endif
 }
 
 void Input::center_mouse()
 {
-	if (!use_mirror_screen)
-		return;
+    if (!use_mirror_screen)
+        return;
 
-	int screen_width, screen_height;
-	glfwGetWindowSize(window, &screen_width, &screen_height);
+    int screen_width, screen_height;
+    glfwGetWindowSize(window, &screen_width, &screen_height);
 
-	int center_x = (int)floor(screen_width * 0.5f);
-	int center_y = (int)floor(screen_height * 0.5f);
-	glfwSetCursorPos(window, center_x, center_y);
-	mouse_position.x = (float)center_x;
-	mouse_position.y = (float)center_y;
+    int center_x = (int)floor(screen_width * 0.5f);
+    int center_y = (int)floor(screen_height * 0.5f);
+    glfwSetCursorPos(window, center_x, center_y);
+    mouse_position.x = (float)center_x;
+    mouse_position.y = (float)center_y;
 }
 
 bool Input::is_key_pressed(int key, bool stop_propagation)
@@ -173,7 +174,7 @@ void Input::set_prev_state()
     memcpy((void*)&prev_keystate, keystate, GLFW_KEY_LAST);
     memcpy((void*)&prev_buttons, buttons, GLFW_MOUSE_BUTTON_LAST);
 
-#ifdef XR_SUPPORT
+#ifdef OPENXR_SUPPORT
     for (int i = 0; i < HAND_COUNT; ++i) {
         prev_trigger_state[i] = is_trigger_pressed(i);
         prev_grab_state[i] = is_grab_pressed(i);
@@ -198,11 +199,11 @@ void Input::set_mouse_wheel(float offset_x, float offset_y)
 
 glm::mat4x4 Input::get_controller_pose(uint8_t controller, uint8_t type, bool world_space)
 {
-#ifdef XR_SUPPORT
+#ifdef OPENXR_SUPPORT
     if (!xr_context) return glm::mat4x4(1.0f);
     glm::mat4 mat;
-    if (type == POSE_AIM) mat = xr_data.controllerAimPoseMatrices[controller];
-    else mat = xr_data.controllerGripPoseMatrices[controller];
+    if (type == POSE_AIM) mat = xr_context->xr_data.controllerAimPoseMatrices[controller];
+    else mat = xr_context->xr_data.controllerGripPoseMatrices[controller];
 
     if (xr_context->root_transform && world_space) {
         return (xr_context->root_transform->get_model() * mat);
@@ -216,74 +217,74 @@ glm::mat4x4 Input::get_controller_pose(uint8_t controller, uint8_t type, bool wo
 
 glm::vec3 Input::get_controller_position(uint8_t controller, uint8_t type, bool world_space)
 {
-#ifdef XR_SUPPORT
-	if (!xr_context) return {};
+#ifdef OPENXR_SUPPORT
+    if (!xr_context) return {};
     glm::vec3 pos;
-	if (type == POSE_AIM) pos = xr_data.controllerAimPoses[controller].position;
-    else pos = xr_data.controllerGripPoses[controller].position;
+    if (type == POSE_AIM) pos = xr_context->xr_data.controllerAimPoses[controller].position;
+    else pos = xr_context->xr_data.controllerGripPoses[controller].position;
 
     if (xr_context->root_transform && world_space) {
         return (xr_context->root_transform->get_model() * glm::vec4(pos, 1.0f));
     }
     return pos;
 #else
-	return {};
+    return {};
 #endif
 }
 
 glm::quat Input::get_controller_rotation(uint8_t controller, uint8_t type)
 {
-#ifdef XR_SUPPORT
-	if (!xr_context) return { 0.0f, 0.0f, 0.0f, 1.0f };
-	if (type == POSE_AIM) return xr_data.controllerAimPoses[controller].orientation;
-	else return xr_data.controllerGripPoses[controller].orientation;
+#ifdef OPENXR_SUPPORT
+    if (!xr_context) return { 0.0f, 0.0f, 0.0f, 1.0f };
+    if (type == POSE_AIM) return xr_context->xr_data.controllerAimPoses[controller].orientation;
+    else return xr_context->xr_data.controllerGripPoses[controller].orientation;
 #else
-	return {};
+    return {};
 #endif
 }
 
 bool Input::is_button_pressed(uint8_t button)
 {
-#ifdef XR_SUPPORT
-	return xr_context && xr_data.buttonsState[button].click.state.currentState;
+#ifdef OPENXR_SUPPORT
+    return xr_context && xr_context->xr_data.buttonsState[button].click.state.currentState;
 #else
-	return false;
+    return false;
 #endif
 }
 
 bool Input::was_button_pressed(uint8_t button)
 {
-#ifdef XR_SUPPORT
-	return xr_context && (xr_data.buttonsState[button].click.state.currentState && xr_data.buttonsState[button].click.state.changedSinceLastSync);
+#ifdef OPENXR_SUPPORT
+    return xr_context && (xr_context->xr_data.buttonsState[button].click.state.currentState && xr_context->xr_data.buttonsState[button].click.state.changedSinceLastSync);
 #else
-	return false;
+    return false;
 #endif
 }
 
 bool Input::was_button_released(uint8_t button)
 {
-#ifdef XR_SUPPORT
-	return xr_context && (!xr_data.buttonsState[button].click.state.currentState && xr_data.buttonsState[button].click.state.changedSinceLastSync);
+#ifdef OPENXR_SUPPORT
+    return xr_context && (!xr_context->xr_data.buttonsState[button].click.state.currentState && xr_context->xr_data.buttonsState[button].click.state.changedSinceLastSync);
 #else
-	return false;
+    return false;
 #endif
 }
 
 bool Input::is_button_touched(uint8_t button)
 {
-#ifdef XR_SUPPORT
-	return xr_context && xr_data.buttonsState[button].touch.state.currentState;
+#ifdef OPENXR_SUPPORT
+    return xr_context && xr_context->xr_data.buttonsState[button].touch.state.currentState;
 #else
-	return false;
+    return false;
 #endif
 }
 
 bool Input::was_button_touched(uint8_t button)
 {
-#ifdef XR_SUPPORT
-	return xr_context && (xr_data.buttonsState[button].touch.state.currentState && xr_data.buttonsState[button].touch.state.changedSinceLastSync);
+#ifdef OPENXR_SUPPORT
+    return xr_context && (xr_context->xr_data.buttonsState[button].touch.state.currentState && xr_context->xr_data.buttonsState[button].touch.state.changedSinceLastSync);
 #else
-	return false;
+    return false;
 #endif
 }
 
@@ -292,19 +293,19 @@ bool Input::was_button_touched(uint8_t button)
 */
 
 float Input::get_trigger_value(uint8_t controller)
-{ 
-#ifdef XR_SUPPORT
-	if (!xr_context) return 0.0f;
-	return xr_data.triggerValueState[controller].currentState;
+{
+#ifdef OPENXR_SUPPORT
+    if (!xr_context) return 0.0f;
+    return xr_context->xr_data.triggerValueState[controller].currentState;
 #else
-	return 0.0f;
+    return 0.0f;
 #endif
 }
 
 bool Input::was_trigger_pressed(uint8_t controller)
 {
-#ifdef XR_SUPPORT
-    return xr_context && !prev_trigger_state[controller] && (xr_data.triggerValueState[controller].currentState > 0.5f);
+#ifdef OPENXR_SUPPORT
+    return xr_context && !prev_trigger_state[controller] && (xr_context->xr_data.triggerValueState[controller].currentState > 0.5f);
 #else
     return false;
 #endif
@@ -312,8 +313,8 @@ bool Input::was_trigger_pressed(uint8_t controller)
 
 bool Input::was_trigger_released(uint8_t controller)
 {
-#ifdef XR_SUPPORT
-    return xr_context && prev_trigger_state[controller] && (xr_data.triggerValueState[controller].currentState < 0.5f);
+#ifdef OPENXR_SUPPORT
+    return xr_context && prev_trigger_state[controller] && (xr_context->xr_data.triggerValueState[controller].currentState < 0.5f);
 #else
     return false;
 #endif
@@ -321,8 +322,8 @@ bool Input::was_trigger_released(uint8_t controller)
 
 bool Input::is_trigger_pressed(uint8_t controller)
 {
-#ifdef XR_SUPPORT
-    return xr_context && (xr_data.triggerValueState[controller].currentState > 0.5f);
+#ifdef OPENXR_SUPPORT
+    return xr_context && (xr_context->xr_data.triggerValueState[controller].currentState > 0.5f);
 #else
     return false;
 #endif
@@ -330,16 +331,16 @@ bool Input::is_trigger_pressed(uint8_t controller)
 
 bool Input::is_trigger_touched(uint8_t controller)
 {
-#ifdef XR_SUPPORT
-    return xr_context && XrBool32_to_bool(xr_data.triggerTouchState[controller].currentState);
+#ifdef OPENXR_SUPPORT
+    return xr_context && xr_context->xr_data.triggerTouchState[controller].currentState;
 #else
     return false;
 #endif
 }
 
 bool Input::was_trigger_touched(uint8_t controller) {
-#ifdef XR_SUPPORT
-    return xr_context && (XrBool32_to_bool(xr_data.triggerTouchState[controller].currentState) && XrBool32_to_bool(xr_data.triggerTouchState[controller].changedSinceLastSync));
+#ifdef OPENXR_SUPPORT
+    return xr_context && (xr_context->xr_data.triggerTouchState[controller].currentState && xr_context->xr_data.triggerTouchState[controller].changedSinceLastSync);
 #else
     return false;
 #endif
@@ -351,8 +352,8 @@ bool Input::was_trigger_touched(uint8_t controller) {
 
 bool Input::is_grab_pressed(uint8_t controller)
 {
-#ifdef XR_SUPPORT
-    return xr_context && (xr_data.grabState[controller].currentState > 0.5f);
+#ifdef OPENXR_SUPPORT
+    return xr_context && (xr_context->xr_data.grabState[controller].currentState > 0.5f);
 #else
     return false;
 #endif
@@ -360,8 +361,8 @@ bool Input::is_grab_pressed(uint8_t controller)
 
 bool Input::was_grab_pressed(uint8_t controller)
 {
-#ifdef XR_SUPPORT
-    return xr_context && !prev_grab_state[controller] && (xr_data.grabState[controller].currentState > 0.5f);
+#ifdef OPENXR_SUPPORT
+    return xr_context && !prev_grab_state[controller] && (xr_context->xr_data.grabState[controller].currentState > 0.5f);
 #else
     return false;
 #endif
@@ -369,8 +370,8 @@ bool Input::was_grab_pressed(uint8_t controller)
 
 bool Input::was_grab_released(uint8_t controller)
 {
-#ifdef XR_SUPPORT
-    return xr_context && prev_grab_state[controller] && (xr_data.grabState[controller].currentState < 0.5f);
+#ifdef OPENXR_SUPPORT
+    return xr_context && prev_grab_state[controller] && (xr_context->xr_data.grabState[controller].currentState < 0.5f);
 #else
     return false;
 #endif
@@ -378,9 +379,9 @@ bool Input::was_grab_released(uint8_t controller)
 
 float Input::get_grab_value(uint8_t controller)
 {
-#ifdef XR_SUPPORT
+#ifdef OPENXR_SUPPORT
     if (!xr_context) return 0.0f;
-    return xr_data.grabState[controller].currentState;
+    return xr_context->xr_data.grabState[controller].currentState;
 #else
     return false;
 #endif
@@ -392,45 +393,45 @@ float Input::get_grab_value(uint8_t controller)
 
 glm::vec2 Input::get_thumbstick_value(uint8_t controller)
 {
-#ifdef XR_SUPPORT
-	if (!xr_context) return { 0.0f, 0.0f };
-	return XrVector2f_to_glm(xr_data.thumbStickValueState[controller].currentState);
+#ifdef OPENXR_SUPPORT
+    if (!xr_context) return { 0.0f, 0.0f };
+    return glm::make_vec2(&xr_context->xr_data.thumbStickValueState[controller].currentState.x);
 #else
-	return {};
+    return {};
 #endif
 }
 
 bool Input::is_thumbstick_pressed(uint8_t controller)
 {
-#ifdef XR_SUPPORT
-	return xr_context && XrBool32_to_bool(xr_data.thumbStickClickState[controller].currentState);
+#ifdef OPENXR_SUPPORT
+    return xr_context && xr_context->xr_data.thumbStickClickState[controller].currentState;
 #else
-	return false;
+    return false;
 #endif
 }
 
 bool Input::was_thumbstick_pressed(uint8_t controller)
 {
-#ifdef XR_SUPPORT
-	return xr_context && (XrBool32_to_bool(xr_data.thumbStickClickState[controller].currentState) && XrBool32_to_bool(xr_data.thumbStickClickState[controller].changedSinceLastSync));
+#ifdef OPENXR_SUPPORT
+    return xr_context && (xr_context->xr_data.thumbStickClickState[controller].currentState && xr_context->xr_data.thumbStickClickState[controller].changedSinceLastSync);
 #else
-	return false;
+    return false;
 #endif
 }
 
 bool Input::is_thumbstick_touched(uint8_t controller)
-{ 
-#ifdef XR_SUPPORT
-	return xr_context && XrBool32_to_bool(xr_data.thumbStickTouchState[controller].currentState);
+{
+#ifdef OPENXR_SUPPORT
+    return xr_context && xr_context->xr_data.thumbStickTouchState[controller].currentState;
 #else
-	return false;
+    return false;
 #endif
 }
 
 bool Input::was_thumbstick_touched(uint8_t controller)
 {
-#ifdef XR_SUPPORT
-	return xr_context && (XrBool32_to_bool(xr_data.thumbStickTouchState[controller].currentState) && XrBool32_to_bool(xr_data.thumbStickTouchState[controller].changedSinceLastSync));
+#ifdef OPENXR_SUPPORT
+    return xr_context && (xr_context->xr_data.thumbStickTouchState[controller].currentState && xr_context->xr_data.thumbStickTouchState[controller].changedSinceLastSync);
 #else
 	return false;
 #endif
@@ -438,7 +439,7 @@ bool Input::was_thumbstick_touched(uint8_t controller)
 
 uint8_t Input::get_leading_thumbstick_axis(uint8_t controller)
 {
-#ifdef XR_SUPPORT
+#ifdef OPENXR_SUPPORT
     const glm::vec2& value = Input::get_thumbstick_value(controller);
     const glm::vec2& abs_axis = glm::abs(value);
     if (glm::abs(glm::length(abs_axis)) >= XR_THUMBSTICK_DEADZONE) {

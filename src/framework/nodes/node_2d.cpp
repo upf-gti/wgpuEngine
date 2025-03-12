@@ -36,7 +36,7 @@ Node2D::Node2D(const std::string& n, const glm::vec2& p, const glm::vec2& s, uin
 
     set_position(p);
 
-    if ((parameter_flags & ui::CREATE_3D) && Renderer::instance->get_openxr_available()) {
+    if ((parameter_flags & ui::CREATE_3D) && Renderer::instance->get_xr_available()) {
         xr_viewport_3d = new Viewport3D(this);
         xr_viewport_3d->set_active(true);
     }
@@ -68,7 +68,7 @@ void Node2D::add_child(Node2D* child)
     }
 
     // Disable 2d if rendering in xr
-    if (Renderer::instance->get_openxr_available()) {
+    if (Renderer::instance->get_xr_available()) {
         child->disable_2d();
     }
 

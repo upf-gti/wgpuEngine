@@ -1,10 +1,10 @@
 #pragma once
 
-#include "xr_context.h"
+#include "xr/xr_context.h"
 
-#ifdef XR_SUPPORT
+#ifdef OPENXR_SUPPORT
 
-#include "dawnxr/dawnxr.h"
+#include "xr/dawnxr/dawnxr.h"
 #include "framework/input_xr.h"
 
 #if defined(BACKEND_VULKAN)
@@ -14,6 +14,8 @@ struct XrGraphicsRequirementsD3D12KHR;
 #endif
 
 struct OpenXRContext : public XRContext {
+
+    virtual ~OpenXRContext();
 
     /*
     * XR General
@@ -36,6 +38,35 @@ struct OpenXRContext : public XRContext {
 
     sInputState input_state;
 
+    struct XrInputData {
+
+        // Poses
+        glm::mat4x4 eyePoseMatrixes[EYE_COUNT];
+        XrInputPose eyePoses[EYE_COUNT];
+        glm::mat4x4 headPoseMatrix;
+        XrInputPose headPose;
+        glm::mat4x4 controllerAimPoseMatrices[HAND_COUNT];
+        XrInputPose controllerAimPoses[HAND_COUNT];
+        glm::mat4x4 controllerGripPoseMatrices[HAND_COUNT];
+        XrInputPose controllerGripPoses[HAND_COUNT];
+
+        // Input States. Also includes lastChangeTime, isActive, changedSinceLastSync properties.
+        XrActionStateFloat grabState[HAND_COUNT];
+        XrActionStateVector2f thumbStickValueState[HAND_COUNT];
+        XrActionStateBoolean thumbStickClickState[HAND_COUNT];
+        XrActionStateBoolean thumbStickTouchState[HAND_COUNT];
+        XrActionStateFloat triggerValueState[HAND_COUNT];
+        XrActionStateBoolean triggerTouchState[HAND_COUNT];
+
+        // Buttons.
+        std::vector<XrMappedButtonState> buttonsState;
+
+        // Headset State. Use to detect status / user proximity / user presence / user engagement https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html#session-lifecycle
+        XrSessionState headsetActivityState = XR_SESSION_STATE_UNKNOWN;
+    };
+
+    XrInputData xr_data;
+
     void init_actions(XrInputData& data);
     void poll_actions(XrInputData& data);
 
@@ -55,6 +86,12 @@ struct OpenXRContext : public XRContext {
     /*
     * Render
     */
+
+    struct sSwapchainData {
+        XrSwapchain swapchain = {};
+        uint32_t    image_index = {};
+        std::vector<dawnxr::SwapchainImageDawn> images;
+    };
 
     WGPUTextureView get_swapchain_view(uint8_t eye_idx) override;
     uint32_t get_swapchain_image_index(uint8_t eye_idx) override;
@@ -78,7 +115,7 @@ struct OpenXRContext : public XRContext {
     void release_swapchain(int swapchain_index);
     void end_frame();
 
-    void update();
+    void update() override;
 
     /*
     * Debug & Errors
@@ -113,7 +150,7 @@ private:
 
 #else
 
-struct XRContext {
+struct OpenXRContext {
 
 };
 

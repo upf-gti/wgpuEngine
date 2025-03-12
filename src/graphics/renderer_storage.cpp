@@ -809,7 +809,7 @@ RenderPipelineKey RendererStorage::get_render_pipeline_key(Material* material)
         assert(0);
     }
 
-    bool is_openxr_available = Renderer::instance->get_openxr_available();
+    bool is_openxr_available = Renderer::instance->get_xr_available();
     WGPUTextureFormat swapchain_format = is_openxr_available ? webgpu_context->xr_swapchain_format : webgpu_context->swapchain_format;
 
     WGPUColorTargetState color_target = {};

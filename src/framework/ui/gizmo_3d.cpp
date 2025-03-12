@@ -28,7 +28,7 @@ void Gizmo3D::initialize(const eGizmoOp& new_operation, const glm::vec3& positio
 {
     operation = new_operation;
 
-    xr_enabled = Renderer::instance->get_openxr_available();
+    xr_enabled = Renderer::instance->get_xr_available();
 
     if (xr_enabled) {
         Material* material = new Material();

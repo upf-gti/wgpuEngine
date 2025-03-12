@@ -4,7 +4,7 @@
 
 #if defined(OPENXR_SUPPORT)
 
-#include "xr/openxr_context.h"
+#include "xr/openxr/openxr_context.h"
 
 #include "xr/dawnxr/dawnxr_internal.h"
 
@@ -12,7 +12,7 @@
 
 #elif defined(WEBXR_SUPPORT)
 
-#include "xr/webxr_context.h"
+#include "xr/webxr/webxr_context.h"
 
 #endif
 
@@ -67,12 +67,15 @@ Renderer::Renderer(const sRendererConfiguration& config)
 
 #if defined(OPENXR_SUPPORT)
     OpenXRContext* openxr_context = new OpenXRContext();
-    is_openxr_available = openxr_context->create_instance();
+    is_xr_available = openxr_context->create_instance();
 
     xr_context = openxr_context;
-#elif defined(WEBXR_CONTEXT)
+#elif defined(WEBXR_SUPPORT)
+    spdlog::info("Creating WebXR context");
+
     WebXRContext* webxr_context = new WebXRContext();
     //is_openxr_available = openxr_context->create_instance();
+    is_xr_available = true; // TODO: query support
 
     xr_context = webxr_context;
 #endif
@@ -120,7 +123,7 @@ int Renderer::initialize()
 
     if (!webgpu_context->adapter) {
         if (adapter_future.id == 0) {
-            adapter_future = webgpu_context->request_adapter(xr_context, is_openxr_available);
+            adapter_future = webgpu_context->request_adapter(xr_context, is_xr_available);
         }
         webgpu_context->process_events();
         return 1;
@@ -137,8 +140,8 @@ int Renderer::initialize()
     }
 
     bool create_screen_swapchain = true;
-#ifdef XR_SUPPORT
-    if (is_openxr_available) {
+#ifdef OPENXR_SUPPORT
+    if (is_xr_available) {
         create_screen_swapchain = use_mirror_screen;
     }
 #endif
@@ -167,18 +170,18 @@ int Renderer::post_initialize()
     xr_context->z_near = z_near;
     xr_context->z_far = z_far;
 
-    if (is_openxr_available && !xr_context->init(webgpu_context)) {
+    if (is_xr_available && !xr_context->init(webgpu_context)) {
         spdlog::error("Could not initialize OpenXR context");
-        is_openxr_available = false;
+        is_xr_available = false;
     }
 
-    if (is_openxr_available) {
+    if (is_xr_available) {
         webgpu_context->render_width = xr_context->viewport.z;
         webgpu_context->render_height = xr_context->viewport.w;
     }
 #endif
 
-    if (!is_openxr_available) {
+    if (!is_xr_available) {
         webgpu_context->render_width = webgpu_context->screen_width;
         webgpu_context->render_height = webgpu_context->screen_height;
     }
@@ -200,13 +203,13 @@ int Renderer::post_initialize()
 
     init_timestamp_queries();
 
-#ifdef XR_SUPPORT
-    if (is_openxr_available && use_mirror_screen) {
+#ifdef USE_MIRROR_WINDOW
+    if (is_xr_available) {
         init_mirror_pipeline();
     }
 #endif
 
-    WGPUTextureFormat swapchain_format = is_openxr_available ? webgpu_context->xr_swapchain_format : webgpu_context->swapchain_format;
+    WGPUTextureFormat swapchain_format = is_xr_available ? webgpu_context->xr_swapchain_format : webgpu_context->swapchain_format;
 
     WGPUColorTargetState color_target = {};
     color_target.format = swapchain_format;
@@ -273,7 +276,7 @@ void Renderer::clean()
     xr_context->clean();
 
 #if defined(USE_MIRROR_WINDOW)
-    if (is_openxr_available) {
+    if (is_xr_available) {
         for (uint8_t i = 0; i < swapchain_uniforms.size(); i++) {
             swapchain_uniforms[i].destroy();
             wgpuBindGroupRelease(swapchain_bind_groups[i]);
@@ -283,7 +286,7 @@ void Renderer::clean()
 #endif // XR_SUPPORT
 #endif // USE_MIRROR_WINDOW
 
-    uint8_t num_textures = is_openxr_available ? 2 : 1;
+    uint8_t num_textures = is_xr_available ? 2 : 1;
     for (int i = 0; i < num_textures; ++i)
     {
         wgpuTextureViewRelease(eye_depth_texture_view[i]);
@@ -339,7 +342,7 @@ void Renderer::clean()
 void Renderer::update(float delta_time)
 {
 #if defined(XR_SUPPORT)
-    if (is_openxr_available) {
+    if (is_xr_available) {
         xr_context->update();
     }
 #endif
@@ -352,7 +355,7 @@ void Renderer::update(float delta_time)
     WGPUCommandEncoderDescriptor encoder_desc = {};
     global_command_encoder = wgpuDeviceCreateCommandEncoder(webgpu_context->device, &encoder_desc);
 
-    if (!is_openxr_available) {
+    if (!is_xr_available) {
         const auto& io = ImGui::GetIO();
         if (!io.WantCaptureMouse && !io.WantCaptureKeyboard && !IO::any_focus()) {
             camera_3d->update(delta_time);
@@ -368,7 +371,28 @@ void Renderer::render()
     WGPUTextureView screen_surface_texture_view;
     WGPUSurfaceTexture screen_surface_texture;
 
-    if (!is_openxr_available || use_mirror_screen) {
+    if (!eye_depth_texture_view[0]) {
+        spdlog::error("Can not render if depth buffer is not initialized");
+        clear_renderables();
+
+#ifdef XR_SUPPORT
+        if (is_xr_available) {
+            glm::ivec4 viewport = xr_context->viewport;
+
+            if (viewport.z != webgpu_context->render_width || viewport.w != webgpu_context->render_height) {
+
+                webgpu_context->render_width = viewport.z;
+                webgpu_context->render_height = viewport.w;
+
+                resize_window(viewport.z, viewport.w);
+            }
+        }
+#endif
+
+        return;
+    }
+
+    if (!is_xr_available || use_mirror_screen) {
 
         wgpuSurfaceGetCurrentTexture(webgpu_context->surface, &screen_surface_texture);
         if (screen_surface_texture.status != WGPUSurfaceGetCurrentTextureStatus_SuccessOptimal) {
@@ -389,7 +413,7 @@ void Renderer::render()
 
     std::vector<std::vector<sRenderData>> render_lists(RENDER_LIST_COUNT);
 
-    if (!is_openxr_available) {
+    if (!is_xr_available) {
         camera_data.right_controller_position = camera_data.eye;
 
         prepare_cull_instancing(*camera_3d, render_lists, render_instances_data);
@@ -459,14 +483,16 @@ void Renderer::render()
             xr_context->release_swapchain(eye_idx);
         }
 
+#if defined(USE_MIRROR_WINDOW)
         if (use_mirror_screen) {
             render_mirror(screen_surface_texture_view, custom_mirror_fbo_bind_group ? custom_mirror_fbo_bind_group : swapchain_bind_groups[xr_context->get_swapchain_image_index(0)]);
         }
+#endif
     }
 #endif
 
     // Render 2D
-    if (!is_openxr_available || use_mirror_screen) {
+    if (!is_xr_available || use_mirror_screen) {
 
         camera_2d_data.eye = camera_2d->get_eye();
         camera_2d_data.view_projection = camera_2d->get_view_projection();
@@ -553,7 +579,7 @@ void Renderer::render()
         debug_this_frame = false;
     }
 
-    if (!is_openxr_available) {
+    if (!is_xr_available) {
         wgpuTextureViewRelease(screen_surface_texture_view);
         wgpuTextureRelease(screen_surface_texture.texture);
     }
@@ -565,7 +591,7 @@ void Renderer::render()
 #endif
 
 #ifndef __EMSCRIPTEN__
-    if (!is_openxr_available || use_mirror_screen) {
+    if (!is_xr_available || use_mirror_screen) {
         wgpuSurfacePresent(webgpu_context->surface);
     }
 #endif
@@ -780,7 +806,12 @@ void Renderer::init_lighting_bind_group()
 
 void Renderer::init_depth_buffers()
 {
-    uint8_t num_textures = is_openxr_available ? 2 : 1;
+    if (webgpu_context->render_width == 0 || webgpu_context->render_height == 0) {
+        spdlog::error("Can not create depth buffer with size ({}, {})", webgpu_context->render_width, webgpu_context->render_height);
+        return;
+    }
+
+    uint8_t num_textures = is_xr_available ? 2 : 1;
     for (int i = 0; i < num_textures; ++i)
     {
         eye_depth_textures[i].create(
@@ -801,9 +832,14 @@ void Renderer::init_depth_buffers()
 
 void Renderer::init_multisample_textures()
 {
-    WGPUTextureFormat swapchain_format = is_openxr_available ? webgpu_context->xr_swapchain_format : webgpu_context->swapchain_format;
+    if (webgpu_context->render_width == 0 || webgpu_context->render_height == 0) {
+        spdlog::error("Can not multisample textures with size ({}, {})", webgpu_context->render_width, webgpu_context->render_height);
+        return;
+    }
 
-    uint8_t num_textures = is_openxr_available ? 2 : 1;
+    WGPUTextureFormat swapchain_format = is_xr_available ? webgpu_context->xr_swapchain_format : webgpu_context->swapchain_format;
+
+    uint8_t num_textures = is_xr_available ? 2 : 1;
     for (int i = 0; i < num_textures; ++i) {
         multisample_textures[i].create(
             WGPUTextureDimension_2D,
@@ -1341,7 +1377,7 @@ void Renderer::resize_window(int width, int height)
 {
     webgpu_context->create_swapchain(width, height);
 
-    if (!is_openxr_available) {
+    if (!is_xr_available) {
         webgpu_context->screen_width = width;
         webgpu_context->screen_height = height;
         webgpu_context->render_width = width;
@@ -1370,7 +1406,7 @@ void Renderer::set_irradiance_texture(Texture* texture)
 #ifdef XR_SUPPORT
 XRContext* Renderer::get_xr_context()
 {
-    return (is_openxr_available ? xr_context : nullptr);
+    return (is_xr_available ? xr_context : nullptr);
 }
 #endif
 
@@ -1535,7 +1571,7 @@ void Renderer::init_camera_bind_group()
 glm::vec3 Renderer::get_camera_eye()
 {
 #if defined(XR_SUPPORT)
-    if (is_openxr_available) {
+    if (is_xr_available) {
         return xr_context->per_view_data[0].position; // return left eye
     }
 #endif
@@ -1546,7 +1582,7 @@ glm::vec3 Renderer::get_camera_eye()
 glm::vec3 Renderer::get_camera_front()
 {
 #if defined(XR_SUPPORT)
-    if (is_openxr_available) {
+    if (is_xr_available) {
         glm::mat4x4 view = xr_context->per_view_data[0].view_matrix; // use left eye
         return { view[2].x, view[2].y, -view[2].z };
     }

@@ -107,7 +107,7 @@ namespace ui {
     {
         Material* material = quad_mesh->get_surface_material_override(quad_mesh->get_surface(0));
 
-        bool is_2d = material->get_is_2D() || (!Renderer::instance->get_openxr_available());
+        bool is_2d = material->get_is_2D() || (!Renderer::instance->get_xr_available());
 
         if (is_2d) {
             return Input::was_mouse_pressed(GLFW_MOUSE_BUTTON_LEFT);
@@ -123,7 +123,7 @@ namespace ui {
     {
         Material* material = quad_mesh->get_surface_material_override(quad_mesh->get_surface(0));
 
-        bool is_2d = material->get_is_2D() || (!Renderer::instance->get_openxr_available());
+        bool is_2d = material->get_is_2D() || (!Renderer::instance->get_xr_available());
 
         if (is_2d) {
             return Input::was_mouse_released(GLFW_MOUSE_BUTTON_LEFT);
@@ -139,7 +139,7 @@ namespace ui {
     {
         Material* material = quad_mesh->get_surface_material_override(quad_mesh->get_surface(0));
 
-        bool is_2d = material->get_is_2D() || (!Renderer::instance->get_openxr_available());
+        bool is_2d = material->get_is_2D() || (!Renderer::instance->get_xr_available());
 
         if (is_2d) {
             return Input::is_mouse_pressed(GLFW_MOUSE_BUTTON_LEFT);
@@ -201,7 +201,7 @@ namespace ui {
             );
 
             if (data.is_hovered) {
-                if (Renderer::instance->get_openxr_available()) {
+                if (Renderer::instance->get_xr_available()) {
                     data.ray_intersection = intersection_point;
                     data.ray_distance = collision_dist;
                 }
@@ -428,7 +428,7 @@ namespace ui {
         Surface* quad_surface = quad_mesh->get_surface(0);
 
         // Use subdivided quad in case we use panels with curvature
-        if (Renderer::instance->get_openxr_available() && (flags & CURVED_PANEL)) {
+        if (Renderer::instance->get_xr_available() && (flags & CURVED_PANEL)) {
             quad_surface->create_subdivided_quad(size.x, size.y, true);
         }
         else {
@@ -441,7 +441,7 @@ namespace ui {
         material->set_shader(RendererStorage::get_shader_from_source(shaders::ui_xr_panel::source, shaders::ui_xr_panel::path, shaders::ui_xr_panel::libraries, material));
 
         // Fullscreen in 2d mode only!
-        fullscreen = !Renderer::instance->get_openxr_available() && (flags & ui::FULLSCREEN);
+        fullscreen = !Renderer::instance->get_xr_available() && (flags & ui::FULLSCREEN);
 
         ui_data.xr_size = glm::vec2(1.0f, 1.0f);
         ui_data.xr_position = glm::vec2(0.5f, 0.5f);
@@ -453,7 +453,7 @@ namespace ui {
 
     sInputData XRPanel::get_input_data(bool ignore_focus)
     {
-        if (!Renderer::instance->get_openxr_available() || !(parameter_flags & CURVED_PANEL)) {
+        if (!Renderer::instance->get_xr_available() || !(parameter_flags & CURVED_PANEL)) {
             return Panel2D::get_input_data(ignore_focus);
         }
 

@@ -54,7 +54,7 @@ void IO::update(float delta_time)
     // xr: sort inputs by ray distance and later by priority
     // flat screen: sort by priority
 
-    bool is_xr = Renderer::instance->get_openxr_available();
+    bool is_xr = Renderer::instance->get_xr_available();
 
     std::sort(frame_inputs.begin(), frame_inputs.end(), [xr = is_xr](auto& lhs, auto& rhs) {
 
@@ -108,7 +108,7 @@ void IO::blur()
     hovered = nullptr;
 
     // If actions are pressed, we are still focusing something..
-    bool should_remove_focus = Renderer::instance->get_openxr_available() ?
+    bool should_remove_focus = Renderer::instance->get_xr_available() ?
         (Input::get_trigger_value(HAND_RIGHT) <= XR_THUMBSTICK_DEADZONE) :
         !Input::is_mouse_pressed(GLFW_MOUSE_BUTTON_LEFT);
 

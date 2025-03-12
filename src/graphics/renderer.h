@@ -89,7 +89,7 @@ protected:
 
     Texture* irradiance_texture = nullptr;
 
-    Texture*        eye_depth_textures;
+    Texture*        eye_depth_textures = nullptr;
     WGPUTextureView eye_depth_texture_view[EYE_COUNT] = {};
 
     uint8_t msaa_count = 1;
@@ -105,7 +105,7 @@ protected:
     Frustum frustum_cull;
     MeshInstance3D* selected_mesh_aabb = nullptr;
 
-    bool is_openxr_available    = false;
+    bool is_xr_available    = false;
     bool use_mirror_screen      = false;
     bool use_custom_mirror      = true;
 
@@ -301,7 +301,7 @@ public:
     void render_splats(WGPURenderPassEncoder render_pass, const std::vector<std::vector<sRenderData>>& render_lists, const sInstanceData& instance_data, WGPUBindGroup camera_bind_group, uint32_t camera_buffer_stride = 0);
     void render_2D(WGPURenderPassEncoder render_pass, const std::vector<std::vector<sRenderData>>& render_lists, const sInstanceData& instance_data, WGPUBindGroup camera_bind_group);
 
-    bool get_openxr_available() { return is_openxr_available; }
+    bool get_xr_available() { return is_xr_available; }
     bool get_use_mirror_screen() { return use_mirror_screen; }
 
     inline void set_exposure(float new_exposure) { exposure = new_exposure; }

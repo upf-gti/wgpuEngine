@@ -6,20 +6,15 @@
 
 #include "glm/vec2.hpp"
 #include "glm/vec3.hpp"
-#include "glm/vec4.hpp"
+#include "glm/ext/quaternion_float.hpp"
 
-#ifdef XR_SUPPORT
-
-#include "openxr/openxr_platform.h"
-
-#endif
-
-#include "input_xr.h"
+#include "xr/xr_context.h"
 
 #include <GLFW/glfw3.h>
 
+#define XR_THUMBSTICK_DEADZONE 0.01f
+
 class Renderer;
-struct XRContext;
 
 class Input {
 
@@ -45,14 +40,6 @@ class Input {
     static bool prev_trigger_state[HAND_COUNT];
     static bool prev_grab_state[HAND_COUNT];
 
-    static XrInputData xr_data;
-
-    /*
-    *	Conversors
-    */
-
-    static bool XrBool32_to_bool(XrBool32 v) { return static_cast<bool>(v); }
-    static glm::vec2 XrVector2f_to_glm(XrVector2f v) { return glm::vec2(v.x, v.y); }
 #endif
 
 public:
