@@ -8,6 +8,30 @@
 
 #include "webxr.h"
 
+enum WEBXR_BUTTONS
+{
+    WEBXR_BUTTON_TRIGGER = 0,
+    WEBXR_BUTTON_GRIP,
+    WEBXR_BUTTON_THUMBSTICK,
+    WEBXR_BUTTON_MENU,
+    WEBXR_BUTTON_AX,
+    WEBXR_BUTTON_BY,
+    WEBXR_BUTTON_EXTRA,
+    WEBXR_BUTTON_COUNT
+};
+
+struct WebXRActionStateBoolean {
+    bool currentState;
+    bool changedSinceLastSync;
+    int64_t lastChangeTime;
+};
+
+struct WebXRActionStateFloat {
+    float currentState;
+    bool changedSinceLastSync;
+    int64_t lastChangeTime;
+};
+
 struct WebXRContext : public XRContext {
 
     virtual ~WebXRContext();
@@ -24,6 +48,35 @@ struct WebXRContext : public XRContext {
     /*
     * XR Input
     */
+
+    struct XrInputData {
+
+        // Poses
+        // glm::mat4x4 eyePoseMatrixes[EYE_COUNT];
+        // XrInputPose eyePoses[EYE_COUNT];
+        glm::mat4x4 headPoseMatrix;
+        WebXRRigidTransform headPose;
+        glm::mat4x4 controllerAimPoseMatrices[HAND_COUNT];
+        WebXRRigidTransform controllerAimPoses[HAND_COUNT];
+        glm::mat4x4 controllerGripPoseMatrices[HAND_COUNT];
+        WebXRRigidTransform controllerGripPoses[HAND_COUNT];
+
+        // Input States. Also includes lastChangeTime, isActive, changedSinceLastSync properties.
+        // XrActionStateFloat grabState[HAND_COUNT];
+        // XrActionStateVector2f thumbStickValueState[HAND_COUNT];
+        // XrActionStateBoolean thumbStickClickState[HAND_COUNT];
+        // XrActionStateBoolean thumbStickTouchState[HAND_COUNT];
+        WebXRActionStateFloat triggerValueState[HAND_COUNT];
+        // XrActionStateBoolean triggerTouchState[HAND_COUNT];
+
+        // Buttons.
+        // std::vector<XrMappedButtonState> buttonsState;
+
+        // // Headset State. Use to detect status / user proximity / user presence / user engagement https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html#session-lifecycle
+        // XrSessionState headsetActivityState = XR_SESSION_STATE_UNKNOWN;
+    };
+
+    XrInputData xr_data;
 
     //sInputState input_state;
 
@@ -44,7 +97,7 @@ struct WebXRContext : public XRContext {
     * Render
     */
 
-    void update_views(WebXRView views[2], WGPUTextureView texture_view_left, WGPUTextureView texture_view_right);
+    void update_views(WebXRRigidTransform* head_pose, WebXRView views[2], WGPUTextureView texture_view_left, WGPUTextureView texture_view_right);
 
     WGPUTextureView swapchain_views[2];
 
