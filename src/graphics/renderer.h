@@ -16,7 +16,7 @@
 #include <map>
 #include <string>
 
-#define MAX_LIGHTS 32
+#define MAX_LIGHTS 32u
 
 class Camera;
 class Texture;

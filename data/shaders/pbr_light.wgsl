@@ -83,7 +83,7 @@ fn get_direct_light( m : ptr<function, PbrMaterial> ) -> vec3f
     var n : vec3f = m.normal;
     var v : vec3f = m.view_dir;
 
-    let num_lights_clamped : u32 = clamp(num_lights, 0, MAX_LIGHTS);
+    let num_lights_clamped : u32 = clamp(num_lights, 0u, MAX_LIGHTS);
 
     for (var i : u32 = 0; i < num_lights_clamped; i++)
     {

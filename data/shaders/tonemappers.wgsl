@@ -57,5 +57,5 @@ fn tonemap_khronos_pbr_neutral( color : vec3f ) -> vec3f
     final_color *= newPeak / peak;
 
     let g : f32 = 1. - 1. / (desaturation * (peak - newPeak) + 1.);
-    return mix(final_color, vec3(1, 1, 1), g);
+    return mix(final_color, vec3f(1.0, 1.0, 1.0), g);
 }

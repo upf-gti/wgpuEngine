@@ -187,19 +187,16 @@ bool Shader::parse_preprocessor_line(std::istringstream& string_stream, std::str
             if (define_name == define.first) {
                 if (std::holds_alternative<bool>(define.second)) {
                     final_value = std::get<bool>(define.second) ? "1" : "0";
+                } else
+                if (std::holds_alternative<int32_t>(define.second)) {
+                    final_value = std::to_string(std::get<int32_t>(define.second));
+                } else
+                if (std::holds_alternative<uint32_t>(define.second)) {
+                    final_value = std::to_string(std::get<uint32_t>(define.second)) + "u";
+                } else
+                if (std::holds_alternative<float>(define.second)) {
+                    final_value = std::to_string(std::get<float>(define.second));
                 }
-                else
-                    if (std::holds_alternative<int32_t>(define.second)) {
-                        final_value = std::to_string(std::get<int32_t>(define.second));
-                    }
-                    else
-                        if (std::holds_alternative<uint32_t>(define.second)) {
-                            final_value = std::to_string(std::get<uint32_t>(define.second));
-                        }
-                        else
-                            if (std::holds_alternative<float>(define.second)) {
-                                final_value = std::to_string(std::get<float>(define.second));
-                            }
             }
         }
 

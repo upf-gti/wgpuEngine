@@ -135,7 +135,7 @@ fn compute(@builtin(global_invocation_id) id: vec3<u32>) {
 		var dir : vec3f;
 		var color : vec4f;
 		switch (id.z) {
-			case 0: {
+			case 0u: {
 				dir = get_dir_0(u0, v0);
 				color = textureSampleLevel(input_cubemap_texture, texture_sampler, normalize(dir), 0.0) * weights[0];
 
@@ -149,7 +149,7 @@ fn compute(@builtin(global_invocation_id) id: vec3<u32>) {
 				color += textureSampleLevel(input_cubemap_texture, texture_sampler, normalize(dir), 0.0) * weights[3];
 				break;
 			}
-			case 1: {
+			case 1u: {
 				dir = get_dir_1(u0, v0);
 				color = textureSampleLevel(input_cubemap_texture, texture_sampler, normalize(dir), 0.0) * weights[0];
 
@@ -163,7 +163,7 @@ fn compute(@builtin(global_invocation_id) id: vec3<u32>) {
 				color += textureSampleLevel(input_cubemap_texture, texture_sampler, normalize(dir), 0.0) * weights[3];
 				break;
 			}
-			case 2: {
+			case 2u: {
 				dir = get_dir_2(u0, v0);
 				color = textureSampleLevel(input_cubemap_texture, texture_sampler, normalize(dir), 0.0) * weights[0];
 
@@ -177,7 +177,7 @@ fn compute(@builtin(global_invocation_id) id: vec3<u32>) {
 				color += textureSampleLevel(input_cubemap_texture, texture_sampler, normalize(dir), 0.0) * weights[3];
 				break;
 			}
-			case 3: {
+			case 3u: {
 				dir = get_dir_3(u0, v0);
 				color = textureSampleLevel(input_cubemap_texture, texture_sampler, normalize(dir), 0.0) * weights[0];
 
@@ -191,7 +191,7 @@ fn compute(@builtin(global_invocation_id) id: vec3<u32>) {
 				color += textureSampleLevel(input_cubemap_texture, texture_sampler, normalize(dir), 0.0) * weights[3];
 				break;
 			}
-			case 4: {
+			case 4u: {
 				dir = get_dir_4(u0, v0);
 				color = textureSampleLevel(input_cubemap_texture, texture_sampler, normalize(dir), 0.0) * weights[0];
 
