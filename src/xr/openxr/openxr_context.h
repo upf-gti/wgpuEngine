@@ -38,37 +38,32 @@ struct OpenXRContext : public XRContext {
 
     sInputState input_state;
 
-    struct XrInputData {
+    // Poses
+    glm::mat4x4 eyePoseMatrixes[EYE_COUNT];
+    XrInputPose eyePoses[EYE_COUNT];
+    glm::mat4x4 headPoseMatrix;
+    XrInputPose headPose;
+    glm::mat4x4 controllerAimPoseMatrices[HAND_COUNT];
+    XrInputPose controllerAimPoses[HAND_COUNT];
+    glm::mat4x4 controllerGripPoseMatrices[HAND_COUNT];
+    XrInputPose controllerGripPoses[HAND_COUNT];
 
-        // Poses
-        glm::mat4x4 eyePoseMatrixes[EYE_COUNT];
-        XrInputPose eyePoses[EYE_COUNT];
-        glm::mat4x4 headPoseMatrix;
-        XrInputPose headPose;
-        glm::mat4x4 controllerAimPoseMatrices[HAND_COUNT];
-        XrInputPose controllerAimPoses[HAND_COUNT];
-        glm::mat4x4 controllerGripPoseMatrices[HAND_COUNT];
-        XrInputPose controllerGripPoses[HAND_COUNT];
+    // Input States. Also includes lastChangeTime, isActive, changedSinceLastSync properties.
+    XrActionStateFloat grabState[HAND_COUNT];
+    XrActionStateVector2f thumbStickValueState[HAND_COUNT];
+    XrActionStateBoolean thumbStickClickState[HAND_COUNT];
+    XrActionStateBoolean thumbStickTouchState[HAND_COUNT];
+    XrActionStateFloat triggerValueState[HAND_COUNT];
+    XrActionStateBoolean triggerTouchState[HAND_COUNT];
 
-        // Input States. Also includes lastChangeTime, isActive, changedSinceLastSync properties.
-        XrActionStateFloat grabState[HAND_COUNT];
-        XrActionStateVector2f thumbStickValueState[HAND_COUNT];
-        XrActionStateBoolean thumbStickClickState[HAND_COUNT];
-        XrActionStateBoolean thumbStickTouchState[HAND_COUNT];
-        XrActionStateFloat triggerValueState[HAND_COUNT];
-        XrActionStateBoolean triggerTouchState[HAND_COUNT];
+    // Buttons.
+    std::vector<XrMappedButtonState> buttonsState;
 
-        // Buttons.
-        std::vector<XrMappedButtonState> buttonsState;
+    // Headset State. Use to detect status / user proximity / user presence / user engagement https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html#session-lifecycle
+    XrSessionState headsetActivityState = XR_SESSION_STATE_UNKNOWN;
 
-        // Headset State. Use to detect status / user proximity / user presence / user engagement https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html#session-lifecycle
-        XrSessionState headsetActivityState = XR_SESSION_STATE_UNKNOWN;
-    };
-
-    XrInputData xr_data;
-
-    void init_actions(XrInputData& data);
-    void poll_actions(XrInputData& data);
+    void init_actions();
+    void poll_actions() override;
 
     void apply_haptics(uint8_t controller, float amplitude, float duration);
     void stop_haptics(uint8_t controller);

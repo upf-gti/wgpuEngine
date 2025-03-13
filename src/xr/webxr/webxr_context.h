@@ -4,8 +4,6 @@
 
 #include "includes.h"
 
-// #define WEBXR_SUPPORT
-
 #ifdef WEBXR_SUPPORT
 
 #include "webxr.h"
@@ -39,33 +37,23 @@ struct WebXRContext : public XRContext {
     * XR Input
     */
 
-    struct XrInputData {
+    // Poses
+    glm::mat4x4 headPoseMatrix;
+    WebXRRigidTransform headPose;
+    glm::mat4x4 controllerAimPoseMatrices[HAND_COUNT];
+    WebXRRigidTransform controllerAimPoses[HAND_COUNT];
+    glm::mat4x4 controllerGripPoseMatrices[HAND_COUNT];
+    WebXRRigidTransform controllerGripPoses[HAND_COUNT];
 
-        // Poses
-        // glm::mat4x4 eyePoseMatrixes[EYE_COUNT];
-        // XrInputPose eyePoses[EYE_COUNT];
-        glm::mat4x4 headPoseMatrix;
-        WebXRRigidTransform headPose;
-        glm::mat4x4 controllerAimPoseMatrices[HAND_COUNT];
-        WebXRRigidTransform controllerAimPoses[HAND_COUNT];
-        glm::mat4x4 controllerGripPoseMatrices[HAND_COUNT];
-        WebXRRigidTransform controllerGripPoses[HAND_COUNT];
+    glm::vec2 axisState[HAND_COUNT];
 
-        std::vector<float> axisState[HAND_COUNT];
-
-        // Buttons.
-        std::vector<GamepadButton> buttonsState[HAND_COUNT];
-
-        // // Headset State. Use to detect status / user proximity / user presence / user engagement https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html#session-lifecycle
-        // XrSessionState headsetActivityState = XR_SESSION_STATE_UNKNOWN;
-    };
-
-    XrInputData xr_data;
+    // Buttons.
+    std::vector<GamepadButton> buttonsState[HAND_COUNT];
 
     //sInputState input_state;
 
-    //void init_actions(XrInputData& data);
-    //void poll_actions(XrInputData& data);
+    //void init_actions();
+    void poll_actions() override;
 
     //void apply_haptics(uint8_t controller, float amplitude, float duration);
     //void stop_haptics(uint8_t controller);

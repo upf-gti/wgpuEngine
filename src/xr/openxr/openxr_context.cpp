@@ -529,7 +529,7 @@ void OpenXRContext::print_reference_spaces()
     }
 }
 
-void OpenXRContext::init_actions(XrInputData& data)
+void OpenXRContext::init_actions()
 {
     XrResult result;
 
@@ -596,7 +596,7 @@ void OpenXRContext::init_actions(XrInputData& data)
 
         // Create an input actions getting button states
 
-        for (auto& mb : data.buttonsState) {
+        for (auto& mb : buttonsState) {
             // Click action
             is_ok &= create_action(input_state.actionSet, &input_state.handSubactionPath[mb.hand], 1,
                 mb.name + "_click_action", mb.name + " Click Action", XR_ACTION_TYPE_BOOLEAN_INPUT, mb.click.action);
@@ -711,7 +711,7 @@ void OpenXRContext::init_actions(XrInputData& data)
         };
 
         // Add button mappings.
-        for (auto& mb : data.buttonsState)
+        for (auto& mb : buttonsState)
         {
             bindings.push_back({ mb.click.action, mb.click.path });
             if (mb.touch.active) bindings.push_back({ mb.touch.action, mb.touch.path });
@@ -827,7 +827,7 @@ void OpenXRContext::init_actions(XrInputData& data)
     }
 }
 
-void OpenXRContext::poll_actions(XrInputData& data)
+void OpenXRContext::poll_actions()
 {
     // Sync the actions 
     std::vector<XrActiveActionSet> activeActionSets = {
@@ -846,19 +846,19 @@ void OpenXRContext::poll_actions(XrInputData& data)
     }
 
     // [tdbe] Head action poses
-    data.eyePoseMatrixes[EYE_LEFT] = parse_OpenXR_pose_to_glm(projection_views[EYE_LEFT].pose);
-    data.eyePoses[EYE_LEFT] = parse_OpenXR_pose_to_sPose(projection_views[EYE_LEFT].pose);
-    data.eyePoseMatrixes[EYE_RIGHT] = parse_OpenXR_pose_to_glm(projection_views[EYE_RIGHT].pose);
-    data.eyePoses[EYE_RIGHT] = parse_OpenXR_pose_to_sPose(projection_views[EYE_RIGHT].pose);
+    eyePoseMatrixes[EYE_LEFT] = parse_OpenXR_pose_to_glm(projection_views[EYE_LEFT].pose);
+    eyePoses[EYE_LEFT] = parse_OpenXR_pose_to_sPose(projection_views[EYE_LEFT].pose);
+    eyePoseMatrixes[EYE_RIGHT] = parse_OpenXR_pose_to_glm(projection_views[EYE_RIGHT].pose);
+    eyePoses[EYE_RIGHT] = parse_OpenXR_pose_to_sPose(projection_views[EYE_RIGHT].pose);
     // [tdbe] TODO: figure out what/how head poses/joints work in openxr https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html
-    data.headPose = {
-        .orientation = slerp(data.eyePoses[EYE_LEFT].orientation, data.eyePoses[EYE_RIGHT].orientation, .5),
-        .position = slerp(data.eyePoses[EYE_LEFT].position, data.eyePoses[EYE_RIGHT].position, .5)
+    headPose = {
+        .orientation = slerp(eyePoses[EYE_LEFT].orientation, eyePoses[EYE_RIGHT].orientation, .5),
+        .position = slerp(eyePoses[EYE_LEFT].position, eyePoses[EYE_RIGHT].position, .5)
     };
-    data.headPoseMatrix = parse_OpenXR_pose_to_glm(data.headPose);
+    headPoseMatrix = parse_OpenXR_pose_to_glm(headPose);
 
     // [tdbe] Headset State. Use to detect status / user proximity / user presence / user engagement https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html#session-lifecycle
-    data.headsetActivityState = session_state;
+    headsetActivityState = session_state;
 
     for (int i = 0u; i < HAND_COUNT; i++) {
 
@@ -875,8 +875,8 @@ void OpenXRContext::poll_actions(XrInputData& data)
                 XR_SPACE_LOCATION_ORIENTATION_VALID_BIT | XR_SPACE_LOCATION_ORIENTATION_TRACKED_BIT;
             if ((spaceLocation.locationFlags & checkFlags) == checkFlags)
             {
-                data.controllerAimPoseMatrices[i] = parse_OpenXR_pose_to_glm(spaceLocation.pose);
-                data.controllerAimPoses[i] = parse_OpenXR_pose_to_sPose(spaceLocation.pose);
+                controllerAimPoseMatrices[i] = parse_OpenXR_pose_to_glm(spaceLocation.pose);
+                controllerAimPoses[i] = parse_OpenXR_pose_to_sPose(spaceLocation.pose);
             }
         }
 
@@ -893,41 +893,41 @@ void OpenXRContext::poll_actions(XrInputData& data)
                 XR_SPACE_LOCATION_ORIENTATION_VALID_BIT | XR_SPACE_LOCATION_ORIENTATION_TRACKED_BIT;
             if ((spaceLocation.locationFlags & checkFlags) == checkFlags)
             {
-                data.controllerGripPoseMatrices[i] = parse_OpenXR_pose_to_glm(spaceLocation.pose);
-                data.controllerGripPoses[i] = parse_OpenXR_pose_to_sPose(spaceLocation.pose);
+                controllerGripPoseMatrices[i] = parse_OpenXR_pose_to_glm(spaceLocation.pose);
+                controllerGripPoses[i] = parse_OpenXR_pose_to_sPose(spaceLocation.pose);
             }
         }
 
         // Grab State
         {
-            XrActionStateFloat grabState = get_action_float_state(input_state.grabAction, i);
-            data.grabState[i] = grabState;
+            XrActionStateFloat _grabState = get_action_float_state(input_state.grabAction, i);
+            grabState[i] = _grabState;
         }
 
         // Thumbstick State
         {
-            XrActionStateVector2f thumbStickValueState = get_action_vector2f_State(input_state.thumbstickValueAction, i);
-            data.thumbStickValueState[i] = thumbStickValueState;
+            XrActionStateVector2f _thumbStickValueState = get_action_vector2f_State(input_state.thumbstickValueAction, i);
+            thumbStickValueState[i] = _thumbStickValueState;
 
-            XrActionStateBoolean thumbStickClickState = get_action_boolean_state(input_state.thumbstickClickAction, i);
-            data.thumbStickClickState[i] = thumbStickClickState;
+            XrActionStateBoolean _thumbStickClickState = get_action_boolean_state(input_state.thumbstickClickAction, i);
+            thumbStickClickState[i] = _thumbStickClickState;
 
-            XrActionStateBoolean thumbStickTouchState = get_action_boolean_state(input_state.thumbstickTouchAction, i);
-            data.thumbStickTouchState[i] = thumbStickTouchState;
+            XrActionStateBoolean _thumbStickTouchState = get_action_boolean_state(input_state.thumbstickTouchAction, i);
+            thumbStickTouchState[i] = _thumbStickTouchState;
         }
 
         // Triggers State
         {
-            XrActionStateFloat triggerValueState = get_action_float_state(input_state.triggerValueAction, i);
-            data.triggerValueState[i] = triggerValueState;
+            XrActionStateFloat _triggerValueState = get_action_float_state(input_state.triggerValueAction, i);
+            triggerValueState[i] = _triggerValueState;
 
-            XrActionStateBoolean triggerTouchState = get_action_boolean_state(input_state.triggerTouchAction, i);
-            data.triggerTouchState[i] = triggerTouchState;
+            XrActionStateBoolean _triggerTouchState = get_action_boolean_state(input_state.triggerTouchAction, i);
+            triggerTouchState[i] = _triggerTouchState;
         }
     }
 
     // State (Buttons).
-    for (auto& mb : data.buttonsState)
+    for (auto& mb : buttonsState)
     {
         mb.click.state = get_action_boolean_state(mb.click.action, mb.hand);
         if (mb.touch.active) mb.touch.state = get_action_boolean_state(mb.touch.action, mb.hand);

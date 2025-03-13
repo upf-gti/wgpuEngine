@@ -2,9 +2,11 @@
 
 #include "graphics/webgpu_context.h"
 
-#include <glm/gtc/type_ptr.hpp>
+#include "framework/input.h"
 
 #include "spdlog/spdlog.h"
+
+#include <glm/gtc/type_ptr.hpp>
 
 #include <emscripten.h>
 #include <emscripten/html5_webgpu.h>
@@ -47,8 +49,10 @@ bool WebXRContext::init(WebGPUContext* webgpu_context)
         this
     );
 
-    xr_data.axisState[HAND_LEFT].resize(4);
-    xr_data.axisState[HAND_RIGHT].resize(4);
+    if (Input::init_xr(this)) {
+        spdlog::error("Can't initialize xr input");
+        return 1;
+    }
 
     return true;
 }
@@ -83,35 +87,11 @@ void WebXRContext::update_views(WebXRRigidTransform* head_pose, WebXRView views[
 
     // Head pose
     {
-        xr_data.headPose = *head_pose;
-        xr_data.headPoseMatrix = parse_WebXR_pose_to_glm(xr_data.headPose);
+        headPose = *head_pose;
+        headPoseMatrix = parse_WebXR_pose_to_glm(headPose);
     }
 
-    // Controller inputs
-    {
-        WebXRInputSource sources[HAND_COUNT];
-        int sources_count = 0;
-        webxr_get_input_sources(sources, 5, &sources_count);
-
-        for(int s = 0; s < sources_count; ++s) {
-            // Poses
-            webxr_get_input_pose(&sources[s], &xr_data.controllerGripPoses[s], WEBXR_INPUT_POSE_GRIP);
-            xr_data.controllerGripPoseMatrices[s] = parse_WebXR_pose_to_glm(xr_data.controllerGripPoses[s]);
-            webxr_get_input_pose(&sources[s], &xr_data.controllerAimPoses[s], WEBXR_INPUT_POSE_TARGET_RAY);
-            xr_data.controllerAimPoseMatrices[s] = parse_WebXR_pose_to_glm(xr_data.controllerAimPoses[s]);
-
-            // Buttons
-            if(xr_data.buttonsState[s].size() != sources_count) {
-                xr_data.buttonsState[s].resize(sources_count);
-            }
-
-            for(int b = 0; b < WEBXR_BUTTON_COUNT; ++b) {
-                webxr_get_input_button(&sources[s], b, &xr_data.buttonsState[s][b]);
-            }
-
-            // webxr_get_input_axes(&sources[s], xr_data.axisState.data());
-        }
-    }
+    poll_actions();
 }
 
 WGPUTextureView WebXRContext::get_swapchain_view(uint8_t eye_idx)
@@ -119,8 +99,61 @@ WGPUTextureView WebXRContext::get_swapchain_view(uint8_t eye_idx)
     return swapchain_views[eye_idx];
 }
 
+void WebXRContext::poll_actions()
+{
+    WebXRInputSource sources[HAND_COUNT];
+    int sources_count = 0;
+    webxr_get_input_sources(sources, 5, &sources_count);
+
+    for(int s = 0; s < sources_count; ++s) {
+
+        WebXRInputSource* source = &sources[s];
+
+        // Poses
+        webxr_get_input_pose(source, &controllerGripPoses[s], WEBXR_INPUT_POSE_GRIP);
+        controllerGripPoseMatrices[s] = parse_WebXR_pose_to_glm(controllerGripPoses[s]);
+        webxr_get_input_pose(source, &controllerAimPoses[s], WEBXR_INPUT_POSE_TARGET_RAY);
+        controllerAimPoseMatrices[s] = parse_WebXR_pose_to_glm(controllerAimPoses[s]);
+
+        // Buttons
+        if(buttonsState[s].size() != sources_count) {
+            buttonsState[s].resize(sources_count);
+        }
+
+        for(int b = 0; b < WEBXR_BUTTON_COUNT; ++b) {
+            webxr_get_input_button(source, b, &buttonsState[s][b]);
+        }
+
+        webxr_get_input_axes(source, &axisState[s].x);
+    }
+
+    // if(buttonsState[HAND_RIGHT][WEBXR_BUTTON_TRIGGER].value > 0.0) {
+    //     spdlog::info("WEBXR_BUTTON_TRIGGER {}",buttonsState[HAND_RIGHT][WEBXR_BUTTON_TRIGGER].value);
+    // }
+
+    // if(buttonsState[HAND_RIGHT][WEBXR_BUTTON_GRIP].value > 0.0) {
+    //     spdlog::info("WEBXR_BUTTON_GRIP {}",buttonsState[HAND_RIGHT][WEBXR_BUTTON_GRIP].value);
+    // }
+
+    // if(buttonsState[HAND_RIGHT][WEBXR_BUTTON_THUMBSTICK_PRESS].pressed) {
+    //     spdlog::info("WEBXR_BUTTON_THUMBSTICK_PRESS");
+    // }
+
+    // if(buttonsState[HAND_RIGHT][WEBXR_BUTTON_AX].pressed) {
+    //     spdlog::info("WEBXR_BUTTON_AX");
+    // }
+
+    // if(buttonsState[HAND_RIGHT][WEBXR_BUTTON_BY].pressed) {
+    //     spdlog::info("WEBXR_BUTTON_BY");
+    // }
+
+    // spdlog::info("WEBXR_THUBSTICKL_RIGHT X {} Y {}",axisState[HAND_RIGHT].x,axisState[HAND_RIGHT].y);
+    // spdlog::info("{}",buttonsState[HAND_RIGHT][WEBXR_BUTTON_AX].pressed ? "PRESSED" : "NOOOOT PRESSED");
+}
+
 void WebXRContext::update()
 {
+
 }
 
 void WebXRContext::print_viewconfig_view_info()

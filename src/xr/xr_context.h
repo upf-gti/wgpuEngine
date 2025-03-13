@@ -64,7 +64,7 @@ struct XRContext {
     //sInputState input_state;
 
     //virtual void init_actions(XrInputData& data) {};
-    //virtual void poll_actions(XrInputData& data) {};
+    virtual void poll_actions() {};
 
     //virtual void apply_haptics(uint8_t controller, float amplitude, float duration) {};
     //virtual void stop_haptics(uint8_t controller) {};
