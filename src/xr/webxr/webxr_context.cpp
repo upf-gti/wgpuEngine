@@ -47,6 +47,9 @@ bool WebXRContext::init(WebGPUContext* webgpu_context)
         this
     );
 
+    xr_data.axisState[HAND_LEFT].resize(4);
+    xr_data.axisState[HAND_RIGHT].resize(4);
+
     return true;
 }
 
@@ -89,20 +92,24 @@ void WebXRContext::update_views(WebXRRigidTransform* head_pose, WebXRView views[
         WebXRInputSource sources[HAND_COUNT];
         int sources_count = 0;
         webxr_get_input_sources(sources, 5, &sources_count);
-    
-        for(int i = 0; i < sources_count; ++i) {
+
+        for(int s = 0; s < sources_count; ++s) {
             // Poses
-            webxr_get_input_pose(&sources[i], &xr_data.controllerGripPoses[i], WEBXR_INPUT_POSE_GRIP);
-            xr_data.controllerGripPoseMatrices[i] = parse_WebXR_pose_to_glm(xr_data.controllerGripPoses[i]);
-            webxr_get_input_pose(&sources[i], &xr_data.controllerAimPoses[i], WEBXR_INPUT_POSE_TARGET_RAY);
-            xr_data.controllerAimPoseMatrices[i] = parse_WebXR_pose_to_glm(xr_data.controllerAimPoses[i]);
+            webxr_get_input_pose(&sources[s], &xr_data.controllerGripPoses[s], WEBXR_INPUT_POSE_GRIP);
+            xr_data.controllerGripPoseMatrices[s] = parse_WebXR_pose_to_glm(xr_data.controllerGripPoses[s]);
+            webxr_get_input_pose(&sources[s], &xr_data.controllerAimPoses[s], WEBXR_INPUT_POSE_TARGET_RAY);
+            xr_data.controllerAimPoseMatrices[s] = parse_WebXR_pose_to_glm(xr_data.controllerAimPoses[s]);
 
             // Buttons
-            GamepadButton button;
-            webxr_get_input_button(&sources[i], WEBXR_BUTTON_TRIGGER, &button);
+            if(xr_data.buttonsState[s].size() != sources_count) {
+                xr_data.buttonsState[s].resize(sources_count);
+            }
 
-            spdlog::info("BUTTONS {}", button.value);
-            // spdlog::info("BUTTONS {} {} {} {} {} {}", buttons[0].value, buttons[1].value, buttons[2].value, buttons[3].value, buttons[4].value, buttons[5].value)
+            for(int b = 0; b < WEBXR_BUTTON_COUNT; ++b) {
+                webxr_get_input_button(&sources[s], b, &xr_data.buttonsState[s][b]);
+            }
+
+            // webxr_get_input_axes(&sources[s], xr_data.axisState.data());
         }
     }
 }
