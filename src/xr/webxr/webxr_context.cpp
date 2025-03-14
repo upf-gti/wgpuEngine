@@ -127,8 +127,17 @@ void WebXRContext::poll_actions()
             handButtons[s].resize(sources_count);
         }
 
+        // TODO: Refactor this to get all buttons at once and avoid making different emscripten calls
         for (int b = 0; b < WEBXR_BUTTON_COUNT; ++b) {
-            webxr_get_input_button(source, b, &handButtons[s][b]);
+            GamepadButton button;
+            webxr_get_input_button(source, b, &button);
+            // Update changedSinceLastSync to get was pressed/release events
+            {
+                button.changedSinceLastSync[GAMEPAD_BUTTON_PRESSED_STATE] = (button.pressed != handButtons[s][b].pressed);
+                button.changedSinceLastSync[GAMEPAD_BUTTON_TOUCHED_STATE] = (button.touched != handButtons[s][b].touched);
+                button.changedSinceLastSync[GAMEPAD_BUTTON_VALUE_STATE] = (button.value != handButtons[s][b].value);
+            }
+            handButtons[s][b] = button;
         }
 
         webxr_get_input_axes(source, &axisState[s].x);
@@ -140,26 +149,6 @@ void WebXRContext::poll_actions()
     buttonsState[XR_BUTTON_X] = handButtons[HAND_LEFT][WEBXR_BUTTON_AX];
     buttonsState[XR_BUTTON_Y] = handButtons[HAND_LEFT][WEBXR_BUTTON_AX];
     buttonsState[XR_BUTTON_MENU] = {}; // not used in webxr
-
-    // if(handButtons[HAND_RIGHT][WEBXR_BUTTON_TRIGGER].value > 0.0) {
-    //     spdlog::info("WEBXR_BUTTON_TRIGGER {}",handButtons[HAND_RIGHT][WEBXR_BUTTON_TRIGGER].value);
-    // }
-
-    // if(handButtons[HAND_RIGHT][WEBXR_BUTTON_GRAB].value > 0.0) {
-    //     spdlog::info("WEBXR_BUTTON_GRAB {}",handButtons[HAND_RIGHT][WEBXR_BUTTON_GRAB].value);
-    // }
-
-    // if(handButtons[HAND_RIGHT][WEBXR_BUTTON_THUMBSTICK_PRESS].pressed) {
-    //     spdlog::info("WEBXR_BUTTON_THUMBSTICK_PRESS");
-    // }
-
-    // if(handButtons[HAND_RIGHT][WEBXR_BUTTON_AX].pressed) {
-    //     spdlog::info("WEBXR_BUTTON_AX");
-    // }
-
-    // if(handButtons[HAND_RIGHT][WEBXR_BUTTON_BY].pressed) {
-    //     spdlog::info("WEBXR_BUTTON_BY");
-    // }
 }
 
 void WebXRContext::update()

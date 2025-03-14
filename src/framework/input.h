@@ -106,9 +106,9 @@ public:
     */
 
     static float get_trigger_value(uint8_t controller);
+    static bool is_trigger_pressed(uint8_t controller);
     static bool was_trigger_pressed(uint8_t controller);
     static bool was_trigger_released(uint8_t controller);
-    static bool is_trigger_pressed(uint8_t controller);
     static bool is_trigger_touched(uint8_t controller);
     static bool was_trigger_touched(uint8_t controller);
 

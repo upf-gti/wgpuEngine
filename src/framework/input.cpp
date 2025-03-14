@@ -269,9 +269,12 @@ bool Input::is_button_pressed(uint8_t button)
 
 bool Input::was_button_pressed(uint8_t button)
 {
-#ifdef OPENXR_SUPPORT
+#if defined(OPENXR_SUPPORT)
     OpenXRContext* openxr_context = static_cast<OpenXRContext*>(xr_context);
     return openxr_context && (openxr_context->buttonsState[button].click.state.currentState && openxr_context->buttonsState[button].click.state.changedSinceLastSync);
+#elif defined(WEBXR_SUPPORT)
+    WebXRContext* webxr_context = static_cast<WebXRContext*>(xr_context);
+    return webxr_context && (webxr_context->buttonsState[button].pressed && webxr_context->buttonsState[button].changedSinceLastSync[GAMEPAD_BUTTON_PRESSED_STATE]);
 #else
     return false;
 #endif
@@ -279,9 +282,12 @@ bool Input::was_button_pressed(uint8_t button)
 
 bool Input::was_button_released(uint8_t button)
 {
-#ifdef OPENXR_SUPPORT
+#if defined(OPENXR_SUPPORT)
     OpenXRContext* openxr_context = static_cast<OpenXRContext*>(xr_context);
     return openxr_context && (!openxr_context->buttonsState[button].click.state.currentState && openxr_context->buttonsState[button].click.state.changedSinceLastSync);
+#elif defined(WEBXR_SUPPORT)
+    WebXRContext* webxr_context = static_cast<WebXRContext*>(xr_context);
+    return webxr_context && (!webxr_context->buttonsState[button].pressed && webxr_context->buttonsState[button].changedSinceLastSync[GAMEPAD_BUTTON_PRESSED_STATE]);
 #else
     return false;
 #endif
@@ -302,9 +308,12 @@ bool Input::is_button_touched(uint8_t button)
 
 bool Input::was_button_touched(uint8_t button)
 {
-#ifdef OPENXR_SUPPORT
+#if defined(OPENXR_SUPPORT)
     OpenXRContext* openxr_context = static_cast<OpenXRContext*>(xr_context);
     return openxr_context && (openxr_context->buttonsState[button].touch.state.currentState && openxr_context->buttonsState[button].touch.state.changedSinceLastSync);
+#elif defined(WEBXR_SUPPORT)
+    WebXRContext* webxr_context = static_cast<WebXRContext*>(xr_context);
+    return webxr_context && (webxr_context->buttonsState[button].touched && webxr_context->buttonsState[button].changedSinceLastSync[GAMEPAD_BUTTON_TOUCHED_STATE]);
 #else
     return false;
 #endif
@@ -329,26 +338,6 @@ float Input::get_trigger_value(uint8_t controller)
 #endif
 }
 
-bool Input::was_trigger_pressed(uint8_t controller)
-{
-#ifdef OPENXR_SUPPORT
-    OpenXRContext* openxr_context = static_cast<OpenXRContext*>(xr_context);
-    return openxr_context && !prev_trigger_state[controller] && (openxr_context->triggerValueState[controller].currentState > 0.5f);
-#else
-    return false;
-#endif
-}
-
-bool Input::was_trigger_released(uint8_t controller)
-{
-#ifdef OPENXR_SUPPORT
-    OpenXRContext* openxr_context = static_cast<OpenXRContext*>(xr_context);
-    return openxr_context && prev_trigger_state[controller] && (openxr_context->triggerValueState[controller].currentState < 0.5f);
-#else
-    return false;
-#endif
-}
-
 bool Input::is_trigger_pressed(uint8_t controller)
 {
 #if defined(OPENXR_SUPPORT)
@@ -357,6 +346,32 @@ bool Input::is_trigger_pressed(uint8_t controller)
 #elif defined(WEBXR_SUPPORT)
     WebXRContext* webxr_context = static_cast<WebXRContext*>(xr_context);
     return webxr_context && webxr_context->handButtons[controller][WEBXR_BUTTON_TRIGGER].value > 0.5f;
+#else
+    return false;
+#endif
+}
+
+bool Input::was_trigger_pressed(uint8_t controller)
+{
+#if defined(OPENXR_SUPPORT)
+    OpenXRContext* openxr_context = static_cast<OpenXRContext*>(xr_context);
+    return openxr_context && !prev_trigger_state[controller] && (openxr_context->triggerValueState[controller].currentState > 0.5f);
+#elif defined(WEBXR_SUPPORT)
+    WebXRContext* webxr_context = static_cast<WebXRContext*>(xr_context);
+    return webxr_context && !prev_trigger_state[controller] && webxr_context->handButtons[controller][WEBXR_BUTTON_TRIGGER].value > 0.5f;
+#else
+    return false;
+#endif
+}
+
+bool Input::was_trigger_released(uint8_t controller)
+{
+#if defined(OPENXR_SUPPORT)
+    OpenXRContext* openxr_context = static_cast<OpenXRContext*>(xr_context);
+    return openxr_context && prev_trigger_state[controller] && (openxr_context->triggerValueState[controller].currentState < 0.5f);
+#elif defined(WEBXR_SUPPORT)
+    WebXRContext* webxr_context = static_cast<WebXRContext*>(xr_context);
+    return webxr_context && prev_trigger_state[controller] && webxr_context->handButtons[controller][WEBXR_BUTTON_TRIGGER].value < 0.5f;
 #else
     return false;
 #endif
@@ -375,10 +390,14 @@ bool Input::is_trigger_touched(uint8_t controller)
 #endif
 }
 
-bool Input::was_trigger_touched(uint8_t controller) {
-#ifdef OPENXR_SUPPORT
+bool Input::was_trigger_touched(uint8_t controller)
+{
+#if defined(OPENXR_SUPPORT)
     OpenXRContext* openxr_context = static_cast<OpenXRContext*>(xr_context);
     return openxr_context && (openxr_context->triggerTouchState[controller].currentState && openxr_context->triggerTouchState[controller].changedSinceLastSync);
+#elif defined(WEBXR_SUPPORT)
+    WebXRContext* webxr_context = static_cast<WebXRContext*>(xr_context);
+    return webxr_context && (webxr_context->handButtons[controller][WEBXR_BUTTON_TRIGGER].touched && webxr_context->handButtons[controller][WEBXR_BUTTON_TRIGGER].changedSinceLastSync[GAMEPAD_BUTTON_TOUCHED_STATE]);
 #else
     return false;
 #endif
@@ -403,9 +422,12 @@ bool Input::is_grab_pressed(uint8_t controller)
 
 bool Input::was_grab_pressed(uint8_t controller)
 {
-#ifdef OPENXR_SUPPORT
+#if defined(OPENXR_SUPPORT)
     OpenXRContext* openxr_context = static_cast<OpenXRContext*>(xr_context);
     return openxr_context && !prev_grab_state[controller] && (openxr_context->grabState[controller].currentState > 0.5f);
+#elif defined(WEBXR_SUPPORT)
+    WebXRContext* webxr_context = static_cast<WebXRContext*>(xr_context);
+    return webxr_context && !prev_grab_state[controller] && webxr_context->handButtons[controller][WEBXR_BUTTON_GRAB].value > 0.5f;
 #else
     return false;
 #endif
@@ -413,9 +435,12 @@ bool Input::was_grab_pressed(uint8_t controller)
 
 bool Input::was_grab_released(uint8_t controller)
 {
-#ifdef OPENXR_SUPPORT
+#if defined(OPENXR_SUPPORT)
     OpenXRContext* openxr_context = static_cast<OpenXRContext*>(xr_context);
     return openxr_context && prev_grab_state[controller] && (openxr_context->grabState[controller].currentState < 0.5f);
+#elif defined(WEBXR_SUPPORT)
+    WebXRContext* webxr_context = static_cast<WebXRContext*>(xr_context);
+    return webxr_context && prev_grab_state[controller] && webxr_context->handButtons[controller][WEBXR_BUTTON_GRAB].value < 0.5f;
 #else
     return false;
 #endif
@@ -470,9 +495,12 @@ bool Input::is_thumbstick_pressed(uint8_t controller)
 
 bool Input::was_thumbstick_pressed(uint8_t controller)
 {
-#ifdef OPENXR_SUPPORT
+#if defined(OPENXR_SUPPORT)
     OpenXRContext* openxr_context = static_cast<OpenXRContext*>(xr_context);
     return openxr_context && (openxr_context->thumbStickClickState[controller].currentState && openxr_context->thumbStickClickState[controller].changedSinceLastSync);
+#elif defined(WEBXR_SUPPORT)
+    WebXRContext* webxr_context = static_cast<WebXRContext*>(xr_context);
+    return webxr_context && (webxr_context->handButtons[controller][WEBXR_BUTTON_THUMBSTICK_PRESS].pressed && webxr_context->handButtons[controller][WEBXR_BUTTON_THUMBSTICK_PRESS].changedSinceLastSync[GAMEPAD_BUTTON_PRESSED_STATE]);
 #else
     return false;
 #endif
@@ -493,11 +521,14 @@ bool Input::is_thumbstick_touched(uint8_t controller)
 
 bool Input::was_thumbstick_touched(uint8_t controller)
 {
-#ifdef OPENXR_SUPPORT
+#if defined(OPENXR_SUPPORT)
     OpenXRContext* openxr_context = static_cast<OpenXRContext*>(xr_context);
     return openxr_context && (openxr_context->thumbStickTouchState[controller].currentState && openxr_context->thumbStickTouchState[controller].changedSinceLastSync);
+#elif defined(WEBXR_SUPPORT)
+    WebXRContext* webxr_context = static_cast<WebXRContext*>(xr_context);
+    return webxr_context && (webxr_context->handButtons[controller][WEBXR_BUTTON_THUMBSTICK_PRESS].touched && webxr_context->handButtons[controller][WEBXR_BUTTON_THUMBSTICK_PRESS].changedSinceLastSync[GAMEPAD_BUTTON_TOUCHED_STATE]);
 #else
-	return false;
+    return false;
 #endif
 }
 
