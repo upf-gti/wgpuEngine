@@ -147,7 +147,7 @@ void WebXRContext::poll_actions()
     buttonsState[XR_BUTTON_A] = handButtons[HAND_RIGHT][WEBXR_BUTTON_AX];
     buttonsState[XR_BUTTON_B] = handButtons[HAND_RIGHT][WEBXR_BUTTON_BY];
     buttonsState[XR_BUTTON_X] = handButtons[HAND_LEFT][WEBXR_BUTTON_AX];
-    buttonsState[XR_BUTTON_Y] = handButtons[HAND_LEFT][WEBXR_BUTTON_AX];
+    buttonsState[XR_BUTTON_Y] = handButtons[HAND_LEFT][WEBXR_BUTTON_BY];
     buttonsState[XR_BUTTON_MENU] = {}; // not used in webxr
 }
 
