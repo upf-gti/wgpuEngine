@@ -39,14 +39,8 @@ struct OpenXRContext : public XRContext {
     sInputState input_state;
 
     // Poses
-    glm::mat4x4 eyePoseMatrixes[EYE_COUNT];
+    glm::mat4x4 eyePoseMatrices[EYE_COUNT];
     XrInputPose eyePoses[EYE_COUNT];
-    glm::mat4x4 headPoseMatrix;
-    XrInputPose headPose;
-    glm::mat4x4 controllerAimPoseMatrices[HAND_COUNT];
-    XrInputPose controllerAimPoses[HAND_COUNT];
-    glm::mat4x4 controllerGripPoseMatrices[HAND_COUNT];
-    XrInputPose controllerGripPoses[HAND_COUNT];
 
     // Input States. Also includes lastChangeTime, isActive, changedSinceLastSync properties.
     XrActionStateFloat grabState[HAND_COUNT];

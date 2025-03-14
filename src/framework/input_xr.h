@@ -30,11 +30,6 @@ struct XrMappedButtonState {
     void bind_touch(XrInstance* instance, const char* path) { touch.active = true; xrStringToPath(*instance, path, &touch.path); }
 };
 
-struct XrInputPose {
-    glm::quat orientation;
-    glm::vec3 position;
-};
-
 struct
 {
     bool supported = false;

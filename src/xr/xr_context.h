@@ -8,6 +8,7 @@
 #include "glm/vec3.hpp"
 #include "glm/vec4.hpp"
 #include "glm/mat4x4.hpp"
+#include "glm/gtc/quaternion.hpp"
 
 #ifdef XR_SUPPORT
 
@@ -34,6 +35,7 @@ enum XR_BUTTONS {
     XR_BUTTON_X,
     XR_BUTTON_Y,
     XR_BUTTON_MENU,
+    XR_BUTTON_COUNT,
 };
 
 enum XR_THUMBSTICK_AXIS : uint8_t {
@@ -41,6 +43,13 @@ enum XR_THUMBSTICK_AXIS : uint8_t {
     XR_THUMBSTICK_AXIS_X,
     XR_THUMBSTICK_AXIS_Y
 };
+
+struct XrInputPose {
+    glm::quat orientation;
+    glm::vec3 position;
+};
+
+glm::mat4x4 XrInputPose_to_glm(const XrInputPose& p);
 
 struct XRContext {
 
@@ -60,6 +69,14 @@ struct XRContext {
     /*
     * XR Input
     */
+
+    // Poses
+    glm::mat4x4 headPoseMatrix;
+    XrInputPose headPose;
+    glm::mat4x4 controllerAimPoseMatrices[HAND_COUNT];
+    XrInputPose controllerAimPoses[HAND_COUNT];
+    glm::mat4x4 controllerGripPoseMatrices[HAND_COUNT];
+    XrInputPose controllerGripPoses[HAND_COUNT];
 
     //sInputState input_state;
 

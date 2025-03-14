@@ -13,9 +13,11 @@
 
 #ifdef WEBXR_SUPPORT
 
-glm::mat4x4 parse_WebXR_pose_to_glm(const WebXRRigidTransform& p);
+XrInputPose parse_WebXR_pose_to_XrInputPose(const WebXRRigidTransform& p);
 
-WebXRContext::~WebXRContext() {
+WebXRContext::~WebXRContext()
+{
+
 }
 
 bool WebXRContext::init(WebGPUContext* webgpu_context)
@@ -50,7 +52,7 @@ bool WebXRContext::init(WebGPUContext* webgpu_context)
     );
 
     if (Input::init_xr(this)) {
-        spdlog::error("Can't initialize xr input");
+        spdlog::error("Can't initialize WebXR input");
         return 1;
     }
 
@@ -87,8 +89,8 @@ void WebXRContext::update_views(WebXRRigidTransform* head_pose, WebXRView views[
 
     // Head pose
     {
-        headPose = *head_pose;
-        headPoseMatrix = parse_WebXR_pose_to_glm(headPose);
+        headPose = parse_WebXR_pose_to_XrInputPose(*head_pose);
+        headPoseMatrix = XrInputPose_to_glm(headPose);
     }
 
     poll_actions();
@@ -105,50 +107,59 @@ void WebXRContext::poll_actions()
     int sources_count = 0;
     webxr_get_input_sources(sources, 5, &sources_count);
 
+    WebXRRigidTransform webxr_transform;
+
     for(int s = 0; s < sources_count; ++s) {
 
         WebXRInputSource* source = &sources[s];
 
         // Poses
-        webxr_get_input_pose(source, &controllerGripPoses[s], WEBXR_INPUT_POSE_GRIP);
-        controllerGripPoseMatrices[s] = parse_WebXR_pose_to_glm(controllerGripPoses[s]);
-        webxr_get_input_pose(source, &controllerAimPoses[s], WEBXR_INPUT_POSE_TARGET_RAY);
-        controllerAimPoseMatrices[s] = parse_WebXR_pose_to_glm(controllerAimPoses[s]);
+        webxr_get_input_pose(source, &webxr_transform, WEBXR_INPUT_POSE_GRIP);
+        controllerGripPoses[s] = parse_WebXR_pose_to_XrInputPose(webxr_transform);
+        controllerGripPoseMatrices[s] = XrInputPose_to_glm(controllerGripPoses[s]);
+
+        webxr_get_input_pose(source, &webxr_transform, WEBXR_INPUT_POSE_TARGET_RAY);
+        controllerAimPoses[s] = parse_WebXR_pose_to_XrInputPose(webxr_transform);
+        controllerAimPoseMatrices[s] = XrInputPose_to_glm(controllerAimPoses[s]);
 
         // Buttons
-        if(buttonsState[s].size() != sources_count) {
-            buttonsState[s].resize(sources_count);
+        if(handButtons[s].size() != sources_count) {
+            handButtons[s].resize(sources_count);
         }
 
-        for(int b = 0; b < WEBXR_BUTTON_COUNT; ++b) {
-            webxr_get_input_button(source, b, &buttonsState[s][b]);
+        for (int b = 0; b < WEBXR_BUTTON_COUNT; ++b) {
+            webxr_get_input_button(source, b, &handButtons[s][b]);
         }
 
         webxr_get_input_axes(source, &axisState[s].x);
     }
 
-    // if(buttonsState[HAND_RIGHT][WEBXR_BUTTON_TRIGGER].value > 0.0) {
-    //     spdlog::info("WEBXR_BUTTON_TRIGGER {}",buttonsState[HAND_RIGHT][WEBXR_BUTTON_TRIGGER].value);
+    // map buttons to XR_BUTTONS
+    buttonsState[XR_BUTTON_A] = handButtons[HAND_RIGHT][WEBXR_BUTTON_AX];
+    buttonsState[XR_BUTTON_B] = handButtons[HAND_RIGHT][WEBXR_BUTTON_BY];
+    buttonsState[XR_BUTTON_X] = handButtons[HAND_LEFT][WEBXR_BUTTON_AX];
+    buttonsState[XR_BUTTON_Y] = handButtons[HAND_LEFT][WEBXR_BUTTON_AX];
+    buttonsState[XR_BUTTON_MENU] = {}; // not used in webxr
+
+    // if(handButtons[HAND_RIGHT][WEBXR_BUTTON_TRIGGER].value > 0.0) {
+    //     spdlog::info("WEBXR_BUTTON_TRIGGER {}",handButtons[HAND_RIGHT][WEBXR_BUTTON_TRIGGER].value);
     // }
 
-    // if(buttonsState[HAND_RIGHT][WEBXR_BUTTON_GRIP].value > 0.0) {
-    //     spdlog::info("WEBXR_BUTTON_GRIP {}",buttonsState[HAND_RIGHT][WEBXR_BUTTON_GRIP].value);
+    // if(handButtons[HAND_RIGHT][WEBXR_BUTTON_GRAB].value > 0.0) {
+    //     spdlog::info("WEBXR_BUTTON_GRAB {}",handButtons[HAND_RIGHT][WEBXR_BUTTON_GRAB].value);
     // }
 
-    // if(buttonsState[HAND_RIGHT][WEBXR_BUTTON_THUMBSTICK_PRESS].pressed) {
+    // if(handButtons[HAND_RIGHT][WEBXR_BUTTON_THUMBSTICK_PRESS].pressed) {
     //     spdlog::info("WEBXR_BUTTON_THUMBSTICK_PRESS");
     // }
 
-    // if(buttonsState[HAND_RIGHT][WEBXR_BUTTON_AX].pressed) {
+    // if(handButtons[HAND_RIGHT][WEBXR_BUTTON_AX].pressed) {
     //     spdlog::info("WEBXR_BUTTON_AX");
     // }
 
-    // if(buttonsState[HAND_RIGHT][WEBXR_BUTTON_BY].pressed) {
+    // if(handButtons[HAND_RIGHT][WEBXR_BUTTON_BY].pressed) {
     //     spdlog::info("WEBXR_BUTTON_BY");
     // }
-
-    // spdlog::info("WEBXR_THUBSTICKL_RIGHT X {} Y {}",axisState[HAND_RIGHT].x,axisState[HAND_RIGHT].y);
-    // spdlog::info("{}",buttonsState[HAND_RIGHT][WEBXR_BUTTON_AX].pressed ? "PRESSED" : "NOOOOT PRESSED");
 }
 
 void WebXRContext::update()
@@ -184,10 +195,8 @@ void WebXRContext::print_error(int error)
     }
 }
 
-inline glm::mat4x4 parse_WebXR_pose_to_glm(const WebXRRigidTransform& p) {
-    glm::mat4 translation = glm::translate(glm::mat4{ 1.f }, glm::vec3(p.position[0], p.position[1], p.position[2]));
-    glm::mat4 orientation = glm::mat4_cast(glm::quat(p.orientation[0], p.orientation[1], p.orientation[2], p.orientation[3]));
-    return translation * orientation;
+inline XrInputPose parse_WebXR_pose_to_XrInputPose(const WebXRRigidTransform& p) {
+    return { glm::quat(p.orientation[0], p.orientation[1], p.orientation[2], p.orientation[3]), glm::vec3(p.position[0], p.position[1], p.position[2]) };
 }
 
 #endif

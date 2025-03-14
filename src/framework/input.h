@@ -16,6 +16,10 @@
 
 class Renderer;
 
+#ifdef XR_SUPPORT
+class XRContext;
+#endif
+
 class Input {
 
     // Mouse state
@@ -36,10 +40,10 @@ class Input {
     static bool use_mirror_screen;
 
 #ifdef XR_SUPPORT
+    static XRContext* xr_context;
 
     static bool prev_trigger_state[HAND_COUNT];
     static bool prev_grab_state[HAND_COUNT];
-
 #endif
 
 public:

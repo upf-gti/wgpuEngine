@@ -12,7 +12,7 @@
 enum WEBXR_BUTTONS
 {
     WEBXR_BUTTON_TRIGGER = 0,
-    WEBXR_BUTTON_GRIP,
+    WEBXR_BUTTON_GRAB,
     WEBXR_BUTTON_TOUCHPAD,
     WEBXR_BUTTON_THUMBSTICK_PRESS,
     WEBXR_BUTTON_AX,
@@ -37,20 +37,10 @@ struct WebXRContext : public XRContext {
     * XR Input
     */
 
-    // Poses
-    glm::mat4x4 headPoseMatrix;
-    WebXRRigidTransform headPose;
-    glm::mat4x4 controllerAimPoseMatrices[HAND_COUNT];
-    WebXRRigidTransform controllerAimPoses[HAND_COUNT];
-    glm::mat4x4 controllerGripPoseMatrices[HAND_COUNT];
-    WebXRRigidTransform controllerGripPoses[HAND_COUNT];
-
+    // All buttons, Trigger and Grip
+    std::vector<GamepadButton> handButtons[HAND_COUNT];
+    std::vector<GamepadButton> buttonsState;
     glm::vec2 axisState[HAND_COUNT];
-
-    // Buttons.
-    std::vector<GamepadButton> buttonsState[HAND_COUNT];
-
-    //sInputState input_state;
 
     //void init_actions();
     void poll_actions() override;
@@ -69,15 +59,15 @@ struct WebXRContext : public XRContext {
     * Render
     */
 
-    void update_views(WebXRRigidTransform* head_pose, WebXRView views[2], WGPUTextureView texture_view_left, WGPUTextureView texture_view_right);
-
     WGPUTextureView swapchain_views[2];
-
-    WGPUTextureView get_swapchain_view(uint8_t eye_idx) override;
 
     // inverted for reverse-z
     float z_near = 1000.0f;
     float z_far = 0.01f;
+
+    void update_views(WebXRRigidTransform* head_pose, WebXRView views[2], WGPUTextureView texture_view_left, WGPUTextureView texture_view_right);
+
+    WGPUTextureView get_swapchain_view(uint8_t eye_idx) override;
 
     void update() override;
 

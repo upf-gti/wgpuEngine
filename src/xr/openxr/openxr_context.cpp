@@ -4,23 +4,21 @@
 
 #include <cstdarg>
 
-#include "spdlog/spdlog.h"
-
 #include "framework/input.h"
-
 #include "framework/math/transform.h"
 
 #include "graphics/webgpu_context.h"
+
+#include "spdlog/spdlog.h"
 
 // we need an identity pose for creating spaces without offsets
 static XrPosef identity_pose = { .orientation = {.x = 0, .y = 0, .z = 0, .w = 1.0},
                                  .position = {.x = 0, .y = 0, .z = 0} };
 
 // Helper functions for pose to GLM
-glm::mat4x4 parse_OpenXR_projection_to_glm(const XrFovf& fov, float nearZ, float farZ);
-glm::mat4x4 parse_OpenXR_pose_to_glm(const XrPosef& p);
-glm::mat4x4 parse_OpenXR_pose_to_glm(const XrInputPose& p);
-inline XrInputPose parse_OpenXR_pose_to_sPose(const XrPosef& xrPosef);
+glm::mat4x4 OpenXRProjection_to_glm(const XrFovf& fov, float nearZ, float farZ);
+glm::mat4x4 XrInputPose_to_glm(const XrPosef& p);
+inline XrInputPose OpenXRPose_to_XrInputPose(const XrPosef& xrPosef);
 glm::quat slerp(const glm::quat& start, const glm::quat& end, float percent);
 glm::vec3 slerp(const glm::vec3& start, const glm::vec3& end, float percent);
 
@@ -183,7 +181,7 @@ bool OpenXRContext::init(WebGPUContext* webgpu_context)
     viewport = glm::ivec4(0, 0, viewconfig_views[0].recommendedImageRectWidth, viewconfig_views[0].recommendedImageRectHeight);
 
     if (Input::init_xr(this)) {
-        spdlog::error("Can't initialize xr input");
+        spdlog::error("Can't initialize OpenXR input");
         return 1;
     }
 
@@ -846,16 +844,16 @@ void OpenXRContext::poll_actions()
     }
 
     // [tdbe] Head action poses
-    eyePoseMatrixes[EYE_LEFT] = parse_OpenXR_pose_to_glm(projection_views[EYE_LEFT].pose);
-    eyePoses[EYE_LEFT] = parse_OpenXR_pose_to_sPose(projection_views[EYE_LEFT].pose);
-    eyePoseMatrixes[EYE_RIGHT] = parse_OpenXR_pose_to_glm(projection_views[EYE_RIGHT].pose);
-    eyePoses[EYE_RIGHT] = parse_OpenXR_pose_to_sPose(projection_views[EYE_RIGHT].pose);
+    eyePoseMatrices[EYE_LEFT] = XrInputPose_to_glm(projection_views[EYE_LEFT].pose);
+    eyePoses[EYE_LEFT] = OpenXRPose_to_XrInputPose(projection_views[EYE_LEFT].pose);
+    eyePoseMatrices[EYE_RIGHT] = XrInputPose_to_glm(projection_views[EYE_RIGHT].pose);
+    eyePoses[EYE_RIGHT] = OpenXRPose_to_XrInputPose(projection_views[EYE_RIGHT].pose);
     // [tdbe] TODO: figure out what/how head poses/joints work in openxr https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html
     headPose = {
         .orientation = slerp(eyePoses[EYE_LEFT].orientation, eyePoses[EYE_RIGHT].orientation, .5),
         .position = slerp(eyePoses[EYE_LEFT].position, eyePoses[EYE_RIGHT].position, .5)
     };
-    headPoseMatrix = parse_OpenXR_pose_to_glm(headPose);
+    headPoseMatrix = XrInputPose_to_glm(headPose);
 
     // [tdbe] Headset State. Use to detect status / user proximity / user presence / user engagement https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html#session-lifecycle
     headsetActivityState = session_state;
@@ -875,8 +873,8 @@ void OpenXRContext::poll_actions()
                 XR_SPACE_LOCATION_ORIENTATION_VALID_BIT | XR_SPACE_LOCATION_ORIENTATION_TRACKED_BIT;
             if ((spaceLocation.locationFlags & checkFlags) == checkFlags)
             {
-                controllerAimPoseMatrices[i] = parse_OpenXR_pose_to_glm(spaceLocation.pose);
-                controllerAimPoses[i] = parse_OpenXR_pose_to_sPose(spaceLocation.pose);
+                controllerAimPoseMatrices[i] = XrInputPose_to_glm(spaceLocation.pose);
+                controllerAimPoses[i] = OpenXRPose_to_XrInputPose(spaceLocation.pose);
             }
         }
 
@@ -893,8 +891,8 @@ void OpenXRContext::poll_actions()
                 XR_SPACE_LOCATION_ORIENTATION_VALID_BIT | XR_SPACE_LOCATION_ORIENTATION_TRACKED_BIT;
             if ((spaceLocation.locationFlags & checkFlags) == checkFlags)
             {
-                controllerGripPoseMatrices[i] = parse_OpenXR_pose_to_glm(spaceLocation.pose);
-                controllerGripPoses[i] = parse_OpenXR_pose_to_sPose(spaceLocation.pose);
+                controllerGripPoseMatrices[i] = XrInputPose_to_glm(spaceLocation.pose);
+                controllerGripPoses[i] = OpenXRPose_to_XrInputPose(spaceLocation.pose);
             }
         }
 
@@ -1136,13 +1134,13 @@ void OpenXRContext::update()
         if (root_transform) {
             const glm::mat4 root_model = root_transform->get_model();
             per_view_data[i].position = root_model * glm::vec4(per_view_data[i].position, 1.0);
-            per_view_data[i].view_matrix = glm::inverse(root_model * parse_OpenXR_pose_to_glm(views[i].pose));
+            per_view_data[i].view_matrix = glm::inverse(root_model * XrInputPose_to_glm(views[i].pose));
         }
         else {
-            per_view_data[i].view_matrix = glm::inverse(parse_OpenXR_pose_to_glm(views[i].pose));
+            per_view_data[i].view_matrix = glm::inverse(XrInputPose_to_glm(views[i].pose));
         }
 
-        per_view_data[i].projection_matrix = parse_OpenXR_projection_to_glm(views[i].fov, z_near, z_far);
+        per_view_data[i].projection_matrix = OpenXRProjection_to_glm(views[i].fov, z_near, z_far);
 
         per_view_data[i].view_projection_matrix = per_view_data[i].projection_matrix * per_view_data[i].view_matrix;
     }
@@ -1275,7 +1273,7 @@ XrActionStateVector2f OpenXRContext::get_action_vector2f_State(XrAction targetAc
 */
 
 // From: https://github.com/jherico/OpenXR-Samples/blob/master/src/examples/sdl2_gl_single_file_example.cpp
-inline glm::mat4x4 parse_OpenXR_projection_to_glm(const XrFovf& fov, float nearZ, float farZ) {
+inline glm::mat4x4 OpenXRProjection_to_glm(const XrFovf& fov, float nearZ, float farZ) {
     const auto& tanAngleRight = tanf(fov.angleRight);
     const auto& tanAngleLeft = tanf(fov.angleLeft);
     const auto& tanAngleUp = tanf(fov.angleUp);
@@ -1311,19 +1309,13 @@ inline glm::mat4x4 parse_OpenXR_projection_to_glm(const XrFovf& fov, float nearZ
     return resultm;
 }
 
-inline glm::mat4x4 parse_OpenXR_pose_to_glm(const XrPosef& p) {
+inline glm::mat4x4 XrInputPose_to_glm(const XrPosef& p) {
     glm::mat4 translation = glm::translate(glm::mat4{ 1.f }, glm::vec3(p.position.x, p.position.y, p.position.z));
     glm::mat4 orientation = glm::mat4_cast(glm::quat(p.orientation.x, p.orientation.y, p.orientation.z, p.orientation.w));
     return translation * orientation;
 }
 
-inline glm::mat4x4 parse_OpenXR_pose_to_glm(const XrInputPose& p) {
-    glm::mat4 translation = glm::translate(glm::mat4{ 1.f }, glm::vec3(p.position.x, p.position.y, p.position.z));
-    glm::mat4 orientation = glm::mat4_cast(glm::quat(p.orientation.x, p.orientation.y, p.orientation.z, p.orientation.w));
-    return translation * orientation;
-}
-
-inline XrInputPose parse_OpenXR_pose_to_sPose(const XrPosef& xrPosef) {
+inline XrInputPose OpenXRPose_to_XrInputPose(const XrPosef& xrPosef) {
     
     return XrInputPose{
         .orientation = glm::quat(xrPosef.orientation.x, xrPosef.orientation.y, xrPosef.orientation.z, xrPosef.orientation.w),
