@@ -1,5 +1,7 @@
 #include "webxr_context.h"
 
+#include "engine/engine.h"
+
 #include "graphics/webgpu_context.h"
 
 #include "framework/input.h"
@@ -29,7 +31,7 @@ bool WebXRContext::init(WebGPUContext* webgpu_context)
     webxr_init(
         /* Frame callback */
         [](void* userData, int time, WebXRRigidTransform* head_pose, WebXRView views[2], WGPUTextureView texture_view_left, WGPUTextureView texture_view_right, int viewCount) {
-            static_cast<WebXRContext*>(userData)->update_views(head_pose, views, texture_view_left, texture_view_right);
+            static_cast<WebXRContext*>(userData)->on_frame(head_pose, views, texture_view_left, texture_view_right);
         },
         /* Session WebXR init callback */
         [](void* userData) {
@@ -63,13 +65,26 @@ void WebXRContext::clean()
 {
 }
 
+void WebXRContext::on_frame(WebXRRigidTransform* head_pose, WebXRView views[2], WGPUTextureView texture_view_left, WGPUTextureView texture_view_right)
+{
+    update_views(head_pose, views, texture_view_left, texture_view_right);
+
+    poll_actions();
+
+    Engine::instance->on_frame(); // Make frame from here to synchronise render and xr session
+}
+
 bool WebXRContext::begin_session()
 {
+    emscripten_pause_main_loop();
+
     return false;
 }
 
 bool WebXRContext::end_session()
 {
+    emscripten_resume_main_loop();
+
     return false;
 }
 
@@ -92,8 +107,6 @@ void WebXRContext::update_views(WebXRRigidTransform* head_pose, WebXRView views[
         headPose = parse_WebXR_pose_to_XrInputPose(*head_pose);
         headPoseMatrix = XrInputPose_to_glm(headPose);
     }
-
-    poll_actions();
 }
 
 WGPUTextureView WebXRContext::get_swapchain_view(uint8_t eye_idx)

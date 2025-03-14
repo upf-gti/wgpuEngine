@@ -52,6 +52,7 @@ struct WebXRContext : public XRContext {
     * XR Session
     */
 
+    void on_frame(WebXRRigidTransform* head_pose, WebXRView views[2], WGPUTextureView texture_view_left, WGPUTextureView texture_view_right);
     bool begin_session() override;
     bool end_session() override;
 

@@ -336,7 +336,6 @@ void Engine::start_loop()
         (void*)this,
         0, true
     );
-
 #else
     while (!stop_game_loop) {
 
