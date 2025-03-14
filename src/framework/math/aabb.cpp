@@ -94,3 +94,15 @@ AABB AABB::rotate(const glm::quat& rotation) const
 
     return { center, new_half_size };
 }
+
+bool AABB::ray_intersection(glm::dvec3 ray_origin, glm::dvec3 ray_dir, double min_interval, double max_interval) const
+{
+    glm::dvec3 t_min = (static_cast<glm::dvec3>(center - half_size) - ray_origin) / ray_dir;
+    glm::dvec3 t_max = (static_cast<glm::dvec3>(center + half_size) - ray_origin) / ray_dir;
+    glm::dvec3 t1 = glm::min(t_min, t_max);
+    glm::dvec3 t2 = glm::max(t_min, t_max);
+    double t_near = std::max(std::max(t1.x, t1.y), t1.z);
+    double t_far = std::min(std::min(t2.x, t2.y), t2.z);
+
+    return t_near <= t_far && t_near > min_interval && t_far < max_interval;
+}
