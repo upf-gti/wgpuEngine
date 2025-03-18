@@ -125,7 +125,7 @@ const glm::mat4x4& Transform::get_model()
     return model;
 }
 
-const glm::mat4x4& Transform::get_model() const
+const glm::mat4x4 Transform::get_model() const
 {
     return dirty ? Transform::transform_to_mat4(*this) : model;
 }

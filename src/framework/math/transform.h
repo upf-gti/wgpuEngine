@@ -47,7 +47,7 @@ public:
     void cache_model();
 
     const glm::mat4x4& get_model();
-    const glm::mat4x4& get_model() const;
+    const glm::mat4x4 get_model() const;
 
     glm::vec3 get_front();
     glm::vec3 get_up();

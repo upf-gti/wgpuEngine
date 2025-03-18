@@ -26,30 +26,16 @@ struct AABB {
 
     AABB rotate(const glm::quat& rotation) const;
 
-    // https://gist.github.com/DomNomNom/46bb1ce47f68d255fd5d
-    bool ray_intersection(glm::dvec3 ray_origin, glm::dvec3 ray_dir, double min_interval = -infinity, double max_interval = infinity) const;
-
     // Returns the index of the longest axis of the bounding box.
     int longest_axis() const {
-        int x_size = abs(half_size.x);
-        int y_size = abs(half_size.y);
-        int z_size = abs(half_size.z);
+        float x_size = abs(half_size.x);
+        float y_size = abs(half_size.y);
+        float z_size = abs(half_size.z);
 
         if (x_size > y_size)
             return x_size > z_size ? 0 : 2;
         else
             return y_size > z_size ? 1 : 2;
-    }
-
-    float axis_min(int axis) const {
-        if (axis == 1) {
-            return (center - half_size).y;
-        } else
-        if (axis == 2) {
-            return (center - half_size).z;
-        }
-
-        return (center - half_size).x;
     }
 };
 
