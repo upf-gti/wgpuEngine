@@ -69,6 +69,12 @@ void Transform::rotate_arround(const glm::quat& rotation, const glm::vec3 pivot)
     dirty = true;
 }
 
+void Transform::cache_model()
+{
+    dirty = false;
+    model = Transform::transform_to_mat4(*this);
+}
+
 const glm::vec3& Transform::get_position() const
 {
     return position_p;
@@ -117,6 +123,11 @@ const glm::mat4x4& Transform::get_model()
     }
 
     return model;
+}
+
+const glm::mat4x4 Transform::get_model() const
+{
+    return dirty ? Transform::transform_to_mat4(*this) : model;
 }
 
 glm::vec3 Transform::get_front()

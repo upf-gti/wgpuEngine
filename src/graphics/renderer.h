@@ -107,7 +107,7 @@ protected:
 
     bool is_xr_available    = false;
     bool use_mirror_screen      = false;
-    bool use_custom_mirror      = true;
+    bool use_custom_mirror      = false;
 
     glm::vec4 clear_color = { 0.0f, 0.0f, 0.0f, 1.0f };
 

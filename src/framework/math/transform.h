@@ -44,7 +44,11 @@ public:
     void rotate_world(const glm::quat& rotation_delta);
     void rotate_arround(const glm::quat& rotation, const glm::vec3 pivot);
 
+    void cache_model();
+
     const glm::mat4x4& get_model();
+    const glm::mat4x4 get_model() const;
+
     glm::vec3 get_front();
     glm::vec3 get_up();
 
