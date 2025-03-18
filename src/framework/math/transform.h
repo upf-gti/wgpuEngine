@@ -13,7 +13,7 @@ class Transform {
 
     glm::mat4x4 model;
 
-    bool dirty = false;
+    bool dirty = true;
 
 public:
 
