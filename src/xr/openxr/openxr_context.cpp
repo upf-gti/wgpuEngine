@@ -388,6 +388,12 @@ bool OpenXRContext::end_session()
     return true;
 }
 
+WGPUTextureView OpenXRContext::get_swapchain_view(uint8_t eye_idx, uint32_t image_idx)
+{
+    const sSwapchainData& swapchainData = swapchains[eye_idx];
+    return swapchainData.images[image_idx].textureView;
+}
+
 WGPUTextureView OpenXRContext::get_swapchain_view(uint8_t eye_idx)
 {
     const sSwapchainData& swapchainData = swapchains[eye_idx];
@@ -1111,6 +1117,11 @@ void OpenXRContext::end_frame()
         spdlog::trace("Failed to end frame!");
         return;
     }
+}
+
+uint32_t OpenXRContext::get_num_images_per_swapchain()
+{
+    return swapchains[0].images.size();
 }
 
 void OpenXRContext::update()

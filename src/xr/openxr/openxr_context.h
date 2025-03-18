@@ -82,6 +82,7 @@ struct OpenXRContext : public XRContext {
         std::vector<dawnxr::SwapchainImageDawn> images;
     };
 
+    WGPUTextureView get_swapchain_view(uint8_t eye_idx, uint32_t image_idx) override;
     WGPUTextureView get_swapchain_view(uint8_t eye_idx) override;
     uint32_t get_swapchain_image_index(uint8_t eye_idx) override;
 
@@ -103,6 +104,8 @@ struct OpenXRContext : public XRContext {
     void acquire_swapchain(int swapchain_index);
     void release_swapchain(int swapchain_index);
     void end_frame();
+
+    uint32_t get_num_images_per_swapchain() override;
 
     void update() override;
 

@@ -77,7 +77,7 @@ void resize_callback(GLFWwindow* window, int width, int height)
         return;
     }
 
-    if (!engine->get_openxr_available()) {
+    if (!engine->get_xr_available()) {
         engine->resize_window(width, height);
     }
 }
@@ -101,6 +101,8 @@ int Engine::initialize(Renderer* renderer, sEngineConfiguration configuration)
 
 #ifdef __EMSCRIPTEN__
     on_engine_pre_initialized();
+
+    show_imgui = false;
 #endif
 
     renderer->set_msaa_count(configuration.msaa_count, true);
@@ -351,7 +353,7 @@ void Engine::add_node(Node* node)
     main_scene->add_node(node);
 }
 
-bool Engine::get_openxr_available()
+bool Engine::get_xr_available()
 {
     return renderer->get_xr_available();
 }

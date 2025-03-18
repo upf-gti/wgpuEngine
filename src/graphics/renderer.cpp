@@ -391,6 +391,8 @@ void Renderer::render()
         }
 #endif
 
+        ImGui::Render();
+
         return;
     }
 
@@ -1438,10 +1440,10 @@ void Renderer::init_mirror_pipeline()
     color_target.writeMask = WGPUColorWriteMask_All;
 
     // Generate uniforms from the swapchain
-    for (uint8_t i = 0; i < 2; i++) {
+    for (uint8_t i = 0; i < xr_context->get_num_images_per_swapchain(); i++) {
         Uniform swapchain_uni;
 
-        swapchain_uni.data = xr_context->get_swapchain_view(i);
+        swapchain_uni.data = xr_context->get_swapchain_view(EYE_LEFT, i);
         swapchain_uni.binding = 0;
 
         swapchain_uniforms.push_back(swapchain_uni);

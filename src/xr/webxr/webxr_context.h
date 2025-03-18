@@ -68,6 +68,7 @@ struct WebXRContext : public XRContext {
 
     void update_views(WebXRRigidTransform* head_pose, WebXRView views[2], WGPUTextureView texture_view_left, WGPUTextureView texture_view_right);
 
+    WGPUTextureView get_swapchain_view(uint8_t eye_idx, uint32_t image_idx) override;
     WGPUTextureView get_swapchain_view(uint8_t eye_idx) override;
 
     void update() override;

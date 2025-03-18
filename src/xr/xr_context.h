@@ -97,6 +97,7 @@ struct XRContext {
     * Render
     */
 
+    virtual WGPUTextureView get_swapchain_view(uint8_t eye_idx, uint32_t image_idx) = 0;
     virtual WGPUTextureView get_swapchain_view(uint8_t eye_idx) = 0;
     virtual uint32_t get_swapchain_image_index(uint8_t eye_idx);
 
@@ -119,6 +120,8 @@ struct XRContext {
     virtual void acquire_swapchain(int swapchain_index);
     virtual void release_swapchain(int swapchain_index);
     virtual void end_frame();
+
+    virtual uint32_t get_num_images_per_swapchain();
 
     virtual void update() = 0;
 

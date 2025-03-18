@@ -93,6 +93,8 @@ WGPUFuture WebGPUContext::request_adapter(XRContext* xr_context, bool is_openxr_
 #ifdef WEBXR_SUPPORT
     WGPURequestAdapterWebXROptions webxr_options = {};
     webxr_options.xrCompatible = true;
+    webxr_options.chain.next = nullptr;
+    webxr_options.chain.sType = WGPUSType_RequestAdapterWebXROptions;
     adapter_opts.nextInChain = reinterpret_cast<WGPUChainedStruct*>(&webxr_options);
 #endif
 

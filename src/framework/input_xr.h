@@ -1,7 +1,7 @@
 #pragma once
 
 #include "includes.h"
-#ifdef XR_SUPPORT
+#ifdef OPENXR_SUPPORT
 #include "xr/dawnxr/dawnxr.h"
 #endif
 

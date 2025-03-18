@@ -11,7 +11,6 @@
 #include <glm/gtc/type_ptr.hpp>
 
 #include <emscripten.h>
-#include <emscripten/html5_webgpu.h>
 
 #ifdef WEBXR_SUPPORT
 
@@ -112,6 +111,11 @@ void WebXRContext::update_views(WebXRRigidTransform* head_pose, WebXRView views[
 WGPUTextureView WebXRContext::get_swapchain_view(uint8_t eye_idx)
 {
     return swapchain_views[eye_idx];
+}
+
+WGPUTextureView WebXRContext::get_swapchain_view(uint8_t eye_idx, uint32_t image_idx)
+{
+    return get_swapchain_view(eye_idx);
 }
 
 void WebXRContext::poll_actions()

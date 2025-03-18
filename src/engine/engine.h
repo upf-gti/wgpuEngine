@@ -74,7 +74,7 @@ public:
     static Engine* get_instance() { return instance; }
     sEngineConfiguration get_configuration() { return configuration; }
     Renderer* get_renderer() { return renderer; }
-    bool get_openxr_available();
+    bool get_xr_available();
     bool get_use_mirror_window();
     bool should_close();
     Scene* get_main_scene();
