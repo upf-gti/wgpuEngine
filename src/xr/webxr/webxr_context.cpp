@@ -135,18 +135,20 @@ void WebXRContext::poll_actions()
 
         WebXRInputSource* source = &sources[s];
 
+        WebXRHandedness hand = source->handedness;
+
         // Poses
         webxr_get_input_pose(source, &webxr_transform, WEBXR_INPUT_POSE_GRIP);
-        controllerGripPoses[s] = parse_WebXR_pose_to_XrInputPose(webxr_transform);
-        controllerGripPoseMatrices[s] = XrInputPose_to_glm(controllerGripPoses[s]);
+        controllerGripPoses[hand] = parse_WebXR_pose_to_XrInputPose(webxr_transform);
+        controllerGripPoseMatrices[hand] = XrInputPose_to_glm(controllerGripPoses[hand]);
 
         webxr_get_input_pose(source, &webxr_transform, WEBXR_INPUT_POSE_TARGET_RAY);
-        controllerAimPoses[s] = parse_WebXR_pose_to_XrInputPose(webxr_transform);
-        controllerAimPoseMatrices[s] = XrInputPose_to_glm(controllerAimPoses[s]);
+        controllerAimPoses[hand] = parse_WebXR_pose_to_XrInputPose(webxr_transform);
+        controllerAimPoseMatrices[hand] = XrInputPose_to_glm(controllerAimPoses[hand]);
 
         // Buttons
-        if(handButtons[s].size() != sources_count) {
-            handButtons[s].resize(sources_count);
+        if(handButtons[hand].size() != sources_count) {
+            handButtons[hand].resize(sources_count);
         }
 
         // TODO: Refactor this to get all buttons at once and avoid making different emscripten calls
@@ -155,14 +157,14 @@ void WebXRContext::poll_actions()
             webxr_get_input_button(source, b, &button);
             // Update changedSinceLastSync to get was pressed/release events
             {
-                button.changedSinceLastSync[GAMEPAD_BUTTON_PRESSED_STATE] = (button.pressed != handButtons[s][b].pressed);
-                button.changedSinceLastSync[GAMEPAD_BUTTON_TOUCHED_STATE] = (button.touched != handButtons[s][b].touched);
-                button.changedSinceLastSync[GAMEPAD_BUTTON_VALUE_STATE] = (button.value != handButtons[s][b].value);
+                button.changedSinceLastSync[GAMEPAD_BUTTON_PRESSED_STATE] = (button.pressed != handButtons[hand][b].pressed);
+                button.changedSinceLastSync[GAMEPAD_BUTTON_TOUCHED_STATE] = (button.touched != handButtons[hand][b].touched);
+                button.changedSinceLastSync[GAMEPAD_BUTTON_VALUE_STATE] = (button.value != handButtons[hand][b].value);
             }
-            handButtons[s][b] = button;
+            handButtons[hand][b] = button;
         }
 
-        webxr_get_input_axes(source, &axisState[s].x);
+        webxr_get_input_axes(source, &axisState[hand].x);
     }
 
     // map buttons to XR_BUTTONS

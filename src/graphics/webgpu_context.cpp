@@ -863,7 +863,7 @@ void WebGPUContext::read_buffer(WGPUBuffer buffer, size_t size, void* output_dat
 
 void WebGPUContext::read_buffer_async(WGPUBuffer buffer, size_t size, const std::function<void(const void* output_buffer, void* userdata)>& read_callback, void* read_userdata)
 {
-    WGPUBuffer output_buffer = create_buffer(size, WGPUBufferUsage_CopyDst | WGPUBufferUsage_MapRead, nullptr, "read_buffer");
+    WGPUBuffer output_buffer = create_buffer(size, WGPUBufferUsage_CopyDst | WGPUBufferUsage_MapRead, nullptr, "read_buffer_async");
 
     WGPUCommandEncoder encoder = wgpuDeviceCreateCommandEncoder(device, {});
 

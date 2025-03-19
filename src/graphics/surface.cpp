@@ -238,6 +238,10 @@ void Surface::create_quad(float w, float h, bool flip_y, bool centered, const gl
         wgpuBufferDestroy(vertex_pos_buffer);
     }
 
+    if (vertex_data_buffer) {
+        wgpuBufferDestroy(vertex_data_buffer);
+    }
+
     name = "quad";
 
     glm::vec3 origin(0.0f);
@@ -258,6 +262,10 @@ void Surface::create_subdivided_quad(float w, float h, bool flip_y, uint32_t sub
     // Mesh has vertex data...
     if (vertex_pos_buffer) {
         wgpuBufferDestroy(vertex_pos_buffer);
+    }
+
+    if (vertex_data_buffer) {
+        wgpuBufferDestroy(vertex_data_buffer);
     }
 
     name = "subdivided_quad";
@@ -307,6 +315,10 @@ void Surface::create_box(float w, float h, float d, const glm::vec3& color)
         wgpuBufferDestroy(vertex_pos_buffer);
     }
 
+    if (vertex_data_buffer) {
+        wgpuBufferDestroy(vertex_data_buffer);
+    }
+
     name = "box";
 
     sSurfaceData vertices;
@@ -340,6 +352,10 @@ void Surface::create_rounded_box(float w, float h, float d, float c, const glm::
     // Mesh has vertex data...
     if (vertex_pos_buffer) {
         wgpuBufferDestroy(vertex_pos_buffer);
+    }
+
+    if (vertex_data_buffer) {
+        wgpuBufferDestroy(vertex_data_buffer);
     }
 
     name = "rounded_box";
@@ -557,6 +573,10 @@ void Surface::create_sphere(float r, uint32_t segments, uint32_t rings, const gl
         wgpuBufferDestroy(vertex_pos_buffer);
     }
 
+    if (vertex_data_buffer) {
+        wgpuBufferDestroy(vertex_data_buffer);
+    }
+
     name = "sphere";
 
     sSurfaceData vertices;
@@ -641,6 +661,10 @@ void Surface::create_cone(float r, float h, uint32_t segments, const glm::vec3& 
         wgpuBufferDestroy(vertex_pos_buffer);
     }
 
+    if (vertex_data_buffer) {
+        wgpuBufferDestroy(vertex_data_buffer);
+    }
+
     name = "cone";
 
     sSurfaceData vertices;
@@ -706,6 +730,10 @@ void Surface::create_cylinder(float r, float h, uint32_t segments, bool capped, 
     if (vertex_pos_buffer)
     {
         wgpuBufferDestroy(vertex_pos_buffer);
+    }
+
+    if (vertex_data_buffer) {
+        wgpuBufferDestroy(vertex_data_buffer);
     }
 
     name = "cylinder";
@@ -789,6 +817,10 @@ void Surface::create_capsule(float r, float h, uint32_t segments, uint32_t rings
     if (vertex_pos_buffer)
     {
         wgpuBufferDestroy(vertex_pos_buffer);
+    }
+
+    if (vertex_data_buffer) {
+        wgpuBufferDestroy(vertex_data_buffer);
     }
 
     name = "capsule";
@@ -936,6 +968,10 @@ void Surface::create_torus(float r, float ir, uint32_t segments_section, uint32_
         wgpuBufferDestroy(vertex_pos_buffer);
     }
 
+    if (vertex_data_buffer) {
+        wgpuBufferDestroy(vertex_data_buffer);
+    }
+
     name = "torus";
 
     sSurfaceData vertices;
@@ -999,6 +1035,15 @@ void Surface::create_torus(float r, float ir, uint32_t segments_section, uint32_
 
 void Surface::create_circle(float radius, uint32_t segments)
 {
+    if (vertex_pos_buffer)
+    {
+        wgpuBufferDestroy(vertex_pos_buffer);
+    }
+
+    if (vertex_data_buffer) {
+        wgpuBufferDestroy(vertex_data_buffer);
+    }
+
     name = "circle";
 
     sSurfaceData vertices;
@@ -1018,8 +1063,16 @@ void Surface::create_circle(float radius, uint32_t segments)
 
 void Surface::create_arrow()
 {
-    name = "arrow";
+    if (vertex_pos_buffer)
+    {
+        wgpuBufferDestroy(vertex_pos_buffer);
+    }
 
+    if (vertex_data_buffer) {
+        wgpuBufferDestroy(vertex_data_buffer);
+    }
+
+    name = "arrow";
 
     sSurfaceData vertices;
     vertices.resize(8);
@@ -1047,6 +1100,15 @@ void Surface::create_arrow()
 
 void Surface::create_skybox()
 {
+    if (vertex_pos_buffer)
+    {
+        wgpuBufferDestroy(vertex_pos_buffer);
+    }
+
+    if (vertex_data_buffer) {
+        wgpuBufferDestroy(vertex_data_buffer);
+    }
+
     name = "skybox";
 
     sSurfaceData vertices;
