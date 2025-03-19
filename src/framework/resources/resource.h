@@ -29,6 +29,10 @@ public:
 
     std::string get_scene_unique_id() const { return scene_unique_id; }
 
+    uint32_t get_ref_count() {
+        return ref_count;
+    }
+
 private:
 
     uint32_t ref_count = 0;

@@ -598,12 +598,12 @@ void Renderer::render()
     if (!is_xr_available || use_mirror_screen) {
         wgpuSurfacePresent(webgpu_context->surface);
     }
-#endif
 
     if (timestamps_requested) {
         get_timestamps();
         timestamps_requested = false;
     }
+#endif
 
     clear_renderables();
 }
@@ -880,6 +880,7 @@ void Renderer::resolve_query_set(WGPUCommandEncoder encoder, uint8_t first_query
 
 void Renderer::get_timestamps()
 {
+#ifndef __EMSCRIPTEN__
     auto read_callback = [&](const void* output_buffer, void* user_data) {
         const uint64_t* timestamps_buffer = reinterpret_cast<const uint64_t*>(output_buffer);
         uint8_t* query_index_cpy = static_cast<uint8_t*>(user_data);
@@ -900,6 +901,8 @@ void Renderer::get_timestamps()
     uint8_t* query_index_cpy = new uint8_t();
     *query_index_cpy = query_index;
     webgpu_context->read_buffer_async(timestamp_query_buffer, sizeof(uint64_t) * maximum_query_sets, read_callback, query_index_cpy);
+#endif
+
 }
 
 void Renderer::set_msaa_count(uint8_t msaa_count, bool is_initial_value)
