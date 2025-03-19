@@ -165,6 +165,7 @@ void WebXRContext::poll_actions()
         }
 
         webxr_get_input_axes(source, &axisState[hand].x);
+        axisState[hand].y = -axisState[hand].y; // seems webxr Y axis is inverted (?)
     }
 
     // map buttons to XR_BUTTONS
