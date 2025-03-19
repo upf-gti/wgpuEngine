@@ -166,11 +166,11 @@ namespace ui {
             }
 
             if (text_2d) {
-                text_2d->set_visibility(false);
+                text_2d->set_visibility(false, false);
             }
 
             if (text_2d_value) {
-                text_2d_value->set_visibility(false);
+                text_2d_value->set_visibility(false, false);
             }
         }
 
@@ -191,11 +191,11 @@ namespace ui {
         IO::set_hover(this, data);
 
         if (text_2d) {
-            text_2d->set_visibility(true);
+            text_2d->set_visibility(true, false);
         }
 
         if (text_2d_value) {
-            text_2d_value->set_visibility(true);
+            text_2d_value->set_visibility(true, false);
         }
 
         if (data.is_pressed) {
@@ -386,11 +386,11 @@ namespace ui {
             }
 
             if (text_2d) {
-                text_2d->set_visibility(false);
+                text_2d->set_visibility(false, false);
             }
 
             if (text_2d_value) {
-                text_2d_value->set_visibility(false);
+                text_2d_value->set_visibility(false, false);
             }
         }
 
@@ -411,11 +411,11 @@ namespace ui {
         IO::set_hover(this, data);
 
         if (text_2d) {
-            text_2d->set_visibility(true);
+            text_2d->set_visibility(true, false);
         }
 
         if (text_2d_value) {
-            text_2d_value->set_visibility(true);
+            text_2d_value->set_visibility(true, false);
         }
 
         if (data.is_pressed) {
