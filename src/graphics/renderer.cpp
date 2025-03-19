@@ -634,6 +634,7 @@ void Renderer::render_camera(const std::vector<std::vector<sRenderData>>& render
         WGPURenderPassDepthStencilAttachment render_pass_depth_attachment = {};
 
         if (depth_view) {
+
             render_pass_depth_attachment.view = depth_view;
             render_pass_depth_attachment.depthClearValue = 0.0f;
             render_pass_depth_attachment.depthLoadOp = WGPULoadOp_Clear;
@@ -832,6 +833,8 @@ void Renderer::init_depth_buffers()
         // Generate Texture views of depth buffers
         eye_depth_texture_view[i] = eye_depth_textures[i].get_view();
     }
+
+    spdlog::info("Depth buffers initialized with size ({}, {})", webgpu_context->render_width, webgpu_context->render_height);
 }
 
 void Renderer::init_multisample_textures()
