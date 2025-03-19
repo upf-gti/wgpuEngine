@@ -27,6 +27,8 @@ bool WebXRContext::init(WebGPUContext* webgpu_context)
 
     webxr_set_device((webgpu_context->get_device()));
 
+    per_view_data.resize(EYE_COUNT);
+
     webxr_init(
         /* Frame callback */
         [](void* userData, int time, WebXRRigidTransform* head_pose, WebXRView views[2], WGPUTextureView texture_view_left, WGPUTextureView texture_view_right, int viewCount) {
