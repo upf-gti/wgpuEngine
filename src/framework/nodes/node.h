@@ -84,6 +84,7 @@ public:
     virtual void initialize() {};
 
     virtual void add_child(Node* child);
+    virtual void add_children(std::vector<Node*> children);
     virtual void remove_child(Node* child);
 
     virtual void render();

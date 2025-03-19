@@ -43,6 +43,13 @@ void Node::add_child(Node* child)
     children.push_back(child);
 }
 
+void Node::add_children(std::vector<Node*> children)
+{
+    for (Node* child : children) {
+        add_child(child);
+    }
+}
+
 void Node::remove_child(Node* child)
 {
     // Checks if it's a child
