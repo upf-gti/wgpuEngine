@@ -1,5 +1,7 @@
 #include mesh_includes.wgsl
 
+#define GAMMA_CORRECTION
+
 @vertex
 fn vs_main(in: VertexInput) -> VertexOutput {
     var out: VertexOutput;
@@ -22,7 +24,12 @@ fn fs_main(in: VertexOutput) -> FragmentOutput {
     let xr_image = textureSample(left_eye_texture, texture_sampler, uvs);
 
     var out: FragmentOutput;
-    out.color = vec4f(pow(xr_image.rgb, 1.0 / vec3f(2.2)), 1.0); // Color
+
+    if (GAMMA_CORRECTION == 0) {
+        out.color = vec4f(pow(xr_image.rgb, 1.0 / vec3f(2.2)), 1.0);
+    } else {
+        out.color = vec4f(xr_image.rgb, 1.0);
+    }
 
     return out;
 }
