@@ -124,7 +124,7 @@ void WebXRContext::poll_actions()
 {
     WebXRInputSource sources[HAND_COUNT];
     int sources_count = 0;
-    webxr_get_input_sources(sources, 5, &sources_count);
+    webxr_get_input_sources(sources, HAND_COUNT, &sources_count);
 
     WebXRRigidTransform webxr_transform;
 
