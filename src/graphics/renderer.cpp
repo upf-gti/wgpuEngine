@@ -74,7 +74,6 @@ Renderer::Renderer(const sRendererConfiguration& config)
     spdlog::info("Creating WebXR context");
 
     WebXRContext* webxr_context = new WebXRContext();
-    //is_openxr_available = openxr_context->create_instance();
     is_xr_available = true; // TODO: query support
 
     xr_context = webxr_context;
@@ -587,12 +586,18 @@ void Renderer::render()
         wgpuTextureViewRelease(screen_surface_texture_view);
         wgpuTextureRelease(screen_surface_texture.texture);
     }
-
 #ifdef XR_SUPPORT
     else {
         xr_context->end_frame();
+
+#ifdef WEBXR_SUPPORT
+        for (uint32_t eye_idx = 0; eye_idx < EYE_COUNT; eye_idx++) {
+            wgpuTextureViewRelease(xr_context->get_swapchain_view(eye_idx));
+        }
+#endif // WEBXR_SUPPORT
+
     }
-#endif
+#endif // XR_SUPPORT
 
 #ifndef __EMSCRIPTEN__
     if (!is_xr_available || use_mirror_screen) {
@@ -1020,7 +1025,7 @@ void Renderer::prepare_cull_instancing(const Camera& camera, std::vector<std::ve
                 if (equal_priority && equal_surface && lhs_mat > rhs_mat) return true;
 
                 return false;
-                });
+            });
         }
         //else {
         //    // Sort transparent render_list by distance to camera

@@ -60,7 +60,7 @@ struct WebXRContext : public XRContext {
     * Render
     */
 
-    WGPUTextureView swapchain_views[2];
+    WGPUTextureView swapchain_views[2] = {};
 
     // inverted for reverse-z
     float z_near = 1000.0f;

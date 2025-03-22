@@ -45,8 +45,8 @@ enum XR_THUMBSTICK_AXIS : uint8_t {
 };
 
 struct XrInputPose {
-    glm::quat orientation;
-    glm::vec3 position;
+    glm::quat orientation = { 0.0, 0.0, 0.0, 1.0 };
+    glm::vec3 position = {};
 };
 
 glm::mat4x4 XrInputPose_to_glm(const XrInputPose& p);
@@ -71,12 +71,12 @@ struct XRContext {
     */
 
     // Poses
-    glm::mat4x4 headPoseMatrix;
-    XrInputPose headPose;
-    glm::mat4x4 controllerAimPoseMatrices[HAND_COUNT];
-    XrInputPose controllerAimPoses[HAND_COUNT];
-    glm::mat4x4 controllerGripPoseMatrices[HAND_COUNT];
-    XrInputPose controllerGripPoses[HAND_COUNT];
+    glm::mat4x4 headPoseMatrix = glm::identity<glm::mat4x4>();
+    XrInputPose headPose = {};
+    glm::mat4x4 controllerAimPoseMatrices[HAND_COUNT] = { glm::identity<glm::mat4x4>(), glm::identity<glm::mat4x4>() };
+    XrInputPose controllerAimPoses[HAND_COUNT] = {};
+    glm::mat4x4 controllerGripPoseMatrices[HAND_COUNT] = { glm::identity<glm::mat4x4>(), glm::identity<glm::mat4x4>() };
+    XrInputPose controllerGripPoses[HAND_COUNT] = {};
 
     //sInputState input_state;
 

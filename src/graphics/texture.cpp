@@ -4,7 +4,6 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
-#include <bit>
 #include <algorithm>
 
 #include "spdlog/spdlog.h"
@@ -210,11 +209,12 @@ WGPUTextureView Texture::get_view(WGPUTextureViewDimension view_dimension, uint3
 
 void Texture::set_texture_parameters(const std::string& name, WGPUTextureDimension dimension, int width, int height, int array_layers, bool create_mipmaps, WGPUTextureFormat p_format)
 {
+    this->name = name;
     this->dimension = dimension;
     this->format = p_format;
     this->size = { (unsigned int)width, (unsigned int)height, (unsigned int)array_layers };
     this->usage = static_cast<WGPUTextureUsage>(WGPUTextureUsage_TextureBinding | WGPUTextureUsage_CopyDst);
-    this->mipmaps = create_mipmaps ? std::bit_width(std::max(size.width, size.height)) : 1;
+    this->mipmaps = create_mipmaps ? (1 + std::floor(std::log2(std::max(std::max(width, height), array_layers)))) : 1;
 }
 
 void Texture::load_from_data(void* data)

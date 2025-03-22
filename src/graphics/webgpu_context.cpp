@@ -472,7 +472,7 @@ void WebGPUContext::create_texture_mipmaps(WGPUTexture texture, WGPUExtent3D tex
     WGPUCommandEncoderDescriptor encoder_desc = {};
     WGPUCommandEncoder command_encoder = custom_command_encoder ? custom_command_encoder : wgpuDeviceCreateCommandEncoder(device, &encoder_desc);
 
-    WGPUComputePassDescriptor compute_pass_desc = {};
+    WGPUComputePassDescriptor compute_pass_desc = { .label = { "texture_mipmaps_pass", WGPU_STRLEN} };
     compute_pass_desc.timestampWrites = nullptr;
     WGPUComputePassEncoder compute_pass = wgpuCommandEncoderBeginComputePass(command_encoder, &compute_pass_desc);
 
@@ -500,9 +500,9 @@ void WebGPUContext::create_texture_mipmaps(WGPUTexture texture, WGPUExtent3D tex
             if (level > 0) {
                 WGPUExtent3D previous_size = texture_mip_sizes[level - 1];
                 texture_mip_sizes[level] = {
-                    previous_size.width / 2,
-                    previous_size.height / 2,
-                    previous_size.depthOrArrayLayers / 2
+                    std::max(previous_size.width / 2, 1u),
+                    std::max(previous_size.height / 2, 1u),
+                    std::max(previous_size.depthOrArrayLayers / 2, 1u)
                 };
             }
         }
@@ -530,6 +530,7 @@ void WebGPUContext::create_texture_mipmaps(WGPUTexture texture, WGPUExtent3D tex
             // This ceils invocationCountX / workgroupSizePerDim
             uint32_t workgroupCountX = (invocationCountX + workgroupSizePerDim - 1) / workgroupSizePerDim;
             uint32_t workgroupCountY = (invocationCountY + workgroupSizePerDim - 1) / workgroupSizePerDim;
+
             wgpuComputePassEncoderDispatchWorkgroups(compute_pass, workgroupCountX, workgroupCountY, 1);
 
             wgpuBindGroupRelease(mipmaps_bind_group);
@@ -575,7 +576,7 @@ void WebGPUContext::create_cubemap_mipmaps(WGPUTexture texture, WGPUExtent3D tex
     WGPUCommandEncoderDescriptor encoder_desc = {};
     WGPUCommandEncoder command_encoder = custom_command_encoder ? custom_command_encoder : wgpuDeviceCreateCommandEncoder(device, &encoder_desc);
 
-    WGPUComputePassDescriptor compute_pass_desc = {};
+    WGPUComputePassDescriptor compute_pass_desc = { .label = { "cubemap_mipmaps_pass", WGPU_STRLEN} };
     compute_pass_desc.timestampWrites = nullptr;
     WGPUComputePassEncoder compute_pass = wgpuCommandEncoderBeginComputePass(command_encoder, &compute_pass_desc);
 
@@ -1278,7 +1279,7 @@ void WebGPUContext::generate_brdf_lut_texture()
     WGPUCommandEncoderDescriptor encoder_desc = {};
     WGPUCommandEncoder command_encoder = wgpuDeviceCreateCommandEncoder(device, &encoder_desc);
 
-    WGPUComputePassDescriptor compute_pass_desc = {};
+    WGPUComputePassDescriptor compute_pass_desc = { .label = { "brdf_lut_pass", WGPU_STRLEN} };
     compute_pass_desc.timestampWrites = nullptr;
     WGPUComputePassEncoder compute_pass = wgpuCommandEncoderBeginComputePass(command_encoder, &compute_pass_desc);
 
@@ -1368,7 +1369,7 @@ void WebGPUContext::generate_prefiltered_env_texture(Texture* prefiltered_env_te
         std::vector<Uniform*> uniforms = { &hdr_uniform, &cubemap_all_faces_output_uniform, &sampler };
         WGPUBindGroup bind_group = create_bind_group(uniforms, panorama_to_cubemap_shader, 0);
 
-        WGPUComputePassDescriptor compute_pass_desc = {};
+        WGPUComputePassDescriptor compute_pass_desc = { .label = { "panorama_to_cubemap_pass", WGPU_STRLEN} };
         compute_pass_desc.timestampWrites = nullptr;
         WGPUComputePassEncoder compute_pass = wgpuCommandEncoderBeginComputePass(command_encoder, &compute_pass_desc);
 
@@ -1419,7 +1420,7 @@ void WebGPUContext::generate_prefiltered_env_texture(Texture* prefiltered_env_te
             wgpuQueueWriteBuffer(prefilter_queue, std::get<WGPUBuffer>(current_level_uniform.data), i * buffer_stride, &prefilter_env_uniform_data, sizeof(PrefilterEnvUniformData));
         }
 
-        WGPUComputePassDescriptor compute_pass_desc = {};
+        WGPUComputePassDescriptor compute_pass_desc = { .label = { "prefilter_env_pass", WGPU_STRLEN} };
         compute_pass_desc.timestampWrites = nullptr;
         WGPUComputePassEncoder compute_pass = wgpuCommandEncoderBeginComputePass(command_encoder, &compute_pass_desc);
 
@@ -1496,7 +1497,7 @@ WGPUInstance WebGPUContext::get_instance()
 
 void WebGPUContext::create_swapchain(int width, int height)
 {
-    WGPUSurfaceCapabilities surface_capabilities;
+    WGPUSurfaceCapabilities surface_capabilities = {};
     wgpuSurfaceGetCapabilities(surface, adapter, &surface_capabilities);
 
     bool support_mailbox_present = false;

@@ -31,6 +31,9 @@ bool WebXRContext::init(WebGPUContext* webgpu_context)
 
     per_view_data.resize(EYE_COUNT);
 
+    handButtons[HAND_RIGHT].resize(WEBXR_BUTTON_COUNT);
+    handButtons[HAND_LEFT].resize(WEBXR_BUTTON_COUNT);
+
     webxr_init(
         /* Frame callback */
         [](void* userData, int time, WebXRRigidTransform* head_pose, WebXRView views[2], WGPUTextureView texture_view_left, WGPUTextureView texture_view_right, int viewCount) {
@@ -145,11 +148,6 @@ void WebXRContext::poll_actions()
         webxr_get_input_pose(source, &webxr_transform, WEBXR_INPUT_POSE_TARGET_RAY);
         controllerAimPoses[hand] = parse_WebXR_pose_to_XrInputPose(webxr_transform);
         controllerAimPoseMatrices[hand] = XrInputPose_to_glm(controllerAimPoses[hand]);
-
-        // Buttons
-        if(handButtons[hand].size() != sources_count) {
-            handButtons[hand].resize(sources_count);
-        }
 
         // TODO: Refactor this to get all buttons at once and avoid making different emscripten calls
         for (int b = 0; b < WEBXR_BUTTON_COUNT; ++b) {

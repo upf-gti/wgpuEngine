@@ -11,7 +11,7 @@ class Transform {
 	glm::quat rotation_p;
 	glm::vec3 scale_p;
 
-    glm::mat4x4 model;
+    glm::mat4x4 model = glm::identity<glm::mat4x4>();
 
     bool dirty = true;
 
