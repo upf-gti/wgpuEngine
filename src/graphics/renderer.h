@@ -115,6 +115,63 @@ protected:
     float z_near = 1000.0f;
     float z_far = 0.01f;
 
+    enum eRendererPassType {
+        RENDERER_PASS_TYPE_COMPUTE,
+        RENDERER_PASS_TYPE_RENDER
+    };
+
+    struct sRenderAttachment {
+            WGPUTexture texture;
+            WGPUTextureView view;
+    };
+    struct sPass {
+        eRendererPassType type = RENDERER_PASS_TYPE_RENDER;
+
+        // Targets
+        // if render, bind as out/ fbo
+        // if compute, bind as storage texture
+
+        // Input: output of next stage
+
+        // Resources
+        // Buffers
+
+        // REnder pass
+        // rende targets
+
+        uint8_t render_textures_count = 0u;
+        sRenderAttachment attachments[6];
+
+        bool uses_depth = false;
+        WGPUTexture depth_buffer;
+        WGPUTextureView depth_buffer_view;
+
+        // The number of pixels that a workgroup process. Used to compute the dispatch size
+        glm::uvec3 pixel_workgroup_size;
+    };
+
+    struct sRenderPipelineBuilder {
+        std::vector<sPass> passes;
+
+        sRenderAttachment *initial_attachments = nullptr;
+        uint8_t initial_attachment_count = 0u;
+
+        void init(sRenderAttachment *initial_attachments, uint8_t initial_attachment_count);
+        void add_render_pass(Pipeline *pipeline, sRenderAttachment *attachments, uint8_t attachment_count, bool uses_depth, WGPUBindgroup *extra_bindgroup = nullptr);
+        void add_compute_pass(Pipeline *pipeline, sRenderAttachment *attachments, uint8_t attachment_count, WGPUBindgroup *extra_bindgroup = nullptr, glm::uvec3 pixels_workgroup_size = glm::uvec3(1u));
+    
+        sRenderPipeline build();
+    };
+
+    struct sRenderPipeline {
+        unit8_t expeceted_attachment_count = 0u;
+        std::vector<sPass> passes;
+
+        void add_to_comand_encoder(WGPUCommandEncoder cmd_encoder, sRenderAttachment *initial_attachments, uint8_t initial_attachment_count);
+
+        void clean();
+    };
+
     struct sUniformData {
         glm::mat4x4 model;
     };

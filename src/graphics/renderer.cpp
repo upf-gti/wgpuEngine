@@ -1620,4 +1620,76 @@ void Renderer::store_texture_to_disk(WGPUCommandEncoder cmd_encoder, const WGPUT
         .copy_size = buffer_size,
         .size = in_size
     });
+
+// RENDER PIPELINE METHODS ================
+void sRenderPipelineBuilder::init(sRenderAttachment *initial_attach, uint8_t attachment_count) 
+{
+    assert(initial_attachment_count > 0u && "Needs at least one atachment to start building the pipeline");
+
+    initial_attachments = initial_attach;
+    initial_attachment_count = attachment_count;
+}
+
+void sRenderPipelineBuilder::add_render_pass(   Pipeline *pipeline, 
+                                                sRenderAttachment *attachments, 
+                                                uint8_t attachment_count, 
+                                                bool uses_depth,
+                                                WGPUBindgroup *extra_bindgroup) 
+{
+   assert(attachment_count > 0u && "The render pass must have at least 1 attachment");
+   sPass new_pass = {
+        .type = RENDERER_PASS_TYPE_RENDER,
+        .render_textures_count = attachment_count
+    };
+
+    memcpy(&new_pass.attachments, attachments, sizeof(sRenderAttachment) * attachment_count);
+
+    if (uses_depth) {
+        new_pass.uses_depth = true;
+
+        // TODO: depth stuff
+    }
+
+    passes.push_back(new_pass);
+}
+void sRenderPipelineBuilder::add_compute_pass(  Pipeline *pipeline, 
+                                                sRenderAttachment *attachments, 
+                                                uint8_t attachment_count, 
+                                                WGPUBindgroup *extra_bindgroup,
+                                                glm::uvec3 pixels_workgroup_size) 
+{
+    assert(attachment_count > 0u && "The compute pass must have at least 1 attachment");
+   sPass new_pass = {
+        .type = RENDERER_PASS_TYPE_COMPUTE,
+        .render_textures_count = attachment_count,
+        .pixel_workgroup_size = pixels_workgroup_size
+    };
+
+    memcpy(&new_pass.attachments, attachments, sizeof(sRenderAttachment) * attachment_count); 
+
+    passes.push_back(new_pass);
+}
+sRenderPipeline sRenderPipelineBuilder::build() 
+{
+    assert(initial_attachments != nullptr && passes.size() > 0u && "Need to initialize and add at least one pass");
+    
+    sRenderPipeline new_pipeline;
+
+    // First create the initial render pass, that connects the GPUBBER (if any) to the pipeline
+
+    // Create bindgroup
+
+    for(sPass &curr_pass : passes) {
+
+    }
+
+    return new_pipeline;
+}
+
+
+void sRenderPipeline::add_to_comand_encoder(    WGPUCommandEncoder cmd_encoder, 
+                                                sRenderAttachment *attachments, 
+                                                uint8_t attachment_count    ) {
+    //
+    assert(expected_attachment_count == attachment_count && "Needs to accept the same ammount ofattachments");
 }
