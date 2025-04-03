@@ -1078,7 +1078,7 @@ void WebGPUContext::copy_texture_to_texture(WGPUTexture texture_src, WGPUTexture
 }
 
 WGPURenderPipeline WebGPUContext::create_render_pipeline(WGPUShaderModule render_shader_module, WGPUPipelineLayout pipeline_layout, const std::vector<WGPUVertexBufferLayout>& vertex_attributes,
-    WGPUColorTargetState color_target, const RenderPipelineDescription& description, std::vector< WGPUConstantEntry> constants)
+    const RenderPipelineDescription& description, std::vector< WGPUConstantEntry> constants)
 {    
     WGPUVertexState vertex_state = {};
     vertex_state.module = render_shader_module;
@@ -1093,8 +1093,8 @@ WGPURenderPipeline WebGPUContext::create_render_pipeline(WGPUShaderModule render
     fragment_state.entryPoint = { description.fs_entry_point.c_str(), description.fs_entry_point.size() };
     fragment_state.constantCount = constants.size();
     fragment_state.constants = constants.data();
-    fragment_state.targetCount = 1;
-    fragment_state.targets = &color_target;
+    fragment_state.targetCount = description.color_target_count;
+    fragment_state.targets = description.color_targets;
 
     WGPUDepthStencilState depth_state = {};
     depth_state.depthCompare = description.depth_read ? description.depth_compare : WGPUCompareFunction_Always;
@@ -1137,7 +1137,7 @@ WGPURenderPipeline WebGPUContext::create_render_pipeline(WGPUShaderModule render
 }
 
 void WebGPUContext::create_render_pipeline_async(WGPUShaderModule render_shader_module, WGPUPipelineLayout pipeline_layout, const std::vector<WGPUVertexBufferLayout>& vertex_attributes,
-    WGPUColorTargetState color_target, WGPUCreateRenderPipelineAsyncCallbackInfo callback_info, const RenderPipelineDescription& description, std::vector< WGPUConstantEntry> constants)
+    WGPUCreateRenderPipelineAsyncCallbackInfo callback_info, const RenderPipelineDescription& description, std::vector< WGPUConstantEntry> constants)
 {
     WGPUVertexState vertex_state = {};
     vertex_state.module = render_shader_module;
@@ -1152,8 +1152,8 @@ void WebGPUContext::create_render_pipeline_async(WGPUShaderModule render_shader_
     fragment_state.entryPoint = { description.fs_entry_point.c_str(), description.fs_entry_point.size() };
     fragment_state.constantCount = constants.size();
     fragment_state.constants = constants.data();
-    fragment_state.targetCount = 1;
-    fragment_state.targets = &color_target;
+    fragment_state.targetCount = description.color_target_count;
+    fragment_state.targets = description.color_targets;
 
     WGPUDepthStencilState depth_state = {};
     depth_state.depthCompare = description.depth_read ? description.depth_compare : WGPUCompareFunction_Always;

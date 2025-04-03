@@ -13,6 +13,7 @@ class Texture;
 struct OpenXRContext;
 struct GLFWwindow;
 
+#define MAX_ATTACHMENT_COUNT 5u
 #define ENVIRONMENT_RESOLUTION 1024
 
 struct RenderPipelineDescription {
@@ -33,6 +34,9 @@ struct RenderPipelineDescription {
     bool blending_enabled = false;
     uint8_t sample_count = 1;
     bool allow_msaa = true;
+
+    WGPUColorTargetState color_targets[MAX_ATTACHMENT_COUNT];
+    uint8_t color_target_count = 1u;
 };
 
 WGPUStringView get_string_view(const char* str);
@@ -118,9 +122,9 @@ struct WebGPUContext {
     void                   copy_texture_to_texture(WGPUTexture texture_src, WGPUTexture texture_dst, uint32_t src_mipmap_level, uint32_t dst_mipmap_level, const WGPUExtent3D& copy_size, WGPUCommandEncoder custom_command_encoder = nullptr);
 
     WGPURenderPipeline     create_render_pipeline(WGPUShaderModule render_shader_module, WGPUPipelineLayout pipeline_layout, const std::vector<WGPUVertexBufferLayout>& vertex_attributes,
-                                                  WGPUColorTargetState color_target, const RenderPipelineDescription& description, std::vector< WGPUConstantEntry> constants = {});
+                                                  const RenderPipelineDescription& description, std::vector< WGPUConstantEntry> constants = {});
     void                   create_render_pipeline_async(WGPUShaderModule render_shader_module, WGPUPipelineLayout pipeline_layout, const std::vector<WGPUVertexBufferLayout>& vertex_attributes,
-                                                  WGPUColorTargetState color_target, WGPUCreateRenderPipelineAsyncCallbackInfo callback_info, const RenderPipelineDescription& description,
+                                                  WGPUCreateRenderPipelineAsyncCallbackInfo callback_info, const RenderPipelineDescription& description,
                                                   std::vector< WGPUConstantEntry> constants = {});
 
     WGPUComputePipeline    create_compute_pipeline(WGPUShaderModule compute_shader_module, WGPUPipelineLayout pipeline_layout, const char* entry_point = "compute", std::vector< WGPUConstantEntry> constants = {});

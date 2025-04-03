@@ -749,7 +749,7 @@ void RendererStorage::register_render_pipeline(Material* material)
     }
 
     Pipeline* render_pipeline = new Pipeline();
-    render_pipeline->create_render_async(material->get_shader_ref(), key.color_target, key.description);
+    render_pipeline->create_render_async(material->get_shader_ref(), key.description);
     registered_render_pipelines[key] = render_pipeline;
 }
 
@@ -812,43 +812,50 @@ RenderPipelineKey RendererStorage::get_render_pipeline_key(Material* material)
     bool is_openxr_available = Renderer::instance->get_openxr_available();
     WGPUTextureFormat swapchain_format = is_openxr_available ? webgpu_context->xr_swapchain_format : webgpu_context->swapchain_format;
 
-    WGPUColorTargetState color_target = {};
-    color_target.format = swapchain_format;
-    color_target.writeMask = WGPUColorWriteMask_All;
+    Renderer* renderer = Renderer::instance;
+    description.color_target_count = renderer->get_gbuffer_count();
 
-    switch (material->get_transparency_type()) {
-    case ALPHA_OPAQUE:
-        break;
-    case ALPHA_BLEND: {
-        WGPUBlendState* blend_state = new WGPUBlendState;
-        blend_state->color = {
-                .operation = WGPUBlendOperation_Add,
-                .srcFactor = WGPUBlendFactor_SrcAlpha,
-                .dstFactor = WGPUBlendFactor_OneMinusSrcAlpha,
-        };
-        blend_state->alpha = {
-                .operation = WGPUBlendOperation_Add,
-                .srcFactor = WGPUBlendFactor_Zero,
-                .dstFactor = WGPUBlendFactor_One,
-        };
+    for (uint8_t i = 0u; i < description.color_target_count; i++) {
+        WGPUColorTargetState color_target = {};
+        color_target.format = swapchain_format;
+        color_target.writeMask = WGPUColorWriteMask_All;
 
-        color_target.blend = blend_state;
+        switch (material->get_transparency_type()) {
+            case ALPHA_OPAQUE:
+                break;
+            case ALPHA_BLEND: {
+                WGPUBlendState* blend_state = new WGPUBlendState;
+                blend_state->color = {
+                        .operation = WGPUBlendOperation_Add,
+                        .srcFactor = WGPUBlendFactor_SrcAlpha,
+                        .dstFactor = WGPUBlendFactor_OneMinusSrcAlpha,
+                };
+                blend_state->alpha = {
+                        .operation = WGPUBlendOperation_Add,
+                        .srcFactor = WGPUBlendFactor_Zero,
+                        .dstFactor = WGPUBlendFactor_One,
+                };
 
-        description.depth_write = WGPUOptionalBool_False;
-        description.blending_enabled = true;
-        break;
-    }
-    case ALPHA_MASK:
-        break;
-    case ALPHA_HASH:
-        break;
+                color_target.blend = blend_state;
+
+                description.depth_write = WGPUOptionalBool_False;
+                description.blending_enabled = true;
+                break;
+            }
+            case ALPHA_MASK:
+                break;
+            case ALPHA_HASH:
+                break;
+        }
+
+        description.color_targets[i] = color_target;
     }
 
     description.depth_read = material->get_depth_read();
-    description.sample_count = Renderer::instance->get_msaa_count();
+    description.sample_count = renderer->get_msaa_count();
     description.has_fragment_state = material->get_fragment_write();
 
-    return { material->get_shader(), color_target, description, material->get_shader()->get_pipeline_layout() };
+    return { material->get_shader(), description, material->get_shader()->get_pipeline_layout() };
 }
 
 void RendererStorage::clean_registered_pipelines()

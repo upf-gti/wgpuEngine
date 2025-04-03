@@ -6,6 +6,7 @@
 #include "framework/math/frustum_cull.h"
 #include "graphics/surface.h"
 #include "graphics/pipeline.h"
+#include "graphics/texture.h"
 
 #include "framework/camera/camera.h"
 
@@ -35,6 +36,8 @@ struct sLightUniformData;
 struct sRendererConfiguration {
     WGPURequiredLimits required_limits = {};
     std::vector<WGPUFeatureName> features;
+
+    uint32_t gbuffer_count = 1;
 
     sRendererConfiguration() {
         required_limits.limits.maxVertexAttributes = 4;
@@ -92,9 +95,17 @@ protected:
     Texture*        eye_depth_textures;
     WGPUTextureView eye_depth_texture_view[EYE_COUNT] = {};
 
-    uint8_t msaa_count = 1;
+    uint8_t msaa_count = 1u;
     Texture* multisample_textures;
     WGPUTextureView multisample_textures_views[EYE_COUNT] = {};
+
+    struct sRenderAttachment {
+        Texture texture;
+        WGPUTextureView view;
+    };
+
+    uint8_t gbuffer_count = 1u;
+    sRenderAttachment gbuffers[EYE_COUNT][MAX_ATTACHMENT_COUNT] = {};
 
     RendererStorage* renderer_storage;
 
@@ -120,11 +131,7 @@ protected:
         RENDERER_PASS_TYPE_RENDER
     };
 
-    struct sRenderAttachment {
-            WGPUTexture texture;
-            WGPUTextureView view;
-    };
-    struct sPass {
+    struct sPostProcessPass {
         eRendererPassType type = RENDERER_PASS_TYPE_RENDER;
 
         // Targets
@@ -150,26 +157,26 @@ protected:
         glm::uvec3 pixel_workgroup_size;
     };
 
-    struct sRenderPipelineBuilder {
-        std::vector<sPass> passes;
+    struct sPostProcessPipeline {
+        uint8_t expected_attachment_count = 0u;
+        std::vector<sPostProcessPass> passes;
+
+        void add_to_comand_encoder(WGPUCommandEncoder cmd_encoder, sRenderAttachment* initial_attachments, uint8_t initial_attachment_count);
+
+        void clean();
+    };
+
+    struct sPostProcessPipelineBuilder {
+        std::vector<sPostProcessPass> passes;
 
         sRenderAttachment *initial_attachments = nullptr;
         uint8_t initial_attachment_count = 0u;
 
         void init(sRenderAttachment *initial_attachments, uint8_t initial_attachment_count);
-        void add_render_pass(Pipeline *pipeline, sRenderAttachment *attachments, uint8_t attachment_count, bool uses_depth, WGPUBindgroup *extra_bindgroup = nullptr);
-        void add_compute_pass(Pipeline *pipeline, sRenderAttachment *attachments, uint8_t attachment_count, WGPUBindgroup *extra_bindgroup = nullptr, glm::uvec3 pixels_workgroup_size = glm::uvec3(1u));
+        void add_render_pass(Pipeline *pipeline, sRenderAttachment *attachments, uint8_t attachment_count, bool uses_depth, WGPUBindGroup* extra_bindgroup = nullptr);
+        void add_compute_pass(Pipeline *pipeline, sRenderAttachment *attachments, uint8_t attachment_count, WGPUBindGroup* extra_bindgroup = nullptr, glm::uvec3 pixels_workgroup_size = glm::uvec3(1u));
     
-        sRenderPipeline build();
-    };
-
-    struct sRenderPipeline {
-        unit8_t expeceted_attachment_count = 0u;
-        std::vector<sPass> passes;
-
-        void add_to_comand_encoder(WGPUCommandEncoder cmd_encoder, sRenderAttachment *initial_attachments, uint8_t initial_attachment_count);
-
-        void clean();
+        sPostProcessPipeline build();
     };
 
     struct sUniformData {
@@ -302,6 +309,10 @@ protected:
 
     std::vector<sTextureToStoreCmd> textures_to_store_list;
 
+    // Texture 2 screen
+    Surface* screen_quad_mesh;
+    Material* screen_quad_material;
+
 public:
 
     // Singleton
@@ -320,7 +331,7 @@ public:
     virtual void update(float delta_time);
     virtual void render();
 
-    void render_camera(const std::vector<std::vector<sRenderData>>& render_lists, WGPUTextureView framebuffer_view, WGPUTextureView depth_view,
+    void render_camera(const std::vector<std::vector<sRenderData>>& render_lists, WGPURenderPassColorAttachment render_attachments[MAX_ATTACHMENT_COUNT], const uint8_t render_attachment_count, WGPUTextureView depth_view,
         const sInstanceData& instance_data, WGPUBindGroup camera_bind_group, bool render_transparents = true, const std::string& pass_name = "", uint32_t eye_idx = 0, uint32_t camera_offset = 0);
 
     void process_events();
@@ -342,6 +353,7 @@ public:
 
     void init_depth_buffers();
     void init_multisample_textures();
+    void init_gbuffers();
     void init_timestamp_queries();
 
     void set_frustum_camera_paused(bool value);
@@ -358,6 +370,8 @@ public:
 
     void set_msaa_count(uint8_t msaa_count, bool is_initial_value = false);
     uint8_t get_msaa_count();
+
+    uint8_t get_gbuffer_count() { return gbuffer_count; }
 
     bool is_inside_frustum(const glm::vec3& minp, const glm::vec3& maxp) const;
 
@@ -431,6 +445,8 @@ public:
     Texture* get_irradiance_texture() { return irradiance_texture; }
 
     Camera* get_camera() { return camera_3d; }
+
+    void texture_to_screen(WGPUCommandEncoder cmd_encoder, const WGPUTexture gpu_texture);
 
     void store_texture_to_disk(WGPUCommandEncoder cmd_encoder, const WGPUTexture gpu_texture, const WGPUExtent3D in_size, const char* file_dir);
 };

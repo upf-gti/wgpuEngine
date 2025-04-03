@@ -185,7 +185,12 @@ int Renderer::post_initialize()
     init_lighting_bind_group();
     init_camera_bind_group();
 
-    init_multisample_textures();
+    if (gbuffer_count > 1) {
+        init_gbuffers();
+    } else {
+        init_multisample_textures();
+    }
+
 
     init_timestamp_queries();
 
@@ -223,7 +228,7 @@ int Renderer::post_initialize()
     desc.sample_count = msaa_count;
 
     gs_render_shader = RendererStorage::get_shader_from_source(shaders::gs_render::source, shaders::gs_render::path, shaders::gs_render::libraries);
-    gs_render_pipeline.create_render_async(gs_render_shader, color_target, desc);
+    gs_render_pipeline.create_render_async(gs_render_shader, desc);
 
     shadow_material = new Material();
     shadow_material->set_type(MATERIAL_UNLIT);
@@ -241,15 +246,9 @@ int Renderer::post_initialize()
     camera_2d = new Camera2D();
     camera_2d->set_orthographic(0.0f, webgpu_context->render_width, webgpu_context->render_height, 0.0f, -1.0f, 1.0f);
 
-    //selected_mesh_aabb = parse_mesh("data/meshes/cube/aabb_cube.obj", false);
-
-    //Material* AABB_material = new Material();
-    //AABB_material->set_color(glm::vec4(0.8f, 0.3f, 0.9f, 1.0f));
-    //AABB_material->set_transparency_type(ALPHA_BLEND);
-    //AABB_material->set_cull_type(CULL_NONE);
-    //AABB_material->set_type(MATERIAL_UNLIT);
-    //AABB_material->set_shader(RendererStorage::get_shader_from_source(shaders::AABB_shader::source, shaders::AABB_shader::path, AABB_material));
-    //selected_mesh_aabb->set_surface_material_override(selected_mesh_aabb->get_surface(0), AABB_material);
+    // Prepare the texture 2 mesh
+    screen_quad_mesh = new Surface();
+    screen_quad_mesh->create_quad(2.0f, 2.0f);
 
     return 0;
 }
@@ -428,7 +427,18 @@ void Renderer::render()
 
         wgpuQueueWriteBuffer(webgpu_context->device_queue, std::get<WGPUBuffer>(camera_uniform.data), 0, &camera_data, sizeof(sCameraData));
 
-        render_camera(render_lists, screen_surface_texture_view, eye_depth_texture_view[EYE_LEFT], render_instances_data, render_camera_bind_group, true, "forward_render");
+        // Prepare the color attachments
+        WGPURenderPassColorAttachment gbuffer_attachments[MAX_ATTACHMENT_COUNT] = {};
+
+        for (uint8_t i = 0u; i < gbuffer_count; i++) {
+            gbuffer_attachments[i].view = gbuffers[EYE_LEFT][i].view;
+            gbuffer_attachments[i].loadOp = WGPULoadOp_Clear;
+            gbuffer_attachments[i].storeOp = WGPUStoreOp_Store;
+            gbuffer_attachments[i].depthSlice = WGPU_DEPTH_SLICE_UNDEFINED;
+            gbuffer_attachments[i].clearValue = WGPUColor{ clear_color.r, clear_color.g, clear_color.b, clear_color.a };
+        }
+
+        render_camera(render_lists, gbuffer_attachments, gbuffer_count, eye_depth_texture_view[EYE_LEFT], render_instances_data, render_camera_bind_group, true, "forward_render");
     }
 #ifdef XR_SUPPORT
     else {
@@ -483,8 +493,20 @@ void Renderer::render()
 
             wgpuQueueWriteBuffer(webgpu_context->device_queue, std::get<WGPUBuffer>(camera_uniform.data), eye_idx * camera_buffer_stride, &camera_data, sizeof(sCameraData));
 
-            render_camera(render_lists, swapchainData.images[swapchainData.image_index].textureView, eye_depth_texture_view[eye_idx], render_instances_data, render_camera_bind_group, true, "forward_render_xr", eye_idx, eye_idx);
+            // Prepare the color attachments
+            WGPURenderPassColorAttachment gbuffer_attachments[MAX_ATTACHMENT_COUNT] = {};
 
+            for (uint8_t i = 0u; i < gbuffer_count; i++) {
+                gbuffer_attachments[i].view = gbuffers[eye_idx][i].view;
+                gbuffer_attachments[i].loadOp = WGPULoadOp_Clear;
+                gbuffer_attachments[i].storeOp = WGPUStoreOp_Store;
+                gbuffer_attachments[i].depthSlice = WGPU_DEPTH_SLICE_UNDEFINED;
+                gbuffer_attachments[i].clearValue = WGPUColor{ clear_color.r, clear_color.g, clear_color.b, clear_color.a };
+            }
+
+            render_camera(render_lists, gbuffer_attachments, gbuffer_count, eye_depth_texture_view[eye_idx], render_instances_data, render_camera_bind_group, true, "forward_render_xr", eye_idx, eye_idx);
+
+            // Result target: swapchainData.images[swapchainData.image_index].textureView
             xr_context->release_swapchain(eye_idx);
         }
 
@@ -510,6 +532,7 @@ void Renderer::render()
 
         // Prepare the color attachment
         WGPURenderPassColorAttachment render_pass_color_attachment = {};
+
         if (msaa_count > 1) {
             render_pass_color_attachment.view = multisample_textures_views[EYE_LEFT];
             render_pass_color_attachment.resolveTarget = screen_surface_texture_view;
@@ -530,6 +553,8 @@ void Renderer::render()
 
         // Create & fill the render pass (encoder)
         WGPURenderPassEncoder render_pass = wgpuCommandEncoderBeginRenderPass(global_command_encoder, &render_pass_descr);
+
+       
 
         if (custom_pre_2d_pass) {
             custom_pre_2d_pass(render_pass, render_camera_bind_group_2d, custom_pass_user_data, 0);
@@ -610,27 +635,26 @@ void Renderer::render()
     clear_renderables();
 }
 
-void Renderer::render_camera(const std::vector<std::vector<sRenderData>>& render_lists, WGPUTextureView framebuffer_view, WGPUTextureView depth_view,
+void Renderer::render_camera(const std::vector<std::vector<sRenderData>>& render_lists, WGPURenderPassColorAttachment render_attachments[MAX_ATTACHMENT_COUNT], const uint8_t render_attachment_count, WGPUTextureView depth_view,
     const sInstanceData& instance_data, WGPUBindGroup camera_bind_group, bool render_transparents, const std::string& pass_name, uint32_t eye_idx, uint32_t camera_offset)
 {
     {
-        // Prepare the color attachment
-        WGPURenderPassColorAttachment render_pass_color_attachment = {};
+            /*if (framebuffer_view) {
+                if (msaa_count > 1) {
+                    render_pass_color_attachment.view = multisample_textures_views[eye_idx];
+                    render_pass_color_attachment.resolveTarget = framebuffer_view;
+                }
+                else {
+                    render_pass_color_attachment.view = framebuffer_view;
+                }
 
-        if (framebuffer_view) {
-            if (msaa_count > 1) {
-                render_pass_color_attachment.view = multisample_textures_views[eye_idx];
-                render_pass_color_attachment.resolveTarget = framebuffer_view;
-            }
-            else {
-                render_pass_color_attachment.view = framebuffer_view;
-            }
-
-            render_pass_color_attachment.loadOp = WGPULoadOp_Clear;
-            render_pass_color_attachment.storeOp = WGPUStoreOp_Store;
-            render_pass_color_attachment.depthSlice = WGPU_DEPTH_SLICE_UNDEFINED;
-            render_pass_color_attachment.clearValue = WGPUColor{ clear_color.r, clear_color.g, clear_color.b, clear_color.a };
-        }
+                render_pass_color_attachment.loadOp = WGPULoadOp_Clear;
+                render_pass_color_attachment.storeOp = WGPUStoreOp_Store;
+                render_pass_color_attachment.depthSlice = WGPU_DEPTH_SLICE_UNDEFINED;
+                render_pass_color_attachment.clearValue = WGPUColor{ clear_color.r, clear_color.g, clear_color.b, clear_color.a };
+            }*/
+     
+       
 
         // Prepate the depth attachment
         WGPURenderPassDepthStencilAttachment render_pass_depth_attachment = {};
@@ -648,8 +672,8 @@ void Renderer::render_camera(const std::vector<std::vector<sRenderData>>& render
         }
 
         WGPURenderPassDescriptor render_pass_descr = {};
-        render_pass_descr.colorAttachmentCount = framebuffer_view ? 1 : 0;
-        render_pass_descr.colorAttachments = framebuffer_view ? &render_pass_color_attachment : nullptr;
+        render_pass_descr.colorAttachmentCount = render_attachment_count;
+        render_pass_descr.colorAttachments = render_attachments;
         render_pass_descr.depthStencilAttachment = depth_view ? &render_pass_depth_attachment : nullptr;
         render_pass_descr.label = { pass_name.c_str(), pass_name.length() };
 
@@ -849,6 +873,32 @@ void Renderer::init_multisample_textures()
         }
 
         multisample_textures_views[i] = multisample_textures[i].get_view();
+        gbuffers[i][0].view = multisample_textures_views[i];
+    }
+    gbuffer_count = 1;
+}
+
+void Renderer::init_gbuffers()
+{
+    // A bit of a waste, but at least should work
+    WGPUTextureFormat swapchain_format = WGPUTextureFormat_RGBA32Float;
+
+    uint8_t num_textures = is_openxr_available ? 2 : 1;
+    for (int i = 0; i < num_textures; ++i) {
+        for (int j = 0; j < gbuffer_count; j++) {
+            gbuffers[i][j].texture.create(
+                WGPUTextureDimension_2D,
+                swapchain_format,
+                { webgpu_context->render_width, webgpu_context->render_height, 1 },
+                WGPUTextureUsage_RenderAttachment,
+                1, 1, nullptr);
+
+            if (gbuffers[i][j].view) {
+                wgpuTextureViewRelease(gbuffers[i][j].view);
+            }
+
+            gbuffers[i][j].view = gbuffers[i][j].texture.get_view();
+        } 
     }
 }
 
@@ -904,7 +954,11 @@ void Renderer::set_msaa_count(uint8_t msaa_count, bool is_initial_value)
 
     if (recreate) {
         init_depth_buffers();
-        init_multisample_textures();
+        if (gbuffer_count) {
+            init_gbuffers();
+        } else {
+            init_multisample_textures();
+        }
     }
 
     RendererStorage::reload_all_render_pipelines();
@@ -1135,7 +1189,8 @@ void Renderer::render_shadow_maps()
             light->create_shadow_data();
         }
 
-        render_camera(render_lists, nullptr, light->get_shadow_depth_texture_view(), shadow_instances_data, shadow_camera_bind_group, false, "shadow_map", 0, light_idx);
+        assert(false && "Shadow maps are not implemented");
+        //render_camera(render_lists, nullptr, light->get_shadow_depth_texture_view(), shadow_instances_data, shadow_camera_bind_group, false, "shadow_map", 0, light_idx);
     }
 }
 
@@ -1389,7 +1444,11 @@ void Renderer::resize_window(int width, int height)
     }
 
     init_depth_buffers();
-    init_multisample_textures();
+    if (gbuffer_count > 1) {
+        init_gbuffers();
+    } else {
+        init_multisample_textures();
+    }
 }
 
 void Renderer::set_irradiance_texture(Texture* texture)
@@ -1453,7 +1512,7 @@ void Renderer::init_mirror_pipeline()
         swapchain_bind_groups.push_back(webgpu_context->create_bind_group(uniforms, mirror_shader, 0));
     }
 
-    mirror_pipeline.create_render(mirror_shader, color_target, { .use_depth = false, .allow_msaa = false });
+    mirror_pipeline.create_render(mirror_shader, { .use_depth = false, .allow_msaa = false });
 }
 
 void Renderer::render_mirror(WGPUTextureView screen_surface_texture_view, WGPUBindGroup displayed_fbo_bind_group)
@@ -1586,6 +1645,10 @@ glm::vec3 Renderer::get_camera_front()
     return glm::normalize(camera->get_center() - camera->get_eye());
 }
 
+void Renderer::texture_to_screen(WGPUCommandEncoder cmd_encoder, const WGPUTexture gpu_texture) {
+
+}
+
 void Renderer::store_texture_to_disk(WGPUCommandEncoder cmd_encoder, const WGPUTexture gpu_texture, const WGPUExtent3D in_size, const char* file_dir) {
     assert(in_size.depthOrArrayLayers == 1 && "Only supports for 2D textures");
 
@@ -1619,10 +1682,14 @@ void Renderer::store_texture_to_disk(WGPUCommandEncoder cmd_encoder, const WGPUT
         .src_buffer = gpu_texture_data_upload,
         .copy_size = buffer_size,
         .size = in_size
-    });
+        });
+
+}
+
+
 
 // RENDER PIPELINE METHODS ================
-void sRenderPipelineBuilder::init(sRenderAttachment *initial_attach, uint8_t attachment_count) 
+void Renderer::sPostProcessPipelineBuilder::init(sRenderAttachment* initial_attach, uint8_t attachment_count)
 {
     assert(initial_attachment_count > 0u && "Needs at least one atachment to start building the pipeline");
 
@@ -1630,16 +1697,16 @@ void sRenderPipelineBuilder::init(sRenderAttachment *initial_attach, uint8_t att
     initial_attachment_count = attachment_count;
 }
 
-void sRenderPipelineBuilder::add_render_pass(   Pipeline *pipeline, 
-                                                sRenderAttachment *attachments, 
-                                                uint8_t attachment_count, 
-                                                bool uses_depth,
-                                                WGPUBindgroup *extra_bindgroup) 
+void Renderer::sPostProcessPipelineBuilder::add_render_pass(Pipeline* pipeline,
+                                                            sRenderAttachment* attachments,
+                                                            uint8_t attachment_count,
+                                                            bool uses_depth,
+                                                            WGPUBindGroup* extra_bindgroup)
 {
-   assert(attachment_count > 0u && "The render pass must have at least 1 attachment");
-   sPass new_pass = {
-        .type = RENDERER_PASS_TYPE_RENDER,
-        .render_textures_count = attachment_count
+    assert(attachment_count > 0u && "The render pass must have at least 1 attachment");
+    sPostProcessPass new_pass = {
+         .type = RENDERER_PASS_TYPE_RENDER,
+         .render_textures_count = attachment_count
     };
 
     memcpy(&new_pass.attachments, attachments, sizeof(sRenderAttachment) * attachment_count);
@@ -1652,34 +1719,34 @@ void sRenderPipelineBuilder::add_render_pass(   Pipeline *pipeline,
 
     passes.push_back(new_pass);
 }
-void sRenderPipelineBuilder::add_compute_pass(  Pipeline *pipeline, 
-                                                sRenderAttachment *attachments, 
-                                                uint8_t attachment_count, 
-                                                WGPUBindgroup *extra_bindgroup,
-                                                glm::uvec3 pixels_workgroup_size) 
+void Renderer::sPostProcessPipelineBuilder::add_compute_pass(   Pipeline* pipeline,
+                                                                sRenderAttachment* attachments,
+                                                                uint8_t attachment_count,
+                                                                WGPUBindGroup* extra_bindgroup,
+                                                                glm::uvec3 pixels_workgroup_size)
 {
     assert(attachment_count > 0u && "The compute pass must have at least 1 attachment");
-   sPass new_pass = {
-        .type = RENDERER_PASS_TYPE_COMPUTE,
-        .render_textures_count = attachment_count,
-        .pixel_workgroup_size = pixels_workgroup_size
+    sPostProcessPass new_pass = {
+         .type = RENDERER_PASS_TYPE_COMPUTE,
+         .render_textures_count = attachment_count,
+         .pixel_workgroup_size = pixels_workgroup_size
     };
 
-    memcpy(&new_pass.attachments, attachments, sizeof(sRenderAttachment) * attachment_count); 
+    memcpy(&new_pass.attachments, attachments, sizeof(sRenderAttachment) * attachment_count);
 
     passes.push_back(new_pass);
 }
-sRenderPipeline sRenderPipelineBuilder::build() 
+Renderer::sPostProcessPipeline Renderer::sPostProcessPipelineBuilder::build()
 {
     assert(initial_attachments != nullptr && passes.size() > 0u && "Need to initialize and add at least one pass");
-    
-    sRenderPipeline new_pipeline;
+
+    sPostProcessPipeline new_pipeline;
 
     // First create the initial render pass, that connects the GPUBBER (if any) to the pipeline
 
     // Create bindgroup
 
-    for(sPass &curr_pass : passes) {
+    for (sPostProcessPass& curr_pass : passes) {
 
     }
 
@@ -1687,9 +1754,9 @@ sRenderPipeline sRenderPipelineBuilder::build()
 }
 
 
-void sRenderPipeline::add_to_comand_encoder(    WGPUCommandEncoder cmd_encoder, 
-                                                sRenderAttachment *attachments, 
-                                                uint8_t attachment_count    ) {
+void Renderer::sPostProcessPipeline::add_to_comand_encoder( WGPUCommandEncoder cmd_encoder,
+                                                            sRenderAttachment* attachments,
+                                                            uint8_t attachment_count) {
     //
     assert(expected_attachment_count == attachment_count && "Needs to accept the same ammount ofattachments");
 }
