@@ -145,6 +145,9 @@ public:
 
     void render_gui();
 
+    bool is_deferred_material() const { return deferred_material; }
+    void set_if_is_deferred(bool is_def) { deferred_material = is_def; }
+
 private:
 
     uint32_t dirty_flags = 0;
@@ -169,6 +172,8 @@ private:
     bool use_skinning = false;
     bool is_2D = false;
     bool fragment_write = true;
+
+    bool deferred_material = false;
 
     eTransparencyType transparency_type = ALPHA_OPAQUE;
     eTopologyType topology_type = TOPOLOGY_TRIANGLE_LIST;

@@ -253,6 +253,7 @@ int Renderer::post_initialize()
     screen_quad_mesh->add_surface(quad_mesh);
 
     screen_quad_material = new Material();
+    screen_quad_material->set_if_is_deferred(false);
     screen_quad_material->set_is_2D(true);
     screen_quad_material->set_depth_read(false);
     screen_quad_material->set_depth_write(false);
@@ -452,13 +453,13 @@ void Renderer::render()
 
         for (uint8_t i = 0u; i < gbuffer_count; i++) {
             gbuffer_attachments[i].view = gbuffers[EYE_LEFT][i].view;
-            gbuffer_attachments[i].loadOp = WGPULoadOp_Clear;
+            gbuffer_attachments[i].loadOp = WGPULoadOp_Load;
             gbuffer_attachments[i].storeOp = WGPUStoreOp_Store;
             gbuffer_attachments[i].depthSlice = WGPU_DEPTH_SLICE_UNDEFINED;
-            gbuffer_attachments[i].clearValue = WGPUColor{ clear_color.r, clear_color.g, clear_color.b, clear_color.a };
+            gbuffer_attachments[i].clearValue = WGPUColor{ 1.0f, clear_color.g, clear_color.b, clear_color.a };
         }
 
-        render_camera(render_lists, gbuffer_attachments, gbuffer_count, eye_depth_texture_view[EYE_LEFT], render_instances_data, render_camera_bind_group, true, "forward_render");
+        render_camera(render_lists, gbuffer_attachments, gbuffer_count, eye_depth_texture_view[EYE_LEFT], render_instances_data, render_camera_bind_group, true, "deferred_render");
     }
 #ifdef XR_SUPPORT
     else {
@@ -907,7 +908,7 @@ void Renderer::init_gbuffers()
         for (int j = 0; j < gbuffer_count; j++) {
             gbuffers[i][j].texture.create(
                 WGPUTextureDimension_2D,
-                swapchain_format,
+                gbuffer_formats[j],
                 { webgpu_context->render_width, webgpu_context->render_height, 1 },
                 WGPUTextureUsage_RenderAttachment | WGPUTextureUsage_TextureBinding,
                 1, 1, nullptr);
@@ -1332,28 +1333,29 @@ void Renderer::render_transparent(WGPURenderPassEncoder render_pass, const std::
 
 void Renderer::render_splats(WGPURenderPassEncoder render_pass, const std::vector<std::vector<sRenderData>>& render_lists, const sInstanceData& instance_data, WGPUBindGroup camera_bind_group, uint32_t camera_buffer_stride)
 {
-#ifndef NDEBUG
-    webgpu_context->push_debug_group(render_pass, { "Gaussian Splats", WGPU_STRLEN });
-#endif
-
-    for (GSNode* gs_node : gs_scenes_list) {
-
-        if (!gs_render_pipeline.set(render_pass)) {
-            continue;
-        }
-
-        wgpuRenderPassEncoderSetBindGroup(render_pass, 0, gs_node->get_render_bindgroup(), 0, nullptr);
-        wgpuRenderPassEncoderSetBindGroup(render_pass, 1, camera_bind_group, 1, &camera_buffer_stride);
-
-        wgpuRenderPassEncoderSetVertexBuffer(render_pass, 0, gs_node->get_render_buffer(), 0, gs_node->get_splats_render_bytes_size());
-        wgpuRenderPassEncoderSetVertexBuffer(render_pass, 1, gs_node->get_ids_buffer(), 0, gs_node->get_ids_render_bytes_size());
-
-        wgpuRenderPassEncoderDraw(render_pass, 4, gs_node->get_splat_count(), 0, 0);
-    }
-
-#ifndef NDEBUG
-    webgpu_context->pop_debug_group(render_pass);
-#endif
+    return;
+//#ifndef NDEBUG
+//    webgpu_context->push_debug_group(render_pass, { "Gaussian Splats", WGPU_STRLEN });
+//#endif
+//
+//    for (GSNode* gs_node : gs_scenes_list) {
+//
+//        if (!gs_render_pipeline.set(render_pass)) {
+//            continue;
+//        }
+//
+//        wgpuRenderPassEncoderSetBindGroup(render_pass, 0, gs_node->get_render_bindgroup(), 0, nullptr);
+//        wgpuRenderPassEncoderSetBindGroup(render_pass, 1, camera_bind_group, 1, &camera_buffer_stride);
+//
+//        wgpuRenderPassEncoderSetVertexBuffer(render_pass, 0, gs_node->get_render_buffer(), 0, gs_node->get_splats_render_bytes_size());
+//        wgpuRenderPassEncoderSetVertexBuffer(render_pass, 1, gs_node->get_ids_buffer(), 0, gs_node->get_ids_render_bytes_size());
+//
+//        wgpuRenderPassEncoderDraw(render_pass, 4, gs_node->get_splat_count(), 0, 0);
+//    }
+//
+//#ifndef NDEBUG
+//    webgpu_context->pop_debug_group(render_pass);
+//#endif
 }
 
 void Renderer::render_2D(WGPURenderPassEncoder render_pass, const std::vector<std::vector<sRenderData>>& render_lists, const sInstanceData& instance_data, WGPUBindGroup camera_bind_group)

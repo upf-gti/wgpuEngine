@@ -813,11 +813,11 @@ RenderPipelineKey RendererStorage::get_render_pipeline_key(Material* material)
     WGPUTextureFormat swapchain_format = is_openxr_available ? webgpu_context->xr_swapchain_format : webgpu_context->swapchain_format;
 
     Renderer* renderer = Renderer::instance;
-    description.color_target_count = renderer->get_gbuffer_count();
+    description.color_target_count = (material->is_deferred_material()) ? renderer->get_gbuffer_count() : 1u;
 
     for (uint8_t i = 0u; i < description.color_target_count; i++) {
         WGPUColorTargetState color_target = {};
-        color_target.format = swapchain_format;
+        color_target.format = (material->is_deferred_material()) ? renderer->gbuffer_formats[i] : swapchain_format;
         color_target.writeMask = WGPUColorWriteMask_All;
 
         switch (material->get_transparency_type()) {

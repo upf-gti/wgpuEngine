@@ -52,11 +52,12 @@ void Pipeline::create_render_common(Shader* shader, const RenderPipelineDescript
     // Copy pipeline info
     description = desc;
     // TODO: Check for blending in each pass
-    description.blending_enabled = (description.color_targets[0].blend != nullptr);
 
-    if (description.blending_enabled) {
-        blend_state = description.color_targets[0].blend;
-    }
+        description.blending_enabled = (description.color_targets[0].blend != nullptr);
+
+        if (description.blending_enabled) {
+            blend_state = description.color_targets[0].blend;
+        }
 }
 
 void Pipeline::create_compute_common(Shader* shader)
@@ -137,9 +138,7 @@ void Pipeline::reload(Shader* shader)
 	if (std::holds_alternative<WGPURenderPipeline>(pipeline)) {
 		wgpuRenderPipelineRelease(std::get<WGPURenderPipeline>(pipeline));
         if (description.blending_enabled) {
-            for (uint8_t i = 0u; i < description.color_target_count; i++) {
-                description.color_targets[i].blend = blend_state;
-            }
+            description.color_targets[0].blend = blend_state;
         }
 
         description.sample_count = Renderer::instance->get_msaa_count();

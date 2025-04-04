@@ -31,10 +31,12 @@
 #include "graphics/texture.h"
 #include "graphics/shader.h"
 #include "graphics/renderer_storage.h"
+#include "graphics/renderer.h"
 
 #include "engine/scene.h"
 
 #include "shaders/mesh_forward.wgsl.gen.h"
+#include "shaders/mesh_deferred.wgsl.gen.h"
 
 #include <filesystem>
 
@@ -673,7 +675,13 @@ void read_mesh(const tinygltf::Model& model, const tinygltf::Node& node, Node3D*
                 custom_defines.push_back("HAS_TANGENTS");
             }
 
-            material->set_shader(RendererStorage::get_shader_from_source(shaders::mesh_forward::source, shaders::mesh_forward::path, shaders::mesh_forward::libraries, material, custom_defines));
+            if (Renderer::instance->get_gbuffer_count() > 1) {
+                material->set_if_is_deferred(true);
+                material->set_shader(RendererStorage::get_shader_from_source(shaders::mesh_deferred::source, shaders::mesh_deferred::path, shaders::mesh_deferred::libraries, material, custom_defines));
+            } else {
+                material->set_if_is_deferred(false);
+                material->set_shader(RendererStorage::get_shader_from_source(shaders::mesh_forward::source, shaders::mesh_forward::path, shaders::mesh_forward::libraries, material, custom_defines));
+            }
         }
         else {
             surface->set_surface_data(vertices);
@@ -1555,7 +1563,12 @@ void GltfParser::on_async_finished()
             custom_defines.push_back("HAS_TANGENTS");
         }
 
-        material->set_shader(RendererStorage::get_shader_from_source(shaders::mesh_forward::source, shaders::mesh_forward::path, shaders::mesh_forward::libraries, material, custom_defines));
+        if (Renderer::instance->get_gbuffer_count() > 1) {
+            material->set_shader(RendererStorage::get_shader_from_source(shaders::mesh_deferred::source, shaders::mesh_deferred::path, shaders::mesh_deferred::libraries, material, custom_defines));
+        }
+        else {
+            material->set_shader(RendererStorage::get_shader_from_source(shaders::mesh_forward::source, shaders::mesh_forward::path, shaders::mesh_forward::libraries, material, custom_defines));
+        }
     }
 
     // Initialize nodes after async parsing

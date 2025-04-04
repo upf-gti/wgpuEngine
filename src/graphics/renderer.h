@@ -104,7 +104,7 @@ protected:
         WGPUTextureView view;
     };
 
-    uint8_t gbuffer_count = 1u;
+    uint8_t gbuffer_count = 3u;
     sRenderAttachment gbuffers[EYE_COUNT][MAX_ATTACHMENT_COUNT] = {};
 
     RendererStorage* renderer_storage;
@@ -321,6 +321,8 @@ public:
 
     // Singleton
     static Renderer* instance;
+
+    const WGPUTextureFormat       gbuffer_formats[3] = { WGPUTextureFormat_RGBA16Float, WGPUTextureFormat_RGBA16Float, WGPUTextureFormat_RG16Float };
 
     Renderer(const sRendererConfiguration& config = {});
     virtual ~Renderer();

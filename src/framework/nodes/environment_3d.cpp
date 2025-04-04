@@ -7,6 +7,8 @@
 #include "graphics/renderer_storage.h"
 
 #include "shaders/mesh_texture_cube.wgsl.gen.h"
+#include "shaders/mesh_texture_cube_deferred.wgsl.gen.h"
+
 
 REGISTER_NODE_CLASS(Environment3D)
 
@@ -25,7 +27,13 @@ Environment3D::Environment3D() : MeshInstance3D()
     material->set_type(MATERIAL_UNLIT);
     material->set_depth_write(false);
     material->set_priority(20);
-    material->set_shader(RendererStorage::get_shader_from_source(shaders::mesh_texture_cube::source, shaders::mesh_texture_cube::path, shaders::mesh_texture_cube::libraries, material));
+    if (Renderer::instance->get_gbuffer_count() == 1) {
+        material->set_if_is_deferred(false);
+        material->set_shader(RendererStorage::get_shader_from_source(shaders::mesh_texture_cube::source, shaders::mesh_texture_cube::path, shaders::mesh_texture_cube::libraries, material));
+    } else {
+        material->set_if_is_deferred(true);
+        material->set_shader(RendererStorage::get_shader_from_source(shaders::mesh_texture_cube_deferred::source, shaders::mesh_texture_cube_deferred::path, shaders::mesh_texture_cube_deferred::libraries, material));
+    }
 
     Surface* surface = new Surface();
 
