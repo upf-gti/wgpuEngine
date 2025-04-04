@@ -37,6 +37,21 @@ void Texture::create(WGPUTextureDimension dimension, WGPUTextureFormat format, W
     }
 }
 
+void Texture::create(WGPUTexture wgpu_texture_src, WGPUTextureDimension dimension, WGPUTextureFormat format, WGPUExtent3D size, WGPUTextureUsage usage, uint32_t mipmaps, uint8_t sample_count) {
+    this->dimension = dimension;
+    this->format = format;
+    this->size = size;
+    this->usage = usage;
+    this->mipmaps = mipmaps;
+    this->sample_count = sample_count;
+
+    if (texture) {
+        wgpuTextureDestroy(texture);
+    }
+
+    texture = wgpu_texture_src;
+}
+
 void Texture::update(void* data, uint32_t mip_level, WGPUOrigin3D origin)
 {
     webgpu_context->upload_texture(texture, dimension, size, mip_level, format, data, origin);

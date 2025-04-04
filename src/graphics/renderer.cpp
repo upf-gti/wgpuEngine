@@ -247,8 +247,20 @@ int Renderer::post_initialize()
     camera_2d->set_orthographic(0.0f, webgpu_context->render_width, webgpu_context->render_height, 0.0f, -1.0f, 1.0f);
 
     // Prepare the texture 2 mesh
-    screen_quad_mesh = new Surface();
-    screen_quad_mesh->create_quad(2.0f, 2.0f);
+    quad_mesh = new Surface();
+    quad_mesh->create_quad(2.0f, 2.0f);
+    screen_quad_mesh = new MeshInstance3D();
+    screen_quad_mesh->add_surface(quad_mesh);
+
+    screen_quad_material = new Material();
+    screen_quad_material->set_is_2D(true);
+    screen_quad_material->set_depth_read(false);
+    screen_quad_material->set_depth_write(false);
+    screen_quad_material->set_type(MATERIAL_UNLIT);
+    screen_quad_material->set_diffuse_texture(&gbuffers[EYE_LEFT][0].texture);
+    screen_quad_material->set_shader(RendererStorage::get_shader_from_source(shaders::mesh_forward::source, shaders::mesh_forward::path, shaders::mesh_forward::libraries, screen_quad_material));
+    quad_mesh->set_material(screen_quad_material);
+    screen_quad_mesh->set_surface_material_override(quad_mesh, screen_quad_material);
 
     return 0;
 }
@@ -418,6 +430,14 @@ void Renderer::render()
     if (!is_openxr_available) {
         camera_data.right_controller_position = camera_data.eye;
 
+        //if (present_texture_to_screen) {
+        camera_2d->set_view(glm::mat4x4(1.0f));
+        camera_2d->set_projection(glm::mat4x4(1.0f));
+        texture_to_present = &gbuffers[EYE_LEFT][0].texture;
+        screen_quad_material->set_diffuse_texture(&gbuffers[EYE_LEFT][0].texture);
+        render_entity_list.push_back({ screen_quad_mesh, glm::mat4(1.0f) });
+        //}
+
         prepare_cull_instancing(*camera_3d, render_lists, render_instances_data);
 
         camera_data.eye = camera_3d->get_eye();
@@ -553,8 +573,6 @@ void Renderer::render()
 
         // Create & fill the render pass (encoder)
         WGPURenderPassEncoder render_pass = wgpuCommandEncoderBeginRenderPass(global_command_encoder, &render_pass_descr);
-
-       
 
         if (custom_pre_2d_pass) {
             custom_pre_2d_pass(render_pass, render_camera_bind_group_2d, custom_pass_user_data, 0);
@@ -865,7 +883,7 @@ void Renderer::init_multisample_textures()
             WGPUTextureDimension_2D,
             swapchain_format,
             { webgpu_context->render_width, webgpu_context->render_height, 1 },
-            WGPUTextureUsage_RenderAttachment,
+            WGPUTextureUsage_RenderAttachment | WGPUTextureUsage_TextureBinding,
             1, msaa_count, nullptr);
 
         if (multisample_textures_views[i]) {
@@ -873,7 +891,8 @@ void Renderer::init_multisample_textures()
         }
 
         multisample_textures_views[i] = multisample_textures[i].get_view();
-        gbuffers[i][0].view = multisample_textures_views[i];
+        gbuffers[EYE_LEFT][i].view = multisample_textures_views[i];
+        gbuffers[EYE_LEFT][i].texture = multisample_textures[i];
     }
     gbuffer_count = 1;
 }
@@ -890,7 +909,7 @@ void Renderer::init_gbuffers()
                 WGPUTextureDimension_2D,
                 swapchain_format,
                 { webgpu_context->render_width, webgpu_context->render_height, 1 },
-                WGPUTextureUsage_RenderAttachment,
+                WGPUTextureUsage_RenderAttachment | WGPUTextureUsage_TextureBinding,
                 1, 1, nullptr);
 
             if (gbuffers[i][j].view) {

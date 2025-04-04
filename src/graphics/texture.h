@@ -38,7 +38,8 @@ public:
     void load(const std::string& texture_path, bool is_srgb);
     void load_hdr(const std::string& texture_path);
 
-	void create(WGPUTextureDimension dimension, WGPUTextureFormat format, WGPUExtent3D size, WGPUTextureUsage usage, uint32_t mipmaps, uint8_t sample_count, const void* data);
+    void create(WGPUTextureDimension dimension, WGPUTextureFormat format, WGPUExtent3D size, WGPUTextureUsage usage, uint32_t mipmaps, uint8_t sample_count, const void* data);
+    void create(WGPUTexture wgpu_texture_src, WGPUTextureDimension dimension, WGPUTextureFormat format, WGPUExtent3D size, WGPUTextureUsage usage, uint32_t mipmaps, uint8_t sample_count);
 
     void update(void* data, uint32_t mip_level, WGPUOrigin3D origin);
 

@@ -310,8 +310,12 @@ protected:
     std::vector<sTextureToStoreCmd> textures_to_store_list;
 
     // Texture 2 screen
-    Surface* screen_quad_mesh;
+    bool present_texture_to_screen = false;
+
+    Surface* quad_mesh = nullptr;
+    MeshInstance3D* screen_quad_mesh = nullptr;
     Material* screen_quad_material;
+    Texture *texture_to_present;
 
 public:
 
