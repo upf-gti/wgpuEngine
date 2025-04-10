@@ -106,7 +106,7 @@ fn vs_main(in: VertexInput) -> VertexOutput {
 struct FragmentOutput {
     @location(0) color: vec4f,
     @location(1) normal: vec4f,
-    @location(2) material: vec4f
+    //@location(2) material: vec4f
 }
 
 @fragment
@@ -219,7 +219,7 @@ fn fs_main(in: VertexOutput, @builtin(front_facing) is_front_facing: bool) -> Fr
 
     out.color = vec4f(final_color, alpha);
     out.normal = vec4f(m.normal, 0.0);
-    out.material = vec4f(m.roughness, m.metallic, m.emissive, 0.0);
+    //out.material = vec4f(m.roughness, m.metallic, 0.0, 0.0);
 
     return out;
 }

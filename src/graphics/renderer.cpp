@@ -388,27 +388,42 @@ void Renderer::render()
         textures_to_store_list.pop_back();
 
         webgpu_context->read_buffer_async(to_store->src_buffer,
-            to_store->copy_size * sizeof(uint8_t), [&](const void* output_buffer, void* user_data) {
+            to_store->copy_size * sizeof(uint32_t), [&](const void* output_buffer, void* user_data) {
                 sTextureToStoreCmd* copy_data = (sTextureToStoreCmd*) user_data;
-                uint8_t *raw_buffer = new uint8_t[copy_data->copy_size];
-                memcpy(raw_buffer, output_buffer, copy_data->copy_size * sizeof(uint8_t));
+                float *raw_buffer = new float[copy_data->copy_size];
+                memcpy(raw_buffer, output_buffer, copy_data->copy_size * sizeof(float));
                 wgpuBufferDestroy(copy_data->src_buffer);
 
                 fprintf(copy_data->dst_file, "P3\n%d %d\n255\n", copy_data->size.width, copy_data->size.height);
 
-                for (uint32_t i = 0u; i < copy_data->size.height; i++) {
-                    for (uint32_t j = 0u; j < copy_data->size.width; j++) {
 
-                        const uint32_t idx = (j + copy_data->size.width * i) * 4u;
+                if (copy_data->is_depth) {
+                    for (uint32_t i = 0u; i < copy_data->size.height; i++) {
+                        for (uint32_t j = 0u; j < copy_data->size.width; j++) {
+                            const uint32_t idx = (j + copy_data->size.width * i);
 
-                        fprintf(copy_data->dst_file,
-                            "%d %d %d\n",
-                            raw_buffer[idx + 2u],
-                            raw_buffer[idx + 1u],
-                            raw_buffer[idx]
-                        );
+                            float depth = raw_buffer[idx] * 256.0f;
+                            fprintf(copy_data->dst_file,
+                                "%f %f %f\n",
+                                depth, depth, depth
+                            );
+                        }
+                    }
+                } else {
+                    for (uint32_t i = 0u; i < copy_data->size.height; i++) {
+                        for (uint32_t j = 0u; j < copy_data->size.width; j++) {
+                            const uint32_t idx = (j + copy_data->size.width * i) * 4u;
+
+                            fprintf(copy_data->dst_file,
+                                "%f %f %f\n",
+                                (raw_buffer[idx + 2u] * 256.0f),
+                                (raw_buffer[idx + 1u] * 256.0f),
+                                (raw_buffer[idx] * 256.0f)
+                            );
+                        }
                     }
                 }
+                
 
                 fclose(copy_data->dst_file);
 
@@ -539,6 +554,11 @@ void Renderer::render()
 
     // TEXTURE TO DISK STORAGE EXAMPLE
     //store_texture_to_disk(global_command_encoder, screen_surface_texture.texture, { webgpu_context->screen_width, webgpu_context->screen_height, 1 }, "result.ppm");
+
+    if (store_gbuffers) {
+        store_gbuffers_to_disk(get_global_command_encoder(), store_gbuffer_name);
+        store_gbuffers = false;
+    }
 
     // Render 2D
     if (!is_openxr_available || use_mirror_screen) {
@@ -862,7 +882,7 @@ void Renderer::init_depth_buffers()
             WGPUTextureDimension_2D,
             WGPUTextureFormat_Depth32Float,
             { webgpu_context->render_width, webgpu_context->render_height, 1 },
-            WGPUTextureUsage_RenderAttachment,
+            WGPUTextureUsage_RenderAttachment | WGPUTextureUsage_CopySrc,
             1, msaa_count, nullptr);
 
         if (eye_depth_texture_view[i]) {
@@ -910,7 +930,7 @@ void Renderer::init_gbuffers()
                 WGPUTextureDimension_2D,
                 gbuffer_formats[j],
                 { webgpu_context->render_width, webgpu_context->render_height, 1 },
-                WGPUTextureUsage_RenderAttachment | WGPUTextureUsage_TextureBinding,
+                WGPUTextureUsage_RenderAttachment | WGPUTextureUsage_TextureBinding | WGPUTextureUsage_CopySrc,
                 1, 1, nullptr);
 
             if (gbuffers[i][j].view) {
@@ -1670,19 +1690,21 @@ void Renderer::texture_to_screen(WGPUCommandEncoder cmd_encoder, const WGPUTextu
 
 }
 
-void Renderer::store_texture_to_disk(WGPUCommandEncoder cmd_encoder, const WGPUTexture gpu_texture, const WGPUExtent3D in_size, const char* file_dir) {
+void Renderer::store_texture_to_disk(WGPUCommandEncoder cmd_encoder, const WGPUTexture gpu_texture, const WGPUExtent3D in_size, const char* file_dir, const bool is_depth) {
     assert(in_size.depthOrArrayLayers == 1 && "Only supports for 2D textures");
 
-    size_t buffer_size = in_size.width * in_size.height * 4;
+    size_t buffer_size = in_size.width * in_size.height;
 
-    WGPUBuffer gpu_texture_data_upload = webgpu_context->create_buffer(buffer_size * sizeof(uint8_t) * 4, WGPUBufferUsage_CopyDst | WGPUBufferUsage_CopySrc, nullptr, "buff_to_upload_tex");
+    if (!is_depth) {
+        buffer_size *= 4;
+    }
 
-    uint32_t p = in_size.width * sizeof(uint8_t) * in_size.height;
+    WGPUBuffer gpu_texture_data_upload = webgpu_context->create_buffer(buffer_size * sizeof(uint32_t), WGPUBufferUsage_CopyDst | WGPUBufferUsage_CopySrc, nullptr, "buff_to_upload_tex");
 
     WGPUTexelCopyBufferInfo buffer_copy = {
         .layout = {
             .offset = 0u,
-            .bytesPerRow = in_size.width * sizeof(uint8_t) * 4,
+            .bytesPerRow = (is_depth) ? (in_size.width * sizeof(uint32_t)) : (in_size.width * sizeof(uint32_t) * 4),
             .rowsPerImage = in_size.height
         },
         .buffer = gpu_texture_data_upload
@@ -1702,9 +1724,21 @@ void Renderer::store_texture_to_disk(WGPUCommandEncoder cmd_encoder, const WGPUT
         .dst_file = fopen(file_dir, "w"),
         .src_buffer = gpu_texture_data_upload,
         .copy_size = buffer_size,
-        .size = in_size
+        .size = in_size,
+        .is_depth = is_depth
         });
 
+}
+
+void Renderer::store_gbuffers_to_disk(WGPUCommandEncoder cmd_encoder, const char* file_dir) {
+    std::string new_file = std::string(file_dir);
+    
+    for (uint32_t i = 0u; i < gbuffer_count; i++) {
+        store_texture_to_disk(cmd_encoder, gbuffers[0][i].texture.get_texture(),
+            { webgpu_context->render_width, webgpu_context->render_height, 1 }, (new_file + std::to_string(i) + std::string(".ppm")).c_str());
+    }
+    store_texture_to_disk(cmd_encoder, eye_depth_textures[EYE_LEFT].get_texture(),
+        { webgpu_context->render_width, webgpu_context->render_height, 1 }, (new_file + std::string("_depth.ppm")).c_str(), true);
 }
 
 

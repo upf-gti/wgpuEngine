@@ -52,6 +52,7 @@ struct sRendererConfiguration {
         required_limits.limits.maxDynamicUniformBuffersPerPipelineLayout = 1;
 
 #if !defined(__EMSCRIPTEN__)
+        features.push_back(WGPUFeatureName_Float32Blendable);
         features.push_back(WGPUFeatureName_TimestampQuery);
 #endif
     }
@@ -104,7 +105,7 @@ protected:
         WGPUTextureView view;
     };
 
-    uint8_t gbuffer_count = 3u;
+    uint8_t gbuffer_count = 2u;
     sRenderAttachment gbuffers[EYE_COUNT][MAX_ATTACHMENT_COUNT] = {};
 
     RendererStorage* renderer_storage;
@@ -305,6 +306,7 @@ protected:
         WGPUBuffer src_buffer;
         size_t  copy_size;
         WGPUExtent3D size;
+        bool is_depth;
     };
 
     std::vector<sTextureToStoreCmd> textures_to_store_list;
@@ -317,12 +319,15 @@ protected:
     Material* screen_quad_material;
     Texture *texture_to_present;
 
+    bool store_gbuffers = false;
+    const char* store_gbuffer_name;
+
 public:
 
     // Singleton
     static Renderer* instance;
 
-    const WGPUTextureFormat       gbuffer_formats[3] = { WGPUTextureFormat_RGBA16Float, WGPUTextureFormat_RGBA16Float, WGPUTextureFormat_RG16Float };
+    const WGPUTextureFormat       gbuffer_formats[3] = { WGPUTextureFormat_RGBA32Float, WGPUTextureFormat_RGBA32Float, WGPUTextureFormat_RG32Float };
 
     Renderer(const sRendererConfiguration& config = {});
     virtual ~Renderer();
@@ -452,7 +457,14 @@ public:
 
     Camera* get_camera() { return camera_3d; }
 
+    void set_store_gbuffers(const char* name) {
+        store_gbuffers = true;
+        store_gbuffer_name = name;
+    }
+
     void texture_to_screen(WGPUCommandEncoder cmd_encoder, const WGPUTexture gpu_texture);
 
-    void store_texture_to_disk(WGPUCommandEncoder cmd_encoder, const WGPUTexture gpu_texture, const WGPUExtent3D in_size, const char* file_dir);
+    void store_gbuffers_to_disk(WGPUCommandEncoder cmd_encoder, const char* file_dir);
+
+    void store_texture_to_disk(WGPUCommandEncoder cmd_encoder, const WGPUTexture gpu_texture, const WGPUExtent3D in_size, const char* file_dir, const bool is_depth = false);
 };

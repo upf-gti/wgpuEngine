@@ -36,7 +36,7 @@ fn vs_main(in: VertexInput) -> SkyboxVertexOutput {
 struct FragmentOutput {
     @location(0) color: vec4f,
     @location(1) normal: vec4f,
-    @location(2) material: vec4f
+    //@location(2) material: vec4f
 }
 
 @fragment
@@ -56,7 +56,7 @@ fn fs_main(in: SkyboxVertexOutput) -> FragmentOutput {
 
     out.color = vec4f(final_color, 1.0);
     out.normal = vec4f(0.0);
-    out.material = vec4f(0.0);
+    //out.material = vec4f(0.0);
 
     return out;
 }

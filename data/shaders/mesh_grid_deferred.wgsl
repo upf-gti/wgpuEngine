@@ -24,7 +24,7 @@ fn vs_main(in: VertexInput) -> VertexOutput {
 struct FragmentOutput {
     @location(0) color: vec4f,
     @location(1) normal: vec4f,
-    @location(2) material: vec4f
+    //@location(2) material: vec4f
 }
 
 // https://bgolus.medium.com/the-best-darn-grid-shader-yet-727f9278b9d8#5ef5
@@ -73,7 +73,7 @@ fn fs_main(in: VertexOutput) -> FragmentOutput {
 
     if (out.color.a > 0.005) {
         out.normal = vec4f(in.normal, 1.0);
-        out.material = vec4f(0.0, 1.0, 0.0, 1.0);
+        //out.material = vec4f(0.0, 1.0, 0.0, 1.0);
     }
     return out;
 }
