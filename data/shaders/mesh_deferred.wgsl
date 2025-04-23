@@ -218,7 +218,7 @@ fn fs_main(in: VertexOutput, @builtin(front_facing) is_front_facing: bool) -> Fr
     }
 
     out.color = vec4f(final_color, alpha);
-    out.normal = vec4f(m.normal, 0.0);
+    out.normal = vec4f(m.normal * 0.5 + 0.5, 0.0);
     //out.material = vec4f(m.roughness, m.metallic, 0.0, 0.0);
 
     return out;

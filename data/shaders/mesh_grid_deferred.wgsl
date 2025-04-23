@@ -72,7 +72,7 @@ fn fs_main(in: VertexOutput) -> FragmentOutput {
     out.color.a *= (1.0 - 2.0 * distance(vec2f(0.5), in.uv.xy));
 
     if (out.color.a > 0.005) {
-        out.normal = vec4f(in.normal, 1.0);
+        out.normal = vec4f(in.normal * 0.5 + 0.5, 1.0);
         //out.material = vec4f(0.0, 1.0, 0.0, 1.0);
     }
     return out;

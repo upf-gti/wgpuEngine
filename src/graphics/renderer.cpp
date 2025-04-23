@@ -402,9 +402,9 @@ void Renderer::render()
                         for (uint32_t j = 0u; j < copy_data->size.width; j++) {
                             const uint32_t idx = (j + copy_data->size.width * i);
 
-                            float depth = raw_buffer[idx] * 256.0f;
+                            uint32_t depth = (uint32_t) ceil(raw_buffer[idx] * 255.0f);
                             fprintf(copy_data->dst_file,
-                                "%f %f %f\n",
+                                "%u %u %u\n",
                                 depth, depth, depth
                             );
                         }
@@ -415,10 +415,10 @@ void Renderer::render()
                             const uint32_t idx = (j + copy_data->size.width * i) * 4u;
 
                             fprintf(copy_data->dst_file,
-                                "%f %f %f\n",
-                                (raw_buffer[idx + 2u] * 256.0f),
-                                (raw_buffer[idx + 1u] * 256.0f),
-                                (raw_buffer[idx] * 256.0f)
+                                "%u %u %u\n",
+                                (uint32_t)ceil(raw_buffer[idx] * 255.0f),
+                                (uint32_t)ceil(raw_buffer[idx + 1u] * 255.0f),
+                                (uint32_t)ceil(raw_buffer[idx + 2u] * 255.0f)
                             );
                         }
                     }
