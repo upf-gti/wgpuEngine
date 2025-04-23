@@ -216,9 +216,18 @@ fn fs_main(in: VertexOutput, @builtin(front_facing) is_front_facing: bool) -> Fr
     if (GAMMA_CORRECTION == 1) {
         final_color = pow(final_color, vec3(1.0 / 2.2));
     }
+    
+    // Velocity vectors
+    var curr_proj = camera_data.view_projection * vec4f(in.world_position, 1.0);
+    var prev_proj = camera_data.prev_view_projection * vec4f(in.world_position, 1.0);
+    curr_proj = curr_proj / curr_proj.w;
+    prev_proj = prev_proj / prev_proj.w;
+
+    let velocity_vector = curr_proj.xy - prev_proj.xy;
 
     out.color = vec4f(final_color, alpha);
     out.normal = vec4f(m.normal * 0.5 + 0.5, 0.0);
+    out.normal = vec4f(velocity_vector.x, velocity_vector.y, 0.0, 1.0);
     //out.material = vec4f(m.roughness, m.metallic, 0.0, 0.0);
 
     return out;

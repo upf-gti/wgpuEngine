@@ -213,6 +213,7 @@ protected:
     };
 
     struct sCameraData {
+        glm::mat4x4 prev_view_projection;
         glm::mat4x4 view_projection;
         glm::mat4x4 view;
         glm::mat4x4 projection;

@@ -29,6 +29,7 @@ struct InstanceData {
 }
 
 struct CameraData {
+    prev_view_projection : mat4x4f,
     view_projection : mat4x4f,
     view : mat4x4f,
     projection : mat4x4f,

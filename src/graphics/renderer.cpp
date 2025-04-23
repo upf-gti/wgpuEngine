@@ -394,7 +394,7 @@ void Renderer::render()
                 memcpy(raw_buffer, output_buffer, copy_data->copy_size * sizeof(float));
                 wgpuBufferDestroy(copy_data->src_buffer);
 
-                fprintf(copy_data->dst_file, "P3\n%d %d\n255\n", copy_data->size.width, copy_data->size.height);
+                fprintf(copy_data->dst_file, "%d %d\n", copy_data->size.width, copy_data->size.height);
 
 
                 if (copy_data->is_depth) {
@@ -402,9 +402,9 @@ void Renderer::render()
                         for (uint32_t j = 0u; j < copy_data->size.width; j++) {
                             const uint32_t idx = (j + copy_data->size.width * i);
 
-                            uint32_t depth = (uint32_t) ceil(raw_buffer[idx] * 255.0f);
+                            float depth = raw_buffer[idx];
                             fprintf(copy_data->dst_file,
-                                "%u %u %u\n",
+                                "%f %f %f\n",
                                 depth, depth, depth
                             );
                         }
@@ -415,10 +415,10 @@ void Renderer::render()
                             const uint32_t idx = (j + copy_data->size.width * i) * 4u;
 
                             fprintf(copy_data->dst_file,
-                                "%u %u %u\n",
-                                (uint32_t)ceil(raw_buffer[idx] * 255.0f),
-                                (uint32_t)ceil(raw_buffer[idx + 1u] * 255.0f),
-                                (uint32_t)ceil(raw_buffer[idx + 2u] * 255.0f)
+                                "%f %f %f\n",
+                                (raw_buffer[idx]),
+                                (raw_buffer[idx + 1u]),
+                                (raw_buffer[idx + 2u])
                             );
                         }
                     }
@@ -457,6 +457,7 @@ void Renderer::render()
         prepare_cull_instancing(*camera_3d, render_lists, render_instances_data);
 
         camera_data.eye = camera_3d->get_eye();
+        camera_data.prev_view_projection = camera_data.view_projection;
         camera_data.view_projection = camera_3d->get_view_projection();
         camera_data.view = camera_3d->get_view();
         camera_data.projection = camera_3d->get_projection();
@@ -1735,10 +1736,10 @@ void Renderer::store_gbuffers_to_disk(WGPUCommandEncoder cmd_encoder, const char
     
     for (uint32_t i = 0u; i < gbuffer_count; i++) {
         store_texture_to_disk(cmd_encoder, gbuffers[0][i].texture.get_texture(),
-            { webgpu_context->render_width, webgpu_context->render_height, 1 }, (new_file + std::to_string(i) + std::string(".ppm")).c_str());
+            { webgpu_context->render_width, webgpu_context->render_height, 1 }, (new_file + std::to_string(i) + std::string(".txt")).c_str());
     }
     store_texture_to_disk(cmd_encoder, eye_depth_textures[EYE_LEFT].get_texture(),
-        { webgpu_context->render_width, webgpu_context->render_height, 1 }, (new_file + std::string("_depth.ppm")).c_str(), true);
+        { webgpu_context->render_width, webgpu_context->render_height, 1 }, (new_file + std::string("_depth.txt")).c_str(), true);
 }
 
 
