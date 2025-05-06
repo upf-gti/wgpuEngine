@@ -42,10 +42,15 @@ namespace ui {
         material->set_is_2D(true);
         material->set_cull_type(CULL_BACK);
         material->set_transparency_type(ALPHA_BLEND);
+        material->set_depth_read_write(false);
         material->set_priority(class_type);
 
         if (image_path.size()) {
             material->set_diffuse_texture(RendererStorage::get_texture(image_path, TEXTURE_STORAGE_UI));
+        }
+
+        if (Renderer::instance->get_xr_available()) {
+            disable_2d();
         }
 
         material->set_shader(RendererStorage::get_shader_from_source(shaders::ui_panel::source, shaders::ui_panel::path, shaders::ui_panel::libraries, material));
