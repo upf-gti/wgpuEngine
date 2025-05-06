@@ -49,10 +49,6 @@ namespace ui {
             material->set_diffuse_texture(RendererStorage::get_texture(image_path, TEXTURE_STORAGE_UI));
         }
 
-        if (Renderer::instance->get_xr_available()) {
-            disable_2d();
-        }
-
         material->set_shader(RendererStorage::get_shader_from_source(shaders::ui_panel::source, shaders::ui_panel::path, shaders::ui_panel::libraries, material));
 
         Surface* quad_surface = new Surface();
