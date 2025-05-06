@@ -234,7 +234,7 @@ namespace ui {
         quad_mesh->set_surface_material_override(quad_mesh->get_surface(0), material);
 
         auto webgpu_context = Renderer::instance->get_webgpu_context();
-        RendererStorage::register_ui_widget(webgpu_context, material->get_shader_ref(), quad_mesh, ui_data, 3);
+        RendererStorage::register_ui_widget(webgpu_context, material->get_shader_ref(), quad_mesh, ui_data, 3, true);
 
         render_background = true;
     }
@@ -343,7 +343,7 @@ namespace ui {
         quad_mesh->set_surface_material_override(quad_mesh->get_surface(0), material);
 
         auto webgpu_context = Renderer::instance->get_webgpu_context();
-        RendererStorage::register_ui_widget(webgpu_context, material->get_shader_ref(), quad_mesh, ui_data, 3);
+        RendererStorage::register_ui_widget(webgpu_context, material->get_shader_ref(), quad_mesh, ui_data, 3, true);
 
         padding = glm::vec2(GROUP_MARGIN);
         item_margin = glm::vec2(GROUP_MARGIN * 0.5f);

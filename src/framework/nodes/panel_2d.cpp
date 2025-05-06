@@ -16,6 +16,7 @@
 #include "graphics/webgpu_context.h"
 
 #include "shaders/mesh_forward.wgsl.gen.h"
+#include "shaders/ui/ui_panel.wgsl.gen.h"
 #include "shaders/ui/ui_xr_panel.wgsl.gen.h"
 #include "shaders/ui/ui_color_picker.wgsl.gen.h"
 #include "shaders/ui/ui_texture.wgsl.gen.h"
@@ -37,7 +38,7 @@ namespace ui {
 
         Material* material = new Material();
         material->set_color(color);
-        material->set_type(MATERIAL_UNLIT);
+        material->set_type(MATERIAL_UI);
         material->set_is_2D(true);
         material->set_cull_type(CULL_BACK);
         material->set_transparency_type(ALPHA_BLEND);
@@ -47,7 +48,7 @@ namespace ui {
             material->set_diffuse_texture(RendererStorage::get_texture(image_path, TEXTURE_STORAGE_UI));
         }
 
-        material->set_shader(RendererStorage::get_shader_from_source(shaders::mesh_forward::source, shaders::mesh_forward::path, shaders::mesh_forward::libraries, material));
+        material->set_shader(RendererStorage::get_shader_from_source(shaders::ui_panel::source, shaders::ui_panel::path, shaders::ui_panel::libraries, material));
 
         Surface* quad_surface = new Surface();
         quad_surface->create_quad(size.x, size.y, true);
@@ -55,6 +56,9 @@ namespace ui {
         quad_mesh = new MeshInstance();
         quad_mesh->add_surface(quad_surface);
         quad_mesh->set_surface_material_override(quad_mesh->get_surface(0), material);
+
+        auto webgpu_context = Renderer::instance->get_webgpu_context();
+        RendererStorage::register_ui_widget(webgpu_context, material->get_shader_ref(), quad_mesh, ui_data, 3);
 
         parameter_flags = flags;
     }
@@ -399,7 +403,7 @@ namespace ui {
         quad_mesh->set_surface_material_override(quad_mesh->get_surface(0), material);
 
         auto webgpu_context = Renderer::instance->get_webgpu_context();
-        RendererStorage::register_ui_widget(webgpu_context, material->get_shader_ref(), quad_mesh, ui_data, 3);
+        RendererStorage::register_ui_widget(webgpu_context, material->get_shader_ref(), quad_mesh, ui_data, 3, true);
     }
 
     void Image2D::update(float delta_time)
@@ -448,7 +452,7 @@ namespace ui {
         ui_data.aspect_ratio = fullscreen ? -1.0f : size.x / size.y;
 
         auto webgpu_context = Renderer::instance->get_webgpu_context();
-        RendererStorage::register_ui_widget(webgpu_context, material->get_shader_ref(), quad_mesh, ui_data, 3);
+        RendererStorage::register_ui_widget(webgpu_context, material->get_shader_ref(), quad_mesh, ui_data, 3, true);
     }
 
     sInputData XRPanel::get_input_data(bool ignore_focus)
@@ -683,7 +687,7 @@ namespace ui {
         });
 
         auto webgpu_context = Renderer::instance->get_webgpu_context();
-        RendererStorage::register_ui_widget(webgpu_context, material->get_shader_ref(), quad_mesh, ui_data, 3);
+        RendererStorage::register_ui_widget(webgpu_context, material->get_shader_ref(), quad_mesh, ui_data, 3, true);
     }
 
     void Text2D::update(float delta_time)
@@ -872,7 +876,7 @@ namespace ui {
         quad_mesh->set_surface_material_override(quad_mesh->get_surface(0), material);
 
         auto webgpu_context = Renderer::instance->get_webgpu_context();
-        RendererStorage::register_ui_widget(webgpu_context, material->get_shader_ref(), quad_mesh, ui_data, 3);
+        RendererStorage::register_ui_widget(webgpu_context, material->get_shader_ref(), quad_mesh, ui_data, 3, true);
 
         Node::bind(name + "@changed", [&](const std::string& signal, Color color) {
             glm::vec3 new_color = rgb2hsv(glm::pow(glm::vec3(color), glm::vec3(1.0f / 2.2f)));

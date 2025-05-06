@@ -278,11 +278,16 @@ void RendererStorage::update_material_bind_group(WebGPUContext* webgpu_context, 
     material->reset_dirty_flags();
 }
 
-void RendererStorage::register_ui_widget(WebGPUContext* webgpu_context, Shader* shader, void* entity_mesh, const sUIData& ui_data, uint8_t bind_group_id)
+void RendererStorage::register_ui_widget(WebGPUContext* webgpu_context, Shader* shader, void* entity_mesh, const sUIData& ui_data, uint8_t bind_group_id, bool force)
 {
     if (ui_widget_bind_groups.contains(entity_mesh)) {
-        assert(false);
-        return;
+        if (force) {
+            delete_ui_widget(webgpu_context, entity_mesh);
+        }
+        else {
+            assert(false);
+            return;
+        }
     }
 
     Uniform* data_uniform = new Uniform();
