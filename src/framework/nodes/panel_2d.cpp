@@ -42,6 +42,7 @@ namespace ui {
         material->set_is_2D(true);
         material->set_cull_type(CULL_BACK);
         material->set_transparency_type(ALPHA_BLEND);
+        material->set_depth_read_write(false);
         material->set_priority(class_type);
 
         if (image_path.size()) {
@@ -56,6 +57,10 @@ namespace ui {
         quad_mesh = new MeshInstance();
         quad_mesh->add_surface(quad_surface);
         quad_mesh->set_surface_material_override(quad_mesh->get_surface(0), material);
+
+        if (Renderer::instance->get_xr_available()) {
+            disable_2d();
+        }
 
         auto webgpu_context = Renderer::instance->get_webgpu_context();
         RendererStorage::register_ui_widget(webgpu_context, material->get_shader_ref(), quad_mesh, ui_data, 3);
