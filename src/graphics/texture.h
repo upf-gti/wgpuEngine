@@ -47,7 +47,7 @@ public:
 	static WebGPUContext* webgpu_context;
 
     void load(const std::string& texture_path, bool is_srgb, bool upload_to_vram = true, bool store_texture_data = false);
-    void load_hdr(const std::string& texture_path);
+    void load_hdr(const std::string& texture_path, bool store_texture_data = false);
 
 	void create(WGPUTextureDimension dimension, WGPUTextureFormat format, WGPUExtent3D size, WGPUTextureUsage usage, uint32_t mipmaps, uint8_t sample_count, const void* data);
 

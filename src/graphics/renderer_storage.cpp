@@ -495,7 +495,7 @@ Texture* RendererStorage::get_texture(const std::string& texture_path, TextureSt
     if (extension == "hdr")
     {
         Texture* hdr_texture = new Texture();
-        hdr_texture->load_hdr(texture_path);
+        hdr_texture->load_hdr(texture_path, flags & TEXTURE_STORAGE_STORE_DATA);
 
         tx->create(WGPUTextureDimension_2D, WGPUTextureFormat_RGBA32Float, { ENVIRONMENT_RESOLUTION, ENVIRONMENT_RESOLUTION, 6 },
             static_cast<WGPUTextureUsage>(WGPUTextureUsage_StorageBinding | WGPUTextureUsage_TextureBinding | WGPUTextureUsage_CopyDst), 6, 1, nullptr);
@@ -514,7 +514,7 @@ Texture* RendererStorage::get_texture(const std::string& texture_path, TextureSt
     else
     {
         bool is_srgb = flags & TEXTURE_STORAGE_SRGB;
-        tx->load(texture_path, is_srgb);
+        tx->load(texture_path, is_srgb, true, flags & TEXTURE_STORAGE_STORE_DATA);
 
         // Ref to keep memory alive
         if (flags & TEXTURE_STORAGE_KEEP_MEMORY) {

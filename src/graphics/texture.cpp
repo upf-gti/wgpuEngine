@@ -156,7 +156,7 @@ void Texture::load(const std::string& texture_path, bool is_srgb, bool upload_to
     spdlog::trace("Texture loaded: {}", texture_path);
 }
 
-void Texture::load_hdr(const std::string& texture_path)
+void Texture::load_hdr(const std::string& texture_path, bool store_texture_data)
 {
     int width, height, channels;
     float* data = stbi_loadf(texture_path.c_str(), &width, &height, &channels, 4);
@@ -167,6 +167,18 @@ void Texture::load_hdr(const std::string& texture_path)
     path = texture_path;
 
     load_from_data(path, WGPUTextureDimension_2D, width, height, 1, data, false, WGPUTextureFormat_RGBA32Float);
+
+    if (store_texture_data) {
+
+        texture_data.data.resize(width * height * 4 * sizeof(float));
+
+        memcpy(texture_data.data.data(), data, width * height * 4 * sizeof(float));
+
+        texture_data.image_width = width;
+        texture_data.image_height = height;
+        texture_data.bytes_per_pixel = 4;
+        texture_data.bytes_per_scanline = texture_data.image_width * texture_data.bytes_per_pixel;
+    }
 
     stbi_image_free(data);
 
