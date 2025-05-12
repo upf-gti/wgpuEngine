@@ -10,12 +10,6 @@
 #include "glm/mat4x4.hpp"
 #include "glm/gtc/quaternion.hpp"
 
-#ifdef XR_SUPPORT
-
-struct WebGPUContext;
-
-class Transform;
-
 // Small helper so we don't forget whether we treat 0 as left or right hand
 enum XR_HANDS
 {
@@ -43,6 +37,12 @@ enum XR_THUMBSTICK_AXIS : uint8_t {
     XR_THUMBSTICK_AXIS_X,
     XR_THUMBSTICK_AXIS_Y
 };
+
+#ifdef XR_SUPPORT
+
+struct WebGPUContext;
+
+class Transform;
 
 struct XrInputPose {
     glm::quat orientation = { 0.0, 0.0, 0.0, 1.0 };

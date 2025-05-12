@@ -71,6 +71,7 @@ void Input::init(GLFWwindow* _window, bool use_mirror_screen, bool use_glfw)
 	}
 }
 
+#ifdef XR_SUPPORT
 bool Input::init_xr(XRContext* context)
 {
     if (!context) {
@@ -121,6 +122,8 @@ bool Input::init_xr(XRContext* context)
 
     return 0;
 }
+
+#endif
 
 void Input::update(float delta_time)
 {

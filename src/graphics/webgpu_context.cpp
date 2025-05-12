@@ -42,6 +42,8 @@ WGPUTextureFormat WebGPUContext::swapchain_format = WGPUTextureFormat_BGRA8Unorm
 WGPUTextureFormat WebGPUContext::xr_swapchain_format = WGPUTextureFormat_BGRA8UnormSrgb;
 #elif defined(WEBXR_SUPPORT)
 WGPUTextureFormat WebGPUContext::xr_swapchain_format = WGPUTextureFormat_BGRA8Unorm;
+#else
+WGPUTextureFormat WebGPUContext::xr_swapchain_format = WGPUTextureFormat_Undefined;
 #endif
 
 WGPUStringView get_string_view(const char* str)
