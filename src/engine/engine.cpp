@@ -145,7 +145,7 @@ int Engine::initialize(Renderer* renderer, sEngineConfiguration configuration)
 
     init_imgui(renderer->get_glfw_window());
 
-    renderer->set_camera_type(configuration.camera_type);
+    renderer->set_camera_params(configuration.camera_type, configuration.camera_eye, configuration.camera_center);
 
     post_initialize();
 

@@ -261,7 +261,7 @@ public:
 
     void submit_global_command_encoder();
 
-    void set_camera_type(eCameraType camera_type);
+    void set_camera_params(eCameraType camera_type, const glm::vec3& camera_eye, const glm::vec3& camera_center);
     eCameraType get_camera_type();
 
     void set_custom_pass_user_data(void* user_data);

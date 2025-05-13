@@ -728,7 +728,7 @@ void Renderer::submit_global_command_encoder()
 
 }
 
-void Renderer::set_camera_type(eCameraType camera_type)
+void Renderer::set_camera_params(eCameraType camera_type, const glm::vec3& camera_eye, const glm::vec3& camera_center)
 {
     this->camera_type = camera_type;
 
@@ -746,7 +746,7 @@ void Renderer::set_camera_type(eCameraType camera_type)
         camera_3d->look_at(old_camera->get_eye(), old_camera->get_center(), old_camera->get_up());
     }
     else {
-        camera_3d->look_at(glm::vec3(0.0f, 0.2f, 0.8f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        camera_3d->look_at(camera_eye, camera_center, glm::vec3(0.0f, 1.0f, 0.0f));
     }
 
     camera_3d->set_mouse_sensitivity(0.003f);
