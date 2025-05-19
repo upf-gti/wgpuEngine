@@ -7,6 +7,8 @@
 
 #include <fstream>
 
+#include "spdlog/spdlog.h"
+
 Scene::Scene(const std::string& name)
 {
     this->name = name;
@@ -98,16 +100,23 @@ void Scene::parse(const std::string& path)
 {
     std::ifstream binary_scene_file(path, std::ios::in | std::ios::binary);
 
+    if (!binary_scene_file || binary_scene_file.fail()) {
+        spdlog::error("Scene parser: Could not open file {}", path);
+        return;
+    }
+
     sSceneBinaryHeader header;
 
     binary_scene_file.read(reinterpret_cast<char*>(&header), sizeof(sSceneBinaryHeader));
 
     // Update name if necessary
-    size_t name_size = 0;
-    binary_scene_file.read(reinterpret_cast<char*>(&name_size), sizeof(size_t));
+    uint64_t name_size = 0;
+    binary_scene_file.read(reinterpret_cast<char*>(&name_size), sizeof(uint64_t));
     std::string new_name;
     new_name.resize(name_size);
     binary_scene_file.read(&new_name[0], name_size);
+
+    spdlog::info("Scene parser: Loading scene {} ({} nodes)", new_name, header.node_count);
 
     if (name.empty()) {
         name = new_name;
@@ -117,8 +126,8 @@ void Scene::parse(const std::string& path)
 
     for (int i = 0; i < header.node_count; ++i) {
         // parse node type
-        size_t node_type_size = 0;
-        binary_scene_file.read(reinterpret_cast<char*>(&node_type_size), sizeof(size_t));
+        uint64_t node_type_size = 0;
+        binary_scene_file.read(reinterpret_cast<char*>(&node_type_size), sizeof(uint64_t));
         node_type.resize(node_type_size);
         binary_scene_file.read(&node_type[0], node_type_size);
 

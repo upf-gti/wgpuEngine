@@ -104,8 +104,8 @@ void Node::parse(std::ifstream& binary_scene_file)
 
     binary_scene_file.read(reinterpret_cast<char*>(&header), sizeof(sNodeBinaryHeader));
 
-    size_t name_size = 0;
-    binary_scene_file.read(reinterpret_cast<char*>(&name_size), sizeof(size_t));
+    uint64_t name_size = 0;
+    binary_scene_file.read(reinterpret_cast<char*>(&name_size), sizeof(uint64_t));
     name.resize(name_size);
     binary_scene_file.read(&name[0], name_size);
 
@@ -114,8 +114,8 @@ void Node::parse(std::ifstream& binary_scene_file)
     for (int i = 0; i < header.children_count; ++i) {
 
         // parse node type
-        size_t node_type_size = 0;
-        binary_scene_file.read(reinterpret_cast<char*>(&node_type_size), sizeof(size_t));
+        uint64_t node_type_size = 0;
+        binary_scene_file.read(reinterpret_cast<char*>(&node_type_size), sizeof(uint64_t));
         child_node_type.resize(node_type_size);
         binary_scene_file.read(&child_node_type[0], node_type_size);
 
