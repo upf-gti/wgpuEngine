@@ -94,7 +94,7 @@ Engine::~Engine()
     }
 }
 
-int Engine::initialize(Renderer* renderer, sEngineConfiguration configuration)
+int Engine::initialize(Renderer* renderer, const sEngineConfiguration& configuration)
 {
     spdlog::set_pattern("[%^%l%$] %v");
     spdlog::set_level(spdlog::level::debug);

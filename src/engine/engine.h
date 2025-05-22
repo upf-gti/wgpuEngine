@@ -58,7 +58,7 @@ public:
     Engine();
     ~Engine();
 
-    virtual int initialize(Renderer* renderer, sEngineConfiguration configuration = {});
+    virtual int initialize(Renderer* renderer, const sEngineConfiguration& configuration = {});
     virtual int post_initialize();
     virtual void clean();
 
