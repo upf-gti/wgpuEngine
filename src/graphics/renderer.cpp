@@ -706,6 +706,24 @@ void Renderer::render_camera(const std::vector<std::vector<sRenderData>>& render
     }
 }
 
+bool Renderer::get_xr_available()
+{
+#ifdef XR_SUPPORT
+    return is_xr_available;
+#else
+    return false;
+#endif
+}
+
+bool Renderer::get_use_mirror_screen()
+{
+#if defined(USE_MIRROR_WINDOW)
+    return use_mirror_screen;
+#else
+    return false;
+#endif
+}
+
 void Renderer::process_events()
 {
     webgpu_context->process_events();

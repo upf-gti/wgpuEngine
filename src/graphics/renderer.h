@@ -301,8 +301,8 @@ public:
     void render_splats(WGPURenderPassEncoder render_pass, const std::vector<std::vector<sRenderData>>& render_lists, const sInstanceData& instance_data, WGPUBindGroup camera_bind_group, uint32_t camera_buffer_stride = 0);
     void render_2D(WGPURenderPassEncoder render_pass, const std::vector<std::vector<sRenderData>>& render_lists, const sInstanceData& instance_data, WGPUBindGroup camera_bind_group);
 
-    bool get_xr_available() { return is_xr_available; }
-    bool get_use_mirror_screen() { return use_mirror_screen; }
+    bool get_xr_available();
+    bool get_use_mirror_screen();
 
     inline void set_exposure(float new_exposure) { exposure = new_exposure; }
     inline void set_ibl_intensity(float new_intensity) { ibl_intensity = new_intensity; }
