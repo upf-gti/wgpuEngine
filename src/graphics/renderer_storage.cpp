@@ -178,7 +178,7 @@ void RendererStorage::register_material_bind_group(WebGPUContext* webgpu_context
 
     if (material->get_use_skinning()) {
 
-        MeshInstance3D* instance_3d = static_cast<MeshInstance3D*>(mesh_instance);
+        MeshInstance3D* instance_3d = static_cast<MeshInstance3D*>(mesh_instance->get_node_ref());
         SkeletonInstance3D* skeleton_instance = dynamic_cast<SkeletonInstance3D*>(instance_3d->get_parent());
         assert(skeleton_instance);
 
