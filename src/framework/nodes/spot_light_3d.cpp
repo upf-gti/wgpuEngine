@@ -41,7 +41,7 @@ void SpotLight3D::render()
 {
 #ifndef NDEBUG
     if (debug_material) {
-        Renderer::instance->add_renderable(debug_mesh, get_global_model() * debug_mesh->get_global_model());
+        Renderer::instance->add_renderable(debug_mesh->get_mesh_instance(), get_global_model() * debug_mesh->get_global_model());
     }
 #endif
 }

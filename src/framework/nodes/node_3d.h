@@ -39,7 +39,7 @@ public:
     void rotate(float angle, const glm::vec3& axis);
     void rotate(const glm::quat& q);
     void rotate_world(const glm::quat& q);
-    void scale(glm::vec3 scale);
+    void scale(const glm::vec3& scale);
 
     virtual void serialize(std::ofstream& binary_scene_file) override;
     virtual void parse(std::ifstream& binary_scene_file) override;

@@ -9,6 +9,11 @@
 
 #include "spdlog/spdlog.h"
 
+Scene::Scene()
+{
+    this->name = "scene_unnamed";
+}
+
 Scene::Scene(const std::string& name)
 {
     this->name = name;

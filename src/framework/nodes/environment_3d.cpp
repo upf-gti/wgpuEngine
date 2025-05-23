@@ -16,7 +16,7 @@ Environment3D::Environment3D() : MeshInstance3D()
 
     name = "Environment3D";
 
-    frustum_culling_enabled = false;
+    mesh_instance->set_frustum_culling_enabled(false);
 
     Material* material = new Material();
 

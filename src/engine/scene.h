@@ -11,7 +11,8 @@ class Scene {
     std::string name;
 
 public:
-    Scene(const std::string& name = "");
+    Scene();
+    Scene(const std::string& name);
     ~Scene();
 
     void add_node(Node* node, int idx = -1);

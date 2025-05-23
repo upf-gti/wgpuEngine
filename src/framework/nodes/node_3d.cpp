@@ -114,7 +114,7 @@ void Node3D::rotate_world(const glm::quat& q)
     transform.rotate_world(q);
 }
 
-void Node3D::scale(glm::vec3 scale)
+void Node3D::scale(const glm::vec3& scale)
 {
     transform.scale(scale);
 }

@@ -78,5 +78,5 @@ void Joint3D::render()
     Transform joint_global_transform = Transform::combine(get_parent<Node3D*>()->get_global_transform(), pose->get_global_transform(index));
     joint_global_transform.set_scale(glm::vec3(0.005f));
     bool selected = (Joint3D::selected_joint == this);
-    Renderer::instance->add_renderable(selected ? selected_mesh_instance : mesh_instance, joint_global_transform.get_model());
+    Renderer::instance->add_renderable(selected ? selected_mesh_instance->get_mesh_instance() : mesh_instance->get_mesh_instance(), joint_global_transform.get_model());
 }

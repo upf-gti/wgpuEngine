@@ -31,8 +31,8 @@ void DirectionalLight3D::render()
 #ifndef NDEBUG
     if (debug_material) {
         // Use light transform to simplify rotation logic
-        Renderer::instance->add_renderable(debug_mesh_v, get_global_model() * debug_mesh_v->get_global_model());
-        Renderer::instance->add_renderable(debug_mesh_v, get_global_model() * debug_mesh_h->get_global_model());
+        Renderer::instance->add_renderable(debug_mesh_v->get_mesh_instance(), get_global_model() * debug_mesh_v->get_global_model());
+        Renderer::instance->add_renderable(debug_mesh_v->get_mesh_instance(), get_global_model() * debug_mesh_h->get_global_model());
     }
 #endif
 

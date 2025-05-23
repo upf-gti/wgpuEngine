@@ -8,11 +8,13 @@
 class Shader;
 class Texture;
 class Skeleton;
+class Node;
 
 class MeshInstance {
 
 protected:
 
+    Node* node_ref = nullptr;
     Skeleton* skeleton = nullptr;
 
     bool frustum_culling_enabled = true;
@@ -28,22 +30,21 @@ public:
 	virtual ~MeshInstance();
 
     Material* get_surface_material(int surface_idx);
-
-    void set_surface_material_override(Surface* surface, Material* material);
-
-    void set_frustum_culling_enabled(bool enabled);
     bool get_frustum_culling_enabled();
-
-    void set_receive_shadows(bool receive_shadows) { this->receive_shadows = receive_shadows; }
     bool get_receive_shadows() { return receive_shadows; }
-
     Material* get_surface_material_override(Surface* surface);
-
-	void  add_surface(Surface* surface);
     const std::vector<Surface*>& get_surfaces() const;
+    std::vector<Surface*>& get_surfaces();
     Surface* get_surface(int surface_idx) const;
     uint32_t get_surface_count() const;
-
-    void set_skeleton(Skeleton* s);
     Skeleton* get_skeleton();
+    Node* get_node_ref() { return node_ref; }
+
+    void set_surface_material_override(Surface* surface, Material* material);
+    void set_frustum_culling_enabled(bool enabled);
+    void set_receive_shadows(bool receive_shadows) { this->receive_shadows = receive_shadows; }
+    void set_node_ref(Node* node) { node_ref = node; }
+    void set_skeleton(Skeleton* s);
+
+	void add_surface(Surface* surface);
 };

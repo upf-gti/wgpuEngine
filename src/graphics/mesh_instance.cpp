@@ -83,6 +83,11 @@ const std::vector<Surface*>& MeshInstance::get_surfaces() const
     return surfaces;
 }
 
+std::vector<Surface*>& MeshInstance::get_surfaces()
+{
+    return surfaces;
+}
+
 void MeshInstance::set_skeleton(Skeleton* s)
 {
     skeleton = s;

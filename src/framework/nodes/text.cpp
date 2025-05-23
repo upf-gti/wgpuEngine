@@ -49,6 +49,8 @@ void TextEntity::generate_mesh(const Color& color, bool is_2D)
     if (text.empty() || !font)
         return;
 
+    auto& surfaces = mesh_instance->get_surfaces();
+
     // Clear previous mesh
     if (!surfaces.empty()) {
         vertices.clear();

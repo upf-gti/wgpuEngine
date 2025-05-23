@@ -10,6 +10,8 @@ REGISTER_NODE_CLASS(MeshInstance3D)
 MeshInstance3D::MeshInstance3D() : Node3D()
 {
     node_type = "MeshInstance3D";
+    mesh_instance = new MeshInstance();
+    mesh_instance->set_node_ref(this);
 }
 
 MeshInstance3D::~MeshInstance3D()
@@ -24,7 +26,7 @@ void MeshInstance3D::set_aabb(const AABB& new_aabb)
 
 void MeshInstance3D::render()
 {
-    Renderer::instance->add_renderable(this, get_global_transform().get_model());
+    Renderer::instance->add_renderable(mesh_instance, get_global_transform().get_model());
 
     Node3D::render();
 }
@@ -32,6 +34,56 @@ void MeshInstance3D::render()
 void MeshInstance3D::update(float delta_time)
 {  
     Node3D::update(delta_time);
+}
+
+void MeshInstance3D::set_surface_material_override(Surface* surface, Material* material)
+{
+    mesh_instance->set_surface_material_override(surface, material);
+}
+
+void MeshInstance3D::set_frustum_culling_enabled(bool enabled)
+{
+    mesh_instance->set_frustum_culling_enabled(enabled);
+}
+
+void MeshInstance3D::set_receive_shadows(bool new_receive_shadows)
+{
+    mesh_instance->set_receive_shadows(new_receive_shadows);
+}
+
+bool MeshInstance3D::get_frustum_culling_enabled()
+{
+    return mesh_instance->get_frustum_culling_enabled();
+}
+
+Material* MeshInstance3D::get_surface_material(int surface_idx)
+{
+    return mesh_instance->get_surface_material(surface_idx);
+}
+
+Material* MeshInstance3D::get_surface_material_override(Surface* surface)
+{
+    return mesh_instance->get_surface_material_override(surface);
+}
+
+const std::vector<Surface*>& MeshInstance3D::get_surfaces() const
+{
+    return mesh_instance->get_surfaces();
+}
+
+Surface* MeshInstance3D::get_surface(int surface_idx) const
+{
+    return mesh_instance->get_surface(surface_idx);
+}
+
+uint32_t MeshInstance3D::get_surface_count() const
+{
+    return mesh_instance->get_surface_count();
+}
+
+void MeshInstance3D::add_surface(Surface* surface)
+{
+    mesh_instance->add_surface(surface);
 }
 
 void MeshInstance3D::render_gui()
@@ -42,6 +94,7 @@ void MeshInstance3D::render_gui()
 
     if (is_open)
     {
+        const auto& surfaces = mesh_instance->get_surfaces();
         for (int i = 0; i < surfaces.size(); ++i) {
             std::string surface_name = surfaces[i]->get_name();
             std::string final_surface_name = surface_name.empty() ? ("Surface " + std::to_string(i)).c_str() : surface_name;
