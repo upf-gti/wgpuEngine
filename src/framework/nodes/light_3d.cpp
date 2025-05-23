@@ -83,7 +83,7 @@ void Light3D::render_gui()
     Node3D::render_gui();
 }
 
-void Light3D::set_color(glm::vec3 color)
+void Light3D::set_color(const glm::vec3& color)
 {
     this->color = color;
 }

@@ -57,7 +57,7 @@ void OmniLight3D::render_gui()
     Light3D::render_gui();
 }
 
-void OmniLight3D::set_color(glm::vec3 color)
+void OmniLight3D::set_color(const glm::vec3& color)
 {
     if (debug_material) {
         debug_material->set_color(glm::vec4(color, 1.0f));

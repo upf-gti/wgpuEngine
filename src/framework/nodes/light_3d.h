@@ -57,7 +57,7 @@ public:
 
     virtual void create_debug_meshes() = 0;
 
-    virtual void set_color(glm::vec3 color);
+    virtual void set_color(const glm::vec3& color);
     void set_intensity(float value);
     virtual void set_range(float value);
     void set_fading_enabled(bool value);
