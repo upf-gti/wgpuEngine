@@ -49,6 +49,18 @@ EM_JS(void, on_end_frame, (), {
     }
 });
 
+EM_JS(void, on_render, (), {
+    if (Module.Engine.onRender) {
+        Module.Engine.onRender();
+    }
+});
+
+EM_JS(void, on_update, (float delta_time), {
+    if (Module.Engine.onUpdate) {
+        Module.Engine.onUpdate(delta_time);
+    }
+});
+
 EM_JS(int, canvas_get_width, (), {
   return canvas.clientWidth;
 });
@@ -161,6 +173,8 @@ int Engine::initialize(Renderer* renderer, const sEngineConfiguration& configura
 
 int Engine::post_initialize()
 {
+    main_scene = new Scene("main_scene");
+
     return 0;
 }
 
@@ -372,6 +386,11 @@ bool Engine::should_close()
     return stop_game_loop;
 }
 
+void Engine::set_main_scene(Scene* scene)
+{
+    main_scene = scene;
+}
+
 void Engine::set_main_scene(const std::string& scene_path)
 {
     if (main_scene) {
@@ -458,10 +477,18 @@ void Engine::update(float delta_time)
     }
 
     renderer->update(delta_time);
+
+#ifdef __EMSCRIPTEN__
+    on_update(delta_time);
+#endif
 }
 
 void Engine::render()
 {
+#ifdef __EMSCRIPTEN__
+    on_render();
+#endif
+
     renderer->render();
 }
 

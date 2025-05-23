@@ -83,5 +83,11 @@ public:
     float get_delta_time() { return delta_time; }
     void get_scene_ray(glm::vec3& ray_origin, glm::vec3& ray_direction);
 
+    void set_main_scene(Scene* scene);
     virtual void set_main_scene(const std::string& scene_path);
+
+#ifdef __EMSCRIPTEN__
+    bool get_wasm_module_initialized() const { return wasm_module_initialized; }
+    void set_wasm_module_initialized(bool value) { wasm_module_initialized = value; }
+#endif
 };
