@@ -14,6 +14,18 @@
 
 #include <filesystem>
 
+#ifdef __EMSCRIPTEN__
+
+#include "shaders/mesh_forward.wgsl.gen.h"
+#include "shaders/mesh_grid.wgsl.gen.h"
+#include "shaders/ui/ui_panel.wgsl.gen.h"
+#include "shaders/ui/ui_xr_panel.wgsl.gen.h"
+#include "shaders/ui/ui_color_picker.wgsl.gen.h"
+#include "shaders/ui/ui_texture.wgsl.gen.h"
+#include "shaders/ui/ui_text_shadow.wgsl.gen.h"
+
+#endif
+
 RendererStorage* RendererStorage::instance = nullptr;
 
 std::map<std::string, Surface*> RendererStorage::surfaces;
@@ -374,6 +386,32 @@ Shader* RendererStorage::get_shader(const std::string& shader_path, const std::v
 
     return sh;
 }
+
+#ifdef __EMSCRIPTEN__
+Shader* RendererStorage::get_shader_from_name(const char* shader_name, const Material* material)
+{
+    std::string name = shader_name;
+    if (name == "mesh_forward") return get_shader_from_source(shaders::mesh_forward::source, shaders::mesh_forward::path, shaders::mesh_forward::libraries, material);
+    else if (name == "mesh_grid") return get_shader_from_source(shaders::mesh_grid::source, shaders::mesh_grid::path, shaders::mesh_grid::libraries, material);
+    else if (name == "ui_panel") return get_shader_from_source(shaders::ui_panel::source, shaders::ui_panel::path, shaders::ui_panel::libraries, material);
+    else if (name == "ui_xr_panel") return get_shader_from_source(shaders::ui_xr_panel::source, shaders::ui_xr_panel::path, shaders::ui_xr_panel::libraries, material);
+    else if (name == "ui_color_picker") return get_shader_from_source(shaders::ui_color_picker::source, shaders::ui_color_picker::path, shaders::ui_color_picker::libraries, material);
+    else if (name == "ui_texture") return get_shader_from_source(shaders::ui_texture::source, shaders::ui_texture::path, shaders::ui_texture::libraries, material);
+    else if (name == "ui_text_shadow") return get_shader_from_source(shaders::ui_text_shadow::source, shaders::ui_text_shadow::path, shaders::ui_text_shadow::libraries, material);
+    return nullptr;
+}
+
+Surface* RendererStorage::get_surface(const char* mesh_path)
+{
+    return get_surface(std::string(mesh_path));
+}
+
+Texture* RendererStorage::get_texture(const char* texture_path, TextureStorageFlags flags)
+{
+    return get_texture(std::string(texture_path));
+}
+
+#endif
 
 Shader* RendererStorage::get_shader_from_source(const char* source, const std::string& name,
     const std::vector<std::string>& libraries,
