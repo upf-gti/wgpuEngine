@@ -388,9 +388,8 @@ Shader* RendererStorage::get_shader(const std::string& shader_path, const std::v
 }
 
 #ifdef __EMSCRIPTEN__
-Shader* RendererStorage::get_shader_from_name(const char* shader_name, const Material* material)
+Shader* RendererStorage::get_shader_from_name(const std::string& name, const Material* material)
 {
-    std::string name = shader_name;
     if (name == "mesh_forward") return get_shader_from_source(shaders::mesh_forward::source, shaders::mesh_forward::path, shaders::mesh_forward::libraries, material);
     else if (name == "mesh_grid") return get_shader_from_source(shaders::mesh_grid::source, shaders::mesh_grid::path, shaders::mesh_grid::libraries, material);
     else if (name == "ui_panel") return get_shader_from_source(shaders::ui_panel::source, shaders::ui_panel::path, shaders::ui_panel::libraries, material);
@@ -400,17 +399,6 @@ Shader* RendererStorage::get_shader_from_name(const char* shader_name, const Mat
     else if (name == "ui_text_shadow") return get_shader_from_source(shaders::ui_text_shadow::source, shaders::ui_text_shadow::path, shaders::ui_text_shadow::libraries, material);
     return nullptr;
 }
-
-Surface* RendererStorage::get_surface(const char* mesh_path)
-{
-    return get_surface(std::string(mesh_path));
-}
-
-Texture* RendererStorage::get_texture(const char* texture_path, TextureStorageFlags flags)
-{
-    return get_texture(std::string(texture_path));
-}
-
 #endif
 
 Shader* RendererStorage::get_shader_from_source(const char* source, const std::string& name,

@@ -76,9 +76,7 @@ public:
     static Shader* get_shader(const std::string& shader_path, const std::vector<std::string>& custom_define_specializations);
 
 #ifdef __EMSCRIPTEN__
-    static Shader* get_shader_from_name(const char* name, const Material* material);
-    static Surface* get_surface(const char* mesh_path);
-    static Texture* get_texture(const char* texture_path, TextureStorageFlags flags = TEXTURE_STORAGE_NONE);
+    static Shader* get_shader_from_name(const std::string& name, const Material* material);
 #endif
 
     static Shader* get_shader_from_source(const char* source, const std::string& name,
