@@ -67,6 +67,11 @@ float BlendAnimation::update(float current_time, uint8_t loop, std::vector<Node:
     }
 
     for (uint32_t i = 0; i < animation->get_track_count(); ++i) {
+        // This should not happen
+        if (data[i].property_type == Node::AnimatablePropertyType::UNDEFINED) {
+            assert(0);
+            continue;
+        }
         time = animation->sample(current_time, i, loop, &data[i]);
     }
 
