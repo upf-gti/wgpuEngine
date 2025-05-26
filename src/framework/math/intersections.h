@@ -15,14 +15,14 @@ namespace intersection {
         const glm::vec3& ray_direction,
         const glm::vec3& plane_origin,
         const glm::vec3& plane_orientation,
-        float& collision_distance) {
+        float* collision_distance) {
 
         const float facing = glm::dot(ray_direction, plane_orientation);
 
         if (glm::abs(facing) > EPSILON) {
             const glm::vec3 p = plane_origin - ray_origin;
             const float distance = glm::dot(p, plane_orientation) / facing;
-            collision_distance = distance;
+            *collision_distance = distance;
             return distance >= 0;
         }
 
@@ -36,7 +36,7 @@ namespace intersection {
         const glm::quat& quad_rotation,
         glm::vec3& intersection,
         glm::vec3& local_intersection,
-        float& collision_distance,
+        float* collision_distance,
         bool centered = true) {
 
         // Assumtion: the original quad orientation is (0,1,0)
@@ -49,7 +49,7 @@ namespace intersection {
             ray_direction,
             quad_origin,
             quad_orientation,
-            plane_intersection_distance)) {
+            &plane_intersection_distance)) {
             return false;
         }
 
@@ -58,7 +58,7 @@ namespace intersection {
 
         glm::vec3 intersection_point = (ray_origin + ray_direction * plane_intersection_distance);
         intersection = intersection_point;
-        collision_distance = plane_intersection_distance;
+        *collision_distance = plane_intersection_distance;
 
         // To local position
         intersection_point -= quad_origin;
@@ -88,7 +88,7 @@ namespace intersection {
         float curvature_factor,
         glm::vec3& intersection,
         glm::vec3& local_intersection,
-        float& collision_distance,
+        float* collision_distance,
         bool centered = true) {
 
         const glm::vec2& step = glm::vec2(quad_size.x / subdivisions, quad_size.y / subdivisions);
@@ -173,7 +173,7 @@ namespace intersection {
         const glm::vec3& circle_origin,
         const float circle_radius,
         const glm::quat& circle_rotation,
-        float& collision_distance) {
+        float* collision_distance) {
 
         // Assumtion: the original circle orientation is (0,1,0)
         const glm::vec3 circle_orientation = circle_rotation * glm::vec3(0.f, 1.f, 0.f);
@@ -185,13 +185,13 @@ namespace intersection {
             ray_direction,
             circle_origin,
             circle_orientation,
-            plane_intersection_distance)) {
+            &plane_intersection_distance)) {
             return false;
         }
 
         // Second, is the intesected point inside the circle?
         const glm::vec3 intersection_point = (ray_origin + ray_direction * plane_intersection_distance);
-        collision_distance = plane_intersection_distance;
+        *collision_distance = plane_intersection_distance;
         return glm::length(intersection_point - circle_origin) < circle_radius;
     }
 
@@ -199,7 +199,7 @@ namespace intersection {
         const glm::vec3& ray_direction,
         const glm::vec3& sphere_center,
         float sphere_radius,
-        float& collision_distance) {
+        float* collision_distance) {
 
         const glm::vec3 origin_to_center = sphere_center - ray_origin;
         const double a = glm::length2(ray_direction);
@@ -212,7 +212,7 @@ namespace intersection {
             return false;
         }
 
-        collision_distance = (h - glm::sqrt(discriminant)) / a;
+        *collision_distance = (h - glm::sqrt(discriminant)) / a;
 
         return true;
     }
@@ -221,7 +221,7 @@ namespace intersection {
         const glm::vec3& ray_direction,
         const glm::vec3& box_origin,
         const glm::vec3& box_halfsize,
-        float& collision_distance) {
+        float* collision_distance) {
 
         // Using the slabs method
         const glm::vec3 inv_ray_dir = 1.0f / ray_direction;
@@ -245,11 +245,11 @@ namespace intersection {
         // if tmin > tmax, ray doesn't intersect AABB
         if (t_max < 0 || t_min > t_max)
         {
-            collision_distance = t_max;
+            *collision_distance = t_max;
             return false;
         }
 
-        collision_distance = t_min;
+        *collision_distance = t_min;
         return true;
     }
 
@@ -258,7 +258,7 @@ namespace intersection {
         const glm::vec3& box_origin,
         const glm::vec3& box_halfsize,
         const glm::quat& box_rotation,
-        float& collision_distance) {
+        float* collision_distance) {
 
         // Translate the Ray to the OBB space, and procede like an AABB
         const glm::quat rotate_to_OBB = glm::inverse(box_rotation);
@@ -286,7 +286,7 @@ namespace intersection {
         const glm::vec3& plane_origin,
         const glm::vec3& plane_normal,
         float* distance,
-        const float  epsilon = EPSILON) {
+        const float epsilon = EPSILON) {
         float dist_to_plane = glm::dot(plane_normal, point - plane_origin);
         *distance = dist_to_plane - epsilon;
 

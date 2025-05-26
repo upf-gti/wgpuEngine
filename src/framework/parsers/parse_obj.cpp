@@ -15,7 +15,7 @@
 
 #include "spdlog/spdlog.h"
 
-void parse_obj(const char* obj_path, MeshInstance3D* entity_mesh, bool create_aabb)
+void parse_obj(const std::string& obj_path, MeshInstance3D* entity_mesh, bool create_aabb)
 {
     if (!entity_mesh) {
         return;
@@ -39,7 +39,7 @@ void parse_obj(const char* obj_path, MeshInstance3D* entity_mesh, bool create_aa
     auto& shapes = reader.GetShapes();
     auto& materials = reader.GetMaterials();
 
-    std::filesystem::path obj_path_fs = std::filesystem::path(obj_path);
+    std::filesystem::path obj_path_fs = std::filesystem::path(obj_path.c_str());
 
     entity_mesh->set_name(obj_path_fs.stem().string());
 
@@ -145,7 +145,7 @@ void parse_obj(const char* obj_path, MeshInstance3D* entity_mesh, bool create_aa
     entity_mesh->set_aabb(entity_aabb);
 }
 
-MeshInstance3D* parse_obj(const char* obj_path, bool create_aabb)
+MeshInstance3D* parse_obj(const std::string& obj_path, bool create_aabb)
 {
     MeshInstance3D* new_entity = new MeshInstance3D();
 

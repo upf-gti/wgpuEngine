@@ -206,7 +206,7 @@ void SkeletonInstance3D::set_uniform_data(Uniform* animated_u, Uniform* invbind_
     invbind_uniform_data = invbind_u;
 }
 
-bool SkeletonInstance3D::test_ray_collision(const glm::vec3& ray_origin, const glm::vec3& ray_direction, float& distance, Node3D** out)
+bool SkeletonInstance3D::test_ray_collision(const glm::vec3& ray_origin, const glm::vec3& ray_direction, float* distance, Node3D** out)
 {
     Pose& pose = skeleton->get_current_pose();
 
@@ -218,9 +218,9 @@ bool SkeletonInstance3D::test_ray_collision(const glm::vec3& ray_origin, const g
 
     for (size_t i = 0; i < joint_nodes.size(); ++i) {
         Transform joint_global_transform = Transform::combine(global_transform, pose.get_global_transform(i));
-        if (intersection::ray_sphere(ray_origin, ray_direction, joint_global_transform.get_position(), 0.01f, joint_distance)) {
-            if (joint_distance < distance) {
-                distance = joint_distance;
+        if (intersection::ray_sphere(ray_origin, ray_direction, joint_global_transform.get_position(), 0.01f, &joint_distance)) {
+            if (joint_distance < *distance) {
+                *distance = joint_distance;
                 result |= true;
                 *out = joint_nodes[i];
                 Joint3D::selected_joint = static_cast<Joint3D*>(*out);

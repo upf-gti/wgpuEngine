@@ -60,7 +60,7 @@ public:
     void set_transform_dirty(bool value);
     void set_parent(Node3D* node);
 
-    virtual bool test_ray_collision(const glm::vec3& ray_origin, const glm::vec3& ray_direction, float& distance, Node3D** out = nullptr);
+    virtual bool test_ray_collision(const glm::vec3& ray_origin, const glm::vec3& ray_direction, float* distance, Node3D** out = nullptr);
 
     void clone(Node* new_node, bool copy = true) override;
 

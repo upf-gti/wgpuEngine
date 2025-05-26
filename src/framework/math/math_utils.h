@@ -31,6 +31,8 @@ glm::vec3 mod_vec3(glm::vec3 v, float m);
 uint32_t next_power_of_two(uint32_t value);
 glm::quat get_quat_between_vec3(const glm::vec3& p1, const glm::vec3& p2);
 
+glm::vec3 rotate_point_by_quat(const glm::vec3& v, const glm::vec4& q);
+
 glm::vec3 rgb2hsv(glm::vec3 rgb);
 glm::vec3 hsv2rgb(glm::vec3 c);
 
