@@ -992,7 +992,7 @@ void parse_model_skins(Node3D* scene_root, tinygltf::Model& model, std::map<std:
     std::vector<uint32_t> joint_indices;
     std::vector<Joint3D*> joint_nodes;
 
-    for (size_t s = 0; s < model.skins.size(); s++) {
+    for (size_t s = 0; s < 1; s++) {
 
         const tinygltf::Skin& skin = model.skins[s];
 
@@ -1026,7 +1026,6 @@ void parse_model_skins(Node3D* scene_root, tinygltf::Model& model, std::map<std:
         // For each joint in the skin, get the inverse bind pose matrix
         for (size_t i = 0; i < skin.joints.size(); i++) {
 
-            size_t id = i;// +rest_pose.size() - num_joints;
             uint32_t joint_id = skin.joints[i];
             const tinygltf::Node& node = model.nodes[joint_id];
 
@@ -1046,7 +1045,7 @@ void parse_model_skins(Node3D* scene_root, tinygltf::Model& model, std::map<std:
                 }
 
                 Transform transform = Transform::mat4_to_transform(model_matrix);
-                rest_pose.set_local_transform(id, transform);
+                rest_pose.set_local_transform(i, transform);
                 joint_3d->set_transform(transform);
             }
             else {
@@ -1054,7 +1053,7 @@ void parse_model_skins(Node3D* scene_root, tinygltf::Model& model, std::map<std:
                 Transform transform;
                 read_transform(node, transform);
 
-                rest_pose.set_local_transform(id, transform);
+                rest_pose.set_local_transform(i, transform);
                 joint_3d->set_transform(transform);
             }
 
@@ -1067,21 +1066,20 @@ void parse_model_skins(Node3D* scene_root, tinygltf::Model& model, std::map<std:
                 parent = j;
                 break;
             }
-            rest_pose.set_parent(id, parent);
+
+            rest_pose.set_parent(i, parent);
 
             glm::mat4x4 m;
 
             // Get the 16 values of the inverse bind matrix and put them into a mat4
             memcpy(&m, ptr + i * 16, 16 * sizeof(float));
 
-            inverse_bind_matrices[id] = m;
+            inverse_bind_matrices[i] = m;
 
             // Set the transform into the array of transforms of the joints in the bind pose (world bind pose)
-            glm::mat4x4 bind_matrix = inverse(m);
-            Transform bind_transform = Transform::mat4_to_transform(bind_matrix);
-            world_bind_transforms[id] = bind_transform;
+            Transform bind_transform = Transform::mat4_to_transform(m);
+            world_bind_transforms[i] = Transform::inverse(bind_transform);
         }
-
     }
 
     bind_pose = rest_pose;
@@ -1356,7 +1354,6 @@ void parse_model_animations(const tinygltf::Model& model, std::vector<SkeletonIn
                 }
             }
 
-            Track* track = new_animation->add_track(node_id);
 
             std::string track_path;
             if (channel.target_path == "pointer") {
@@ -1381,13 +1378,21 @@ void parse_model_animations(const tinygltf::Model& model, std::vector<SkeletonIn
                 track_name = node.name + "/" + track_path;
             }
             else {
-                track_name = track_path;
+                // For now, discard these tracks
+                continue;
             }
 
+            if (skeleton && node_id < 0) {
+                // Discard these tracks too -> nodes that are not
+                // used in the skeleton as joint
+                continue;
+            }
+
+            Track* track = new_animation->add_track(node_id);
             track->set_name(track_name);
 
-            // Check if it's a joint and has a skeleton and get the full path..
-            if (skeleton && node_id >= 0) {
+            // Check if it's a skeleton joint and has a skeleton and get the full path..
+            if (skeleton) {
 
                 std::string parent_names = "";
                 Node3D* _node = skeleton_instance;

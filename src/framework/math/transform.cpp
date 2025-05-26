@@ -1,6 +1,6 @@
 #include "transform.h"
 
-#define EPSILON 0.000001f
+#define EPSILON 0.000000000001f
 
 #include "glm/gtx/compatibility.hpp"
 #include "glm/gtx/norm.hpp"

@@ -74,10 +74,10 @@ fn vs_main(in: VertexInput) -> VertexOutput {
     var normals = vec4f(in.normal, 0.0);
 
 #ifdef USE_SKINNING
-    var skin : mat4x4f = (animated_matrices[in.joints.x] * inv_bind_matrices[in.joints.x]) * in.weights.x;
-    skin += (animated_matrices[in.joints.y] * inv_bind_matrices[in.joints.y]) * in.weights.y;
-    skin += (animated_matrices[in.joints.z] * inv_bind_matrices[in.joints.z]) * in.weights.z;
-    skin += (animated_matrices[in.joints.w] * inv_bind_matrices[in.joints.w]) * in.weights.w;
+    var skin : mat4x4f = (animated_matrices[u32(in.joints.x)] * inv_bind_matrices[u32(in.joints.x)]) * in.weights.x;
+    skin += (animated_matrices[u32(in.joints.y)] * inv_bind_matrices[u32(in.joints.y)]) * in.weights.y;
+    skin += (animated_matrices[u32(in.joints.z)] * inv_bind_matrices[u32(in.joints.z)]) * in.weights.z;
+    skin += (animated_matrices[u32(in.joints.w)] * inv_bind_matrices[u32(in.joints.w)]) * in.weights.w;
     position = skin * position;
     normals = skin * normals;
 #endif
