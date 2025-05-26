@@ -16,7 +16,7 @@ public:
 
     virtual void look_at(const glm::vec3& eye, const glm::vec3& center, const glm::vec3& up, bool reset_internals = true);
 
-    void look_at_entity(Node3D* entity);
+    void look_at_node(Node3D* entity);
 
 protected:
 

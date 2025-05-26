@@ -51,7 +51,7 @@ void Camera3D::look_at(const glm::vec3& eye, const glm::vec3& center, const glm:
     }
 }
 
-void Camera3D::look_at_entity(Node3D* entity)
+void Camera3D::look_at_node(Node3D* entity)
 {
     if (!entity) {
         return;

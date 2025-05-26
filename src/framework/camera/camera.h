@@ -8,13 +8,12 @@ enum eCameraType {
 };
 
 class Camera {
+public:
 
     enum eCameraProjectionType {
         PERSPECTIVE,
         ORTHOGRAPHIC
     };
-
-public:
 
     Camera() = default;
 

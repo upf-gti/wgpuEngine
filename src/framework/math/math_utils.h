@@ -12,6 +12,11 @@
 #define PI_2 (0.5f * PI)
 #define PI_4 (0.5f * PI_2)
 
+#ifdef __EMSCRIPTEN__
+float radians(float degrees);
+float degrees(float radians);
+#endif
+
 const double infinity = std::numeric_limits<double>::infinity();
 
 void quat_swing_twist_decomposition(const glm::vec3& dir, const glm::quat& rotation, glm::quat& swing, glm::quat& twist);

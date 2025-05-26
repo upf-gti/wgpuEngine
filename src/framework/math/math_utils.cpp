@@ -5,6 +5,19 @@
 #include <algorithm>
 #include <bit>
 
+#ifdef __EMSCRIPTEN__
+float radians(float degrees)
+{
+    return glm::radians(degrees);
+}
+
+float degrees(float radians)
+{
+    return glm::degrees(radians);
+}
+
+#endif
+
 glm::vec3 load_vec3(const std::string& str) {
     glm::vec3 v;
     int n = sscanf(str.c_str(), "%f %f %f", &v.x, &v.y, &v.z);
