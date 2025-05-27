@@ -1542,8 +1542,7 @@ bool GltfParser::parse_model(tinygltf::Model* model, std::vector<Node*>& entitie
     }
 
     // Clean unused nodes
-    // TODO: This is not doing what we want. Revise it
-    /*for (auto instance : skeleton_instances) {
+    for (auto instance : skeleton_instances) {
         auto& joint_names = instance->get_skeleton()->get_joint_names();
 
         for (auto& name : joint_names) {
@@ -1555,7 +1554,7 @@ bool GltfParser::parse_model(tinygltf::Model* model, std::vector<Node*>& entitie
             delete loaded_nodes[name];
             loaded_nodes[name] = nullptr;
         }
-    }*/
+    }
 
     name_repeats.clear();
     loaded_nodes.clear();

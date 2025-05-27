@@ -8,6 +8,10 @@ class Node;
 class Scene {
 
     std::vector<Node*> nodes;
+
+#ifdef __EMSCRIPTEN__
+public:
+#endif
     std::string name;
 
 public:

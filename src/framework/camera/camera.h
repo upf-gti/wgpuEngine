@@ -36,6 +36,7 @@ public:
 
     void set_eye(const glm::vec3& new_eye);
     void set_center(const glm::vec3& new_center);
+    void set_up(const glm::vec3& new_up);
 
     void set_speed(float speed) { this->speed = speed; }
     void set_mouse_sensitivity(float mouse_sensitivity) { this->mouse_sensitivity = mouse_sensitivity; }
@@ -46,18 +47,21 @@ public:
     const glm::vec3& get_center() const { return center; }
     const glm::vec3& get_up() const { return up; }
 
-    float get_fov() { return fov; }
-    float get_aspect() { return aspect; }
-    float get_near() { return z_near; }
-    float get_far() { return z_far; }
-
+    float get_fov() const { return fov; }
+    float get_aspect() const { return aspect; }
+    float get_near() const { return z_near; }
+    float get_far() const { return z_far; }
     float get_speed() const { return speed; }
+    float get_mouse_sensitivity() const { return mouse_sensitivity; }
 
     const glm::mat4x4& get_view() const { return view; }
     const glm::mat4x4& get_projection() const { return projection; }
     const glm::mat4x4& get_view_projection() const { return view_projection; }
 
 protected:
+#ifdef __EMSCRIPTEN__
+public:
+#endif
 
     glm::mat4x4 view;
     glm::mat4x4 projection;

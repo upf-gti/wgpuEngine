@@ -62,6 +62,9 @@ public:
     };
 
 protected:
+#ifdef __EMSCRIPTEN__
+public:
+#endif
 
     static uint32_t last_node_id;
 

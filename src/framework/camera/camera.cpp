@@ -94,6 +94,13 @@ void Camera::set_center(const glm::vec3& new_center)
     update_view_matrix();
 }
 
+void Camera::set_up(const glm::vec3& new_up)
+{
+    up = new_up;
+
+    update_view_matrix();
+}
+
 void Camera::update_view_matrix()
 {
     view = glm::lookAt(eye, center, up);
