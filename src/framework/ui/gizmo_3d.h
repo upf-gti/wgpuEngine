@@ -14,6 +14,9 @@ class MeshInstance3D;
 */
 
 class Gizmo3D {
+#ifdef __EMSCRIPTEN__
+public:
+#endif
 
     static Color X_AXIS_COLOR;
     static Color Y_AXIS_COLOR;

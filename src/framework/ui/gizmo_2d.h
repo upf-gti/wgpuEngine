@@ -6,6 +6,9 @@
 #include "framework/utils/ImGuizmo.h"
 
 class Gizmo2D {
+#ifdef __EMSCRIPTEN__
+public:
+#endif
 
     ImGuizmo::OPERATION operation = ImGuizmo::TRANSLATE;
     ImGuizmo::MODE mode = ImGuizmo::WORLD;
