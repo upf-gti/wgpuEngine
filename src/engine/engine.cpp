@@ -69,18 +69,34 @@ EM_JS(int, canvas_get_height, (), {
   return canvas.clientHeight;
 });
 
+EM_JS(const char*, get_html5_resize_target, (), {
+    var str = "html5ResizeTarget" in Module ? Module.html5ResizeTarget : "";
+    var lengthBytes = lengthBytesUTF8(str) + 1;
+    var ptr = _malloc(lengthBytes);
+    stringToUTF8(str, ptr, lengthBytes);
+    return ptr;
+});
+
 static EM_BOOL on_web_display_size_changed(int event_type,
     const EmscriptenUiEvent* ui_event, void* user_data)
 {
     Engine* engine = reinterpret_cast<Engine*>(user_data);
-    engine->resize_window(ui_event->windowInnerWidth, ui_event->windowInnerHeight);
-    return true;
+    std::string target = get_html5_resize_target();
+    if (target.empty()) {
+        engine->resize_window(ui_event->windowInnerWidth, ui_event->windowInnerHeight);
+    }
+    else {
+        double width, height;
+        emscripten_get_element_css_size(target.c_str(), &width, &height);
+        engine->resize_window(width, height);
+    }
+    return EM_TRUE;
 }
 #endif
 
 Engine* Engine::instance = nullptr;
 
-void resize_callback(GLFWwindow* window, int width, int height)
+void glfw_resize_callback(GLFWwindow* window, int width, int height)
 {
     Engine* engine = reinterpret_cast<Engine*>(glfwGetWindowUserPointer(window));
 
@@ -230,14 +246,13 @@ bool Engine::pre_initialize_renderer()
             webgpu_context->screen_width = mode->width;
             webgpu_context->screen_height = mode->height;
 
-            window = glfwCreateWindow(mode->width, mode->height, "ROOMS", monitor, nullptr);
+            window = glfwCreateWindow(mode->width, mode->height, "wgpuEngine", monitor, nullptr);
         } else {
             webgpu_context->screen_width = screen_width;
             webgpu_context->screen_height = screen_height;
 
-            window = glfwCreateWindow(screen_width, screen_height, "ROOMS", nullptr, nullptr);
+            window = glfwCreateWindow(screen_width, screen_height, "wgpuEngine", nullptr, nullptr);
         }
-
 
         glfwSetWindowTitle(window, configuration.window_title.c_str());
     }
@@ -245,7 +260,7 @@ bool Engine::pre_initialize_renderer()
 
     Input::init(window, use_mirror_screen, use_glfw);
     glfwSetWindowUserPointer(window, this);
-    glfwSetFramebufferSizeCallback(window, resize_callback);
+    glfwSetFramebufferSizeCallback(window, glfw_resize_callback);
 
     renderer->pre_initialize(window, use_mirror_screen);
 

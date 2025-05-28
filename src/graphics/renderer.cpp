@@ -857,7 +857,7 @@ void Renderer::init_depth_buffers()
         eye_depth_texture_view[i] = eye_depth_textures[i].get_view();
     }
 
-    spdlog::info("Depth buffers initialized with size ({}, {})", webgpu_context->render_width, webgpu_context->render_height);
+    spdlog::trace("Depth buffers initialized with size ({}, {})", webgpu_context->render_width, webgpu_context->render_height);
 }
 
 void Renderer::init_multisample_textures()
