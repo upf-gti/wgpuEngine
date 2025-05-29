@@ -118,7 +118,7 @@ bool WebXRContext::end_session()
 void WebXRContext::update_views(WebXRRigidTransform* head_pose, WebXRView views[2], WGPUTextureView texture_view_left, WGPUTextureView texture_view_right)
 {
     for (int i = 0; i < EYE_COUNT; i++) {
-        const glm::mat4 root_model = root_transform->get_model();
+        const glm::mat4& root_model = root_transform ? root_transform->get_model() : glm::mat4(1.0f);
         per_view_data[i].position = root_model * glm::vec4(glm::make_vec3(views[i].viewPose.position), 1.0f);
         per_view_data[i].projection_matrix = glm::make_mat4(views[i].projectionMatrix);
         per_view_data[i].view_matrix = (root_model * glm::make_mat4(views[i].viewPose.matrix));
