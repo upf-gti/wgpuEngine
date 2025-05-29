@@ -105,7 +105,7 @@ protected:
     Frustum frustum_cull;
     MeshInstance3D* selected_mesh_aabb = nullptr;
 
-    bool is_xr_available    = false;
+    bool is_xr_available        = false;
     bool use_mirror_screen      = false;
     bool use_custom_mirror      = false;
 
