@@ -12,6 +12,7 @@ public:
     MeshInstance3D();
 	~MeshInstance3D();
 
+    void update_aabb();
     void set_aabb(const AABB& new_aabb) override;
 
 	virtual void render() override;

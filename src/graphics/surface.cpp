@@ -144,6 +144,21 @@ const WGPUBuffer& Surface::get_index_buffer() const
     return index_buffer;
 }
 
+void Surface::update_aabb(std::vector<glm::vec3>& vertices)
+{
+    glm::vec3 min_pos = { FLT_MAX, FLT_MAX, FLT_MAX };
+    glm::vec3 max_pos = { -FLT_MAX, -FLT_MAX, -FLT_MAX };
+
+    for (auto& vtx : vertices) {
+        min_pos = glm::min(vtx, min_pos);
+        max_pos = glm::max(vtx, max_pos);
+    }
+
+    glm::vec3 aabb_half_size = (max_pos - min_pos) * 0.5f;
+    glm::vec3 aabb_position = min_pos + aabb_half_size;
+    set_aabb({ aabb_position, aabb_half_size });
+}
+
 void Surface::create_axis(float s)
 {
     sSurfaceData vertices;
@@ -343,6 +358,8 @@ void Surface::create_box(float w, float h, float d, const glm::vec3& color)
     vertices.append(neg_z);
 
     spdlog::trace("Box mesh created ({} vertices)", vertices.vertices.size());
+
+    update_aabb(vertices.vertices);
 
     create_surface_data(vertices);
 }
