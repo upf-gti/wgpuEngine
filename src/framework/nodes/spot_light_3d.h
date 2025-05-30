@@ -31,8 +31,8 @@ public:
 
     sLightUniformData get_uniform_data() override;
 
-    float get_inner_cone_angle() { return inner_cone_angle; };
-    float get_outer_cone_angle() { return outer_cone_angle; };
+    float get_inner_cone_angle() const { return inner_cone_angle; };
+    float get_outer_cone_angle() const { return outer_cone_angle; };
 
     void set_range(float value) override;
 

@@ -9,9 +9,6 @@ class Scene {
 
     std::vector<Node*> nodes;
 
-#ifdef __EMSCRIPTEN__
-public:
-#endif
     std::string name;
 
 public:
@@ -27,7 +24,7 @@ public:
     void set_name(const std::string& name);
 
     std::vector<Node*>& get_nodes();
-    const std::string& get_name() { return name; }
+    const std::string& get_name() const { return name; }
 
     void delete_all();
 

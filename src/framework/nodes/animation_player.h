@@ -9,12 +9,6 @@ class MeshInstance3D;
 
 class AnimationPlayer : public Node3D
 {
-#ifdef __EMSCRIPTEN__
-public:
-#endif
-
-    Node3D* root_node = nullptr;
-
     std::string current_animation_name;
 
     bool autoplay   = false;
@@ -36,6 +30,11 @@ public:
 
     void generate_track_data();
 
+#ifdef __EMSCRIPTEN__
+public:
+#endif
+    Node3D* root_node = nullptr;
+
 public:
 
     AnimationPlayer();
@@ -54,7 +53,7 @@ public:
     void set_speed(float new_speed) { speed = new_speed; }
     void set_blend_time(float new_blend_time) { blend_time = new_blend_time; }
     void set_loop_type(uint8_t new_loop_type) { loop_type = new_loop_type; }
-    void set_root_node(Node3D* new_root_node) { root_node = new_root_node; };
+    void set_root_node(Node3D* new_root_node) { root_node = new_root_node; }
 
     float get_playback_time() const { return playback; }
     float get_blend_time() const { return blend_time; }

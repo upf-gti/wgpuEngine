@@ -101,20 +101,20 @@ void Pipeline::create_render_async(Shader* shader, const WGPUColorTargetState& p
     async_compile = true;
 }
 
-void Pipeline::create_compute(Shader* shader, const char* entry_point, const std::vector<WGPUConstantEntry> &constants)
+void Pipeline::create_compute(Shader* shader, const std::string& entry_point, const std::vector<WGPUConstantEntry>& constants)
 {
     create_compute_common(shader);
 
     spdlog::info("Compiling compute pipeline for shader {}", shader->get_path());
 
-	pipeline = webgpu_context->create_compute_pipeline(shader->get_module(), shader->get_pipeline_layout(), entry_point, constants);
+    pipeline = webgpu_context->create_compute_pipeline(shader->get_module(), shader->get_pipeline_layout(), entry_point.c_str(), constants);
 
-	shader->set_pipeline(this);
+    shader->set_pipeline(this);
 
     loaded = true;
 }
 
-void Pipeline::create_compute_async(Shader* shader, const char* entry_point, const std::vector<WGPUConstantEntry> &constants)
+void Pipeline::create_compute_async(Shader* shader, const std::string& entry_point, const std::vector<WGPUConstantEntry> &constants)
 {
     create_compute_common(shader);
 
@@ -125,7 +125,7 @@ void Pipeline::create_compute_async(Shader* shader, const char* entry_point, con
     callback_info.callback = compute_pipeline_creation_callback;
     callback_info.userdata1 = (void*)this;
 
-    webgpu_context->create_compute_pipeline_async(shader->get_module(), shader->get_pipeline_layout(), callback_info, entry_point, constants);
+    webgpu_context->create_compute_pipeline_async(shader->get_module(), shader->get_pipeline_layout(), callback_info, entry_point.c_str(), constants);
 
     shader->set_pipeline(this);
 

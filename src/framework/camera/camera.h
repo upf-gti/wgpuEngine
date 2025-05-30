@@ -59,9 +59,6 @@ public:
     const glm::mat4x4& get_view_projection() const { return view_projection; }
 
 protected:
-#ifdef __EMSCRIPTEN__
-public:
-#endif
 
     glm::mat4x4 view;
     glm::mat4x4 projection;
@@ -74,10 +71,6 @@ public:
 
     eCameraProjectionType type;
 
-    glm::vec3 eye = {};
-    glm::vec3 center = {};
-    glm::vec3 up = { 0.0f, 1.0f, 0.0f };
-
     float fov;
     float aspect;
     float z_near;
@@ -85,4 +78,12 @@ public:
 
     float speed = 1.0f;
     float mouse_sensitivity = 0.01f;
+
+#ifdef __EMSCRIPTEN__
+public:
+#endif
+
+    glm::vec3 eye = {};
+    glm::vec3 center = {};
+    glm::vec3 up = { 0.0f, 1.0f, 0.0f };
 };

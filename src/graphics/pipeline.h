@@ -22,10 +22,10 @@ public:
     void create_render_async(Shader* shader, const WGPUColorTargetState& p_color_target, const RenderPipelineDescription& desc = {}, const std::vector<WGPUConstantEntry>& constants = {});
 
 	//void create_compute(Shader* shader, WGPUPipelineLayout pipeline_layout);
-	void create_compute(Shader* shader, const char* entry_point = "compute", const std::vector<WGPUConstantEntry>& constants = {});
+	void create_compute(Shader* shader, const std::string& entry_point = "compute", const std::vector<WGPUConstantEntry>& constants = {});
 
     //void create_compute_async(Shader* shader, WGPUPipelineLayout pipeline_layout);
-    void create_compute_async(Shader* shader, const char* entry_point = "compute", const std::vector<WGPUConstantEntry>& constants = {});
+    void create_compute_async(Shader* shader, const std::string& entry_point = "compute", const std::vector<WGPUConstantEntry>& constants = {});
 
 	void reload(Shader* shader);
 
