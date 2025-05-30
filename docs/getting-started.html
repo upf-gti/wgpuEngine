@@ -1,16 +1,3 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
-<head>
-    <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
-    <meta name="viewport" content="width=device-width,initial-scale=1.0">
-    <title>wgpuEngine Docs</title>
-    <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v6.4.2/css/all.css">
-    <script type="text/javascript" src="docmaker.js"></script>
-</head>
-
-<body>
-
 <script type="text/javascript">
 
 MAKE_HEADER( "Getting Started", "h1", "getting-started" );
@@ -23,15 +10,15 @@ MAKE_CODE( `@int@ @[mtd]main@()
     @[cls]Renderer@* renderer_instance = @new@ @[cls]Renderer@();
 
     @[cls]sEngineConfiguration@ configuration = {
-        .window_width = 1600,
-        .window_height = 900,
-        .window_title = "wgpuEngine Test",
-        .msaa_count = 4
+        .window_width = @1600@,
+        .window_height = @900@,
+        .window_title = @"wgpuEngine Test"@,
+        .msaa_count = @4@
     };
 
     @if@ (engine_instance->@[mtd]initialize@(renderer_instance, configuration)) {
         @[com]// Exit application if misconfigured@
-        @return@ 1;
+        @return@ @1@;
     }
 
     engine->@[mtd]start_loop@();
@@ -41,7 +28,7 @@ MAKE_CODE( `@int@ @[mtd]main@()
     @delete@ engine;
     @delete@ renderer;
 
-    @return@ 0;
+    @return@ @0@;
 }
 ` );
 
@@ -82,6 +69,3 @@ submitting it. This is handled automatically for the engine, and if you want to 
 the update & render functions of the engine, a scene or a node.` );
 
 </script>
-
-</body>
-</html>

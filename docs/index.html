@@ -5,76 +5,146 @@
     <meta name="viewport" content="width=device-width,initial-scale=1.0">
     <title>wgpuEngine Docs</title>
     <link rel="stylesheet" href="https://cdn.skypack.dev/lexgui/build/lexgui.css">
-    <style>
-        iframe { border: none; }
-    </style>
+    <link rel="stylesheet" href="style.css">
+    <script type="text/javascript" src="docmaker.js"></script>
+    <script type="importmap">
+        {
+          "imports": {
+            "lexgui": "https://cdn.skypack.dev/lexgui/build/lexgui.module.js",
+            "lexgui/components/": "https://cdn.skypack.dev/lexgui/build/components/"
+          }
+        }
+    </script>
 </head>
-    <body></body>
+    <body>
+        <div id="content"></div>
     <script type="module">
 
-        import { LX } from 'https://cdn.skypack.dev/lexgui/build/lexgui.module.js';
+        import { LX } from 'lexgui';
+
+        window.LX = LX;
 
         const mobile = navigator && /Android|iPhone/i.test(navigator.userAgent);
+        const content = document.getElementById('content');
+        const oldScripts = [];
 
-        let url = "build.html";
+        SET_DOM_TARGET( content );
 
-        let iframe = document.createElement('iframe');
-        iframe.id = iframe.name = 'viewer';
-        iframe.src = url;
-        iframe.style.width = "100%";
-        iframe.style.height = "100%";
+        window.loadPage = function(page, addToHistory = true) {
+            fetch(page)
+            .then(response => response.text())
+            .then(html => {
+
+                content.parentElement.scrollTop = 0;
+
+                oldScripts.forEach(script => script.remove());
+
+                const tempDiv = document.createElement("div");
+                tempDiv.innerHTML = html;
+                
+                const scripts = tempDiv.querySelectorAll("script");
+                scripts.forEach(script => script.remove());
+
+                content.innerHTML = tempDiv.innerHTML;
+
+                scripts.forEach(script => {
+                    const newScript = document.createElement("script");
+                    newScript.type = script.type;
+                    if (script.src) {
+                        newScript.src = script.src; // external scripts
+                        newScript.onload = () => console.log(`Loaded: ${script.src}`);
+                    } else {
+                        newScript.textContent = script.textContent; // inline scripts
+                    }
+                    document.body.prepend(newScript);
+                    oldScripts.push( newScript );
+                });
+
+                if (addToHistory) {
+                    history.pushState({ page }, "", `?p=${page.replace( ".html", "" )}`);
+                }
+            })
+            .catch(() => content.innerHTML = "<p>Error loading content.</p>");
+        }
+
+        window.addEventListener("popstate", function (event) {
+            if (event.state?.page) {
+                loadPage(event.state.page, false);
+            }
+        });
 
         // Init library and get main area
-        let area = LX.init();
+        let area = await LX.init( { rootClass: "wrapper" } );
 
-        if( mobile )
+        if( false )
         {
             area.root.style.borderRight = "2px solid gray";
-            area.addMenubar( m => {
+            const menubar = area.addMenubar( m => {
                 m.add( "wgpuEngine", () => { });
-                m.setButtonIcon("Github", "fa-brands fa-github", () => {window.open("https://github.com/upf-gti/wgpuEngine/")}, { float: "left" });
             });
+
+            menubar.setButtonIcon("Github", "Github", () => {window.open("https://github.com/upf-gti/wgpuEngine/")}, { float: "left" });
 
             // Split main area
             area.split({ type: 'vertical', sizes: "auto", resize: false });
             let [top, bottom] = area.sections;
 
             let panel = top.addPanel();
-            fillDocs( panel, true );
+            // fillDocs( panel, true );
 
-            bottom.root.appendChild(iframe);
+            bottom.root.appendChild(content);
         }
         else
         {
-            // Split main area
-            area.split({sizes:["15%","85%"], resize: false});
-            let [left,right] = area.sections;
+            const open = ( url, target, name, dom, event ) => {
+                if( event ) event.preventDefault();
+                if( target )
+                {
+                    window.open( url, target );
+                }
+                else
+                {
+                    loadPage( url );
+                }
+            }
 
-            left.root.style.borderRight = "2px solid gray";
-            left.addMenubar( m => {
-                m.add( "wgpuEngine", () => { });
-                m.setButtonIcon("Github", "fa-brands fa-github", () => {window.open("https://github.com/upf-gti/wgpuEngine/")}, { float: "left" });
+            const sidebar = area.addSidebar( m => {
+                m.group( "Manual" );
+                m.add( "Build", { callback: open.bind( this, "build.html", null ) } );
+                m.add( "Getting Started", { callback: open.bind( this, "getting-started.html", null ) } );
+                m.add( "Creating a 3D Scene", { callback: open.bind( this, "scenes.html", null ) } );
+                m.add( "Materials", { callback: open.bind( this, "materials.html", null ) } );
+                m.add( "Input", { callback: open.bind( this, "Input.html", null ) } );
+                m.add( "UI Components", { callback: open.bind( this, "ui.html", null ) } );
+                m.separator();
+                m.add( "Source Code", { icon: "Code", callback: open.bind( this, "https://github.com/upf-gti/wgpuEngine/", "_blank" ) } );
+            }, { 
+                headerTitle: "wgpuEngine Docs",
+                xheaderSubtitle: 'v' + LX.version,
+                headerImage: "./images/upf.png",
+                footerTitle: "UPF-GTI",
+                xfooterSubtitle: "alexroco.30@gmail.com",
+                xfooterImage: "https://avatars.githubusercontent.com/u/25059187?s=400&u=ad8907b748c13e4e1a7cdd3882826acb6a2928b5&v=4",
+                collapsable: false
             });
 
-            let panel = left.addPanel();
-            fillDocs( panel );
+            const menubar = sidebar.siblingArea.addMenubar();
+            const starterTheme = LX.getTheme();
 
-            right.root.appendChild(iframe);
+            menubar.addButtons([{
+                title: "Change Theme",
+                icon: starterTheme == "dark" ? "Moon" : "Sun",
+                swap: starterTheme == "dark" ? "Sun" : "Moon",
+                callback:  (value, event) => { LX.switchTheme() }
+            }]);
+
+            menubar.siblingArea.root.style.overflowY = "scroll";
+            menubar.siblingArea.root.appendChild( content );
         }
 
-        // **** **** **** **** **** **** **** **** **** **** **** **** 
-
-        function fillDocs( panel, branches_closed ) {
-            panel.clear();
-            panel.branch("Documentation", { closed: branches_closed });
-            panel.addTitle("Build", {link: "build.html", target: 'viewer'});
-            panel.addTitle("Getting started", {link: "getting_started.html", target: 'viewer'});
-            panel.addTitle("Creating a 3D Scene", {link: "scenes.html", target: 'viewer'});
-            panel.addTitle("Materials", {link: "materials.html", target: 'viewer'});
-            panel.addTitle("Input", {link: "input.html", target: 'viewer'});
-            // panel.addTitle("UI Components", {link: "ui.html", target: 'viewer'});
-            panel.merge();
-        }
+        let params = new URLSearchParams( document.location.search );
+        loadPage( ( params.get( "p" ) ?? "build" ) + ".html", false );
 
     </script>
+    </body>
 </html>

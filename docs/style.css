@@ -1,176 +1,119 @@
-@import url('https://fonts.googleapis.com/css2?family=Figtree:ital,wght@0,300..900;1,300..900&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,100..700;1,100..700&display=swap');
+@font-face {
+    font-family: "GeistSans";
+    src: url("https://raw.githubusercontent.com/jxarco/lexgui.js/master/data/GeistSans.ttf");
+}
 
 :root {
 	color-scheme: light dark;
-
-	--color-blue: #049EF4;
-	--text-color: #bbb;
-	--text-color-secondary: #999;
-
-	--font-size: 18px;
-	--line-height: 26px;
 
 	--border-style: 1px solid #444;
 	--panel-width: 300px;
 	--page-padding: 24px;
 	--max-width: 960px;
 	--icon-size: 20px;
+	--stylish-color: light-dark(#fd18a5, #e2c886);
 }
 
-html {
-	font-family: "Figtree", sans-serif;
-	font-size: var(--font-size);
-	line-height: var(--line-height);
-}
-
-body {
-	color: var(--text-color);
+#content {
+	font-family: "GeistSans", sans-serif;
 	tab-size: 4;
-	overflow: auto;
-	overflow-x: hidden;
 	max-width: var(--max-width);
+	width: 100%;
+	height: auto;
 	margin: 0 auto;
 	padding: var(--page-padding);
 	word-break: break-word;
-
 	text-align: justify;
-  	text-justify: inter-word;
+	text-justify: inter-word;
+	border-radius: 12px;
 }
 
-code button {
-	border: 1px solid #666;
-	border-radius: 4px;
+#content .lexarea.docs {
+	margin-block: 1.5em;
+	width: 80% !important;
+	justify-self: center;
+}
+
+#content::-webkit-scrollbar {
+    display: none;
+}
+
+.code-container {
+	position: relative;
+	margin: 16px calc(-1 * var(--page-padding));
+}
+
+.code-container button {
+	border: none;
 	outline: none;
 	background: none;
 	position: absolute;
-	top: 14px;
-	right: 14px;
+	top: 12px;
+	right: 12px;
 	font-size: 18px;
 	padding: 6px;
 	color: #bbb;
-	transition: all 0.25s;
+	transition: color 0.25s;
+	z-index: 1;
 }
 
-code button:hover {
+.code-container button:hover {
 	color: #ccc;
-	border-color: #ccc;
 	cursor: pointer;
 }
 
-code button.copied {
-	border: 1px solid #42d065;
+.code-container button.copied svg {
 	color: #42d065;
 }
 
-::-webkit-scrollbar {
-    height: 3px;
-    width: 4px;
-    background: none;
-    margin-right: 2px;
-}
-
-::-webkit-scrollbar-thumb {
-    background: #aaaaaaa5;
-    border-radius: 6px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-    background: #aaaaaa;
-}
-
-body.rtl h1,
-body.rtl h2,
-body.rtl h3,
-body.rtl h4,
-body.rtl p,
-body.rtl ul,
-body.rtl ol,
-body.rtl table {
-	direction: rtl !important;
-}
-body.rtl code {
-	direction: ltr !important;
-	text-align: initial;
-}
-
-a {
-	color: var(--color-blue);
+#content a {
+	color: var(--global-color-accent-light);
 	cursor: pointer;
 	text-decoration: none;
 }
 
-h1 {
-	font-size: 32px;
-	line-height: 48px;
-	font-weight: 800;
-	margin-left: -2px;
-	margin-top: 16px;
-	margin-bottom: -8px;
-	font-family: "Poppins", sans-serif;
-	text-transform: uppercase;
+#content .lexpanel a, #content .lexarea a {
+	color: unset;
 }
 
-h2 {
+#content h1 {
+	font-size: 32px;
+	line-height: 48px;
+	margin-left: -2px;
+	margin-top: 0.67em;
+	margin-bottom: 0.67em;
+	font-optical-sizing: auto;
+	font-weight: 600;
+	font-style: normal;
+	font-variation-settings: "wdth" 100;
+}
+
+#content h2 {
 	font-size: 28px;
 	line-height: 36px;
 	font-weight: normal;
 	margin-left: -1px;
-	margin-top: 28px;
-	margin-bottom: -8px;
-	font-family: "Poppins", sans-serif;
+	margin-top: 0.83em;
+	margin-bottom: 0.83em;
 }
 
-h3 {
+#content h3 {
 	font-size: 20px;
 	line-height: 28px;
 	font-weight: normal;
-	margin-top: 24px;
-	margin-bottom: -8px;
-	font-family: "Poppins", sans-serif;
-}
-
-p,
-div,
-table,
-ol,
-ul,
-summary {
-	margin-top: 16px;
-	margin-bottom: 16px;
-}
-
-p {
-	padding-right: 16px;
-}
-
-ul, ol {
-	box-sizing: border-box;
-	padding-left: 24px;
-}
-ul li,
-ol li {
-	padding-left: 4px;
-	margin-bottom: 4px;
-}
-
-li ul,
-li ol {
-	margin-top: 4px;
+	margin-top: 0.95em;
+	margin-bottom: 0.95em;
 }
 
 code {
-	font-size: calc(var(--font-size) - 1px);
+	font-family: "Roboto Mono", monospace;
+	font-size: 14px;
 	line-height: calc(var(--line-height) - 1px);
-	margin: 16px calc(-1 * var(--page-padding));
-    background-color: #282828;
+	/* margin: 16px calc(-1 * var(--page-padding)); */
+	background-color: #282828;
 	text-align: unset !important;
-  	text-justify: unset !important;
-}
-
-ol code,
-ul code {
-	margin: 16px 0;
+	text-justify: unset !important;
 }
 
 code.inline {
@@ -182,28 +125,8 @@ code.inline {
 }
 
 code.inline:not(.ref) {
-    color: #e2c886;
-}
-
-table {
-	width: 100%;
-	border-collapse: collapse;
-}
-
-table th,
-table td {
-	text-align: left;
-	vertical-align: top;
-	padding: 8px 6px;
-	border-bottom: var(--border-style);
-}
-
-table th {
-	text-decoration: none;
-}
-table th:first-child,
-table td:first-child {
-	padding-left: 0;
+	color: var(--stylish-color);
+	font-weight: 500;
 }
 
 code:not(.inline) {
@@ -216,138 +139,99 @@ code:not(.inline) {
 	border-radius: 6px;
 }
 
-iframe {
-	width: 100%;
-	height: 420px;
-	border:0;
+code.inline.table {
+	padding: 0px 2px;
+	line-height: unset;
+	font-size: 13px;
 }
 
-table code {
-	padding: 0px;
-	margin: 0px;
-	width: auto;
+code.inline.desc {
+	background-color: var(--global-color-tertiary);
+	color: var(--global-text-tertiary);
 }
 
-strong {
+#content strong {
 	font-weight:900;
 }
 
-a.permalink {
+#content a.permalink {
 	float: right;
 	margin-left: 5px;
 	display: none;
 }
 
-img {
+#content > img {
 	width: 100%;
-	/* height: -webkit-fill-available; */
 	margin: 16px calc(-1 * var(--page-padding)) ;
 	border-radius: 4px;	
 }
 
 @media all and ( min-width: 1700px ) {
-
+	
 	:root {
 		--panel-width: 360px;
-		--font-size: 18px;
 		--line-height: 28px;
 		--page-padding: 28px;
 		--icon-size: 24px;
 	}
 
-	h1 {
+	#content h1 {
 		font-size: 42px;
 		line-height: 50px;
 	}
 
-	h2 {
+	#content h2 {
 		font-size: 32px;
 		line-height: 40px;
 	}
 
-	h3 {
+	#content h3 {
 		font-size: 24px;
 		line-height: 32px;
 	}
+
 }
 
 /* mobile */
 
-@media all and (max-width: 600px) {
+@media all and ( max-width: 640px ) {
 
 	:root {
 		--page-padding: 16px;
-		--icon-size: 24px;
-		--font-size: 18px;
+		--icon-size: 20px;
 	}
 
-	body {
+	#content {
 		padding: var(--page-padding);
 	}
 
-	h1 {
-		font-size: 24px;
+	#content h1 {
+		font-size: 28px;
 		line-height: 36px;
 		padding-right: 20px;
 		margin-top: 0;
 	}
 
-	h2 {
-		font-size: 22px;
+	#content h2 {
+		font-size: 24px;
 		line-height: 32px;
 		margin-top: 24px;
 	}
 
-	h3 {
+	#content h3 {
 		font-size: 20px;
 		line-height: 28px;
 	}
 
-	ul {
-		text-align: left;
-	}
-
-	code {
-		font-size: 14px;
-	}
-
-	code:not(.inline) {
-		border-radius: 0px;
-	}
-}
-
-pre .str, code .str { color: #cd9c5d; } /* string */
-pre .kwd, code .kwd { color: #2194ce; } /* keyword */
-pre .com, code .com { color: #559c54; } /* comment */
-pre .cls, code .cls { color: #50c6a7; } /* class */
-pre .mtd, code .mtd { color: #d9d99f; } /* method */
-pre .pre, code .pre { color: #9c9c9c; } /* preprocessor */
-pre .flw, code .flw { color: #d24aae; } /* control flow */
-pre .enu, code .enu { color: #c0dec2; } /* enum */
-
-.desc {
-	color: var(--text-color-secondary);
-}
-
-a .desc {
-	color: var(--color-blue);
-}
-
-.param {
-	color: #e2c886;
-}
-
-.prop, .method {
-	color: #e2c886;
-	font-size: 21px;
 }
 
 #goUpButton {
 	position: fixed;
+	z-index: 10;
 	bottom: 32px;
 	right: 32px;
 	border: 1px solid #666;
-	border-radius: 4px;
+	border-radius: 6px;
 	outline: none;
 	background: none;
 	font-size: 18px;
@@ -362,4 +246,111 @@ a .desc {
 	color: #ccc;
 	border-color: #ccc;
 	cursor: pointer;
+}
+
+pre .str, code .str { color: #c79369; } /* string */
+pre .kwd, code .kwd { color: #2194ce; } /* keyword */
+pre .com, code .com { color: #999999; } /* comment */
+pre .cls, code .cls { color: #4fccbd; } /* class */
+pre .lit, code .lit { color: #ce57b4; } /* literal */
+pre .pln, code .pln { color: #444444; } /* plaintext */
+pre .dec, code .dec { color: #75e060; } /* decimal */
+pre .mtd, code .mtd { color: #e6e2b8; } /* method */
+pre .pre, code .pre { color: #9c9c9c; } /* preprocessor */
+pre .enu, code .enu { color: #c0dec2; } /* enum */
+
+pre .tag, code .tag { color: #2194ce; } /* HTML tag */
+pre .atn, code .atn { color: #81cdf8; } /* HTML attribute name */
+pre .com, code .com { color: #4e994d; } /* comment */
+pre .pln, code .pln { color: #aaaaaa; } /* plaintext */
+
+.desc {
+	color: var(--global-text-tertiary);
+}
+
+a .desc {
+	color: var(--global-color-accent);
+}
+
+.param {
+	color: var(--stylish-color);
+}
+
+.prop, .method {
+	color: var(--stylish-color);
+	font-size: 16px;
+}
+
+code:has(.constructor) {
+	background: none;
+}
+
+.constructor {
+	color: var(--stylish-color);
+	font-size: 21px;
+}
+
+#content span.solid {
+	/* background-color: var(--global-selected); */
+	border-radius: 8px;
+	padding: 2px;
+	padding-inline: 8px;
+}
+
+#content span.outline {
+	/* border: 1px solid var(--global-accent); */
+	/* color: var(--global-selected); */
+	border-radius: 8px;
+	padding: 2px;
+	padding-inline: 8px;
+}
+
+:root[data-theme="light"] #content {
+	color: #202124;
+}
+
+:root[data-theme="light"] code {
+	background-color: #ededed;
+}
+
+:root[data-theme="light"] code button {
+	color: #434e53;
+}
+
+:root[data-theme="light"] code button:hover {
+	color: #879094;
+}
+
+:root[data-theme="light"] pre .str, :root[data-theme="light"] code .str { color: #188038; }
+:root[data-theme="light"] pre .kwd, :root[data-theme="light"] code .kwd { color: #1967d2; }
+:root[data-theme="light"] pre .com, :root[data-theme="light"] code .com { color: #b80672; }
+:root[data-theme="light"] pre .typ, :root[data-theme="light"] code .typ { color: #0b9484; }
+:root[data-theme="light"] pre .dec, :root[data-theme="light"] code .dec { color: #c5221f; }
+:root[data-theme="light"] pre .mtd, :root[data-theme="light"] code .mtd { color: #504f4c; }
+:root[data-theme="light"] pre .lit, :root[data-theme="light"] code .lit { color: #1967d2; }
+:root[data-theme="light"] pre .tag, :root[data-theme="light"] code .tag { color: #2183b4; }
+:root[data-theme="light"] pre .atn, :root[data-theme="light"] code .atn { color: #a753c0; }
+
+:root[data-theme="light"] .desc {
+	color: #70777a;
+}
+
+:root[data-theme="light"] a .desc {
+	color: var(--global-color-accent);
+}
+
+:root[data-theme="light"] .param {
+	color: #37474f;
+}
+
+:root[data-theme="light"] .prop, :root[data-theme="light"] .method {
+	color: #37474f;
+}
+
+:root[data-theme="light"] #goUpButton {
+	color: #37474f;
+}
+
+:root[data-theme="light"] #goUpButton:hover {
+	color: #879094;
 }
