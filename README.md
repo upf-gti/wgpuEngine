@@ -9,7 +9,7 @@ It uses Dawn, which provides WebGPU for desktop and web (via [emscripten](https:
 
 glTF scene showcasing PBR  |  Gaussian Splatting scan (by [FABW](https://animationsinstitut.de/de/))
 :-------------------------:|:-------------------------:
-![image](https://www.upf.edu/documents/261055318/0/wgpuEngine+03_02_2025+18_32_02+%281%29.png/192c5f3a-6923-66ac-93d3-d3f9fe2e16a1?t=1738654624796)  |  ![image](https://www.upf.edu/documents/261055318/0/wgpuEngine+03_02_2025+18_42_06.png/7aaa2a5a-2f19-72b3-4b3e-256a80e5ce89?t=1738653886454)
+![image](https://github.com/user-attachments/assets/5a190d79-402e-4f69-a7b6-fb505e1488cb)  |  ![image](https://github.com/user-attachments/assets/7b472234-a941-4095-b082-bc5099b0ac1a)
 
 ## Documentation & Examples
 
