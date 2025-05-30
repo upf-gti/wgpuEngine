@@ -23,6 +23,27 @@ WebXRContext::~WebXRContext()
 
 }
 
+bool WebXRContext::is_session_supported()
+{
+    webxr_is_session_supported(WEBXR_SESSION_MODE_IMMERSIVE_VR, [](void* userData, int mode, bool supported) {
+        static_cast<WebXRContext*>(userData)->set_session_supported(supported);
+    }, this);
+
+    while (!session_queried) {
+        emscripten_sleep(1); // Allows browser to run events
+    }
+
+    spdlog::info("WebXR session supported: {}", session_supported);
+
+    return session_supported;
+}
+
+void WebXRContext::set_session_supported(bool value)
+{
+    session_supported = value;
+    session_queried = true;
+}
+
 bool WebXRContext::init(WebGPUContext* webgpu_context)
 {
     spdlog::info("WebXR init");
@@ -97,7 +118,7 @@ bool WebXRContext::end_session()
 void WebXRContext::update_views(WebXRRigidTransform* head_pose, WebXRView views[2], WGPUTextureView texture_view_left, WGPUTextureView texture_view_right)
 {
     for (int i = 0; i < EYE_COUNT; i++) {
-        const glm::mat4 root_model = root_transform->get_model();
+        const glm::mat4& root_model = root_transform ? root_transform->get_model() : glm::mat4(1.0f);
         per_view_data[i].position = root_model * glm::vec4(glm::make_vec3(views[i].viewPose.position), 1.0f);
         per_view_data[i].projection_matrix = glm::make_mat4(views[i].projectionMatrix);
         per_view_data[i].view_matrix = (root_model * glm::make_mat4(views[i].viewPose.matrix));

@@ -24,6 +24,18 @@ void MeshInstance3D::set_aabb(const AABB& new_aabb)
     aabb = new_aabb;
 }
 
+void MeshInstance3D::update_aabb()
+{
+    AABB entity_aabb;
+
+    for (const Surface* surface : get_surfaces()) {
+        const AABB& surface_aabb = surface->get_aabb();//.transform(get_global_model());
+        entity_aabb = merge_aabbs(entity_aabb, surface_aabb);
+    }
+
+    set_aabb(entity_aabb);
+}
+
 void MeshInstance3D::render()
 {
     Renderer::instance->add_renderable(mesh_instance, get_global_transform().get_model());

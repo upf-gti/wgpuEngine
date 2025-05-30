@@ -28,6 +28,8 @@ struct WebXRContext : public XRContext {
     * XR General
     */
 
+    bool session_queried = false;
+    bool session_supported = false;
     bool initialized = false;
 
     bool init(WebGPUContext* webgpu_context) override;
@@ -52,6 +54,8 @@ struct WebXRContext : public XRContext {
     * XR Session
     */
 
+    bool is_session_supported();
+    void set_session_supported(bool value);
     void on_frame(WebXRRigidTransform* head_pose, WebXRView views[2], WGPUTextureView texture_view_left, WGPUTextureView texture_view_right);
     bool begin_session() override;
     bool end_session() override;

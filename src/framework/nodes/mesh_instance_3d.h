@@ -15,6 +15,7 @@ public:
     MeshInstance3D();
 	~MeshInstance3D();
 
+    void update_aabb();
     void set_aabb(const AABB& new_aabb) override;
     void set_surface_material_override(Surface* surface, Material* material);
     void set_frustum_culling_enabled(bool enabled);

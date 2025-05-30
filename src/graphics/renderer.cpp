@@ -74,7 +74,7 @@ Renderer::Renderer(const sRendererConfiguration& config)
     spdlog::info("Creating WebXR context");
 
     WebXRContext* webxr_context = new WebXRContext();
-    is_xr_available = true; // TODO: query support
+    is_xr_available = webxr_context->is_session_supported();
 
     xr_context = webxr_context;
 #endif
@@ -169,7 +169,7 @@ int Renderer::post_initialize()
     xr_context->z_far = z_far;
 
     if (is_xr_available && !xr_context->init(webgpu_context)) {
-        spdlog::error("Could not initialize OpenXR context");
+        spdlog::error("Could not initialize XR context");
         is_xr_available = false;
     }
 
@@ -385,7 +385,9 @@ void Renderer::render()
 
                 resize_window(viewport.z, viewport.w);
 
+#if defined(USE_MIRROR_WINDOW)
                 init_mirror_pipeline();
+#endif
             }
         }
 #endif

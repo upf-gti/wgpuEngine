@@ -128,4 +128,5 @@ public:
 
     AABB get_aabb() const;
     void set_aabb(AABB aabb);
+    void update_aabb(std::vector<glm::vec3>& vertices);
 };
