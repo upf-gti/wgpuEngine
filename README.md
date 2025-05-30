@@ -1,22 +1,28 @@
-# wgpuEngine
+# wgpuEngine: WebGPU Cross-platform 3D engine
 
 `wgpuEngine` is an open-source cross-platform engine designed for creating desktop, XR (extended reality), and 3D web applications. Built on top of the newest graphics API  WebGPU, it provides a solution to render complex scenes, animations, and immersive experiences. 
 
-It uses Dawn, which provides WebGPU for desktop and web (via [emscripten](https://emscripten.org/)). We are still using a [forked version](https://github.com/blitz-research/dawn) until the official one adds XR support. For desktop XR it uses OpenXR. 
+It uses Dawn, which provides WebGPU for desktop and web (via [emscripten](https://emscripten.org/)). We are still using a [forked version](https://github.com/blitz-research/dawn) until the official one adds XR support. It supports XR via OpenXR for desktop and WebXR for web environments.
 
 > [!IMPORTANT]
-> Web XR still not available until WebGPU and WebXR are integrated.
+> Support for Web XR is already available via new WebGPU-WebXR binding!
+
+glTF scene showcasing PBR  |  Gaussian Splatting scan (by [FABW](https://animationsinstitut.de/de/))
+:-------------------------:|:-------------------------:
+![image](https://www.upf.edu/documents/261055318/0/wgpuEngine+03_02_2025+18_32_02+%281%29.png/192c5f3a-6923-66ac-93d3-d3f9fe2e16a1?t=1738654624796)  |  ![image](https://www.upf.edu/documents/261055318/0/wgpuEngine+03_02_2025+18_42_06.png/7aaa2a5a-2f19-72b3-4b3e-256a80e5ce89?t=1738653886454)
+
+## Documentation & Examples
 
 The documentation is still in progress, but you can find it [here](https://upf-gti.github.io/wgpuEngine/)!
 For an example of how to use this engine, check out [Rooms](https://github.com/upf-gti/rooms)!
 
 ## Features
 
-- Web export (Still no XR enabled)
-- Flat screen + Desktop VR Rendering Supported
+- Web export
+- Flat screen + VR Rendering Supported
 - Supported platforms:
     - **Windows**
-    - **Web Chrome**
+    - **Web Browsers**
     - **Mac OS**
 - Supported formats:
     - **.obj** (using [tinyobjloader](https://github.com/tinyobjloader/tinyobjloader))
@@ -36,13 +42,17 @@ For an example of how to use this engine, check out [Rooms](https://github.com/u
     - 3D Text Rendering
     - 2D and 3D Gizmo ([ImGuizmo](https://github.com/CedricGuillemet/ImGuizmo) for 2D)
 
+## Experimental
+
+- C++ to JavaScript bindings to build web applications on the web from scratch ([jsbind branch](https://github.com/upf-gti/wgpuEngine/tree/jsbind))
+- Support web XR applications following expected WebGPU-WebXR interoperability
+- Support deferred rendering
+
 ## Roadmap
 
 - Shadow mapping
-- Support deferred rendering
 - Android support
 - Physics integration
-- Following expected WebGPU-WebXR interoperability, support web XR applications
 
 ## Quick start
 
@@ -142,7 +152,7 @@ cmake --build .
 
 ## Support
 
-This project is being developed with partial financial support of:
+This project has received partial financial support of:
 
 |  MAX-R Project (HORIZON) | Wi-XR Project (PID2021-123995NB-I00) |
 | --- | --- |
