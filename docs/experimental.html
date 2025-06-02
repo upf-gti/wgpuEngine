@@ -1,0 +1,33 @@
+<script type="text/javascript">
+
+MAKE_HEADER( "Experimental features", "h1", "experimental" );
+
+MAKE_HEADER( "Store texture to disk", "h3" );
+
+MAKE_PARAGRAPH( ` In order to use this feature, you should be on the ${ INLINE_CODE( "TextureStorageToDisk" ) } branch of the engine.`, true );
+MAKE_LINE_BREAK();
+MAKE_LINE_BREAK();
+MAKE_PARAGRAPH( `The renderer has a method in order to store any WGPUTexture, from V-RAM to disk storage. Currently the only supported format is PPM (with values ranging from 0 to 255), due to its simplicity.` );
+MAKE_PARAGRAPH( `This method is async, so it will not happen at the moment that the function is called. On debug mode, when storing the image a hitching can happen, due to some overheads, due to this we recommend 
+to avoid taking captures for all frames in debug mode. In order to store the current frame, it would be necessary to store the current ${ INLINE_CODE( "screen_surface_texture" ) }.` );
+
+MAKE_CODE( `@[cls]Renderer@* @[var]renderer@ = @[cls]Renderer@::@[stc]instance@;
+@[var]renderer@.@[mtd]store_texture_to_disk@(
+    @[var]current_command_encoder@,
+    @[var]screen_surface_texture@.texture,
+    { @[var]texture_width@, @[var]texture_height@, @1u@ },
+    @"result.ppm"@
+);` );
+
+MAKE_HEADER( "Store G-Buffers to disk", "h3" );
+
+MAKE_PARAGRAPH( `Similar to the previous feature, but simpler. Just signal the renderer in wich frame do you want to record and store the G-Buffers, and will generate a Color PPM, a Normal PPM and a Depth PPM.
+Just set the base name and dir of the PPM files. The depth texture is stored in a non-linear way, so you night need to check the projection matrix in order to use this values.` );
+
+MAKE_CODE( `@[com]// Wherever in the Update function:@
+
+@[cls]Renderer@* @[var]renderer@ = @[cls]Renderer@::@[stc]instance@;
+@[var]renderer@.@[mtd]set_store_gbuffers@(@"results/GBuffer_test_"@);
+@[com]// This will store in the results folder de GBuffer_test_0.ppm (color),@ 
+@[com]// GBuffer_test_1.ppm(normal) and GBuffer_test_depth.ppm(depth)@` );
+</script>

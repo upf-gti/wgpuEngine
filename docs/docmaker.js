@@ -2,6 +2,7 @@
 
 const KEY_WORDS = ['int', 'float', 'double', 'bool', 'char', 'wchar_t', 'const', 'static_cast', 'dynamic_cast', 'new', 'delete', 'void', 'true', 'false', 'auto', 'struct', 'typedef', 'nullptr', 
 -    'NULL', 'unsigned', 'namespace'];
+const CLASS_WORDS = ['uint32_t', 'uint64_t', 'uint8_t'];
 const STATEMENT_WORDS = ['for', 'if', 'else', 'return', 'continue', 'break', 'case', 'switch', 'while', 'using'];
 const HTML_ATTRIBUTES = ['html', 'charset', 'rel', 'src', 'href', 'crossorigin', 'type', 'lang'];
 const HTML_TAGS = ['html', 'DOCTYPE', 'head', 'meta', 'title', 'link', 'script', 'body', 'style'];
@@ -108,19 +109,23 @@ function MAKE_CODE( text )
 
                 if( KEY_WORDS.includes( content ) )
                 {
-                    highlight = "kwd";    
+                    highlight = "kwd";
+                }
+                else if( CLASS_WORDS.includes( content ) )
+                {
+                    highlight = "cls";
                 }
                 else if( STATEMENT_WORDS.includes( content ) )
                 {
-                    highlight = "lit";    
+                    highlight = "lit";
                 }
                 else if( HTML_TAGS.includes( content ) )
                 {
-                    highlight = "tag";    
+                    highlight = "tag";
                 }
                 else if( HTML_ATTRIBUTES.includes( content ) )
                 {
-                    highlight = "atn";    
+                    highlight = "atn";
                 }
                 else if( ( content[ 0 ] == '"' && content[ content.length - 1 ] == '"' ) ||
                         ( content[ 0 ] == "'" && content[ content.length - 1 ] == "'" ) ||
@@ -130,7 +135,7 @@ function MAKE_CODE( text )
                 }
                 else if( parseFloat( content ) != NaN )
                 {
-                    highlight = "dec";    
+                    highlight = "dec";
                 }
                 else
                 {
@@ -169,7 +174,7 @@ function MAKE_BULLET_LIST( list )
     let ul = document.createElement('ul');
     for( var el of list ) {
         let li = document.createElement('li');
-        li.className = "leading-relaxed";
+        li.className = "leading-loose";
         li.innerHTML = el;
         ul.appendChild( li );
     }
@@ -185,7 +190,7 @@ function ADD_CODE_LIST_ITEM( item, target )
         return;
     }
     let li = document.createElement('li');
-    li.className = "leading-relaxed";
+    li.className = "leading-loose";
     li.innerHTML = split ? ( item.length == 2 ? INLINE_CODE( item[0] ) + ": " + item[1] : INLINE_CODE( item[0] + " <span class='desc'>(" + item[1] + ")</span>" ) + ": " + item[2] ) : INLINE_CODE( item );
     target.appendChild( li );
 }
@@ -280,10 +285,25 @@ function COPY_SNIPPET( b )
     console.log("Copied!");
 }
 
-function INSERT_IMAGE( src, caption = "" )
+function INSERT_IMAGE( src, caption = "", parent )
 {
     let img = document.createElement('img');
     img.src = src;
     img.alt = caption;
-    mainContainer.appendChild( img );
+    ( parent ?? mainContainer ).appendChild( img );
+}
+
+function INSERT_IMAGES( sources, captions = [], width, height )
+{
+    let div = document.createElement('div');
+    div.style.width = width ?? "auto";
+    div.style.height = height ?? "256px";
+    div.className = "flex flex-row justify-center";
+
+    for( let i = 0; i < sources.length; ++i )
+    {
+        INSERT_IMAGE( sources[ i ], captions[ i ], div );
+    }
+
+    mainContainer.appendChild( div );
 }

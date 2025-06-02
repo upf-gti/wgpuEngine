@@ -28,14 +28,14 @@ obj just includes geometry and materials, so we prefer glb as the main import fo
 
 MAKE_CODE( `@[pre]#include@ @[str]"framework/parsers/parse_gltf.h"@
 
-std::@[cls]vector@<@[cls]Node@*> parsed_entities;
-@[cls]GltfParser@ parser;
+@[lit]std@::@[cls]vector@<@[cls]Node@*> @[var]parsed_entities@;
+@[cls]GltfParser@ @[var]parser@;
 
-parser.@[mtd]parse@(@[str]"data/meshes/our_scene.glb"@, parsed_entities);
-parser.@[mtd]parse@(@[str]"data/meshes/character.glb"@, parsed_entities);
+@[var]parser@.@[mtd]parse@(@[str]"data/meshes/our_scene.glb"@, @[var]parsed_entities@);
+@[var]parser@.@[mtd]parse@(@[str]"data/meshes/character.glb"@, @[var]parsed_entities@);
 
-scene->@[mtd]add_node@(@static_cast@<@[cls]MeshInstance3D@*>(parsed_entities[@0@]));
-scene->@[mtd]add_node@(@static_cast@<@[cls]MeshInstance3D@*>(parsed_entities[@1@]));
+@[var]scene@->@[mtd]add_node@(@static_cast@<@[cls]MeshInstance3D@*>(@[var]parsed_entities@[@0@]));
+@[var]scene@->@[mtd]add_node@(@static_cast@<@[cls]MeshInstance3D@*>(@[var]parsed_entities@[@1@]));
 ` );
 
 MAKE_PARAGRAPH( `In this snippet, we are loading inside a ${ INLINE_CODE( "Node" ) } pointer array all the nodes inside two GLB files, and they are just putting 2 entities inside the scene. 
@@ -47,7 +47,6 @@ MAKE_PARAGRAPH( `You can also create a ${ INLINE_CODE( "MeshInstance3D" ) } by p
 
 MAKE_PARAGRAPH( `The ${ INLINE_CODE( "Surface" ) } can be created from sending geometry in an array form (take into account that the vertex order and config needs to be maintained from our shaders, 
 unless you overload them). The ${ INLINE_CODE( "Surface" ) } class also provides 
-${ INLINE_LINK( "methods for creating simple primitives", "https://github.com/upf-gti/wgpuEngine/blob/630ce20973914a86006401d4a01ed90e9a88222c/src/graphics/surface.h#L87" ) } like 
-// quads, boxes, spheres, cones, cylinders, etc.` );
+${ INLINE_LINK( "methods for creating simple primitives", "https://github.com/upf-gti/wgpuEngine/blob/630ce20973914a86006401d4a01ed90e9a88222c/src/graphics/surface.h#L87" ) } such as quads, boxes, spheres, cones or cylinders.` );
 
 </script>

@@ -1,0 +1,123 @@
+<script type="text/javascript">
+
+MAKE_HEADER( "Custom Shaders", "h1", "shaders" );
+
+MAKE_PARAGRAPH( `Up to this point, we have been looking at the engine part of wgpuEngine, but it also features some frameworks for better quality of life when working with WebGPU directly. 
+We provide some abstractions for computing bindgroups and pipelines, without the need of creating the BindgroupLayout.` );
+MAKE_LINE_BREAK();
+MAKE_PARAGRAPH( `The first part is to have a valid ${ INLINE_CODE( "webgpu_context" ) } (after the renderer has been initialized) which contains all the functions that we use for generation pipelines and uniforms.` );
+
+MAKE_CODE( `@[cls]Renderer@* @[var]renderer@ = @[cls]Renderer@::@[stc]instance@;
+@[cls]WebGPUContext@* @[var]webgpu_context@ = @[var]renderer@->@[mtd]get_webgpu_context@();
+`);
+
+MAKE_HEADER( "Shaders", "h3" );
+
+MAKE_PARAGRAPH( `wgpuEngine has already defined shaders for PBR rendering, mipmap generation and a few UI components. 
+For creating your own shaders, for raster or compute, you allocate it inside the RenderStorage class (where all the render resources, like textures, meshes and so, are stored):` );
+
+MAKE_CODE( `@[cls]Shader@* @[var]new_shader@ = @[cls]RendererStorage@::@[stf]get_shader@(@"data/new_shader.wgsl"@);`);
+
+MAKE_HEADER( "Buffers", "h3" );
+
+MAKE_PARAGRAPH( `Using the context to create a buffer. Check the ${ INLINE_LINK( "source code", "https://github.com/upf-gti/wgpuEngine/blob/bf3c8abae0dbb80b81ec92562aa5fa7787239680/src/graphics/webgpu_context.h#L103" ) } to see which are the available functions to create different GPU resources. 
+As you can see, you only need to set the buffer size, the usage, a default value (or a null pointer if none), and an optional debug name. The last one is standard for all resource creation in the engine:` );
+
+MAKE_CODE( `@[cls]WGPUBuffer@ @[var]new_buffer@ = @[var]webgpu_context@->@[mtd]create_buffer@(
+    @[var]buffer_size@,
+    @[enu]WGPUBufferUsage_CopyDst@ | @[enu]WGPUBufferUsage_Storage@,
+    &@[var]default_variable@,
+    @"New buffer"@
+);
+
+@[com]// Update@
+@[var]webgpu_context@->@[mtd]update_buffer@(@[var]new_buffer@, @0@, &@[var]new_val@, @[mtd]sizeof@(@[var]buffer_size@));`);
+
+MAKE_PARAGRAPH( `All these functions return WebGPU native types, so for cleaning & deallocating, you can just use the WebGPU functions.`, true );
+
+MAKE_HEADER( "Uniforms", "h3" );
+
+MAKE_PARAGRAPH( `The Uniform class is used to relate GPU resources to different bindings, in order to be added to a bindgroup later.` );
+
+MAKE_CODE( `@[com]// Uniform buffer@
+@[cls]Uniform@ @[var]uni@;
+@[var]uni@.data = @[var]webgpu_context@->@[mtd]create_buffer@(
+    @[var]buff_size@,
+    @[enu]WGPUBufferUsage_CopyDst@ | @[enu]WGPUBufferUsage_Storage@,
+    @nullptr@,
+    @"New uniform"@
+);
+@[var]uni@.binding = @6@;
+@[var]uni@.buffer_size = @[var]buff_size@;
+
+@[com]// Texture uniform@
+@[cls]Texture@ @[var]color_tex@;
+@[var]color_tex@.@[mtd]create@(
+    @[enu]WGPUTextureDimension_2D@,
+    @[enu]WGPUTextureFormat_R32Float@,
+    { @1080u@, @720u@, @1u@ },
+    @static_cast@<@[enu]WGPUTextureUsage@>(
+        @[enu]WGPUTextureUsage_TextureBinding@ | 
+        @[enu]WGPUTextureUsage_StorageBinding@ | 
+        @[enu]WGPUTextureUsage_CopySrc@
+    ),
+    @1@, 
+    @1@, 
+    @nullptr@
+);
+
+@[cls]Uniform@ @[var]color_tex_uniform@;
+@[var]color_tex_uniform@.data = @[var]color_tex@.@[mtd]get_view@(@[enu]WGPUTextureViewDimension_2D@);
+@[var]color_tex_uniform@.binding = @3@;
+`);
+
+MAKE_HEADER( "Bind Groups", "h3" );
+
+MAKE_PARAGRAPH( `For generating bind groups, you just need to group the uniforms and indicate the bind group index in the shader. There is no need to create the bindgroup layout, since it is analyzed from the shader.` );
+
+MAKE_CODE( `@uint32_t@ @[var]bindgroup_index@ = @1u@;
+@[lit]std@::@[cls]vector@<@Uniform@*> @[var]uniforms@ = { &@[var]color_tex_uni@, &@[var]normal_tex_uni@ };
+@[cls]WGPUBindGroup@ @[var]mesh_bindgroup@ = @[var]webgpu_context@->@[mtd]create_bind_group@(
+    @[var]uniforms@,
+    @[var]shader@,
+    @[var]bindgroup_index@,
+    @"Mesh bindgroup"@
+);
+`);
+
+MAKE_HEADER( "Pipelines", "h3" );
+
+MAKE_PARAGRAPH( `Creating pipelines from a shader. It is recommended to use the async variant, since it does not stop the application until it is compiled, however you need to check if the pipeline is created before using it.` );
+
+MAKE_CODE( `@[cls]Pipeline@ @[var]new_pipeline@;
+@[com]// Create a compute shader@
+@[var]new_pipeline@.@[mtd]create_compute_async@(@[var]shader@);
+@[var]new_pipeline@.@[mtd]create_compute@(@[var]shader@);
+@[com]// Create a raster shader@
+@[var]new_pipeline@.@[mtd]create_render_async@(@[var]shader@);
+@[var]new_pipeline@.@[mtd]create_render@(@[var]shader@);
+`);
+
+MAKE_PARAGRAPH( `Using a pipeline:` );
+
+MAKE_CODE( `@if@ (!@[var]mesh_pipeline@.@[mtd]is_loaded@()) {
+	@return@;
+}
+
+@[var]mesh_pipeline@.@[mtd]set@(@[var]render_pass@);
+
+@[mtd]wgpuRenderPassEncoderSetBindGroup@(@[var]render_pass@, @0@, @[var]mesh_group@, @0@, @nullptr@);
+@[mtd]wgpuRenderPassEncoderSetBindGroup@(@[var]render_pass@, @1@, @[var]camera_group@, @1@, @nullptr@);
+
+@[mtd]wgpuRenderPassEncoderSetVertexBuffer@(
+    @[var]render_pass@,
+    @0@,
+    @[var]surface@->@[mtd]get_vertex_buffer@(),
+    @0@,
+    @[var]surface@->@[mtd]get_vertices_byte_size@()
+);
+
+@[mtd]wgpuRenderPassEncoderDraw@(@[var]render_pass@, @[var]surface@->@[mtd]get_vertex_count@(), @1@, @0@, @0@);
+`);
+
+</script>

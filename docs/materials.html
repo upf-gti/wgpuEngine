@@ -16,31 +16,31 @@ MAKE_BULLET_LIST( [
 
 MAKE_PARAGRAPH( `For more specific data, check the ${ INLINE_LINK( "Material class definition", "https://github.com/upf-gti/wgpuEngine/blob/main/src/graphics/material.h" ) } for a more exhaustive list of all properties.` );
 
-MAKE_PARAGRAPH( `When loading a mesh from an OBJ or GLTF file, the generated ${ INLINE_CODE( "MeshInstance3D" ) } comes with a default material per surface. You can change the material or override 
+MAKE_PARAGRAPH( `When loading a mesh from an OBJ or glTF file, the generated ${ INLINE_CODE( "MeshInstance3D" ) } comes with a default material per surface. You can change the material or override 
 the material’s surface with a different material:` );
 
 MAKE_CODE( `@[com]// Change material example@
-@[cls]MeshInstance3D@* cube_mesh_instance = @[mtd]parse_mesh@(@[str]"data/meshes/cube.obj"@);
+@[cls]MeshInstance3D@* @[var]cube_mesh_instance@ = @[mtd]parse_mesh@(@[str]"data/meshes/cube.obj"@);
 
-@[cls]Material@* material = cube_mesh_instance->@[mtd]get_surface@(@0u@)->@[mtd]get_material@();
-material->@[mtd]set_transparency_type@(@[enu]ALPHA_BLEND@);
-material->@[mtd]set_cull_type@(@[enu]CULL_NONE@);
-material->@[mtd]set_type@(@[enu]MATERIAL_UNLIT@);
-material->@[mtd]set_color@({@1.0f@, @0.0f@, @0.0f@, @1.0f@);
+@[cls]Material@* @[var]material@ = @[var]cube_mesh_instance@->@[mtd]get_surface@(@0u@)->@[mtd]get_material@();
+@[var]material@->@[mtd]set_transparency_type@(@[enu]ALPHA_BLEND@);
+@[var]material@->@[mtd]set_cull_type@(@[enu]CULL_NONE@);
+@[var]material@->@[mtd]set_type@(@[enu]MATERIAL_UNLIT@);
+@[var]material@->@[mtd]set_color@({@1.0f@, @0.0f@, @0.0f@, @1.0f@);
 `);
 
 MAKE_CODE( `@[com]// Override material example@
-@[cls]MeshInstance3D@* cube_mesh_instance = @[mtd]parse_mesh@(@[str]"data/meshes/cube.obj"@);
+@[cls]MeshInstance3D@* @[var]cube_mesh_instance@ = @[mtd]parse_mesh@(@[str]"data/meshes/cube.obj"@);
 
-@[cls]Material@* material = @new@ @[cls]Material@();
-material->@[mtd]set_transparency_type@(@[enu]ALPHA_BLEND@);
-material->@[mtd]set_cull_type@(@[enu]CULL_NONE@);
-material->@[mtd]set_type@(@[enu]MATERIAL_UNLIT@);
-material->@[mtd]set_color@({@1.0f@, @0.0f@, @0.0f@, @1.0f@);
-@[cls]Surface@* cube_surface = cube_mesh_instance->@[mtd]get_surface@(@0u@);
+@[cls]Material@* @[var]material@ = @new@ @[cls]Material@();
+@[var]material@->@[mtd]set_transparency_type@(@[enu]ALPHA_BLEND@);
+@[var]material@->@[mtd]set_cull_type@(@[enu]CULL_NONE@);
+@[var]material@->@[mtd]set_type@(@[enu]MATERIAL_UNLIT@);
+@[var]material@->@[mtd]set_color@({@1.0f@, @0.0f@, @0.0f@, @1.0f@);
+@[cls]Surface@* @[var]cube_surface@ = @[var]cube_mesh_instance@->@[mtd]get_surface@(@0u@);
 
 @[com]// Overload, in this instance, this surface with the new material@
-cube_mesh_instance->@[mtd]set_surface_material_override@(cube_surface, material);
+@[var]cube_mesh_instance@->@[mtd]set_surface_material_override@(@[var]cube_surface@, @[var]material@);
 `);
 
 MAKE_PARAGRAPH( `Next, we will see how to compile your own shaders in the engine, in order to be used for GPU compute or to overload the material.` );

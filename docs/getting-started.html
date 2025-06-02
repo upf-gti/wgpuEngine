@@ -6,27 +6,28 @@ MAKE_PARAGRAPH( `Let's start by looking at the most simple wgpuEngine program po
 
 MAKE_CODE( `@int@ @[mtd]main@()
 {
-    @[cls]Engine@* engine_instance = @new@ @[cls]Engine@();
-    @[cls]Renderer@* renderer_instance = @new@ @[cls]Renderer@();
+    @[cls]Engine@* @[var]engine_instance@ = @new@ @[cls]Engine@();
+    @[cls]Renderer@* @[var]renderer_instance@ = @new@ @[cls]Renderer@();
 
-    @[cls]sEngineConfiguration@ configuration = {
+    @[cls]sEngineConfiguration@ @[var]configuration@ = {
         .window_width = @1600@,
         .window_height = @900@,
         .window_title = @"wgpuEngine Test"@,
         .msaa_count = @4@
     };
 
-    @if@ (engine_instance->@[mtd]initialize@(renderer_instance, configuration)) {
+    @if@ (@[var]engine_instance@->@[mtd]initialize@(@[var]renderer_instance@, @[var]configuration@)) {
         @[com]// Exit application if misconfigured@
         @return@ @1@;
     }
 
-    engine->@[mtd]start_loop@();
+    @[var]engine@->@[mtd]start_loop@();
 
-    engine->@[mtd]clean@();
+    @[var]engine@->@[mtd]clean@();
 
-    @delete@ engine;
-    @delete@ renderer;
+    @delete@ @[var]engine@;
+
+    @delete@ @[var]renderer@;
 
     @return@ @0@;
 }
@@ -37,15 +38,15 @@ MAKE_PARAGRAPH( `Even though from this stage you can start adding nodes and mesh
 
 MAKE_HEADER( "Engine & Renderer", "h2", "engine-renderer" );
 
-MAKE_PARAGRAPH( `In wgpuEngine the Engine side (scene management, application code) are detached from the Renderer (scene representation) by default. 
+MAKE_PARAGRAPH( `In wgpuEngine, the Engine side (scene management, application code) is detached from the Renderer (scene representation) by default. 
 Most projects will use our default renderer, that should cover most of the needs (more on this and expanding the renderer later); however most of the users 
 will need to build their own applications on top of the base application.` );
-
+MAKE_LINE_BREAK();
 MAKE_PARAGRAPH( `wgpuEngine is built around inheritance as a way to expand functionality from some base classes, and two of those are both the Engine and Render classes. 
 The base methods to inherit and that mark lifecycle of the Engine class are:` );
 
 MAKE_CODE_BULLET_LIST( [
-    ["int initialize(Renderer* render_instance, sEngineConfiguration config)", "Method called when initializing the Engine instance. Apart from providing a renderer and a configuration struct for the Engine base class, this method can be used for loading non-render related resources, like setting up scenes and application exclusive configurations."],
+    ["int initialize(Renderer* render_instance, const sEngineConfiguration& config)", "Method called when initializing the Engine instance. Apart from providing a renderer and a configuration struct for the Engine base class, this method can be used for loading non-render related resources, like setting up scenes and application exclusive configurations."],
     ["int post_initialize()", "This method is called automatically when the WebGPU context has been created successfully. Here you can start loading GPU/render related resources (textures, meshes that are stored on GPU memory, buffers, etc..). It is normally used for adding Nodes to scenes."],
     ["void clean()", "Self explanatory, it will clean the Renderer and all the data from the base Engine class. You should use this for cleaning your own allocated in the heap resources, and exiting gracefully."],
     ["void update(float delta_time)", "This method is called one per frame before the render method. Here you should handle all the logic and application changes, from the user input, in order to be presented for the user."],
@@ -55,7 +56,7 @@ MAKE_CODE_BULLET_LIST( [
 MAKE_PARAGRAPH( `On the ${ INLINE_CODE( "Renderer" ) } class, the base methods to inherit are quite similar:` );
 
 MAKE_CODE_BULLET_LIST( [
-    ["int initialize(sRendererConfiguration config)", "Method called when initializing the WebGPU context, from the configuration provided. The configuration determines the default required_limits and features of the wguEngine, and can be overloaded and expanded by the user"],
+    ["int initialize(const sRendererConfiguration& config)", "Method called when initializing the WebGPU context, from the configuration provided. The configuration determines the default required_limits and features of the wguEngine, and can be overloaded and expanded by the user"],
     ["int post_initialize()", "This method is called automatically when the WebGPU context has been created successfully. You can start loading shaders and Pipelines and start creating bindgroups on this step"],
     ["void clean()", "Self explanatory, it will clean the Renderer and all the data from the base class. You should use this for cleaning your own allocated GPU and heap resources, for exiting gracefully"],
     ["void update(float delta_time)", "This method is called one per frame before the render method. You can start preparing the logic for your custom render options here"],

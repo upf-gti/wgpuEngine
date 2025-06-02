@@ -252,11 +252,14 @@ pre .str, code .str { color: #c79369; } /* string */
 pre .kwd, code .kwd { color: #2194ce; } /* keyword */
 pre .com, code .com { color: #999999; } /* comment */
 pre .cls, code .cls { color: #4fccbd; } /* class */
+pre .stc, code .stc { color: #0b6b60; } /* static member */
+pre .stf, code .stf { color: #6d8cf5; } /* static function */
 pre .lit, code .lit { color: #ce57b4; } /* literal */
 pre .pln, code .pln { color: #444444; } /* plaintext */
 pre .dec, code .dec { color: #75e060; } /* decimal */
 pre .mtd, code .mtd { color: #e6e2b8; } /* method */
-pre .pre, code .pre { color: #9c9c9c; } /* preprocessor */
+pre .pre, code .pre { color: #8f8c8c; } /* preprocessor */
+pre .var, code .var { color: #d8d5d5; } /* variable */
 pre .enu, code .enu { color: #c0dec2; } /* enum */
 
 pre .tag, code .tag { color: #2194ce; } /* HTML tag */

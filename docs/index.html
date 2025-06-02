@@ -114,17 +114,24 @@
                 m.add( "Getting Started", { callback: open.bind( this, "getting-started.html", null ) } );
                 m.add( "Creating a 3D Scene", { callback: open.bind( this, "scenes.html", null ) } );
                 m.add( "Materials", { callback: open.bind( this, "materials.html", null ) } );
+                m.add( "Shaders", { callback: open.bind( this, "shaders.html", null ) } );
                 m.add( "Input", { callback: open.bind( this, "input.html", null ) } );
                 // m.add( "UI Components", { callback: open.bind( this, "ui.html", null ) } );
+                m.add( "Experimental", { callback: open.bind( this, "experimental.html", null ) } );
+                m.add( "Support", { callback: open.bind( this, "support.html", null ) } );
+                m.separator();
+                m.group( "Example Apps" );
+                m.add( "Rooms (VR Sculpting)", { callback: open.bind( this, "https://github.com/upf-gti/rooms/", "_blank" ) } );
+                m.add( "Basic Sample", { callback: open.bind( this, "https://github.com/upf-gti/wgpuEngineSample/", "_blank" ) } );
                 m.separator();
                 m.add( "Source Code", { icon: "Code", callback: open.bind( this, "https://github.com/upf-gti/wgpuEngine/", "_blank" ) } );
             }, { 
-                headerTitle: "wgpuEngine Docs",
-                xheaderSubtitle: 'v' + LX.version,
+                headerTitle: "wgpuEngine",
+                headerSubtitle: 'Docs',
                 headerImage: "./images/upf.png",
                 footerTitle: "UPF-GTI",
                 xfooterSubtitle: "alexroco.30@gmail.com",
-                xfooterImage: "https://avatars.githubusercontent.com/u/25059187?s=400&u=ad8907b748c13e4e1a7cdd3882826acb6a2928b5&v=4",
+                footerImage: "./images/upf.png",
                 collapsable: false
             });
 
