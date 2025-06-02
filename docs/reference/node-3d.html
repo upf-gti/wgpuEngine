@@ -1,0 +1,40 @@
+<script type="text/javascript">
+
+    MAKE_PARAGRAPH( `Site under construction...` + LX.makeIcon( "Construction", { svgClass: "xxl"  } ).innerHTML );
+
+    MAKE_HEADER( "Node3D", "h1", "node-3D" );
+    MAKE_PARAGRAPH( `A base class for 3D scene graph nodes. Inherits from Node and provides spatial transformation (position, rotation, scale), hierarchy management, collider shape definition, and scene interaction (such as raycasting and selection). Node3D supports serialization, transformation manipulation, and integrates into the engine's rendering and update loops. It is designed to be extended by other 3D components in the engine.` );
+    MAKE_LINE_BREAK();
+
+    MAKE_CLASS_CONSTRUCTOR( "Node3D", [] );
+
+    MAKE_LINE_BREAK();
+
+    {
+        const area = new LX.Area( { skipAppend: true, height: "auto", className: "mb-6" } );
+        const panel = area.addPanel();
+        content.appendChild( area.root );
+
+        panel.addTable( null, {
+            head: [ "Member", "Type", "Description", "Default" ],
+            body: [
+                ["..", "..", "—", "—"],
+            ].map( v => {
+                return [ INLINE_CODE( v[ 0 ], "table" ), INLINE_CODE( v[ 1 ], "table desc" ), v[ 2 ], v[ 3 ] != "—" ? INLINE_CODE( v[ 3 ], "table desc" ) : v[ 3 ] ];
+            } )
+        }, {});
+        panel.addBlank( null, "24px" );
+        panel.addTable( null, {
+            head: [ "Return type", "Method", "Parameters" ],
+            body: [
+                ["..", "...", "—"],
+            ].map( v => {
+                return [ INLINE_CODE( v[ 0 ], "table desc" ), INLINE_CODE( v[ 1 ], "table" ), v[ 2 ] != "—" ? INLINE_CODE( v[ 2 ], "desc" ) : v[ 2 ] ];
+            } )
+        }, {});
+    }
+
+    MAKE_LINE_BREAK();
+    MAKE_LINE_BREAK();
+
+</script>

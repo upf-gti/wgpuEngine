@@ -1,0 +1,67 @@
+<script type="text/javascript">
+
+    MAKE_PARAGRAPH( `Site under construction...` + LX.makeIcon( "Construction", { svgClass: "xxl"  } ).innerHTML );
+
+    MAKE_HEADER( "WebGPUContext", "h1", "webgpu-context" );
+    MAKE_PARAGRAPH( `Manages the core WebGPU state and resource creation for the engine. This includes initialization and teardown of the WebGPU instance, device, swapchain, and surface, as well as methods for creating GPU resources like textures, buffers, samplers, shaders, pipelines, and bind groups. It also provides utility functions for debugging, mipmap generation, BRDF LUT baking, and integration with XR and window systems like GLFW.` );
+    MAKE_LINE_BREAK();
+
+    MAKE_CLASS_CONSTRUCTOR( "WebGPUContext", [] );
+
+    MAKE_LINE_BREAK();
+
+    {
+        const area = new LX.Area( { skipAppend: true, height: "auto", className: "mb-6" } );
+        const panel = area.addPanel();
+        content.appendChild( area.root );
+
+        panel.addTable( null, {
+            head: [ "Member", "Type", "Description", "Default" ],
+            body: [
+                ["adapter", "WGPUAdapter", "—", "—"],
+                ["device", "WGPUDevice", "—", "—"],
+                ["instance", "WGPUInstance", "—", "—"],
+                ["is_initialized", "bool", "—", "false"],
+                ["render_height", "uint32_t", "—", "0"],
+                ["render_width", "uint32_t", "—", "0"],
+                ["required_limits", "WGPULimits", "—", "—"],
+                ["screen_height", "uint32_t", "—", "0"],
+                ["screen_width", "uint32_t", "—", "0"],
+                ["supported_limits", "WGPULimits", "—", "—"],
+                ["window", "GLFWwindow", "—", "0"],
+            ].map( v => {
+                return [ INLINE_CODE( v[ 0 ], "table" ), INLINE_CODE( v[ 1 ], "table desc" ), v[ 2 ], v[ 3 ] != "—" ? INLINE_CODE( v[ 3 ], "table desc" ) : v[ 3 ] ];
+            } )
+        }, {});
+        panel.addBlank( null, "24px" );
+        panel.addTable( null, {
+            head: [ "Return type", "Method", "Parameters" ],
+            body: [
+                ["void", "close_window", "—"],
+                ["WGPUBindGroup", "create_bind_group", "const std::vector&lt;Uniform*&gt;& uniforms <br> WGPUBindGroupLayout bind_group_layout <br> char const* label"],
+                ["WGPUBindGroup", "create_bind_group", "const std::vector&lt;Uniform*&gt;& uniforms <br> const Shader* shader <br> uint16_t bind_group <br> char const* label"],
+                ["WGPUBindGroupLayout", "create_bind_group_layout", "const std::vector&lt;WGPUBindGroupLayoutEntry&gt;& entries <br> char const* label"],
+                ["WGPUBuffer", "create_buffer", "size_t size <br> int usage <br> const void* data <br> const char* label"],
+                ["void", "create_instance", "—"],
+                ["WGPUPipelineLayout", "create_pipeline_layout", "const std::vector&lt;WGPUBindGroupLayout&gt;& bind_group_layouts <br> const std::string& label"],
+                ["WGPUShaderModule", "create_shader_module", "char const* code"],
+                ["void", "create_swapchain", "int width <br> int height"],
+                ["WGPUTexture", "create_texture", "WGPUTextureDimension dimension <br> WGPUTextureFormat format <br> WGPUExtent3D size <br> WGPUTextureUsage usage <br> uint32_t mipmaps <br> uint8_t sample_count"],
+                ["WGPUTextureView", "create_texture_view", "WGPUTexture texture <br> WGPUTextureViewDimension dimension <br> WGPUTextureFormat format <br> WGPUTextureAspect aspect <br> uint32_t base_mipmap_level <br> uint32_t mip_level_count <br> uint32_t base_array_layer <br> uint32_t array_layer_count <br> const char* label"],
+                ["void", "destroy", "—"],
+                ["WGPUDevice", "get_device", "—"],
+                ["WGPUInstance", "get_instance", "—"],
+                ["int", "initialize", "bool create_screen_swapchain"],
+                ["void", "print_device_info", "—"],
+                ["WGPUFuture", "request_adapter", "XRContext* xr_context <br> bool is_openxr_available"],
+                ["WGPUFuture", "request_device", "const std::vector&lt;WGPUFeatureName&gt; required_features"],
+            ].map( v => {
+                return [ INLINE_CODE( v[ 0 ], "table desc" ), INLINE_CODE( v[ 1 ], "table" ), v[ 2 ] != "—" ? INLINE_CODE( v[ 2 ], "desc" ) : v[ 2 ] ];
+            } )
+        }, {});
+    }
+
+    MAKE_LINE_BREAK();
+    MAKE_LINE_BREAK();
+
+</script>

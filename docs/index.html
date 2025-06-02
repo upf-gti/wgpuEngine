@@ -120,6 +120,13 @@
                 m.add( "Experimental", { callback: open.bind( this, "experimental.html", null ) } );
                 m.add( "Support", { callback: open.bind( this, "support.html", null ) } );
                 m.separator();
+                m.group( "Reference" );
+                m.add( "Graphics" );
+                m.add( "Graphics/RenderPipelineDescription", { callback: open.bind( this, "reference/rendering-pipeline-desc.html", null ) } );
+                m.add( "Graphics/WebGPUContext", { callback: open.bind( this, "reference/webgpu-context.html", null ) } );
+                m.add( "Nodes" );
+                m.add( "Nodes/Node3D", { callback: open.bind( this, "reference/node-3d.html", null ) } );
+                m.separator();
                 m.group( "Example Apps" );
                 m.add( "Rooms (VR Sculpting)", { callback: open.bind( this, "https://github.com/upf-gti/rooms/", "_blank" ) } );
                 m.add( "Basic Sample", { callback: open.bind( this, "https://github.com/upf-gti/wgpuEngineSample/", "_blank" ) } );
