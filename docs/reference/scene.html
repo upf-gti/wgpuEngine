@@ -1,0 +1,52 @@
+<script type="text/javascript">
+
+    MAKE_PARAGRAPH( `Site under construction...` + LX.makeIcon( "Construction", { svgClass: "xxl"  } ).innerHTML );
+
+    MAKE_HEADER( "Scene", "h1", "scene" );
+    MAKE_PARAGRAPH( `Manages a collection of Node pointers representing a scene graph. Supports adding, removing, and bulk adding nodes, naming the scene, and retrieving its nodes. Provides serialization and deserialization to/from file paths.` );
+    MAKE_LINE_BREAK();
+
+    MAKE_CLASS_CONSTRUCTOR( "Scene", [] );
+
+    MAKE_LINE_BREAK();
+
+    {
+        const area = new LX.Area( { skipAppend: true, height: "auto", className: "mb-6" } );
+        const panel = area.addPanel();
+        content.appendChild( area.root );
+
+        // panel.addTable( null, {
+        //     head: [ "Member", "Type", "Default" ],
+        //     body: [
+        //         ["transform", "Transform", "—"],
+        //         ["collider_shape", "eColliderShape", "COLLIDER_SHAPE_AABB"],
+        //         ["selected", "bool", "false"],
+        //     ].map( v => {
+        //         return [ INLINE_CODE( v[ 0 ], "table" ), INLINE_CODE( v[ 1 ], "table desc" ), v[ 2 ] != "—" ? INLINE_CODE( v[ 2 ], "table desc" ) : v[ 2 ] ];
+        //     } )
+        // }, {});
+        // panel.addBlank( null, "24px" );
+        panel.addTable( null, {
+            head: [ "Return type", "Method", "Parameters" ],
+            body: [
+                ["void", "update", "float delta_time"],
+                ["void", "render", "—"],
+                ["void", "add_node", "Node* node <br> int idx = -1"],
+                ["void", "add_nodes", "const std::vector&lt;Node*&gt;&amp; nodes_to_add <br> int idx = -1"],
+                ["void", "remove_node", "Node* node"],
+                ["void", "set_name", "const std::string&amp; name"],
+                ["std::vector&lt;Node*&gt;&amp;", "get_nodes", "—"],
+                ["const std::string&amp;", "get_name", "—"],
+                ["void", "delete_all", "—"],
+                ["void", "serialize", "const std::string&amp; path"],
+                ["void", "parse", "const std::string&amp; path"],
+            ].map( v => {
+                return [ INLINE_CODE( v[ 0 ], "table desc" ), INLINE_CODE( v[ 1 ], "table" ), v[ 2 ] != "—" ? INLINE_CODE( v[ 2 ], "desc text-sm" ) : v[ 2 ] ];
+            } )
+        }, { filter: "Method" });
+    }
+
+    MAKE_LINE_BREAK();
+    MAKE_LINE_BREAK();
+
+</script>

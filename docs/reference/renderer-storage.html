@@ -1,0 +1,66 @@
+<script type="text/javascript">
+
+    MAKE_PARAGRAPH( `Site under construction...` + LX.makeIcon( "Construction", { svgClass: "xxl"  } ).innerHTML );
+
+    MAKE_HEADER( "RendererStorage", "h1", "renderer-storage" );
+    MAKE_PARAGRAPH( `A central singleton class responsible for managing and caching all rendering-related resources in the engine, including shaders, textures, surfaces, pipelines, animations, and material bindings. RendererStorage provides utilities for loading, registering, reusing, and updating GPU resources efficiently. It supports material and UI binding management, shader specialization, and render pipeline key generation.` );
+    MAKE_LINE_BREAK();
+
+    MAKE_CLASS_CONSTRUCTOR( "RendererStorage", [] );
+
+    MAKE_LINE_BREAK();
+
+    {
+        const area = new LX.Area( { skipAppend: true, height: "auto", className: "mb-6" } );
+        const panel = area.addPanel();
+        content.appendChild( area.root );
+
+        // panel.addTable( null, {
+        //     head: [ "Member", "Type", "Default" ],
+        //     body: [
+        //         ["transform", "Transform", "—"],
+        //         ["collider_shape", "eColliderShape", "COLLIDER_SHAPE_AABB"],
+        //         ["selected", "bool", "false"],
+        //     ].map( v => {
+        //         return [ INLINE_CODE( v[ 0 ], "table" ), INLINE_CODE( v[ 1 ], "table desc" ), v[ 2 ] != "—" ? INLINE_CODE( v[ 2 ], "table desc" ) : v[ 2 ] ];
+        //     } )
+        // }, {});
+        // panel.addBlank( null, "24px" );
+        panel.addTable( null, {
+            head: [ "Return type", "Method", "Parameters" ],
+            body: [
+                ["void", "register_material_bind_group", "WebGPUContext* webgpu_context <br> MeshInstance* mesh_instance <br> Material* material"],
+                ["WGPUBindGroup", "get_material_bind_group", "const Material* material"],
+                ["void", "delete_material_bind_group", "WebGPUContext* webgpu_context <br> Material* material"],
+                ["void", "update_material_bind_group", "WebGPUContext* webgpu_context <br> MeshInstance* mesh_instance <br> Material* material"],
+                ["void", "register_ui_widget", "WebGPUContext* webgpu_context <br> Shader* shader <br> void* widget <br> const sUIData&amp; ui_data <br> uint8_t bind_group_id <br> bool force = false"],
+                ["WGPUBindGroup", "get_ui_widget_bind_group", "const void* widget"],
+                ["void", "update_ui_widget", "WebGPUContext* webgpu_context <br> void* entity_mesh <br> const sUIData&amp; ui_data"],
+                ["void", "delete_ui_widget", "WebGPUContext* webgpu_context <br> void* entity_mesh"],
+                ["Shader*", "get_shader", "const std::string&amp; shader_path <br> const Material* material = nullptr <br> const std::vector&lt;std::string&gt;&amp; custom_define_specializations = {}"],
+                ["Shader*", "get_shader", "const std::string&amp; shader_path <br> const std::vector&lt;std::string&gt;&amp; custom_define_specializations"],
+                ["Shader*", "get_shader_from_source", "const char* source <br> const std::string&amp; name <br> const std::vector&lt;std::string&gt;&amp; libraries <br> const Material* material = nullptr <br> const std::vector&lt;std::string&gt;&amp; custom_define_specializations = {}"],
+                ["Shader*", "get_shader_from_source", "const char* source <br> const std::string&amp; name <br> const std::vector&lt;std::string&gt;&amp; libraries <br> const std::vector&lt;std::string&gt;&amp; custom_define_specializations"],
+                ["void", "reload_shader", "const std::string&amp; shader_path"],
+                ["void", "reload_engine_shader", "const std::string&amp; shader_path"],
+                ["Texture*", "get_texture", "const std::string&amp; texture_path <br> TextureStorageFlags flags = TEXTURE_STORAGE_NONE"],
+                ["Surface*", "get_surface", "const std::string&amp; mesh_path"],
+                ["void", "register_basic_surfaces", "—"],
+                ["std::vector&lt;std::string&gt;", "get_common_define_specializations", "const Material* material"],
+                ["void", "reload_all_render_pipelines", "—"],
+                ["void", "register_animation", "const std::string&amp; animation_path <br> Animation* animation"],
+                ["void", "erase_animation", "const std::string&amp; animation_path"],
+                ["Animation*", "get_animation", "const std::string&amp; animation_path"],
+                ["void", "register_render_pipeline", "Material* material"],
+                ["RenderPipelineKey", "get_render_pipeline_key", "Material* material"],
+                ["void", "clean_registered_pipelines", "—"]
+            ].map( v => {
+                return [ INLINE_CODE( v[ 0 ], "table desc" ), INLINE_CODE( v[ 1 ], "table" ), v[ 2 ] != "—" ? INLINE_CODE( v[ 2 ], "desc text-sm" ) : v[ 2 ] ];
+            } )
+        }, { filter: "Method" });
+    }
+
+    MAKE_LINE_BREAK();
+    MAKE_LINE_BREAK();
+
+</script>

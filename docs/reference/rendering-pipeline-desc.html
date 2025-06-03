@@ -1,5 +1,7 @@
 <script type="text/javascript">
 
+    MAKE_PARAGRAPH( `Site under construction...` + LX.makeIcon( "Construction", { svgClass: "xxl"  } ).innerHTML );
+
     MAKE_HEADER( "RenderPipelineDescription", "h1", "render-pipeline-description" );
     MAKE_PARAGRAPH( `Holds configuration settings for creating a WebGPU render pipeline. It includes parameters such as entry points for shaders, depth behavior, topology, culling mode, blending options, and multisampling support.` );
     MAKE_LINE_BREAK();
@@ -10,22 +12,22 @@
         content.appendChild( area.root );
 
         panel.addTable( null, {
-            head: [ "Member", "Type", "Description", "Default" ],
+            head: [ "Type", "Member", "Default" ],
             body: [
-                ["allow_msaa", "bool", "—", "true"],
-                ["blending_enabled", "bool", "—", "false"],
-                ["cull_mode", "WGPUCullMode", "—", "WGPUCullMode_None"],
-                ["depth_compare", "WGPUCompareFunction", "—", "WGPUCompareFunction_Greater"],
-                ["depth_read", "bool", "—", "true"],
-                ["depth_write", "WGPUOptionalBool", "—", "WGPUOptionalBool_True"],
-                ["fs_entry_point", "std::string", "—", `"fs_main"`],
-                ["has_fragment_state", "bool", "—", "true"],
-                ["sample_count", "uint8_t", "—", "1"],
-                ["topology", "WGPUPrimitiveTopology", "—", "WGPUPrimitiveTopology_TriangleList"],
-                ["use_depth", "bool", "—", "true"],
-                ["vs_entry_point", "std::string", "—", `"vs_main"`],
+                ["bool", "allow_msaa", "true"],
+                ["uint8_t", "sample_count", "1"],
+                ["bool", "blending_enabled", "false"],
+                ["WGPUCullMode", "cull_mode", "WGPUCullMode_None"],
+                ["WGPUPrimitiveTopology", "topology", "WGPUPrimitiveTopology_TriangleList"],
+                ["WGPUCompareFunction", "depth_compare", "WGPUCompareFunction_Greater"],
+                ["bool", "depth_read", "true"],
+                ["WGPUOptionalBool", "depth_write", "WGPUOptionalBool_True"],
+                ["bool", "has_fragment_state", "true"],
+                ["bool", "use_depth", "true"],
+                ["std::string", "fs_entry_point", `"fs_main"`],
+                ["std::string", "vs_entry_point", `"vs_main"`],
             ].map( v => {
-                return [ INLINE_CODE( v[ 0 ], "table" ), INLINE_CODE( v[ 1 ], "table desc" ), v[ 2 ], v[ 3 ] != "—" ? INLINE_CODE( v[ 3 ], "table desc" ) : v[ 3 ] ];
+                return [ INLINE_CODE( v[ 0 ], "table desc" ), INLINE_CODE( v[ 1 ], "table" ), v[ 2 ] != "—" ? INLINE_CODE( v[ 2 ], "desc text-sm" ) : v[ 2 ] ];
             } )
         }, {});
     }

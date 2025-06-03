@@ -1,0 +1,75 @@
+<script type="text/javascript">
+
+    MAKE_PARAGRAPH( `Site under construction...` + LX.makeIcon( "Construction", { svgClass: "xxl"  } ).innerHTML );
+
+    MAKE_HEADER( "Node2D", "h1", "node-2D" );
+    MAKE_PARAGRAPH( `A base class for all 2D UI and widget nodes in the engine. Node2D supports hierarchy management, transformations, visibility control, and XR-aware rendering. It stores a sUIData block for rendering and interaction data, and exposes virtual input-handling methods for UI interactivity.` );
+    MAKE_LINE_BREAK();
+
+    MAKE_CLASS_CONSTRUCTOR( "Node2D", [] );
+
+    MAKE_LINE_BREAK();
+
+    {
+        const area = new LX.Area( { skipAppend: true, height: "auto", className: "mb-6" } );
+        const panel = area.addPanel();
+        content.appendChild( area.root );
+
+        // panel.addTable( null, {
+        //     head: [ "Member", "Type", "Default" ],
+        //     body: [
+        //         ["transform", "Transform", "—"],
+        //         ["collider_shape", "eColliderShape", "COLLIDER_SHAPE_AABB"],
+        //         ["selected", "bool", "false"],
+        //     ].map( v => {
+        //         return [ INLINE_CODE( v[ 0 ], "table" ), INLINE_CODE( v[ 1 ], "table desc" ), v[ 2 ] != "—" ? INLINE_CODE( v[ 2 ], "table desc" ) : v[ 2 ] ];
+        //     } )
+        // }, {});
+        // panel.addBlank( null, "24px" );
+        panel.addTable( null, {
+            head: [ "Return type", "Method", "Parameters" ],
+            body: [
+                ["void", "initialize", "—"],
+                ["void", "add_child", "Node2D* child"],
+                ["void", "add_childs", "const std::vector&lt;Node2D*&gt;&amp; childs"],
+                ["void", "remove_child", "Node2D* child"],
+                ["void", "on_children_changed", "—"],
+                ["void", "update_ui_data", "—"],
+                ["void", "render", "—"],
+                ["void", "update", "float delta_time"],
+                ["void", "release", "—"],
+                ["sInputData", "get_input_data", "bool ignore_focus = false"],
+                ["bool", "on_input", "sInputData data"],
+                ["bool", "on_pressed", "—"],
+                ["void", "translate", "const glm::vec2&amp; translation"],
+                ["void", "rotate", "float angle"],
+                ["void", "rotate", "const glm::quat&amp; q"],
+                ["void", "scale", "glm::vec2 scale"],
+                ["Viewport3D*", "get_xr_viewport", "—"],
+                ["const glm::vec2", "get_local_translation", "—"],
+                ["const glm::vec2", "get_translation", "—"],
+                ["const glm::vec2", "get_scale", "—"],
+                ["glm::mat3x3", "get_global_model", "—"],
+                ["glm::mat4x4", "get_global_viewport_model", "—"],
+                ["glm::mat3x3", "get_model", "—"],
+                ["glm::mat3x3", "get_rotation", "—"],
+                ["glm::vec2", "get_size", "—"],
+                ["uint8_t", "get_class_type", "—"],
+                ["bool", "get_visibility", "—"],
+                ["bool", "set_visibility", "bool value <br> bool propagate = true"],
+                ["void", "set_position", "const glm::vec2&amp; translation"],
+                ["void", "set_model", "const glm::mat3x3&amp; _model"],
+                ["void", "set_viewport_model", "glm::mat4x4 model"],
+                ["void", "set_xr_transform", "const Transform&amp; transform"],
+                ["void", "set_priority", "uint8_t priority"],
+                ["void", "clean", "—"]
+            ].map( v => {
+                return [ INLINE_CODE( v[ 0 ], "table desc" ), INLINE_CODE( v[ 1 ], "table" ), v[ 2 ] != "—" ? INLINE_CODE( v[ 2 ], "desc text-sm" ) : v[ 2 ] ];
+            } )
+        }, { filter: "Method" });
+    }
+
+    MAKE_LINE_BREAK();
+    MAKE_LINE_BREAK();
+
+</script>

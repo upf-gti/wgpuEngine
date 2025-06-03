@@ -15,23 +15,55 @@
         const panel = area.addPanel();
         content.appendChild( area.root );
 
-        panel.addTable( null, {
-            head: [ "Member", "Type", "Description", "Default" ],
-            body: [
-                ["..", "..", "—", "—"],
-            ].map( v => {
-                return [ INLINE_CODE( v[ 0 ], "table" ), INLINE_CODE( v[ 1 ], "table desc" ), v[ 2 ], v[ 3 ] != "—" ? INLINE_CODE( v[ 3 ], "table desc" ) : v[ 3 ] ];
-            } )
-        }, {});
-        panel.addBlank( null, "24px" );
+        // panel.addTable( null, {
+        //     head: [ "Member", "Type", "Default" ],
+        //     body: [
+        //         ["transform", "Transform", "—"],
+        //         ["collider_shape", "eColliderShape", "COLLIDER_SHAPE_AABB"],
+        //         ["selected", "bool", "false"],
+        //     ].map( v => {
+        //         return [ INLINE_CODE( v[ 0 ], "table" ), INLINE_CODE( v[ 1 ], "table desc" ), v[ 2 ] != "—" ? INLINE_CODE( v[ 2 ], "table desc" ) : v[ 2 ] ];
+        //     } )
+        // }, {});
+        // panel.addBlank( null, "24px" );
         panel.addTable( null, {
             head: [ "Return type", "Method", "Parameters" ],
             body: [
-                ["..", "...", "—"],
+                ["void", "initialize", "—"],
+                ["void", "render", "—"],
+                ["void", "update", "float delta_time"],
+                ["void", "render_gui", "—"],
+                ["void", "translate", "const glm::vec3&amp; translation"],
+                ["void", "rotate", "float angle <br> const glm::vec3&amp; axis"],
+                ["void", "rotate", "const glm::quat&amp; q"],
+                ["void", "rotate_world", "const glm::quat&amp; q"],
+                ["void", "scale", "const glm::vec3&amp; scale"],
+                ["void", "serialize", "std::ofstream&amp; binary_scene_file"],
+                ["void", "parse", "std::ifstream&amp; binary_scene_file"],
+                ["const glm::vec3", "get_local_translation", "—"],
+                ["const glm::vec3", "get_translation", "—"],
+                ["glm::mat4x4", "get_global_model", "—"],
+                ["glm::mat4x4", "get_model", "—"],
+                ["glm::quat", "get_rotation", "—"],
+                ["Transform&amp;", "get_transform", "—"],
+                ["Transform", "get_global_transform", "—"],
+                ["void", "set_position", "const glm::vec3&amp; translation"],
+                ["void", "set_rotation", "const glm::quat&amp; rotation"],
+                ["void", "set_scale", "const glm::vec3&amp; scale"],
+                ["void", "set_global_transform", "const Transform&amp; new_transform"],
+                ["void", "set_transform", "const Transform&amp; new_transform"],
+                ["void", "set_transform_dirty", "bool value"],
+                ["void", "set_parent", "Node3D* node"],
+                ["bool", "test_ray_collision", "const glm::vec3&amp; ray_origin <br> const glm::vec3&amp; ray_direction <br> float* distance <br> Node3D** out = nullptr"],
+                ["void", "clone", "Node* new_node <br> bool copy = true"],
+                ["void", "select", "—"],
+                ["void", "unselect", "—"],
+                ["bool", "is_selected", "—"],
+                ["bool", "is_child_selected", "—"]
             ].map( v => {
-                return [ INLINE_CODE( v[ 0 ], "table desc" ), INLINE_CODE( v[ 1 ], "table" ), v[ 2 ] != "—" ? INLINE_CODE( v[ 2 ], "desc" ) : v[ 2 ] ];
+                return [ INLINE_CODE( v[ 0 ], "table desc" ), INLINE_CODE( v[ 1 ], "table" ), v[ 2 ] != "—" ? INLINE_CODE( v[ 2 ], "desc text-sm" ) : v[ 2 ] ];
             } )
-        }, {});
+        }, { filter: "Method" });
     }
 
     MAKE_LINE_BREAK();

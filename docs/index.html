@@ -75,86 +75,103 @@
 
         // Init library and get main area
         let area = await LX.init( { rootClass: "wrapper" } );
+        let menubar = null;
 
-        if( false )
-        {
-            area.root.style.borderRight = "2px solid gray";
-            const menubar = area.addMenubar( m => {
-                m.add( "wgpuEngine", () => { });
-            });
-
-            menubar.setButtonIcon("Github", "Github", () => {window.open("https://github.com/upf-gti/wgpuEngine/")}, { float: "left" });
-
-            // Split main area
-            area.split({ type: 'vertical', sizes: "auto", resize: false });
-            let [top, bottom] = area.sections;
-
-            let panel = top.addPanel();
-            // fillDocs( panel, true );
-
-            bottom.root.appendChild(content);
-        }
-        else
-        {
-            const open = ( url, target, name, dom, event ) => {
-                if( event ) event.preventDefault();
-                if( target )
-                {
-                    window.open( url, target );
-                }
-                else
-                {
-                    loadPage( url );
-                }
-            }
-
-            const sidebar = area.addSidebar( m => {
-                m.group( "Manual" );
-                m.add( "Build", { callback: open.bind( this, "build.html", null ) } );
-                m.add( "Getting Started", { callback: open.bind( this, "getting-started.html", null ) } );
-                m.add( "Creating a 3D Scene", { callback: open.bind( this, "scenes.html", null ) } );
-                m.add( "Materials", { callback: open.bind( this, "materials.html", null ) } );
-                m.add( "Shaders", { callback: open.bind( this, "shaders.html", null ) } );
-                m.add( "Input", { callback: open.bind( this, "input.html", null ) } );
-                // m.add( "UI Components", { callback: open.bind( this, "ui.html", null ) } );
-                m.add( "Experimental", { callback: open.bind( this, "experimental.html", null ) } );
-                m.add( "Support", { callback: open.bind( this, "support.html", null ) } );
-                m.separator();
-                m.group( "Reference" );
-                m.add( "Graphics" );
-                m.add( "Graphics/RenderPipelineDescription", { callback: open.bind( this, "reference/rendering-pipeline-desc.html", null ) } );
-                m.add( "Graphics/WebGPUContext", { callback: open.bind( this, "reference/webgpu-context.html", null ) } );
-                m.add( "Nodes" );
-                m.add( "Nodes/Node3D", { callback: open.bind( this, "reference/node-3d.html", null ) } );
-                m.separator();
-                m.group( "Example Apps" );
-                m.add( "Rooms (VR Sculpting)", { callback: open.bind( this, "https://github.com/upf-gti/rooms/", "_blank" ) } );
-                m.add( "Basic Sample", { callback: open.bind( this, "https://github.com/upf-gti/wgpuEngineSample/", "_blank" ) } );
-                m.separator();
-                m.add( "Source Code", { icon: "Code", callback: open.bind( this, "https://github.com/upf-gti/wgpuEngine/", "_blank" ) } );
-            }, { 
-                headerTitle: "wgpuEngine",
-                headerSubtitle: 'Docs',
-                headerImage: "./images/upf.png",
-                footerTitle: "UPF-GTI",
-                xfooterSubtitle: "alexroco.30@gmail.com",
-                footerImage: "./images/upf.png",
-                collapsable: false
-            });
-
-            const menubar = sidebar.siblingArea.addMenubar();
-            const starterTheme = LX.getTheme();
-
-            menubar.addButtons([{
+        const starterTheme = LX.getTheme();
+        const menubarButtons = [
+            {
                 title: "Change Theme",
                 icon: starterTheme == "dark" ? "Moon" : "Sun",
                 swap: starterTheme == "dark" ? "Sun" : "Moon",
                 callback:  (value, event) => { LX.switchTheme() }
-            }]);
+            }
+        ];
 
-            menubar.siblingArea.root.style.overflowY = "scroll";
-            menubar.siblingArea.root.appendChild( content );
+        const sidebarOptions = {
+            headerTitle: "wgpuEngine",
+            headerSubtitle: 'Docs',
+            headerImage: "./images/upf.png",
+            footerTitle: "UPF-GTI",
+            xfooterSubtitle: "alexroco.30@gmail.com",
+            footerImage: "./images/upf.png",
+            collapsed: false,
+            collapsable: false
+        };
+
+        const open = ( url, target, name, dom, event ) => {
+            if( event ) event.preventDefault();
+            if( target )
+            {
+                window.open( url, target );
+            }
+            else
+            {
+                loadPage( url );
+            }
+            if( window.__currentSheet )
+            {
+                window.__currentSheet.destroy();
+            }
         }
+
+        const sidebarCallback = m => {
+            m.group( "Manual" );
+            m.add( "Build", { callback: open.bind( this, "build.html", null ) } );
+            m.add( "Getting Started", { callback: open.bind( this, "getting-started.html", null ) } );
+            m.add( "Creating a 3D Scene", { callback: open.bind( this, "scenes.html", null ) } );
+            m.add( "Materials", { callback: open.bind( this, "materials.html", null ) } );
+            m.add( "Shaders", { callback: open.bind( this, "shaders.html", null ) } );
+            m.add( "Input", { callback: open.bind( this, "input.html", null ) } );
+            // m.add( "UI Components", { callback: open.bind( this, "ui.html", null ) } );
+            m.add( "Experimental", { callback: open.bind( this, "experimental.html", null ) } );
+            m.add( "Support", { callback: open.bind( this, "support.html", null ) } );
+            m.separator();
+            m.group( "Reference" );
+            m.add( "Graphics" );
+            m.add( "Graphics/Material", { callback: open.bind( this, "reference/material.html", null ) } );
+            m.add( "Graphics/RendererStorage", { callback: open.bind( this, "reference/renderer-storage.html", null ) } );
+            m.add( "Graphics/RenderPipelineDescription", { callback: open.bind( this, "reference/rendering-pipeline-desc.html", null ) } );
+            m.add( "Graphics/WebGPUContext", { callback: open.bind( this, "reference/webgpu-context.html", null ) } );
+            m.add( "Nodes" );
+            m.add( "Nodes/MeshInstance3D", { callback: open.bind( this, "reference/mesh-instance-3d.html", null ) } );
+            m.add( "Nodes/Node2D", { callback: open.bind( this, "reference/node-2d.html", null ) } );
+            m.add( "Nodes/Node3D", { callback: open.bind( this, "reference/node-3d.html", null ) } );
+            m.add( "Nodes/Scene", { callback: open.bind( this, "reference/scene.html", null ) } );
+            m.separator();
+            m.group( "Example Apps" );
+            m.add( "Rooms (VR Sculpting)", { callback: open.bind( this, "https://github.com/upf-gti/rooms/", "_blank" ) } );
+            m.add( "Basic Sample", { callback: open.bind( this, "https://github.com/upf-gti/wgpuEngineSample/", "_blank" ) } );
+            m.separator();
+            m.add( "Source Code", { icon: "Code", callback: open.bind( this, "https://github.com/upf-gti/wgpuEngine/", "_blank" ) } );
+        };
+
+        if( mobile )
+        {
+            menubar = area.addMenubar();
+
+            const sheetArea = new LX.Area({ skipAppend: true });
+            sheetArea.addSidebar( sidebarCallback, sidebarOptions );
+
+            menubarButtons.splice( 0, 0,
+                {
+                    title: "Menu",
+                    icon: "PanelLeft",
+                    callback: (value, event) => {
+                        window.__currentSheet = new LX.Sheet("256px", [ sheetArea ] );
+                    }
+                }
+            );
+        }
+        else
+        {
+            const sidebar = area.addSidebar( sidebarCallback, sidebarOptions );
+            menubar = sidebar.siblingArea.addMenubar();
+        }
+
+        menubar.addButtons( menubarButtons );
+
+        menubar.siblingArea.root.style.overflowY = "scroll";
+        menubar.siblingArea.root.appendChild( content );
 
         let params = new URLSearchParams( document.location.search );
         loadPage( ( params.get( "p" ) ?? "build" ) + ".html", false );

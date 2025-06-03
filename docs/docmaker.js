@@ -290,20 +290,33 @@ function INSERT_IMAGE( src, caption = "", parent )
     let img = document.createElement('img');
     img.src = src;
     img.alt = caption;
+    img.className = "my-1";
     ( parent ?? mainContainer ).appendChild( img );
 }
 
 function INSERT_IMAGES( sources, captions = [], width, height )
 {
-    let div = document.createElement('div');
-    div.style.width = width ?? "auto";
-    div.style.height = height ?? "256px";
-    div.className = "flex flex-row justify-center";
+    const mobile = navigator && /Android|iPhone/i.test(navigator.userAgent);
 
-    for( let i = 0; i < sources.length; ++i )
+    if( !mobile )
     {
-        INSERT_IMAGE( sources[ i ], captions[ i ], div );
-    }
+        let div = document.createElement('div');
+        div.style.width = width ?? "auto";
+        div.style.height = height ?? "256px";
+        div.className = "flex flex-row justify-center";
 
-    mainContainer.appendChild( div );
+        for( let i = 0; i < sources.length; ++i )
+        {
+            INSERT_IMAGE( sources[ i ], captions[ i ], div );
+        }
+
+        mainContainer.appendChild( div );
+    }
+    else
+    {
+        for( let i = 0; i < sources.length; ++i )
+        {
+            INSERT_IMAGE( sources[ i ], captions[ i ] );
+        }
+    }
 }

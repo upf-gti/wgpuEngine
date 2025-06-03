@@ -3,7 +3,7 @@
     MAKE_PARAGRAPH( `Site under construction...` + LX.makeIcon( "Construction", { svgClass: "xxl"  } ).innerHTML );
 
     MAKE_HEADER( "WebGPUContext", "h1", "webgpu-context" );
-    MAKE_PARAGRAPH( `Manages the core WebGPU state and resource creation for the engine. This includes initialization and teardown of the WebGPU instance, device, swapchain, and surface, as well as methods for creating GPU resources like textures, buffers, samplers, shaders, pipelines, and bind groups. It also provides utility functions for debugging, mipmap generation, BRDF LUT baking, and integration with XR and window systems like GLFW.` );
+    MAKE_PARAGRAPH( `Manages the core WebGPU state and resource creation for the engine. This includes initialization and teardown of the WebGPU instance, device, swapchain, and surface, as well as methods for creating GPU resources like textures, buffers, samplers, shaders, pipelines, and bind groups.` );
     MAKE_LINE_BREAK();
 
     MAKE_CLASS_CONSTRUCTOR( "WebGPUContext", [] );
@@ -16,49 +16,71 @@
         content.appendChild( area.root );
 
         panel.addTable( null, {
-            head: [ "Member", "Type", "Description", "Default" ],
+            head: [ "Type", "Member", "Default" ],
             body: [
-                ["adapter", "WGPUAdapter", "—", "—"],
-                ["device", "WGPUDevice", "—", "—"],
-                ["instance", "WGPUInstance", "—", "—"],
-                ["is_initialized", "bool", "—", "false"],
-                ["render_height", "uint32_t", "—", "0"],
-                ["render_width", "uint32_t", "—", "0"],
-                ["required_limits", "WGPULimits", "—", "—"],
-                ["screen_height", "uint32_t", "—", "0"],
-                ["screen_width", "uint32_t", "—", "0"],
-                ["supported_limits", "WGPULimits", "—", "—"],
-                ["window", "GLFWwindow", "—", "0"],
+                ["WGPUAdapter", "adapter", "—"],
+                ["WGPUDevice", "device", "—"],
+                ["WGPUInstance", "instance", "—"],
+                ["bool", "is_initialized", "false"],
+                ["uint32_t", "render_width", "0"],
+                ["uint32_t", "render_height", "0"],
+                ["uint32_t", "screen_width", "0"],
+                ["uint32_t", "screen_height", "0"],
+                ["WGPULimits", "required_limits", "—"],
+                ["WGPULimits", "supported_limits", "—"],
+                ["GLFWwindow", "window", "—"],
             ].map( v => {
-                return [ INLINE_CODE( v[ 0 ], "table" ), INLINE_CODE( v[ 1 ], "table desc" ), v[ 2 ], v[ 3 ] != "—" ? INLINE_CODE( v[ 3 ], "table desc" ) : v[ 3 ] ];
+                return [ INLINE_CODE( v[ 0 ], "table desc" ), INLINE_CODE( v[ 1 ], "table" ), v[ 2 ] != "—" ? INLINE_CODE( v[ 2 ], "table desc" ) : v[ 2 ] ];
             } )
         }, {});
         panel.addBlank( null, "24px" );
         panel.addTable( null, {
             head: [ "Return type", "Method", "Parameters" ],
             body: [
-                ["void", "close_window", "—"],
-                ["WGPUBindGroup", "create_bind_group", "const std::vector&lt;Uniform*&gt;& uniforms <br> WGPUBindGroupLayout bind_group_layout <br> char const* label"],
-                ["WGPUBindGroup", "create_bind_group", "const std::vector&lt;Uniform*&gt;& uniforms <br> const Shader* shader <br> uint16_t bind_group <br> char const* label"],
-                ["WGPUBindGroupLayout", "create_bind_group_layout", "const std::vector&lt;WGPUBindGroupLayoutEntry&gt;& entries <br> char const* label"],
-                ["WGPUBuffer", "create_buffer", "size_t size <br> int usage <br> const void* data <br> const char* label"],
-                ["void", "create_instance", "—"],
-                ["WGPUPipelineLayout", "create_pipeline_layout", "const std::vector&lt;WGPUBindGroupLayout&gt;& bind_group_layouts <br> const std::string& label"],
-                ["WGPUShaderModule", "create_shader_module", "char const* code"],
-                ["void", "create_swapchain", "int width <br> int height"],
-                ["WGPUTexture", "create_texture", "WGPUTextureDimension dimension <br> WGPUTextureFormat format <br> WGPUExtent3D size <br> WGPUTextureUsage usage <br> uint32_t mipmaps <br> uint8_t sample_count"],
-                ["WGPUTextureView", "create_texture_view", "WGPUTexture texture <br> WGPUTextureViewDimension dimension <br> WGPUTextureFormat format <br> WGPUTextureAspect aspect <br> uint32_t base_mipmap_level <br> uint32_t mip_level_count <br> uint32_t base_array_layer <br> uint32_t array_layer_count <br> const char* label"],
-                ["void", "destroy", "—"],
-                ["WGPUDevice", "get_device", "—"],
-                ["WGPUInstance", "get_instance", "—"],
                 ["int", "initialize", "bool create_screen_swapchain"],
-                ["void", "print_device_info", "—"],
+                ["void", "destroy", "—"],
+                ["void", "close_window", "—"],
+                ["void", "create_instance", "—"],
                 ["WGPUFuture", "request_adapter", "XRContext* xr_context <br> bool is_openxr_available"],
                 ["WGPUFuture", "request_device", "const std::vector&lt;WGPUFeatureName&gt; required_features"],
+                ["WGPUDevice", "get_device", "—"],
+                ["void", "print_device_info", "—"],
+                ["WGPUInstance", "get_instance", "—"],
+                ["void", "create_swapchain", "int width <br> int height"],
+                ["WGPUShaderModule", "create_shader_module", "char const* code"],
+                ["WGPUBuffer", "create_buffer", "size_t size <br> int usage <br> const void* data <br> const char* label = nullptr"],
+                ["WGPUTexture", "create_texture", "WGPUTextureDimension dimension <br> WGPUTextureFormat format <br> WGPUExtent3D size <br> WGPUTextureUsage usage <br> uint32_t mipmaps <br> uint8_t sample_count"],
+                ["WGPUTextureView", "create_texture_view", "WGPUTexture texture <br> WGPUTextureViewDimension dimension <br> WGPUTextureFormat format <br> WGPUTextureAspect aspect = WGPUTextureAspect_All <br> uint32_t base_mip_level = 0 <br> uint32_t mip_level_count = 1 <br> uint32_t base_array_layer = 0 <br> uint32_t array_layer_count = 1 <br> const char* label = \"\""],
+                ["WGPUSampler", "create_sampler", "WGPUAddressMode wrap_u = WGPUAddressMode_ClampToEdge <br> WGPUAddressMode wrap_v = WGPUAddressMode_ClampToEdge <br> WGPUAddressMode wrap_w = WGPUAddressMode_ClampToEdge <br> WGPUFilterMode mag_filter = WGPUFilterMode_Linear <br> WGPUFilterMode min_filter = WGPUFilterMode_Linear <br> WGPUMipmapFilterMode mipmap_filter = WGPUMipmapFilterMode_Linear <br> float lod_max_clamp = 1.0f <br> uint16_t max_anisotropy = 1"],
+                ["void", "create_texture_mipmaps", "WGPUTexture texture <br> WGPUExtent3D texture_size <br> uint32_t mip_level_count <br> WGPUTextureViewDimension view_dimension = WGPUTextureViewDimension_2D <br> WGPUTextureFormat format = WGPUTextureFormat_RGBA8Unorm <br> WGPUOrigin3D origin = {0, 0, 0} <br> WGPUCommandEncoder custom_command_encoder = nullptr"],
+                ["void", "create_cubemap_mipmaps", "WGPUTexture texture <br> WGPUExtent3D texture_size <br> uint32_t mip_level_count <br> WGPUTextureViewDimension view_dimension = WGPUTextureViewDimension_2D <br> WGPUTextureFormat format = WGPUTextureFormat_RGBA8Unorm <br> WGPUOrigin3D origin = {0, 0, 0} <br> WGPUCommandEncoder custom_command_encoder = nullptr"],
+                ["void", "upload_texture", "WGPUTexture texture <br> WGPUTextureDimension dimension <br> WGPUExtent3D texture_size <br> uint32_t mip_level <br> WGPUTextureFormat format <br> const void* data <br> WGPUOrigin3D origin = { 0, 0, 0 }"],
+                ["WGPUBindGroupLayout", "create_bind_group_layout", "const std::vector&lt;WGPUBindGroupLayoutEntry&gt;& entries <br> char const* label = nullptr"],
+                ["WGPUBindGroup", "create_bind_group", "const std::vector&lt;Uniform*&gt;& uniforms <br> WGPUBindGroupLayout bind_group_layout <br> char const* label = nullptr"],
+                ["WGPUBindGroup", "create_bind_group", "const std::vector&lt;Uniform*&gt;& uniforms <br> const Shader* shader <br> uint16_t bind_group <br> char const* label = nullptr"],
+                ["WGPUPipelineLayout", "create_pipeline_layout", "const std::vector&lt;WGPUBindGroupLayout&gt;& bind_group_layouts <br> const std::string& label = \"\""],
+                ["void", "copy_texture_to_texture", "WGPUTexture texture_src <br> WGPUTexture texture_dst <br> uint32_t src_mipmap_level <br> uint32_t dst_mipmap_level <br> const WGPUExtent3D& copy_size <br> WGPUCommandEncoder custom_command_encoder = nullptr"],
+                ["WGPURenderPipeline", "create_render_pipeline", "WGPUShaderModule render_shader_module <br> WGPUPipelineLayout pipeline_layout <br> const std::vector&lt;WGPUVertexBufferLayout&gt;& vertex_attributes <br> WGPUColorTargetState color_target <br> const RenderPipelineDescription& description <br> std::vector&lt;WGPUConstantEntry&gt; constants = {}"],
+                ["void", "create_render_pipeline_async", "WGPUShaderModule render_shader_module <br> WGPUPipelineLayout pipeline_layout <br> const std::vector&lt;WGPUVertexBufferLayout&gt;& vertex_attributes <br> WGPUColorTargetState color_target <br> WGPUCreateRenderPipelineAsyncCallbackInfo callback_info <br> const RenderPipelineDescription& description <br> std::vector&lt;WGPUConstantEntry&gt; constants = {}"],
+                ["WGPUComputePipeline", "create_compute_pipeline", "WGPUShaderModule compute_shader_module <br> WGPUPipelineLayout pipeline_layout <br> const char* entry_point = \"compute\" <br> std::vector&lt;WGPUConstantEntry&gt; constants = {}"],
+                ["void", "create_compute_pipeline_async", "WGPUShaderModule compute_shader_module <br> WGPUPipelineLayout pipeline_layout <br> WGPUCreateComputePipelineAsyncCallbackInfo callback_info <br> const char* entry_point = \"compute\" <br> std::vector&lt;WGPUConstantEntry&gt; constants = {}"],
+                ["WGPUVertexBufferLayout", "create_vertex_buffer_layout", "const std::vector&lt;WGPUVertexAttribute&gt;& vertex_attributes <br> uint64_t stride <br> WGPUVertexStepMode step_mode"],
+                ["WGPUQuerySet", "create_query_set", "uint8_t maximum_query_sets"],
+                ["void", "generate_brdf_lut_texture", "—"],
+                ["void", "generate_prefiltered_env_texture", "Texture* prefiltered_env_texture <br> Texture* hdr_texture"],
+                ["void", "update_buffer", "WGPUBuffer buffer <br> uint64_t buffer_offset <br> void const* data <br> size_t size"],
+                ["void", "read_buffer", "WGPUBuffer buffer <br> size_t size <br> void* output_data"],
+                ["void", "read_buffer_async", "WGPUBuffer buffer <br> size_t size <br> const std::function<void(const void* output_buffer, void* userdata)>& read_callback <br> void* read_userdata"],
+                ["sMipmapPipeline", "get_mipmap_pipeline", "WGPUTextureFormat texture_format"],
+                ["void", "push_debug_group", "WGPURenderPassEncoder render_pass <br> WGPUStringView label"],
+                ["void", "push_debug_group", "WGPUComputePassEncoder compute_pass <br> WGPUStringView label"],
+                ["void", "pop_debug_group", "WGPURenderPassEncoder render_pass"],
+                ["void", "pop_debug_group", "WGPUComputePassEncoder compute_pass"],
+                ["void", "process_events", "—"]
             ].map( v => {
-                return [ INLINE_CODE( v[ 0 ], "table desc" ), INLINE_CODE( v[ 1 ], "table" ), v[ 2 ] != "—" ? INLINE_CODE( v[ 2 ], "desc" ) : v[ 2 ] ];
+                return [ INLINE_CODE( v[ 0 ], "table desc" ), INLINE_CODE( v[ 1 ], "table" ), v[ 2 ] != "—" ? INLINE_CODE( v[ 2 ], "desc text-sm" ) : v[ 2 ] ];
             } )
-        }, {});
+        }, { filter: "Method" });
     }
 
     MAKE_LINE_BREAK();

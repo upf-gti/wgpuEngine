@@ -1,0 +1,97 @@
+<script type="text/javascript">
+
+    MAKE_PARAGRAPH( `Site under construction...` + LX.makeIcon( "Construction", { svgClass: "xxl"  } ).innerHTML );
+
+    MAKE_HEADER( "Material", "h1", "material" );
+    MAKE_PARAGRAPH( `Represents a renderable material with configurable properties such as color, roughness, metallic, occlusion, emissive color, and various textures (diffuse, metallic-roughness, normal, emissive, occlusion). Supports transparency, topology, culling modes, and shader assignment.` );
+    MAKE_LINE_BREAK();
+
+    MAKE_CLASS_CONSTRUCTOR( "Material", [] );
+
+    MAKE_LINE_BREAK();
+
+    {
+        const area = new LX.Area( { skipAppend: true, height: "auto", className: "mb-6" } );
+        const panel = area.addPanel();
+        content.appendChild( area.root );
+
+        // panel.addTable( null, {
+        //     head: [ "Member", "Type", "Default" ],
+        //     body: [
+        //         ["transform", "Transform", "—"],
+        //         ["collider_shape", "eColliderShape", "COLLIDER_SHAPE_AABB"],
+        //         ["selected", "bool", "false"],
+        //     ].map( v => {
+        //         return [ INLINE_CODE( v[ 0 ], "table" ), INLINE_CODE( v[ 1 ], "table desc" ), v[ 2 ] != "—" ? INLINE_CODE( v[ 2 ], "table desc" ) : v[ 2 ] ];
+        //     } )
+        // }, {});
+        // panel.addBlank( null, "24px" );
+        panel.addTable( null, {
+            head: [ "Return type", "Method", "Parameters" ],
+            body: [
+                ["void", "set_color", "const glm::vec4&amp; color"],
+                ["void", "set_roughness", "float roughness"],
+                ["void", "set_metallic", "float metallic"],
+                ["void", "set_occlusion", "float occlusion"],
+                ["void", "set_emissive", "const glm::vec3&amp; emissive"],
+                ["void", "set_diffuse_texture", "Texture* diffuse_texture"],
+                ["void", "set_metallic_roughness_texture", "Texture* metallic_roughness_texture"],
+                ["void", "set_normal_texture", "Texture* normal_texture"],
+                ["void", "set_emissive_texture", "Texture* emissive_texture"],
+                ["void", "set_occlusion_texture", "Texture* occlusion_texture"],
+                ["void", "set_alpha_mask", "float alpha_mask"],
+                ["void", "set_depth_read_write", "bool value"],
+                ["void", "set_depth_read", "bool depth_read"],
+                ["void", "set_depth_write", "bool depth_write"],
+                ["void", "set_use_skinning", "bool use_skinning"],
+                ["void", "set_is_2D", "bool is_2D"],
+                ["void", "set_fragment_write", "bool fragment_write"],
+                ["void", "set_transparency_type", "eTransparencyType transparency_type"],
+                ["void", "set_topology_type", "eTopologyType topology_type"],
+                ["void", "set_cull_type", "eCullType cull_type"],
+                ["void", "set_type", "eMaterialType type"],
+                ["void", "set_priority", "uint8_t priority"],
+                ["void", "set_shader", "Shader* shader"],
+                ["void", "set_shader_pipeline", "Pipeline* pipeline"],
+                ["glm::vec4", "get_color", "—"],
+                ["float", "get_roughness", "—"],
+                ["float", "get_metallic", "—"],
+                ["float", "get_occlusion", "—"],
+                ["glm::vec3", "get_emissive", "—"],
+                ["const Texture*", "get_diffuse_texture", "—"],
+                ["const Texture*", "get_metallic_roughness_texture", "—"],
+                ["const Texture*", "get_normal_texture", "—"],
+                ["const Texture*", "get_emissive_texture", "—"],
+                ["const Texture*", "get_occlusion_texture", "—"],
+                ["Texture*", "get_diffuse_texture", "—"],
+                ["Texture*", "get_metallic_roughness_texture", "—"],
+                ["Texture*", "get_normal_texture", "—"],
+                ["Texture*", "get_emissive_texture", "—"],
+                ["Texture*", "get_occlusion_texture", "—"],
+                ["float", "get_alpha_mask", "—"],
+                ["bool", "get_depth_read", "—"],
+                ["bool", "get_depth_write", "—"],
+                ["bool", "get_use_skinning", "—"],
+                ["bool", "get_is_2D", "—"],
+                ["bool", "get_fragment_write", "—"],
+                ["eTransparencyType", "get_transparency_type", "—"],
+                ["eTopologyType", "get_topology_type", "—"],
+                ["eCullType", "get_cull_type", "—"],
+                ["eMaterialType", "get_type", "—"],
+                ["uint8_t", "get_priority", "—"],
+                ["const Shader*", "get_shader", "—"],
+                ["Shader*", "get_shader_ref", "—"],
+                ["void", "set_dirty_flag", "eMaterialProperties property_flag"],
+                ["void", "reset_dirty_flags", "—"],
+                ["uint32_t", "get_dirty_flags", "—"],
+                ["void", "render_gui", "—"]
+            ].map( v => {
+                return [ INLINE_CODE( v[ 0 ], "table desc" ), INLINE_CODE( v[ 1 ], "table" ), v[ 2 ] != "—" ? INLINE_CODE( v[ 2 ], "desc text-sm" ) : v[ 2 ] ];
+            } )
+        }, { filter: "Method" });
+    }
+
+    MAKE_LINE_BREAK();
+    MAKE_LINE_BREAK();
+
+</script>

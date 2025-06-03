@@ -162,7 +162,7 @@ code.inline.desc {
 
 #content > img {
 	width: 100%;
-	margin: 16px calc(-1 * var(--page-padding)) ;
+	/* margin: 16px calc(-1 * var(--page-padding)) ; */
 	border-radius: 4px;	
 }
 
