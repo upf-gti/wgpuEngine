@@ -327,10 +327,12 @@ code:has(.constructor) {
 :root[data-theme="light"] pre .str, :root[data-theme="light"] code .str { color: #188038; }
 :root[data-theme="light"] pre .kwd, :root[data-theme="light"] code .kwd { color: #1967d2; }
 :root[data-theme="light"] pre .com, :root[data-theme="light"] code .com { color: #b80672; }
-:root[data-theme="light"] pre .typ, :root[data-theme="light"] code .typ { color: #0b9484; }
+:root[data-theme="light"] pre .cls, :root[data-theme="light"] code .cls { color: #0b9484; }
 :root[data-theme="light"] pre .dec, :root[data-theme="light"] code .dec { color: #c5221f; }
-:root[data-theme="light"] pre .mtd, :root[data-theme="light"] code .mtd { color: #504f4c; }
+:root[data-theme="light"] pre .mtd, :root[data-theme="light"] code .mtd { color: #636362; }
 :root[data-theme="light"] pre .lit, :root[data-theme="light"] code .lit { color: #1967d2; }
+:root[data-theme="light"] pre .var, :root[data-theme="light"] code .var { color: #222222; }
+:root[data-theme="light"] pre .enu, :root[data-theme="light"] code .enu { color: #505fe2; }
 :root[data-theme="light"] pre .tag, :root[data-theme="light"] code .tag { color: #2183b4; }
 :root[data-theme="light"] pre .atn, :root[data-theme="light"] code .atn { color: #a753c0; }
 
