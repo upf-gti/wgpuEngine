@@ -1349,7 +1349,7 @@ AABB Surface::get_aabb() const
     return this->aabb;
 }
 
-void Surface::set_aabb(AABB aabb)
+void Surface::set_aabb(const AABB& aabb)
 {
     this->aabb = aabb;
 }

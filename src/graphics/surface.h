@@ -127,6 +127,6 @@ public:
     void render_gui();
 
     AABB get_aabb() const;
-    void set_aabb(AABB aabb);
+    void set_aabb(const AABB& aabb);
     void update_aabb(std::vector<glm::vec3>& vertices);
 };
