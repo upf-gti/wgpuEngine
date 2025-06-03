@@ -359,3 +359,11 @@ code:has(.constructor) {
 :root[data-theme="light"] #goUpButton:hover {
 	color: #879094;
 }
+
+.lextable {
+	overflow-x: scroll
+}
+
+.lextable table th {
+	white-space: nowrap;
+}

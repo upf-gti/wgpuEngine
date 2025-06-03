@@ -1,0 +1,73 @@
+<script type="text/javascript">
+
+    MAKE_PARAGRAPH( `Site under construction...` + LX.makeIcon( "Construction", { svgClass: "xxl"  } ).innerHTML );
+
+    MAKE_HEADER( "Surface", "h1", "surface" );
+    MAKE_PARAGRAPH( `The Surface class represents a 3D geometry container with vertex/index data, material reference, GPU buffers, and AABB support. It can procedurally generate common shapes (e.g., quads, boxes, spheres), build and update GPU buffers, handle tangent generation with MikkTSpace, and supports serialization of interleaved data.` );
+    MAKE_LINE_BREAK();
+
+    MAKE_CLASS_CONSTRUCTOR( "Surface", [] );
+
+    MAKE_LINE_BREAK();
+
+    {
+        const area = new LX.Area( { skipAppend: true, height: "auto", className: "mb-6" } );
+        const panel = area.addPanel();
+        content.appendChild( area.root );
+
+        panel.addTable( null, {
+            head: [ "Return type", "Method", "Parameters" ],
+            body: [
+                ["void", "set_material", "Material* material"],
+                ["Material*", "get_material", "—"],
+                ["const Material*", "get_material", "—"],
+                ["const sSurfaceData&amp;", "get_surface_data", "—"],
+                ["sSurfaceData&amp;", "get_surface_data", "—"],
+                ["const WGPUBuffer&amp;", "get_vertex_buffer", "—"],
+                ["const WGPUBuffer&amp;", "get_vertex_data_buffer", "—"],
+                ["const WGPUBuffer&amp;", "get_index_buffer", "—"],
+                ["void", "create_axis", "float s = 1.f"],
+                ["void", "create_quad", "float w = 1.f, float h = 1.f, bool flip_y = false, bool centered = true, const glm::vec3&amp; color = { 1.f, 1.f, 1.f }"],
+                ["void", "create_subdivided_quad", "float w = 1.f, float h = 1.f, bool flip_y = false, uint32_t subdivisions = 16, bool centered = true, const glm::vec3&amp; color = { 1.f, 1.f, 1.f }"],
+                ["void", "create_box", "float w = 1.f, float h = 1.f, float d = 1.f, const glm::vec3&amp; color = { 1.f, 1.f, 1.f }"],
+                ["void", "create_rounded_box", "float w = 1.f, float h = 1.f, float d = 1.f, float c = 0.2f, const glm::vec3&amp; color = { 1.f, 1.f, 1.f }"],
+                ["void", "create_sphere", "float r = 1.f, uint32_t segments = 32, uint32_t rings = 32, const glm::vec3&amp; color = { 1.f, 1.f, 1.f }"],
+                ["void", "create_cone", "float r = 1.f, float h = 1.f, uint32_t segments = 32, const glm::vec3&amp; color = { 1.f, 1.f, 1.f }"],
+                ["void", "create_cylinder", "float r = 1.f, float h = 1.f, uint32_t segments = 32, bool capped = true, const glm::vec3&amp; color = { 1.f, 1.f, 1.f }"],
+                ["void", "create_capsule", "float r = 1.f, float h = 1.f, uint32_t segments = 32, uint32_t rings = 8, const glm::vec3&amp; color = { 1.f, 1.f, 1.f }"],
+                ["void", "create_torus", "float r = 1.f, float ir = 0.2f, uint32_t segments_section = 32, uint32_t segments_circle = 32, const glm::vec3&amp; color = { 1.f, 1.f, 1.f }"],
+                ["void", "create_circle", "float radius = 1.f, uint32_t segments = 32"],
+                ["void", "create_arrow", "—"],
+                ["void", "create_skybox", "—"],
+                ["std::vector&lt;sInterleavedData&gt;", "create_interleaved_data", "const sSurfaceData&amp; vertices_data"],
+                ["void", "update_vertex_buffer", "const std::vector&lt;glm::vec3&gt;&amp; vertices"],
+                ["void", "update_surface_data", "const sSurfaceData&amp; vertices_data, bool store_data = false"],
+                ["void", "create_surface_data", "const sSurfaceData&amp; vertices_data, bool store_data = false"],
+                ["void", "set_surface_data", "const sSurfaceData&amp; vertices_data"],
+                ["void", "create_index_buffer", "const std::vector&lt;uint32_t&gt;&amp; indices"],
+                ["uint32_t", "get_vertex_count", "—"],
+                ["uint64_t", "get_vertices_byte_size", "—"],
+                ["uint64_t", "get_interleaved_data_byte_size", "—"],
+                ["static int", "mikkt_get_num_faces", "const SMikkTSpaceContext* pContext"],
+                ["static int", "mikkt_get_num_vertices_of_face", "const SMikkTSpaceContext* pContext, const int iFace"],
+                ["static void", "mikkt_get_position", "const SMikkTSpaceContext* pContext, float fvPosOut[], const int iFace, const int iVert"],
+                ["static void", "mikkt_get_normal", "const SMikkTSpaceContext* pContext, float fvNormOut[], const int iFace, const int iVert"],
+                ["static void", "mikkt_get_tex_coord", "const SMikkTSpaceContext* pContext, float fvTexcOut[], const int iFace, const int iVert"],
+                ["static void", "mikkt_set_tspace_basic", "const SMikkTSpaceContext* pContext, const float fvTangent[], const float fSign, const int iFace, const int iVert"],
+                ["bool", "generate_tangents", "sSurfaceData* vertices_data"],
+                ["uint32_t", "get_index_count", "—"],
+                ["uint64_t", "get_indices_byte_size", "—"],
+                ["void", "render_gui", "—"],
+                ["AABB", "get_aabb", "—"],
+                ["void", "set_aabb", "const AABB&amp; aabb"],
+                ["void", "update_aabb", "std::vector&lt;glm::vec3&gt;&amp; vertices"]
+            ].map( v => {
+                return [ INLINE_CODE( v[ 0 ], "table desc" ), INLINE_CODE( v[ 1 ], "table" ), v[ 2 ] != "—" ? INLINE_CODE( v[ 2 ], "desc text-sm" ) : v[ 2 ] ];
+            } )
+        }, { filter: "Method" });
+    }
+
+    MAKE_LINE_BREAK();
+    MAKE_LINE_BREAK();
+
+</script>

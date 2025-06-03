@@ -1,0 +1,41 @@
+<script type="text/javascript">
+
+    MAKE_PARAGRAPH( `Site under construction...` + LX.makeIcon( "Construction", { svgClass: "xxl"  } ).innerHTML );
+
+    MAKE_HEADER( "Pipeline", "h1", "pipeline" );
+    MAKE_PARAGRAPH( `The Pipeline class manages WebGPU render and compute pipelines, supporting both synchronous and asynchronous creation with shaders, color targets, and constants. It handles pipeline binding, reloading, and tracks whether it's loaded or MSAA-capable.` );
+    MAKE_LINE_BREAK();
+
+    MAKE_CLASS_CONSTRUCTOR( "Pipeline", [] );
+
+    MAKE_LINE_BREAK();
+
+    {
+        const area = new LX.Area( { skipAppend: true, height: "auto", className: "mb-6" } );
+        const panel = area.addPanel();
+        content.appendChild( area.root );
+
+        panel.addTable( null, {
+            head: [ "Return type", "Method", "Parameters" ],
+            body: [
+                ["void", "create_render", "Shader* shader, const WGPUColorTargetState&amp; p_color_target, const RenderPipelineDescription&amp; desc = {}, const std::vector&lt;WGPUConstantEntry&gt;&amp; constants = {}"],
+                ["void", "create_render_async", "Shader* shader, const WGPUColorTargetState&amp; p_color_target, const RenderPipelineDescription&amp; desc = {}, const std::vector&lt;WGPUConstantEntry&gt;&amp; constants = {}"],
+                ["void", "create_compute", "Shader* shader, const std::string&amp; entry_point = \"compute\", const std::vector&lt;WGPUConstantEntry&gt;&amp; constants = {}"],
+                ["void", "create_compute_async", "Shader* shader, const std::string&amp; entry_point = \"compute\", const std::vector&lt;WGPUConstantEntry&gt;&amp; constants = {}"],
+                ["void", "reload", "Shader* shader"],
+                ["bool", "set", "const WGPURenderPassEncoder&amp; render_pass"],
+                ["bool", "set", "const WGPUComputePassEncoder&amp; compute_pass"],
+                ["bool", "is_render_pipeline", "—"],
+                ["bool", "is_compute_pipeline", "—"],
+                ["bool", "is_msaa_allowed", "—"],
+                ["bool", "is_loaded", "—"]
+            ].map( v => {
+                return [ INLINE_CODE( v[ 0 ], "table desc" ), INLINE_CODE( v[ 1 ], "table" ), v[ 2 ] != "—" ? INLINE_CODE( v[ 2 ], "desc text-sm" ) : v[ 2 ] ];
+            } )
+        }, { filter: "Method" });
+    }
+
+    MAKE_LINE_BREAK();
+    MAKE_LINE_BREAK();
+
+</script>

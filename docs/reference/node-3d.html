@@ -15,17 +15,6 @@
         const panel = area.addPanel();
         content.appendChild( area.root );
 
-        // panel.addTable( null, {
-        //     head: [ "Member", "Type", "Default" ],
-        //     body: [
-        //         ["transform", "Transform", "—"],
-        //         ["collider_shape", "eColliderShape", "COLLIDER_SHAPE_AABB"],
-        //         ["selected", "bool", "false"],
-        //     ].map( v => {
-        //         return [ INLINE_CODE( v[ 0 ], "table" ), INLINE_CODE( v[ 1 ], "table desc" ), v[ 2 ] != "—" ? INLINE_CODE( v[ 2 ], "table desc" ) : v[ 2 ] ];
-        //     } )
-        // }, {});
-        // panel.addBlank( null, "24px" );
         panel.addTable( null, {
             head: [ "Return type", "Method", "Parameters" ],
             body: [

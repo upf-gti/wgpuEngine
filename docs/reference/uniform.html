@@ -1,0 +1,43 @@
+<script type="text/javascript">
+
+    MAKE_PARAGRAPH( `Site under construction...` + LX.makeIcon( "Construction", { svgClass: "xxl"  } ).innerHTML );
+
+    MAKE_HEADER( "Uniform", "h1", "uniform" );
+    MAKE_PARAGRAPH( `The Uniform struct encapsulates a WebGPU resource such as a buffer, sampler, or texture view, identified by a binding slot and optionally sized for buffers, providing a method to retrieve its corresponding bind group entry for GPU binding and includes lifecycle management with construction and destruction.` );
+    MAKE_LINE_BREAK();
+
+    MAKE_CLASS_CONSTRUCTOR( "Uniform", [] );
+
+    MAKE_LINE_BREAK();
+
+    {
+        const area = new LX.Area( { skipAppend: true, height: "auto", className: "mb-6" } );
+        const panel = area.addPanel();
+        content.appendChild( area.root );
+
+        panel.addTable( null, {
+            head: [ "Type", "Member", "Default" ],
+            body: [
+                ["uint32_t", "binding", "0"],
+                ["uint64_t", "buffer_size", "0"],
+                [" std::variant&lt;std::monostate, WGPUBuffer, WGPUSampler, WGPUTextureView&gt;", "data", "—"],
+            ].map( v => {
+                return [ INLINE_CODE( v[ 0 ], "table desc" ), INLINE_CODE( v[ 1 ], "table" ), v[ 2 ] != "—" ? INLINE_CODE( v[ 2 ], "table desc" ) : v[ 2 ] ];
+            } )
+        }, {});
+        panel.addBlank( null, "24px" );
+        panel.addTable( null, {
+            head: [ "Return type", "Method", "Parameters" ],
+            body: [
+                ["void", "destroy", "—"],
+                ["WGPUBindGroupEntry", "get_bind_group_entry", "—"]
+            ].map( v => {
+                return [ INLINE_CODE( v[ 0 ], "table desc" ), INLINE_CODE( v[ 1 ], "table" ), v[ 2 ] != "—" ? INLINE_CODE( v[ 2 ], "desc text-sm" ) : v[ 2 ] ];
+            } )
+        }, { filter: "Method" });
+    }
+
+    MAKE_LINE_BREAK();
+    MAKE_LINE_BREAK();
+
+</script>

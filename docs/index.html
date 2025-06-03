@@ -129,8 +129,12 @@
             m.group( "Reference" );
             m.add( "Graphics" );
             m.add( "Graphics/Material", { callback: open.bind( this, "reference/material.html", null ) } );
+            m.add( "Graphics/Pipeline", { callback: open.bind( this, "reference/pipeline.html", null ) } );
             m.add( "Graphics/RendererStorage", { callback: open.bind( this, "reference/renderer-storage.html", null ) } );
             m.add( "Graphics/RenderPipelineDescription", { callback: open.bind( this, "reference/rendering-pipeline-desc.html", null ) } );
+            m.add( "Graphics/Surface", { callback: open.bind( this, "reference/surface.html", null ) } );
+            m.add( "Graphics/Texture", { callback: open.bind( this, "reference/texture.html", null ) } );
+            m.add( "Graphics/Uniform", { callback: open.bind( this, "reference/uniform.html", null ) } );
             m.add( "Graphics/WebGPUContext", { callback: open.bind( this, "reference/webgpu-context.html", null ) } );
             m.add( "Nodes" );
             m.add( "Nodes/MeshInstance3D", { callback: open.bind( this, "reference/mesh-instance-3d.html", null ) } );
