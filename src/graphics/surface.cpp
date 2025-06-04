@@ -109,12 +109,7 @@ void Surface::create_index_buffer(const std::vector<uint32_t>& indices)
     index_buffer = webgpu_context->create_buffer(get_indices_byte_size(), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Index, indices.data(), ("index_buffer_" + name).c_str());
 }
 
-Material* Surface::get_material()
-{
-    return material;
-}
-
-const Material* Surface::get_material() const
+Material* Surface::get_material() const
 {
     return material;
 }

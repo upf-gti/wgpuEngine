@@ -74,8 +74,7 @@ public:
 
     void set_material(Material* material);
 
-    Material* get_material();
-    const Material* get_material() const;
+    Material* get_material() const;
 
     const sSurfaceData& get_surface_data() const;
     sSurfaceData& get_surface_data();
