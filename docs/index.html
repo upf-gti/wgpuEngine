@@ -123,15 +123,21 @@
             m.add( "Shaders", { callback: open.bind( this, "shaders.html", null ) } );
             m.add( "Input", { callback: open.bind( this, "input.html", null ) } );
             // m.add( "UI Components", { callback: open.bind( this, "ui.html", null ) } );
-            m.add( "Experimental", { callback: open.bind( this, "experimental.html", null ) } );
-            m.add( "Support", { callback: open.bind( this, "support.html", null ) } );
+            m.group( "Experimental" );
+            m.add( "Experimental/Disk Storage", { callback: open.bind( this, "disk-storage.html", null ) } );
+            m.add( "Experimental/JS Bindings", { callback: open.bind( this, "js-bindings.html", null ) } );
             m.separator();
             m.group( "Reference" );
+            m.add( "Engine" );
+            m.add( "Engine/Engine", { callback: open.bind( this, "reference/engine.html", null ) } );
+            m.add( "Engine/Scene", { callback: open.bind( this, "reference/scene.html", null ) } );
             m.add( "Graphics" );
             m.add( "Graphics/Material", { callback: open.bind( this, "reference/material.html", null ) } );
             m.add( "Graphics/Pipeline", { callback: open.bind( this, "reference/pipeline.html", null ) } );
+            m.add( "Graphics/Renderer", { callback: open.bind( this, "reference/renderer.html", null ) } );
             m.add( "Graphics/RendererStorage", { callback: open.bind( this, "reference/renderer-storage.html", null ) } );
             m.add( "Graphics/RenderPipelineDescription", { callback: open.bind( this, "reference/rendering-pipeline-desc.html", null ) } );
+            m.add( "Graphics/Shader", { callback: open.bind( this, "reference/shader.html", null ) } );
             m.add( "Graphics/Surface", { callback: open.bind( this, "reference/surface.html", null ) } );
             m.add( "Graphics/Texture", { callback: open.bind( this, "reference/texture.html", null ) } );
             m.add( "Graphics/Uniform", { callback: open.bind( this, "reference/uniform.html", null ) } );
@@ -140,13 +146,13 @@
             m.add( "Nodes/MeshInstance3D", { callback: open.bind( this, "reference/mesh-instance-3d.html", null ) } );
             m.add( "Nodes/Node2D", { callback: open.bind( this, "reference/node-2d.html", null ) } );
             m.add( "Nodes/Node3D", { callback: open.bind( this, "reference/node-3d.html", null ) } );
-            m.add( "Nodes/Scene", { callback: open.bind( this, "reference/scene.html", null ) } );
             m.separator();
             m.group( "Example Apps" );
             m.add( "Rooms (VR Sculpting)", { callback: open.bind( this, "https://github.com/upf-gti/rooms/", "_blank" ) } );
             m.add( "Basic Sample", { callback: open.bind( this, "https://github.com/upf-gti/wgpuEngineSample/", "_blank" ) } );
             m.separator();
             m.add( "Source Code", { icon: "Code", callback: open.bind( this, "https://github.com/upf-gti/wgpuEngine/", "_blank" ) } );
+            m.add( "Support", { icon: "Heart", callback: open.bind( this, "support.html", null ) } );
         };
 
         if( mobile )

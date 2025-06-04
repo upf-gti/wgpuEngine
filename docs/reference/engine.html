@@ -1,0 +1,53 @@
+<script type="text/javascript">
+
+    MAKE_PARAGRAPH( `Site under construction...` + LX.makeIcon( "Construction", { svgClass: "xxl"  } ).innerHTML );
+
+    MAKE_HEADER( "Engine", "h1", "engine" );
+    MAKE_PARAGRAPH( `The Engine class manages the lifecycle of the application, including initialization, main loop control, rendering, GUI integration (ImGui), shader hot-reloading, and XR support. It encapsulates configuration, scene management, time tracking, and input utilities, serving as the central coordinator for rendering and application logic through its Renderer, Scene, and Node components.` );
+    MAKE_LINE_BREAK();
+
+    MAKE_CLASS_CONSTRUCTOR( "Engine", [] );
+
+    MAKE_LINE_BREAK();
+
+    {
+        const area = new LX.Area( { skipAppend: true, height: "auto", className: "mb-6" } );
+        const panel = area.addPanel();
+        content.appendChild( area.root );
+
+        panel.addTable( null, {
+            head: [ "Return type", "Method", "Parameters" ],
+            body: [
+                ["int", "initialize", "Renderer* renderer <br> const sEngineConfiguration&amp; configuration = {}"],
+                ["int", "post_initialize", "—"],
+                ["void", "clean", "—"],
+                ["void", "start_loop", "—"],
+                ["void", "on_frame", "—"],
+                ["void", "update", "float delta_time"],
+                ["void", "render", "—"],
+                ["void", "render_default_gui", "—"],
+                ["bool", "render_scene_tree_recursive", "Node* entity"],
+                ["void", "add_node", "Node* node"],
+                ["void", "resize_window", "int width <br> int height"],
+                ["void", "vibrate_hand", "int controller <br> float amplitude <br> float duration"],
+                ["Engine*", "get_instance", "—"],
+                ["sEngineConfiguration", "get_configuration", "—"],
+                ["Renderer*", "get_renderer", "—"],
+                ["bool", "get_xr_available", "—"],
+                ["bool", "get_use_mirror_window", "—"],
+                ["bool", "should_close", "—"],
+                ["Scene*", "get_main_scene", "—"],
+                ["float", "get_delta_time", "—"],
+                ["void", "get_scene_ray", "glm::vec3&amp; ray_origin <br> glm::vec3&amp; ray_direction"],
+                ["void", "set_main_scene", "Scene* scene"],
+                ["void", "set_main_scene", "const std::string&amp; scene_path"]
+            ].map( v => {
+                return [ INLINE_CODE( v[ 0 ], "table desc" ), INLINE_CODE( v[ 1 ], "table" ), v[ 2 ] != "—" ? INLINE_CODE( v[ 2 ], "desc text-sm" ) : v[ 2 ] ];
+            } )
+        }, { filter: "Method" });
+    }
+
+    MAKE_LINE_BREAK();
+    MAKE_LINE_BREAK();
+
+</script>

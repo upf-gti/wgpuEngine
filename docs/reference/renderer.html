@@ -1,0 +1,104 @@
+<script type="text/javascript">
+
+    MAKE_PARAGRAPH( `Site under construction...` + LX.makeIcon( "Construction", { svgClass: "xxl"  } ).innerHTML );
+
+    MAKE_HEADER( "Renderer", "h1", "renderer" );
+    MAKE_PARAGRAPH( `The Renderer class is the central graphics engine responsible for initializing and managing the WebGPU rendering pipeline, handling scene rendering, cameras (3D/2D), lighting, shadows, MSAA, and advanced features like XR support, Gaussian Splatting, and timestamp queries. It organizes renderable entities, manages GPU resources like textures, uniforms, and bind groups, and supports custom rendering passes and debug tools.` );
+    MAKE_LINE_BREAK();
+
+    MAKE_CLASS_CONSTRUCTOR( "Renderer", [
+        ["const sRendererConfiguration& config", "= {}" ]
+    ] );
+
+    MAKE_LINE_BREAK();
+
+    {
+        MAKE_PARAGRAPH( `*: If defined XR_SUPPORT.`, true )
+        MAKE_LINE_BREAK();
+        MAKE_PARAGRAPH( `**: If defined USE_MIRROR_WINDOW.`, true )
+
+        const area = new LX.Area( { skipAppend: true, height: "auto", className: "mb-6" } );
+        const panel = area.addPanel();
+        content.appendChild( area.root );
+
+        panel.addTable( null, {
+            head: [ "Return type", "Method", "Parameters" ],
+            body: [
+                ["int", "pre_initialize", "GLFWwindow* window <br> bool use_mirror_screen = false"],
+                ["int", "initialize", "—"],
+                ["int", "post_initialize", "—"],
+                ["void", "clean", "—"],
+                ["bool", "is_initialized", "—"],
+                ["void", "update", "float delta_time"],
+                ["void", "render", "—"],
+                ["void", "render_camera", "const std::vector&lt;std::vector&lt;sRenderData&gt;&gt;& render_lists <br> WGPUTextureView framebuffer_view <br> WGPUTextureView depth_view <br> const sInstanceData& instance_data <br> WGPUBindGroup camera_bind_group <br> bool render_transparents = true <br> const std::string& pass_name = \"\" <br> uint32_t eye_idx = 0 <br> uint32_t camera_offset = 0"],
+                ["void", "render_opaque", "WGPURenderPassEncoder render_pass <br> const std::vector&lt;std::vector&lt;sRenderData&gt;&gt;& render_lists <br> const sInstanceData& instance_data <br> WGPUBindGroup camera_bind_group <br> uint32_t camera_buffer_stride = 0"],
+                ["void", "render_transparent", "WGPURenderPassEncoder render_pass <br> const std::vector&lt;std::vector&lt;sRenderData&gt;&gt;& render_lists <br> const sInstanceData& instance_data <br> WGPUBindGroup camera_bind_group <br> uint32_t camera_buffer_stride = 0"],
+                ["void", "render_splats", "WGPURenderPassEncoder render_pass <br> const std::vector&lt;std::vector&lt;sRenderData&gt;&gt;& render_lists <br> const sInstanceData& instance_data <br> WGPUBindGroup camera_bind_group <br> uint32_t camera_buffer_stride = 0"],
+                ["void", "render_2D", "WGPURenderPassEncoder render_pass <br> const std::vector&lt;std::vector&lt;sRenderData&gt;&gt;& render_lists <br> const sInstanceData& instance_data <br> WGPUBindGroup camera_bind_group"],
+                ["void", "set_camera_params", "eCameraType camera_type <br> const glm::vec3& camera_eye <br> const glm::vec3& camera_center"],
+                ["void", "set_custom_pass_user_data", "void* user_data"],
+                ["void", "set_frustum_camera_paused", "bool value"],
+                ["void", "set_exposure", "float new_exposure"],
+                ["void", "set_msaa_count", "uint8_t msaa_count <br> bool is_initial_value = false"],
+                ["void", "set_ibl_intensity", "float new_intensity"],
+                ["void", "set_custom_mirror_fbo_bind_group**", "WGPUBindGroup fbo_bind_group"],
+                ["void", "set_required_features", "std::vector&lt;WGPUFeatureName&gt; new_required_features"],
+                ["void", "set_required_limits", "const WGPULimits& required_limits"],
+                ["void", "set_irradiance_texture", "Texture* texture"],
+                ["eCameraType", "get_camera_type", "—"],
+                ["uint32_t", "get_frame_counter", "—"],
+                ["WGPUBindGroup", "get_lighting_bind_group", "—"],
+                ["WGPUBindGroup", "get_render_camera_bind_group", "—"],
+                ["WGPUBindGroup", "get_compute_camera_bind_group", "—"],
+                ["bool", "get_frustum_camera_paused", "—"],
+                ["bool", "get_use_custom_mirror", "—"],
+                ["WGPUCommandEncoder", "get_global_command_encoder", "—"],
+                ["float", "get_exposure", "—"],
+                ["float", "get_ibl_intensity", "—"],
+                ["Uniform*", "get_current_camera_uniform", "—"],
+                ["glm::vec3", "get_camera_eye", "—"],
+                ["glm::vec3", "get_camera_front", "—"],
+                ["std::vector&lt;float&gt;&", "get_last_frame_timestamps", "—"],
+                ["uint8_t", "get_msaa_count", "—"],
+                ["bool", "get_xr_available", "—"],
+                ["bool", "get_use_mirror_screen", "—"],
+                ["WGPUQuerySet", "get_query_set", "—"],
+                ["std::map&lt;uint8_t, std::string&gt;&", "get_queries_label_map", "—"],
+                ["glm::vec4", "get_clear_color", "—"],
+                ["XRContext*", "get_xr_context*", "—"],
+                ["WebGPUContext*", "get_webgpu_context", "—"],
+                ["GLFWwindow*", "get_glfw_window", "—"],
+                ["Texture*", "get_irradiance_texture", "—"],
+                ["Camera*", "get_camera", "—"],
+                ["void", "process_events", "—"],
+                ["void", "submit_global_command_encoder", "—"],
+                ["void", "increase_frame_counter", "—"],
+                ["void", "init_lighting_bind_group", "—"],
+                ["void", "init_depth_buffers", "—"],
+                ["void", "init_multisample_textures", "—"],
+                ["void", "init_timestamp_queries", "—"],
+                ["void", "request_timestamps", "—"],
+                ["void", "resolve_query_set", "WGPUCommandEncoder encoder <br> uint8_t first_query"],
+                ["bool", "is_inside_frustum", "const glm::vec3& minp <br> const glm::vec3& maxp"],
+                ["void", "prepare_cull_instancing", "const Camera& camera <br> std::vector&lt;std::vector&lt;sRenderData&gt;&gt;& render_lists <br> sInstanceData& instances_data <br> bool is_shadow_pass = false"],
+                ["void", "toogle_frame_debug", "—"],
+                ["void", "render_mirror**", "WGPUTextureView screen_surface_texture_view <br> WGPUBindGroup displayed_fbo_bind_group"],
+                ["void", "init_mirror_pipeline**", "—"],
+                ["uint8_t", "timestamp", "WGPUCommandEncoder encoder <br> const char* label = \"\""],
+                ["void", "add_renderable", "MeshInstance* mesh_instance <br> const glm::mat4x4& global_matrix"],
+                ["void", "clear_renderables", "—"],
+                ["void", "add_splat_scene", "GSNode* gs_scene"],
+                ["void", "update_lights", "—"],
+                ["void", "add_light", "Light3D* new_light"],
+                ["void", "resize_window", "int width <br> int height"],
+            ].map( v => {
+                return [ INLINE_CODE( v[ 0 ], "table desc" ), INLINE_CODE( v[ 1 ], "table" ), v[ 2 ] != "—" ? INLINE_CODE( v[ 2 ], "desc text-sm" ) : v[ 2 ] ];
+            } )
+        }, { filter: "Method" });
+    }
+
+    MAKE_LINE_BREAK();
+    MAKE_LINE_BREAK();
+
+</script>

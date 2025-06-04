@@ -1,0 +1,45 @@
+<script type="text/javascript">
+
+    MAKE_PARAGRAPH( `Site under construction...` + LX.makeIcon( "Construction", { svgClass: "xxl"  } ).innerHTML );
+
+    MAKE_HEADER( "Shader", "h1", "shader" );
+    MAKE_PARAGRAPH( `The Shader class manages WebGPU shader modules, supporting loading from files or source strings with optional define specializations and library includes. It handles reflection to extract bind group and vertex buffer layouts, supports reloading, and links to a Pipeline.` );
+    MAKE_LINE_BREAK();
+
+    MAKE_CLASS_CONSTRUCTOR( "Shader", [] );
+
+    MAKE_LINE_BREAK();
+
+    {
+        const area = new LX.Area( { skipAppend: true, height: "auto", className: "mb-6" } );
+        const panel = area.addPanel();
+        content.appendChild( area.root );
+
+        panel.addTable( null, {
+            head: [ "Return type", "Method", "Parameters" ],
+            body: [
+                ["bool", "load_from_file", "const std::string&amp; shader_path <br> const std::string&amp; specialized_path = \"\" <br> std::vector&lt;std::string&gt; define_specializations = {}"],
+                ["bool", "load_from_source", "const std::string&amp; shader_source <br> const std::string&amp; name <br> const std::vector&lt;std::string&gt;&amp; libraries <br> const std::string&amp; specialized_path = \"\" <br> std::vector&lt;std::string&gt; define_specializations = {}"],
+                ["void", "reload", "const std::string&amp; engine_shader_path = \"\""],
+                ["void", "set_define_specializations", "std::vector&lt;std::string&gt; define_specializations"],
+                ["WGPUShaderModule", "get_module", "—"],
+                ["void", "set_pipeline", "Pipeline* pipeline"],
+                ["const Pipeline*", "get_pipeline", "—"],
+                ["const std::vector&lt;WGPUBindGroupLayout&gt;&amp;", "get_bind_group_layouts", "—"],
+                ["const std::vector&lt;WGPUVertexBufferLayout&gt;&amp;", "get_vertex_buffer_layouts", "—"],
+                ["const WGPUPipelineLayout", "get_pipeline_layout", "—"],
+                ["static void", "reload_engine_library", "const std::string&amp; folder <br> const std::string&amp; engine_library"],
+                ["std::string", "get_path", "—"],
+                ["bool", "is_loaded", "—"],
+                ["static void", "set_custom_define", "const std::string&amp; define_name <br> custom_define_type value"],
+                ["bool", "is_loaded_from_file", "—"]
+            ].map( v => {
+                return [ INLINE_CODE( v[ 0 ], "table desc" ), INLINE_CODE( v[ 1 ], "table" ), v[ 2 ] != "—" ? INLINE_CODE( v[ 2 ], "desc text-sm" ) : v[ 2 ] ];
+            } )
+        }, { filter: "Method" });
+    }
+
+    MAKE_LINE_BREAK();
+    MAKE_LINE_BREAK();
+
+</script>

@@ -364,6 +364,16 @@ code:has(.constructor) {
 	overflow-x: scroll
 }
 
+.lextable table {
+	table-layout: auto;
+}
+
 .lextable table th {
 	white-space: nowrap;
+}
+
+/* Hack to shrink Type and Method columns in reference docs */
+.lextable:has(input) table tbody tr:last-child td:not(:last-child) {
+	width: 1px;
+    white-space: nowrap;
 }

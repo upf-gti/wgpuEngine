@@ -1,0 +1,43 @@
+<script type="text/javascript">
+
+MAKE_HEADER( "Experimental features", "h1", "experimental" );
+
+MAKE_HEADER( "JavaScript bindings", "h3" );
+
+MAKE_PARAGRAPH( `The JavaScript bindings are designed to expose every core functionality of the engine's C++ codebase, making the engine fully usable within web applications.
+ By leveraging WebGPU for modern, high-performance graphics, the engine delivers native-like rendering capabilities directly in the browser. These bindings ensure seamless integration between C++ and JavaScript,
+  allowing developers to build rich, interactive 3D applications for the web. The result is a fully cross-platform engine that runs efficiently across desktop and mobile browsers, without compromising access to engine features or performance.` );
+
+MAKE_CODE( `@this@.engine = window.engineInstance;
+@this@.renderer = @this@.engine.@[mtd]getRenderer@();
+
+@const@ scene = @this@.engine.@[mtd]getMainScene@();
+@const@ skybox = @new@ @[cls]WGE@.@[mtd]Environment3D@();
+skybox.@[mtd]setTexture@( @"test.hdr"@ );
+scene.@[mtd]addNode@( skybox, @-1@ );
+
+@[cls]WGE@.Engine.@[mtd]onRender@ = () => {
+    scene.@[mtd]render@();
+}
+
+@[cls]WGE@.Engine.@[mtd]onUpdate@ = ( @[var]dt@ ) => {
+    scene.@[mtd]update@( @[var]dt@ );
+}
+
+@const@ boxMaterial = @new@ @[cls]WGE@.@[mtd]Material@();
+boxMaterial.color = @new@ @[cls]WGE@.@[mtd]vec4@(@0.3@, @0.2@, @0.3@, @0.50@);
+
+@const@ texture = @await@ @[cls]WGE@.RendererStorage.@[mtd]getTexture@( @"wall.png"@ );
+boxMaterial.@[mtd]setDiffuseTexture@( texture );
+boxMaterial.@[mtd]setShader@( @[cls]WGE@.RendererStorage.@[mtd]getShaderFromName@( @"mesh_forward"@, boxMaterial ) );
+
+@const@ surface = @[cls]WGE@.RendererStorage.@[mtd]getSurface@(@"box"@);
+@const@ box = @new@ @[cls]WGE@.@[mtd]MeshInstance3D@();
+box.name = @"Box"@;
+box.@[mtd]addSurface@( surface );
+box.@[mtd]setPosition@( @new@ @[cls]WGE@.@[mtd]vec3@(@1.0@, @0@, @-5.0@) );
+box.@[mtd]setSurfaceMaterialOverride@( surface, boxMaterial );
+scene.@[mtd]addNode@( box, @-1@ );
+`, 'js' );
+
+</script>

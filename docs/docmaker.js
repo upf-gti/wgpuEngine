@@ -3,7 +3,9 @@
 const KEY_WORDS = ['int', 'float', 'double', 'bool', 'char', 'wchar_t', 'const', 'static_cast', 'dynamic_cast', 'new', 'delete', 'void', 'true', 'false', 'auto', 'struct', 'typedef', 'nullptr', 
 -    'NULL', 'unsigned', 'namespace'];
 const CLASS_WORDS = ['uint32_t', 'uint64_t', 'uint8_t'];
-const STATEMENT_WORDS = ['for', 'if', 'else', 'return', 'continue', 'break', 'case', 'switch', 'while', 'using'];
+const STATEMENT_WORDS = ['for', 'if', 'else', 'return', 'continue', 'break', 'case', 'switch', 'while', 'using', 'await'];
+
+const JS_KEY_WORDS = ['var', 'let', 'const', 'static', 'function', 'null', 'undefined', 'new', 'delete', 'true', 'false', 'NaN', 'this'];
 const HTML_ATTRIBUTES = ['html', 'charset', 'rel', 'src', 'href', 'crossorigin', 'type', 'lang'];
 const HTML_TAGS = ['html', 'DOCTYPE', 'head', 'meta', 'title', 'link', 'script', 'body', 'style'];
 
@@ -37,7 +39,7 @@ function MAKE_PARAGRAPH( string, sup )
     mainContainer.appendChild( paragraph );
 }
 
-function MAKE_CODE( text )
+function MAKE_CODE( text, language = "cpp" )
 {
     console.assert(text);
 
@@ -107,7 +109,11 @@ function MAKE_CODE( text )
                     text = text.substr( 0, i ) + '@' + content + '@' + text.substr( i + content.length + 3 );
                 }
 
-                if( KEY_WORDS.includes( content ) )
+                if( language == "cpp" && KEY_WORDS.includes( content ) )
+                {
+                    highlight = "kwd";
+                }
+                else if( language == "js" && JS_KEY_WORDS.includes( content ) )
                 {
                     highlight = "kwd";
                 }
@@ -217,7 +223,7 @@ function MAKE_CLASS_CONSTRUCTOR( name, params )
     for( var p of params ) {
         const name = p[ 0 ];
         const type = p[ 1 ];
-        paramsHTML += name + ": <span class='desc'>" + type + "</span>" + ( params.indexOf( p ) != (params.length - 1) ? ', ' : '' );
+        paramsHTML += name + " <span class='desc'>" + type + "</span>" + ( params.indexOf( p ) != (params.length - 1) ? ', ' : '' );
     }
     let pr = document.createElement('p');
     pr.innerHTML = INLINE_CODE( "<span class='constructor'>" + name + "(" + paramsHTML + ")" + "</span>" );
