@@ -378,13 +378,20 @@ void Material::render_gui()
             dirty_flags |= eMaterialProperties::PROP_EMISSIVE;
         }
 
+        ImGui::Text("Topology Type");
+        ImGui::SameLine(200);
+        static const char* topology_types[] = { "TOPOLOGY_POINT_LIST", "TOPOLOGY_LINE_LIST", "TOPOLOGY_LINE_STRIP", "TOPOLOGY_TRIANGLE_LIST", "TOPOLOGY_TRIANGLE_STRIP" };
+        int topology_type_int = static_cast<int>(topology_type);
+        if (ImGui::Combo("##Topology Type", &topology_type_int, topology_types, ((int)(sizeof(topology_types) / sizeof(*(topology_types)))))) {
+            set_topology_type(static_cast<eTopologyType>(topology_type_int));
+        }
+
         ImGui::Text("Cull Type");
         ImGui::SameLine(200);
         static const char* cull_types[] = { "NONE", "BACK", "FRONT" };
         int cull_type_int = static_cast<int>(cull_type);
         if (ImGui::Combo("##Cull Type", &cull_type_int, cull_types, ((int)(sizeof(cull_types) / sizeof(*(cull_types)))))) {
-            cull_type = static_cast<eCullType>(cull_type_int);
-            dirty_flags |= eMaterialProperties::PROP_CULL_TYPE;
+            set_cull_type(static_cast<eCullType>(cull_type_int));
         }
 
         ImGui::Text("Transparency Type");
@@ -392,8 +399,7 @@ void Material::render_gui()
         static const char* transparency_types[] = { "OPAQUE", "BLEND", "MASK", "HASH" };
         int transparency_type_int = static_cast<int>(transparency_type);
         if (ImGui::Combo("##Transparency", &transparency_type_int, transparency_types, ((int)(sizeof(transparency_types) / sizeof(*(transparency_types)))))) {
-            transparency_type = static_cast<eTransparencyType>(transparency_type_int);
-            dirty_flags |= eMaterialProperties::PROP_TRANSPARENCY_TYPE;
+            set_transparency_type(static_cast<eTransparencyType>(transparency_type_int));
         }
 
         if (transparency_type == ALPHA_MASK) {
