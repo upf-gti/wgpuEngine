@@ -23,7 +23,7 @@ WebXRContext::~WebXRContext()
 
 }
 
-bool WebXRContext::is_session_supported()
+bool WebXRContext::query_session_supported()
 {
     webxr_is_session_supported(WEBXR_SESSION_MODE_IMMERSIVE_VR, [](void* userData, int mode, bool supported) {
         static_cast<WebXRContext*>(userData)->set_session_supported(supported);

@@ -15,6 +15,11 @@
 #include "graphics/font.h"
 #include "graphics/graphics_utils.h"
 
+#include "xr/xr_context.h"
+#ifdef WEBXR_SUPPORT
+#include "xr/webxr/webxr_context.h"
+#endif
+
 #include "framework/math/transform.h"
 #include "framework/math/aabb.h"
 #include "framework/math/intersections.h"
@@ -26,6 +31,8 @@
 #include "framework/nodes/skeleton_instance_3d.h"
 #include "framework/parsers/parse_gltf.h"
 #include "framework/parsers/parse_obj.h"
+#include "framework/parsers/parse_ply.h"
+#include "framework/parsers/parse_vdb.h"
 #include "framework/camera/flyover_camera.h"
 #include "framework/camera/orbit_camera.h"
 #include "framework/ui/gizmo_3d.h"
@@ -411,6 +418,7 @@ EMSCRIPTEN_BINDINGS(wgpuEngine_bindings) {
    class_<Node>("Node")
         .constructor<>()
         .property("name", &Node::name)
+        .property("sceneUID", &Node::get_scene_unique_id)
         .function("render", &Node::render)
         .function("update", &Node::update)
         .function("getChildren", &Node::get_children)
@@ -554,9 +562,32 @@ EMSCRIPTEN_BINDINGS(wgpuEngine_bindings) {
         .constructor<>()
         .function("parse", &GltfParser::parse);
 
+    class_<PlyParser, base<Parser>>("PlyParser")
+        .constructor<>()
+        .function("parse", &PlyParser::parse);
+
+    class_<VdbParser, base<Parser>>("VdbParser")
+        .constructor<>()
+        .function("parse", &VdbParser::parse);
+
     function("_parseObj", select_overload<MeshInstance3D*(const std::string&, bool)>(&parse_obj), allow_raw_pointers());
 
     register_vector<Node*>("VectorNodePtr");
+
+    /*
+    *   XR
+    */
+
+    class_<XRContext>("XRContext")
+        .property("initialized", &XRContext::is_initialized);
+
+#ifdef WEBXR_SUPPORT
+    class_<WebXRContext, base<XRContext>>("WebXRContext")
+        .constructor<>()
+        .property("sessionSupported", &WebXRContext::is_session_supported)
+        .property("near", &WebXRContext::z_near)
+        .property("far", &WebXRContext::z_far);
+#endif
 
     /*
     *	Renderer
@@ -566,6 +597,9 @@ EMSCRIPTEN_BINDINGS(wgpuEngine_bindings) {
 
     class_<Renderer>("Renderer")
         .constructor<const sRendererConfiguration&>()
+#ifdef XR_SUPPORT
+        .function("getXrContext", &Renderer::get_xr_context, return_value_policy::reference())
+#endif
         .function("getCamera", &Renderer::get_camera, allow_raw_pointers());
 
     enum_<TextureStorageFlags>("TextureStorageFlags")

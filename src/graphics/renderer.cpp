@@ -74,7 +74,7 @@ Renderer::Renderer(const sRendererConfiguration& config)
     spdlog::info("Creating WebXR context");
 
     WebXRContext* webxr_context = new WebXRContext();
-    is_xr_available = webxr_context->is_session_supported();
+    is_xr_available = webxr_context->query_session_supported();
 
     xr_context = webxr_context;
 #endif

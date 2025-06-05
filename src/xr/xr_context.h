@@ -66,6 +66,8 @@ struct XRContext {
     virtual bool init(WebGPUContext* webgpu_context) = 0;
     virtual void clean() = 0;
 
+    bool is_initialized() const { return initialized; }
+
     /*
     * XR Input
     */
