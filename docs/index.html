@@ -5,8 +5,7 @@
     <meta name="viewport" content="width=device-width,initial-scale=1.0">
     <title>wgpuEngine Docs</title>
     <link rel="stylesheet" href="https://cdn.skypack.dev/lexgui/build/lexgui.css">
-    <link rel="stylesheet" href="style.css">
-    <script type="text/javascript" src="docmaker.js"></script>
+    <link rel="stylesheet" href="https://cdn.skypack.dev/lexgui/build/lexgui-docs.css">
     <script type="importmap">
         {
           "imports": {
@@ -21,6 +20,7 @@
     <script type="module">
 
         import { LX } from 'lexgui';
+        import 'lexgui/components/docmaker.js';
 
         window.LX = LX;
 
@@ -87,13 +87,13 @@
             }
         ];
 
+        const customFooter = LX.makeContainer( ["100%", "32px"], "", "<p>Site created with _</p><span><a href='https://github.com/jxarco/lexgui.js/'>LexGUI.js</a></span>_" );
+
         const sidebarOptions = {
-            headerTitle: "wgpuEngine",
-            headerSubtitle: 'Docs',
+            headerTitle: "wgpuEngine (GTI)",
+            headerSubtitle: 'Documentation',
             headerImage: "./images/upf.png",
-            footerTitle: "UPF-GTI",
-            xfooterSubtitle: "alexroco.30@gmail.com",
-            footerImage: "./images/upf.png",
+            footer: customFooter,
             collapsed: false,
             collapsable: false
         };
@@ -178,6 +178,9 @@
             const sidebar = area.addSidebar( sidebarCallback, sidebarOptions );
             menubar = sidebar.siblingArea.addMenubar();
         }
+
+        customFooter.style.fontSize = "12px";
+        customFooter.classList.add( "fg-secondary", "justify-center" );
 
         menubar.addButtons( menubarButtons );
 

@@ -27,7 +27,7 @@ MAKE_CODE( `@[com]// Change material example@
 @[var]material@->@[mtd]set_cull_type@(@[enu]CULL_NONE@);
 @[var]material@->@[mtd]set_type@(@[enu]MATERIAL_UNLIT@);
 @[var]material@->@[mtd]set_color@({@1.0f@, @0.0f@, @0.0f@, @1.0f@);
-`);
+`, "cpp" );
 
 MAKE_CODE( `@[com]// Override material example@
 @[cls]MeshInstance3D@* @[var]cube_mesh_instance@ = @[mtd]parse_mesh@(@[str]"data/meshes/cube.obj"@);
@@ -41,7 +41,7 @@ MAKE_CODE( `@[com]// Override material example@
 
 @[com]// Overload, in this instance, this surface with the new material@
 @[var]cube_mesh_instance@->@[mtd]set_surface_material_override@(@[var]cube_surface@, @[var]material@);
-`);
+`, "cpp" );
 
 MAKE_PARAGRAPH( `Next, we will see how to compile your own shaders in the engine, in order to be used for GPU compute or to overload the material.` );
 

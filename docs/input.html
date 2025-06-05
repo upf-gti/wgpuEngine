@@ -17,22 +17,22 @@ MAKE_CODE( `@bool@ @[mtd]is_key_pressed@(@int@ @[var]key@, @bool@ @[var]stop_pro
 @[lit]glm@::@[cls]vec2@ @[mtd]get_mouse_position@();
 @[lit]glm@::@[cls]vec2@ @[mtd]get_mouse_delta@();
 @float@ @[mtd]get_mouse_wheel_delta@();
-` );
+`, "cpp" );
 
 MAKE_HEADER( "XR Controllers", "h2", "xr-controllers" );
 
-MAKE_PARAGRAPH( `The engine also offers different methods to get data from XR Controllers, specifically poses, buttons, grab buttons, triggers and thumbsticks.` );
+MAKE_PARAGRAPH( `The engine also offers different methods to get data from XR Controllers, specifically poses, buttons, grab buttons, triggers and thumbsticks.`, "cpp" );
 
 MAKE_CODE( `@[com]// Example: Getting right hand pose transform@
 @[lit]glm@::@[cls]mat4x4@ @[var]hand_right_pose@ = @[cls]Input@::@[mtd]get_controller_pose@(@[enu]HAND_RIGHT@);
-` );
+`, "cpp" );
 
 MAKE_HEADER( "Poses", "h3", "xr-poses" );
 
 MAKE_CODE( `@[lit]glm@::@[cls]mat4x4@ @[mtd]get_controller_pose@(@uint8_t@ @[var]controller@, @uint8_t@ @[var]type@, @bool@ @[var]world_space@);
 @[lit]glm@::@[cls]vec3@ @[mtd]get_controller_position@(@uint8_t@ @[var]controller@, @uint8_t@ @[var]type@, @bool@ @[var]world_space@);
 @[lit]glm@::@[cls]quat@ @[mtd]get_controller_rotation@(@uint8_t@ @[var]controller@, @uint8_t@ @[var]type@);
-` );
+`, "cpp" );
 
 MAKE_CODE_BULLET_LIST([
     ["controller", `Specify controller id (${ INLINE_CODE( "HAND_LEFT" ) } or ${ INLINE_CODE( "HAND_RIGHT" ) }, from ${ INLINE_CODE( "OPENXR_HANDS" ) })`],
@@ -47,7 +47,7 @@ MAKE_CODE( `@bool@ @[mtd]is_button_pressed@(@uint8_t@ @[var]button@);
 @bool@ @[mtd]was_button_released@(@uint8_t@ @[var]button@);
 @bool@ @[mtd]is_button_touched@(@uint8_t@ @[var]button@);
 @bool@ @[mtd]was_button_touched@(@uint8_t@ @[var]button@);
-` );
+`, "cpp" );
 
 MAKE_CODE_BULLET_LIST([
     ["button", `Specify button id (from ${ INLINE_CODE( "OPENXR_BUTTONS" ) })`]
@@ -59,7 +59,7 @@ MAKE_CODE( `@bool@ @[mtd]is_grab_pressed@(@uint8_t@ @[var]controller@);
 @bool@ @[mtd]was_grab_pressed@(@uint8_t@ @[var]controller@);
 @bool@ @[mtd]was_grab_released@(@uint8_t@ @[var]controller@);
 @float@ @[mtd]get_grab_value@(@uint8_t@ @[var]controller@);
-` );
+`, "cpp" );
 
 MAKE_CODE_BULLET_LIST([
     ["controller", `Specify controller id (${ INLINE_CODE( "HAND_LEFT" ) } or ${ INLINE_CODE( "HAND_RIGHT" ) }, from ${ INLINE_CODE( "OPENXR_HANDS" ) })`]
@@ -73,7 +73,7 @@ MAKE_CODE( `@float@ @[mtd]get_trigger_value@(@uint8_t@ @[var]controller@);
 @bool@ @[mtd]is_trigger_pressed@(@uint8_t@ @[var]controller@);
 @bool@ @[mtd]is_trigger_touched@(@uint8_t@ @[var]controller@);
 @bool@ @[mtd]was_trigger_touched@(@uint8_t@ @[var]controller@);
-` );
+`, "cpp" );
 
 MAKE_CODE_BULLET_LIST([
     ["controller", `Specify controller id (${ INLINE_CODE( "HAND_LEFT" ) } or ${ INLINE_CODE( "HAND_RIGHT" ) }, from ${ INLINE_CODE( "OPENXR_HANDS" ) })`]
@@ -87,7 +87,7 @@ MAKE_CODE( `@uint8_t@ @[mtd]get_leading_thumbstick_axis@(@uint8_t@ @[var]control
 @bool@ @[mtd]was_thumbstick_pressed@(@uint8_t@ @[var]controller@);
 @bool@ @[mtd]is_thumbstick_touched@(@uint8_t@ @[var]controller@);
 @bool@ @[mtd]was_thumbstick_touched@(@uint8_t@ @[var]controller@);
-` );
+`, "cpp" );
 
 MAKE_CODE_BULLET_LIST([
     ["controller", `Specify controller id (${ INLINE_CODE( "HAND_LEFT" ) } or ${ INLINE_CODE( "HAND_RIGHT" ) }, from ${ INLINE_CODE( "OPENXR_HANDS" ) })`],

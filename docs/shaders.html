@@ -9,14 +9,14 @@ MAKE_PARAGRAPH( `The first part is to have a valid ${ INLINE_CODE( "webgpu_conte
 
 MAKE_CODE( `@[cls]Renderer@* @[var]renderer@ = @[cls]Renderer@::@[stc]instance@;
 @[cls]WebGPUContext@* @[var]webgpu_context@ = @[var]renderer@->@[mtd]get_webgpu_context@();
-`);
+`, "cpp" );
 
 MAKE_HEADER( "Shaders", "h3" );
 
 MAKE_PARAGRAPH( `wgpuEngine has already defined shaders for PBR rendering, mipmap generation and a few UI components. 
 For creating your own shaders, for raster or compute, you allocate it inside the RenderStorage class (where all the render resources, like textures, meshes and so, are stored):` );
 
-MAKE_CODE( `@[cls]Shader@* @[var]new_shader@ = @[cls]RendererStorage@::@[stf]get_shader@(@"data/new_shader.wgsl"@);`);
+MAKE_CODE( `@[cls]Shader@* @[var]new_shader@ = @[cls]RendererStorage@::@[stf]get_shader@(@"data/new_shader.wgsl"@);`, "cpp" );
 
 MAKE_HEADER( "Buffers", "h3" );
 
@@ -31,7 +31,7 @@ MAKE_CODE( `@[cls]WGPUBuffer@ @[var]new_buffer@ = @[var]webgpu_context@->@[mtd]c
 );
 
 @[com]// Update@
-@[var]webgpu_context@->@[mtd]update_buffer@(@[var]new_buffer@, @0@, &@[var]new_val@, @[mtd]sizeof@(@[var]buffer_size@));`);
+@[var]webgpu_context@->@[mtd]update_buffer@(@[var]new_buffer@, @0@, &@[var]new_val@, @[mtd]sizeof@(@[var]buffer_size@));`, "cpp" );
 
 MAKE_PARAGRAPH( `All these functions return WebGPU native types, so for cleaning & deallocating, you can just use the WebGPU functions.`, true );
 
@@ -69,7 +69,7 @@ MAKE_CODE( `@[com]// Uniform buffer@
 @[cls]Uniform@ @[var]color_tex_uniform@;
 @[var]color_tex_uniform@.data = @[var]color_tex@.@[mtd]get_view@(@[enu]WGPUTextureViewDimension_2D@);
 @[var]color_tex_uniform@.binding = @3@;
-`);
+`, "cpp" );
 
 MAKE_HEADER( "Bind Groups", "h3" );
 
@@ -83,7 +83,7 @@ MAKE_CODE( `@uint32_t@ @[var]bindgroup_index@ = @1u@;
     @[var]bindgroup_index@,
     @"Mesh bindgroup"@
 );
-`);
+`, "cpp" );
 
 MAKE_HEADER( "Pipelines", "h3" );
 
@@ -96,7 +96,7 @@ MAKE_CODE( `@[cls]Pipeline@ @[var]new_pipeline@;
 @[com]// Create a raster shader@
 @[var]new_pipeline@.@[mtd]create_render_async@(@[var]shader@);
 @[var]new_pipeline@.@[mtd]create_render@(@[var]shader@);
-`);
+`, "cpp" );
 
 MAKE_PARAGRAPH( `Using a pipeline:` );
 
@@ -118,6 +118,6 @@ MAKE_CODE( `@if@ (!@[var]mesh_pipeline@.@[mtd]is_loaded@()) {
 );
 
 @[mtd]wgpuRenderPassEncoderDraw@(@[var]render_pass@, @[var]surface@->@[mtd]get_vertex_count@(), @1@, @0@, @0@);
-`);
+`, "cpp" );
 
 </script>

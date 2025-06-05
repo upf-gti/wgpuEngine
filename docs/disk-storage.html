@@ -17,7 +17,7 @@ MAKE_CODE( `@[cls]Renderer@* @[var]renderer@ = @[cls]Renderer@::@[stc]instance@;
     @[var]screen_surface_texture@.texture,
     { @[var]texture_width@, @[var]texture_height@, @1u@ },
     @"result.ppm"@
-);` );
+);`, "cpp" );
 
 MAKE_HEADER( "Store G-Buffers to disk", "h3" );
 
@@ -29,5 +29,6 @@ MAKE_CODE( `@[com]// Wherever in the Update function:@
 @[cls]Renderer@* @[var]renderer@ = @[cls]Renderer@::@[stc]instance@;
 @[var]renderer@.@[mtd]set_store_gbuffers@(@"results/GBuffer_test_"@);
 @[com]// This will store in the results folder de GBuffer_test_0.ppm (color),@ 
-@[com]// GBuffer_test_1.ppm(normal) and GBuffer_test_depth.ppm(depth)@` );
+@[com]// GBuffer_test_1.ppm(normal) and GBuffer_test_depth.ppm(depth)@
+`, "cpp" );
 </script>

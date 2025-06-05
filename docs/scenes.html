@@ -10,6 +10,8 @@ Here you can see most of the nodes supported in the engine:` );
 
 INSERT_IMAGE( "images/Node_scheme.png", "Node Inheritance Scheme" );
 
+MAKE_LINE_BREAK();
+MAKE_LINE_BREAK();
 MAKE_PARAGRAPH( `A ${ INLINE_CODE( "Node3D" ) } contains a 3D transform that details its position in the scene, so that all the nodes that inherit will have a position transform in the scene. 
 However, some nodes might need to overload its transform in runtime, like the ${ INLINE_CODE( "Camera" ) } node in VR mode that will follow the head of the user in the 3D space, or like the ${ INLINE_CODE( "Environment3D" ) } 
 that contains a skybox that is always following the camera.` );
@@ -36,7 +38,7 @@ MAKE_CODE( `@[pre]#include@ @[str]"framework/parsers/parse_gltf.h"@
 
 @[var]scene@->@[mtd]add_node@(@static_cast@<@[cls]MeshInstance3D@*>(@[var]parsed_entities@[@0@]));
 @[var]scene@->@[mtd]add_node@(@static_cast@<@[cls]MeshInstance3D@*>(@[var]parsed_entities@[@1@]));
-` );
+`, "cpp" );
 
 MAKE_PARAGRAPH( `In this snippet, we are loading inside a ${ INLINE_CODE( "Node" ) } pointer array all the nodes inside two GLB files, and they are just putting 2 entities inside the scene. 
 A glb/gltf can also be loaded directly to a scene.` );
