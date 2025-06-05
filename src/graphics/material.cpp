@@ -405,6 +405,15 @@ void Material::render_gui()
             }
         }
 
+        ImGui::Text("Priority");
+        ImGui::SameLine(200);
+        ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
+        int priority_int = static_cast<int>(priority);
+        if (ImGui::DragInt("##Priority", &priority_int, 1, 0, 20)) {
+            priority = static_cast<uint8_t>(priority_int);
+            dirty_flags |= eMaterialProperties::PROP_PRIORITY;
+        }
+
         ImGui::Text("Roughness");
         ImGui::SameLine(200);
         ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
