@@ -36,7 +36,7 @@ void Gizmo3D::initialize(const eGizmoOp& new_operation, const glm::vec3& positio
         material->set_priority(0);
         material->set_transparency_type(ALPHA_BLEND);
         material->set_color(glm::vec4(1.0f));
-        material->set_shader(RendererStorage::get_shader_from_source(shaders::mesh_forward::source, shaders::mesh_forward::path, shaders::mesh_forward::libraries));
+        material->set_shader(RendererStorage::get_shader_from_source(shaders::mesh_forward::source, shaders::mesh_forward::path, shaders::mesh_forward::libraries, material));
 
         free_hand_point_mesh = parse_mesh("data/meshes/sphere.obj");
         free_hand_point_mesh->set_surface_material_override(free_hand_point_mesh->get_surface(0), material);
