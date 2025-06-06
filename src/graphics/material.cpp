@@ -188,6 +188,7 @@ void Material::set_is_2D(bool is_2D)
 void Material::set_fragment_write(bool fragment_write)
 {
     this->fragment_write = fragment_write;
+    dirty_flags |= eMaterialProperties::PROP_FRAGMENT_WRITE;
 }
 
 void Material::set_transparency_type(eTransparencyType transparency_type)
