@@ -48,9 +48,10 @@ public:
 
     void load(const std::string& texture_path, bool is_srgb, bool upload_to_vram = true, bool store_texture_data = false);
     void load_hdr(const std::string& texture_path, bool store_texture_data = false);
+    void load_from_data(const std::string& name, WGPUTextureDimension dimension, int width, int height, int array_layers, void* data, bool create_mipmaps = true, WGPUTextureFormat p_format = WGPUTextureFormat_RGBA8Unorm);
+    void load_from_hdre(HDRE* hdre);
 
 	void create(WGPUTextureDimension dimension, WGPUTextureFormat format, WGPUExtent3D size, WGPUTextureUsage usage, uint32_t mipmaps, uint8_t sample_count, const void* data);
-
     void update(void* data, uint32_t mip_level, WGPUOrigin3D origin);
 
     void generate_mipmaps(const void* data);
@@ -62,12 +63,8 @@ public:
         uint32_t base_mip_level = 0, uint32_t mip_level_count = 1,
         uint32_t base_array_layer = 0, uint32_t array_layer_count = 1) const;
 
-
     uint32_t        get_mipmap_count() const { return mipmaps; }
     WGPUTextureDimension get_dimension() const { return dimension; }
-
-    void set_wrap_u(WGPUAddressMode wrap_u) { this->wrap_u = wrap_u; }
-    void set_wrap_v(WGPUAddressMode wrap_v) { this->wrap_v = wrap_v; }
 
     WGPUAddressMode get_wrap_u() const { return wrap_u; }
     WGPUAddressMode get_wrap_v() const { return wrap_v; }
@@ -78,15 +75,14 @@ public:
 
     sTextureData& get_texture_data() { return texture_data; }
     const sTextureData& get_texture_data() const { return texture_data; }
-
     WGPUTextureFormat get_format() const { return format; }
-
     WGPUExtent3D get_size() const { return size; }
+    const std::string& get_path() const { return path; }
 
     bool is_srgb() const { return texture_data.is_srgb; }
 
-    void load_from_data(const std::string& name, WGPUTextureDimension dimension, int width, int height, int array_layers, void* data, bool create_mipmaps = true, WGPUTextureFormat p_format = WGPUTextureFormat_RGBA8Unorm);
-    void load_from_hdre( HDRE* hdre );
+    void set_wrap_u(WGPUAddressMode wrap_u) { this->wrap_u = wrap_u; }
+    void set_wrap_v(WGPUAddressMode wrap_v) { this->wrap_v = wrap_v; }
 
     void set_texture_parameters(const std::string& name, WGPUTextureDimension dimension, int width, int height, int array_layers, bool create_mipmaps = true, WGPUTextureFormat p_format = WGPUTextureFormat_RGBA8Unorm);
 

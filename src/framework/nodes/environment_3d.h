@@ -11,5 +11,6 @@ public:
 
 	void update(float delta_time) override;
 
+    Texture* get_texture() const;
     void set_texture(const std::string& texture_path);
 };

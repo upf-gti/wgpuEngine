@@ -43,6 +43,12 @@ void Environment3D::update(float delta_time)
     set_position(renderer->get_camera_eye());
 }
 
+Texture* Environment3D::get_texture() const
+{
+    Material* material = mesh_instance->get_surface_material(0);
+    return material->get_diffuse_texture();
+}
+
 void Environment3D::set_texture(const std::string& texture_path)
 {
     Renderer* renderer = static_cast<Renderer*>(Renderer::instance);

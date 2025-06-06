@@ -183,7 +183,9 @@ EMSCRIPTEN_BINDINGS(wgpuEngine_bindings) {
     function("getRotationToFace", &get_rotation_to_face);
     function("smoothDampAngle", &smooth_damp_angle, allow_raw_pointers());
 
-    class_<Resource>("Resource").constructor<>();
+    class_<Resource>("Resource")
+        .property("name", &Resource::get_name, &Resource::set_name)
+        .constructor<>();
 
     enum_<eGizmoOp>("GizmoOp")
         .value("TRANSLATE_X", TRANSLATE_X)
@@ -352,7 +354,9 @@ EMSCRIPTEN_BINDINGS(wgpuEngine_bindings) {
         .value("LIGHT_OMNI", LIGHT_OMNI)
         .value("LIGHT_SPOT", LIGHT_SPOT);
 
-    class_<Texture, base<Resource>>("Texture").constructor<>();
+    class_<Texture, base<Resource>>("Texture")
+        .property("path", &Texture::get_path)
+        .constructor<>();
 
     class_<Font, base<Resource>>("Font").constructor<>();
 
@@ -462,6 +466,7 @@ EMSCRIPTEN_BINDINGS(wgpuEngine_bindings) {
 
     class_<Environment3D, base<MeshInstance3D>>("Environment3D")
         .constructor<>()
+        .property("texture", &Environment3D::get_texture, return_value_policy::reference())
         .function("update", &Environment3D::update)
         .function("_setTexture", &Environment3D::set_texture);
 
