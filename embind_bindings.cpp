@@ -245,7 +245,9 @@ EMSCRIPTEN_BINDINGS(wgpuEngine_bindings) {
 
     register_vector<WGPUConstantEntry>("VectorWGPUConstantEntry");
 
-    class_<Shader>("Shader").constructor<>();
+    class_<Shader>("Shader")
+        .constructor<>()
+        .property("path", &Shader::get_path);
 
     class_<Uniform>("Uniform").constructor<>();
 
@@ -617,6 +619,7 @@ EMSCRIPTEN_BINDINGS(wgpuEngine_bindings) {
     class_<RendererStorage>("RendererStorage")
         .class_function("getSurface", &RendererStorage::get_surface, allow_raw_pointers())
         .class_function("getShaderFromName", &RendererStorage::get_shader_from_name, allow_raw_pointers())
+        .class_function("reloadShader", &RendererStorage::reload_shader)
         .class_function("_getTexture", &RendererStorage::get_texture, allow_raw_pointers())
         .class_function("_getShader", select_overload<Shader*(const std::string&,const Material*,const std::vector<std::string>&)>(&RendererStorage::get_shader), allow_raw_pointers());
 
