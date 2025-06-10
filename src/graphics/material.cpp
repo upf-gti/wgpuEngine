@@ -388,6 +388,15 @@ void Material::render_gui()
             dirty_flags |= eMaterialProperties::PROP_CULL_TYPE;
         }
 
+        ImGui::Text("Topology Type");
+        ImGui::SameLine(200);
+        static const char* topology_types[] = { "TOPOLOGY_POINT_LIST", "TOPOLOGY_LINE_LIST", "TOPOLOGY_LINE_STRIP", "TOPOLOGY_TRIANGLE_LIST", "TOPOLOGY_TRIANGLE_STRIP" };
+        int topology_type_int = static_cast<int>(topology_type);
+        if (ImGui::Combo("##Topology Type", &topology_type_int, topology_types, ((int)(sizeof(topology_types) / sizeof(*(topology_types)))))) {
+            topology_type = static_cast<eTopologyType>(topology_type_int);
+            dirty_flags |= eMaterialProperties::PROP_TOPOLOGY_TYPE;
+        }
+
         ImGui::Text("Transparency Type");
         ImGui::SameLine(200);
         static const char* transparency_types[] = { "OPAQUE", "BLEND", "MASK", "HASH" };

@@ -111,6 +111,9 @@ void MeshInstance3D::render_gui()
             std::string surface_name = surfaces[i]->get_name();
             std::string final_surface_name = surface_name.empty() ? ("Surface " + std::to_string(i)).c_str() : surface_name;
             if (ImGui::TreeNodeEx(final_surface_name.c_str(), ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_Leaf)) {
+
+                surfaces[i]->render_gui();
+
                 Material* material = mesh_instance->get_surface_material_override(surfaces[i]);
                 if (!material) {
                     material = surfaces[i]->get_material();

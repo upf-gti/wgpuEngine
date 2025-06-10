@@ -574,6 +574,8 @@ void Surface::create_rounded_box(float w, float h, float d, float c, const glm::
 
     spdlog::trace("Rounded Box mesh created ({} vertices)", vertices.size());
 
+    update_aabb(vertices.vertices);
+
     create_surface_data(vertices);
 }
 
@@ -739,6 +741,8 @@ void Surface::create_cone(float r, float h, uint32_t segments, const glm::vec3& 
 
     spdlog::trace("Cone mesh created ({} vertices)", vtx_counter);
 
+    update_aabb(vertices.vertices);
+
     create_surface_data(vertices);
 }
 
@@ -825,6 +829,8 @@ void Surface::create_cylinder(float r, float h, uint32_t segments, bool capped, 
     }
 
     spdlog::trace("Cylinder mesh created ({} vertices)", vtx_counter);
+
+    update_aabb(vertices.vertices);
 
     create_surface_data(vertices);
 }
@@ -975,11 +981,15 @@ void Surface::create_capsule(float r, float h, uint32_t segments, uint32_t rings
 
     spdlog::trace("Capsule mesh created ({} vertices)", vertices.size());
 
+    update_aabb(vertices.vertices);
+
     create_surface_data(vertices);
 }
 
-void Surface::create_torus(float r, float ir, uint32_t segments_section, uint32_t segments_circle, const glm::vec3& color)
+void Surface::create_torus(float ring_radius, float tube_radius, uint32_t rings, uint32_t ring_segments, const glm::vec3& color)
 {
+    assert(ring_radius != tube_radius && "Ring and tube radii cannot be the same.");
+
     // Mesh has vertex data...
     if (vertex_pos_buffer)
     {
@@ -992,63 +1002,57 @@ void Surface::create_torus(float r, float ir, uint32_t segments_section, uint32_
 
     name = "torus";
 
-    sSurfaceData vertices;
+    uint32_t num_vertices = (rings + 1) * (ring_segments + 1);
 
     sSurfaceData vtxs;
-    vtxs.resize((segments_circle + 1) * (segments_section + 1));
-    uint32_t vtx_counter = 0;
+    vtxs.vertices.reserve(num_vertices);
+    vtxs.normals.reserve(num_vertices);
+    vtxs.uvs.reserve(num_vertices);
+    vtxs.colors.reserve(num_vertices);
 
     std::vector<uint32_t> indices;
-    indices.resize((segments_circle) * (segments_section + 1) * 6);
-    uint32_t idx_counter = 0;
+    indices.reserve(rings * ring_segments * 6);
 
-    float pi2 = glm::pi<float>() * 2.f;
+    float tau = glm::tau<float>();
 
-    float deltaSection = (pi2 / segments_section);
-    float deltaCircle = (pi2 / segments_circle);
-    int offset = 0;
+    for (int i = 0; i <= rings; i++) {
+        float theta = (float)i / rings * tau;  // around the main ring
+        float cosTheta = cos(theta);
+        float sinTheta = sin(theta);
+        for (int j = 0; j <= ring_segments; j++) {
+            float phi = (float)j / ring_segments * tau;  // around the tube
+            float cosPhi = cos(phi);
+            float sinPhi = sin(phi);
 
-    for (unsigned int i = 0; i <= segments_circle; i++)
-    {
-        for (unsigned int j = 0; j <= segments_section; j++)
-        {
-            glm::vec3 c0(r, 0.0, 0.0);
-            glm::vec3 v0(r + ir * cosf(j * deltaSection), ir * sinf(j * deltaSection), 0.0);
-            glm::quat q = glm::angleAxis(i * deltaCircle, normals::pY);
-            glm::vec3 v = q * v0;
-            glm::vec3 c = q * c0;
+            float x = (ring_radius + tube_radius * cosPhi) * cosTheta;
+            float y = tube_radius * sinPhi;
+            float z = (ring_radius + tube_radius * cosPhi) * sinTheta;
 
-            vtxs.vertices[vtx_counter] = v;
-            vtxs.uvs[vtx_counter] = glm::vec2(i / (float)segments_circle, j / (float)segments_section);
-            vtxs.normals[vtx_counter] = glm::normalize(v - c);
-            vtxs.colors[vtx_counter] = color;
-            vtx_counter++;
+            vtxs.vertices.push_back(glm::vec3(x, y, z));
+            vtxs.normals.push_back(glm::normalize(glm::vec3(cos(theta) * cos(phi), sin(phi), sin(theta) * cos(phi))));
+            vtxs.uvs.push_back(glm::vec2((float)i / rings, (float)j / ring_segments));
+            vtxs.colors.push_back(color);
 
-            if (i != segments_circle)
-            {
-                indices[idx_counter++] = offset + segments_section + 1;
-                indices[idx_counter++] = offset;
-                indices[idx_counter++] = offset + segments_section;
-                indices[idx_counter++] = offset + segments_section + 1;
-                indices[idx_counter++] = offset + 1;
-                indices[idx_counter++] = offset;
+            if (i != rings && j != ring_segments) {
+                uint32_t row1 = i * (ring_segments + 1);
+                uint32_t row2 = (i + 1) * (ring_segments + 1);
+
+                vtxs.indices.push_back(row1 + j);
+                vtxs.indices.push_back(row1 + j + 1);
+                vtxs.indices.push_back(row2 + j);
+
+                vtxs.indices.push_back(row1 + j + 1);
+                vtxs.indices.push_back(row2 + j + 1);
+                vtxs.indices.push_back(row2 + j);
             }
-            offset++;
         }
     }
 
-    // Add vertices...
-    vertices.resize(indices.size());
-    for (uint32_t i = 0; i < indices.size(); i++) {
-        vertices.vertices[i] = vtxs.vertices[indices[i]];
-        vertices.uvs[i] = vtxs.uvs[indices[i]];
-        vertices.normals[i] = vtxs.normals[indices[i]];
-        vertices.colors[i] = vtxs.colors[indices[i]];
-    }
+    spdlog::info("Torus mesh created ({} vertices, {} indices)", vtxs.vertices.size(), vtxs.indices.size());
 
-    spdlog::trace("Torus mesh created ({} vertices)", vertices.size());
+    update_aabb(vtxs.vertices);
 
-    create_surface_data(vertices);
+    create_surface_data(vtxs);
 }
 
 void Surface::create_circle(float radius, uint32_t segments)
@@ -1066,11 +1070,13 @@ void Surface::create_circle(float radius, uint32_t segments)
 
     sSurfaceData vertices;
 
-    float increment = 2.0f * PI / segments;
+    float pi = glm::pi<float>();
+    float pi2 = pi * 2.f;
+    float increment = pi2 / segments;
 
-    for (float currAngle = 0.0f; currAngle <= 2.0f * PI + increment; currAngle += increment)
+    for (float curr_angle = 0.0f; curr_angle <= pi2 + increment; curr_angle += increment)
     {
-        vertices.vertices.push_back( glm::vec3(radius * cos(currAngle), radius * sin(currAngle), 0) );
+        vertices.vertices.push_back( glm::vec3(radius * cosf(curr_angle), radius * sinf(curr_angle), 0) );
         vertices.colors.push_back( glm::vec3(1.0f) );
     }
 

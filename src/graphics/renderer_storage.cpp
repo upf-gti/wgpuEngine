@@ -8,6 +8,8 @@
 #include "renderer.h"
 #include "mesh_instance.h"
 
+#include "geometries/torus_geometry.h"
+
 #include "framework/nodes/mesh_instance_3d.h"
 #include "framework/nodes/skeleton_instance_3d.h"
 #include "framework/animation/animation.h"
@@ -640,10 +642,15 @@ void RendererStorage::register_basic_surfaces()
     surfaces["capsule"] = capsule_mesh;
 
     // Torus
-    Surface* torus_mesh = new Surface();
-    torus_mesh->create_torus();
+    Surface* torus_mesh = new TorusGeometry();
     torus_mesh->ref();
     surfaces["torus"] = torus_mesh;
+
+    // Circle
+    Surface* circle_mesh = new Surface();
+    circle_mesh->create_circle();
+    circle_mesh->ref();
+    surfaces["circle"] = circle_mesh;
 }
 
 std::vector<std::string> RendererStorage::get_common_define_specializations(const Material* material)
