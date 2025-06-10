@@ -46,14 +46,10 @@ public:
 
     Track();
 
-    int get_id();
-    float get_end_time();
-    float get_start_time();
+    int get_id() const;
     eTrackType get_type() const { return type; };
-    const std::string& get_name();
-    const std::string& get_path();
-    Keyframe& get_keyframe(uint32_t index);
-    int get_keyframe_index(float time);
+    const std::string& get_name() const;
+    const std::string& get_path() const;
     Interpolator& get_interpolator() { return interpolator; }
 
     void set_id(int id);
@@ -64,6 +60,10 @@ public:
     uint32_t size();
     void resize(uint32_t size);
 
+    float get_end_time() const;
+    float get_start_time() const;
+    Keyframe& get_keyframe(uint32_t index);
+    int get_keyframe_index(float time);
     uint32_t add_keyframe(const Keyframe& k, bool sort = false);
     void delete_keyframe(int keyframe_idx);
 

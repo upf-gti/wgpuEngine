@@ -168,7 +168,7 @@ uint32_t Skeleton::get_joint_index(uint32_t id)
     return joint_ids[id];
 }
 
-uint32_t Skeleton::get_joints_count()
+uint32_t Skeleton::get_joints_count() const
 {
     return (uint32_t)joint_ids.size();
 }

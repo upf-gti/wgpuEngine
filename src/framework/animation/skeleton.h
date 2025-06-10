@@ -5,8 +5,6 @@
 
 class Skeleton : public Resource
 {
-    std::string name = "";
-
     Pose bind_pose;
     Pose rest_pose;
     Pose current_pose;
@@ -38,11 +36,9 @@ public:
     const std::vector<uint32_t>& get_joint_indices();
     std::string& get_joint_name(uint32_t id);
     uint32_t get_joint_index(uint32_t id);
-    uint32_t get_joints_count();
-    const std::string& get_name() { return name; };
+    uint32_t get_joints_count() const;
 
     void set_current_pose(const Pose& pose);
-    void set_name(const std::string& new_name) { name = new_name; };
 
     void serialize(std::ofstream& binary_scene_file);
     void parse(std::ifstream& binary_scene_file);

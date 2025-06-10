@@ -62,9 +62,6 @@ public:
     };
 
 protected:
-#ifdef __EMSCRIPTEN__
-public:
-#endif
 
     static uint32_t last_node_id;
 
@@ -113,6 +110,8 @@ public:
 
     template <typename T = Node*>
     T get_parent() const { if (!parent) return nullptr;  return dynamic_cast<T>(parent); };
+
+    Node* get_base_parent() const { return parent; };
 
     std::string find_path(const std::string& node_name, const std::string& current_path = "");
 
