@@ -4,8 +4,9 @@
 
 class CylinderGeometry : public SurfaceGeometry
 {
-    float radius = 1.0f;
-    float height = 1.0f;
+    float top_radius = 0.5f;
+    float bottom_radius = 0.5f;
+    float height = 2.0f;
 
     uint32_t rings = 4u;
     uint32_t ring_segments = 64u;
@@ -16,17 +17,19 @@ class CylinderGeometry : public SurfaceGeometry
 
 public:
 
-    CylinderGeometry(float radius = 1.0f, float height = 1.0f, uint32_t rings = 4u, uint32_t ring_segments = 64u, bool capped = true, const glm::vec3& color = { 1.f, 1.f, 1.f });
+    CylinderGeometry(float top_radius = 0.5f, float bottom_radius = 0.5f, float height = 2.0f, uint32_t rings = 4u, uint32_t ring_segments = 64u, bool capped = true, const glm::vec3& color = { 1.f, 1.f, 1.f });
 
     void render_gui() override;
 
-    float get_radius() const { return radius; }
+    float get_top_radius() const { return top_radius; }
+    float get_bottom_radius() const { return bottom_radius; }
     float get_height() const { return height; }
     uint32_t get_rings() const { return rings; }
     uint32_t get_ring_segments() const { return ring_segments; }
     bool get_capped() const { return capped; }
 
-    void set_radius(float new_ring_radius);
+    void set_top_radius(float new_top_radius);
+    void set_bottom_radius(float new_bottom_radius);
     void set_height(float new_height);
     void set_rings(uint32_t new_rings);
     void set_ring_segments(uint32_t new_ring_segments);

@@ -8,20 +8,26 @@
 #include "spdlog/spdlog.h"
 #include "imgui.h"
 
-CylinderGeometry::CylinderGeometry(float radius, float height, uint32_t rings, uint32_t ring_segments, bool capped, const glm::vec3& color)
-    : SurfaceGeometry(color), radius(radius), height(height), rings(rings), ring_segments(ring_segments), capped(capped)
+CylinderGeometry::CylinderGeometry(float top_radius, float bottom_radius, float height, uint32_t rings, uint32_t ring_segments, bool capped, const glm::vec3& color)
+    : SurfaceGeometry(color), top_radius(top_radius), bottom_radius(bottom_radius), height(height), rings(rings), ring_segments(ring_segments), capped(capped)
 {
     build_mesh();
 }
 
 void CylinderGeometry::build_mesh()
 {
-    create_cylinder(radius, height, rings, ring_segments, capped, color);
+    create_cylinder(top_radius, bottom_radius, height, rings, ring_segments, capped, color);
 }
 
-void CylinderGeometry::set_radius(float new_radius)
+void CylinderGeometry::set_top_radius(float new_top_radius)
 {
-    radius = new_radius;
+    top_radius = new_top_radius;
+    build_mesh();
+}
+
+void CylinderGeometry::set_bottom_radius(float new_bottom_radius)
+{
+    bottom_radius = new_bottom_radius;
     build_mesh();
 }
 
@@ -56,10 +62,17 @@ void CylinderGeometry::render_gui()
 
         SurfaceGeometry::render_gui();
 
-        ImGui::Text("Radius");
+        ImGui::Text("Top Radius");
         ImGui::SameLine(200);
         ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
-        if (ImGui::DragFloat("##Radius", &radius, 0.01f, 0.01f, 2.0f)) {
+        if (ImGui::DragFloat("##Top Radius", &top_radius, 0.01f, 0.01f, 2.0f)) {
+            dirty = true;
+        }
+
+        ImGui::Text("Bottom Radius");
+        ImGui::SameLine(200);
+        ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
+        if (ImGui::DragFloat("##Bottom Radius", &bottom_radius, 0.01f, 0.01f, 2.0f)) {
             dirty = true;
         }
 

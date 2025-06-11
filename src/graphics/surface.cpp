@@ -12,6 +12,17 @@ Surface* Surface::quad_mesh = nullptr;
 
 Surface::~Surface()
 {
+    clean_buffers();
+
+    if (material) {
+        if (material->unref()) {
+            RendererStorage::delete_material_bind_group(webgpu_context, material);
+        }
+    }
+}
+
+void Surface::clean_buffers()
+{
     if (vertex_pos_buffer) {
         wgpuBufferDestroy(vertex_pos_buffer);
     }
@@ -20,10 +31,8 @@ Surface::~Surface()
         wgpuBufferDestroy(vertex_data_buffer);
     }
 
-    if (material) {
-        if (material->unref()) {
-            RendererStorage::delete_material_bind_group(webgpu_context, material);
-        }
+    if (index_buffer) {
+        wgpuBufferDestroy(index_buffer);
     }
 }
 
@@ -243,14 +252,7 @@ sSurfaceData Surface::generate_quad(float w, float h, const glm::vec3& position,
 
 void Surface::create_quad(float w, float h, bool flip_y, bool centered, const glm::vec3& color)
 {
-    // Mesh has vertex data...
-    if (vertex_pos_buffer) {
-        wgpuBufferDestroy(vertex_pos_buffer);
-    }
-
-    if (vertex_data_buffer) {
-        wgpuBufferDestroy(vertex_data_buffer);
-    }
+    clean_buffers();
 
     name = "quad";
 
@@ -269,14 +271,7 @@ void Surface::create_quad(float w, float h, bool flip_y, bool centered, const gl
 
 void Surface::create_subdivided_quad(float w, float h, bool flip_y, uint32_t subdivisions, bool centered, const glm::vec3& color)
 {
-    // Mesh has vertex data...
-    if (vertex_pos_buffer) {
-        wgpuBufferDestroy(vertex_pos_buffer);
-    }
-
-    if (vertex_data_buffer) {
-        wgpuBufferDestroy(vertex_data_buffer);
-    }
+    clean_buffers();
 
     name = "subdivided_quad";
 
@@ -320,14 +315,7 @@ void Surface::create_subdivided_quad(float w, float h, bool flip_y, uint32_t sub
 
 void Surface::create_box(float w, float h, float d, const glm::vec3& color)
 {
-    // Mesh has vertex data...
-    if (vertex_pos_buffer) {
-        wgpuBufferDestroy(vertex_pos_buffer);
-    }
-
-    if (vertex_data_buffer) {
-        wgpuBufferDestroy(vertex_data_buffer);
-    }
+    clean_buffers();
 
     name = "box";
 
@@ -361,14 +349,7 @@ void Surface::create_box(float w, float h, float d, const glm::vec3& color)
 
 void Surface::create_rounded_box(float w, float h, float d, float c, const glm::vec3& color)
 {
-    // Mesh has vertex data...
-    if (vertex_pos_buffer) {
-        wgpuBufferDestroy(vertex_pos_buffer);
-    }
-
-    if (vertex_data_buffer) {
-        wgpuBufferDestroy(vertex_data_buffer);
-    }
+    clean_buffers();
 
     name = "rounded_box";
 
@@ -514,15 +495,15 @@ void Surface::create_rounded_box(float w, float h, float d, float c, const glm::
             glm::vec3 offsetPosition = centerPosition - 0.5f * height * vy0;
             int numSegHeight = 1;
 
-            float deltaAngle = (half_pi / chamfer_seg);
+            float delta_angle = (half_pi / chamfer_seg);
             float deltaHeight = height / (float)numSegHeight;
 
             for (unsigned short i = 0; i <= numSegHeight; i++)
             {
                 for (unsigned short j = 0; j <= chamfer_seg; j++)
                 {
-                    float x0 = c * cosf(j * deltaAngle);
-                    float z0 = c * sinf(j * deltaAngle);
+                    float x0 = c * cosf(j * delta_angle);
+                    float z0 = c * sinf(j * delta_angle);
 
                     vtxs.vertices[vtx_counter] = glm::vec3(x0 * vx0 + i * deltaHeight * vy0 + z0 * vz0 + offsetPosition);
                     vtxs.uvs[vtx_counter] = glm::vec2(j / (float)chamfer_seg, i / (float)numSegHeight);
@@ -581,15 +562,7 @@ void Surface::create_rounded_box(float w, float h, float d, float c, const glm::
 
 void Surface::create_sphere(float r, uint32_t segments, uint32_t rings, const glm::vec3& color)
 {
-    // Mesh has vertex data...
-    if (vertex_pos_buffer)
-    {
-        wgpuBufferDestroy(vertex_pos_buffer);
-    }
-
-    if (vertex_data_buffer) {
-        wgpuBufferDestroy(vertex_data_buffer);
-    }
+    clean_buffers();
 
     name = "sphere";
 
@@ -675,15 +648,7 @@ void Surface::create_sphere(float r, uint32_t segments, uint32_t rings, const gl
 
 void Surface::create_cone(float r, float h, uint32_t segments, const glm::vec3& color)
 {
-    // Mesh has vertex data...
-    if (vertex_pos_buffer)
-    {
-        wgpuBufferDestroy(vertex_pos_buffer);
-    }
-
-    if (vertex_data_buffer) {
-        wgpuBufferDestroy(vertex_data_buffer);
-    }
+    clean_buffers();
 
     name = "cone";
 
@@ -692,7 +657,7 @@ void Surface::create_cone(float r, float h, uint32_t segments, const glm::vec3& 
     vertices.resize(segments * 6 * 2);
 
     float pi2 = glm::pi<float>() * 2.f;
-    float deltaAngle = pi2 / float(segments);
+    float delta_angle = pi2 / float(segments);
     float normal_y = r / h;
     uint32_t vtx_counter = 0;
 
@@ -706,9 +671,9 @@ void Surface::create_cone(float r, float h, uint32_t segments, const glm::vec3& 
 
     for (uint32_t i = 0; i < segments; i++)
     {
-        float angle = i * deltaAngle;
+        float angle = i * delta_angle;
 
-        glm::vec3 n = glm::normalize(glm::vec3(sinf(angle + deltaAngle * 0.5f), normal_y, cosf(angle + deltaAngle * 0.5f)));
+        glm::vec3 n = glm::normalize(glm::vec3(sinf(angle + delta_angle * 0.5f), normal_y, cosf(angle + delta_angle * 0.5f)));
         add_vertex(glm::vec3(0.f, h, 0.f), n, glm::vec2(i / float(segments), 1.f));
 
         float nx = sinf(angle);
@@ -716,8 +681,8 @@ void Surface::create_cone(float r, float h, uint32_t segments, const glm::vec3& 
         n = glm::normalize(glm::vec3(nx, normal_y, nz));
         add_vertex(glm::vec3(nx * r, 0.f, nz * r), n, glm::vec2(i / float(segments), 0.f));
 
-        nx = sinf(angle + deltaAngle);
-        nz = cosf(angle + deltaAngle);
+        nx = sinf(angle + delta_angle);
+        nz = cosf(angle + delta_angle);
         n = glm::normalize(glm::vec3(nx, normal_y, nz));
         add_vertex(glm::vec3(nx * r, 0.f, nz * r), n, glm::vec2((i + 1) / float(segments), 0.f));
     }
@@ -729,10 +694,10 @@ void Surface::create_cone(float r, float h, uint32_t segments, const glm::vec3& 
 
     for (uint32_t i = 0; i < segments; ++i)
     {
-        float angle = i * deltaAngle;
+        float angle = i * delta_angle;
 
         glm::vec3 uv = glm::vec3(sinf(angle), 0.f, cosf(angle));
-        glm::vec3 uv2 = glm::vec3(sinf(angle + deltaAngle), 0.f, cosf(angle + deltaAngle));
+        glm::vec3 uv2 = glm::vec3(sinf(angle + delta_angle), 0.f, cosf(angle + delta_angle));
 
         add_vertex(glm::vec3(uv2[0] * r, 0.f, uv2[2] * r), down, glm::vec2(uv2[0] * 0.5f + 0.5f, uv2[2] * 0.5f + 0.5f));
         add_vertex(glm::vec3(uv[0] * r, 0.f, uv[2] * r), down, glm::vec2(uv[0] * 0.5f + 0.5f, uv[2] * 0.5f + 0.5f));
@@ -746,89 +711,116 @@ void Surface::create_cone(float r, float h, uint32_t segments, const glm::vec3& 
     create_surface_data(vertices);
 }
 
-void Surface::create_cylinder(float r, float h, uint32_t rings, uint32_t ring_segments, bool capped, const glm::vec3& color)
+void Surface::create_cylinder(float top_radius, float bottom_radius, float height, uint32_t rings, uint32_t ring_segments, bool capped, const glm::vec3& color)
 {
-    // Mesh has vertex data...
-    if (vertex_pos_buffer)
-    {
-        wgpuBufferDestroy(vertex_pos_buffer);
-    }
-
-    if (vertex_data_buffer) {
-        wgpuBufferDestroy(vertex_data_buffer);
-    }
+    clean_buffers();
 
     name = "cylinder";
 
+    float tau = glm::tau<float>();
+    float top_circumference = top_radius * tau;
+    float bottom_circumference = bottom_radius * tau;
+
+    float horizontal_length = std::max(std::max(2.f * (top_radius + bottom_radius), top_circumference), bottom_circumference);
+    float center_h = 0.5f * (horizontal_length) / horizontal_length;
+    float top_h = top_circumference / horizontal_length;
+    float bottom_h = bottom_circumference / horizontal_length;
+    //float padding_h = p_uv2_padding / horizontal_length;
+
+    int num_points = (rings + 2) * (ring_segments + 1) + 4 + 2 * ring_segments;
+
     sSurfaceData vertices;
+    vertices.vertices.reserve(num_points);
+    vertices.normals.reserve(num_points);
+    vertices.uvs.reserve(num_points);
+    vertices.colors.reserve(num_points);
 
-    vertices.resize(ring_segments * 6);
-
-    float pi2 = glm::pi<float>() * 2.f;
-    float deltaAngle = pi2 / float(ring_segments);
-    uint32_t vtx_counter = 0;
+    vertices.indices.reserve((rings + 1) * (ring_segments) * 6 + 6 * ring_segments);
 
     auto add_vertex = [&](const glm::vec3& p, const glm::vec3& n, const glm::vec2& uv, const glm::vec3& color = glm::vec3(1.0f)) {
-        vertices.vertices[vtx_counter] = p;
-        vertices.normals[vtx_counter] = n;
-        vertices.uvs[vtx_counter] = uv;
-        vertices.colors[vtx_counter] = color;
-        vtx_counter++;
-        };
+        vertices.vertices.push_back(p);
+        vertices.normals.push_back(n);
+        vertices.uvs.push_back(uv);
+        vertices.colors.push_back(color);
+    };
 
-    for (uint32_t i = 0; i < ring_segments; i++)
-    {
-        float angle = i * deltaAngle;
+    const float side_normal_y = (bottom_radius - top_radius) / height;
 
-        float x0 = sinf(angle);
-        float z0 = cosf(angle);
-        glm::vec3 n0 = glm::normalize(glm::vec3(x0, 0.f, z0));
+    int i, j, prevrow = 0, thisrow = 0, point = 0;
+    float x, y, z, u, v, radius, radius_h;
 
-        float x1 = sinf(angle + deltaAngle);
-        float z1 = cosf(angle + deltaAngle);
-        glm::vec3 n1 = glm::normalize(glm::vec3(x1, 0.f, z1));
+    for (j = 0; j <= (rings + 1); j++) {
+        v = j;
+        v /= (rings + 1);
 
-        // First triangle
-        add_vertex(glm::vec3(x0 * r, h * 0.5f, z0 * r), n0, glm::vec2(i / float(ring_segments), 1.f));
-        add_vertex(glm::vec3(x0 * r, h * -0.5f, z0 * r), n0, glm::vec2(i / float(ring_segments), 0.f));
-        add_vertex(glm::vec3(x1 * r, h * -0.5f, z1 * r), n1, glm::vec2((i + 1) / float(ring_segments), 0.f));
+        radius = top_radius + ((bottom_radius - top_radius) * v);
+        radius_h = top_h + ((bottom_h - top_h) * v);
 
-        // Second triangle
-        add_vertex(glm::vec3(x1 * r, h * 0.5f, z1 * r), n1, glm::vec2((i + 1) / float(ring_segments), 1.f));
-        add_vertex(glm::vec3(x0 * r, h * 0.5f, z0 * r), n0, glm::vec2(i / float(ring_segments), 1.f));
-        add_vertex(glm::vec3(x1 * r, h * -0.5f, z1 * r), n1, glm::vec2((i + 1) / float(ring_segments), 0.f));
-    }
+        y = height * v;
+        y = (height * 0.5f) - y;
 
-    // Caps
-    if (capped)
-    {
-        vertices.resize(ring_segments * 6 * 2);
+        for (i = 0; i <= ring_segments; i++) {
+            u = i;
+            u /= ring_segments;
 
-        glm::vec3 top_center = glm::vec3(0.f, h * 0.5f, 0.f);
-        glm::vec3 bottom_center = glm::vec3(0.f, h * -0.5f, 0.f);
-        glm::vec3 up = glm::vec3(0.f, 1.f, 0.f);
-        glm::vec3 down = glm::vec3(0.f, -1.f, 0.f);
+            if (i == ring_segments) {
+                x = 0.f;
+                z = 1.f;
+            }
+            else {
+                x = sinf(u * tau);
+                z = cosf(u * tau);
+            }
 
-        for (uint32_t i = 0; i < ring_segments; ++i)
-        {
-            float angle = i * deltaAngle;
+            add_vertex(glm::vec3(x * radius, y, z * radius), glm::normalize(glm::vec3(x, side_normal_y, z)), glm::vec2(u, v * 0.5f), color);
 
-            glm::vec3 uv = glm::vec3(sinf(angle), 0.f, cosf(angle));
-            glm::vec3 uv2 = glm::vec3(sinf(angle + deltaAngle), 0.f, cosf(angle + deltaAngle));
+            point++;
 
-            // Top
-            add_vertex(glm::vec3(uv[0] * r, h * 0.5f, uv[2] * r), up, glm::vec2(-uv[0] * 0.5f + 0.5f, uv[2] * 0.5f + 0.5f));
-            add_vertex(glm::vec3(uv2[0] * r, h * 0.5f, uv2[2] * r), up, glm::vec2(-uv2[0] * 0.5f + 0.5f, uv2[2] * 0.5f + 0.5f));
-            add_vertex(top_center, up, glm::vec2(0.5f));
+            if (i > 0 && j > 0) {
+                vertices.indices.push_back(prevrow + i - 1);
+                vertices.indices.push_back(prevrow + i);
+                vertices.indices.push_back(thisrow + i - 1);
 
-            // Bottom
-            add_vertex(glm::vec3(uv2[0] * r, h * -0.5, uv2[2] * r), down, glm::vec2(uv2[0] * 0.5 + 0.5, uv2[2] * 0.5 + 0.5));
-            add_vertex(glm::vec3(uv[0] * r, h * -0.5, uv[2] * r), down, glm::vec2(uv[0] * 0.5 + 0.5, uv[2] * 0.5 + 0.5));
-            add_vertex(bottom_center, down, glm::vec2(0.5f));
+                vertices.indices.push_back(prevrow + i);
+                vertices.indices.push_back(thisrow + i);
+                vertices.indices.push_back(thisrow + i - 1);
+            }
         }
+
+        prevrow = thisrow;
+        thisrow = point;
     }
 
-    spdlog::trace("Cylinder mesh created ({} vertices)", vtx_counter);
+    //// Caps
+    //if (capped)
+    //{
+    //    vertices.resize(ring_segments * 6 * 2);
+
+    //    glm::vec3 top_center = glm::vec3(0.f, h * 0.5f, 0.f);
+    //    glm::vec3 bottom_center = glm::vec3(0.f, h * -0.5f, 0.f);
+    //    glm::vec3 up = glm::vec3(0.f, 1.f, 0.f);
+    //    glm::vec3 down = glm::vec3(0.f, -1.f, 0.f);
+
+    //    for (uint32_t i = 0; i < ring_segments; ++i)
+    //    {
+    //        float angle = i * delta_angle;
+
+    //        glm::vec3 uv = glm::vec3(sinf(angle), 0.f, cosf(angle));
+    //        glm::vec3 uv2 = glm::vec3(sinf(angle + delta_angle), 0.f, cosf(angle + delta_angle));
+
+    //        // Top
+    //        add_vertex(glm::vec3(uv[0] * r, h * 0.5f, uv[2] * r), up, glm::vec2(-uv[0] * 0.5f + 0.5f, uv[2] * 0.5f + 0.5f));
+    //        add_vertex(glm::vec3(uv2[0] * r, h * 0.5f, uv2[2] * r), up, glm::vec2(-uv2[0] * 0.5f + 0.5f, uv2[2] * 0.5f + 0.5f));
+    //        add_vertex(top_center, up, glm::vec2(0.5f));
+
+    //        // Bottom
+    //        add_vertex(glm::vec3(uv2[0] * r, h * -0.5, uv2[2] * r), down, glm::vec2(uv2[0] * 0.5 + 0.5, uv2[2] * 0.5 + 0.5));
+    //        add_vertex(glm::vec3(uv[0] * r, h * -0.5, uv[2] * r), down, glm::vec2(uv[0] * 0.5 + 0.5, uv[2] * 0.5 + 0.5));
+    //        add_vertex(bottom_center, down, glm::vec2(0.5f));
+    //    }
+    //}
+
+    spdlog::trace("Cylinder mesh created ({} vertices, {} indices)", vertices.vertices.size(), vertices.indices.size());
 
     update_aabb(vertices.vertices);
 
@@ -837,55 +829,43 @@ void Surface::create_cylinder(float r, float h, uint32_t rings, uint32_t ring_se
 
 void Surface::create_capsule(float r, float h, uint32_t rings, uint32_t ring_segments, const glm::vec3& color)
 {
-    // Mesh has vertex data...
-    if (vertex_pos_buffer)
-    {
-        wgpuBufferDestroy(vertex_pos_buffer);
-    }
-
-    if (vertex_data_buffer) {
-        wgpuBufferDestroy(vertex_data_buffer);
-    }
+    clean_buffers();
 
     name = "capsule";
 
-    sSurfaceData vertices;
-
-    float pi = glm::pi<float>() * 2.f;
-    float half_pi = glm::pi<float>() * 0.5f;
-    float pi2 = glm::pi<float>() * 2.f;
+    float pi = glm::pi<float>();
+    float half_pi = pi * 0.5f;
+    float pi2 = pi * 2.f;
 
     float delta_ring_angle = (half_pi / rings);
     float delta_seg_angle = (pi2 / ring_segments);
 
-    float sphere_ratio = r / (2 * r + h);
-    float cylinder_ratio = h / (2 * r + h);
+    float sphere_ratio = r / (2.0f * r + h);
+    float cylinder_ratio = h / (2.0f * r + h);
 
-    uint32_t num_height_seg = 2;
+    uint32_t num_height_seg = rings;
 
     sSurfaceData vtxs;
     const int num_vertices = (2 * rings + 2) * (ring_segments + 1) + (num_height_seg - 1) * (ring_segments + 1);
     vtxs.resize(num_vertices);
     uint32_t vtx_counter = 0;
 
-    std::vector<uint32_t> indices;
     const int num_indices = (2 * rings + 1) * (ring_segments + 1) * 6 + (num_height_seg - 1) * (ring_segments + 1) * 6;
-    indices.resize(num_indices);
-    vertices.resize(num_indices);
+    vtxs.indices.resize(num_indices);
 
-    uint32_t idx_counter = 0;
+    uint32_t idx_counter = 0u;
     int offset = 0;
 
     // Top half sphere
     // Generate the group of rings for the sphere
 
-    for (unsigned int ring = 0; ring <= rings; ring++)
+    for (uint32_t ring = 0; ring <= rings; ring++)
     {
         float r0 = r * sinf(ring * delta_ring_angle);
         float y0 = r * cosf(ring * delta_ring_angle);
 
         // Generate the group of segments for the current ring
-        for (unsigned int seg = 0; seg <= ring_segments; seg++)
+        for (uint32_t seg = 0; seg <= ring_segments; seg++)
         {
             float x0 = r0 * cosf(seg * delta_seg_angle);
             float z0 = r0 * sinf(seg * delta_seg_angle);
@@ -898,12 +878,12 @@ void Surface::create_capsule(float r, float h, uint32_t rings, uint32_t ring_seg
             vtx_counter++;
 
             // each vertex (except the last) has six indices pointing to it
-            indices[idx_counter++] = (offset + ring_segments + 1);
-            indices[idx_counter++] = (offset + ring_segments);
-            indices[idx_counter++] = (offset);
-            indices[idx_counter++] = (offset + ring_segments + 1);
-            indices[idx_counter++] = (offset);
-            indices[idx_counter++] = (offset + 1);
+            vtxs.indices[idx_counter++] = (offset + ring_segments + 1);
+            vtxs.indices[idx_counter++] = (offset + ring_segments);
+            vtxs.indices[idx_counter++] = (offset);
+            vtxs.indices[idx_counter++] = (offset + ring_segments + 1);
+            vtxs.indices[idx_counter++] = (offset);
+            vtxs.indices[idx_counter++] = (offset + 1);
 
             offset++;
         }
@@ -911,14 +891,14 @@ void Surface::create_capsule(float r, float h, uint32_t rings, uint32_t ring_seg
 
     // Cylinder part
 
-    float deltaAngle = (pi2 / ring_segments);
+    float delta_angle = (pi2 / ring_segments);
     float deltah = h / float(num_height_seg);
 
     for (unsigned short i = 1; i < num_height_seg; i++)
         for (unsigned short j = 0; j <= ring_segments; j++)
         {
-            float x0 = r * cosf(j * deltaAngle);
-            float z0 = r * sinf(j * deltaAngle);
+            float x0 = r * cosf(j * delta_angle);
+            float z0 = r * sinf(j * delta_angle);
 
             vtxs.vertices[vtx_counter] = glm::vec3(x0, 0.5f * h - i * deltah, z0);
             vtxs.uvs[vtx_counter] = glm::vec2(j / (float)ring_segments, (i / float(num_height_seg)) * cylinder_ratio + sphere_ratio);
@@ -926,12 +906,12 @@ void Surface::create_capsule(float r, float h, uint32_t rings, uint32_t ring_seg
             vtxs.colors[vtx_counter] = color;
             vtx_counter++;
 
-            indices[idx_counter++] = (offset + ring_segments + 1);
-            indices[idx_counter++] = (offset + ring_segments);
-            indices[idx_counter++] = (offset);
-            indices[idx_counter++] = (offset + ring_segments + 1);
-            indices[idx_counter++] = (offset);
-            indices[idx_counter++] = (offset + 1);
+            vtxs.indices[idx_counter++] = (offset + ring_segments + 1);
+            vtxs.indices[idx_counter++] = (offset + ring_segments);
+            vtxs.indices[idx_counter++] = (offset);
+            vtxs.indices[idx_counter++] = (offset + ring_segments + 1);
+            vtxs.indices[idx_counter++] = (offset);
+            vtxs.indices[idx_counter++] = (offset + 1);
 
             offset++;
         }
@@ -939,13 +919,13 @@ void Surface::create_capsule(float r, float h, uint32_t rings, uint32_t ring_seg
     // Bottom half sphere
     // Generate the group of rings for the sphere
 
-    for (unsigned int ring = 0; ring <= rings; ring++)
+    for (uint32_t ring = 0; ring <= rings; ring++)
     {
         float r0 = r * sinf(half_pi + ring * delta_ring_angle);
         float y0 = r * cosf(half_pi + ring * delta_ring_angle);
 
         // Generate the group of segments for the current ring
-        for (unsigned int seg = 0; seg <= ring_segments; seg++)
+        for (uint32_t seg = 0; seg <= ring_segments; seg++)
         {
             float x0 = r0 * cosf(seg * delta_seg_angle);
             float z0 = r0 * sinf(seg * delta_seg_angle);
@@ -960,45 +940,29 @@ void Surface::create_capsule(float r, float h, uint32_t rings, uint32_t ring_seg
             if (ring != rings)
             {
                 // each vertex (except the last) has six indices pointing to it
-                indices[idx_counter++] = (offset + ring_segments + 1);
-                indices[idx_counter++] = (offset + ring_segments);
-                indices[idx_counter++] = (offset);
-                indices[idx_counter++] = (offset + ring_segments + 1);
-                indices[idx_counter++] = (offset);
-                indices[idx_counter++] = (offset + 1);
+                vtxs.indices[idx_counter++] = (offset + ring_segments + 1);
+                vtxs.indices[idx_counter++] = (offset + ring_segments);
+                vtxs.indices[idx_counter++] = (offset);
+                vtxs.indices[idx_counter++] = (offset + ring_segments + 1);
+                vtxs.indices[idx_counter++] = (offset);
+                vtxs.indices[idx_counter++] = (offset + 1);
             }
             offset++;
         }
     }
 
-    // Add vertices...
-    for (uint32_t i = 0; i < indices.size(); i++) {
-        vertices.vertices[i] = vtxs.vertices[indices[i]];
-        vertices.uvs[i] = vtxs.uvs[indices[i]];
-        vertices.normals[i] = vtxs.normals[indices[i]];
-        vertices.colors[i] = vtxs.colors[indices[i]];
-    }
+    spdlog::trace("Capsule mesh created ({} vertices, {} indices)", vtxs.vertices.size(), vtxs.indices.size());
 
-    spdlog::trace("Capsule mesh created ({} vertices)", vertices.size());
+    update_aabb(vtxs.vertices);
 
-    update_aabb(vertices.vertices);
-
-    create_surface_data(vertices);
+    create_surface_data(vtxs);
 }
 
 void Surface::create_torus(float ring_radius, float tube_radius, uint32_t rings, uint32_t ring_segments, const glm::vec3& color)
 {
     assert(ring_radius != tube_radius && "Ring and tube radii cannot be the same.");
 
-    // Mesh has vertex data...
-    if (vertex_pos_buffer)
-    {
-        wgpuBufferDestroy(vertex_pos_buffer);
-    }
-
-    if (vertex_data_buffer) {
-        wgpuBufferDestroy(vertex_data_buffer);
-    }
+    clean_buffers();
 
     name = "torus";
 
@@ -1057,14 +1021,7 @@ void Surface::create_torus(float ring_radius, float tube_radius, uint32_t rings,
 
 void Surface::create_circle(float radius, uint32_t segments)
 {
-    if (vertex_pos_buffer)
-    {
-        wgpuBufferDestroy(vertex_pos_buffer);
-    }
-
-    if (vertex_data_buffer) {
-        wgpuBufferDestroy(vertex_data_buffer);
-    }
+    clean_buffers();
 
     name = "circle";
 
@@ -1087,14 +1044,7 @@ void Surface::create_circle(float radius, uint32_t segments)
 
 void Surface::create_arrow()
 {
-    if (vertex_pos_buffer)
-    {
-        wgpuBufferDestroy(vertex_pos_buffer);
-    }
-
-    if (vertex_data_buffer) {
-        wgpuBufferDestroy(vertex_data_buffer);
-    }
+    clean_buffers();
 
     name = "arrow";
 
@@ -1124,14 +1074,7 @@ void Surface::create_arrow()
 
 void Surface::create_skybox()
 {
-    if (vertex_pos_buffer)
-    {
-        wgpuBufferDestroy(vertex_pos_buffer);
-    }
-
-    if (vertex_data_buffer) {
-        wgpuBufferDestroy(vertex_data_buffer);
-    }
+    clean_buffers();
 
     name = "skybox";
 
