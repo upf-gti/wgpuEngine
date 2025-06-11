@@ -8,7 +8,11 @@
 #include "renderer.h"
 #include "mesh_instance.h"
 
+#include "geometries/box_geometry.h"
+#include "geometries/sphere_geometry.h"
 #include "geometries/torus_geometry.h"
+#include "geometries/capsule_geometry.h"
+#include "geometries/cylinder_geometry.h"
 
 #include "framework/nodes/mesh_instance_3d.h"
 #include "framework/nodes/skeleton_instance_3d.h"
@@ -606,8 +610,7 @@ void RendererStorage::register_basic_surfaces()
     surfaces["quad"] = quad_mesh;
 
     // Box
-    Surface* box_mesh = new Surface();
-    box_mesh->create_box();
+    Surface* box_mesh = new BoxGeometry();
     box_mesh->ref();
     surfaces["box"] = box_mesh;
 
@@ -618,8 +621,7 @@ void RendererStorage::register_basic_surfaces()
     surfaces["rounded_box"] = rounded_box_mesh;
 
     // Sphere
-    Surface* sphere_mesh = new Surface();
-    sphere_mesh->create_sphere();
+    Surface* sphere_mesh = new SphereGeometry();
     sphere_mesh->ref();
     surfaces["sphere"] = sphere_mesh;
 
@@ -630,14 +632,12 @@ void RendererStorage::register_basic_surfaces()
     surfaces["cone"] = cone_mesh;
 
     // Cylinder
-    Surface* cylinder_mesh = new Surface();
-    cylinder_mesh->create_cylinder();
+    Surface* cylinder_mesh = new CylinderGeometry();
     cylinder_mesh->ref();
     surfaces["cylinder"] = cylinder_mesh;
 
     // Capsule
-    Surface* capsule_mesh = new Surface();
-    capsule_mesh->create_capsule();
+    Surface* capsule_mesh = new CapsuleGeometry();
     capsule_mesh->ref();
     surfaces["capsule"] = capsule_mesh;
 

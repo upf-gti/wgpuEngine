@@ -88,12 +88,12 @@ public:
     void create_subdivided_quad(float w = 1.f, float h = 1.f, bool flip_y = false, uint32_t subdivisions = 16, bool centered = true, const glm::vec3& color = { 1.f, 1.f, 1.f });
     void create_box(float w = 1.f, float h = 1.f, float d = 1.f, const glm::vec3& color = { 1.f, 1.f, 1.f });
     void create_rounded_box(float w = 1.f, float h = 1.f, float d = 1.f, float c = 0.2f, const glm::vec3& color = { 1.f, 1.f, 1.f });
-    void create_sphere(float r = 1.f, uint32_t segments = 32, uint32_t rings = 32, const glm::vec3& color = { 1.f, 1.f, 1.f });
-    void create_cone(float r = 1.f, float h = 1.f, uint32_t segments = 32, const glm::vec3& color = { 1.f, 1.f, 1.f });
-    void create_cylinder(float r = 1.f, float h = 1.f, uint32_t segments = 32, bool capped = true, const glm::vec3& color = { 1.f, 1.f, 1.f });
-    void create_capsule(float r = 1.f, float h = 1.f, uint32_t segments = 32, uint32_t rings = 8, const glm::vec3& color = { 1.f, 1.f, 1.f });
+    void create_sphere(float r = 1.f, uint32_t segments = 64u, uint32_t rings = 32u, const glm::vec3& color = { 1.f, 1.f, 1.f });
+    void create_cone(float r = 1.f, float h = 1.f, uint32_t segments = 32u, const glm::vec3& color = { 1.f, 1.f, 1.f });
+    void create_cylinder(float r = 1.f, float h = 1.f, uint32_t rings = 8u, uint32_t ring_segments = 64u, bool capped = true, const glm::vec3& color = { 1.f, 1.f, 1.f });
+    void create_capsule(float r = 1.f, float h = 1.f, uint32_t rings = 8u, uint32_t ring_segments = 64u, const glm::vec3& color = { 1.f, 1.f, 1.f });
     void create_torus(float ring_radius = 1.f, float tube_radius = 0.2f, uint32_t rings = 64u, uint32_t ring_segments = 32u, const glm::vec3& color = { 1.f, 1.f, 1.f });
-    void create_circle(float radius = 1.f, uint32_t segments = 32);
+    void create_circle(float radius = 1.f, uint32_t segments = 32u);
     void create_arrow();
     void create_skybox();
 

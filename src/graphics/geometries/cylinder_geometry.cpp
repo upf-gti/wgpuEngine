@@ -1,4 +1,4 @@
-#include "torus_geometry.h"
+#include "cylinder_geometry.h"
 
 #include "framework/math/math_utils.h"
 #include "framework/colors.h"
@@ -8,59 +8,65 @@
 #include "spdlog/spdlog.h"
 #include "imgui.h"
 
-TorusGeometry::TorusGeometry(float ring_radius, float tube_radius, uint32_t rings, uint32_t ring_segments, const glm::vec3& color)
-    : SurfaceGeometry(color), ring_radius(ring_radius), tube_radius(tube_radius), rings(rings), ring_segments(ring_segments)
+CylinderGeometry::CylinderGeometry(float radius, float height, uint32_t rings, uint32_t ring_segments, bool capped, const glm::vec3& color)
+    : SurfaceGeometry(color), radius(radius), height(height), rings(rings), ring_segments(ring_segments), capped(capped)
 {
     build_mesh();
 }
 
-void TorusGeometry::build_mesh()
+void CylinderGeometry::build_mesh()
 {
-    create_torus(ring_radius, tube_radius, rings, ring_segments, color);
+    create_cylinder(radius, height, rings, ring_segments, capped, color);
 }
 
-void TorusGeometry::set_ring_radius(float new_ring_radius)
+void CylinderGeometry::set_radius(float new_radius)
 {
-    ring_radius = new_ring_radius;
+    radius = new_radius;
     build_mesh();
 }
 
-void TorusGeometry::set_tube_radius(float new_tube_radius)
+void CylinderGeometry::set_height(float new_height)
 {
-    tube_radius = new_tube_radius;
+    height = new_height;
     build_mesh();
 }
 
-void TorusGeometry::set_rings(uint32_t new_rings)
+void CylinderGeometry::set_rings(uint32_t new_rings)
 {
     rings = new_rings;
     build_mesh();
 }
 
-void TorusGeometry::set_ring_segments(uint32_t new_ring_segments)
+void CylinderGeometry::set_ring_segments(uint32_t new_ring_segments)
 {
     ring_segments = new_ring_segments;
     build_mesh();
 }
 
-void TorusGeometry::render_gui()
+void CylinderGeometry::set_capped(bool new_capped)
+{
+    capped = new_capped;
+    build_mesh();
+}
+
+void CylinderGeometry::render_gui()
 {
     Surface::render_gui();
 
     std::string surface_name = name.empty() ? "" : (" (" + name + ")");
     if (ImGui::TreeNodeEx(("Geometry" + surface_name).c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
 
-        ImGui::Text("Ring radius");
+        ImGui::Text("Radius");
         ImGui::SameLine(200);
         ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
-        if (ImGui::DragFloat("##Ring radius", &ring_radius, 0.01f, 0.01f, 2.0f)) {
+        if (ImGui::DragFloat("##Radius", &radius, 0.01f, 0.01f, 2.0f)) {
             dirty = true;
         }
 
-        ImGui::Text("Tube radius");
+        ImGui::Text("Height");
         ImGui::SameLine(200);
         ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
-        if (ImGui::DragFloat("##Tube radius", &tube_radius, 0.01f, 0.01f, 2.0f)) {
+        if (ImGui::DragFloat("##Height", &height, 0.01f, 0.01f, 2.0f)) {
             dirty = true;
         }
 
@@ -79,6 +85,13 @@ void TorusGeometry::render_gui()
         int ring_seg_int = static_cast<int>(ring_segments);
         if (ImGui::DragInt("##Ring Segments", &ring_seg_int, 1, 3, 64)) {
             ring_segments = static_cast<uint32_t>(ring_seg_int);
+            dirty = true;
+        }
+
+        ImGui::Text("Capped");
+        ImGui::SameLine(200);
+        ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
+        if (ImGui::Checkbox("##Capped", &capped)) {
             dirty = true;
         }
 

@@ -746,7 +746,7 @@ void Surface::create_cone(float r, float h, uint32_t segments, const glm::vec3& 
     create_surface_data(vertices);
 }
 
-void Surface::create_cylinder(float r, float h, uint32_t segments, bool capped, const glm::vec3& color)
+void Surface::create_cylinder(float r, float h, uint32_t rings, uint32_t ring_segments, bool capped, const glm::vec3& color)
 {
     // Mesh has vertex data...
     if (vertex_pos_buffer)
@@ -762,10 +762,10 @@ void Surface::create_cylinder(float r, float h, uint32_t segments, bool capped, 
 
     sSurfaceData vertices;
 
-    vertices.resize(segments * 6);
+    vertices.resize(ring_segments * 6);
 
     float pi2 = glm::pi<float>() * 2.f;
-    float deltaAngle = pi2 / float(segments);
+    float deltaAngle = pi2 / float(ring_segments);
     uint32_t vtx_counter = 0;
 
     auto add_vertex = [&](const glm::vec3& p, const glm::vec3& n, const glm::vec2& uv, const glm::vec3& color = glm::vec3(1.0f)) {
@@ -774,9 +774,9 @@ void Surface::create_cylinder(float r, float h, uint32_t segments, bool capped, 
         vertices.uvs[vtx_counter] = uv;
         vertices.colors[vtx_counter] = color;
         vtx_counter++;
-    };
+        };
 
-    for (uint32_t i = 0; i < segments; i++)
+    for (uint32_t i = 0; i < ring_segments; i++)
     {
         float angle = i * deltaAngle;
 
@@ -789,27 +789,27 @@ void Surface::create_cylinder(float r, float h, uint32_t segments, bool capped, 
         glm::vec3 n1 = glm::normalize(glm::vec3(x1, 0.f, z1));
 
         // First triangle
-        add_vertex(glm::vec3(x0 * r, h * 0.5f, z0 * r), n0, glm::vec2(i / float(segments), 1.f));
-        add_vertex(glm::vec3(x0 * r, h * -0.5f, z0 * r), n0, glm::vec2(i / float(segments), 0.f));
-        add_vertex(glm::vec3(x1 * r, h * -0.5f, z1 * r), n1, glm::vec2((i + 1) / float(segments), 0.f));
+        add_vertex(glm::vec3(x0 * r, h * 0.5f, z0 * r), n0, glm::vec2(i / float(ring_segments), 1.f));
+        add_vertex(glm::vec3(x0 * r, h * -0.5f, z0 * r), n0, glm::vec2(i / float(ring_segments), 0.f));
+        add_vertex(glm::vec3(x1 * r, h * -0.5f, z1 * r), n1, glm::vec2((i + 1) / float(ring_segments), 0.f));
 
         // Second triangle
-        add_vertex(glm::vec3(x1 * r, h * 0.5f, z1 * r), n1, glm::vec2((i + 1) / float(segments), 1.f));
-        add_vertex(glm::vec3(x0 * r, h * 0.5f, z0 * r), n0, glm::vec2(i / float(segments), 1.f));
-        add_vertex(glm::vec3(x1 * r, h * -0.5f, z1 * r), n1, glm::vec2((i + 1) / float(segments), 0.f));
+        add_vertex(glm::vec3(x1 * r, h * 0.5f, z1 * r), n1, glm::vec2((i + 1) / float(ring_segments), 1.f));
+        add_vertex(glm::vec3(x0 * r, h * 0.5f, z0 * r), n0, glm::vec2(i / float(ring_segments), 1.f));
+        add_vertex(glm::vec3(x1 * r, h * -0.5f, z1 * r), n1, glm::vec2((i + 1) / float(ring_segments), 0.f));
     }
 
     // Caps
     if (capped)
     {
-        vertices.resize(segments * 6 * 2);
+        vertices.resize(ring_segments * 6 * 2);
 
         glm::vec3 top_center = glm::vec3(0.f, h * 0.5f, 0.f);
         glm::vec3 bottom_center = glm::vec3(0.f, h * -0.5f, 0.f);
         glm::vec3 up = glm::vec3(0.f, 1.f, 0.f);
         glm::vec3 down = glm::vec3(0.f, -1.f, 0.f);
 
-        for (uint32_t i = 0; i < segments; ++i)
+        for (uint32_t i = 0; i < ring_segments; ++i)
         {
             float angle = i * deltaAngle;
 
@@ -835,7 +835,7 @@ void Surface::create_cylinder(float r, float h, uint32_t segments, bool capped, 
     create_surface_data(vertices);
 }
 
-void Surface::create_capsule(float r, float h, uint32_t segments, uint32_t rings, const glm::vec3& color)
+void Surface::create_capsule(float r, float h, uint32_t rings, uint32_t ring_segments, const glm::vec3& color)
 {
     // Mesh has vertex data...
     if (vertex_pos_buffer)
@@ -856,7 +856,7 @@ void Surface::create_capsule(float r, float h, uint32_t segments, uint32_t rings
     float pi2 = glm::pi<float>() * 2.f;
 
     float delta_ring_angle = (half_pi / rings);
-    float delta_seg_angle = (pi2 / segments);
+    float delta_seg_angle = (pi2 / ring_segments);
 
     float sphere_ratio = r / (2 * r + h);
     float cylinder_ratio = h / (2 * r + h);
@@ -864,12 +864,12 @@ void Surface::create_capsule(float r, float h, uint32_t segments, uint32_t rings
     uint32_t num_height_seg = 2;
 
     sSurfaceData vtxs;
-    const int num_vertices = (2 * rings + 2) * (segments + 1) + (num_height_seg - 1) * (segments + 1);
+    const int num_vertices = (2 * rings + 2) * (ring_segments + 1) + (num_height_seg - 1) * (ring_segments + 1);
     vtxs.resize(num_vertices);
     uint32_t vtx_counter = 0;
 
     std::vector<uint32_t> indices;
-    const int num_indices = (2 * rings + 1) * (segments + 1) * 6 + (num_height_seg - 1) * (segments + 1) * 6;
+    const int num_indices = (2 * rings + 1) * (ring_segments + 1) * 6 + (num_height_seg - 1) * (ring_segments + 1) * 6;
     indices.resize(num_indices);
     vertices.resize(num_indices);
 
@@ -885,23 +885,23 @@ void Surface::create_capsule(float r, float h, uint32_t segments, uint32_t rings
         float y0 = r * cosf(ring * delta_ring_angle);
 
         // Generate the group of segments for the current ring
-        for (unsigned int seg = 0; seg <= segments; seg++)
+        for (unsigned int seg = 0; seg <= ring_segments; seg++)
         {
             float x0 = r0 * cosf(seg * delta_seg_angle);
             float z0 = r0 * sinf(seg * delta_seg_angle);
 
             // Add one vertex to the strip which makes up the sphere
             vtxs.vertices[vtx_counter] = glm::vec3(x0, 0.5f * h + y0, z0);
-            vtxs.uvs[vtx_counter] = glm::vec2((float)seg / (float)segments, (float)ring / (float)rings * sphere_ratio);
+            vtxs.uvs[vtx_counter] = glm::vec2((float)seg / (float)ring_segments, (float)ring / (float)rings * sphere_ratio);
             vtxs.normals[vtx_counter] = glm::normalize(glm::vec3(x0, y0, z0));
             vtxs.colors[vtx_counter] = color;
             vtx_counter++;
 
             // each vertex (except the last) has six indices pointing to it
-            indices[idx_counter++] = (offset + segments + 1);
-            indices[idx_counter++] = (offset + segments);
+            indices[idx_counter++] = (offset + ring_segments + 1);
+            indices[idx_counter++] = (offset + ring_segments);
             indices[idx_counter++] = (offset);
-            indices[idx_counter++] = (offset + segments + 1);
+            indices[idx_counter++] = (offset + ring_segments + 1);
             indices[idx_counter++] = (offset);
             indices[idx_counter++] = (offset + 1);
 
@@ -911,25 +911,25 @@ void Surface::create_capsule(float r, float h, uint32_t segments, uint32_t rings
 
     // Cylinder part
 
-    float deltaAngle = (pi2 / segments);
+    float deltaAngle = (pi2 / ring_segments);
     float deltah = h / float(num_height_seg);
 
     for (unsigned short i = 1; i < num_height_seg; i++)
-        for (unsigned short j = 0; j <= segments; j++)
+        for (unsigned short j = 0; j <= ring_segments; j++)
         {
             float x0 = r * cosf(j * deltaAngle);
             float z0 = r * sinf(j * deltaAngle);
 
             vtxs.vertices[vtx_counter] = glm::vec3(x0, 0.5f * h - i * deltah, z0);
-            vtxs.uvs[vtx_counter] = glm::vec2(j / (float)segments, (i / float(num_height_seg)) * cylinder_ratio + sphere_ratio);
+            vtxs.uvs[vtx_counter] = glm::vec2(j / (float)ring_segments, (i / float(num_height_seg)) * cylinder_ratio + sphere_ratio);
             vtxs.normals[vtx_counter] = glm::normalize(glm::vec3(x0, 0, z0));
             vtxs.colors[vtx_counter] = color;
             vtx_counter++;
 
-            indices[idx_counter++] = (offset + segments + 1);
-            indices[idx_counter++] = (offset + segments);
+            indices[idx_counter++] = (offset + ring_segments + 1);
+            indices[idx_counter++] = (offset + ring_segments);
             indices[idx_counter++] = (offset);
-            indices[idx_counter++] = (offset + segments + 1);
+            indices[idx_counter++] = (offset + ring_segments + 1);
             indices[idx_counter++] = (offset);
             indices[idx_counter++] = (offset + 1);
 
@@ -945,14 +945,14 @@ void Surface::create_capsule(float r, float h, uint32_t segments, uint32_t rings
         float y0 = r * cosf(half_pi + ring * delta_ring_angle);
 
         // Generate the group of segments for the current ring
-        for (unsigned int seg = 0; seg <= segments; seg++)
+        for (unsigned int seg = 0; seg <= ring_segments; seg++)
         {
             float x0 = r0 * cosf(seg * delta_seg_angle);
             float z0 = r0 * sinf(seg * delta_seg_angle);
 
             // Add one vertex to the strip which makes up the sphere
             vtxs.vertices[vtx_counter] = glm::vec3(x0, -0.5f * h + y0, z0);
-            vtxs.uvs[vtx_counter] = glm::vec2((float)seg / (float)segments, (float)ring / (float)rings * sphere_ratio + cylinder_ratio + sphere_ratio);
+            vtxs.uvs[vtx_counter] = glm::vec2((float)seg / (float)ring_segments, (float)ring / (float)rings * sphere_ratio + cylinder_ratio + sphere_ratio);
             vtxs.normals[vtx_counter] = glm::normalize(glm::vec3(x0, y0, z0));
             vtxs.colors[vtx_counter] = color;
             vtx_counter++;
@@ -960,10 +960,10 @@ void Surface::create_capsule(float r, float h, uint32_t segments, uint32_t rings
             if (ring != rings)
             {
                 // each vertex (except the last) has six indices pointing to it
-                indices[idx_counter++] = (offset + segments + 1);
-                indices[idx_counter++] = (offset + segments);
+                indices[idx_counter++] = (offset + ring_segments + 1);
+                indices[idx_counter++] = (offset + ring_segments);
                 indices[idx_counter++] = (offset);
-                indices[idx_counter++] = (offset + segments + 1);
+                indices[idx_counter++] = (offset + ring_segments + 1);
                 indices[idx_counter++] = (offset);
                 indices[idx_counter++] = (offset + 1);
             }
