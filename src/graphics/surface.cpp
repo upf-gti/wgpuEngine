@@ -333,23 +333,23 @@ void Surface::create_box(float w, float h, float d, const glm::vec3& color)
 
     sSurfaceData vertices;
 
-    float w2 = w * 2.0f;
-    float h2 = h * 2.0f;
-    float d2 = d * 2.0f;
+    float w2 = w * 0.5f;
+    float h2 = h * 0.5f;
+    float d2 = d * 0.5f;
 
-    auto pos_x = generate_quad(h2, w2, d * normals::pX, -normals::pX, color, true);
+    auto pos_x = generate_quad(h, d, w2 * normals::pX, -normals::pX, color, true);
     vertices.append(pos_x);
-    auto neg_x = generate_quad(h2, w2, d * normals::nX, -normals::nX, color, true);
+    auto neg_x = generate_quad(h, d, w2 * normals::nX, -normals::nX, color, true);
     vertices.append(neg_x);
 
-    auto pos_y = generate_quad(w2, d2, h * normals::pY, -normals::pY, color, true);
+    auto pos_y = generate_quad(w, d, h2 * normals::pY, -normals::pY, color, true);
     vertices.append(pos_y);
-    auto neg_y = generate_quad(w2, d2, h * normals::nY, -normals::nY, color, true);
+    auto neg_y = generate_quad(w, d, h2 * normals::nY, -normals::nY, color, true);
     vertices.append(neg_y);
 
-    auto pos_z = generate_quad(w2, h2, d * normals::pZ, -normals::pZ, color, true);
+    auto pos_z = generate_quad(w, h, d2 * normals::pZ, -normals::pZ, color, true);
     vertices.append(pos_z);
-    auto neg_z = generate_quad(w2, h2, d * normals::nZ, -normals::nZ, color, true);
+    auto neg_z = generate_quad(w, h, d2 * normals::nZ, -normals::nZ, color, true);
     vertices.append(neg_z);
 
     spdlog::trace("Box mesh created ({} vertices)", vertices.vertices.size());
@@ -1048,7 +1048,7 @@ void Surface::create_torus(float ring_radius, float tube_radius, uint32_t rings,
         }
     }
 
-    spdlog::info("Torus mesh created ({} vertices, {} indices)", vtxs.vertices.size(), vtxs.indices.size());
+    spdlog::trace("Torus mesh created ({} vertices, {} indices)", vtxs.vertices.size(), vtxs.indices.size());
 
     update_aabb(vtxs.vertices);
 

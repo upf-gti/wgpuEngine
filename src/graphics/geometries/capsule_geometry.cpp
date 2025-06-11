@@ -45,10 +45,10 @@ void CapsuleGeometry::set_ring_segments(uint32_t new_ring_segments)
 
 void CapsuleGeometry::render_gui()
 {
-    Surface::render_gui();
-
     std::string surface_name = name.empty() ? "" : (" (" + name + ")");
     if (ImGui::TreeNodeEx(("Geometry" + surface_name).c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
+
+        SurfaceGeometry::render_gui();
 
         ImGui::Text("Radius");
         ImGui::SameLine(200);

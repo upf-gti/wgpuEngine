@@ -4,7 +4,7 @@
 
 class SphereGeometry : public SurfaceGeometry
 {
-    float radius = 1.0f;
+    float radius = 0.5f;
 
     uint32_t rings = 32u;
     uint32_t ring_segments = 64u;
@@ -13,7 +13,7 @@ class SphereGeometry : public SurfaceGeometry
 
 public:
 
-    SphereGeometry(float radius = 1.f, uint32_t rings = 32u, uint32_t ring_segments = 64u, const glm::vec3& color = { 1.f, 1.f, 1.f });
+    SphereGeometry(float radius = 0.5f, uint32_t rings = 32u, uint32_t ring_segments = 64u, const glm::vec3& color = { 1.f, 1.f, 1.f });
 
     void render_gui() override;
 

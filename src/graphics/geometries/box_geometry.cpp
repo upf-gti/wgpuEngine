@@ -47,10 +47,10 @@ void BoxGeometry::set_size(const glm::vec3& size)
 
 void BoxGeometry::render_gui()
 {
-    Surface::render_gui();
-
     std::string surface_name = name.empty() ? "" : (" (" + name + ")");
     if (ImGui::TreeNodeEx(("Geometry" + surface_name).c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
+
+        SurfaceGeometry::render_gui();
 
         ImGui::Text("Width");
         ImGui::SameLine(200);

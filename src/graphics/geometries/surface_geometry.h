@@ -16,5 +16,7 @@ public:
 
     SurfaceGeometry(const glm::vec3& new_color);
 
+    void render_gui() override;
+
     void set_color(const glm::vec3& new_color);
 };
