@@ -92,7 +92,7 @@ public:
     void create_cone(float r = 1.f, float h = 1.f, uint32_t segments = 32, const glm::vec3& color = { 1.f, 1.f, 1.f });
     void create_cylinder(float r = 1.f, float h = 1.f, uint32_t segments = 32, bool capped = true, const glm::vec3& color = { 1.f, 1.f, 1.f });
     void create_capsule(float r = 1.f, float h = 1.f, uint32_t segments = 32, uint32_t rings = 8, const glm::vec3& color = { 1.f, 1.f, 1.f });
-    void create_torus(float r = 1.f, float ir = 0.2f, uint32_t segments_section = 32, uint32_t segments_circle = 32, const glm::vec3& color = { 1.f, 1.f, 1.f });
+    void create_torus(float ring_radius = 1.f, float tube_radius = 0.2f, uint32_t rings = 64u, uint32_t ring_segments = 32u, const glm::vec3& color = { 1.f, 1.f, 1.f });
     void create_circle(float radius = 1.f, uint32_t segments = 32);
     void create_arrow();
     void create_skybox();
@@ -123,7 +123,7 @@ public:
     uint32_t get_index_count() const;
     uint64_t get_indices_byte_size() const;
 
-    void render_gui();
+    virtual void render_gui();
 
     AABB get_aabb() const;
     void set_aabb(const AABB& aabb);

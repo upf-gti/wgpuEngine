@@ -188,6 +188,7 @@ void Material::set_is_2D(bool is_2D)
 void Material::set_fragment_write(bool fragment_write)
 {
     this->fragment_write = fragment_write;
+    dirty_flags |= eMaterialProperties::PROP_FRAGMENT_WRITE;
 }
 
 void Material::set_transparency_type(eTransparencyType transparency_type)
@@ -394,6 +395,15 @@ void Material::render_gui()
             set_cull_type(static_cast<eCullType>(cull_type_int));
         }
 
+        ImGui::Text("Topology Type");
+        ImGui::SameLine(200);
+        static const char* topology_types[] = { "TOPOLOGY_POINT_LIST", "TOPOLOGY_LINE_LIST", "TOPOLOGY_LINE_STRIP", "TOPOLOGY_TRIANGLE_LIST", "TOPOLOGY_TRIANGLE_STRIP" };
+        int topology_type_int = static_cast<int>(topology_type);
+        if (ImGui::Combo("##Topology Type", &topology_type_int, topology_types, ((int)(sizeof(topology_types) / sizeof(*(topology_types)))))) {
+            topology_type = static_cast<eTopologyType>(topology_type_int);
+            dirty_flags |= eMaterialProperties::PROP_TOPOLOGY_TYPE;
+        }
+
         ImGui::Text("Transparency Type");
         ImGui::SameLine(200);
         static const char* transparency_types[] = { "OPAQUE", "BLEND", "MASK", "HASH" };
@@ -409,6 +419,15 @@ void Material::render_gui()
             if (ImGui::DragFloat("##Alpha Mask", &alpha_mask, 0.01f, 0.0f, 1.0f)) {
                 dirty_flags |= eMaterialProperties::PROP_ALPHA_MASK;
             }
+        }
+
+        ImGui::Text("Priority");
+        ImGui::SameLine(200);
+        ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
+        int priority_int = static_cast<int>(priority);
+        if (ImGui::DragInt("##Priority", &priority_int, 1, 0, 20)) {
+            priority = static_cast<uint8_t>(priority_int);
+            dirty_flags |= eMaterialProperties::PROP_PRIORITY;
         }
 
         ImGui::Text("Roughness");

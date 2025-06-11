@@ -107,6 +107,9 @@ EMSCRIPTEN_BINDINGS(wgpuEngine_bindings) {
         .function("rotate", &AABB::rotate)
         .function("getLongestAxis", &AABB::longest_axis);
 
+    register_vector<glm::mat4>("VectorMat4");
+    register_vector<Transform>("VectorTransform");
+
     /*
     *	Input
     */
@@ -183,7 +186,9 @@ EMSCRIPTEN_BINDINGS(wgpuEngine_bindings) {
     function("getRotationToFace", &get_rotation_to_face);
     function("smoothDampAngle", &smooth_damp_angle, allow_raw_pointers());
 
-    class_<Resource>("Resource").constructor<>();
+    class_<Resource>("Resource")
+        .property("name", &Resource::get_name, &Resource::set_name)
+        .constructor<>();
 
     enum_<eGizmoOp>("GizmoOp")
         .value("TRANSLATE_X", TRANSLATE_X)
@@ -232,6 +237,7 @@ EMSCRIPTEN_BINDINGS(wgpuEngine_bindings) {
     //bool update(const glm::vec3 & controller_position, float delta_time);
 
     register_vector<std::string>("VectorString");
+    register_vector<int>("VectorInt");
 
     /*
     *	WebGPU
@@ -243,7 +249,9 @@ EMSCRIPTEN_BINDINGS(wgpuEngine_bindings) {
 
     register_vector<WGPUConstantEntry>("VectorWGPUConstantEntry");
 
-    class_<Shader>("Shader").constructor<>();
+    class_<Shader>("Shader")
+        .constructor<>()
+        .property("path", &Shader::get_path);
 
     class_<Uniform>("Uniform").constructor<>();
 
@@ -352,7 +360,9 @@ EMSCRIPTEN_BINDINGS(wgpuEngine_bindings) {
         .value("LIGHT_OMNI", LIGHT_OMNI)
         .value("LIGHT_SPOT", LIGHT_SPOT);
 
-    class_<Texture, base<Resource>>("Texture").constructor<>();
+    class_<Texture, base<Resource>>("Texture")
+        .property("path", &Texture::get_path)
+        .constructor<>();
 
     class_<Font, base<Resource>>("Font").constructor<>();
 
@@ -417,12 +427,16 @@ EMSCRIPTEN_BINDINGS(wgpuEngine_bindings) {
 
    class_<Node>("Node")
         .constructor<>()
-        .property("name", &Node::name)
+        .property("name", &Node::get_name, &Node::set_name)
         .property("sceneUID", &Node::get_scene_unique_id)
+        .property("parent", &Node::get_base_parent, return_value_policy::reference())
         .function("render", &Node::render)
         .function("update", &Node::update)
         .function("getChildren", &Node::get_children)
-        .function("getNode", select_overload<Node*(const std::string&)>(&Node::get_node), return_value_policy::reference());
+        .function("getNode", select_overload<Node*(const std::string&)>(&Node::get_node), return_value_policy::reference())
+        .function("addChild", &Node::add_child, allow_raw_pointers())
+        .function("addChildren", &Node::add_children, allow_raw_pointers())
+        .function("removeChild", &Node::remove_child, allow_raw_pointers());
 
     class_<Node3D, base<Node>>("Node3D")
         .constructor<>()
@@ -462,6 +476,7 @@ EMSCRIPTEN_BINDINGS(wgpuEngine_bindings) {
 
     class_<Environment3D, base<MeshInstance3D>>("Environment3D")
         .constructor<>()
+        .property("texture", &Environment3D::get_texture, return_value_policy::reference())
         .function("update", &Environment3D::update)
         .function("_setTexture", &Environment3D::set_texture);
 
@@ -518,16 +533,49 @@ EMSCRIPTEN_BINDINGS(wgpuEngine_bindings) {
         .value("ANIMATION_LOOP_REVERSE", ANIMATION_LOOP_REVERSE)
         .value("ANIMATION_LOOP_PING_PONG", ANIMATION_LOOP_PING_PONG);
 
+    class_<Keyframe>("Keyframe")
+        .constructor<>();
 
-    class_<Track>("Track").constructor<>();
+    class_<Interpolator>("Interpolator")
+        .constructor<>();
 
-    class_<Pose>("Pose").constructor<>();
+    class_<Track>("Track")
+        .constructor<>()
+        .property("endTime", &Track::get_end_time)
+        .property("id", &Track::get_id, &Track::set_id)
+        .property("name", &Track::get_name, &Track::set_name)
+        .property("path", &Track::get_path, &Track::set_path)
+        .property("type", &Track::get_type, &Track::set_type)
+        .property("startTime", &Track::get_start_time)
+        .function("addKeyframe", &Track::add_keyframe)
+        .function("deleteKeyframe", &Track::delete_keyframe)
+        .function("getKeyframe", &Track::get_keyframe, return_value_policy::reference())
+        .function("getKeyframeIndex", &Track::get_keyframe_index);
 
-    class_<Skeleton, base<Resource>>("Skeleton").constructor<>();
+    class_<Pose>("Pose")
+        .constructor<>()
+        .property("joints", &Pose::get_joints, &Pose::set_joints)
+        .property("parents", &Pose::get_parents, &Pose::set_parents)
+        .function("getGlobalMatrices", &Pose::get_global_matrices)
+        .function("getGlobalTransform", &Pose::get_global_transform)
+        .function("getLocalTransform", &Pose::get_local_transform)
+        .function("getParent", &Pose::get_parent)
+        .function("resize", &Pose::resize)
+        .function("size", &Pose::size)
+        .function("setLocalTransform", &Pose::set_local_transform)
+        .function("setParent", &Pose::set_parent);
+
+    class_<Skeleton, base<Resource>>("Skeleton")
+        .constructor<>()
+        .property("jointsCount", &Skeleton::get_joints_count)
+        .function("getJointIndex", &Skeleton::get_joint_index)
+        .function("getJointNames", &Skeleton::get_joint_names)
+        .function("getInverseBindPose", &Skeleton::get_inv_bind_pose);
 
     class_<Animation, base<Resource>>("Animation").constructor<>();
 
-    class_<SkeletonInstance3D, base<Node3D>>("SkeletonInstance3D").constructor<>();
+    class_<SkeletonInstance3D, base<Node3D>>("SkeletonInstance3D")
+        .constructor<>();
 
     class_<AnimationPlayer, base<Node3D>>("AnimationPlayer")
         .constructor<>()
@@ -612,6 +660,7 @@ EMSCRIPTEN_BINDINGS(wgpuEngine_bindings) {
     class_<RendererStorage>("RendererStorage")
         .class_function("getSurface", &RendererStorage::get_surface, allow_raw_pointers())
         .class_function("getShaderFromName", &RendererStorage::get_shader_from_name, allow_raw_pointers())
+        .class_function("reloadShader", &RendererStorage::reload_shader)
         .class_function("_getTexture", &RendererStorage::get_texture, allow_raw_pointers())
         .class_function("_getShader", select_overload<Shader*(const std::string&,const Material*,const std::vector<std::string>&)>(&RendererStorage::get_shader), allow_raw_pointers());
 

@@ -49,17 +49,18 @@ enum eMaterialProperties : uint32_t {
     PROP_OCLUSSION_TEXTURE              = 1 << 7,
     PROP_DEPTH_READ                     = 1 << 8,
     PROP_DEPTH_WRITE                    = 1 << 9,
-    PROP_USE_SKINNING                   = 1 << 10,
-    PROP_TRANSPARENCY_TYPE              = 1 << 11,
-    PROP_TOPOLOGY_TYPE                  = 1 << 12,
-    PROP_CULL_TYPE                      = 1 << 13,
-    PROP_TYPE                           = 1 << 14,
-    PROP_PRIORITY                       = 1 << 15,
-    PROP_ALPHA_MASK                     = 1 << 16,
-    PROP_SHADER                         = 1 << 17,
+    PROP_FRAGMENT_WRITE                 = 1 << 10,
+    PROP_USE_SKINNING                   = 1 << 11,
+    PROP_TRANSPARENCY_TYPE              = 1 << 12,
+    PROP_TOPOLOGY_TYPE                  = 1 << 13,
+    PROP_CULL_TYPE                      = 1 << 14,
+    PROP_TYPE                           = 1 << 15,
+    PROP_PRIORITY                       = 1 << 16,
+    PROP_ALPHA_MASK                     = 1 << 17,
+    PROP_SHADER                         = 1 << 18,
 
     PROP_RELOAD_NEEDED                  = PROP_DIFFUSE_TEXTURE | PROP_METALLIC_ROUGHNESS_TEXTURE | PROP_NORMAL_TEXTURE | PROP_EMISSIVE_TEXTURE | PROP_TRANSPARENCY_TYPE |
-                                          PROP_OCLUSSION_TEXTURE | PROP_DEPTH_READ | PROP_DEPTH_WRITE | PROP_TOPOLOGY_TYPE | PROP_CULL_TYPE | PROP_TYPE,
+                                          PROP_OCLUSSION_TEXTURE | PROP_DEPTH_READ | PROP_DEPTH_WRITE | PROP_FRAGMENT_WRITE | PROP_TOPOLOGY_TYPE | PROP_CULL_TYPE | PROP_TYPE,
 
     PROP_UPDATE_NEEDED                  = PROP_COLOR | PROP_OCLUSSION_ROUGHNESS_METALLIC | PROP_EMISSIVE | PROP_ALPHA_MASK
 };

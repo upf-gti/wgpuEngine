@@ -13,6 +13,20 @@
 
 #include <glm/gtc/type_ptr.hpp>
 
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#include <emscripten/html5.h>
+#include <emscripten/bind.h>
+
+EM_JS(bool, is_canvas_focused, (), {
+    const el = document.activeElement;
+    return !(el &&
+      (el.tagName == "INPUT" ||
+       el.tagName == "TEXTAREA" ||
+       el.isContentEditable)) && (el.tagName == "CANVAS");
+});
+#endif
+
 glm::vec2 Input::mouse_position; //last mouse position
 glm::vec2 Input::mouse_delta; //mouse movement in the last frame
 float Input::mouse_wheel_delta = 0.0f;
@@ -35,6 +49,13 @@ bool Input::use_mirror_screen;
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
+#ifdef __EMSCRIPTEN__
+    if (!is_canvas_focused()) {
+        // Other stuff have the browser focus, ignore the event
+        return;
+    }
+#endif
+
     if (key < 0) return;
 
     Input::set_key_state(key, action != GLFW_RELEASE);
@@ -42,11 +63,25 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 
 void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 {
+#ifdef __EMSCRIPTEN__
+    if (!is_canvas_focused()) {
+        // Other stuff have the browser focus, ignore the event
+        return;
+    }
+#endif
+
     Input::set_mouse_button(button, action != GLFW_RELEASE);
 }
 
 void mouse_scroll_callback(GLFWwindow* window, double offset_x, double offset_y)
 {
+#ifdef __EMSCRIPTEN__
+    if (!is_canvas_focused()) {
+        // Other stuff have the browser focus, ignore the event
+        return;
+    }
+#endif
+
     Input::set_mouse_wheel(static_cast<float>(offset_x), static_cast<float>(offset_y));
 }
 

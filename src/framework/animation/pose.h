@@ -21,7 +21,8 @@ public:
     size_t size() const;
 
 	void set_parent(size_t id, int parent_id);
-    void set_joints(std::vector<Transform> new_joints) { joints = new_joints; };
+    void set_parents(const std::vector<int>& new_parents) { parents = new_parents; };
+    void set_joints(const std::vector<Transform>& new_joints) { joints = new_joints; };
 
 	int get_parent(size_t id);
     const std::vector<Transform>& get_joints() const { return joints; };

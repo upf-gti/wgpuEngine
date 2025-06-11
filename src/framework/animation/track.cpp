@@ -10,7 +10,7 @@ Track::Track()
     
 }
 
-int Track::get_id()
+int Track::get_id() const
 {
     return id;
 }
@@ -30,22 +30,22 @@ void Track::set_path(const std::string& new_path)
     path = new_path;
 }
 
-float Track::get_start_time()
+float Track::get_start_time() const
 {
     return keyframes[0].time;
 }
 
-float Track::get_end_time()
+float Track::get_end_time() const
 {
     return keyframes[keyframes.size() - 1].time;
 }
 
-const std::string& Track::get_name()
+const std::string& Track::get_name() const
 {
     return name;
 }
 
-const std::string& Track::get_path()
+const std::string& Track::get_path() const
 {
     return path;
 }
