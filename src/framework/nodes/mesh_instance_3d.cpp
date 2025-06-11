@@ -10,8 +10,6 @@ REGISTER_NODE_CLASS(MeshInstance3D)
 MeshInstance3D::MeshInstance3D() : Node3D()
 {
     node_type = "MeshInstance3D";
-    mesh_instance = new MeshInstance();
-    mesh_instance->set_node_ref(this);
 }
 
 MeshInstance3D::~MeshInstance3D()
@@ -38,92 +36,102 @@ void MeshInstance3D::update_aabb()
 
 void MeshInstance3D::render()
 {
-    Renderer::instance->add_renderable(mesh_instance, get_global_transform().get_model());
+    if (mesh) {
+        Renderer::instance->add_renderable(mesh, get_global_transform().get_model());
+    }
 
     Node3D::render();
 }
 
 void MeshInstance3D::update(float delta_time)
-{  
+{
     Node3D::update(delta_time);
 }
 
 void MeshInstance3D::set_surface_material_override(Surface* surface, Material* material)
 {
-    mesh_instance->set_surface_material_override(surface, material);
+    assert(mesh);
+    mesh->set_surface_material_override(surface, material);
 }
 
 void MeshInstance3D::set_frustum_culling_enabled(bool enabled)
 {
-    mesh_instance->set_frustum_culling_enabled(enabled);
+    assert(mesh);
+    mesh->set_frustum_culling_enabled(enabled);
 }
 
 void MeshInstance3D::set_receive_shadows(bool new_receive_shadows)
 {
-    mesh_instance->set_receive_shadows(new_receive_shadows);
+    assert(mesh);
+    mesh->set_receive_shadows(new_receive_shadows);
+}
+
+void MeshInstance3D::set_mesh(Mesh* new_mesh)
+{
+    mesh = new_mesh;
+    mesh->set_node_ref(this);
 }
 
 bool MeshInstance3D::get_frustum_culling_enabled()
 {
-    return mesh_instance->get_frustum_culling_enabled();
+    assert(mesh);
+    return mesh->get_frustum_culling_enabled();
 }
 
 Material* MeshInstance3D::get_surface_material(int surface_idx)
 {
-    return mesh_instance->get_surface_material(surface_idx);
+    assert(mesh);
+    return mesh->get_surface_material(surface_idx);
 }
 
 Material* MeshInstance3D::get_surface_material_override(Surface* surface)
 {
-    return mesh_instance->get_surface_material_override(surface);
+    assert(mesh);
+    return mesh->get_surface_material_override(surface);
 }
 
 const std::vector<Surface*>& MeshInstance3D::get_surfaces() const
 {
-    return mesh_instance->get_surfaces();
+    assert(mesh);
+    return mesh->get_surfaces();
 }
 
 Surface* MeshInstance3D::get_surface(int surface_idx) const
 {
-    return mesh_instance->get_surface(surface_idx);
+    assert(mesh);
+    return mesh->get_surface(surface_idx);
 }
 
 uint32_t MeshInstance3D::get_surface_count() const
 {
-    return mesh_instance->get_surface_count();
+    assert(mesh);
+    return mesh->get_surface_count();
 }
 
 void MeshInstance3D::add_surface(Surface* surface)
 {
-    mesh_instance->add_surface(surface);
+    if (!mesh) {
+        mesh = new Mesh();
+        mesh->set_node_ref(this);
+    }
+
+    mesh->add_surface(surface);
 }
 
 void MeshInstance3D::render_gui()
 {
-    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(ImColor(230, 150, 50)));
-    bool is_open = ImGui::TreeNodeEx("Surfaces");
-    ImGui::PopStyleColor();
+    if (mesh) {
 
-    if (is_open)
-    {
-        const auto& surfaces = mesh_instance->get_surfaces();
-        for (int i = 0; i < surfaces.size(); ++i) {
-            std::string surface_name = surfaces[i]->get_name();
-            std::string final_surface_name = surface_name.empty() ? ("Surface " + std::to_string(i)).c_str() : surface_name;
-            if (ImGui::TreeNodeEx(final_surface_name.c_str(), ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_Leaf)) {
+        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(ImColor(230, 150, 50)));
+        bool is_open = ImGui::TreeNodeEx(mesh->get_mesh_type().c_str());
+        ImGui::PopStyleColor();
 
-                surfaces[i]->render_gui();
+        if (is_open)
+        {
+            mesh->render_gui();
 
-                Material* material = mesh_instance->get_surface_material_override(surfaces[i]);
-                if (!material) {
-                    material = surfaces[i]->get_material();
-                }
-                material->render_gui();
-                ImGui::TreePop();
-            }
+            ImGui::TreePop();
         }
-
-        ImGui::TreePop();
     }
 
     Node3D::render_gui();

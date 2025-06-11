@@ -1,8 +1,8 @@
 #pragma once
 
-#include "graphics/geometries/surface_geometry.h"
+#include "graphics/primitives/primitive_mesh.h"
 
-class BoxGeometry : public SurfaceGeometry
+class BoxMesh : public PrimitiveMesh
 {
     float width = 1.0f;
     float height = 1.0f;
@@ -12,7 +12,7 @@ class BoxGeometry : public SurfaceGeometry
 
 public:
 
-    BoxGeometry(float width = 1.f, float height = 1.f, float depth = 1.f, const glm::vec3& color = { 1.f, 1.f, 1.f });
+    BoxMesh(float width = 1.f, float height = 1.f, float depth = 1.f, const glm::vec3& color = { 1.f, 1.f, 1.f });
 
     void render_gui() override;
 

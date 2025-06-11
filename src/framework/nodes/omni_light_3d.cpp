@@ -30,8 +30,8 @@ void OmniLight3D::render()
 {
 #ifndef NDEBUG
     if (debug_material) {
-        Renderer::instance->add_renderable(debug_mesh_v->get_mesh_instance(), get_global_model() * debug_mesh_v->get_global_model());
-        Renderer::instance->add_renderable(debug_mesh_h->get_mesh_instance(), get_global_model() * debug_mesh_h->get_global_model());
+        Renderer::instance->add_renderable(debug_mesh_v->get_mesh(), get_global_model() * debug_mesh_v->get_global_model());
+        Renderer::instance->add_renderable(debug_mesh_h->get_mesh(), get_global_model() * debug_mesh_h->get_global_model());
     }
 #endif
 
@@ -102,15 +102,6 @@ void OmniLight3D::parse(std::ifstream& binary_scene_file)
 
 void OmniLight3D::create_debug_meshes()
 {
-    debug_mesh_v = new MeshInstance3D();
-    debug_mesh_v->set_frustum_culling_enabled(false);
-    debug_mesh_v->set_scale(glm::vec3(range));
-
-    debug_mesh_h = new MeshInstance3D();
-    debug_mesh_h->set_frustum_culling_enabled(false);
-    debug_mesh_h->set_scale(glm::vec3(range));
-    debug_mesh_h->rotate(glm::rotate(transform.get_rotation(), static_cast<float>(PI / 2.0f), glm::vec3(1.0f, 0.0, 0.0)));
-
     Surface* debug_surface = new Surface();
     debug_surface->create_circle(0.5f, 32);
 
@@ -121,6 +112,14 @@ void OmniLight3D::create_debug_meshes()
     debug_material->set_shader(RendererStorage::get_shader_from_source(shaders::mesh_forward::source, shaders::mesh_forward::path, shaders::mesh_forward::libraries, debug_material));
     debug_surface->set_material(debug_material);
 
+    debug_mesh_v = new MeshInstance3D();
     debug_mesh_v->add_surface(debug_surface);
+    debug_mesh_v->set_frustum_culling_enabled(false);
+    debug_mesh_v->set_scale(glm::vec3(range));
+
+    debug_mesh_h = new MeshInstance3D();
     debug_mesh_h->add_surface(debug_surface);
+    debug_mesh_h->set_frustum_culling_enabled(false);
+    debug_mesh_h->set_scale(glm::vec3(range));
+    debug_mesh_h->rotate(glm::rotate(transform.get_rotation(), static_cast<float>(PI / 2.0f), glm::vec3(1.0f, 0.0, 0.0)));
 }

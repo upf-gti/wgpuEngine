@@ -1135,9 +1135,9 @@ void parse_model_skins(Node3D* scene_root, tinygltf::Model& model, std::map<std:
 
         for (auto child : instance->get_children()) {
             MeshInstance3D* child_instance = dynamic_cast<MeshInstance3D*>(child);
-            MeshInstance* mesh_instance = child_instance->get_mesh_instance();
-            assert(mesh_instance);
-            mesh_instance->set_skeleton(skeleton);
+            Mesh* mesh = child_instance->get_mesh();
+            assert(mesh);
+            mesh->set_skeleton(skeleton);
         }
     }
 }

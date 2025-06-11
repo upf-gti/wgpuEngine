@@ -16,10 +16,7 @@ Environment3D::Environment3D() : MeshInstance3D()
 
     name = "Environment3D";
 
-    mesh_instance->set_frustum_culling_enabled(false);
-
     Material* material = new Material();
-
     material->set_diffuse_texture(Renderer::instance->get_irradiance_texture());
     material->set_cull_type(CULL_BACK);
     material->set_type(MATERIAL_UNLIT);
@@ -28,11 +25,11 @@ Environment3D::Environment3D() : MeshInstance3D()
     material->set_shader(RendererStorage::get_shader_from_source(shaders::mesh_texture_cube::source, shaders::mesh_texture_cube::path, shaders::mesh_texture_cube::libraries, material));
 
     Surface* surface = new Surface();
-
     surface->create_skybox();
     surface->set_material(material);
 
     add_surface(surface);
+    set_frustum_culling_enabled(false);
 }
 
 void Environment3D::update(float delta_time)
@@ -45,7 +42,7 @@ void Environment3D::update(float delta_time)
 
 Texture* Environment3D::get_texture() const
 {
-    Material* material = mesh_instance->get_surface_material(0);
+    Material* material = mesh->get_surface_material(0);
     return material->get_diffuse_texture();
 }
 

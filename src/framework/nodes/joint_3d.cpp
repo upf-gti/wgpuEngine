@@ -2,6 +2,7 @@
 
 #include "graphics/renderer.h"
 #include "graphics/renderer_storage.h"
+#include "graphics/primitives/box_mesh.h"
 
 #include "framework/nodes/mesh_instance_3d.h"
 #include "framework/nodes/skeleton_instance_3d.h"
@@ -31,14 +32,16 @@ Joint3D::Joint3D()
     selected_material->set_color(glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
     selected_material->set_shader(RendererStorage::get_shader_from_source(shaders::mesh_forward::source, shaders::mesh_forward::path, shaders::mesh_forward::libraries, material));
 
+    Mesh* mesh = new BoxMesh();
+
     mesh_instance = new MeshInstance3D();
+    mesh_instance->set_mesh(mesh);
     mesh_instance->set_frustum_culling_enabled(false);
-    mesh_instance->add_surface(RendererStorage::get_surface("box"));
     mesh_instance->set_surface_material_override(mesh_instance->get_surface(0), material);
 
     selected_mesh_instance = new MeshInstance3D();
+    selected_mesh_instance->set_mesh(mesh);
     selected_mesh_instance->set_frustum_culling_enabled(false);
-    selected_mesh_instance->add_surface(RendererStorage::get_surface("box"));
     selected_mesh_instance->set_surface_material_override(selected_mesh_instance->get_surface(0), selected_material);
 }
 
@@ -78,5 +81,5 @@ void Joint3D::render()
     Transform joint_global_transform = Transform::combine(get_parent<Node3D*>()->get_global_transform(), pose->get_global_transform(index));
     joint_global_transform.set_scale(glm::vec3(0.005f));
     bool selected = (Joint3D::selected_joint == this);
-    Renderer::instance->add_renderable(selected ? selected_mesh_instance->get_mesh_instance() : mesh_instance->get_mesh_instance(), joint_global_transform.get_model());
+    Renderer::instance->add_renderable(selected ? selected_mesh_instance->get_mesh() : mesh_instance->get_mesh(), joint_global_transform.get_model());
 }

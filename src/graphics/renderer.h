@@ -24,7 +24,7 @@ class Surface;
 class Light3D;
 class RenderdocCapture;
 class RendererStorage;
-class MeshInstance;
+class Mesh;
 class MeshInstance3D;
 class GSNode;
 struct GLFWwindow;
@@ -120,7 +120,7 @@ protected:
     };
 
     struct sRenderListData {
-        MeshInstance* mesh_instance;
+        Mesh* mesh;
         glm::mat4x4 global_matrix;
     };
 
@@ -128,7 +128,7 @@ protected:
         Surface* surface;
         uint32_t repeat;
         glm::mat4x4 global_matrix;
-        MeshInstance* mesh_instance_ref;
+        Mesh* mesh_ref;
         Material* material;
     };
 
@@ -350,7 +350,7 @@ public:
     void set_required_features(std::vector<WGPUFeatureName> new_required_features) { required_features = new_required_features; };
     void set_required_limits(const WGPULimits& required_limits) { webgpu_context->required_limits = required_limits; }
 
-    void add_renderable(MeshInstance* mesh_instance, const glm::mat4x4& global_matrix);
+    void add_renderable(Mesh* mesh_instance, const glm::mat4x4& global_matrix);
     void add_splat_scene(GSNode* gs_scene);
     void clear_renderables();
 

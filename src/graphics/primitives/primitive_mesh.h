@@ -1,20 +1,22 @@
 #pragma once
 
-#include "graphics/surface.h"
+#include "graphics/mesh.h"
 
-class SurfaceGeometry : public Surface
+class PrimitiveMesh : public Mesh
 {
 protected:
+
+    Surface* surface = nullptr;
 
     glm::vec3 color = {1.0f, 1.0f, 1.0f};
 
     bool dirty = false;
 
-    virtual void build_mesh() {}
+    virtual void build_mesh();
 
 public:
 
-    SurfaceGeometry(const glm::vec3& new_color);
+    PrimitiveMesh(const glm::vec3& new_color);
 
     void render_gui() override;
 

@@ -2,7 +2,7 @@
 
 #include "framework/ui/ui_utils.h"
 #include "framework/colors.h"
-#include "graphics/mesh_instance.h"
+#include "graphics/mesh.h"
 #include "framework/nodes/panel_2d.h"
 
 #include <functional>

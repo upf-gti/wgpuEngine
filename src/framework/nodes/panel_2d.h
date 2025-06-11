@@ -2,7 +2,7 @@
 
 #include "framework/ui/ui_utils.h"
 #include "framework/colors.h"
-#include "graphics/mesh_instance.h"
+#include "graphics/mesh.h"
 #include "node_2d.h"
 
 #include <functional>
@@ -28,7 +28,7 @@ namespace ui {
 
         uint32_t parameter_flags = 0;
 
-        MeshInstance* quad_mesh = nullptr;
+        Mesh* quad_mesh = nullptr;
 
         Panel2D() {};
         Panel2D(const std::string& name, const glm::vec2& p, const glm::vec2& s, uint32_t flags = 0u, const Color& c = colors::WHITE);

@@ -10,9 +10,11 @@ class Texture;
 class Skeleton;
 class Node;
 
-class MeshInstance {
+class Mesh {
 
 protected:
+
+    std::string mesh_type;
 
     Node* node_ref = nullptr;
     Skeleton* skeleton = nullptr;
@@ -26,8 +28,8 @@ protected:
 
 public:
 
-    MeshInstance();
-	virtual ~MeshInstance();
+    Mesh();
+	virtual ~Mesh();
 
     Material* get_surface_material(int surface_idx);
     bool get_frustum_culling_enabled();
@@ -39,6 +41,7 @@ public:
     uint32_t get_surface_count() const;
     Skeleton* get_skeleton();
     Node* get_node_ref() { return node_ref; }
+    const std::string& get_mesh_type() { return mesh_type; }
 
     void set_surface_material_override(Surface* surface, Material* material);
     void set_frustum_culling_enabled(bool enabled);
@@ -47,4 +50,6 @@ public:
     void set_skeleton(Skeleton* s);
 
 	void add_surface(Surface* surface);
+
+    virtual void render_gui();
 };

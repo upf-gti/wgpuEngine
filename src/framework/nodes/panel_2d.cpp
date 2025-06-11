@@ -54,7 +54,7 @@ namespace ui {
         Surface* quad_surface = new Surface();
         quad_surface->create_quad(size.x, size.y, true);
 
-        quad_mesh = new MeshInstance();
+        quad_mesh = new Mesh();
         quad_mesh->add_surface(quad_surface);
         quad_mesh->set_surface_material_override(quad_mesh->get_surface(0), material);
 

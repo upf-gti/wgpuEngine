@@ -41,7 +41,7 @@ void SpotLight3D::render()
 {
 #ifndef NDEBUG
     if (debug_material) {
-        Renderer::instance->add_renderable(debug_mesh->get_mesh_instance(), get_global_model() * debug_mesh->get_global_model());
+        Renderer::instance->add_renderable(debug_mesh->get_mesh(), get_global_model() * debug_mesh->get_global_model());
     }
 #endif
 }
@@ -148,12 +148,13 @@ void SpotLight3D::parse(std::ifstream& binary_scene_file)
 
 void SpotLight3D::create_debug_meshes()
 {
-    debug_mesh = new MeshInstance3D();
-    debug_mesh->set_frustum_culling_enabled(false);
-    debug_mesh->set_scale(glm::vec3(range));
-
     debug_surface = new Surface();
     create_debug_render_cone();
+
+    debug_mesh = new MeshInstance3D();
+    debug_mesh->add_surface(debug_surface);
+    debug_mesh->set_frustum_culling_enabled(false);
+    debug_mesh->set_scale(glm::vec3(range));
 
     debug_material = new Material();
     debug_material->set_color(glm::vec4(color, 1.0f));
@@ -161,6 +162,4 @@ void SpotLight3D::create_debug_meshes()
     debug_material->set_topology_type(TOPOLOGY_LINE_STRIP);
     debug_material->set_shader(RendererStorage::get_shader_from_source(shaders::mesh_forward::source, shaders::mesh_forward::path, shaders::mesh_forward::libraries, debug_material));
     debug_surface->set_material(debug_material);
-
-    debug_mesh->add_surface(debug_surface);
 }

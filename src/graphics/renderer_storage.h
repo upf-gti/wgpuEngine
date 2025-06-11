@@ -15,7 +15,7 @@ class Surface;
 class Texture;
 class Shader;
 class Material;
-class MeshInstance;
+class Mesh;
 class Animation;
 struct Uniform;
 
@@ -40,7 +40,6 @@ public:
     static std::map<std::string, const char*> engine_shaders_refs;
     static std::map<std::string, std::vector<std::string>> shader_library_references;
     static std::map<std::string, Texture*> textures;
-    static std::map<std::string, Surface*> surfaces;
     static std::map<std::string, Animation*> animations;
 
     static std::unordered_map<RenderPipelineKey, Pipeline*> registered_render_pipelines;
@@ -57,12 +56,12 @@ public:
     static std::unordered_map<const Material*, sBindingData> material_bind_groups;
     static std::unordered_map<const void*, sBindingData> ui_widget_bind_groups;
 
-    static void register_material_bind_group(WebGPUContext* webgpu_context, MeshInstance* mesh_instance, Material* material);
+    static void register_material_bind_group(WebGPUContext* webgpu_context, Mesh* mesh, Material* material);
     static WGPUBindGroup get_material_bind_group(const Material* material);
 
     static void delete_material_bind_group(WebGPUContext* webgpu_context, Material* material);
 
-    static void update_material_bind_group(WebGPUContext* webgpu_context, MeshInstance* mesh_instance, Material* material);
+    static void update_material_bind_group(WebGPUContext* webgpu_context, Mesh* mesh, Material* material);
 
     static void register_ui_widget(WebGPUContext* webgpu_context, Shader* shader, void* widget, const sUIData& ui_data, uint8_t bind_group_id, bool force = false);
     static WGPUBindGroup get_ui_widget_bind_group(const void* widget);
@@ -92,10 +91,6 @@ public:
     static void reload_engine_shader(const std::string& shader_path);
 
     static Texture* get_texture(const std::string& texture_path, TextureStorageFlags flags = TEXTURE_STORAGE_NONE);
-
-    static Surface* get_surface(const std::string& mesh_path);
-
-    static void register_basic_surfaces();
 
     static std::vector<std::string> get_common_define_specializations(const Material* material);
 

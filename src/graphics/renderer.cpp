@@ -19,7 +19,7 @@
 #include "graphics/texture.h"
 #include "framework/camera/camera.h"
 #include "framework/nodes/light_3d.h"
-#include "graphics/mesh_instance.h"
+#include "graphics/mesh.h"
 #include "graphics/pipeline.h"
 #include "graphics/shader.h"
 #include "graphics/debug/renderdoc_capture.h"
@@ -242,8 +242,6 @@ int Renderer::post_initialize()
     //shadow_material->set_cull_type(CULL_FRONT);
     shadow_material->set_fragment_write(false);
     shadow_material->set_shader(RendererStorage::get_shader_from_source(shaders::mesh_shadow::source, shaders::mesh_shadow::path, shaders::mesh_shadow::libraries, shadow_material));
-
-    RendererStorage::register_basic_surfaces();
 
     // set initial memory size to avoid resizing every push_back
     current_render_list_size = 128;
@@ -973,14 +971,14 @@ void Renderer::prepare_cull_instancing(const Camera& camera, std::vector<std::ve
     // Get all surfaces from entity meshes
     for (auto render_list_data : render_entity_list)
     {
-        MeshInstance* mesh_instance = render_list_data.mesh_instance;
+        Mesh* mesh = render_list_data.mesh;
         glm::mat4x4 global_matrix = render_list_data.global_matrix;
 
-        const std::vector<Surface*>& surfaces = mesh_instance->get_surfaces();
+        const std::vector<Surface*>& surfaces = mesh->get_surfaces();
 
         for (Surface* surface : surfaces) {
 
-            Material* material_override = mesh_instance->get_surface_material_override(surface);
+            Material* material_override = mesh->get_surface_material_override(surface);
             Material* material = material_override ? material_override : surface->get_material();
 
             bool material_is_2d = material->get_is_2D();
@@ -993,11 +991,11 @@ void Renderer::prepare_cull_instancing(const Camera& camera, std::vector<std::ve
                 continue;
             }
 
-            if (is_shadow_pass && (!mesh_instance->get_receive_shadows() || material_is_2d || material->get_transparency_type() == ALPHA_BLEND)) {
+            if (is_shadow_pass && (!mesh->get_receive_shadows() || material_is_2d || material->get_transparency_type() == ALPHA_BLEND)) {
                 continue;
             }
 
-            if (!material_is_2d && mesh_instance->get_frustum_culling_enabled()) {
+            if (!material_is_2d && mesh->get_frustum_culling_enabled()) {
 
                 const AABB& surface_aabb = surface->get_aabb();
 
@@ -1008,7 +1006,7 @@ void Renderer::prepare_cull_instancing(const Camera& camera, std::vector<std::ve
                 }
             }
 
-            RendererStorage::instance->register_material_bind_group(webgpu_context, mesh_instance, material);
+            RendererStorage::instance->register_material_bind_group(webgpu_context, mesh, material);
 
             RendererStorage::register_render_pipeline(material);
 
@@ -1021,7 +1019,7 @@ void Renderer::prepare_cull_instancing(const Camera& camera, std::vector<std::ve
                 list = RENDER_LIST_TRANSPARENT;
             }
 
-            render_lists[list].push_back({ surface, 1, global_matrix, mesh_instance, material });
+            render_lists[list].push_back({ surface, 1, global_matrix, mesh, material });
         }
     }
 
@@ -1234,7 +1232,7 @@ void Renderer::render_render_list(WGPURenderPassEncoder render_pass, const std::
         //#endif
 
         if (material->get_type() == MATERIAL_UI) {
-            WGPUBindGroup ui_bind_group = renderer_storage->get_ui_widget_bind_group(render_data.mesh_instance_ref);
+            WGPUBindGroup ui_bind_group = renderer_storage->get_ui_widget_bind_group(render_data.mesh_ref);
             if (ui_bind_group) {
                 wgpuRenderPassEncoderSetBindGroup(render_pass, 3, ui_bind_group, 0, nullptr);
             }
@@ -1351,14 +1349,14 @@ uint8_t Renderer::timestamp(WGPUCommandEncoder encoder, const char* label)
     return query_index++;
 }
 
-void Renderer::add_renderable(MeshInstance* mesh_instance, const glm::mat4x4& global_matrix)
+void Renderer::add_renderable(Mesh* mesh, const glm::mat4x4& global_matrix)
 {
     if ((render_entity_list.size() + 1) >= current_render_list_size) {
         current_render_list_size <<= 1;
         render_entity_list.reserve(current_render_list_size);
     }
 
-    render_entity_list.push_back({ mesh_instance, global_matrix });
+    render_entity_list.push_back({ mesh, global_matrix });
 }
 
 void Renderer::add_splat_scene(GSNode* gs_scene)

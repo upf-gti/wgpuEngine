@@ -21,13 +21,11 @@ SkeletonHelper3D::SkeletonHelper3D(Skeleton* new_skeleton, Node3D* parent) : Mes
 
 void SkeletonHelper3D::initialize()
 {
-    MeshInstance3D::initialize();
-
-    set_frustum_culling_enabled(false);
-
     Surface* s = new Surface();
     s->set_name("Skeleton Helper");
     add_surface(s);
+
+    set_frustum_culling_enabled(false);
 
     inner_update();
 

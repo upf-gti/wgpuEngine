@@ -1,8 +1,8 @@
 #pragma once
 
-#include "graphics/geometries/surface_geometry.h"
+#include "graphics/primitives/primitive_mesh.h"
 
-class SphereGeometry : public SurfaceGeometry
+class SphereMesh : public PrimitiveMesh
 {
     float radius = 0.5f;
 
@@ -13,9 +13,9 @@ class SphereGeometry : public SurfaceGeometry
 
 public:
 
-    SphereGeometry(float radius = 0.5f, uint32_t rings = 32u, uint32_t ring_segments = 64u, const glm::vec3& color = { 1.f, 1.f, 1.f });
+    SphereMesh(float radius = 0.5f, uint32_t rings = 32u, uint32_t ring_segments = 64u, const glm::vec3& color = { 1.f, 1.f, 1.f });
 
-    void render_gui() override;
+    //void render_gui() override;
 
     float get_radius() const { return radius; }
     uint32_t get_rings() const { return rings; }

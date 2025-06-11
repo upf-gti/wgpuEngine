@@ -6,13 +6,7 @@
 #include "uniform.h"
 #include "pipeline.h"
 #include "renderer.h"
-#include "mesh_instance.h"
-
-#include "geometries/box_geometry.h"
-#include "geometries/sphere_geometry.h"
-#include "geometries/torus_geometry.h"
-#include "geometries/capsule_geometry.h"
-#include "geometries/cylinder_geometry.h"
+#include "mesh.h"
 
 #include "framework/nodes/mesh_instance_3d.h"
 #include "framework/nodes/skeleton_instance_3d.h"
@@ -34,7 +28,6 @@
 
 RendererStorage* RendererStorage::instance = nullptr;
 
-std::map<std::string, Surface*> RendererStorage::surfaces;
 std::map<std::string, Texture*> RendererStorage::textures;
 std::map<std::string, Shader*> RendererStorage::shaders;
 std::map<std::string, const char*> RendererStorage::engine_shaders_refs;
@@ -53,7 +46,7 @@ RendererStorage::RendererStorage()
     instance = this;
 }
 
-void RendererStorage::register_material_bind_group(WebGPUContext* webgpu_context, MeshInstance* mesh_instance, Material* material)
+void RendererStorage::register_material_bind_group(WebGPUContext* webgpu_context, Mesh* mesh, Material* material)
 {
     if (material_bind_groups.contains(material)) {
 
@@ -65,7 +58,7 @@ void RendererStorage::register_material_bind_group(WebGPUContext* webgpu_context
             material->set_shader(get_shader_from_source(engine_shaders_refs[old_shader->get_path()], old_shader->get_path(), libraries, material));
         } else
         if (material->get_dirty_flags() & PROP_UPDATE_NEEDED) {
-            update_material_bind_group(webgpu_context, mesh_instance, material);
+            update_material_bind_group(webgpu_context, mesh, material);
             return;
         }
         else {
@@ -196,7 +189,7 @@ void RendererStorage::register_material_bind_group(WebGPUContext* webgpu_context
 
     if (material->get_use_skinning()) {
 
-        MeshInstance3D* instance_3d = static_cast<MeshInstance3D*>(mesh_instance->get_node_ref());
+        MeshInstance3D* instance_3d = static_cast<MeshInstance3D*>(mesh->get_node_ref());
         SkeletonInstance3D* skeleton_instance = dynamic_cast<SkeletonInstance3D*>(instance_3d->get_parent());
         assert(skeleton_instance);
 
@@ -262,7 +255,7 @@ void RendererStorage::delete_material_bind_group(WebGPUContext* webgpu_context, 
     }
 }
 
-void RendererStorage::update_material_bind_group(WebGPUContext* webgpu_context, MeshInstance* mesh_instance, Material* material)
+void RendererStorage::update_material_bind_group(WebGPUContext* webgpu_context, Mesh* mesh, Material* material)
 {
     std::vector<Uniform*>& uniforms = material_bind_groups[material].uniforms;
     std::unordered_map<eMaterialProperties, uint8_t>& uniform_indices = material_bind_groups[material].uniform_indices;
@@ -562,23 +555,6 @@ Texture* RendererStorage::get_texture(const std::string& texture_path, TextureSt
     return tx;
 }
 
-Surface* RendererStorage::get_surface(const std::string& mesh_path)
-{
-    std::string name = mesh_path;
-
-    // check if already loaded
-    std::map<std::string, Surface*>::iterator it = surfaces.find(mesh_path);
-    if (it != surfaces.end())
-        return it->second;
-
-    Surface* new_surface = new Surface();
-
-    // register in map
-    surfaces[name] = new_surface;
-
-    return new_surface;
-}
-
 void RendererStorage::register_animation(const std::string& animation_path, Animation* animation)
 {
     animations[animation_path] = animation;
@@ -599,58 +575,6 @@ Animation* RendererStorage::get_animation(const std::string& animation_path)
         return it->second;    
 
     return nullptr;
-}
-
-void RendererStorage::register_basic_surfaces()
-{
-    // Quad
-    Surface* quad_mesh = new Surface();
-    quad_mesh->create_quad();
-    quad_mesh->ref();
-    surfaces["quad"] = quad_mesh;
-
-    // Box
-    Surface* box_mesh = new BoxGeometry();
-    box_mesh->ref();
-    surfaces["box"] = box_mesh;
-
-    // Rounded Box
-    Surface* rounded_box_mesh = new Surface();
-    rounded_box_mesh->create_rounded_box();
-    rounded_box_mesh->ref();
-    surfaces["rounded_box"] = rounded_box_mesh;
-
-    // Sphere
-    Surface* sphere_mesh = new SphereGeometry();
-    sphere_mesh->ref();
-    surfaces["sphere"] = sphere_mesh;
-
-    // Cone
-    Surface* cone_mesh = new Surface();
-    cone_mesh->create_cone();
-    cone_mesh->ref();
-    surfaces["cone"] = cone_mesh;
-
-    // Cylinder
-    Surface* cylinder_mesh = new CylinderGeometry();
-    cylinder_mesh->ref();
-    surfaces["cylinder"] = cylinder_mesh;
-
-    // Capsule
-    Surface* capsule_mesh = new CapsuleGeometry();
-    capsule_mesh->ref();
-    surfaces["capsule"] = capsule_mesh;
-
-    // Torus
-    Surface* torus_mesh = new TorusGeometry();
-    torus_mesh->ref();
-    surfaces["torus"] = torus_mesh;
-
-    // Circle
-    Surface* circle_mesh = new Surface();
-    circle_mesh->create_circle();
-    circle_mesh->ref();
-    surfaces["circle"] = circle_mesh;
 }
 
 std::vector<std::string> RendererStorage::get_common_define_specializations(const Material* material)

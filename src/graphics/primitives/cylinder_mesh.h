@@ -1,8 +1,8 @@
 #pragma once
 
-#include "graphics/geometries/surface_geometry.h"
+#include "graphics/primitives/primitive_mesh.h"
 
-class CylinderGeometry : public SurfaceGeometry
+class CylinderMesh : public PrimitiveMesh
 {
     float top_radius = 0.5f;
     float bottom_radius = 0.5f;
@@ -17,9 +17,9 @@ class CylinderGeometry : public SurfaceGeometry
 
 public:
 
-    CylinderGeometry(float top_radius = 0.5f, float bottom_radius = 0.5f, float height = 2.0f, uint32_t rings = 4u, uint32_t ring_segments = 64u, bool capped = true, const glm::vec3& color = { 1.f, 1.f, 1.f });
+    CylinderMesh(float top_radius = 0.5f, float bottom_radius = 0.5f, float height = 2.0f, uint32_t rings = 4u, uint32_t ring_segments = 64u, bool capped = true, const glm::vec3& color = { 1.f, 1.f, 1.f });
 
-    void render_gui() override;
+    //void render_gui() override;
 
     float get_top_radius() const { return top_radius; }
     float get_bottom_radius() const { return bottom_radius; }

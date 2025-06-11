@@ -1,12 +1,12 @@
 #pragma once
 
 #include "node_3d.h"
-#include "graphics/mesh_instance.h"
+#include "graphics/mesh.h"
 
 class MeshInstance3D : public Node3D {
 
 protected:
-    MeshInstance* mesh_instance = nullptr;
+    Mesh* mesh = nullptr;
 
 public:
 
@@ -20,8 +20,9 @@ public:
     void set_surface_material_override(Surface* surface, Material* material);
     void set_frustum_culling_enabled(bool enabled);
     void set_receive_shadows(bool new_receive_shadows);
+    void set_mesh(Mesh* new_mesh);
 
-    MeshInstance* get_mesh_instance() { return mesh_instance; }
+    Mesh* get_mesh() { return mesh; }
     bool get_frustum_culling_enabled();
     Material* get_surface_material(int surface_idx);
     Material* get_surface_material_override(Surface* surface);
@@ -29,7 +30,7 @@ public:
     Surface* get_surface(int surface_idx) const;
     uint32_t get_surface_count() const;
 
-    void  add_surface(Surface* surface);
+    void add_surface(Surface* surface);
 
 	virtual void render() override;
 	virtual void update(float delta_time) override;
