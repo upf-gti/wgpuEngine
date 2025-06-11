@@ -165,31 +165,27 @@ void Surface::update_aabb(std::vector<glm::vec3>& vertices)
 
 void Surface::create_axis(float s)
 {
-    sSurfaceData vertices;
+    sSurfaceData data;
+    data.vertices.reserve(6u);
 
-    vertices.vertices.push_back({ glm::vec3(-1.0f,  0.0f,  0.0f) * s });
-    vertices.vertices.push_back({ glm::vec3( 1.0f,  0.0f,  0.0f) * s });
-    vertices.vertices.push_back({ glm::vec3( 0.0f, -1.0f,  0.0f) * s });
-    vertices.vertices.push_back({ glm::vec3( 0.0f,  1.0f,  0.0f) * s });
-    vertices.vertices.push_back({ glm::vec3( 0.0f,  0.0f, -1.0f) * s });
-    vertices.vertices.push_back({ glm::vec3( 0.0f,  0.0f,  1.0f) * s });
+    data.vertices.push_back({ glm::vec3(-1.0f,  0.0f,  0.0f) * s });
+    data.vertices.push_back({ glm::vec3(1.0f,  0.0f,  0.0f) * s });
+    data.vertices.push_back({ glm::vec3(0.0f, -1.0f,  0.0f) * s });
+    data.vertices.push_back({ glm::vec3(0.0f,  1.0f,  0.0f) * s });
+    data.vertices.push_back({ glm::vec3(0.0f,  0.0f, -1.0f) * s });
+    data.vertices.push_back({ glm::vec3( 0.0f,  0.0f,  1.0f) * s });
 
-    create_surface_data(vertices);
+    create_surface_data(data);
 }
 
 sSurfaceData Surface::generate_quad(float w, float h, const glm::vec3& position, const glm::vec3& normal, const glm::vec3& color, bool flip_y)
 {
-    struct {
-        std::vector<glm::vec3> vertices;
-        std::vector<glm::vec3> normal;
-        std::vector<glm::vec2> uv;
-        std::vector<glm::vec3> color;
-    } points;
+    sSurfaceData points;
 
     points.vertices.reserve(4);
-    points.normal.reserve(4);
-    points.uv.reserve(4);
-    points.color.reserve(4);
+    points.normals.reserve(4);
+    points.uvs.reserve(4);
+    points.colors.reserve(4);
 
     glm::vec3 n = normal;
     glm::vec3 vY = get_perpendicular(n);
@@ -206,9 +202,9 @@ sSurfaceData Surface::generate_quad(float w, float h, const glm::vec3& position,
         for (unsigned short i2 = 0; i2 <= 1; i2++)
         {
             points.vertices.push_back(position - (orig + float(i1) * delta1 + float(i2) * delta2));
-            points.normal.push_back(n);
-            points.uv.push_back(glm::vec2(i1, flip_y ? (1.0f - i2) : i2));
-            points.color.push_back(color);
+            points.normals.push_back(n);
+            points.uvs.push_back(glm::vec2(i1, flip_y ? (1.0f - i2) : i2));
+            points.colors.push_back(color);
         }
     }
 
@@ -222,9 +218,9 @@ sSurfaceData Surface::generate_quad(float w, float h, const glm::vec3& position,
 
     auto add_vertex = [&](uint32_t idx) {
         vertices.vertices[counter] = points.vertices[idx];
-        vertices.normals[counter] = points.normal[idx];
-        vertices.uvs[counter] = points.uv[idx];
-        vertices.colors[counter] = points.color[idx];
+        vertices.normals[counter] = points.normals[idx];
+        vertices.uvs[counter] = points.uvs[idx];
+        vertices.colors[counter] = points.colors[idx];
         counter++;
     };
 
@@ -275,7 +271,7 @@ void Surface::create_subdivided_quad(float w, float h, bool flip_y, uint32_t sub
 
     name = "subdivided_quad";
 
-    sSurfaceData vertices;
+    sSurfaceData data;
 
     float step_x = w / static_cast<float>(subdivisions);
     float step_y = h / static_cast<float>(subdivisions);
@@ -304,13 +300,13 @@ void Surface::create_subdivided_quad(float w, float h, bool flip_y, uint32_t sub
             vtxs.uvs[4] = glm::vec2(uv1.x, 1.0f - uv1.y);
             vtxs.uvs[5] = glm::vec2(uv0.x, 1.0f - uv1.y);
 
-            vertices.append(vtxs);
+            data.append(vtxs);
         }
     }
 
-    spdlog::trace("Subvidided Quad mesh created ({} vertices)", vertices.vertices.size());
+    spdlog::trace("Subvidided Quad mesh created ({} vertices)", data.vertices.size());
 
-    create_surface_data(vertices);
+    create_surface_data(data);
 }
 
 void Surface::create_box(float w, float h, float d, const glm::vec3& color)
@@ -319,32 +315,32 @@ void Surface::create_box(float w, float h, float d, const glm::vec3& color)
 
     name = "box";
 
-    sSurfaceData vertices;
+    sSurfaceData data;
 
     float w2 = w * 0.5f;
     float h2 = h * 0.5f;
     float d2 = d * 0.5f;
 
     auto pos_x = generate_quad(h, d, w2 * normals::pX, -normals::pX, color, true);
-    vertices.append(pos_x);
+    data.append(pos_x);
     auto neg_x = generate_quad(h, d, w2 * normals::nX, -normals::nX, color, true);
-    vertices.append(neg_x);
+    data.append(neg_x);
 
     auto pos_y = generate_quad(w, d, h2 * normals::pY, -normals::pY, color, true);
-    vertices.append(pos_y);
+    data.append(pos_y);
     auto neg_y = generate_quad(w, d, h2 * normals::nY, -normals::nY, color, true);
-    vertices.append(neg_y);
+    data.append(neg_y);
 
     auto pos_z = generate_quad(w, h, d2 * normals::pZ, -normals::pZ, color, true);
-    vertices.append(pos_z);
+    data.append(pos_z);
     auto neg_z = generate_quad(w, h, d2 * normals::nZ, -normals::nZ, color, true);
-    vertices.append(neg_z);
+    data.append(neg_z);
 
-    spdlog::trace("Box mesh created ({} vertices)", vertices.vertices.size());
+    spdlog::trace("Box mesh created ({} vertices)", data.vertices.size());
 
-    update_aabb(vertices.vertices);
+    update_aabb(data.vertices);
 
-    create_surface_data(vertices);
+    create_surface_data(data);
 }
 
 void Surface::create_rounded_box(float w, float h, float d, float c, const glm::vec3& color)
@@ -353,7 +349,7 @@ void Surface::create_rounded_box(float w, float h, float d, float c, const glm::
 
     name = "rounded_box";
 
-    sSurfaceData vertices;
+    sSurfaceData data;
 
     w -= c;
     h -= c;
@@ -364,19 +360,19 @@ void Surface::create_rounded_box(float w, float h, float d, float c, const glm::
 
     // Add side vertices adding the chamfer translation
     auto pos_x = generate_quad(h2, w2, d * normals::pX, -normals::pX, color, true);
-    vertices.append(pos_x);
+    data.append(pos_x);
     auto neg_x = generate_quad(h2, w2, d * normals::nX, -normals::nX, color, true);
-    vertices.append(neg_x);
+    data.append(neg_x);
 
     auto pos_y = generate_quad(w2, d2, (h + c) * normals::pY, -normals::pY, color, true);
-    vertices.append(pos_y);
+    data.append(pos_y);
     auto neg_y = generate_quad(w2, d2, (h + c) * normals::nY, -normals::nY, color, true);
-    vertices.append(neg_y);
+    data.append(neg_y);
 
     auto pos_z = generate_quad(w2, h2, d * normals::pZ, -normals::pZ, color, true);
-    vertices.append(pos_z);
+    data.append(pos_z);
     auto neg_z = generate_quad(w2, h2, d * normals::nZ, -normals::nZ, color, true);
-    vertices.append(neg_z);
+    data.append(neg_z);
 
     if (c > 0.0f) {
 
@@ -389,7 +385,11 @@ void Surface::create_rounded_box(float w, float h, float d, float c, const glm::
         auto add_corner = [&](bool isXPositive, bool isYPositive, bool isZPositive)
         {
             sSurfaceData vtxs;
-            vtxs.resize(chamfer_seg * chamfer_seg * 6);
+            uint32_t num_corner_points = chamfer_seg * chamfer_seg * 6u;
+            vtxs.vertices.resize(num_corner_points);
+            vtxs.uvs.resize(num_corner_points);
+            vtxs.normals.resize(num_corner_points);
+            vtxs.colors.resize(num_corner_points);
             uint32_t vtx_counter = 0;
 
             std::vector<uint32_t> indices;
@@ -426,7 +426,6 @@ void Surface::create_rounded_box(float w, float h, float d, float c, const glm::
                     vtxs.vertices[vtx_counter] = glm::vec3(x0 + offsetPosition.x, y0 + offsetPosition.y, z0 + offsetPosition.z);
                     vtxs.uvs[vtx_counter] = glm::vec2((float)seg / (float)chamfer_seg, (float)ring / (float)chamfer_seg);
                     vtxs.normals[vtx_counter] = glm::normalize(glm::vec3(x0, y0, z0));
-                    vtxs.tangents[vtx_counter] = glm::vec4(0.0f);
                     vtxs.colors[vtx_counter] = color;
                     vtx_counter++;
 
@@ -446,15 +445,19 @@ void Surface::create_rounded_box(float w, float h, float d, float c, const glm::
             }
 
             // Add vertices...
-            vertices.append(vtxs);
-            size_t vertex_offset = vertices.size();
-            vertices.resize(vertex_offset + indices.size());
+            data.append(vtxs);
+            size_t vertex_offset = data.size();
+            size_t num_points = vertex_offset + indices.size();
+            data.vertices.resize(num_points);
+            data.uvs.resize(num_points);
+            data.normals.resize(num_points);
+            data.colors.resize(num_points);
+
             for (size_t i = 0; i < indices.size(); i++) {
-                vertices.vertices[vertex_offset + i] = vtxs.vertices[indices[i]];
-                vertices.uvs[vertex_offset + i] = vtxs.uvs[indices[i]];
-                vertices.normals[vertex_offset + i] = vtxs.normals[indices[i]];
-                vertices.tangents[vertex_offset + i] = vtxs.tangents[indices[i]];
-                vertices.colors[vertex_offset + i] = vtxs.colors[indices[i]];
+                data.vertices[vertex_offset + i] = vtxs.vertices[indices[i]];
+                data.uvs[vertex_offset + i] = vtxs.uvs[indices[i]];
+                data.normals[vertex_offset + i] = vtxs.normals[indices[i]];
+                data.colors[vertex_offset + i] = vtxs.colors[indices[i]];
             }
         };
 
@@ -471,12 +474,16 @@ void Surface::create_rounded_box(float w, float h, float d, float c, const glm::
         auto add_edge = [&](short xPos, short yPos, short zPos)
         {
             sSurfaceData vtxs;
-            vtxs.resize(chamfer_seg * chamfer_seg * 6);
-            uint32_t vtx_counter = 0;
+            uint32_t num_edge_points = chamfer_seg * chamfer_seg * 6u;
+            vtxs.vertices.resize(num_edge_points);
+            vtxs.uvs.resize(num_edge_points);
+            vtxs.normals.resize(num_edge_points);
+            vtxs.colors.resize(num_edge_points);
+            uint32_t vtx_counter = 0u;
 
             std::vector<uint32_t> indices;
-            indices.resize(chamfer_seg * chamfer_seg * 6);
-            uint32_t idx_counter = 0;
+            indices.resize(num_edge_points);
+            uint32_t idx_counter = 0u;
 
             int offset = 0;
 
@@ -527,14 +534,19 @@ void Surface::create_rounded_box(float w, float h, float d, float c, const glm::
             }
 
             // Add vertices...
-            size_t vertex_offset = vertices.size();
-            vertices.resize(vertex_offset + indices.size());
+            size_t vertex_offset = data.size();
+            size_t num_points = vertex_offset + indices.size();
+
+            data.vertices.resize(num_points);
+            data.uvs.resize(num_points);
+            data.normals.resize(num_points);
+            data.colors.resize(num_points);
+
             for (size_t i = 0; i < indices.size(); i++) {
-                vertices.vertices[vertex_offset + i] = vtxs.vertices[indices[i]];
-                vertices.uvs[vertex_offset + i] = vtxs.uvs[indices[i]];
-                vertices.normals[vertex_offset + i] = vtxs.normals[indices[i]];
-                vertices.tangents[vertex_offset + i] = vtxs.tangents[indices[i]];
-                vertices.colors[vertex_offset + i] = vtxs.colors[indices[i]];
+                data.vertices[vertex_offset + i] = vtxs.vertices[indices[i]];
+                data.uvs[vertex_offset + i] = vtxs.uvs[indices[i]];
+                data.normals[vertex_offset + i] = vtxs.normals[indices[i]];
+                data.colors[vertex_offset + i] = vtxs.colors[indices[i]];
             }
         };
 
@@ -553,11 +565,11 @@ void Surface::create_rounded_box(float w, float h, float d, float c, const glm::
         add_edge(0, 1, 1);
     }
 
-    spdlog::trace("Rounded Box mesh created ({} vertices)", vertices.size());
+    spdlog::trace("Rounded Box mesh created ({} vertices)", data.size());
 
-    update_aabb(vertices.vertices);
+    update_aabb(data.vertices);
 
-    create_surface_data(vertices);
+    create_surface_data(data);
 }
 
 void Surface::create_sphere(float r, uint32_t segments, uint32_t rings, const glm::vec3& color)
@@ -566,11 +578,11 @@ void Surface::create_sphere(float r, uint32_t segments, uint32_t rings, const gl
 
     name = "sphere";
 
-    sSurfaceData vertices;
-    vertices.vertices.resize((rings + 1) * (segments + 1) * 6);
-    vertices.normals.resize((rings + 1) * (segments + 1) * 6);
-    vertices.uvs.resize((rings + 1) * (segments + 1) * 6);
-    vertices.colors.resize((rings + 1) * (segments + 1) * 6);
+    sSurfaceData data;
+    data.vertices.resize((rings + 1) * (segments + 1) * 6);
+    data.normals.resize((rings + 1) * (segments + 1) * 6);
+    data.uvs.resize((rings + 1) * (segments + 1) * 6);
+    data.colors.resize((rings + 1) * (segments + 1) * 6);
 
     float pi = glm::pi<float>();
     float pi2 = pi * 2.f;
@@ -578,10 +590,10 @@ void Surface::create_sphere(float r, uint32_t segments, uint32_t rings, const gl
     uint32_t counter = 0;
 
     auto add_vertex = [&](const glm::vec3& p, const glm::vec3& n, const glm::vec2& uv, const glm::vec3& c) {
-        vertices.vertices[counter] = p;
-        vertices.normals[counter] = n;
-        vertices.uvs[counter] = uv;
-        vertices.colors[counter] = c;
+        data.vertices[counter] = p;
+        data.normals[counter] = n;
+        data.uvs[counter] = uv;
+        data.colors[counter] = c;
         counter++;
     };
 
@@ -639,11 +651,11 @@ void Surface::create_sphere(float r, uint32_t segments, uint32_t rings, const gl
         }
     }
 
-    spdlog::trace("Sphere mesh created ({} vertices)", vertices.vertices.size());
+    spdlog::trace("Sphere mesh created ({} vertices)", data.vertices.size());
 
-    update_aabb(vertices.vertices);
+    update_aabb(data.vertices);
 
-    create_surface_data(vertices);
+    create_surface_data(data);
 }
 
 void Surface::create_cone(float r, float h, uint32_t segments, const glm::vec3& color)
@@ -652,21 +664,24 @@ void Surface::create_cone(float r, float h, uint32_t segments, const glm::vec3& 
 
     name = "cone";
 
-    sSurfaceData vertices;
+    sSurfaceData data;
 
-    vertices.resize(segments * 6 * 2);
+    uint32_t num_points = segments * 6u * 2u;
+
+    data.vertices.reserve(num_points);
+    data.normals.reserve(num_points);
+    data.uvs.reserve(num_points);
+    data.colors.reserve(num_points);
 
     float pi2 = glm::pi<float>() * 2.f;
     float delta_angle = pi2 / float(segments);
     float normal_y = r / h;
-    uint32_t vtx_counter = 0;
 
     auto add_vertex = [&](const glm::vec3& p, const glm::vec3& n, const glm::vec2& uv, const glm::vec3& color = glm::vec3(1.0f)) {
-        vertices.vertices[vtx_counter] = p;
-        vertices.normals[vtx_counter] = n;
-        vertices.uvs[vtx_counter] = uv;
-        vertices.colors[vtx_counter] = color;
-        vtx_counter++;
+        data.vertices.push_back(p);
+        data.normals.push_back(n);
+        data.uvs.push_back(uv);
+        data.colors.push_back(color);
     };
 
     for (uint32_t i = 0; i < segments; i++)
@@ -704,11 +719,11 @@ void Surface::create_cone(float r, float h, uint32_t segments, const glm::vec3& 
         add_vertex(bottom_center, down, glm::vec2(0.5f));
     }
 
-    spdlog::trace("Cone mesh created ({} vertices)", vtx_counter);
+    spdlog::trace("Cone mesh created ({} vertices)", data.vertices.size());
 
-    update_aabb(vertices.vertices);
+    update_aabb(data.vertices);
 
-    create_surface_data(vertices);
+    create_surface_data(data);
 }
 
 void Surface::create_cylinder(float top_radius, float bottom_radius, float height, uint32_t rings, uint32_t ring_segments, bool capped, const glm::vec3& color)
@@ -729,19 +744,19 @@ void Surface::create_cylinder(float top_radius, float bottom_radius, float heigh
 
     int num_points = (rings + 2) * (ring_segments + 1) + 4 + 2 * ring_segments;
 
-    sSurfaceData vertices;
-    vertices.vertices.reserve(num_points);
-    vertices.normals.reserve(num_points);
-    vertices.uvs.reserve(num_points);
-    vertices.colors.reserve(num_points);
+    sSurfaceData data;
+    data.vertices.reserve(num_points);
+    data.normals.reserve(num_points);
+    data.uvs.reserve(num_points);
+    data.colors.reserve(num_points);
 
-    vertices.indices.reserve((rings + 1) * (ring_segments) * 6 + 6 * ring_segments);
+    data.indices.reserve((rings + 1) * (ring_segments) * 6 + 6 * ring_segments);
 
     auto add_vertex = [&](const glm::vec3& p, const glm::vec3& n, const glm::vec2& uv, const glm::vec3& color = glm::vec3(1.0f)) {
-        vertices.vertices.push_back(p);
-        vertices.normals.push_back(n);
-        vertices.uvs.push_back(uv);
-        vertices.colors.push_back(color);
+        data.vertices.push_back(p);
+        data.normals.push_back(n);
+        data.uvs.push_back(uv);
+        data.colors.push_back(color);
     };
 
     const float side_normal_y = (bottom_radius - top_radius) / height;
@@ -777,13 +792,13 @@ void Surface::create_cylinder(float top_radius, float bottom_radius, float heigh
             point++;
 
             if (i > 0 && j > 0) {
-                vertices.indices.push_back(prevrow + i - 1);
-                vertices.indices.push_back(prevrow + i);
-                vertices.indices.push_back(thisrow + i - 1);
+                data.indices.push_back(prevrow + i - 1);
+                data.indices.push_back(prevrow + i);
+                data.indices.push_back(thisrow + i - 1);
 
-                vertices.indices.push_back(prevrow + i);
-                vertices.indices.push_back(thisrow + i);
-                vertices.indices.push_back(thisrow + i - 1);
+                data.indices.push_back(prevrow + i);
+                data.indices.push_back(thisrow + i);
+                data.indices.push_back(thisrow + i - 1);
             }
         }
 
@@ -820,11 +835,11 @@ void Surface::create_cylinder(float top_radius, float bottom_radius, float heigh
     //    }
     //}
 
-    spdlog::trace("Cylinder mesh created ({} vertices, {} indices)", vertices.vertices.size(), vertices.indices.size());
+    spdlog::trace("Cylinder mesh created ({} vertices, {} indices)", data.vertices.size(), data.indices.size());
 
-    update_aabb(vertices.vertices);
+    update_aabb(data.vertices);
 
-    create_surface_data(vertices);
+    create_surface_data(data);
 }
 
 void Surface::create_capsule(float r, float h, uint32_t rings, uint32_t ring_segments, const glm::vec3& color)
@@ -845,13 +860,16 @@ void Surface::create_capsule(float r, float h, uint32_t rings, uint32_t ring_seg
 
     uint32_t num_height_seg = rings;
 
-    sSurfaceData vtxs;
+    sSurfaceData data;
     const int num_vertices = (2 * rings + 2) * (ring_segments + 1) + (num_height_seg - 1) * (ring_segments + 1);
-    vtxs.resize(num_vertices);
+    data.vertices.resize(num_vertices);
+    data.uvs.resize(num_vertices);
+    data.normals.resize(num_vertices);
+    data.colors.resize(num_vertices);
     uint32_t vtx_counter = 0;
 
     const int num_indices = (2 * rings + 1) * (ring_segments + 1) * 6 + (num_height_seg - 1) * (ring_segments + 1) * 6;
-    vtxs.indices.resize(num_indices);
+    data.indices.resize(num_indices);
 
     uint32_t idx_counter = 0u;
     int offset = 0;
@@ -871,19 +889,19 @@ void Surface::create_capsule(float r, float h, uint32_t rings, uint32_t ring_seg
             float z0 = r0 * sinf(seg * delta_seg_angle);
 
             // Add one vertex to the strip which makes up the sphere
-            vtxs.vertices[vtx_counter] = glm::vec3(x0, 0.5f * h + y0, z0);
-            vtxs.uvs[vtx_counter] = glm::vec2((float)seg / (float)ring_segments, (float)ring / (float)rings * sphere_ratio);
-            vtxs.normals[vtx_counter] = glm::normalize(glm::vec3(x0, y0, z0));
-            vtxs.colors[vtx_counter] = color;
+            data.vertices[vtx_counter] = glm::vec3(x0, 0.5f * h + y0, z0);
+            data.uvs[vtx_counter] = glm::vec2((float)seg / (float)ring_segments, (float)ring / (float)rings * sphere_ratio);
+            data.normals[vtx_counter] = glm::normalize(glm::vec3(x0, y0, z0));
+            data.colors[vtx_counter] = color;
             vtx_counter++;
 
             // each vertex (except the last) has six indices pointing to it
-            vtxs.indices[idx_counter++] = (offset + ring_segments + 1);
-            vtxs.indices[idx_counter++] = (offset + ring_segments);
-            vtxs.indices[idx_counter++] = (offset);
-            vtxs.indices[idx_counter++] = (offset + ring_segments + 1);
-            vtxs.indices[idx_counter++] = (offset);
-            vtxs.indices[idx_counter++] = (offset + 1);
+            data.indices[idx_counter++] = (offset + ring_segments + 1);
+            data.indices[idx_counter++] = (offset + ring_segments);
+            data.indices[idx_counter++] = (offset);
+            data.indices[idx_counter++] = (offset + ring_segments + 1);
+            data.indices[idx_counter++] = (offset);
+            data.indices[idx_counter++] = (offset + 1);
 
             offset++;
         }
@@ -900,18 +918,18 @@ void Surface::create_capsule(float r, float h, uint32_t rings, uint32_t ring_seg
             float x0 = r * cosf(j * delta_angle);
             float z0 = r * sinf(j * delta_angle);
 
-            vtxs.vertices[vtx_counter] = glm::vec3(x0, 0.5f * h - i * deltah, z0);
-            vtxs.uvs[vtx_counter] = glm::vec2(j / (float)ring_segments, (i / float(num_height_seg)) * cylinder_ratio + sphere_ratio);
-            vtxs.normals[vtx_counter] = glm::normalize(glm::vec3(x0, 0, z0));
-            vtxs.colors[vtx_counter] = color;
+            data.vertices[vtx_counter] = glm::vec3(x0, 0.5f * h - i * deltah, z0);
+            data.uvs[vtx_counter] = glm::vec2(j / (float)ring_segments, (i / float(num_height_seg)) * cylinder_ratio + sphere_ratio);
+            data.normals[vtx_counter] = glm::normalize(glm::vec3(x0, 0, z0));
+            data.colors[vtx_counter] = color;
             vtx_counter++;
 
-            vtxs.indices[idx_counter++] = (offset + ring_segments + 1);
-            vtxs.indices[idx_counter++] = (offset + ring_segments);
-            vtxs.indices[idx_counter++] = (offset);
-            vtxs.indices[idx_counter++] = (offset + ring_segments + 1);
-            vtxs.indices[idx_counter++] = (offset);
-            vtxs.indices[idx_counter++] = (offset + 1);
+            data.indices[idx_counter++] = (offset + ring_segments + 1);
+            data.indices[idx_counter++] = (offset + ring_segments);
+            data.indices[idx_counter++] = (offset);
+            data.indices[idx_counter++] = (offset + ring_segments + 1);
+            data.indices[idx_counter++] = (offset);
+            data.indices[idx_counter++] = (offset + 1);
 
             offset++;
         }
@@ -931,31 +949,31 @@ void Surface::create_capsule(float r, float h, uint32_t rings, uint32_t ring_seg
             float z0 = r0 * sinf(seg * delta_seg_angle);
 
             // Add one vertex to the strip which makes up the sphere
-            vtxs.vertices[vtx_counter] = glm::vec3(x0, -0.5f * h + y0, z0);
-            vtxs.uvs[vtx_counter] = glm::vec2((float)seg / (float)ring_segments, (float)ring / (float)rings * sphere_ratio + cylinder_ratio + sphere_ratio);
-            vtxs.normals[vtx_counter] = glm::normalize(glm::vec3(x0, y0, z0));
-            vtxs.colors[vtx_counter] = color;
+            data.vertices[vtx_counter] = glm::vec3(x0, -0.5f * h + y0, z0);
+            data.uvs[vtx_counter] = glm::vec2((float)seg / (float)ring_segments, (float)ring / (float)rings * sphere_ratio + cylinder_ratio + sphere_ratio);
+            data.normals[vtx_counter] = glm::normalize(glm::vec3(x0, y0, z0));
+            data.colors[vtx_counter] = color;
             vtx_counter++;
 
             if (ring != rings)
             {
                 // each vertex (except the last) has six indices pointing to it
-                vtxs.indices[idx_counter++] = (offset + ring_segments + 1);
-                vtxs.indices[idx_counter++] = (offset + ring_segments);
-                vtxs.indices[idx_counter++] = (offset);
-                vtxs.indices[idx_counter++] = (offset + ring_segments + 1);
-                vtxs.indices[idx_counter++] = (offset);
-                vtxs.indices[idx_counter++] = (offset + 1);
+                data.indices[idx_counter++] = (offset + ring_segments + 1);
+                data.indices[idx_counter++] = (offset + ring_segments);
+                data.indices[idx_counter++] = (offset);
+                data.indices[idx_counter++] = (offset + ring_segments + 1);
+                data.indices[idx_counter++] = (offset);
+                data.indices[idx_counter++] = (offset + 1);
             }
             offset++;
         }
     }
 
-    spdlog::trace("Capsule mesh created ({} vertices, {} indices)", vtxs.vertices.size(), vtxs.indices.size());
+    spdlog::trace("Capsule mesh created ({} vertices, {} indices)", data.vertices.size(), data.indices.size());
 
-    update_aabb(vtxs.vertices);
+    update_aabb(data.vertices);
 
-    create_surface_data(vtxs);
+    create_surface_data(data);
 }
 
 void Surface::create_torus(float ring_radius, float tube_radius, uint32_t rings, uint32_t ring_segments, const glm::vec3& color)
@@ -968,14 +986,12 @@ void Surface::create_torus(float ring_radius, float tube_radius, uint32_t rings,
 
     uint32_t num_vertices = (rings + 1) * (ring_segments + 1);
 
-    sSurfaceData vtxs;
-    vtxs.vertices.reserve(num_vertices);
-    vtxs.normals.reserve(num_vertices);
-    vtxs.uvs.reserve(num_vertices);
-    vtxs.colors.reserve(num_vertices);
-
-    std::vector<uint32_t> indices;
-    indices.reserve(rings * ring_segments * 6);
+    sSurfaceData data;
+    data.vertices.reserve(num_vertices);
+    data.normals.reserve(num_vertices);
+    data.uvs.reserve(num_vertices);
+    data.colors.reserve(num_vertices);
+    data.indices.reserve(rings * ring_segments * 6);
 
     float tau = glm::tau<float>();
 
@@ -992,31 +1008,31 @@ void Surface::create_torus(float ring_radius, float tube_radius, uint32_t rings,
             float y = tube_radius * sinPhi;
             float z = (ring_radius + tube_radius * cosPhi) * sinTheta;
 
-            vtxs.vertices.push_back(glm::vec3(x, y, z));
-            vtxs.normals.push_back(glm::normalize(glm::vec3(cos(theta) * cos(phi), sin(phi), sin(theta) * cos(phi))));
-            vtxs.uvs.push_back(glm::vec2((float)i / rings, (float)j / ring_segments));
-            vtxs.colors.push_back(color);
+            data.vertices.push_back(glm::vec3(x, y, z));
+            data.normals.push_back(glm::normalize(glm::vec3(cos(theta) * cos(phi), sin(phi), sin(theta) * cos(phi))));
+            data.uvs.push_back(glm::vec2((float)i / rings, (float)j / ring_segments));
+            data.colors.push_back(color);
 
             if (i != rings && j != ring_segments) {
                 uint32_t row1 = i * (ring_segments + 1);
                 uint32_t row2 = (i + 1) * (ring_segments + 1);
 
-                vtxs.indices.push_back(row1 + j);
-                vtxs.indices.push_back(row1 + j + 1);
-                vtxs.indices.push_back(row2 + j);
+                data.indices.push_back(row1 + j);
+                data.indices.push_back(row1 + j + 1);
+                data.indices.push_back(row2 + j);
 
-                vtxs.indices.push_back(row1 + j + 1);
-                vtxs.indices.push_back(row2 + j + 1);
-                vtxs.indices.push_back(row2 + j);
+                data.indices.push_back(row1 + j + 1);
+                data.indices.push_back(row2 + j + 1);
+                data.indices.push_back(row2 + j);
             }
         }
     }
 
-    spdlog::trace("Torus mesh created ({} vertices, {} indices)", vtxs.vertices.size(), vtxs.indices.size());
+    spdlog::trace("Torus mesh created ({} vertices, {} indices)", data.vertices.size(), data.indices.size());
 
-    update_aabb(vtxs.vertices);
+    update_aabb(data.vertices);
 
-    create_surface_data(vtxs);
+    create_surface_data(data);
 }
 
 void Surface::create_circle(float radius, uint32_t segments)
@@ -1025,7 +1041,7 @@ void Surface::create_circle(float radius, uint32_t segments)
 
     name = "circle";
 
-    sSurfaceData vertices;
+    sSurfaceData data;
 
     float pi = glm::pi<float>();
     float pi2 = pi * 2.f;
@@ -1033,13 +1049,13 @@ void Surface::create_circle(float radius, uint32_t segments)
 
     for (float curr_angle = 0.0f; curr_angle <= pi2 + increment; curr_angle += increment)
     {
-        vertices.vertices.push_back( glm::vec3(radius * cosf(curr_angle), radius * sinf(curr_angle), 0) );
-        vertices.colors.push_back( glm::vec3(1.0f) );
+        data.vertices.push_back( glm::vec3(radius * cosf(curr_angle), radius * sinf(curr_angle), 0) );
+        data.colors.push_back( glm::vec3(1.0f) );
     }
 
-    spdlog::trace("Circle mesh created ({} vertices)", vertices.size());
+    spdlog::trace("Circle mesh created ({} vertices)", data.size());
 
-    create_surface_data(vertices);
+    create_surface_data(data);
 }
 
 void Surface::create_arrow()
@@ -1048,14 +1064,13 @@ void Surface::create_arrow()
 
     name = "arrow";
 
-    sSurfaceData vertices;
-    vertices.resize(8);
+    sSurfaceData data;
+    data.vertices.reserve(8);
+    data.colors.reserve(8);
 
-    uint32_t vtx_counter = 0;
     auto add_vertex = [&](const glm::vec3& p, const glm::vec3& color = glm::vec3(1.0f)) {
-        vertices.vertices[vtx_counter] = p;
-        vertices.colors[vtx_counter] = color;
-        vtx_counter++;
+        data.vertices.push_back(p);
+        data.colors.push_back(color);
     };
 
     add_vertex(glm::vec3(1.0f, 0.0f, 0.0f));
@@ -1067,9 +1082,9 @@ void Surface::create_arrow()
     add_vertex(glm::vec3(0.6f, -0.25f, 0.0f));
     add_vertex(glm::vec3(1.0f, 0.0f, 0.0f));
 
-    spdlog::trace("Circle mesh created ({} vertices)", vertices.size());
+    spdlog::trace("Circle mesh created ({} vertices)", data.size());
 
-    create_surface_data(vertices);
+    create_surface_data(data);
 }
 
 void Surface::create_skybox()
@@ -1078,15 +1093,13 @@ void Surface::create_skybox()
 
     name = "skybox";
 
-    sSurfaceData vertices;
-    vertices.vertices.resize(36);
-    vertices.colors.resize(36);
+    sSurfaceData data;
+    data.vertices.reserve(36);
+    data.colors.reserve(36);
 
-    uint32_t vtx_counter = 0;
     auto add_vertex = [&](const glm::vec3& p, const glm::vec3& color = glm::vec3(1.0f)) {
-        vertices.vertices[vtx_counter] = p;
-        vertices.colors[vtx_counter] = color;
-        vtx_counter++;
+        data.vertices.push_back(p);
+        data.colors.push_back(color);
     };
 
     add_vertex({ -1.0f, 1.0f, -1.0f } );
@@ -1131,7 +1144,7 @@ void Surface::create_skybox()
     add_vertex( { -1.0f, -1.0f,  1.0f } );
     add_vertex( { 1.0f, -1.0f,  1.0f } );
 
-    create_surface_data(vertices);
+    create_surface_data(data);
 }
 
 std::vector<sInterleavedData> Surface::create_interleaved_data(const sSurfaceData& vertices_data)
