@@ -1137,9 +1137,11 @@ WGPURenderPipeline WebGPUContext::create_render_pipeline(WGPUShaderModule render
     pipeline_descr.layout = pipeline_layout;
     pipeline_descr.vertex = vertex_state;
 
+    bool strip_topology = (description.topology == WGPUPrimitiveTopology_TriangleStrip) || (description.topology == WGPUPrimitiveTopology_LineStrip);
+
     pipeline_descr.primitive = {
         .topology = description.topology,
-        .stripIndexFormat = WGPUIndexFormat_Undefined, // order of the connected vertices
+        .stripIndexFormat = strip_topology ? WGPUIndexFormat_Uint32 : WGPUIndexFormat_Undefined, // order of the connected vertices
         .frontFace = WGPUFrontFace_CCW,
         .cullMode = description.cull_mode
     },
@@ -1196,9 +1198,11 @@ void WebGPUContext::create_render_pipeline_async(WGPUShaderModule render_shader_
     pipeline_descr.layout = pipeline_layout;
     pipeline_descr.vertex = vertex_state;
 
+    bool strip_topology = (description.topology == WGPUPrimitiveTopology_TriangleStrip) || (description.topology == WGPUPrimitiveTopology_LineStrip);
+
     pipeline_descr.primitive = {
         .topology = description.topology,
-        .stripIndexFormat = WGPUIndexFormat_Undefined, // order of the connected vertices
+        .stripIndexFormat = strip_topology ? WGPUIndexFormat_Uint32 : WGPUIndexFormat_Undefined, // order of the connected vertices
         .frontFace = WGPUFrontFace_CCW,
         .cullMode = description.cull_mode
     },
