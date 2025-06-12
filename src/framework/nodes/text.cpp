@@ -49,6 +49,11 @@ void TextEntity::generate_mesh(const Color& color, bool is_2D)
     if (text.empty() || !font)
         return;
 
+    if (!mesh) {
+        mesh = new Mesh();
+        mesh->set_node_ref(this);
+    }
+
     auto& surfaces = mesh->get_surfaces();
 
     // Clear previous mesh
@@ -131,13 +136,10 @@ void TextEntity::generate_mesh(const Color& color, bool is_2D)
     material->set_type(MATERIAL_UNLIT);
     material->set_transparency_type(ALPHA_BLEND);
     material->set_depth_read_write(false);
-
     if (font) {
         material->set_diffuse_texture(font->textures[0]);
     }
-
-    material->set_shader(RendererStorage::get_shader_from_source(shaders::sdf_fonts::source, shaders::sdf_fonts::path, shaders::sdf_fonts::libraries, surface->get_material()));
-
+    material->set_shader(RendererStorage::get_shader_from_source(shaders::sdf_fonts::source, shaders::sdf_fonts::path, shaders::sdf_fonts::libraries, material));
     surface->set_material(material);
 
     add_surface(surface);
