@@ -1,4 +1,4 @@
-#include "box_mesh.h"
+#include "cone_mesh.h"
 
 #include "framework/math/math_utils.h"
 #include "framework/colors.h"
@@ -8,51 +8,43 @@
 #include "spdlog/spdlog.h"
 #include "imgui.h"
 
-BoxMesh::BoxMesh(float width, float height, float depth, const glm::vec3& color)
-    : PrimitiveMesh(color), width(width), height(height), depth(depth)
+ConeMesh::ConeMesh(float radius, float height, uint32_t segments, const glm::vec3& color)
+    : PrimitiveMesh(color), radius(radius), height(height), segments(segments)
 {
-    mesh_type = "BoxMesh";
+    mesh_type = "ConeMesh";
 
     build_mesh();
 }
 
-void BoxMesh::build_mesh()
+void ConeMesh::build_mesh()
 {
-    surface->create_box(width, height, depth, color);
+    surface->create_cone(radius, height, segments, color);
 }
 
-void BoxMesh::set_width(float new_width)
+void ConeMesh::set_radius(float new_radius)
 {
-    width = new_width;
+    radius = new_radius;
     build_mesh();
 }
 
-void BoxMesh::set_height(float new_height)
+void ConeMesh::set_height(float new_height)
 {
     height = new_height;
     build_mesh();
 }
 
-void BoxMesh::set_depth(float new_depth)
+void ConeMesh::set_segments(uint32_t new_segments)
 {
-    depth = new_depth;
+    segments = new_segments;
     build_mesh();
 }
 
-void BoxMesh::set_size(const glm::vec3& size)
+void ConeMesh::render_gui()
 {
-    width = size.x;
-    height = size.y;
-    depth = size.z;
-    build_mesh();
-}
-
-void BoxMesh::render_gui()
-{
-    ImGui::Text("Width");
+    ImGui::Text("Radius");
     ImGui::SameLine(200);
     ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
-    if (ImGui::DragFloat("##Width", &width, 0.01f, 0.01f, 2.0f)) {
+    if (ImGui::DragFloat("##Radius", &radius, 0.01f, 0.01f, 2.0f)) {
         dirty = true;
     }
 
@@ -63,10 +55,12 @@ void BoxMesh::render_gui()
         dirty = true;
     }
 
-    ImGui::Text("Depth");
+    ImGui::Text("Segments");
     ImGui::SameLine(200);
     ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
-    if (ImGui::DragFloat("##Depth", &depth, 0.01f, 0.01f, 2.0f)) {
+    int seg_int = static_cast<int>(segments);
+    if (ImGui::DragInt("##Segments", &seg_int, 1, 3, 64)) {
+        segments = static_cast<uint32_t>(seg_int);
         dirty = true;
     }
 

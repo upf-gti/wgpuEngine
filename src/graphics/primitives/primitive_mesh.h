@@ -12,7 +12,7 @@ protected:
 
     bool dirty = false;
 
-    virtual void build_mesh();
+    virtual void build_mesh() {}
 
 public:
 

@@ -18,7 +18,7 @@ public:
 
     QuadMesh(float width = 1.f, float height = 1.f, bool flip_y = false, bool centered = true, uint32_t subdivisions = 0u, const glm::vec3& color = { 1.f, 1.f, 1.f });
 
-    //void render_gui() override;
+    void render_gui() override;
 
     float get_width() const { return width; }
     float get_height() const { return height; }

@@ -6,17 +6,6 @@ PrimitiveMesh::PrimitiveMesh(const glm::vec3& new_color)
     : color(new_color)
 {
     mesh_type = "";
-}
-
-void PrimitiveMesh::build_mesh()
-{
-    if (surface) {
-        delete surface;
-    }
-
-    surfaces.clear();
-
-    // Should we delete all surfaces in the vector?
 
     surface = new Surface();
 

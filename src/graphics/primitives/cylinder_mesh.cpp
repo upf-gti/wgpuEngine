@@ -18,8 +18,6 @@ CylinderMesh::CylinderMesh(float top_radius, float bottom_radius, float height, 
 
 void CylinderMesh::build_mesh()
 {
-    PrimitiveMesh::build_mesh();
-
     surface->create_cylinder(top_radius, bottom_radius, height, rings, ring_segments, capped, color);
 }
 
@@ -59,64 +57,58 @@ void CylinderMesh::set_capped(bool new_capped)
     build_mesh();
 }
 
-//void CylinderMesh::render_gui()
-//{
-//    std::string surface_name = name.empty() ? "" : (" (" + name + ")");
-//    if (ImGui::TreeNodeEx(("Geometry" + surface_name).c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
-//
-//        SurfaceGeometry::render_gui();
-//
-//        ImGui::Text("Top Radius");
-//        ImGui::SameLine(200);
-//        ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
-//        if (ImGui::DragFloat("##Top Radius", &top_radius, 0.01f, 0.01f, 2.0f)) {
-//            dirty = true;
-//        }
-//
-//        ImGui::Text("Bottom Radius");
-//        ImGui::SameLine(200);
-//        ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
-//        if (ImGui::DragFloat("##Bottom Radius", &bottom_radius, 0.01f, 0.01f, 2.0f)) {
-//            dirty = true;
-//        }
-//
-//        ImGui::Text("Height");
-//        ImGui::SameLine(200);
-//        ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
-//        if (ImGui::DragFloat("##Height", &height, 0.01f, 0.01f, 2.0f)) {
-//            dirty = true;
-//        }
-//
-//        ImGui::Text("Rings");
-//        ImGui::SameLine(200);
-//        ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
-//        int rings_int = static_cast<int>(rings);
-//        if (ImGui::DragInt("##Rings", &rings_int, 1, 3, 64)) {
-//            rings = static_cast<uint32_t>(rings_int);
-//            dirty = true;
-//        }
-//
-//        ImGui::Text("Ring Segments");
-//        ImGui::SameLine(200);
-//        ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
-//        int ring_seg_int = static_cast<int>(ring_segments);
-//        if (ImGui::DragInt("##Ring Segments", &ring_seg_int, 1, 3, 64)) {
-//            ring_segments = static_cast<uint32_t>(ring_seg_int);
-//            dirty = true;
-//        }
-//
-//        ImGui::Text("Capped");
-//        ImGui::SameLine(200);
-//        ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
-//        if (ImGui::Checkbox("##Capped", &capped)) {
-//            dirty = true;
-//        }
-//
-//        ImGui::TreePop();
-//    }
-//
-//    if (dirty) {
-//        build_mesh();
-//        dirty = false;
-//    }
-//}
+void CylinderMesh::render_gui()
+{
+    ImGui::Text("Top Radius");
+    ImGui::SameLine(200);
+    ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
+    if (ImGui::DragFloat("##Top Radius", &top_radius, 0.01f, 0.01f, 2.0f)) {
+        dirty = true;
+    }
+
+    ImGui::Text("Bottom Radius");
+    ImGui::SameLine(200);
+    ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
+    if (ImGui::DragFloat("##Bottom Radius", &bottom_radius, 0.01f, 0.01f, 2.0f)) {
+        dirty = true;
+    }
+
+    ImGui::Text("Height");
+    ImGui::SameLine(200);
+    ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
+    if (ImGui::DragFloat("##Height", &height, 0.01f, 0.01f, 2.0f)) {
+        dirty = true;
+    }
+
+    ImGui::Text("Rings");
+    ImGui::SameLine(200);
+    ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
+    int rings_int = static_cast<int>(rings);
+    if (ImGui::DragInt("##Rings", &rings_int, 1, 3, 64)) {
+        rings = static_cast<uint32_t>(rings_int);
+        dirty = true;
+    }
+
+    ImGui::Text("Ring Segments");
+    ImGui::SameLine(200);
+    ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
+    int ring_seg_int = static_cast<int>(ring_segments);
+    if (ImGui::DragInt("##Ring Segments", &ring_seg_int, 1, 3, 64)) {
+        ring_segments = static_cast<uint32_t>(ring_seg_int);
+        dirty = true;
+    }
+
+    ImGui::Text("Capped");
+    ImGui::SameLine(200);
+    ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
+    if (ImGui::Checkbox("##Capped", &capped)) {
+        dirty = true;
+    }
+
+    if (dirty) {
+        build_mesh();
+        dirty = false;
+    }
+
+    PrimitiveMesh::render_gui();
+}

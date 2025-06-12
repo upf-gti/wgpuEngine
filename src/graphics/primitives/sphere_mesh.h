@@ -15,7 +15,7 @@ public:
 
     SphereMesh(float radius = 0.5f, uint32_t rings = 32u, uint32_t ring_segments = 64u, const glm::vec3& color = { 1.f, 1.f, 1.f });
 
-    //void render_gui() override;
+    void render_gui() override;
 
     float get_radius() const { return radius; }
     uint32_t get_rings() const { return rings; }

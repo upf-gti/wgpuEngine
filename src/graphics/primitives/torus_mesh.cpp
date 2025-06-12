@@ -18,8 +18,6 @@ TorusMesh::TorusMesh(float ring_radius, float tube_radius, uint32_t rings, uint3
 
 void TorusMesh::build_mesh()
 {
-    PrimitiveMesh::build_mesh();
-
     surface->create_torus(ring_radius, tube_radius, rings, ring_segments, color);
 }
 
@@ -47,50 +45,44 @@ void TorusMesh::set_ring_segments(uint32_t new_ring_segments)
     build_mesh();
 }
 
-//void TorusMesh::render_gui()
-//{
-//    std::string surface_name = name.empty() ? "" : (" (" + name + ")");
-//    if (ImGui::TreeNodeEx(("Geometry" + surface_name).c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
-//
-//        SurfaceGeometry::render_gui();
-//
-//        ImGui::Text("Ring radius");
-//        ImGui::SameLine(200);
-//        ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
-//        if (ImGui::DragFloat("##Ring radius", &ring_radius, 0.01f, 0.01f, 2.0f)) {
-//            dirty = true;
-//        }
-//
-//        ImGui::Text("Tube radius");
-//        ImGui::SameLine(200);
-//        ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
-//        if (ImGui::DragFloat("##Tube radius", &tube_radius, 0.01f, 0.01f, 2.0f)) {
-//            dirty = true;
-//        }
-//
-//        ImGui::Text("Rings");
-//        ImGui::SameLine(200);
-//        ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
-//        int rings_int = static_cast<int>(rings);
-//        if (ImGui::DragInt("##Rings", &rings_int, 1, 3, 64)) {
-//            rings = static_cast<uint32_t>(rings_int);
-//            dirty = true;
-//        }
-//
-//        ImGui::Text("Ring Segments");
-//        ImGui::SameLine(200);
-//        ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
-//        int ring_seg_int = static_cast<int>(ring_segments);
-//        if (ImGui::DragInt("##Ring Segments", &ring_seg_int, 1, 3, 64)) {
-//            ring_segments = static_cast<uint32_t>(ring_seg_int);
-//            dirty = true;
-//        }
-//
-//        ImGui::TreePop();
-//    }
-//
-//    if (dirty) {
-//        build_mesh();
-//        dirty = false;
-//    }
-//}
+void TorusMesh::render_gui()
+{
+    ImGui::Text("Ring radius");
+    ImGui::SameLine(200);
+    ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
+    if (ImGui::DragFloat("##Ring radius", &ring_radius, 0.01f, 0.01f, 2.0f)) {
+        dirty = true;
+    }
+
+    ImGui::Text("Tube radius");
+    ImGui::SameLine(200);
+    ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
+    if (ImGui::DragFloat("##Tube radius", &tube_radius, 0.01f, 0.01f, 2.0f)) {
+        dirty = true;
+    }
+
+    ImGui::Text("Rings");
+    ImGui::SameLine(200);
+    ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
+    int rings_int = static_cast<int>(rings);
+    if (ImGui::DragInt("##Rings", &rings_int, 1, 3, 64)) {
+        rings = static_cast<uint32_t>(rings_int);
+        dirty = true;
+    }
+
+    ImGui::Text("Ring Segments");
+    ImGui::SameLine(200);
+    ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
+    int ring_seg_int = static_cast<int>(ring_segments);
+    if (ImGui::DragInt("##Ring Segments", &ring_seg_int, 1, 3, 64)) {
+        ring_segments = static_cast<uint32_t>(ring_seg_int);
+        dirty = true;
+    }
+
+    if (dirty) {
+        build_mesh();
+        dirty = false;
+    }
+
+    PrimitiveMesh::render_gui();
+}

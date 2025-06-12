@@ -18,8 +18,6 @@ SphereMesh::SphereMesh(float radius, uint32_t rings, uint32_t ring_segments, con
 
 void SphereMesh::build_mesh()
 {
-    PrimitiveMesh::build_mesh();
-
     surface->create_sphere(radius, ring_segments, rings, color);
 }
 
@@ -41,43 +39,37 @@ void SphereMesh::set_ring_segments(uint32_t new_ring_segments)
     build_mesh();
 }
 
-//void SphereMesh::render_gui()
-//{
-//    std::string surface_name = name.empty() ? "" : (" (" + name + ")");
-//    if (ImGui::TreeNodeEx(("Geometry" + surface_name).c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
-//
-//        SurfaceGeometry::render_gui();
-//
-//        ImGui::Text("Radius");
-//        ImGui::SameLine(200);
-//        ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
-//        if (ImGui::DragFloat("##Radius", &radius, 0.01f, 0.01f, 2.0f)) {
-//            dirty = true;
-//        }
-//
-//        ImGui::Text("Rings");
-//        ImGui::SameLine(200);
-//        ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
-//        int rings_int = static_cast<int>(rings);
-//        if (ImGui::DragInt("##Rings", &rings_int, 1, 1, 64)) {
-//            rings = static_cast<uint32_t>(rings_int);
-//            dirty = true;
-//        }
-//
-//        ImGui::Text("Ring Segments");
-//        ImGui::SameLine(200);
-//        ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
-//        int ring_seg_int = static_cast<int>(ring_segments);
-//        if (ImGui::DragInt("##Ring Segments", &ring_seg_int, 1, 4, 64)) {
-//            ring_segments = static_cast<uint32_t>(ring_seg_int);
-//            dirty = true;
-//        }
-//
-//        ImGui::TreePop();
-//    }
-//
-//    if (dirty) {
-//        build_mesh();
-//        dirty = false;
-//    }
-//}
+void SphereMesh::render_gui()
+{
+    ImGui::Text("Radius");
+    ImGui::SameLine(200);
+    ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
+    if (ImGui::DragFloat("##Radius", &radius, 0.01f, 0.01f, 2.0f)) {
+        dirty = true;
+    }
+
+    ImGui::Text("Rings");
+    ImGui::SameLine(200);
+    ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
+    int rings_int = static_cast<int>(rings);
+    if (ImGui::DragInt("##Rings", &rings_int, 1, 1, 64)) {
+        rings = static_cast<uint32_t>(rings_int);
+        dirty = true;
+    }
+
+    ImGui::Text("Ring Segments");
+    ImGui::SameLine(200);
+    ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
+    int ring_seg_int = static_cast<int>(ring_segments);
+    if (ImGui::DragInt("##Ring Segments", &ring_seg_int, 1, 4, 64)) {
+        ring_segments = static_cast<uint32_t>(ring_seg_int);
+        dirty = true;
+    }
+
+    if (dirty) {
+        build_mesh();
+        dirty = false;
+    }
+
+    PrimitiveMesh::render_gui();
+}

@@ -18,8 +18,6 @@ QuadMesh::QuadMesh(float width, float height, bool flip_y, bool centered, uint32
 
 void QuadMesh::build_mesh()
 {
-    PrimitiveMesh::build_mesh();
-
     if (subdivisions > 0) {
         surface->create_subdivided_quad(width, height, flip_y, subdivisions, centered, color);
     }
@@ -53,55 +51,49 @@ void QuadMesh::set_size(const glm::vec2& size)
     build_mesh();
 }
 
-//void QuadMesh::render_gui()
-//{
-//    std::string surface_name = name.empty() ? "" : (" (" + name + ")");
-//    if (ImGui::TreeNodeEx(("Geometry" + surface_name).c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
-//
-//        SurfaceGeometry::render_gui();
-//
-//        ImGui::Text("Width");
-//        ImGui::SameLine(200);
-//        ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
-//        if (ImGui::DragFloat("##Width", &width, 0.01f, 0.01f, 2.0f)) {
-//            dirty = true;
-//        }
-//
-//        ImGui::Text("Height");
-//        ImGui::SameLine(200);
-//        ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
-//        if (ImGui::DragFloat("##Height", &height, 0.01f, 0.01f, 2.0f)) {
-//            dirty = true;
-//        }
-//
-//        ImGui::Text("Flip Y");
-//        ImGui::SameLine(200);
-//        ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
-//        if (ImGui::Checkbox("##Flip Y", &flip_y)) {
-//            dirty = true;
-//        }
-//
-//        ImGui::Text("Centered");
-//        ImGui::SameLine(200);
-//        ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
-//        if (ImGui::Checkbox("##Centered", &centered)) {
-//            dirty = true;
-//        }
-//
-//        ImGui::Text("Subdivisions");
-//        ImGui::SameLine(200);
-//        ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
-//        int subdivisions_int = static_cast<int>(subdivisions);
-//        if (ImGui::DragInt("##Subdivisions", &subdivisions_int, 1, 0, 64)) {
-//            subdivisions = static_cast<uint32_t>(subdivisions_int);
-//            dirty = true;
-//        }
-//
-//        ImGui::TreePop();
-//    }
-//
-//    if (dirty) {
-//        build_mesh();
-//        dirty = false;
-//    }
-//}
+void QuadMesh::render_gui()
+{
+    ImGui::Text("Width");
+    ImGui::SameLine(200);
+    ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
+    if (ImGui::DragFloat("##Width", &width, 0.01f, 0.01f, 2.0f)) {
+        dirty = true;
+    }
+
+    ImGui::Text("Height");
+    ImGui::SameLine(200);
+    ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
+    if (ImGui::DragFloat("##Height", &height, 0.01f, 0.01f, 2.0f)) {
+        dirty = true;
+    }
+
+    ImGui::Text("Flip Y");
+    ImGui::SameLine(200);
+    ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
+    if (ImGui::Checkbox("##Flip Y", &flip_y)) {
+        dirty = true;
+    }
+
+    ImGui::Text("Centered");
+    ImGui::SameLine(200);
+    ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
+    if (ImGui::Checkbox("##Centered", &centered)) {
+        dirty = true;
+    }
+
+    ImGui::Text("Subdivisions");
+    ImGui::SameLine(200);
+    ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
+    int subdivisions_int = static_cast<int>(subdivisions);
+    if (ImGui::DragInt("##Subdivisions", &subdivisions_int, 1, 0, 64)) {
+        subdivisions = static_cast<uint32_t>(subdivisions_int);
+        dirty = true;
+    }
+
+    if (dirty) {
+        build_mesh();
+        dirty = false;
+    }
+
+    PrimitiveMesh::render_gui();
+}

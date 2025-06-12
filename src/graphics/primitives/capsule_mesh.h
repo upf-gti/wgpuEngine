@@ -16,7 +16,7 @@ public:
 
     CapsuleMesh(float radius = 0.5f, float height = 2.0f, uint32_t rings = 8u, uint32_t ring_segments = 64u, const glm::vec3& color = { 1.f, 1.f, 1.f });
 
-    //void render_gui() override;
+    void render_gui() override;
 
     float get_radius() const { return radius; }
     float get_height() const { return height; }
