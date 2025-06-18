@@ -8,8 +8,8 @@
 #include "spdlog/spdlog.h"
 #include "imgui.h"
 
-CylinderMesh::CylinderMesh(float top_radius, float bottom_radius, float height, uint32_t rings, uint32_t ring_segments, bool capped, const glm::vec3& color)
-    : PrimitiveMesh(color), top_radius(top_radius), bottom_radius(bottom_radius), height(height), rings(rings), ring_segments(ring_segments), capped(capped)
+CylinderMesh::CylinderMesh(float top_radius, float bottom_radius, float height, uint32_t rings, uint32_t ring_segments, bool cap_top, bool cap_bottom, const glm::vec3& color)
+    : PrimitiveMesh(color), top_radius(top_radius), bottom_radius(bottom_radius), height(height), rings(rings), ring_segments(ring_segments), cap_top(cap_top), cap_bottom(cap_bottom)
 {
     mesh_type = "CylinderMesh";
 
@@ -18,7 +18,7 @@ CylinderMesh::CylinderMesh(float top_radius, float bottom_radius, float height, 
 
 void CylinderMesh::build_mesh()
 {
-    surface->create_cylinder(top_radius, bottom_radius, height, rings, ring_segments, capped, color);
+    surface->create_cylinder(top_radius, bottom_radius, height, rings, ring_segments, cap_top, cap_bottom, color);
 }
 
 void CylinderMesh::set_top_radius(float new_top_radius)
@@ -51,9 +51,15 @@ void CylinderMesh::set_ring_segments(uint32_t new_ring_segments)
     build_mesh();
 }
 
-void CylinderMesh::set_capped(bool new_capped)
+void CylinderMesh::set_cap_top(bool new_cap_top)
 {
-    capped = new_capped;
+    cap_top = new_cap_top;
+    build_mesh();
+}
+
+void CylinderMesh::set_cap_bottom(bool new_cap_bottom)
+{
+    cap_bottom = new_cap_bottom;
     build_mesh();
 }
 
@@ -98,10 +104,17 @@ void CylinderMesh::render_gui()
         dirty = true;
     }
 
-    ImGui::Text("Capped");
+    ImGui::Text("Cap Top");
     ImGui::SameLine(200);
     ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
-    if (ImGui::Checkbox("##Capped", &capped)) {
+    if (ImGui::Checkbox("##Cap Top", &cap_top)) {
+        dirty = true;
+    }
+
+    ImGui::Text("Cap Bottom");
+    ImGui::SameLine(200);
+    ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
+    if (ImGui::Checkbox("##Cap Bottom", &cap_bottom)) {
         dirty = true;
     }
 

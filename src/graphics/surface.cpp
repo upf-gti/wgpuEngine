@@ -726,7 +726,7 @@ void Surface::create_cone(float r, float h, uint32_t segments, const glm::vec3& 
     create_surface_data(data);
 }
 
-void Surface::create_cylinder(float top_radius, float bottom_radius, float height, uint32_t rings, uint32_t ring_segments, bool capped, const glm::vec3& color)
+void Surface::create_cylinder(float top_radius, float bottom_radius, float height, uint32_t rings, uint32_t ring_segments, bool cap_top, bool cap_bottom, const glm::vec3& color)
 {
     clean_buffers();
 
@@ -735,6 +735,7 @@ void Surface::create_cylinder(float top_radius, float bottom_radius, float heigh
     float tau = glm::tau<float>();
     float top_circumference = top_radius * tau;
     float bottom_circumference = bottom_radius * tau;
+    float vertical_length = height + std::max(2.f * top_radius, 2.f * bottom_radius);
 
     float horizontal_length = std::max(std::max(2.f * (top_radius + bottom_radius), top_circumference), bottom_circumference);
     float center_h = 0.5f * (horizontal_length) / horizontal_length;
@@ -793,12 +794,12 @@ void Surface::create_cylinder(float top_radius, float bottom_radius, float heigh
 
             if (i > 0 && j > 0) {
                 data.indices.push_back(prevrow + i - 1);
-                data.indices.push_back(prevrow + i);
                 data.indices.push_back(thisrow + i - 1);
+                data.indices.push_back(prevrow + i);
 
                 data.indices.push_back(prevrow + i);
-                data.indices.push_back(thisrow + i);
                 data.indices.push_back(thisrow + i - 1);
+                data.indices.push_back(thisrow + i);
             }
         }
 
@@ -806,34 +807,83 @@ void Surface::create_cylinder(float top_radius, float bottom_radius, float heigh
         thisrow = point;
     }
 
-    //// Caps
-    //if (capped)
-    //{
-    //    vertices.resize(ring_segments * 6 * 2);
+    // Adjust for bottom section, only used if we calculate UV2s.
+    top_h = top_radius / horizontal_length;
+    float top_v = top_radius / vertical_length;
+    bottom_h = bottom_radius / horizontal_length;
+    float bottom_v = bottom_radius / vertical_length;
 
-    //    glm::vec3 top_center = glm::vec3(0.f, h * 0.5f, 0.f);
-    //    glm::vec3 bottom_center = glm::vec3(0.f, h * -0.5f, 0.f);
-    //    glm::vec3 up = glm::vec3(0.f, 1.f, 0.f);
-    //    glm::vec3 down = glm::vec3(0.f, -1.f, 0.f);
+    // Add top.
+    if (cap_top && top_radius > 0.0) {
+        y = height * 0.5;
 
-    //    for (uint32_t i = 0; i < ring_segments; ++i)
-    //    {
-    //        float angle = i * delta_angle;
+        thisrow = point;
 
-    //        glm::vec3 uv = glm::vec3(sinf(angle), 0.f, cosf(angle));
-    //        glm::vec3 uv2 = glm::vec3(sinf(angle + delta_angle), 0.f, cosf(angle + delta_angle));
+        add_vertex(glm::vec3(0.0f, y, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(0.25f, 0.75f), color);
+        point++;
 
-    //        // Top
-    //        add_vertex(glm::vec3(uv[0] * r, h * 0.5f, uv[2] * r), up, glm::vec2(-uv[0] * 0.5f + 0.5f, uv[2] * 0.5f + 0.5f));
-    //        add_vertex(glm::vec3(uv2[0] * r, h * 0.5f, uv2[2] * r), up, glm::vec2(-uv2[0] * 0.5f + 0.5f, uv2[2] * 0.5f + 0.5f));
-    //        add_vertex(top_center, up, glm::vec2(0.5f));
+        for (i = 0; i <= ring_segments; i++) {
+            float r = i;
+            r /= ring_segments;
 
-    //        // Bottom
-    //        add_vertex(glm::vec3(uv2[0] * r, h * -0.5, uv2[2] * r), down, glm::vec2(uv2[0] * 0.5 + 0.5, uv2[2] * 0.5 + 0.5));
-    //        add_vertex(glm::vec3(uv[0] * r, h * -0.5, uv[2] * r), down, glm::vec2(uv[0] * 0.5 + 0.5, uv[2] * 0.5 + 0.5));
-    //        add_vertex(bottom_center, down, glm::vec2(0.5f));
-    //    }
-    //}
+            if (i == ring_segments) {
+                x = 0.0;
+                z = 1.0;
+            }
+            else {
+                x = sinf(r * tau);
+                z = cosf(r * tau);
+            }
+
+            u = ((x + 1.0) * 0.25);
+            v = 0.5 + ((z + 1.0) * 0.25);
+
+            add_vertex(glm::vec3(x * top_radius, y, z * top_radius), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(u, v), color);
+            point++;
+
+            if (i > 0) {
+                data.indices.push_back(thisrow);
+                data.indices.push_back(point - 2);
+                data.indices.push_back(point - 1);
+            }
+        }
+    }
+
+    // Add bottom.
+    if (cap_bottom && bottom_radius > 0.0) {
+        y = height * -0.5;
+
+        thisrow = point;
+
+        add_vertex(glm::vec3(0.0f, y, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f), glm::vec2(0.75f, 0.75f), color);
+        point++;
+
+        for (i = 0; i <= ring_segments; i++) {
+            float r = i;
+            r /= ring_segments;
+
+            if (i == ring_segments) {
+                x = 0.0;
+                z = 1.0;
+            }
+            else {
+                x = sinf(r * tau);
+                z = cosf(r * tau);
+            }
+
+            u = 0.5 + ((x + 1.0) * 0.25);
+            v = 1.0 - ((z + 1.0) * 0.25);
+
+            add_vertex(glm::vec3(x* bottom_radius, y, z* bottom_radius), glm::vec3(0.0f, -1.0f, 0.0f), glm::vec2(u, v), color);
+            point++;
+
+            if (i > 0) {
+                data.indices.push_back(thisrow);
+                data.indices.push_back(point - 1);
+                data.indices.push_back(point - 2);
+            }
+        }
+    }
 
     spdlog::trace("Cylinder mesh created ({} vertices, {} indices)", data.vertices.size(), data.indices.size());
 
