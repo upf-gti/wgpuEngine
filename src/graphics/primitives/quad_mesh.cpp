@@ -51,6 +51,18 @@ void QuadMesh::set_size(const glm::vec2& size)
     build_mesh();
 }
 
+void QuadMesh::set_centered(bool new_centered)
+{
+    centered = new_centered;
+    build_mesh();
+}
+
+void QuadMesh::set_flip_y(bool new_flip_y)
+{
+    flip_y = new_flip_y;
+    build_mesh();
+}
+
 void QuadMesh::render_gui()
 {
     ImGui::Text("Width");

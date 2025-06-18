@@ -46,7 +46,7 @@ void Mesh::set_frustum_culling_enabled(bool enabled)
     frustum_culling_enabled = enabled;
 }
 
-bool Mesh::get_frustum_culling_enabled()
+bool Mesh::get_frustum_culling_enabled() const
 {
     return frustum_culling_enabled;
 }
@@ -93,7 +93,8 @@ void Mesh::set_skeleton(Skeleton* s)
     skeleton = s;
 }
 
-Skeleton* Mesh::get_skeleton() {
+Skeleton* Mesh::get_skeleton() const
+{
     return skeleton;
 }
 

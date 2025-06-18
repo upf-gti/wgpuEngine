@@ -14,6 +14,13 @@
 #include "graphics/material.h"
 #include "graphics/font.h"
 #include "graphics/graphics_utils.h"
+#include "graphics/primitives/quad_mesh.h"
+#include "graphics/primitives/box_mesh.h"
+#include "graphics/primitives/sphere_mesh.h"
+#include "graphics/primitives/cone_mesh.h"
+#include "graphics/primitives/cylinder_mesh.h"
+#include "graphics/primitives/capsule_mesh.h"
+#include "graphics/primitives/torus_mesh.h"
 
 #include "xr/xr_context.h"
 #ifdef WEBXR_SUPPORT
@@ -425,7 +432,88 @@ EMSCRIPTEN_BINDINGS(wgpuEngine_bindings) {
         .function("createSkybox", &Surface::create_skybox, allow_raw_pointers())
         .function("updateAABB", &Surface::update_aabb);
 
-   class_<Node>("Node")
+    register_vector<Surface*>("VectorSurfacePtr");
+
+    /*
+    *   Meshes
+    */
+
+    class_<Mesh>("Mesh")
+        .constructor<>()
+        .property("type", &Mesh::get_mesh_type)
+        .property("frustumCullingEnabled", &Mesh::get_frustum_culling_enabled, &Mesh::set_frustum_culling_enabled)
+        .property("receiveShadows", &Mesh::get_receive_shadows, &Mesh::set_receive_shadows)
+        .property("surfaces", select_overload<const std::vector<Surface*>& ()const>(&Mesh::get_surfaces))
+        .property("surfaceCount", &Mesh::get_surface_count)
+        .function("addSurface", &Mesh::add_surface, allow_raw_pointers())
+        .function("getSurfaceMaterial", &Mesh::get_surface_material, return_value_policy::reference())
+        .function("getSurfaceMaterialOverride", &Mesh::get_surface_material_override, return_value_policy::reference())
+        .function("getSurface", &Mesh::get_surface, return_value_policy::reference())
+        .function("_getSkeleton", &Mesh::get_skeleton, return_value_policy::reference())
+        .function("_getNodeRef", &Mesh::get_node_ref, return_value_policy::reference())
+        .function("setSurfaceMaterialOverride", &Mesh::set_surface_material_override, allow_raw_pointers())
+        .function("_setNodeRef", &Mesh::set_node_ref, allow_raw_pointers())
+        .function("_setSkeleton", &Mesh::set_skeleton, allow_raw_pointers());
+
+    class_<PrimitiveMesh, base<Mesh>>("PrimitiveMesh");
+
+    class_<QuadMesh, base<PrimitiveMesh>>("QuadMesh")
+        .constructor<>()
+        .constructor<float, float, bool, bool, uint32_t, const glm::vec3&>()
+        .property("width", &QuadMesh::get_width, &QuadMesh::set_width)
+        .property("height", &QuadMesh::get_height, &QuadMesh::set_height)
+        .property("subdivisions", &QuadMesh::get_subdivisions, &QuadMesh::set_subdivisions)
+        .property("flipY", &QuadMesh::get_flip_y, &QuadMesh::set_flip_y)
+        .property("centered", &QuadMesh::get_centered, &QuadMesh::set_centered);
+
+    class_<BoxMesh, base<PrimitiveMesh>>("BoxMesh")
+        .constructor<>()
+        .constructor<float, float, float, const glm::vec3&>()
+        .property("width", &BoxMesh::get_width, &BoxMesh::set_width)
+        .property("height", &BoxMesh::get_height, &BoxMesh::set_height)
+        .property("depth", &BoxMesh::get_depth, &BoxMesh::set_depth);
+
+    class_<SphereMesh, base<PrimitiveMesh>>("SphereMesh")
+        .constructor<>()
+        .constructor<float, uint32_t, uint32_t, const glm::vec3&>()
+        .property("radius", &SphereMesh::get_radius, &SphereMesh::set_radius)
+        .property("rings", &SphereMesh::get_rings, &SphereMesh::set_rings)
+        .property("ringSegments", &SphereMesh::get_ring_segments, &SphereMesh::set_ring_segments);
+
+    class_<CapsuleMesh, base<PrimitiveMesh>>("CapsuleMesh")
+        .constructor<>()
+        .constructor<float, float, uint32_t, uint32_t, const glm::vec3&>()
+        .property("radius", &CapsuleMesh::get_radius, &CapsuleMesh::set_radius)
+        .property("height", &CapsuleMesh::get_height, &CapsuleMesh::set_height)
+        .property("rings", &CapsuleMesh::get_rings, &CapsuleMesh::set_rings)
+        .property("ringSegments", &CapsuleMesh::get_ring_segments, &CapsuleMesh::set_ring_segments);
+
+    class_<CylinderMesh, base<PrimitiveMesh>>("CylinderMesh")
+        .constructor<>()
+        .constructor<float, float, float, uint32_t, uint32_t, bool, const glm::vec3&>()
+        .property("capped", &CylinderMesh::get_capped, &CylinderMesh::set_capped)
+        .property("topRadius", &CylinderMesh::get_top_radius, &CylinderMesh::set_top_radius)
+        .property("bottomRadius", &CylinderMesh::get_bottom_radius, &CylinderMesh::set_bottom_radius)
+        .property("height", &CylinderMesh::get_height, &CylinderMesh::set_height)
+        .property("rings", &CylinderMesh::get_rings, &CylinderMesh::set_rings)
+        .property("ringSegments", &CylinderMesh::get_ring_segments, &CylinderMesh::set_ring_segments);
+
+    class_<TorusMesh, base<PrimitiveMesh>>("TorusMesh")
+        .constructor<>()
+        .constructor<float, float, uint32_t, uint32_t, const glm::vec3&>()
+        .property("ring_radius", &TorusMesh::get_ring_radius, &TorusMesh::set_ring_radius)
+        .property("tube_radius", &TorusMesh::get_tube_radius, &TorusMesh::set_tube_radius)
+        .property("rings", &TorusMesh::get_rings, &TorusMesh::set_rings)
+        .property("ringSegments", &TorusMesh::get_ring_segments, &TorusMesh::set_ring_segments);
+
+    class_<ConeMesh, base<PrimitiveMesh>>("ConeMesh")
+        .constructor<>()
+        .constructor<float, float, uint32_t, const glm::vec3&>()
+        .property("radius", &ConeMesh::get_radius, &ConeMesh::set_radius)
+        .property("height", &ConeMesh::get_height, &ConeMesh::set_height)
+        .property("segments", &ConeMesh::get_segments, &ConeMesh::set_segments);
+
+    class_<Node>("Node")
         .constructor<>()
         .property("name", &Node::get_name, &Node::set_name)
         .property("sceneUID", &Node::get_scene_unique_id)
@@ -472,7 +560,9 @@ EMSCRIPTEN_BINDINGS(wgpuEngine_bindings) {
         .function("getSurfaceMaterialOverride", &MeshInstance3D::get_surface_material_override, return_value_policy::reference())
         .function("setSurfaceMaterialOverride", &MeshInstance3D::set_surface_material_override, allow_raw_pointers())
         .function("setFrustumCullingEnabled", &MeshInstance3D::set_frustum_culling_enabled)
-        .function("addSurface", &MeshInstance3D::add_surface, allow_raw_pointers());
+        .function("addSurface", &MeshInstance3D::add_surface, allow_raw_pointers())
+        .function("_getMesh", &MeshInstance3D::get_mesh, return_value_policy::reference())
+        .function("_setMesh", &MeshInstance3D::set_mesh, allow_raw_pointers());
 
     class_<Environment3D, base<MeshInstance3D>>("Environment3D")
         .constructor<>()
@@ -658,7 +748,6 @@ EMSCRIPTEN_BINDINGS(wgpuEngine_bindings) {
         .value("TEXTURE_STORAGE_UI", TEXTURE_STORAGE_UI);
 
     class_<RendererStorage>("RendererStorage")
-        .class_function("getSurface", &RendererStorage::get_surface, allow_raw_pointers())
         .class_function("getShaderFromName", &RendererStorage::get_shader_from_name, allow_raw_pointers())
         .class_function("reloadShader", &RendererStorage::reload_shader)
         .class_function("_getTexture", &RendererStorage::get_texture, allow_raw_pointers())

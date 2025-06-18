@@ -19,11 +19,10 @@ protected:
     Node* node_ref = nullptr;
     Skeleton* skeleton = nullptr;
 
-    bool frustum_culling_enabled = true;
-
     std::vector<Surface*> surfaces;
     std::unordered_map<Surface*, Material*> material_overrides;
 
+    bool frustum_culling_enabled = true;
     bool receive_shadows = false;
 
 public:
@@ -32,16 +31,16 @@ public:
 	virtual ~Mesh();
 
     Material* get_surface_material(int surface_idx);
-    bool get_frustum_culling_enabled();
-    bool get_receive_shadows() { return receive_shadows; }
+    bool get_frustum_culling_enabled() const;
+    bool get_receive_shadows() const { return receive_shadows; }
     Material* get_surface_material_override(Surface* surface);
     const std::vector<Surface*>& get_surfaces() const;
     std::vector<Surface*>& get_surfaces();
     Surface* get_surface(int surface_idx) const;
     uint32_t get_surface_count() const;
-    Skeleton* get_skeleton();
-    Node* get_node_ref() { return node_ref; }
-    const std::string& get_mesh_type() { return mesh_type; }
+    Skeleton* get_skeleton() const;
+    Node* get_node_ref() const { return node_ref; }
+    const std::string& get_mesh_type() const { return mesh_type; }
 
     void set_surface_material_override(Surface* surface, Material* material);
     void set_frustum_culling_enabled(bool enabled);

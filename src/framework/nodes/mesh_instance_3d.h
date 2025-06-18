@@ -22,7 +22,7 @@ public:
     void set_receive_shadows(bool new_receive_shadows);
     void set_mesh(Mesh* new_mesh);
 
-    Mesh* get_mesh() { return mesh; }
+    Mesh* get_mesh() const { return mesh; }
     bool get_frustum_culling_enabled();
     Material* get_surface_material(int surface_idx);
     Material* get_surface_material_override(Surface* surface);
