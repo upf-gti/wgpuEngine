@@ -2,9 +2,30 @@
 
 #include "glm/gtx/compatibility.hpp"
 
+#ifdef __EMSCRIPTEN__
+TrackType from_val(const emscripten::val& v) {
+    if (v.typeOf().as<std::string>() == "number") { return v.as<float>(); } // default to float
+    if (v.instanceof(emscripten::val::module_property("vec2"))) { return v.as<glm::vec2>(); }
+    if (v.instanceof(emscripten::val::module_property("vec3"))) { return v.as<glm::vec3>(); }
+    if (v.instanceof(emscripten::val::module_property("vec4"))) { return v.as<glm::vec4>(); }
+    if (v.instanceof(emscripten::val::module_property("quat"))) { return v.as<glm::quat>(); }
+    if (v.instanceof(emscripten::val::module_property("ivec2"))) { return v.as<glm::ivec2>(); }
+    if (v.instanceof(emscripten::val::module_property("ivec3"))) { return v.as<glm::ivec3>(); }
+    if (v.instanceof(emscripten::val::module_property("ivec4"))) { return v.as<glm::ivec4>(); }
+    if (v.instanceof(emscripten::val::module_property("uvec2"))) { return v.as<glm::uvec2>(); }
+    if (v.instanceof(emscripten::val::module_property("uvec3"))) { return v.as<glm::uvec3>(); }
+    if (v.instanceof(emscripten::val::module_property("uvec4"))) { return v.as<glm::uvec4>(); }
+    return 0.0f; // fallback
+}
+
+emscripten::val to_val(const TrackType& v) {
+    return std::visit([](auto&& arg) -> emscripten::val { return emscripten::val(arg); }, v);
+}
+#endif
+
 Interpolator::Interpolator()
 {
-    type = eInterpolationType::LINEAR;
+    type = INTERPOLATION_LINEAR;
 }
 
 Interpolator::Interpolator(eInterpolationType new_type)
@@ -12,7 +33,7 @@ Interpolator::Interpolator(eInterpolationType new_type)
     type = new_type;
 }
 
-eInterpolationType Interpolator::get_type()
+eInterpolationType Interpolator::get_type() const
 {
     return type;
 }
@@ -24,13 +45,13 @@ void Interpolator::set_type(eInterpolationType new_type)
 
 TrackType Interpolator::interpolate(const std::vector<Keyframe>& keyframes, float time, int frame_idx, bool looping)
 {
-    if (type == eInterpolationType::STEP) {
+    if (type == INTERPOLATION_STEP) {
         return step(keyframes, frame_idx, looping);
     }
-    else if (type == eInterpolationType::LINEAR) {
+    else if (type == INTERPOLATION_LINEAR) {
         return linear(keyframes, time, frame_idx, looping);
     }
-    else if (type == eInterpolationType::CUBIC) {
+    else if (type == INTERPOLATION_CUBIC) {
         return cubic(keyframes, time, frame_idx, looping);
     }
 

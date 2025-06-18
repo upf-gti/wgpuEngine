@@ -71,6 +71,6 @@ public:
     void parse(std::ifstream& binary_scene_file);
 
     // Prameters: time value, if the track is looping or not
-    TrackType sample(float time, bool looping, Node::AnimatableProperty* out = nullptr, eInterpolationType interpolation_type = eInterpolationType::UNSET);
+    TrackType sample(float time, bool looping, Node::AnimatableProperty* out = nullptr, eInterpolationType interpolation_type = INTERPOLATION_UNSET);
     Keyframe& operator[](uint32_t index);
 };

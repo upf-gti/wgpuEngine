@@ -116,7 +116,7 @@ TrackType Track::sample(float time, bool looping, Node::AnimatableProperty* out,
 
     eInterpolationType prev_type = interpolator.get_type();
 
-    if (interpolation_type != eInterpolationType::UNSET) {
+    if (interpolation_type != INTERPOLATION_UNSET) {
         interpolator.set_type(interpolation_type);
     }
 
@@ -329,7 +329,7 @@ void Track::parse(std::ifstream& binary_scene_file)
     binary_scene_file.read(reinterpret_cast<char*>(&id), sizeof(int));
     binary_scene_file.read(reinterpret_cast<char*>(&type), sizeof(eTrackType));
 
-    eInterpolationType interpolator_type = eInterpolationType::UNSET;
+    eInterpolationType interpolator_type = INTERPOLATION_UNSET;
     binary_scene_file.read(reinterpret_cast<char*>(&interpolator_type), sizeof(eInterpolationType));
     interpolator.set_type(interpolator_type);
 

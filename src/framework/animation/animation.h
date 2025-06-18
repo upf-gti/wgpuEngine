@@ -46,7 +46,7 @@ public:
     void set_id_at_index(uint32_t index, int id);
 
     // Samples the animation clip at the provided time into the out reference
-    float sample(float time, uint32_t track_idx, uint8_t loop, Node::AnimatableProperty* out = nullptr, eInterpolationType interpolation_type = eInterpolationType::UNSET);
+    float sample(float time, uint32_t track_idx, uint8_t loop, Node::AnimatableProperty* out = nullptr, eInterpolationType interpolation_type = INTERPOLATION_UNSET);
 
     // Returns a transform track for the specified track position id
     Track* operator[](uint32_t index);

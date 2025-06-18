@@ -1244,13 +1244,13 @@ void track_from_channel(Track& track, const tinygltf::AnimationChannel& channel,
 
     // make sure the Interpolation type of the track matches the cgltf_interpolation_type type of the sampler
     if (sampler.interpolation == "STEP") {
-        interpolation = eInterpolationType::STEP;
+        interpolation = INTERPOLATION_STEP;
     }
     else if (sampler.interpolation == "LINEAR") {
-        interpolation = eInterpolationType::LINEAR;
+        interpolation = INTERPOLATION_LINEAR;
     }
     else if (sampler.interpolation == "CUBICSPLINE") {
-        interpolation = eInterpolationType::CUBIC;
+        interpolation = INTERPOLATION_CUBIC;
     }
     else {
         assert(0);
@@ -1272,7 +1272,7 @@ void track_from_channel(Track& track, const tinygltf::AnimationChannel& channel,
     track.resize(num_frames);
 
     // Deal with in and out tangents for cubic interpolations
-    bool is_sampler_cubic = (interpolation == eInterpolationType::CUBIC);
+    bool is_sampler_cubic = (interpolation == INTERPOLATION_CUBIC);
 
     // Parse the time and value arrays into frame structures
     for (size_t baseIndex = 0; baseIndex < num_frames; ++baseIndex) {
