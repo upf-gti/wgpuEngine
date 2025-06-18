@@ -44,9 +44,9 @@ For an example of how to use this engine, check out [Rooms](https://github.com/u
 
 ## Experimental
 
-- C++ to JavaScript bindings to build web applications on the web from scratch ([jsbind branch](https://github.com/upf-gti/wgpuEngine/tree/jsbind))
-- Support web XR applications following expected WebGPU-WebXR interoperability
-- Support deferred rendering
+- C++ to JavaScript bindings to build web applications on the web from scratch (see [live web editor](https://upf-gti.github.io/wgpuEngineSample/))
+- Support for web XR applications using brand new WebGPU-WebXR interoperability!
+- Support for deferred rendering
 
 ## Roadmap
 
