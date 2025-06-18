@@ -490,8 +490,9 @@ EMSCRIPTEN_BINDINGS(wgpuEngine_bindings) {
 
     class_<CylinderMesh, base<PrimitiveMesh>>("CylinderMesh")
         .constructor<>()
-        .constructor<float, float, float, uint32_t, uint32_t, bool, const glm::vec3&>()
-        .property("capped", &CylinderMesh::get_capped, &CylinderMesh::set_capped)
+        .constructor<float, float, float, uint32_t, uint32_t, bool, bool, const glm::vec3&>()
+        .property("capTop", &CylinderMesh::get_cap_top, &CylinderMesh::set_cap_top)
+        .property("capBottom", &CylinderMesh::get_cap_bottom, &CylinderMesh::set_cap_bottom)
         .property("topRadius", &CylinderMesh::get_top_radius, &CylinderMesh::set_top_radius)
         .property("bottomRadius", &CylinderMesh::get_bottom_radius, &CylinderMesh::set_bottom_radius)
         .property("height", &CylinderMesh::get_height, &CylinderMesh::set_height)
@@ -501,8 +502,8 @@ EMSCRIPTEN_BINDINGS(wgpuEngine_bindings) {
     class_<TorusMesh, base<PrimitiveMesh>>("TorusMesh")
         .constructor<>()
         .constructor<float, float, uint32_t, uint32_t, const glm::vec3&>()
-        .property("ring_radius", &TorusMesh::get_ring_radius, &TorusMesh::set_ring_radius)
-        .property("tube_radius", &TorusMesh::get_tube_radius, &TorusMesh::set_tube_radius)
+        .property("ringRadius", &TorusMesh::get_ring_radius, &TorusMesh::set_ring_radius)
+        .property("tubeRadius", &TorusMesh::get_tube_radius, &TorusMesh::set_tube_radius)
         .property("rings", &TorusMesh::get_rings, &TorusMesh::set_rings)
         .property("ringSegments", &TorusMesh::get_ring_segments, &TorusMesh::set_ring_segments);
 
