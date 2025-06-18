@@ -6,7 +6,7 @@
 
 #include "framework/math/intersections.h"
 #include "framework/input.h"
-#include "framework/nodes/text.h"
+#include "framework/nodes/text_3d.h"
 #include "framework/nodes/button_2d.h"
 #include "framework/camera/camera.h"
 #include "framework/utils/utils.h"
@@ -656,9 +656,9 @@ namespace ui {
 
         class_type = Node2DClassType::TEXT_SHADOW;
 
-        text_entity = new TextEntity(text_string);
+        text_entity = new Text3D(text_string, colors::WHITE, true);
+        text_entity->generate_mesh();
         text_entity->set_scale(text_scale);
-        text_entity->generate_mesh(colors::WHITE, true);
         text_entity->get_surface_material(0)->set_priority(Node2DClassType::TEXT);
 
         float text_width = (float)text_entity->get_text_width(text_string);

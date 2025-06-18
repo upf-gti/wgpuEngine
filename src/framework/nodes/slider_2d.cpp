@@ -6,7 +6,7 @@
 
 #include "framework/math/intersections.h"
 #include "framework/input.h"
-#include "framework/nodes/text.h"
+#include "framework/nodes/text_3d.h"
 #include "framework/camera/camera.h"
 #include "framework/utils/utils.h"
 #include "framework/ui/io.h"

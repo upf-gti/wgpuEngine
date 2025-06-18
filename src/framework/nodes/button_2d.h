@@ -4,10 +4,9 @@
 #include "framework/colors.h"
 #include "framework/nodes/panel_2d.h"
 #include "framework/nodes/container_2d.h"
+#include "text_3d.h"
 
 #include "graphics/mesh.h"
-
-#include "text.h"
 
 #include <functional>
 #include <map>

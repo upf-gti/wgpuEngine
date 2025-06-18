@@ -35,7 +35,9 @@
 #include "framework/nodes/omni_light_3d.h"
 #include "framework/nodes/spot_light_3d.h"
 #include "framework/nodes/animation_player.h"
+#include "framework/nodes/skeleton_helper_3d.h"
 #include "framework/nodes/skeleton_instance_3d.h"
+#include "framework/nodes/text_3d.h"
 #include "framework/parsers/parse_gltf.h"
 #include "framework/parsers/parse_obj.h"
 #include "framework/parsers/parse_ply.h"
@@ -237,11 +239,13 @@ EMSCRIPTEN_BINDINGS(wgpuEngine_bindings) {
         .function("clean", &Gizmo3D::clean)
         .function("setOperation", &Gizmo3D::set_operation);
 
+    //class_<Color>("Color");
+
     //bool update(glm::vec3 & new_position, const glm::vec3 & controller_position, float delta_time);
     //bool update(glm::vec3 & new_position, glm::quat & rotation, const glm::vec3 & controller_position, float delta_time);
     //bool update(glm::vec3 & new_position, glm::vec3 & scale, const glm::vec3 & controller_position, float delta_time);
     //bool update(Transform & t, const glm::vec3 & controller_position, float delta_time);
-    //bool update(const glm::vec3 & controller_position, float delta_time);
+    //bool update(const glm::vec3& controller_position, float delta_time);
 
     register_vector<std::string>("VectorString");
     register_vector<int>("VectorInt");
@@ -591,6 +595,16 @@ EMSCRIPTEN_BINDINGS(wgpuEngine_bindings) {
     class_<OmniLight3D, base<Light3D>>("OmniLight3D")
         .constructor<>();
 
+    class_<Text3D, base<MeshInstance3D>>("Text3D")
+        .constructor<const std::string&>()
+        .constructor<const std::string&, const Color&, bool, const glm::vec2&, bool>()
+        .property("text", &Text3D::get_text, &Text3D::set_text)
+        .property("fontScale", &Text3D::get_scale, &Text3D::set_scale)
+        .property("wrap", &Text3D::get_wrap, &Text3D::set_wrap)
+        .function("getTextWidth", &Text3D::get_text_width)
+        .function("getTextHeight", &Text3D::get_text_height)
+        .function("generateMesh", &Text3D::generate_mesh);
+
     class_<Scene>("Scene")
         .constructor<>()
         .property("name", &Scene::get_name, &Scene::set_name)
@@ -618,6 +632,12 @@ EMSCRIPTEN_BINDINGS(wgpuEngine_bindings) {
         .value("TYPE_ROTATION", TYPE_ROTATION)
         .value("TYPE_SCALE", TYPE_SCALE);
 
+    enum_<eInterpolationType>("InterpolationType")
+        .value("INTERPOLATION_UNSET", INTERPOLATION_UNSET)
+        .value("INTERPOLATION_STEP", INTERPOLATION_STEP)
+        .value("INTERPOLATION_LINEAR", INTERPOLATION_LINEAR)
+        .value("INTERPOLATION_CUBIC", INTERPOLATION_CUBIC);
+
     enum_<eLoopType>("LoopType")
         .value("ANIMATION_LOOP_NONE", ANIMATION_LOOP_NONE)
         .value("ANIMATION_LOOP_DEFAULT", ANIMATION_LOOP_DEFAULT)
@@ -625,10 +645,19 @@ EMSCRIPTEN_BINDINGS(wgpuEngine_bindings) {
         .value("ANIMATION_LOOP_PING_PONG", ANIMATION_LOOP_PING_PONG);
 
     class_<Keyframe>("Keyframe")
-        .constructor<>();
+        .constructor<>()
+        .property("value", &Keyframe::get_value, &Keyframe::set_value)
+        .property("in", &Keyframe::get_in, &Keyframe::set_in)
+        .property("out", &Keyframe::get_out, &Keyframe::set_out)
+        .property("time", &Keyframe::time);
+
+    register_vector<Keyframe>("VectorKeyframe");
 
     class_<Interpolator>("Interpolator")
-        .constructor<>();
+        .constructor<>()
+        .constructor<eInterpolationType>()
+        .property("type", &Interpolator::get_type, &Interpolator::set_type)
+        .function("interpolate", &Interpolator::interpolate);
 
     class_<Track>("Track")
         .constructor<>()
@@ -664,6 +693,9 @@ EMSCRIPTEN_BINDINGS(wgpuEngine_bindings) {
         .function("getInverseBindPose", &Skeleton::get_inv_bind_pose);
 
     class_<Animation, base<Resource>>("Animation").constructor<>();
+
+    class_<SkeletonHelper3D, base<MeshInstance3D>>("SkeletonHelper3D")
+        .constructor<Skeleton*, Node3D*>();
 
     class_<SkeletonInstance3D, base<Node3D>>("SkeletonInstance3D")
         .constructor<>();

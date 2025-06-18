@@ -7,7 +7,7 @@
 #include "framework/input.h"
 #include "framework/ui/io.h"
 #include "framework/utils/utils.h"
-#include "framework/nodes/text.h"
+#include "framework/nodes/text_3d.h"
 #include "framework/nodes/container_2d.h"
 #include "framework/math/math_utils.h"
 

@@ -46,6 +46,7 @@ public:
     void set_frustum_culling_enabled(bool enabled);
     void set_receive_shadows(bool receive_shadows) { this->receive_shadows = receive_shadows; }
     void set_node_ref(Node* node) { node_ref = node; }
+    void set_mesh_type(const std::string& new_mesh_type) { mesh_type = new_mesh_type; }
     void set_skeleton(Skeleton* s);
 
 	void add_surface(Surface* surface);
