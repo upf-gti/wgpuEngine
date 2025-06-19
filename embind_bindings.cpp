@@ -601,6 +601,7 @@ EMSCRIPTEN_BINDINGS(wgpuEngine_bindings) {
         .property("text", &Text3D::get_text, &Text3D::set_text)
         .property("fontScale", &Text3D::get_scale, &Text3D::set_scale)
         .property("wrap", &Text3D::get_wrap, &Text3D::set_wrap)
+        .property("boxSize", &Text3D::get_box_size, &Text3D::set_box_size)
         .function("getTextWidth", &Text3D::get_text_width)
         .function("getTextHeight", &Text3D::get_text_height)
         .function("generateMesh", &Text3D::generate_mesh);

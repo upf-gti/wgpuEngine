@@ -31,10 +31,9 @@ boxMaterial.color = @new@ @[cls]WGE@.@[mtd]vec4@(@0.3@, @0.2@, @0.3@, @0.50@);
 boxMaterial.@[mtd]setDiffuseTexture@( texture );
 boxMaterial.@[mtd]setShader@( @[cls]WGE@.RendererStorage.@[mtd]getShaderFromName@( @"mesh_forward"@, boxMaterial ) );
 
-@const@ surface = @[cls]WGE@.RendererStorage.@[mtd]getSurface@(@"box"@);
 @const@ box = @new@ @[cls]WGE@.@[mtd]MeshInstance3D@();
 box.name = @"Box"@;
-box.@[mtd]addSurface@( surface );
+box.mesh = new @[cls]WGE@.@[cls]BoxMesh@();
 box.@[mtd]setPosition@( @new@ @[cls]WGE@.@[mtd]vec3@(@1.0@, @0@, @-5.0@) );
 box.@[mtd]setSurfaceMaterialOverride@( surface, boxMaterial );
 scene.@[mtd]addNode@( box, @-1@ );

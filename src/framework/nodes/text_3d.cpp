@@ -155,6 +155,12 @@ void Text3D::set_is_2d(bool new_is_2d)
     generate_mesh();
 }
 
+void Text3D::set_box_size(const glm::vec2& new_box_size)
+{
+    box_size = new_box_size;
+    generate_mesh();
+}
+
 int Text3D::get_text_width(const std::string& text)
 {
     int size = 0;

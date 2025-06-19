@@ -13,9 +13,8 @@
     MAKE_LINE_BREAK();
 
     {
-        MAKE_PARAGRAPH( `*: If defined XR_SUPPORT.`, true )
-        MAKE_LINE_BREAK();
-        MAKE_PARAGRAPH( `**: If defined USE_MIRROR_WINDOW.`, true )
+        MAKE_NOTE( `<b>*</b>: If defined XR_SUPPORT.<br>
+        <b>**</b>: If defined USE_MIRROR_WINDOW.` )
 
         const area = new LX.Area( { skipAppend: true, height: "auto", className: "mb-6" } );
         const panel = area.addPanel();
@@ -96,6 +95,26 @@
                 return [ INLINE_CODE( v[ 0 ], "table desc" ), INLINE_CODE( v[ 1 ], "table" ), v[ 2 ] != "—" ? INLINE_CODE( v[ 2 ], "desc text-sm" ) : v[ 2 ] ];
             } )
         }, { filter: "Method" });
+    }
+
+    MAKE_CLASS_CONSTRUCTOR( "sRendererConfiguration", [], "cpp" );
+
+    MAKE_LINE_BREAK();
+
+    {
+        const area = new LX.Area( { skipAppend: true, height: "auto", className: "mb-6" } );
+        const panel = area.addPanel();
+        content.appendChild( area.root );
+
+        panel.addTable( null, {
+            head: [ "Type", "Member", "Default" ],
+            body: [
+                ["WGPULimits", "required_limits", "—"],
+                ["std::vector<WGPUFeatureName>", "features", "—"]
+            ].map( v => {
+                return [ INLINE_CODE( v[ 0 ], "table desc" ), INLINE_CODE( v[ 1 ], "table" ), v[ 2 ] != "—" ? INLINE_CODE( v[ 2 ], "desc text-sm" ) : v[ 2 ] ];
+            } )
+        }, {});
     }
 
     MAKE_LINE_BREAK();

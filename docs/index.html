@@ -90,8 +90,8 @@
         const customFooter = LX.makeContainer( ["100%", "32px"], "", "<p>Site created with _</p><span><a href='https://github.com/jxarco/lexgui.js/'>LexGUI.js</a></span>_" );
 
         const sidebarOptions = {
-            headerTitle: "wgpuEngine (GTI)",
-            headerSubtitle: 'Documentation',
+            headerTitle: "wgpuEngine (Docs)",
+            headerSubtitle: `Updated 19/06/2025`,
             headerImage: "./images/upf.png",
             footer: customFooter,
             collapsed: false,
@@ -134,6 +134,7 @@
             m.add( "Engine/Scene", { callback: open.bind( this, "reference/scene.html", null ) } );
             m.add( "Graphics" );
             m.add( "Graphics/Material", { callback: open.bind( this, "reference/material.html", null ) } );
+            m.add( "Graphics/Mesh", { callback: open.bind( this, "reference/mesh.html", null ) } );
             m.add( "Graphics/Pipeline", { callback: open.bind( this, "reference/pipeline.html", null ) } );
             m.add( "Graphics/Renderer", { callback: open.bind( this, "reference/renderer.html", null ) } );
             m.add( "Graphics/RendererStorage", { callback: open.bind( this, "reference/renderer-storage.html", null ) } );
@@ -150,7 +151,7 @@
             m.separator();
             m.group( "Example Apps" );
             m.add( "Rooms (VR Sculpting)", { callback: open.bind( this, "https://github.com/upf-gti/rooms/", "_blank" ) } );
-            m.add( "Basic Sample", { callback: open.bind( this, "https://github.com/upf-gti/wgpuEngineSample/", "_blank" ) } );
+            m.add( "Sample JS Editor", { callback: open.bind( this, "https://github.com/upf-gti/wgpuEngineSample/", "_blank" ) } );
             m.separator();
             m.add( "Source Code", { icon: "Code", callback: open.bind( this, "https://github.com/upf-gti/wgpuEngine/", "_blank" ) } );
             m.add( "Support", { icon: "Heart", callback: open.bind( this, "support.html", null ) } );

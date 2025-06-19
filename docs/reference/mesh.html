@@ -1,0 +1,48 @@
+<script type="text/javascript">
+
+    MAKE_PARAGRAPH( `Site under construction...` + LX.makeIcon( "Construction", { svgClass: "xxl"  } ).innerHTML );
+
+    MAKE_HEADER( "Mesh", "h1", "mesh" );
+    MAKE_PARAGRAPH( `The Mesh class represents a 3D object made of multiple surfaces, each with optional material overrides. It supports skeletal animation, frustum culling, and shadow reception.` );
+    MAKE_LINE_BREAK();
+
+    MAKE_CLASS_CONSTRUCTOR( "Mesh", [], "cpp" );
+
+    MAKE_LINE_BREAK();
+
+    {
+        const area = new LX.Area( { skipAppend: true, height: "auto", className: "mb-6" } );
+        const panel = area.addPanel();
+        content.appendChild( area.root );
+
+        panel.addTable( null, {
+            head: [ "Return type", "Method", "Parameters" ],
+            body: [
+                ["Material*", "get_surface_material", "int surface_idx"],
+                ["bool", "get_frustum_culling_enabled", "—"],
+                ["bool", "get_receive_shadows", "—"],
+                ["Material*", "get_surface_material_override", "Surface* surface"],
+                ["const std::vector&lt;Surface*&gt;&", "get_surfaces", "—"],
+                ["std::vector&lt;Surface*&gt;&", "get_surfaces", "—"],
+                ["Surface*", "get_surface", "int surface_idx"],
+                ["uint32_t", "get_surface_count", "—"],
+                ["Skeleton*", "get_skeleton", "—"],
+                ["Node*", "get_node_ref", "—"],
+                ["const std::string&", "get_mesh_type", "—"],
+                ["void", "set_surface_material_override", "Surface* surface <br> Material* material"],
+                ["void", "set_frustum_culling_enabled", "bool enabled"],
+                ["void", "set_receive_shadows", "bool receive_shadows"],
+                ["void", "set_node_ref", "Node* node"],
+                ["void", "set_mesh_type", "const std::string& new_mesh_type"],
+                ["void", "set_skeleton", "Skeleton* s"],
+                ["void", "add_surface", "Surface* surface"]
+            ].map( v => {
+                return [ INLINE_CODE( v[ 0 ], "table desc" ), INLINE_CODE( v[ 1 ], "table" ), v[ 2 ] != "—" ? INLINE_CODE( v[ 2 ], "desc text-sm" ) : v[ 2 ] ];
+            } )
+        }, { filter: "Method" });
+    }
+
+    MAKE_LINE_BREAK();
+    MAKE_LINE_BREAK();
+
+</script>

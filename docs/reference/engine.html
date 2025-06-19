@@ -47,6 +47,32 @@
         }, { filter: "Method" });
     }
 
+    MAKE_CLASS_CONSTRUCTOR( "sEngineConfiguration", [], "cpp" );
+
+    MAKE_LINE_BREAK();
+
+    {
+        const area = new LX.Area( { skipAppend: true, height: "auto", className: "mb-6" } );
+        const panel = area.addPanel();
+        content.appendChild( area.root );
+
+        panel.addTable( null, {
+            head: [ "Type", "Member", "Default" ],
+            body: [
+                ["uint16_t", "window_width", "1600"],
+                ["uint16_t", "window_height", "900"],
+                ["std::string", "window_title", `"wgpuEngine"`],
+                ["eCameraType", "camera_type", "CAMERA_FLYOVER"],
+                ["glm::vec3", "camera_eye", "{ 0.0f, 0.75f, 2.0f }"],
+                ["glm::vec3", "camera_center", "{ 0.0f, 0.75f, 0.0f }"],
+                ["uint8_t", "msaa_count", "1"],
+                ["bool", "fullscreen", "false"],
+            ].map( v => {
+                return [ INLINE_CODE( v[ 0 ], "table desc" ), INLINE_CODE( v[ 1 ], "table" ), v[ 2 ] != "—" ? INLINE_CODE( v[ 2 ], "desc text-sm" ) : v[ 2 ] ];
+            } )
+        }, {});
+    }
+
     MAKE_LINE_BREAK();
     MAKE_LINE_BREAK();
 

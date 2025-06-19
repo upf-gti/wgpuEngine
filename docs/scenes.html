@@ -18,8 +18,8 @@ that contains a skybox that is always following the camera.` );
 
 MAKE_PARAGRAPH( `If it's a ${ INLINE_CODE( "Node2D" ) }, it will contain a size and a relative position inside the 2D container node, that adds a 3D transform and position in the scene to the 2D elements.` );
 
-MAKE_PARAGRAPH( `Usually most of the nodes that you are going to use are ${ INLINE_CODE( "MeshInstance" ) } nodes. They contain a ${ INLINE_CODE( "Mesh" ) } (composed of one or more sub-meshes or 
-${ INLINE_CODE( "Surfaces" ) } as they are called in the engine), a ${ INLINE_CODE( "Material" ) } (that defines how it is going to be rendered to the screen), and a transform that positions and scales the mesh in the scene.` );
+MAKE_PARAGRAPH( `Usually most of the nodes that you are going to use are ${ INLINE_CODE( "MeshInstance3D" ) } nodes. They contain a ${ INLINE_CODE( "Mesh" ) } (composed of one or more sub-meshes or 
+${ INLINE_CODE( "surfaces" ) } as they are called in the engine), a ${ INLINE_CODE( "Material" ) } (that defines how it is going to be rendered to the screen), and a transform that positions and scales the mesh in the scene.` );
 
 MAKE_HEADER( "Importing scenes", "h2", "importing" );
 
@@ -40,15 +40,40 @@ MAKE_CODE( `@[pre]#include@ @[str]"framework/parsers/parse_gltf.h"@
 @[var]scene@->@[mtd]add_node@(@static_cast@<@[cls]MeshInstance3D@*>(@[var]parsed_entities@[@1@]));
 `, "cpp" );
 
-MAKE_PARAGRAPH( `In this snippet, we are loading inside a ${ INLINE_CODE( "Node" ) } pointer array all the nodes inside two GLB files, and they are just putting 2 entities inside the scene. 
+MAKE_NOTE( `In this snippet, we are loading inside a ${ INLINE_CODE( "Node" ) } pointer array all the nodes inside two GLB files, and they are just putting 2 entities inside the scene. 
 A glb/gltf can also be loaded directly to a scene.` );
 
 MAKE_HEADER( "Creating Mesh instances", "h2", "mesh-instances" );
 
-MAKE_PARAGRAPH( `You can also create a ${ INLINE_CODE( "MeshInstance3D" ) } by passing it a ${ INLINE_CODE( "Material" ) } and at least one ${ INLINE_CODE( "Surface" ) }.` );
+MAKE_PARAGRAPH( `You can also create a ${ INLINE_CODE( "MeshInstance3D" ) } by creating a ${ INLINE_CODE( "Mesh" ) } and a ${ INLINE_CODE( "Material" ) }. The surfaces of the mesh can be created from sending geometry in an array form (take into account that the vertex order and config needs to be maintained from our shaders, 
+unless you overload them). The ${ INLINE_CODE( "Surface" ) } class also provides ${ INLINE_LINK( "methods for creating simple primitives", "https://github.com/upf-gti/wgpuEngine/blob/630ce20973914a86006401d4a01ed90e9a88222c/src/graphics/surface.h#L87" ) } such as quads, boxes, spheres, cones or cylinders, which are already implemented
+ in different primitive mesh classes:` );
 
-MAKE_PARAGRAPH( `The ${ INLINE_CODE( "Surface" ) } can be created from sending geometry in an array form (take into account that the vertex order and config needs to be maintained from our shaders, 
-unless you overload them). The ${ INLINE_CODE( "Surface" ) } class also provides 
-${ INLINE_LINK( "methods for creating simple primitives", "https://github.com/upf-gti/wgpuEngine/blob/630ce20973914a86006401d4a01ed90e9a88222c/src/graphics/surface.h#L87" ) } such as quads, boxes, spheres, cones or cylinders.` );
+MAKE_BULLET_LIST( [
+    `QuadMesh`,
+    `BoxMesh`,
+    `SphereMesh`,
+    `CapsuleMesh`,
+    `CylinderMesh`,
+    `TorusMesh`,
+    `ConeMesh`,
+] );
+
+MAKE_CODE( `@auto@ @[var]boxMaterial@ = @new@ @[cls]Material@();
+@[var]boxMaterial@->@[mtd]set_color@(@[lit]glm@::@[cls]vec4@(@0.3@, @0.2@, @0.3@, @0.50@));
+@[var]boxMaterial@->@[mtd]set_diffuse_texture@(@[cls]RendererStorage@::@[mtd]get_texture@(@"build_web/wall.png"@));
+@[var]boxMaterial@->@[mtd]set_shader@(@[cls]RendererStorage@::@[mtd]get_shader_from_source@(@[lit]shaders@::mesh_forward::source, @[lit]shaders@::mesh_forward::path, @[lit]shaders@::mesh_forward::libraries, @[var]boxMaterial@));
+
+@auto@ @[var]mesh@ = @new@ @[cls]CylinderMesh@();
+@auto@ @[var]box@ = @new@ @[cls]MeshInstance3D@();
+@[var]box@->@[mtd]set_name@(@[var]mesh@->@[mtd]get_mesh_type@());
+@[var]box@->@[mtd]set_mesh@(@[var]mesh@);
+@[var]box@->@[mtd]set_position@(@[lit]glm@::@[cls]vec3@(@1.0@, @0@, @-5.0@));
+@[var]box@->@[mtd]set_surface_material_override@(@[var]box@->@[mtd]get_surface@(@0@), @[var]boxMaterial@);
+@[var]main_scene@->@[mtd]add_node@(@[var]box@);
+` )
+
+MAKE_LINE_BREAK();
+MAKE_LINE_BREAK();
 
 </script>

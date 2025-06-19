@@ -37,11 +37,13 @@ public:
     const std::string& get_text() const { return text; }
     float get_scale() const { return font_scale; }
     bool get_wrap() const { return wrap; }
+    const glm::vec2& get_box_size() const { return box_size; }
 
     void set_text(const std::string& p_text);
     void set_scale(float new_scale);
     void set_wrap(bool new_wrap);
     void set_is_2d(bool new_is_2d);
+    void set_box_size(const glm::vec2& new_box_size);
 
     void render_gui() override;
 };
