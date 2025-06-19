@@ -21,7 +21,7 @@ class Text3D : public MeshInstance3D {
     bool wrap = true;
     bool is_2d = false;
 
-    void append_char(glm::vec3 pos, Character& c);
+    void append_char(const glm::vec3& pos, Character& c);
 
 public:
 

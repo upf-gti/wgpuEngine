@@ -715,7 +715,7 @@ namespace ui {
 
             auto t = Transform::identity();
             t.translate(glm::vec3(position, -priority * 3e-5));
-            t.scale(glm::vec3(scale, 1.0f));
+            t.scale(glm::vec3(scale.x, -scale.y, 1.0f)); // Hack to invert text mesh in 2d
 
             text_entity->set_transform(Transform::combine(Transform::mat4_to_transform(get_global_viewport_model()), t));
         }

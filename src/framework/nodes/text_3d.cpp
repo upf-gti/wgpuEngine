@@ -32,15 +32,14 @@ void Text3D::update(float delta_time)
 
 }
 
-void Text3D::append_char(glm::vec3 pos, Character& ch)
+void Text3D::append_char(const glm::vec3& pos, Character& ch)
 {
     float size = (float)font_scale / font->size;
     for (int k = 0; k < 6; ++k) {
-
-        vertices.vertices.push_back((pos + glm::vec3(ch.vertices[k].x, ch.vertices[k].y, ch.vertices[k].z)) * size);
+        vertices.vertices.push_back((pos + glm::vec3(ch.vertices[k].x, -ch.vertices[k].y, ch.vertices[k].z)) * size);
         vertices.uvs.push_back(ch.uvs[k] / glm::vec2(font->scaleW, font->scaleH));
         vertices.normals.push_back(glm::vec3(0.f, 1.f, 0.f));
-        vertices.colors.push_back({ 1.0f, 1.0f, 1.0f });
+        vertices.colors.push_back(color);
     }
 }
 
@@ -130,10 +129,9 @@ void Text3D::generate_mesh()
     material->set_is_2D(is_2d);
     material->set_type(MATERIAL_UNLIT);
     material->set_transparency_type(ALPHA_BLEND);
+    material->set_cull_type(CULL_BACK);
     material->set_depth_read_write(false);
-    if (font) {
-        material->set_diffuse_texture(font->textures[0]);
-    }
+    material->set_diffuse_texture(font->textures[0]);
     material->set_shader(RendererStorage::get_shader_from_source(shaders::sdf_fonts::source, shaders::sdf_fonts::path, shaders::sdf_fonts::libraries, material));
     surface->set_material(material);
 

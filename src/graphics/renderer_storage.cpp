@@ -677,6 +677,10 @@ std::vector<std::string> RendererStorage::get_common_define_specializations(cons
         define_specializations.push_back("UNLIT_MATERIAL");
     }
 
+    if (material->get_is_2D()) {
+        define_specializations.push_back("2D");
+    }
+
     if (default_material) {
         delete material;
     }
