@@ -32,7 +32,7 @@ void Text3D::update(float delta_time)
 
 }
 
-void Text3D::append_char(const glm::vec3& pos, Character& ch)
+void Text3D::append_char(const glm::vec3& pos, const Character& ch)
 {
     float size = (float)font_scale / font->size;
     for (int k = 0; k < 6; ++k) {
@@ -59,8 +59,9 @@ void Text3D::generate_mesh()
         surfaces.clear();
     }
 
-    float size = (float)font_scale / font->size;
+    float scale = (float)font_scale / font->size;
     float space = (float)font->characters[' '].xadvance;
+    float line_height = (float)font->lineHeight;
     glm::vec3 pos(0.f);
     glm::vec3 initial_pos = pos;
     std::string word = "";
@@ -68,57 +69,49 @@ void Text3D::generate_mesh()
     int last_char = text[0];
 
     for (int i = 0; i <= text.size(); ++i) {
-        int c = text[i];
-        if (i == text.size()) { // End of word or text. Push the word to our buffer.
+        char c = i < text.size() ? text[i] : '\0';
 
-            // We must decide prior to draw the word if it fits on this line or has to go on the next one.
-            float word_size = get_text_width(word) * size;
-            if (wrap && word_count > 0
-                // So the ammount of space already traversed + the width of the word fits on the line?
-                && (pos.x - initial_pos.x + word_size > box_size.x))
-            {
-                // Move to the start of the next line
-                pos.x = initial_pos.x;
-                pos.y += (float)font->lineHeight;
-                word_count = 0;
-            }
-            else
-            {
-                // We dont need to move, lets write our word
-                ++word_count;
-            }
+        // process the current word on "space" or end of the word
+        if (c == ' ' || c == '\0') {
+            if (!word.empty()) {
+                float word_size = get_text_width(word);
 
-            // Write the word
-            for (int j = 0; j < word.size(); ++j)
-            {
-                // Check we dont overflow the box from the bottom
-                if (wrap && pos.y + (float)font->lineHeight > box_size.y) continue;
-
-                c = word[j];
-
-                if (c == ' ') {
-                    pos.x += 16.0f;
+                // We must decide prior to draw the word if it fits on this line or has to go on the next one.
+                if (wrap && word_count > 0 && ((pos.x - initial_pos.x) * scale + word_size > box_size.x)) {
+                    pos.x = initial_pos.x;
+                    pos.y += line_height;
+                    word_count = 0;
                 }
-                else {
-                    Character& ch = font->characters[c];
-                    append_char(pos, ch);
-                    pos.x += (float)ch.xadvance;
 
-                    //Adjust next leter position depending on the kerning
+                for (int j = 0; j < word.size(); ++j) {
+                    if (wrap && (pos.y + line_height) * scale > box_size.y) {
+                        continue;
+                    }
+
+                    char wc = word[j];
+                    const Character& ch = font->characters[wc];
+                    append_char(pos, ch);
+                    pos.x += ch.xadvance;
+
+                    // Adjust next leter position depending on the kerning
                     if (j + 1 < word.size()) {
-                        float amount = font->adjust_kerning_pairs(c, text[j + 1]);
-                        pos.x += (float)amount;
+                        float amount = font->adjust_kerning_pairs(wc, word[j + 1]);
+                        pos.x += amount;
                     }
                 }
-            }
 
-            // Add the space we found in first place
-            pos.x += space;
-            word = "";
+                pos.x += space; // space after word
+                word_count++;
+                word.clear();
+            }
         }
         else {
-            word = word + (char)c;
+            word += c;
         }
+    }
+
+    if (vertices.vertices.empty()) {
+        return;
     }
 
     Surface* surface = new Surface();
@@ -166,7 +159,7 @@ int Text3D::get_text_width(const std::string& text)
 {
     int size = 0;
     int textsize = (int)text.size();
-    float font_size = (float)font_scale / font->size;
+    float scale = (float)font_scale / font->size;
 
     for (int i = 0; i < textsize; ++i) {
         unsigned char c = text[i];
@@ -175,13 +168,13 @@ int Text3D::get_text_width(const std::string& text)
         size += c == ' ' ? 16 : (ch.xadvance + kern);
     }
 
-    return size * font_size;
+    return size * scale;
 }
 
 int Text3D::get_text_height(const std::string& text)
 {
     float size = 0;
-    float font_size = (float)font_scale / font->size;
+    float scale = (float)font_scale / font->size;
 
     for (int i = 0; i < (int)text.size(); ++i) {
         unsigned char c = text[i];
@@ -189,5 +182,30 @@ int Text3D::get_text_height(const std::string& text)
         size = std::max(ch.size.y, size);
     }
 
-    return size * font_size;
+    return size * scale;
+}
+
+void Text3D::render_gui()
+{
+    bool dirty = false;
+
+    ImGui::Text("Wrap");
+    ImGui::SameLine(200);
+    ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
+    if (ImGui::Checkbox("##Wrap", &wrap)) {
+        dirty = true;
+    }
+
+    ImGui::Text("Box Size");
+    ImGui::SameLine(200);
+    ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
+    if (ImGui::DragFloat2("##Box Size", &box_size.x, 0.01f, 0.0f, 16.0f)) {
+        dirty = true;
+    }
+
+    if (dirty) {
+        generate_mesh();
+    }
+
+    MeshInstance3D::render_gui();
 }

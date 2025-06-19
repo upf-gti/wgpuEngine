@@ -5,7 +5,7 @@
 
 Mesh::Mesh()
 {
-
+    mesh_type = "Mesh";
 }
 
 Mesh::~Mesh()

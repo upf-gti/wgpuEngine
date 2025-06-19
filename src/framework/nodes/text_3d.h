@@ -21,11 +21,11 @@ class Text3D : public MeshInstance3D {
     bool wrap = true;
     bool is_2d = false;
 
-    void append_char(const glm::vec3& pos, Character& c);
+    void append_char(const glm::vec3& pos, const Character& c);
 
 public:
 
-    Text3D(const std::string& text, const Color& color = colors::BLACK, bool is_2d = false, const glm::vec2& box_size = { 1, 1 }, bool wrap = false);
+    Text3D(const std::string& text, const Color& color = colors::WHITE, bool is_2d = false, const glm::vec2& box_size = { 1, 1 }, bool wrap = false);
     virtual ~Text3D();
 
     virtual void update(float delta_time) override;
@@ -42,4 +42,6 @@ public:
     void set_scale(float new_scale);
     void set_wrap(bool new_wrap);
     void set_is_2d(bool new_is_2d);
+
+    void render_gui() override;
 };
