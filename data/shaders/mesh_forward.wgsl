@@ -120,24 +120,24 @@ fn fs_main(in: VertexOutput, @builtin(front_facing) is_front_facing: bool) -> Fr
 
     m.pos = in.world_position;
     m.view_dir = normalize(camera_data.eye - m.pos);
-    m.normal = normalize(in.normal);
+    m.normal_g = normalize(in.normal);
+
+    if (!is_front_facing) {
+        m.normal_g = -m.normal_g;
+    }
 
 #ifdef NORMAL_TEXTURE
     var normal_color = textureSample(normal_texture, sampler_2d, in.uv).rgb * 2.0 - 1.0;
     // normal_color.y = -normal_color.y;
 
 #ifdef HAS_TANGENTS
-    let TBN : mat3x3f = mat3x3f(in.tangent, in.bitangent, in.normal);
-    m.normal = normalize(TBN * normal_color);
+    let TBN : mat3x3f = mat3x3f(in.tangent, in.bitangent, m.normal_g);
+    m.normal = normalize(TBN * normalize(normal_color));
 #else
-    m.normal = perturb_normal(m.normal, m.view_dir, in.uv, normal_color);
+    m.normal = perturb_normal(m.normal_g, m.view_dir, in.uv, normal_color);
 #endif
 
 #endif
-
-    if (!is_front_facing) {
-        m.normal = -m.normal;
-    }
 
     m.n_dot_v = clamp(dot(m.normal, m.view_dir), 0.0, 1.0);
     m.reflected_dir = normalize(reflect(-m.view_dir, m.normal));
@@ -201,7 +201,7 @@ fn fs_main(in: VertexOutput, @builtin(front_facing) is_front_facing: bool) -> Fr
 //     clearcoat_normal = mat3x3f(in.tangent, in.bitangent, in.normal) * normalize(clearcoat_normal);
 //     return n;
 // #else
-    var clearcoat_normal : vec3f = m.normal;
+    var clearcoat_normal : vec3f = m.normal_g;
 // #endif
 
     m.clearcoat_factor = clearcoat_data.x;

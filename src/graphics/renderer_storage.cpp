@@ -100,7 +100,7 @@ void RendererStorage::register_material_bind_group(WebGPUContext* webgpu_context
         uniforms.push_back(u);
     }
 
-    if (material->get_type() != MATERIAL_UNLIT) {
+    if (material->get_type() == MATERIAL_PBR) {
 
         Texture* metallic_roughness_texture = material->get_metallic_roughness_texture();
         if (metallic_roughness_texture) {

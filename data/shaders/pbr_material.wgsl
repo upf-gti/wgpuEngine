@@ -1,6 +1,7 @@
 struct PbrMaterial
 {
     pos : vec3f,
+    normal_g : vec3f,
     normal : vec3f,
     albedo : vec3f,
     emissive : vec3f,
