@@ -14,6 +14,8 @@ Material::Material()
     properties["occlusion"] = &occlusion;
     properties["emissive"] = &emissive;
     properties["alpha_mask"] = &alpha_mask;
+    properties["clear_coat_factor"] = &clearcoat_factor;
+    properties["clear_coat_roughness"] = &clearcoat_roughness;
 }
 
 Material::~Material()
@@ -36,6 +38,18 @@ Material::~Material()
 
     if (occlusion_texture) {
         occlusion_texture->unref();
+    }
+
+    if (clearcoat_texture) {
+        clearcoat_texture->unref();
+    }
+
+    if (clearcoat_roughness_texture) {
+        clearcoat_roughness_texture->unref();
+    }
+
+    if (clearcoat_normal_texture) {
+        clearcoat_normal_texture->unref();
     }
 }
 
@@ -161,6 +175,54 @@ void Material::set_occlusion_texture(Texture* occlusion_texture)
     this->occlusion_texture = occlusion_texture;
 
     dirty_flags |= eMaterialProperties::PROP_OCLUSSION_TEXTURE;
+}
+
+void Material::set_clearcoat_texture(Texture* clearcoat_texture)
+{
+    if (this->clearcoat_texture != clearcoat_texture) {
+
+        if (this->clearcoat_texture) {
+            this->clearcoat_texture->unref();
+        }
+
+        clearcoat_texture->ref();
+    }
+
+    this->clearcoat_texture = clearcoat_texture;
+
+    dirty_flags |= eMaterialProperties::PROP_CLEARCOAT_TEXTURE;
+}
+
+void Material::set_clearcoat_roughness_texture(Texture* clearcoat_roughness_texture)
+{
+    if (this->clearcoat_roughness_texture != clearcoat_roughness_texture) {
+
+        if (this->clearcoat_roughness_texture) {
+            this->clearcoat_roughness_texture->unref();
+        }
+
+        clearcoat_roughness_texture->ref();
+    }
+
+    this->clearcoat_roughness_texture = clearcoat_roughness_texture;
+
+    dirty_flags |= eMaterialProperties::PROP_CLEARCOAT_ROUGHNESS_TEXTURE;
+}
+
+void Material::set_clearcoat_normal_texture(Texture* clearcoat_normal_texture)
+{
+    if (this->clearcoat_normal_texture != clearcoat_normal_texture) {
+
+        if (this->clearcoat_normal_texture) {
+            this->clearcoat_normal_texture->unref();
+        }
+
+        clearcoat_normal_texture->ref();
+    }
+
+    this->clearcoat_normal_texture = clearcoat_normal_texture;
+
+    dirty_flags |= eMaterialProperties::PROP_CLEARCOAT_NORMAL_TEXTURE;
 }
 
 void Material::set_alpha_mask(float alpha_mask)
@@ -302,6 +364,21 @@ const Texture* Material::get_emissive_texture() const
 const Texture* Material::get_occlusion_texture() const
 {
     return occlusion_texture;
+}
+
+const Texture* Material::get_clearcoat_texture() const
+{
+    return clearcoat_texture;
+}
+
+const Texture* Material::get_clearcoat_roughness_texture() const
+{
+    return clearcoat_roughness_texture;
+}
+
+const Texture* Material::get_clearcoat_normal_texture() const
+{
+    return clearcoat_normal_texture;
 }
 
 float Material::get_alpha_mask() const
@@ -529,4 +606,19 @@ Texture* Material::get_emissive_texture()
 Texture* Material::get_occlusion_texture()
 {
     return occlusion_texture;
+}
+
+Texture* Material::get_clearcoat_texture()
+{
+    return clearcoat_texture;
+}
+
+Texture* Material::get_clearcoat_roughness_texture()
+{
+    return clearcoat_roughness_texture;
+}
+
+Texture* Material::get_clearcoat_normal_texture()
+{
+    return clearcoat_normal_texture;
 }

@@ -604,7 +604,7 @@ void read_mesh(const tinygltf::Model& model, const tinygltf::Node& node, Node3D*
                     material->set_metallic_roughness_texture(texture_cache[pbrMetallicRoughness.metallicRoughnessTexture.index]);
                 }
                 else {
-                    Texture* metallic_roughness_texture;
+                    Texture* metallic_roughness_texture = nullptr;
                     create_material_texture(model, pbrMetallicRoughness.metallicRoughnessTexture.index, &metallic_roughness_texture, false, false, async_load);
                     texture_cache[pbrMetallicRoughness.metallicRoughnessTexture.index] = metallic_roughness_texture;
                     material->set_metallic_roughness_texture(metallic_roughness_texture);
@@ -619,7 +619,7 @@ void read_mesh(const tinygltf::Model& model, const tinygltf::Node& node, Node3D*
                     material->set_normal_texture(texture_cache[gltf_material.normalTexture.index]);
                 }
                 else {
-                    Texture* normal_texture;
+                    Texture* normal_texture = nullptr;
                     create_material_texture(model, gltf_material.normalTexture.index, &normal_texture, false, false, async_load);
                     texture_cache[gltf_material.normalTexture.index] = normal_texture;
                     material->set_normal_texture(normal_texture);
@@ -631,7 +631,7 @@ void read_mesh(const tinygltf::Model& model, const tinygltf::Node& node, Node3D*
                     material->set_emissive_texture(texture_cache[gltf_material.emissiveTexture.index]);
                 }
                 else {
-                    Texture* emissive_texture;
+                    Texture* emissive_texture = nullptr;
                     create_material_texture(model, gltf_material.emissiveTexture.index, &emissive_texture, true, false, async_load);
                     texture_cache[gltf_material.emissiveTexture.index] = emissive_texture;
                     material->set_emissive_texture(emissive_texture);
@@ -644,7 +644,7 @@ void read_mesh(const tinygltf::Model& model, const tinygltf::Node& node, Node3D*
                     material->set_occlusion(static_cast<float>(gltf_material.occlusionTexture.strength));
                 }
                 else {
-                    Texture* occlusion_texture;
+                    Texture* occlusion_texture = nullptr;
                     create_material_texture(model, gltf_material.occlusionTexture.index, &occlusion_texture, true, false, async_load);
                     texture_cache[gltf_material.occlusionTexture.index] = occlusion_texture;
                     material->set_occlusion_texture(occlusion_texture);
@@ -665,32 +665,59 @@ void read_mesh(const tinygltf::Model& model, const tinygltf::Node& node, Node3D*
                     material->set_clearcoat_roughness(static_cast<float>(ext.Get("clearcoatRoughnessFactor").GetNumberAsDouble()));
                 }
 
-                // Clearcoat texture index
-                //int clearcoatTexIndex = -1;
-                //if (ext.Has("clearcoatTexture")) {
-                //    const auto& tex = ext.Get("clearcoatTexture");
-                //    if (tex.Has("index")) {
-                //        clearcoatTexIndex = tex.Get("index").Get<int>();
-                //    }
-                //}
+                if (ext.Has("clearcoatTexture")) {
+                    const auto& tex = ext.Get("clearcoatTexture");
+                    if (tex.Has("index")) {
+                        int clearcoat_texture_index = tex.Get("index").Get<int>();
+                        if (clearcoat_texture_index >= 0) {
+                            if (texture_cache.contains(clearcoat_texture_index)) {
+                                material->set_clearcoat_texture(texture_cache[clearcoat_texture_index]);
+                            }
+                            else {
+                                Texture* clearcoat_texture = nullptr;
+                                create_material_texture(model, clearcoat_texture_index, &clearcoat_texture, false, false, async_load);
+                                texture_cache[clearcoat_texture_index] = clearcoat_texture;
+                                material->set_clearcoat_texture(clearcoat_texture);
+                            }
+                        }
+                    }
+                }
 
-                //// Clearcoat roughness texture index
-                //int clearcoatRoughnessTexIndex = -1;
-                //if (ext.Has("clearcoatRoughnessTexture")) {
-                //    const auto& tex = ext.Get("clearcoatRoughnessTexture");
-                //    if (tex.Has("index")) {
-                //        clearcoatRoughnessTexIndex = tex.Get("index").Get<int>();
-                //    }
-                //}
+                if (ext.Has("clearcoatRoughnessTexture")) {
+                    const auto& tex = ext.Get("clearcoatRoughnessTexture");
+                    if (tex.Has("index")) {
+                        int clearcoat_roughness_texture_index = tex.Get("index").Get<int>();
+                        if (clearcoat_roughness_texture_index >= 0) {
+                            if (texture_cache.contains(clearcoat_roughness_texture_index)) {
+                                material->set_clearcoat_roughness_texture(texture_cache[clearcoat_roughness_texture_index]);
+                            }
+                            else {
+                                Texture* clearcoat_roughness_texture = nullptr;
+                                create_material_texture(model, clearcoat_roughness_texture_index, &clearcoat_roughness_texture, false, false, async_load);
+                                texture_cache[clearcoat_roughness_texture_index] = clearcoat_roughness_texture;
+                                material->set_clearcoat_roughness_texture(clearcoat_roughness_texture);
+                            }
+                        }
+                    }
+                }
 
-                //// Clearcoat normal texture index
-                //int clearcoatNormalTexIndex = -1;
-                //if (ext.Has("clearcoatNormalTexture")) {
-                //    const auto& tex = ext.Get("clearcoatNormalTexture");
-                //    if (tex.Has("index")) {
-                //        clearcoatNormalTexIndex = tex.Get("index").Get<int>();
-                //    }
-                //}
+                if (ext.Has("clearcoatNormalTexture")) {
+                    const auto& tex = ext.Get("clearcoatNormalTexture");
+                    if (tex.Has("index")) {
+                        int clearcoat_normal_texture_index = tex.Get("index").Get<int>();
+                        if (clearcoat_normal_texture_index >= 0) {
+                            if (texture_cache.contains(clearcoat_normal_texture_index)) {
+                                material->set_clearcoat_normal_texture(texture_cache[clearcoat_normal_texture_index]);
+                            }
+                            else {
+                                Texture* clearcoat_texture = nullptr;
+                                create_material_texture(model, clearcoat_normal_texture_index, &clearcoat_texture, false, false, async_load);
+                                texture_cache[clearcoat_normal_texture_index] = clearcoat_texture;
+                                material->set_clearcoat_normal_texture(clearcoat_texture);
+                            }
+                        }
+                    }
+                }
             }
 
             if (gltf_material.doubleSided) {

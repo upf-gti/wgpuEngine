@@ -163,6 +163,36 @@ void RendererStorage::register_material_bind_group(WebGPUContext* webgpu_context
             uniform_indices[eMaterialProperties::PROP_CLEARCOAT] = uniforms.size();
             uniforms.push_back(u);
         }
+
+        Texture* clearcoat_texture = material->get_clearcoat_texture();
+        if (clearcoat_texture) {
+            Uniform* u = new Uniform();
+            u->data = clearcoat_texture->get_view(WGPUTextureViewDimension_2D, 0, clearcoat_texture->get_mipmap_count());
+            u->binding = 13;
+            uniforms.push_back(u);
+            uses_textures |= true;
+            texture_ref = clearcoat_texture;
+        }
+
+        Texture* clearcoat_roughness_texture = material->get_clearcoat_roughness_texture();
+        if (clearcoat_roughness_texture) {
+            Uniform* u = new Uniform();
+            u->data = clearcoat_roughness_texture->get_view(WGPUTextureViewDimension_2D, 0, clearcoat_roughness_texture->get_mipmap_count());
+            u->binding = 14;
+            uniforms.push_back(u);
+            uses_textures |= true;
+            texture_ref = clearcoat_roughness_texture;
+        }
+
+        Texture* clearcoat_normal_texture = material->get_clearcoat_normal_texture();
+        if (clearcoat_normal_texture) {
+            Uniform* u = new Uniform();
+            u->data = clearcoat_normal_texture->get_view(WGPUTextureViewDimension_2D, 0, clearcoat_normal_texture->get_mipmap_count());
+            u->binding = 15;
+            uniforms.push_back(u);
+            uses_textures |= true;
+            texture_ref = clearcoat_normal_texture;
+        }
     }
 
     Texture* normal_texture = material->get_normal_texture();
@@ -628,6 +658,18 @@ std::vector<std::string> RendererStorage::get_common_define_specializations(cons
 
     if (material->get_occlusion_texture()) {
         define_specializations.push_back("OCLUSSION_TEXTURE");
+    }
+
+    if (material->get_clearcoat_texture()) {
+        define_specializations.push_back("CLEARCOAT_TEXTURE");
+    }
+
+    if (material->get_clearcoat_roughness_texture()) {
+        define_specializations.push_back("CLEARCOAT_ROUGHNESS_TEXTURE");
+    }
+
+    if (material->get_clearcoat_normal_texture()) {
+        define_specializations.push_back("CLEARCOAT_NORMAL_TEXTURE");
     }
 
     if (material->get_clearcoat_factor() > 0.0f) {

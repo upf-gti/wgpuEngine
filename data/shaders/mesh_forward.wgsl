@@ -44,6 +44,18 @@
 @group(2) @binding(12) var<uniform> clearcoat_data: vec2f;
 #endif
 
+#ifdef CLEARCOAT_TEXTURE
+@group(2) @binding(13) var clearcoat_texture: texture_2d<f32>;
+#endif
+
+#ifdef CLEARCOAT_ROUGHNESS_TEXTURE
+@group(2) @binding(14) var clearcoat_roughness_texture: texture_2d<f32>;
+#endif
+
+#ifdef CLEARCOAT_NORMAL_TEXTURE
+@group(2) @binding(15) var clearcoat_normal_texture: texture_2d<f32>;
+#endif
+
 #endif
 
 #ifdef NORMAL_TEXTURE
@@ -136,7 +148,8 @@ fn fs_main(in: VertexOutput, @builtin(front_facing) is_front_facing: bool) -> Fr
 #else
     m.normal = perturb_normal(m.normal_g, m.view_dir, in.uv, normal_color);
 #endif
-
+#else
+    m.normal = m.normal_g;
 #endif
 
     m.n_dot_v = clamp(dot(m.normal, m.view_dir), 0.0, 1.0);
@@ -195,33 +208,37 @@ fn fs_main(in: VertexOutput, @builtin(front_facing) is_front_facing: bool) -> Fr
 
 #ifdef CLEARCOAT_MATERIAL
 
-// #ifdef HAS_CLEARCOAT_NORMAL_MAP
-//     let clearcoat_normal_uv : vec2f = in.uv;//getClearcoatNormalUV();
-//     var clearcoat_normal : vec3f = textureSample(clearcoat_normal_texture, sampler_2d, clearcoat_normal_uv).rgb * 2.0 - vec3(1.0);
-//     clearcoat_normal = mat3x3f(in.tangent, in.bitangent, in.normal) * normalize(clearcoat_normal);
-//     return n;
-// #else
-    var clearcoat_normal : vec3f = m.normal_g;
-// #endif
-
     m.clearcoat_factor = clearcoat_data.x;
     m.clearcoat_roughness = clearcoat_data.y;
     m.clearcoat_f0 = vec3f(pow((m.ior - 1.0) / (m.ior + 1.0), 2.0));
     m.clearcoat_f90 = vec3f(1.0);
 
-// #ifdef HAS_CLEARCOAT_MAP
-//     let clearcoat_uv : vec2f = in.uv;//getClearcoatUV();
-//     let clearcoat_sample : vec4f = textureSample(clearcoat_texture, sampler_2d, clearcoat_uv);
-//     m.clearcoat_factor *= clearcoat_sample.r;
-// #endif
+#ifdef CLEARCOAT_TEXTURE
+    let clearcoat_uv : vec2f = in.uv;//getClearcoatUV();
+    let clearcoat_sample : vec4f = textureSample(clearcoat_texture, sampler_2d, clearcoat_uv);
+    m.clearcoat_factor *= clearcoat_sample.r;
+#endif
 
-// #ifdef HAS_CLEARCOAT_ROUGHNESS_MAP
-//     let clearcoat_roughness_uv : vec2f = in.uv;//getClearcoatRoughnessUV();
-//     let clearcoat_sample_roughness : vec4f = textureSample(clearcoat_roughness_texture, sampler_2d, clearcoat_roughness_uv);
-//     m.clearcoat_roughness *= clearcoat_sample_roughness.g;
-// #endif
+#ifdef CLEARCOAT_ROUGHNESS_TEXTURE
+    let clearcoat_roughness_uv : vec2f = in.uv;//getClearcoatRoughnessUV();
+    let clearcoat_sample_roughness : vec4f = textureSample(clearcoat_roughness_texture, sampler_2d, clearcoat_roughness_uv);
+    m.clearcoat_roughness *= clearcoat_sample_roughness.g;
+#endif
 
-    m.clearcoat_normal = clearcoat_normal;
+#ifdef CLEARCOAT_NORMAL_TEXTURE
+    let clearcoat_normal_uv : vec2f = in.uv;//getClearcoatNormalUV();
+    var clearcoat_normal : vec3f = textureSample(clearcoat_normal_texture, sampler_2d, clearcoat_normal_uv).rgb * 2.0 - vec3(1.0);
+
+#ifdef HAS_TANGENTS
+    let cc_TBN : mat3x3f = mat3x3f(in.tangent, in.bitangent, m.normal_g);
+    m.clearcoat_normal = normalize(cc_TBN * normalize(clearcoat_normal));
+#else
+    m.clearcoat_normal = perturb_normal(m.normal_g, m.view_dir, clearcoat_normal_uv, clearcoat_normal);
+#endif
+#else
+    m.clearcoat_normal = m.normal_g;
+#endif
+
     m.clearcoat_roughness = clamp(m.clearcoat_roughness, 0.04, 1.0);
 
 #endif
@@ -257,7 +274,7 @@ fn fs_main(in: VertexOutput, @builtin(front_facing) is_front_facing: bool) -> Fr
 
     final_color += get_direct_light(&m);
 
-    final_color = m.emissive * (1.0 - m.clearcoat_factor * clearcoat_fresnel) + final_color;
+    final_color += m.emissive * (1.0 - m.clearcoat_factor * clearcoat_fresnel);
 #else
     final_color += m.albedo;
 #endif
