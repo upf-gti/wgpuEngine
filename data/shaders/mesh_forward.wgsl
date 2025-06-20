@@ -22,28 +22,32 @@
 
 @group(2) @binding(1) var<uniform> albedo: vec4f;
 
+#ifndef UNLIT_MATERIAL
+
 #ifdef METALLIC_ROUGHNESS_TEXTURE
 @group(2) @binding(2) var metallic_roughness_texture: texture_2d<f32>;
 #endif
 
-#ifndef UNLIT_MATERIAL
 @group(2) @binding(3) var<uniform> occlusion_roughness_metallic: vec3f;
-#endif
-
-#ifdef NORMAL_TEXTURE
-@group(2) @binding(4) var normal_texture: texture_2d<f32>;
-#endif
 
 #ifdef EMISSIVE_TEXTURE
 @group(2) @binding(5) var emissive_texture: texture_2d<f32>;
 #endif
 
+@group(2) @binding(6) var<uniform> emissive: vec3f;
+
 #ifdef OCLUSSION_TEXTURE
 @group(2) @binding(9) var oclussion_texture: texture_2d<f32>;
 #endif
 
-#ifndef UNLIT_MATERIAL
-@group(2) @binding(6) var<uniform> emissive: vec3f;
+#ifdef CLEARCOAT_MATERIAL
+@group(2) @binding(12) var<uniform> clearcoat_data: vec2f;
+#endif
+
+#endif
+
+#ifdef NORMAL_TEXTURE
+@group(2) @binding(4) var normal_texture: texture_2d<f32>;
 #endif
 
 #ifdef USE_SAMPLER
@@ -57,10 +61,6 @@
 #ifdef USE_SKINNING
 @group(2) @binding(10) var<storage, read> animated_matrices: array<mat4x4f>;
 @group(2) @binding(11) var<storage, read> inv_bind_matrices: array<mat4x4f>;
-#endif
-
-#ifdef HAS_CLEARCOAT
-@group(2) @binding(12) var<uniform> clearcoat_data: vec2f;
 #endif
 
 #ifndef UNLIT_MATERIAL
@@ -116,64 +116,11 @@ fn fs_main(in: VertexOutput, @builtin(front_facing) is_front_facing: bool) -> Fr
 
     var out: FragmentOutput;
     var dummy = camera_data.eye;
-
     var m : PbrMaterial;
 
-    // Material properties
-
-    var alpha : f32 = 1.0;
-
-#ifdef ALBEDO_TEXTURE
-    let albedo_texture : vec4f = textureSample(albedo_texture, sampler_2d, in.uv);
-    m.albedo = albedo_texture.rgb * in.color.rgb;
-    alpha = albedo_texture.a * in.color.a;
-#else
-    m.albedo = in.color.rgb;
-    alpha = in.color.a;
-#endif
-
-#ifdef ALPHA_MASK
-    if (alpha < alpha_cutoff) {
-        discard;
-    }
-#endif
-
-// fix properly by implementing #elif or nested #ifdef
-#ifdef UNLIT_MATERIAL
-    let emissive : vec3f = vec3f(0.0);
-#endif
-
-#ifdef EMISSIVE_TEXTURE
-    m.emissive = textureSample(emissive_texture, sampler_2d, in.uv).rgb * emissive;
-#else
-    m.emissive = emissive;
-#endif
-
-// fix properly by implementing #elif or nested #ifdef
-#ifdef UNLIT_MATERIAL
-    let occlusion_roughness_metallic : vec3f = vec3f(0.0);
-#endif
-
-#ifdef OCLUSSION_TEXTURE
-    m.ao = textureSample(oclussion_texture, sampler_2d, in.uv).r;
-    m.ao = m.ao * occlusion_roughness_metallic.r;
-#else
-    m.ao = 1.0;
-#endif
-
-#ifdef METALLIC_ROUGHNESS_TEXTURE
-    var metal_rough : vec3f = textureSample(metallic_roughness_texture, sampler_2d, in.uv).rgb;
-    m.roughness = metal_rough.g * occlusion_roughness_metallic.g;
-    m.metallic = metal_rough.b * occlusion_roughness_metallic.b;
-#else
-    m.roughness = occlusion_roughness_metallic.g;
-    m.metallic = occlusion_roughness_metallic.b;
-#endif
-
     m.pos = in.world_position;
-
-    m.normal = normalize(in.normal);
     m.view_dir = normalize(camera_data.eye - m.pos);
+    m.normal = normalize(in.normal);
 
 #ifdef NORMAL_TEXTURE
     var normal_color = textureSample(normal_texture, sampler_2d, in.uv).rgb * 2.0 - 1.0;
@@ -192,21 +139,61 @@ fn fs_main(in: VertexOutput, @builtin(front_facing) is_front_facing: bool) -> Fr
         m.normal = -m.normal;
     }
 
+    m.n_dot_v = clamp(dot(m.normal, m.view_dir), 0.0, 1.0);
+    m.reflected_dir = normalize(reflect(-m.view_dir, m.normal));
+
+    var alpha : f32 = 1.0;
+
+#ifdef ALBEDO_TEXTURE
+    let albedo_texture : vec4f = textureSample(albedo_texture, sampler_2d, in.uv);
+    m.albedo = albedo_texture.rgb * in.color.rgb;
+    alpha = albedo_texture.a * in.color.a;
+#else
+    m.albedo = in.color.rgb;
+    alpha = in.color.a;
+#endif
+
+#ifdef ALPHA_MASK
+    if (alpha < alpha_cutoff) {
+        discard;
+    }
+#endif
+
     var final_color : vec3f = vec3f(0.0);
 
 #ifndef UNLIT_MATERIAL
 
-    m.n_dot_v = clamp(dot(m.normal, m.view_dir), 0.0, 1.0);
-    m.reflected_dir = normalize(reflect(-m.view_dir, m.normal));
-
-    m.roughness = max(m.roughness, 0.04);
-    m.diffuse = mix(m.albedo, vec3f(0.0), m.metallic);
-    m.f0 = mix(vec3f(0.04), m.albedo, m.metallic);
     m.f90 = vec3f(1.0);
     m.ior = 1.5; // default IOR for most materials
     m.specular_weight = 1.0;
 
-#ifdef HAS_CLEARCOAT
+#ifdef EMISSIVE_TEXTURE
+    m.emissive = textureSample(emissive_texture, sampler_2d, in.uv).rgb * emissive;
+#else
+    m.emissive = emissive;
+#endif
+
+#ifdef OCLUSSION_TEXTURE
+    m.ao = textureSample(oclussion_texture, sampler_2d, in.uv).r;
+    m.ao = m.ao * occlusion_roughness_metallic.r;
+#else
+    m.ao = 1.0;
+#endif
+
+#ifdef METALLIC_ROUGHNESS_TEXTURE
+    var metal_rough : vec3f = textureSample(metallic_roughness_texture, sampler_2d, in.uv).rgb;
+    m.roughness = metal_rough.g * occlusion_roughness_metallic.g;
+    m.metallic = metal_rough.b * occlusion_roughness_metallic.b;
+#else
+    m.roughness = occlusion_roughness_metallic.g;
+    m.metallic = occlusion_roughness_metallic.b;
+#endif
+
+    m.roughness = max(m.roughness, 0.04);
+    m.diffuse = mix(m.albedo, vec3f(0.0), m.metallic);
+    m.f0 = mix(vec3f(0.04), m.albedo, m.metallic);
+
+#ifdef CLEARCOAT_MATERIAL
 
 // #ifdef HAS_CLEARCOAT_NORMAL_MAP
 //     let clearcoat_normal_uv : vec2f = in.uv;//getClearcoatNormalUV();
@@ -260,12 +247,11 @@ fn fs_main(in: VertexOutput, @builtin(front_facing) is_front_facing: bool) -> Fr
     final_color = get_indirect_light(&m);
 
     var clearcoat_fresnel : vec3f = vec3f(0.0);
-    var clearcoat_brdf : vec3f = vec3f(0.0);
 
-#ifdef HAS_CLEARCOAT
+#ifdef CLEARCOAT_MATERIAL
     let cc_normal_dot_v : f32 = clamp(dot(m.clearcoat_normal, m.view_dir), 0.0, 1.0);
     clearcoat_fresnel = F_Schlick(m.clearcoat_f0, m.clearcoat_f90, cc_normal_dot_v);
-    clearcoat_brdf = get_ibl_radiance_ggx(m.clearcoat_normal, m.view_dir, m.clearcoat_roughness);
+    let clearcoat_brdf : vec3f = get_ibl_radiance_ggx(m.clearcoat_normal, m.view_dir, m.clearcoat_roughness);
     final_color = mix(final_color, clearcoat_brdf, m.clearcoat_factor * clearcoat_fresnel);
 #endif
 

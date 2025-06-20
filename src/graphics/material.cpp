@@ -389,6 +389,14 @@ void Material::render_gui()
     std::string material_name = name.empty() ? "" : (" (" + name + ")");
     if (ImGui::TreeNodeEx(("Material" + material_name).c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
 
+        ImGui::Text("Type");
+        ImGui::SameLine(200);
+        static const char* types[] = { "MATERIAL_PBR", "MATERIAL_UNLIT" };
+        int type_int = static_cast<int>(type);
+        if (ImGui::Combo("##Type", &type_int, types, ((int)(sizeof(types) / sizeof(*(types)))))) {
+            set_type(static_cast<eMaterialType>(type_int));
+        }
+
         ImGui::Text("Diffuse Color");
         ImGui::SameLine(200);
         if (ImGui::ColorEdit4("##Color", &color[0], ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel)) {
@@ -461,6 +469,23 @@ void Material::render_gui()
         ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
         if (ImGui::DragFloat("##Oclussion", &occlusion, 0.01f, 0.0f, 1.0f)) {
             dirty_flags |= eMaterialProperties::PROP_OCLUSSION_ROUGHNESS_METALLIC;
+        }
+
+        // Clear coat
+        {
+            ImGui::Text("Clearcoat Factor");
+            ImGui::SameLine(200);
+            ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
+            if (ImGui::DragFloat("##Clearcoat Factor", &clearcoat_factor, 0.01f, 0.0f, 1.0f)) {
+                dirty_flags |= eMaterialProperties::PROP_CLEARCOAT;
+            }
+
+            ImGui::Text("Clearcoat Roughness");
+            ImGui::SameLine(200);
+            ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
+            if (ImGui::DragFloat("##Clearcoat Roughness", &clearcoat_roughness, 0.01f, 0.0f, 1.0f)) {
+                dirty_flags |= eMaterialProperties::PROP_CLEARCOAT;
+            }
         }
 
         ImGui::Text("Depth Read");

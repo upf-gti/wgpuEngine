@@ -89,6 +89,7 @@ void RendererStorage::register_material_bind_group(WebGPUContext* webgpu_context
         texture_ref = diffuse_texture;
     }
 
+    // Albedo color factor
     {
         Uniform* u = new Uniform();
         const glm::vec4& color = material->get_color();
@@ -99,24 +100,69 @@ void RendererStorage::register_material_bind_group(WebGPUContext* webgpu_context
         uniforms.push_back(u);
     }
 
-    Texture* metallic_roughness_texture = material->get_metallic_roughness_texture();
-    if (metallic_roughness_texture) {
-        Uniform* u = new Uniform();
-        u->data = metallic_roughness_texture->get_view(WGPUTextureViewDimension_2D, 0, metallic_roughness_texture->get_mipmap_count());
-        u->binding = 2;
-        uniforms.push_back(u);
-        uses_textures |= true;
-        texture_ref = metallic_roughness_texture;
-    }
+    if (material->get_type() != MATERIAL_UNLIT) {
 
-    if (material->get_type() == MATERIAL_PBR) {
-        Uniform* u = new Uniform();
-        glm::vec3 occlusion_roughness_metallic = { material->get_occlusion(), material->get_roughness(), material->get_metallic() };
-        u->data = webgpu_context->create_buffer(sizeof(glm::vec3), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform, &occlusion_roughness_metallic, "mat_occlusion_roughness_metallic");
-        u->binding = 3;
-        u->buffer_size = sizeof(glm::vec3);
-        uniform_indices[eMaterialProperties::PROP_OCLUSSION_ROUGHNESS_METALLIC] = uniforms.size();
-        uniforms.push_back(u);
+        Texture* metallic_roughness_texture = material->get_metallic_roughness_texture();
+        if (metallic_roughness_texture) {
+            Uniform* u = new Uniform();
+            u->data = metallic_roughness_texture->get_view(WGPUTextureViewDimension_2D, 0, metallic_roughness_texture->get_mipmap_count());
+            u->binding = 2;
+            uniforms.push_back(u);
+            uses_textures |= true;
+            texture_ref = metallic_roughness_texture;
+        }
+
+        // Occlusion, roughness, metallic factors
+        {
+            Uniform* u = new Uniform();
+            glm::vec3 occlusion_roughness_metallic = { material->get_occlusion(), material->get_roughness(), material->get_metallic() };
+            u->data = webgpu_context->create_buffer(sizeof(glm::vec3), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform, &occlusion_roughness_metallic, "mat_occlusion_roughness_metallic");
+            u->binding = 3;
+            u->buffer_size = sizeof(glm::vec3);
+            uniform_indices[eMaterialProperties::PROP_OCLUSSION_ROUGHNESS_METALLIC] = uniforms.size();
+            uniforms.push_back(u);
+        }
+
+        Texture* emissive_texture = material->get_emissive_texture();
+        if (emissive_texture) {
+            Uniform* u = new Uniform();
+            u->data = emissive_texture->get_view(WGPUTextureViewDimension_2D, 0, emissive_texture->get_mipmap_count());
+            u->binding = 5;
+            uniforms.push_back(u);
+            uses_textures |= true;
+            texture_ref = emissive_texture;
+        }
+
+        // Emissive color factor
+        {
+            Uniform* u = new Uniform();
+            const glm::vec3& emissive = material->get_emissive();
+            u->data = webgpu_context->create_buffer(sizeof(glm::vec3), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform, &emissive, "mat_emissive");
+            u->binding = 6;
+            u->buffer_size = sizeof(glm::vec3);
+            uniform_indices[eMaterialProperties::PROP_EMISSIVE] = uniforms.size();
+            uniforms.push_back(u);
+        }
+
+        Texture* occlusion_texture = material->get_occlusion_texture();
+        if (occlusion_texture) {
+            Uniform* u = new Uniform();
+            u->data = occlusion_texture->get_view(WGPUTextureViewDimension_2D, 0, occlusion_texture->get_mipmap_count());
+            u->binding = 9;
+            uniforms.push_back(u);
+            uses_textures |= true;
+            texture_ref = occlusion_texture;
+        }
+
+        if (material->get_clearcoat_factor() > 0.0f) {
+            Uniform* u = new Uniform();
+            glm::vec2 clearcoat_data = { material->get_clearcoat_factor(), material->get_clearcoat_roughness() };
+            u->data = webgpu_context->create_buffer(sizeof(glm::vec2), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform, &clearcoat_data, "mat_clearcoat");
+            u->binding = 12;
+            u->buffer_size = sizeof(glm::vec2);
+            uniform_indices[eMaterialProperties::PROP_CLEARCOAT] = uniforms.size();
+            uniforms.push_back(u);
+        }
     }
 
     Texture* normal_texture = material->get_normal_texture();
@@ -127,36 +173,6 @@ void RendererStorage::register_material_bind_group(WebGPUContext* webgpu_context
         uniforms.push_back(u);
         uses_textures |= true;
         texture_ref = normal_texture;
-    }
-
-    Texture* emissive_texture = material->get_emissive_texture();
-    if (emissive_texture) {
-        Uniform* u = new Uniform();
-        u->data = emissive_texture->get_view(WGPUTextureViewDimension_2D, 0, emissive_texture->get_mipmap_count());
-        u->binding = 5;
-        uniforms.push_back(u);
-        uses_textures |= true;
-        texture_ref = emissive_texture;
-    }
-
-    if (material->get_type() == MATERIAL_PBR) {
-        Uniform* u = new Uniform();
-        const glm::vec3& emissive = material->get_emissive();
-        u->data = webgpu_context->create_buffer(sizeof(glm::vec3), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform, &emissive, "mat_emissive");
-        u->binding = 6;
-        u->buffer_size = sizeof(glm::vec3);
-        uniform_indices[eMaterialProperties::PROP_EMISSIVE] = uniforms.size();
-        uniforms.push_back(u);
-    }
-
-    Texture* occlusion_texture = material->get_occlusion_texture();
-    if (occlusion_texture) {
-        Uniform* u = new Uniform();
-        u->data = occlusion_texture->get_view(WGPUTextureViewDimension_2D, 0, occlusion_texture->get_mipmap_count());
-        u->binding = 9;
-        uniforms.push_back(u);
-        uses_textures |= true;
-        texture_ref = occlusion_texture;
     }
 
     // Add a sampler for basic 2d textures if there's any texture as uniforms
@@ -223,16 +239,6 @@ void RendererStorage::register_material_bind_group(WebGPUContext* webgpu_context
         }
     }
 
-    if (material->get_clearcoat_factor() > 0.0f) {
-        Uniform* u = new Uniform();
-        glm::vec2 clearcoat_data = { material->get_clearcoat_factor(), material->get_clearcoat_roughness() };
-        u->data = webgpu_context->create_buffer(sizeof(glm::vec2), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform, &clearcoat_data, "mat_clearcoat");
-        u->binding = 12;
-        u->buffer_size = sizeof(glm::vec2);
-        uniform_indices[eMaterialProperties::PROP_CLEARCOAT] = uniforms.size();
-        uniforms.push_back(u);
-    }
-
     material->reset_dirty_flags();
 
     if (material->get_fragment_write() || (!material->get_fragment_write() && material->get_use_skinning())) {
@@ -294,6 +300,12 @@ void RendererStorage::update_material_bind_group(WebGPUContext* webgpu_context, 
         Uniform* u = uniforms[uniform_indices[eMaterialProperties::PROP_ALPHA_MASK]];
         float alpha_mask = material->get_alpha_mask();
         webgpu_context->update_buffer(std::get<WGPUBuffer>(u->data), 0, &alpha_mask, sizeof(float));
+    }
+
+    if (dirty_flags & eMaterialProperties::PROP_CLEARCOAT && material->get_type() == MATERIAL_PBR) {
+        Uniform* u = uniforms[uniform_indices[eMaterialProperties::PROP_CLEARCOAT]];
+        glm::vec2 clearcoat_data = { material->get_clearcoat_factor(), material->get_clearcoat_roughness() };
+        webgpu_context->update_buffer(std::get<WGPUBuffer>(u->data), 0, &clearcoat_data, sizeof(glm::vec2));
     }
 
     material->reset_dirty_flags();
@@ -598,10 +610,6 @@ std::vector<std::string> RendererStorage::get_common_define_specializations(cons
 
     std::vector<std::string> define_specializations;
 
-    if (material->get_clearcoat_factor() > 0.0f) {
-        define_specializations.push_back("HAS_CLEARCOAT");
-    }
-
     if (material->get_diffuse_texture()) {
         define_specializations.push_back("ALBEDO_TEXTURE");
     }
@@ -620,6 +628,10 @@ std::vector<std::string> RendererStorage::get_common_define_specializations(cons
 
     if (material->get_occlusion_texture()) {
         define_specializations.push_back("OCLUSSION_TEXTURE");
+    }
+
+    if (material->get_clearcoat_factor() > 0.0f) {
+        define_specializations.push_back("CLEARCOAT_MATERIAL");
     }
 
     if (!define_specializations.empty()) {
