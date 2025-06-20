@@ -223,6 +223,16 @@ void RendererStorage::register_material_bind_group(WebGPUContext* webgpu_context
         }
     }
 
+    if (material->get_clearcoat_factor() > 0.0f) {
+        Uniform* u = new Uniform();
+        glm::vec2 clearcoat_data = { material->get_clearcoat_factor(), material->get_clearcoat_roughness() };
+        u->data = webgpu_context->create_buffer(sizeof(glm::vec2), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform, &clearcoat_data, "mat_clearcoat");
+        u->binding = 12;
+        u->buffer_size = sizeof(glm::vec2);
+        uniform_indices[eMaterialProperties::PROP_CLEARCOAT] = uniforms.size();
+        uniforms.push_back(u);
+    }
+
     material->reset_dirty_flags();
 
     if (material->get_fragment_write() || (!material->get_fragment_write() && material->get_use_skinning())) {
@@ -587,6 +597,10 @@ std::vector<std::string> RendererStorage::get_common_define_specializations(cons
     }
 
     std::vector<std::string> define_specializations;
+
+    if (material->get_clearcoat_factor() > 0.0f) {
+        define_specializations.push_back("HAS_CLEARCOAT");
+    }
 
     if (material->get_diffuse_texture()) {
         define_specializations.push_back("ALBEDO_TEXTURE");

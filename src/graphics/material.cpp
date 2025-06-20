@@ -69,6 +69,18 @@ void Material::set_emissive(const glm::vec3& emissive)
     dirty_flags |= eMaterialProperties::PROP_EMISSIVE;
 }
 
+void Material::set_clearcoat_factor(float new_clearcoat_factor)
+{
+    this->clearcoat_factor = new_clearcoat_factor;
+    dirty_flags |= eMaterialProperties::PROP_CLEARCOAT;
+}
+
+void Material::set_clearcoat_roughness(float new_clearcoat_roughness)
+{
+    this->clearcoat_roughness = new_clearcoat_roughness;
+    dirty_flags |= eMaterialProperties::PROP_CLEARCOAT;
+}
+
 void Material::set_diffuse_texture(Texture* diffuse_texture)
 {
     if (this->diffuse_texture != diffuse_texture) {
@@ -255,6 +267,16 @@ float Material::get_occlusion() const
 glm::vec3 Material::get_emissive() const
 {
     return emissive;
+}
+
+float Material::get_clearcoat_factor() const
+{
+    return clearcoat_factor;
+}
+
+float Material::get_clearcoat_roughness() const
+{
+    return clearcoat_roughness;
 }
 
 const Texture* Material::get_diffuse_texture() const

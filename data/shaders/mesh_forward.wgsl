@@ -59,6 +59,10 @@
 @group(2) @binding(11) var<storage, read> inv_bind_matrices: array<mat4x4f>;
 #endif
 
+#ifdef HAS_CLEARCOAT
+@group(2) @binding(12) var<uniform> clearcoat_data: vec2f;
+#endif
+
 #ifndef UNLIT_MATERIAL
 @group(3) @binding(0) var irradiance_texture: texture_cube<f32>;
 @group(3) @binding(1) var brdf_lut_texture: texture_2d<f32>;
@@ -69,7 +73,7 @@
 
 @vertex
 fn vs_main(in: VertexInput) -> VertexOutput {
-    
+
     var position = vec4f(in.position, 1.0);
     var normals = vec4f(in.normal, 0.0);
 
@@ -199,11 +203,75 @@ fn fs_main(in: VertexOutput, @builtin(front_facing) is_front_facing: bool) -> Fr
     m.diffuse = mix(m.albedo, vec3f(0.0), m.metallic);
     m.f0 = mix(vec3f(0.04), m.albedo, m.metallic);
     m.f90 = vec3f(1.0);
+    m.ior = 1.5; // default IOR for most materials
     m.specular_weight = 1.0;
 
-    final_color += get_indirect_light(&m);
+#ifdef HAS_CLEARCOAT
+
+// #ifdef HAS_CLEARCOAT_NORMAL_MAP
+//     let clearcoat_normal_uv : vec2f = in.uv;//getClearcoatNormalUV();
+//     var clearcoat_normal : vec3f = textureSample(clearcoat_normal_texture, sampler_2d, clearcoat_normal_uv).rgb * 2.0 - vec3(1.0);
+//     clearcoat_normal = mat3x3f(in.tangent, in.bitangent, in.normal) * normalize(clearcoat_normal);
+//     return n;
+// #else
+    var clearcoat_normal : vec3f = m.normal;
+// #endif
+
+    m.clearcoat_factor = clearcoat_data.x;
+    m.clearcoat_roughness = clearcoat_data.y;
+    m.clearcoat_f0 = vec3f(pow((m.ior - 1.0) / (m.ior + 1.0), 2.0));
+    m.clearcoat_f90 = vec3f(1.0);
+
+// #ifdef HAS_CLEARCOAT_MAP
+//     let clearcoat_uv : vec2f = in.uv;//getClearcoatUV();
+//     let clearcoat_sample : vec4f = textureSample(clearcoat_texture, sampler_2d, clearcoat_uv);
+//     m.clearcoat_factor *= clearcoat_sample.r;
+// #endif
+
+// #ifdef HAS_CLEARCOAT_ROUGHNESS_MAP
+//     let clearcoat_roughness_uv : vec2f = in.uv;//getClearcoatRoughnessUV();
+//     let clearcoat_sample_roughness : vec4f = textureSample(clearcoat_roughness_texture, sampler_2d, clearcoat_roughness_uv);
+//     m.clearcoat_roughness *= clearcoat_sample_roughness.g;
+// #endif
+
+    m.clearcoat_normal = clearcoat_normal;
+    m.clearcoat_roughness = clamp(m.clearcoat_roughness, 0.04, 1.0);
+
+#endif
+
+// #ifdef MATERIAL_IRIDESCENCE
+
+//     m.iridescence_factor = u_IridescenceFactor;
+//     m.iridescence_ior = u_IridescenceIor;
+//     m.iridescence_thickness = u_IridescenceThicknessMaximum;
+
+// #ifdef HAS_IRIDESCENCE_MAP
+//     info.iridescence_factor *= texture(u_IridescenceSampler, getIridescenceUV()).r;
+// #endif
+
+//     #ifdef HAS_IRIDESCENCE_THICKNESS_MAP
+//         let thickness_sampled : f32 = texture(u_IridescenceThicknessSampler, getIridescenceThicknessUV()).g;
+//         let thickness : f32 = mix(u_IridescenceThicknessMinimum, u_IridescenceThicknessMaximum, thickness_sampled);
+//         m.iridescence_thickness = thickness;
+//     #endif
+
+// #endif
+
+    final_color = get_indirect_light(&m);
+
+    var clearcoat_fresnel : vec3f = vec3f(0.0);
+    var clearcoat_brdf : vec3f = vec3f(0.0);
+
+#ifdef HAS_CLEARCOAT
+    let cc_normal_dot_v : f32 = clamp(dot(m.clearcoat_normal, m.view_dir), 0.0, 1.0);
+    clearcoat_fresnel = F_Schlick(m.clearcoat_f0, m.clearcoat_f90, cc_normal_dot_v);
+    clearcoat_brdf = get_ibl_radiance_ggx(m.clearcoat_normal, m.view_dir, m.clearcoat_roughness);
+    final_color = mix(final_color, clearcoat_brdf, m.clearcoat_factor * clearcoat_fresnel);
+#endif
+
     final_color += get_direct_light(&m);
-    final_color += m.emissive;
+
+    final_color = m.emissive * (1.0 - m.clearcoat_factor * clearcoat_fresnel) + final_color;
 #else
     final_color += m.albedo;
 #endif

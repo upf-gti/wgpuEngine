@@ -653,6 +653,46 @@ void read_mesh(const tinygltf::Model& model, const tinygltf::Node& node, Node3D*
 
             material->set_emissive({ gltf_material.emissiveFactor[0], gltf_material.emissiveFactor[1], gltf_material.emissiveFactor[2] });
 
+            auto it = gltf_material.extensions.find("KHR_materials_clearcoat");
+            if (it != gltf_material.extensions.end()) {
+                const tinygltf::Value& ext = it->second;
+
+                if (ext.Has("clearcoatFactor")) {
+                    material->set_clearcoat_factor(static_cast<float>(ext.Get("clearcoatFactor").GetNumberAsDouble()));
+                }
+
+                if (ext.Has("clearcoatRoughnessFactor")) {
+                    material->set_clearcoat_roughness(static_cast<float>(ext.Get("clearcoatRoughnessFactor").GetNumberAsDouble()));
+                }
+
+                // Clearcoat texture index
+                //int clearcoatTexIndex = -1;
+                //if (ext.Has("clearcoatTexture")) {
+                //    const auto& tex = ext.Get("clearcoatTexture");
+                //    if (tex.Has("index")) {
+                //        clearcoatTexIndex = tex.Get("index").Get<int>();
+                //    }
+                //}
+
+                //// Clearcoat roughness texture index
+                //int clearcoatRoughnessTexIndex = -1;
+                //if (ext.Has("clearcoatRoughnessTexture")) {
+                //    const auto& tex = ext.Get("clearcoatRoughnessTexture");
+                //    if (tex.Has("index")) {
+                //        clearcoatRoughnessTexIndex = tex.Get("index").Get<int>();
+                //    }
+                //}
+
+                //// Clearcoat normal texture index
+                //int clearcoatNormalTexIndex = -1;
+                //if (ext.Has("clearcoatNormalTexture")) {
+                //    const auto& tex = ext.Get("clearcoatNormalTexture");
+                //    if (tex.Has("index")) {
+                //        clearcoatNormalTexIndex = tex.Get("index").Get<int>();
+                //    }
+                //}
+            }
+
             if (gltf_material.doubleSided) {
                 material->set_cull_type(CULL_NONE);
             }

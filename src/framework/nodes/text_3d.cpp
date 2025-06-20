@@ -23,7 +23,6 @@ Text3D::~Text3D()
 {
     if (font) {
         font->unref();
-        delete font;
     }
 }
 

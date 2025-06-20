@@ -179,3 +179,17 @@ fn get_indirect_light( m : ptr<function, PbrMaterial> ) -> vec3f
     // Combine factors and add AO
     return (diffuse + specular) * m.ao;
 }
+
+fn get_ibl_radiance_ggx( n : vec3f, v : vec3f, roughness : f32 ) -> vec3f
+{
+    let n_dot_v = clamp(dot(n, v), 0.0, 1.0);
+    let max_mipmap : f32 = 5.0;
+    let lod : f32 = roughness * max_mipmap;
+
+    let reflection : vec3f = normalize(reflect(-v, n));
+
+    var specular_sample : vec3f = textureSampleLevel(irradiance_texture, sampler_clamp, reflection, lod).rgb;
+    specular_sample *= camera_data.ibl_intensity;
+
+    return specular_sample;
+}
