@@ -1,5 +1,6 @@
 #pragma once
 
+#include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
 
@@ -43,31 +44,32 @@ enum eMaterialProperties : uint32_t {
     PROP_OCLUSSION_ROUGHNESS_METALLIC   = 1 << 1,
     PROP_EMISSIVE                       = 1 << 2,
     PROP_CLEARCOAT                      = 1 << 3,
-    PROP_DIFFUSE_TEXTURE                = 1 << 4,
-    PROP_METALLIC_ROUGHNESS_TEXTURE     = 1 << 5,
-    PROP_NORMAL_TEXTURE                 = 1 << 6,
-    PROP_EMISSIVE_TEXTURE               = 1 << 7,
-    PROP_OCLUSSION_TEXTURE              = 1 << 8,
-    PROP_CLEARCOAT_TEXTURE              = 1 << 9,
-    PROP_CLEARCOAT_ROUGHNESS_TEXTURE    = 1 << 10,
-    PROP_CLEARCOAT_NORMAL_TEXTURE       = 1 << 11,
-    PROP_DEPTH_READ                     = 1 << 12,
-    PROP_DEPTH_WRITE                    = 1 << 13,
-    PROP_FRAGMENT_WRITE                 = 1 << 14,
-    PROP_USE_SKINNING                   = 1 << 15,
-    PROP_TRANSPARENCY_TYPE              = 1 << 16,
-    PROP_TOPOLOGY_TYPE                  = 1 << 17,
-    PROP_CULL_TYPE                      = 1 << 18,
-    PROP_TYPE                           = 1 << 19,
-    PROP_PRIORITY                       = 1 << 20,
-    PROP_ALPHA_MASK                     = 1 << 21,
-    PROP_SHADER                         = 1 << 22,
+    PROP_IRIDESCENCE                    = 1 << 4,
+    PROP_DIFFUSE_TEXTURE                = 1 << 5,
+    PROP_METALLIC_ROUGHNESS_TEXTURE     = 1 << 6,
+    PROP_NORMAL_TEXTURE                 = 1 << 7,
+    PROP_EMISSIVE_TEXTURE               = 1 << 8,
+    PROP_OCLUSSION_TEXTURE              = 1 << 9,
+    PROP_CLEARCOAT_TEXTURE              = 1 << 10,
+    PROP_CLEARCOAT_ROUGHNESS_TEXTURE    = 1 << 11,
+    PROP_CLEARCOAT_NORMAL_TEXTURE       = 1 << 12,
+    PROP_DEPTH_READ                     = 1 << 13,
+    PROP_DEPTH_WRITE                    = 1 << 14,
+    PROP_FRAGMENT_WRITE                 = 1 << 15,
+    PROP_USE_SKINNING                   = 1 << 16,
+    PROP_TRANSPARENCY_TYPE              = 1 << 17,
+    PROP_TOPOLOGY_TYPE                  = 1 << 18,
+    PROP_CULL_TYPE                      = 1 << 19,
+    PROP_TYPE                           = 1 << 20,
+    PROP_PRIORITY                       = 1 << 21,
+    PROP_ALPHA_MASK                     = 1 << 22,
+    PROP_SHADER                         = 1 << 23,
 
     PROP_RELOAD_NEEDED                  = PROP_DIFFUSE_TEXTURE | PROP_METALLIC_ROUGHNESS_TEXTURE | PROP_NORMAL_TEXTURE | PROP_EMISSIVE_TEXTURE | PROP_TRANSPARENCY_TYPE |
                                           PROP_OCLUSSION_TEXTURE | PROP_CLEARCOAT_TEXTURE | PROP_CLEARCOAT_ROUGHNESS_TEXTURE | PROP_CLEARCOAT_NORMAL_TEXTURE | PROP_DEPTH_READ |
                                           PROP_DEPTH_WRITE | PROP_FRAGMENT_WRITE | PROP_TOPOLOGY_TYPE | PROP_CULL_TYPE | PROP_TYPE,
 
-    PROP_UPDATE_NEEDED                  = PROP_COLOR | PROP_OCLUSSION_ROUGHNESS_METALLIC | PROP_EMISSIVE | PROP_CLEARCOAT | PROP_ALPHA_MASK
+    PROP_UPDATE_NEEDED                  = PROP_COLOR | PROP_OCLUSSION_ROUGHNESS_METALLIC | PROP_EMISSIVE | PROP_CLEARCOAT | PROP_IRIDESCENCE | PROP_ALPHA_MASK
 };
 
 class Material : public Resource
@@ -85,6 +87,10 @@ public:
     void set_emissive(const glm::vec3& emissive);
     void set_clearcoat_factor(float new_clearcoat_factor);
     void set_clearcoat_roughness(float new_clearcoat_roughness);
+    void set_iridescence_factor(float new_iridescence_factor);
+    void set_iridescence_ior(float new_iridescence_ior);
+    void set_iridescence_thickness_min(float new_iridescence_thickness_min);
+    void set_iridescence_thickness_max(float new_iridescence_thickness_max);
 
     void set_diffuse_texture(Texture* diffuse_texture);
     void set_metallic_roughness_texture(Texture* metallic_roughness_texture);
@@ -120,6 +126,10 @@ public:
     glm::vec3 get_emissive() const;
     float get_clearcoat_factor() const;
     float get_clearcoat_roughness() const;
+    float get_iridescence_factor() const;
+    float get_iridescence_ior() const;
+    float get_iridescence_thickness_min() const;
+    float get_iridescence_thickness_max() const;
 
     const Texture* get_diffuse_texture() const;
     const Texture* get_metallic_roughness_texture() const;
@@ -187,6 +197,11 @@ private:
 
     float clearcoat_factor = 0.0f;
     float clearcoat_roughness = 0.0f;
+
+    float iridescence_factor = 0.0f;
+    float iridescence_ior = 1.3f;
+    float iridescence_thickness_min = 100.0f;
+    float iridescence_thickness_max = 400.0f; // nanometers
 
     bool depth_read = true;
     bool depth_write = true;

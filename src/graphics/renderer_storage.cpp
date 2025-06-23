@@ -154,6 +154,10 @@ void RendererStorage::register_material_bind_group(WebGPUContext* webgpu_context
             texture_ref = occlusion_texture;
         }
 
+        /*
+        *   ClearCoat
+        */
+
         if (material->get_clearcoat_factor() > 0.0f) {
             Uniform* u = new Uniform();
             glm::vec2 clearcoat_data = { material->get_clearcoat_factor(), material->get_clearcoat_roughness() };
@@ -192,6 +196,20 @@ void RendererStorage::register_material_bind_group(WebGPUContext* webgpu_context
             uniforms.push_back(u);
             uses_textures |= true;
             texture_ref = clearcoat_normal_texture;
+        }
+
+        /*
+        *   Iridescence
+        */
+
+        if (material->get_iridescence_factor() > 0.0f) {
+            Uniform* u = new Uniform();
+            glm::vec4 iridescence_data = { material->get_iridescence_factor(), material->get_iridescence_ior(), material->get_iridescence_thickness_min(), material->get_iridescence_thickness_max() };
+            u->data = webgpu_context->create_buffer(sizeof(glm::vec4), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform, &iridescence_data, "mat_iridescence");
+            u->binding = 16;
+            u->buffer_size = sizeof(glm::vec4);
+            uniform_indices[eMaterialProperties::PROP_IRIDESCENCE] = uniforms.size();
+            uniforms.push_back(u);
         }
     }
 
@@ -336,6 +354,12 @@ void RendererStorage::update_material_bind_group(WebGPUContext* webgpu_context, 
         Uniform* u = uniforms[uniform_indices[eMaterialProperties::PROP_CLEARCOAT]];
         glm::vec2 clearcoat_data = { material->get_clearcoat_factor(), material->get_clearcoat_roughness() };
         webgpu_context->update_buffer(std::get<WGPUBuffer>(u->data), 0, &clearcoat_data, sizeof(glm::vec2));
+    }
+
+    if (dirty_flags & eMaterialProperties::PROP_IRIDESCENCE && material->get_type() == MATERIAL_PBR) {
+        Uniform* u = uniforms[uniform_indices[eMaterialProperties::PROP_IRIDESCENCE]];
+        glm::vec4 iridescence_data = { material->get_iridescence_factor(), material->get_iridescence_ior(), material->get_iridescence_thickness_min(), material->get_iridescence_thickness_max() };
+        webgpu_context->update_buffer(std::get<WGPUBuffer>(u->data), 0, &iridescence_data, sizeof(glm::vec4));
     }
 
     material->reset_dirty_flags();
@@ -674,6 +698,10 @@ std::vector<std::string> RendererStorage::get_common_define_specializations(cons
 
     if (material->get_clearcoat_factor() > 0.0f) {
         define_specializations.push_back("CLEARCOAT_MATERIAL");
+    }
+
+    if (material->get_iridescence_factor() > 0.0f) {
+        define_specializations.push_back("IRIDESCENCE_MATERIAL");
     }
 
     if (!define_specializations.empty()) {

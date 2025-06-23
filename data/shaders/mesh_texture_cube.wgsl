@@ -45,6 +45,9 @@ fn fs_main(in: SkyboxVertexOutput) -> FragmentOutput {
     var out: FragmentOutput;
     var final_color : vec3f = textureSampleLevel(irradiance_texture, sampler_clamp, in.vertex_position, 1.0).rgb * camera_data.ibl_intensity;
 
+    // White furnace test
+    // final_color = vec3f(1.0);
+
     final_color *= camera_data.exposure;
     final_color = tonemap_khronos_pbr_neutral(final_color);
 

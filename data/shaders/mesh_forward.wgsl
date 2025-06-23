@@ -1,10 +1,14 @@
+#include math.wgsl
 #include mesh_includes.wgsl
 #include pbr_functions.wgsl
 #include tonemappers.wgsl
 #include pbr_material.wgsl
-#include math.wgsl
 
 #define MAX_LIGHTS
+
+#ifdef IRIDESCENCE_MATERIAL
+#include pbr_iridescence.wgsl
+#endif
 
 #ifndef UNLIT_MATERIAL
 #include pbr_light.wgsl
@@ -54,6 +58,10 @@
 
 #ifdef CLEARCOAT_NORMAL_TEXTURE
 @group(2) @binding(15) var clearcoat_normal_texture: texture_2d<f32>;
+#endif
+
+#ifdef IRIDESCENCE_MATERIAL
+@group(2) @binding(16) var<uniform> iridescence_data: vec4f;
 #endif
 
 #endif
@@ -205,6 +213,26 @@ fn fs_main(in: VertexOutput, @builtin(front_facing) is_front_facing: bool) -> Fr
     m.roughness = max(m.roughness, 0.04);
     m.diffuse = mix(m.albedo, vec3f(0.0), m.metallic);
     m.f0 = mix(vec3f(0.04), m.albedo, m.metallic);
+    m.f0_dielectric = vec3f(0.04);
+    m.clearcoat_fresnel = vec3f(0.0);
+
+#ifdef IRIDESCENCE_MATERIAL
+
+    m.iridescence_factor = iridescence_data.x;
+    m.iridescence_ior = iridescence_data.y;
+    m.iridescence_thickness = iridescence_data.w;
+
+#ifdef IRIDESCENCE_TEXTURE
+    // info.iridescence_factor *= texture(u_IridescenceSampler, getIridescenceUV()).r;
+#endif
+
+#ifdef IRIDESCENCE_THICKNESS_TEXTURE
+    // let thickness_sampled : f32 = texture(u_IridescenceThicknessSampler, getIridescenceThicknessUV()).g;
+    // let thickness : f32 = mix(u_IridescenceThicknessMinimum, u_IridescenceThicknessMaximum, thickness_sampled);
+    // m.iridescence_thickness = thickness;
+#endif
+
+#endif
 
 #ifdef CLEARCOAT_MATERIAL
 
@@ -243,38 +271,11 @@ fn fs_main(in: VertexOutput, @builtin(front_facing) is_front_facing: bool) -> Fr
 
 #endif
 
-// #ifdef MATERIAL_IRIDESCENCE
-
-//     m.iridescence_factor = u_IridescenceFactor;
-//     m.iridescence_ior = u_IridescenceIor;
-//     m.iridescence_thickness = u_IridescenceThicknessMaximum;
-
-// #ifdef HAS_IRIDESCENCE_MAP
-//     info.iridescence_factor *= texture(u_IridescenceSampler, getIridescenceUV()).r;
-// #endif
-
-//     #ifdef HAS_IRIDESCENCE_THICKNESS_MAP
-//         let thickness_sampled : f32 = texture(u_IridescenceThicknessSampler, getIridescenceThicknessUV()).g;
-//         let thickness : f32 = mix(u_IridescenceThicknessMinimum, u_IridescenceThicknessMaximum, thickness_sampled);
-//         m.iridescence_thickness = thickness;
-//     #endif
-
-// #endif
-
     final_color = get_indirect_light(&m);
-
-    var clearcoat_fresnel : vec3f = vec3f(0.0);
-
-#ifdef CLEARCOAT_MATERIAL
-    let cc_normal_dot_v : f32 = clamp(dot(m.clearcoat_normal, m.view_dir), 0.0, 1.0);
-    clearcoat_fresnel = F_Schlick(m.clearcoat_f0, m.clearcoat_f90, cc_normal_dot_v);
-    let clearcoat_brdf : vec3f = get_ibl_radiance_ggx(m.clearcoat_normal, m.view_dir, m.clearcoat_roughness);
-    final_color = mix(final_color, clearcoat_brdf, m.clearcoat_factor * clearcoat_fresnel);
-#endif
 
     final_color += get_direct_light(&m);
 
-    final_color += m.emissive * (1.0 - m.clearcoat_factor * clearcoat_fresnel);
+    final_color += m.emissive * (1.0 - m.clearcoat_factor * m.clearcoat_fresnel);
 #else
     final_color += m.albedo;
 #endif
@@ -287,6 +288,9 @@ fn fs_main(in: VertexOutput, @builtin(front_facing) is_front_facing: bool) -> Fr
     }
 
     out.color = vec4f(final_color, alpha);
+    //out.color = vec4f(pow(vec3f(m.albedo), vec3(1.0 / 2.2)), alpha);
+    //out.color = vec4f(vec3f(m.metallic), alpha);
+    //out.color = vec4f((m.normal + vec3f(1.0)) * 0.5, alpha);
 
     return out;
 }

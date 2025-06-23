@@ -6,6 +6,7 @@ struct PbrMaterial
     albedo : vec3f,
     emissive : vec3f,
     f0 : vec3f,
+    f0_dielectric : vec3f,
     f90 : vec3f,
     ior: f32,
     diffuse : vec3f,
@@ -20,6 +21,7 @@ struct PbrMaterial
     clearcoat_factor : f32,
     clearcoat_normal: vec3f,
     clearcoat_roughness : f32,
+    clearcoat_fresnel: vec3f,
 
     // KHR_materials_iridescence
     iridescence_factor : f32,

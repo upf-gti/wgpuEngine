@@ -132,52 +132,81 @@ fn get_indirect_light( m : ptr<function, PbrMaterial> ) -> vec3f
     let lod : f32 = roughness * max_mipmap;
 
     // IBL
-    // https://github.com/mrdoob/three.js/blob/c48f842f5d0fdff950c1a004803e659171bbcb85/src/renderers/shaders/ShaderChunk/lights_physical_pars_fragment.glsl.js#L543
     // Specular + Diffuse
-
-    let fresnel : vec3f = FresnelSchlickRoughness(n_dot_v, m.f0, roughness);
-
-    // Specular color
-
-    let brdf_coords : vec2f = clamp(vec2f(n_dot_v, roughness), vec2f(0.0, 0.0), vec2f(1.0, 1.0));
-    let brdf_lut : vec2f = textureSampleLevel(brdf_lut_texture, sampler_clamp, brdf_coords, 0.0).rg;
 
     // Mixing the reflection with the normal is more accurate and keeps rough objects from gathering light from behind their tangent plane
     // https://github.com/mrdoob/three.js/blob/c48f842f5d0fdff950c1a004803e659171bbcb85/src/renderers/shaders/ShaderChunk/envmap_physical_pars_fragment.glsl.js#L29
     let reflected_dir : vec3f = normalize( mix( m.reflected_dir, m.normal, roughness * roughness) );
     
-    let radiance : vec3f = textureSampleLevel(irradiance_texture, sampler_clamp, reflected_dir, lod).rgb * camera_data.ibl_intensity;
-    let irradiance : vec3f = textureSampleLevel(irradiance_texture, sampler_clamp, m.normal, max_mipmap).rgb * camera_data.ibl_intensity * PI;
+    var radiance : vec3f = textureSampleLevel(irradiance_texture, sampler_clamp, reflected_dir, lod).rgb * camera_data.ibl_intensity;
+    var irradiance : vec3f = textureSampleLevel(irradiance_texture, sampler_clamp, m.normal, max_mipmap).rgb * camera_data.ibl_intensity;// * PI;
 
-    let cosine_weight_irradiance : vec3f = irradiance / PI;
+    // White furnace test
+    // radiance = vec3f(1.0);
+    // irradiance = vec3f(1.0);
 
-    // alternative for brdf_lut to avoid texture sample
-    // let c0 : vec4f = vec4f(-1.0, -0.0275, -0.572, 0.022);
-    // let c1 : vec4f = vec4f(1.0, 0.0425, 1.04, -0.04);
-    // let r : vec4f = roughness * c0 + c1;
-    // let a004 : f32 = min(r.x * r.x, exp2(-9.28 * n_dot_v)) * r.x + r.y;
-    // let brdf_lut : vec2f = vec2f(-1.04, 1.04) * a004 + r.zw;
+    // Combined dielectric and metallic IBL
+    // https://github.com/mrdoob/three.js/blob/c48f842f5d0fdff950c1a004803e659171bbcb85/src/renderers/shaders/ShaderChunk/lights_physical_pars_fragment.glsl.js#L543
 
-    let fss_ess : vec3f = m.f0 * brdf_lut.x + brdf_lut.y;
+    // let cosine_weight_irradiance : vec3f = irradiance;// / PI;
 
-    // Multiple scattering (from: http://www.jcgt.org/published/0008/01/03/)
-    let Ess : f32 = brdf_lut.x + brdf_lut.y;
-    let Ems : f32 = 1.0 - Ess;
-    let Favg : vec3f = m.f0 + (1.0 - m.f0) * 0.047619; // 1 / 21
-    let Fms : vec3f = fss_ess * Favg / (1.0 - Ems * Favg);
+    // let brdf_coords : vec2f = clamp(vec2f(n_dot_v, roughness), vec2f(0.0, 0.0), vec2f(1.0, 1.0));
+    // let brdf_lut : vec2f = textureSampleLevel(brdf_lut_texture, sampler_clamp, brdf_coords, 0.0).rg;
+    // let fss_ess : vec3f = m.f0 * brdf_lut.x + brdf_lut.y;
+    // let Ess : f32 = brdf_lut.x + brdf_lut.y;
+    // let Ems : f32 = 1.0 - Ess;
+    // let Favg : vec3f = m.f0 + (1.0 - m.f0) * 0.047619; // 1 / 21
+    // let Fms : vec3f = fss_ess * Favg / (1.0 - Ems * Favg);
+    // let single_scatter = fss_ess;
+    // let multi_scatter = Fms * Ems;
 
-    let single_scatter = fss_ess;
-    let multi_scatter = Fms * Ems;
+    // let total_scattering : vec3f = single_scatter + multi_scatter;
+    // var diffuse : vec3f = cosine_weight_irradiance * (m.diffuse / PI) + m.diffuse * (1.0 - max(max(total_scattering.r, total_scattering.g), total_scattering.b)) * cosine_weight_irradiance;
+    // var specular : vec3f = single_scatter * radiance + multi_scatter * cosine_weight_irradiance;
+    // var total_indirect : vec3f = diffuse + specular;
 
-    // Diffuse color
+    // Separate Fresnel for metallic and dielectric materials
+    // https://github.com/KhronosGroup/glTF-Sample-Renderer/blob/3dc1bd9bae75f67c1414bbdaf1bdfddb89aa39d6/source/Renderer/shaders/pbr.frag
 
-    let total_scattering : vec3f = single_scatter + multi_scatter;
+    var f_metal_fresnel_ibl : vec3f = get_ibl_ggx_fresnel(m, m.albedo);
+    var f_metal_brdf_ibl : vec3f = f_metal_fresnel_ibl * radiance;
 
-    let diffuse : vec3f = cosine_weight_irradiance * (m.diffuse / PI) + m.diffuse * (1.0 - max(max(total_scattering.r, total_scattering.g), total_scattering.b)) * cosine_weight_irradiance;
-    let specular : vec3f = single_scatter * radiance + multi_scatter * cosine_weight_irradiance;
+    let f_diffuse : vec3f = irradiance * m.albedo;
+    var f_dielectric_fresnel_ibl : vec3f = get_ibl_ggx_fresnel(m, m.f0_dielectric);
+    var f_dielectric_brdf_ibl : vec3f = mix(f_diffuse, radiance, f_dielectric_fresnel_ibl);
 
-    // Combine factors and add AO
-    return (diffuse + specular) * m.ao;
+#ifdef IRIDESCENCE_MATERIAL
+    let iridescence_fresnel_dielectric : vec3f = eval_iridescence(1.0, m.iridescence_ior, m.n_dot_v, m.iridescence_thickness, vec3f(0.04));
+    let iridescence_fresnel_metallic : vec3f = eval_iridescence(1.0, m.iridescence_ior, m.n_dot_v, m.iridescence_thickness, m.albedo);
+    let iridescence_fresnel : vec3f = mix(iridescence_fresnel_dielectric, iridescence_fresnel_metallic, m.metallic);
+
+    if (m.iridescence_thickness == 0.0) {
+        m.iridescence_factor = 0.0;
+    }
+
+    var mixed : vec3f = vec3f(
+        mix(f_diffuse.r, radiance.r, iridescence_fresnel_dielectric.r),
+        mix(f_diffuse.g, radiance.g, iridescence_fresnel_dielectric.g),
+        mix(f_diffuse.b, radiance.b, iridescence_fresnel_dielectric.b)
+    );
+
+    f_metal_brdf_ibl = mix(f_metal_brdf_ibl, radiance * iridescence_fresnel_metallic, m.iridescence_factor);
+    f_dielectric_brdf_ibl = mix(f_dielectric_brdf_ibl, mixed, m.iridescence_factor);
+
+#endif
+
+    var total_indirect : vec3f = mix(f_dielectric_brdf_ibl, f_metal_brdf_ibl, m.metallic);
+
+#ifdef CLEARCOAT_MATERIAL
+    // Only for IBL
+    let cc_normal_dot_v : f32 = clamp(dot(m.clearcoat_normal, m.view_dir), 0.0, 1.0);
+    m.clearcoat_fresnel = F_Schlick(m.clearcoat_f0, m.clearcoat_f90, cc_normal_dot_v);
+    let clearcoat_brdf : vec3f = get_ibl_radiance_ggx(m.clearcoat_normal, m.view_dir, m.clearcoat_roughness);
+    total_indirect = mix(total_indirect, clearcoat_brdf, m.clearcoat_factor * clearcoat_fresnel);
+#endif
+
+    // Add AO
+    return total_indirect * m.ao;
 }
 
 fn get_ibl_radiance_ggx( n : vec3f, v : vec3f, roughness : f32 ) -> vec3f
@@ -187,9 +216,37 @@ fn get_ibl_radiance_ggx( n : vec3f, v : vec3f, roughness : f32 ) -> vec3f
     let lod : f32 = roughness * max_mipmap;
 
     let reflection : vec3f = normalize(reflect(-v, n));
+    let reflected_dir : vec3f = normalize( mix( reflection, n, roughness * roughness) );
 
-    var specular_sample : vec3f = textureSampleLevel(irradiance_texture, sampler_clamp, reflection, lod).rgb;
+    var specular_sample : vec3f = textureSampleLevel(irradiance_texture, sampler_clamp, reflected_dir, lod).rgb;
     specular_sample *= camera_data.ibl_intensity;
 
     return specular_sample;
+}
+
+fn get_ibl_ggx_fresnel( m : ptr<function, PbrMaterial>, F0 : vec3f ) -> vec3f
+{
+    // see https://bruop.github.io/ibl/#single_scattering_results at Single Scattering Results
+    // Roughness dependent fresnel, from Fdez-Aguera
+    // Multiple scattering (from: http://www.jcgt.org/published/0008/01/03/)
+    let brdf_coords : vec2f = clamp(vec2f(m.n_dot_v, m.roughness), vec2f(0.0), vec2f(1.0));
+    let brdf_lut : vec2f = textureSampleLevel(brdf_lut_texture, sampler_clamp, brdf_coords, 0.0).rg;
+
+    // alternative for brdf_lut to avoid texture sample
+    // let c0 : vec4f = vec4f(-1.0, -0.0275, -0.572, 0.022);
+    // let c1 : vec4f = vec4f(1.0, 0.0425, 1.04, -0.04);
+    // let r : vec4f = roughness * c0 + c1;
+    // let a004 : f32 = min(r.x * r.x, exp2(-9.28 * n_dot_v)) * r.x + r.y;
+    // let brdf_lut : vec2f = vec2f(-1.04, 1.04) * a004 + r.zw;
+
+    // var Fr : vec3f = max(vec3f(1.0 - m.roughness), F0) - F0;
+    var k_S : vec3f = F0;// + Fr * pow(1.0 - m.n_dot_v, 5.0);
+    var FssEss : vec3f = m.specular_weight * (k_S * brdf_lut.x + brdf_lut.y);
+
+    // Multiple scattering, from Fdez-Aguera
+    var Ems : f32 = (1.0 - (brdf_lut.x + brdf_lut.y));
+    var F_avg : vec3f = m.specular_weight * (F0 + (1.0 - F0) / 21.0);
+    var FmsEms : vec3f = Ems * FssEss * F_avg / (1.0 - F_avg * Ems);
+
+    return FssEss + FmsEms;
 }

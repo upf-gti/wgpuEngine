@@ -1,6 +1,16 @@
 const M_PI = 3.14159265359;
 const M_PI_INV = 1.0 / 3.14159265359;
 
+fn sq(x : f32) -> f32
+{
+    return x * x;
+}
+
+fn sq3(v : vec3f) -> vec3f
+{
+    return v * v;
+}
+
 fn quat_mult(q1 : vec4f, q2 : vec4f) -> vec4f
 {
     return vec4f(

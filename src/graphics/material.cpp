@@ -95,6 +95,30 @@ void Material::set_clearcoat_roughness(float new_clearcoat_roughness)
     dirty_flags |= eMaterialProperties::PROP_CLEARCOAT;
 }
 
+void Material::set_iridescence_factor(float new_iridescence_factor)
+{
+    this->iridescence_factor = new_iridescence_factor;
+    dirty_flags |= eMaterialProperties::PROP_IRIDESCENCE;
+}
+
+void Material::set_iridescence_ior(float new_iridescence_ior)
+{
+    this->iridescence_ior = new_iridescence_ior;
+    dirty_flags |= eMaterialProperties::PROP_IRIDESCENCE;
+}
+
+void Material::set_iridescence_thickness_min(float new_iridescence_thickness_min)
+{
+    this->iridescence_thickness_min = new_iridescence_thickness_min;
+    dirty_flags |= eMaterialProperties::PROP_IRIDESCENCE;
+}
+
+void Material::set_iridescence_thickness_max(float new_iridescence_thickness_max)
+{
+    this->iridescence_thickness_max = new_iridescence_thickness_max;
+    dirty_flags |= eMaterialProperties::PROP_IRIDESCENCE;
+}
+
 void Material::set_diffuse_texture(Texture* diffuse_texture)
 {
     if (this->diffuse_texture != diffuse_texture) {
@@ -341,6 +365,26 @@ float Material::get_clearcoat_roughness() const
     return clearcoat_roughness;
 }
 
+float Material::get_iridescence_factor() const
+{
+    return iridescence_factor;
+}
+
+float Material::get_iridescence_ior() const
+{
+    return iridescence_ior;
+}
+
+float Material::get_iridescence_thickness_min() const
+{
+    return iridescence_thickness_min;
+}
+
+float Material::get_iridescence_thickness_max() const
+{
+    return iridescence_thickness_max;
+}
+
 const Texture* Material::get_diffuse_texture() const
 {
     return diffuse_texture;
@@ -562,6 +606,32 @@ void Material::render_gui()
             ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
             if (ImGui::DragFloat("##Clearcoat Roughness", &clearcoat_roughness, 0.01f, 0.0f, 1.0f)) {
                 dirty_flags |= eMaterialProperties::PROP_CLEARCOAT;
+            }
+        }
+
+        // Iridescence
+        {
+            ImGui::Text("Iridescence Factor");
+            ImGui::SameLine(200);
+            ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
+            if (ImGui::DragFloat("##Iridescence Factor", &iridescence_factor, 0.01f, 0.0f, 1.0f)) {
+                dirty_flags |= eMaterialProperties::PROP_IRIDESCENCE;
+            }
+
+            ImGui::Text("Iridescence IOR");
+            ImGui::SameLine(200);
+            ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
+            if (ImGui::DragFloat("##Iridescence IOR", &iridescence_ior, 0.01f, 0.0f, 2.0f)) {
+                dirty_flags |= eMaterialProperties::PROP_IRIDESCENCE;
+            }
+
+            ImGui::Text("Iridescence Thickness");
+            ImGui::SameLine(200);
+            ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
+            glm::vec2 iridescence_thickness = { get_iridescence_thickness_min(), get_iridescence_thickness_max() };
+            if (ImGui::DragFloat2("##Iridescence Thickness", &iridescence_thickness.x, 1.0f, 0.0f, 600.0f)) {
+                set_iridescence_thickness_min(iridescence_thickness.x);
+                set_iridescence_thickness_max(iridescence_thickness.y);
             }
         }
 

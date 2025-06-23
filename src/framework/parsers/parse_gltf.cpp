@@ -667,54 +667,106 @@ void read_mesh(const tinygltf::Model& model, const tinygltf::Node& node, Node3D*
 
                 if (ext.Has("clearcoatTexture")) {
                     const auto& tex = ext.Get("clearcoatTexture");
-                    if (tex.Has("index")) {
-                        int clearcoat_texture_index = tex.Get("index").Get<int>();
-                        if (clearcoat_texture_index >= 0) {
-                            if (texture_cache.contains(clearcoat_texture_index)) {
-                                material->set_clearcoat_texture(texture_cache[clearcoat_texture_index]);
-                            }
-                            else {
-                                Texture* clearcoat_texture = nullptr;
-                                create_material_texture(model, clearcoat_texture_index, &clearcoat_texture, false, false, async_load);
-                                texture_cache[clearcoat_texture_index] = clearcoat_texture;
-                                material->set_clearcoat_texture(clearcoat_texture);
-                            }
+                    assert(tex.Has("index"));
+                    int clearcoat_texture_index = tex.Get("index").Get<int>();
+                    if (clearcoat_texture_index >= 0) {
+                        if (texture_cache.contains(clearcoat_texture_index)) {
+                            material->set_clearcoat_texture(texture_cache[clearcoat_texture_index]);
+                        }
+                        else {
+                            Texture* clearcoat_texture = nullptr;
+                            create_material_texture(model, clearcoat_texture_index, &clearcoat_texture, false, false, async_load);
+                            texture_cache[clearcoat_texture_index] = clearcoat_texture;
+                            material->set_clearcoat_texture(clearcoat_texture);
                         }
                     }
                 }
 
                 if (ext.Has("clearcoatRoughnessTexture")) {
                     const auto& tex = ext.Get("clearcoatRoughnessTexture");
-                    if (tex.Has("index")) {
-                        int clearcoat_roughness_texture_index = tex.Get("index").Get<int>();
-                        if (clearcoat_roughness_texture_index >= 0) {
-                            if (texture_cache.contains(clearcoat_roughness_texture_index)) {
-                                material->set_clearcoat_roughness_texture(texture_cache[clearcoat_roughness_texture_index]);
-                            }
-                            else {
-                                Texture* clearcoat_roughness_texture = nullptr;
-                                create_material_texture(model, clearcoat_roughness_texture_index, &clearcoat_roughness_texture, false, false, async_load);
-                                texture_cache[clearcoat_roughness_texture_index] = clearcoat_roughness_texture;
-                                material->set_clearcoat_roughness_texture(clearcoat_roughness_texture);
-                            }
+                    assert(tex.Has("index"));
+                    int clearcoat_roughness_texture_index = tex.Get("index").Get<int>();
+                    if (clearcoat_roughness_texture_index >= 0) {
+                        if (texture_cache.contains(clearcoat_roughness_texture_index)) {
+                            material->set_clearcoat_roughness_texture(texture_cache[clearcoat_roughness_texture_index]);
+                        }
+                        else {
+                            Texture* clearcoat_roughness_texture = nullptr;
+                            create_material_texture(model, clearcoat_roughness_texture_index, &clearcoat_roughness_texture, false, false, async_load);
+                            texture_cache[clearcoat_roughness_texture_index] = clearcoat_roughness_texture;
+                            material->set_clearcoat_roughness_texture(clearcoat_roughness_texture);
                         }
                     }
                 }
 
                 if (ext.Has("clearcoatNormalTexture")) {
                     const auto& tex = ext.Get("clearcoatNormalTexture");
-                    if (tex.Has("index")) {
-                        int clearcoat_normal_texture_index = tex.Get("index").Get<int>();
-                        if (clearcoat_normal_texture_index >= 0) {
-                            if (texture_cache.contains(clearcoat_normal_texture_index)) {
-                                material->set_clearcoat_normal_texture(texture_cache[clearcoat_normal_texture_index]);
-                            }
-                            else {
-                                Texture* clearcoat_texture = nullptr;
-                                create_material_texture(model, clearcoat_normal_texture_index, &clearcoat_texture, false, false, async_load);
-                                texture_cache[clearcoat_normal_texture_index] = clearcoat_texture;
-                                material->set_clearcoat_normal_texture(clearcoat_texture);
-                            }
+                    assert(tex.Has("index"));
+                    int clearcoat_normal_texture_index = tex.Get("index").Get<int>();
+                    if (clearcoat_normal_texture_index >= 0) {
+                        if (texture_cache.contains(clearcoat_normal_texture_index)) {
+                            material->set_clearcoat_normal_texture(texture_cache[clearcoat_normal_texture_index]);
+                        }
+                        else {
+                            Texture* clearcoat_texture = nullptr;
+                            create_material_texture(model, clearcoat_normal_texture_index, &clearcoat_texture, false, false, async_load);
+                            texture_cache[clearcoat_normal_texture_index] = clearcoat_texture;
+                            material->set_clearcoat_normal_texture(clearcoat_texture);
+                        }
+                    }
+                }
+            }
+
+            it = gltf_material.extensions.find("KHR_materials_iridescence");
+            if (it != gltf_material.extensions.end()) {
+                const tinygltf::Value& ext = it->second;
+
+                if (ext.Has("iridescenceFactor")) {
+                    material->set_iridescence_factor(static_cast<float>(ext.Get("iridescenceFactor").GetNumberAsDouble()));
+                }
+
+                if (ext.Has("iridescenceIor")) {
+                    material->set_iridescence_ior(static_cast<float>(ext.Get("iridescenceIor").GetNumberAsDouble()));
+                }
+
+                if (ext.Has("iridescenceThicknessMinimum")) {
+                    material->set_iridescence_thickness_min(static_cast<float>(ext.Get("iridescenceThicknessMinimum").GetNumberAsDouble()));
+                }
+
+                if (ext.Has("iridescenceThicknessMaximum")) {
+                    material->set_iridescence_thickness_max(static_cast<float>(ext.Get("iridescenceThicknessMaximum").GetNumberAsDouble()));
+                }
+
+                if (ext.Has("iridescenceTexture")) {
+                    const auto& tex = ext.Get("iridescenceTexture");
+                    assert(tex.Has("index"));
+                    int iridescence_texture_index = tex.Get("index").Get<int>();
+                    if (iridescence_texture_index >= 0) {
+                        if (texture_cache.contains(iridescence_texture_index)) {
+                            //material->set_iridescence_texture(texture_cache[iridescence_texture_index]);
+                        }
+                        else {
+                            Texture* iridescence_texture = nullptr;
+                            create_material_texture(model, iridescence_texture_index, &iridescence_texture, false, false, async_load);
+                            texture_cache[iridescence_texture_index] = iridescence_texture;
+                            //material->set_iridescence_texture(iridescence_texture);
+                        }
+                    }
+                }
+
+                if (ext.Has("iridescenceThicknessTexture")) {
+                    const auto& tex = ext.Get("iridescenceThicknessTexture");
+                    assert(tex.Has("index"));
+                    int iridescence_thickness_texture_index = tex.Get("index").Get<int>();
+                    if (iridescence_thickness_texture_index >= 0) {
+                        if (texture_cache.contains(iridescence_thickness_texture_index)) {
+                            // material->set_iridescence_thickness_texture(texture_cache[iridescence_thickness_texture_index]);
+                        }
+                        else {
+                            Texture* iridescence_thickness_texture = nullptr;
+                            create_material_texture(model, iridescence_thickness_texture_index, &iridescence_thickness_texture, false, false, async_load);
+                            texture_cache[iridescence_thickness_texture_index] = iridescence_thickness_texture;
+                            //material->set_iridescence_thickness_texture(iridescence_thickness_texture);
                         }
                     }
                 }
