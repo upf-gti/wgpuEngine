@@ -68,6 +68,7 @@
 
 #ifdef NORMAL_TEXTURE
 @group(2) @binding(4) var normal_texture: texture_2d<f32>;
+@group(2) @binding(17) var<uniform> normal_scale: f32;
 #endif
 
 #ifdef USE_SAMPLER
@@ -148,7 +149,7 @@ fn fs_main(in: VertexOutput, @builtin(front_facing) is_front_facing: bool) -> Fr
 
 #ifdef NORMAL_TEXTURE
     var normal_color = textureSample(normal_texture, sampler_2d, in.uv).rgb * 2.0 - 1.0;
-    // normal_color.y = -normal_color.y;
+    normal_color *= vec3f(normal_scale, normal_scale, 1.0);
 
 #ifdef HAS_TANGENTS
     let TBN : mat3x3f = mat3x3f(in.tangent, in.bitangent, m.normal_g);

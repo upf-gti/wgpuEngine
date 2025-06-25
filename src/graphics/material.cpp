@@ -77,6 +77,12 @@ void Material::set_occlusion(float occlusion)
     dirty_flags |= eMaterialProperties::PROP_OCLUSSION_ROUGHNESS_METALLIC;
 }
 
+void Material::set_normal_scale(float normal_scale)
+{
+    this->normal_scale = normal_scale;
+    dirty_flags |= eMaterialProperties::PROP_OCLUSSION_ROUGHNESS_METALLIC;
+}
+
 void Material::set_emissive(const glm::vec3& emissive)
 {
     this->emissive = emissive;
@@ -97,8 +103,18 @@ void Material::set_clearcoat_roughness(float new_clearcoat_roughness)
 
 void Material::set_iridescence_factor(float new_iridescence_factor)
 {
+    if (this->iridescence_factor == new_iridescence_factor) {
+        return;
+    }
+
+    if (new_iridescence_factor == 0.0f || this->iridescence_factor == 0.0f) {
+        dirty_flags |= eMaterialProperties::PROP_IRIDESCENCE_TOGGLE;
+    }
+    else {
+        dirty_flags |= eMaterialProperties::PROP_IRIDESCENCE;
+    }
+
     this->iridescence_factor = new_iridescence_factor;
-    dirty_flags |= eMaterialProperties::PROP_IRIDESCENCE;
 }
 
 void Material::set_iridescence_ior(float new_iridescence_ior)
@@ -350,6 +366,11 @@ float Material::get_occlusion() const
     return occlusion;
 }
 
+float Material::get_normal_scale() const
+{
+    return normal_scale;
+}
+
 glm::vec3 Material::get_emissive() const
 {
     return emissive;
@@ -590,6 +611,13 @@ void Material::render_gui()
         ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
         if (ImGui::DragFloat("##Oclussion", &occlusion, 0.01f, 0.0f, 1.0f)) {
             dirty_flags |= eMaterialProperties::PROP_OCLUSSION_ROUGHNESS_METALLIC;
+        }
+
+        ImGui::Text("Normal Scale");
+        ImGui::SameLine(200);
+        ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
+        if (ImGui::DragFloat("##Normal Scale", &normal_scale, 0.01f, 0.0f, 1.0f)) {
+            dirty_flags |= eMaterialProperties::PROP_NORMAL_SCALE;
         }
 
         // Clear coat

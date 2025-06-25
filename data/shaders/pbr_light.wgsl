@@ -202,7 +202,7 @@ fn get_indirect_light( m : ptr<function, PbrMaterial> ) -> vec3f
     let cc_normal_dot_v : f32 = clamp(dot(m.clearcoat_normal, m.view_dir), 0.0, 1.0);
     m.clearcoat_fresnel = F_Schlick(m.clearcoat_f0, m.clearcoat_f90, cc_normal_dot_v);
     let clearcoat_brdf : vec3f = get_ibl_radiance_ggx(m.clearcoat_normal, m.view_dir, m.clearcoat_roughness);
-    total_indirect = mix(total_indirect, clearcoat_brdf, m.clearcoat_factor * clearcoat_fresnel);
+    total_indirect = mix(total_indirect, clearcoat_brdf, m.clearcoat_factor * m.clearcoat_fresnel);
 #endif
 
     // Add AO

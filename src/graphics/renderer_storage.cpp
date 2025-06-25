@@ -221,6 +221,17 @@ void RendererStorage::register_material_bind_group(WebGPUContext* webgpu_context
         uniforms.push_back(u);
         uses_textures |= true;
         texture_ref = normal_texture;
+
+        // Normal scale
+        {
+            Uniform* u = new Uniform();
+            float normal_scale = material->get_normal_scale();
+            u->data = webgpu_context->create_buffer(sizeof(float), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform, &normal_scale, "mat_normal_scale");
+            u->binding = 17;
+            u->buffer_size = sizeof(float);
+            uniform_indices[eMaterialProperties::PROP_NORMAL_SCALE] = uniforms.size();
+            uniforms.push_back(u);
+        }
     }
 
     // Add a sampler for basic 2d textures if there's any texture as uniforms
@@ -348,6 +359,12 @@ void RendererStorage::update_material_bind_group(WebGPUContext* webgpu_context, 
         Uniform* u = uniforms[uniform_indices[eMaterialProperties::PROP_ALPHA_MASK]];
         float alpha_mask = material->get_alpha_mask();
         webgpu_context->update_buffer(std::get<WGPUBuffer>(u->data), 0, &alpha_mask, sizeof(float));
+    }
+
+    if (dirty_flags & eMaterialProperties::PROP_NORMAL_SCALE) {
+        Uniform* u = uniforms[uniform_indices[eMaterialProperties::PROP_NORMAL_SCALE]];
+        float normal_scale = material->get_normal_scale();
+        webgpu_context->update_buffer(std::get<WGPUBuffer>(u->data), 0, &normal_scale, sizeof(float));
     }
 
     if (dirty_flags & eMaterialProperties::PROP_CLEARCOAT && material->get_type() == MATERIAL_PBR) {

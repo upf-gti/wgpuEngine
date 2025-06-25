@@ -63,13 +63,16 @@ enum eMaterialProperties : uint32_t {
     PROP_TYPE                           = 1 << 20,
     PROP_PRIORITY                       = 1 << 21,
     PROP_ALPHA_MASK                     = 1 << 22,
-    PROP_SHADER                         = 1 << 23,
+    PROP_NORMAL_SCALE                   = 1 << 23,
+    PROP_SHADER                         = 1 << 24,
+    PROP_CLEARCOAT_TOGGLE               = 1 << 25,
+    PROP_IRIDESCENCE_TOGGLE             = 1 << 26,
 
     PROP_RELOAD_NEEDED                  = PROP_DIFFUSE_TEXTURE | PROP_METALLIC_ROUGHNESS_TEXTURE | PROP_NORMAL_TEXTURE | PROP_EMISSIVE_TEXTURE | PROP_TRANSPARENCY_TYPE |
                                           PROP_OCLUSSION_TEXTURE | PROP_CLEARCOAT_TEXTURE | PROP_CLEARCOAT_ROUGHNESS_TEXTURE | PROP_CLEARCOAT_NORMAL_TEXTURE | PROP_DEPTH_READ |
-                                          PROP_DEPTH_WRITE | PROP_FRAGMENT_WRITE | PROP_TOPOLOGY_TYPE | PROP_CULL_TYPE | PROP_TYPE,
+                                          PROP_DEPTH_WRITE | PROP_FRAGMENT_WRITE | PROP_TOPOLOGY_TYPE | PROP_CULL_TYPE | PROP_TYPE | PROP_CLEARCOAT_TOGGLE | PROP_IRIDESCENCE_TOGGLE,
 
-    PROP_UPDATE_NEEDED                  = PROP_COLOR | PROP_OCLUSSION_ROUGHNESS_METALLIC | PROP_EMISSIVE | PROP_CLEARCOAT | PROP_IRIDESCENCE | PROP_ALPHA_MASK
+    PROP_UPDATE_NEEDED                  = PROP_COLOR | PROP_OCLUSSION_ROUGHNESS_METALLIC | PROP_EMISSIVE | PROP_CLEARCOAT | PROP_IRIDESCENCE | PROP_ALPHA_MASK | PROP_NORMAL_SCALE
 };
 
 class Material : public Resource
@@ -84,6 +87,7 @@ public:
     void set_roughness(float roughness);
     void set_metallic(float metallic);
     void set_occlusion(float occlusion);
+    void set_normal_scale(float normal_scale);
     void set_emissive(const glm::vec3& emissive);
     void set_clearcoat_factor(float new_clearcoat_factor);
     void set_clearcoat_roughness(float new_clearcoat_roughness);
@@ -123,6 +127,7 @@ public:
     float get_roughness() const;
     float get_metallic() const;
     float get_occlusion() const;
+    float get_normal_scale() const;
     glm::vec3 get_emissive() const;
     float get_clearcoat_factor() const;
     float get_clearcoat_roughness() const;
@@ -194,6 +199,7 @@ private:
     float occlusion = 1.0f;
     glm::vec3 emissive = {};
     float alpha_mask = 0.5f;
+    float normal_scale = 1.0f;
 
     float clearcoat_factor = 0.0f;
     float clearcoat_roughness = 0.0f;
