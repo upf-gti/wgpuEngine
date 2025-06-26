@@ -358,7 +358,10 @@ std::string Shader::continue_until_tags(std::istringstream& string_stream, std::
     while (true) {
         std::getline(string_stream, line);
 
-        auto it = std::find(tags.begin(), tags.end(), line);
+        auto tokens = tokenize(line);
+        std::string current_tag = tokens[0];
+
+        auto it = std::find(tags.begin(), tags.end(), current_tag);
 
         if (it != tags.end()) {
             return *it;
