@@ -91,8 +91,18 @@ void Material::set_emissive(const glm::vec3& emissive)
 
 void Material::set_clearcoat_factor(float new_clearcoat_factor)
 {
-    this->clearcoat_factor = new_clearcoat_factor;
-    dirty_flags |= eMaterialProperties::PROP_CLEARCOAT;
+    if (clearcoat_factor == new_clearcoat_factor) {
+        return;
+    }
+
+    if (new_clearcoat_factor == 0.0f || clearcoat_factor == 0.0f) {
+        dirty_flags |= eMaterialProperties::PROP_CLEARCOAT_TOGGLE;
+    }
+    else {
+        dirty_flags |= eMaterialProperties::PROP_CLEARCOAT;
+    }
+
+    clearcoat_factor = new_clearcoat_factor;
 }
 
 void Material::set_clearcoat_roughness(float new_clearcoat_roughness)
@@ -103,18 +113,18 @@ void Material::set_clearcoat_roughness(float new_clearcoat_roughness)
 
 void Material::set_iridescence_factor(float new_iridescence_factor)
 {
-    if (this->iridescence_factor == new_iridescence_factor) {
+    if (iridescence_factor == new_iridescence_factor) {
         return;
     }
 
-    if (new_iridescence_factor == 0.0f || this->iridescence_factor == 0.0f) {
+    if (new_iridescence_factor == 0.0f || iridescence_factor == 0.0f) {
         dirty_flags |= eMaterialProperties::PROP_IRIDESCENCE_TOGGLE;
     }
     else {
         dirty_flags |= eMaterialProperties::PROP_IRIDESCENCE;
     }
 
-    this->iridescence_factor = new_iridescence_factor;
+    iridescence_factor = new_iridescence_factor;
 }
 
 void Material::set_iridescence_ior(float new_iridescence_ior)
@@ -551,22 +561,6 @@ void Material::render_gui()
             dirty_flags |= eMaterialProperties::PROP_EMISSIVE;
         }
 
-        ImGui::Text("Topology Type");
-        ImGui::SameLine(200);
-        static const char* topology_types[] = { "TOPOLOGY_POINT_LIST", "TOPOLOGY_LINE_LIST", "TOPOLOGY_LINE_STRIP", "TOPOLOGY_TRIANGLE_LIST", "TOPOLOGY_TRIANGLE_STRIP" };
-        int topology_type_int = static_cast<int>(topology_type);
-        if (ImGui::Combo("##Topology Type", &topology_type_int, topology_types, ((int)(sizeof(topology_types) / sizeof(*(topology_types)))))) {
-            set_topology_type(static_cast<eTopologyType>(topology_type_int));
-        }
-
-        ImGui::Text("Cull Type");
-        ImGui::SameLine(200);
-        static const char* cull_types[] = { "NONE", "BACK", "FRONT" };
-        int cull_type_int = static_cast<int>(cull_type);
-        if (ImGui::Combo("##Cull Type", &cull_type_int, cull_types, ((int)(sizeof(cull_types) / sizeof(*(cull_types)))))) {
-            set_cull_type(static_cast<eCullType>(cull_type_int));
-        }
-
         ImGui::Text("Transparency Type");
         ImGui::SameLine(200);
         static const char* transparency_types[] = { "OPAQUE", "BLEND", "MASK", "HASH" };
@@ -582,14 +576,6 @@ void Material::render_gui()
             if (ImGui::DragFloat("##Alpha Mask", &alpha_mask, 0.01f, 0.0f, 1.0f)) {
                 dirty_flags |= eMaterialProperties::PROP_ALPHA_MASK;
             }
-        }
-
-        ImGui::Text("Priority");
-        ImGui::SameLine(200);
-        ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
-        int priority_int = static_cast<int>(priority);
-        if (ImGui::DragInt("##Priority", &priority_int, 1, 0, 20)) {
-            set_priority(static_cast<uint8_t>(priority_int));
         }
 
         ImGui::Text("Roughness");
@@ -621,46 +607,70 @@ void Material::render_gui()
         }
 
         // Clear coat
-        {
-            ImGui::Text("Clearcoat Factor");
+        if (ImGui::TreeNodeEx("ClearCoat")) {
+
+            ImGui::Text("Factor");
             ImGui::SameLine(200);
             ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
-            if (ImGui::DragFloat("##Clearcoat Factor", &clearcoat_factor, 0.01f, 0.0f, 1.0f)) {
+            float factor = clearcoat_factor;
+            if (ImGui::DragFloat("##Factor", &factor, 0.01f, 0.0f, 1.0f)) {
+                set_clearcoat_factor(factor);
+            }
+
+            ImGui::Text("Roughness");
+            ImGui::SameLine(200);
+            ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
+            if (ImGui::DragFloat("##Roughness", &clearcoat_roughness, 0.01f, 0.0f, 1.0f)) {
                 dirty_flags |= eMaterialProperties::PROP_CLEARCOAT;
             }
 
-            ImGui::Text("Clearcoat Roughness");
-            ImGui::SameLine(200);
-            ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
-            if (ImGui::DragFloat("##Clearcoat Roughness", &clearcoat_roughness, 0.01f, 0.0f, 1.0f)) {
-                dirty_flags |= eMaterialProperties::PROP_CLEARCOAT;
-            }
+            ImGui::TreePop();
         }
 
         // Iridescence
-        {
-            ImGui::Text("Iridescence Factor");
+        if (ImGui::TreeNodeEx("Iridescence")) {
+
+            ImGui::Text("Factor");
             ImGui::SameLine(200);
             ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
-            if (ImGui::DragFloat("##Iridescence Factor", &iridescence_factor, 0.01f, 0.0f, 1.0f)) {
+            float factor = iridescence_factor;
+            if (ImGui::DragFloat("##Factor", &factor, 0.01f, 0.0f, 1.0f)) {
+                set_iridescence_factor(factor);
+            }
+
+            ImGui::Text("IOR");
+            ImGui::SameLine(200);
+            ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
+            if (ImGui::DragFloat("##IOR", &iridescence_ior, 0.01f, 0.0f, 2.0f)) {
                 dirty_flags |= eMaterialProperties::PROP_IRIDESCENCE;
             }
 
-            ImGui::Text("Iridescence IOR");
-            ImGui::SameLine(200);
-            ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
-            if (ImGui::DragFloat("##Iridescence IOR", &iridescence_ior, 0.01f, 0.0f, 2.0f)) {
-                dirty_flags |= eMaterialProperties::PROP_IRIDESCENCE;
-            }
-
-            ImGui::Text("Iridescence Thickness");
+            ImGui::Text("Thickness");
             ImGui::SameLine(200);
             ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
             glm::vec2 iridescence_thickness = { get_iridescence_thickness_min(), get_iridescence_thickness_max() };
-            if (ImGui::DragFloat2("##Iridescence Thickness", &iridescence_thickness.x, 1.0f, 0.0f, 600.0f)) {
+            if (ImGui::DragFloat2("##Thickness", &iridescence_thickness.x, 1.0f, 0.0f, 600.0f)) {
                 set_iridescence_thickness_min(iridescence_thickness.x);
                 set_iridescence_thickness_max(iridescence_thickness.y);
             }
+
+            ImGui::TreePop();
+        }
+
+        ImGui::Text("Topology Type");
+        ImGui::SameLine(200);
+        static const char* topology_types[] = { "TOPOLOGY_POINT_LIST", "TOPOLOGY_LINE_LIST", "TOPOLOGY_LINE_STRIP", "TOPOLOGY_TRIANGLE_LIST", "TOPOLOGY_TRIANGLE_STRIP" };
+        int topology_type_int = static_cast<int>(topology_type);
+        if (ImGui::Combo("##Topology Type", &topology_type_int, topology_types, ((int)(sizeof(topology_types) / sizeof(*(topology_types)))))) {
+            set_topology_type(static_cast<eTopologyType>(topology_type_int));
+        }
+
+        ImGui::Text("Cull Type");
+        ImGui::SameLine(200);
+        static const char* cull_types[] = { "NONE", "BACK", "FRONT" };
+        int cull_type_int = static_cast<int>(cull_type);
+        if (ImGui::Combo("##Cull Type", &cull_type_int, cull_types, ((int)(sizeof(cull_types) / sizeof(*(cull_types)))))) {
+            set_cull_type(static_cast<eCullType>(cull_type_int));
         }
 
         ImGui::Text("Depth Read");
@@ -675,6 +685,14 @@ void Material::render_gui()
         ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
         if (ImGui::Checkbox("##Depth Write", &depth_write)) {
             dirty_flags |= eMaterialProperties::PROP_DEPTH_WRITE;
+        }
+
+        ImGui::Text("Priority");
+        ImGui::SameLine(200);
+        ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
+        int priority_int = static_cast<int>(priority);
+        if (ImGui::DragInt("##Priority", &priority_int, 1, 0, 20)) {
+            set_priority(static_cast<uint8_t>(priority_int));
         }
 
         ImGui::TreePop();

@@ -6,9 +6,16 @@
 #include "framework/utils/tinyfiledialogs.h"
 #include "framework/nodes/mesh_instance_3d.h"
 #include "framework/parsers/parse_scene.h"
+#include "framework/parsers/parser.h"
 
 #include "graphics/renderer_storage.h"
 #include "graphics/renderer.h"
+#include "graphics/primitives/box_mesh.h"
+#include "graphics/primitives/sphere_mesh.h"
+#include "graphics/primitives/cone_mesh.h"
+#include "graphics/primitives/cylinder_mesh.h"
+#include "graphics/primitives/capsule_mesh.h"
+#include "graphics/primitives/torus_mesh.h"
 
 #if defined(OPENXR_SUPPORT)
 #include "xr/openxr/openxr_context.h"
@@ -16,14 +23,14 @@
 #include "xr/webxr/webxr_context.h"
 #endif
 
+#include "shaders/mesh_forward.wgsl.gen.h"
+#include "shaders/mesh_grid.wgsl.gen.h"
+
 #include "imgui.h"
 #include "imgui_internal.h"
 #include "backends/imgui_impl_wgpu.h"
 #include "backends/imgui_impl_glfw.h"
-
 #include "framework/utils/ImGuizmo.h"
-
-#include "framework/parsers/parser.h"
 
 #include "engine/scene.h"
 
@@ -540,6 +547,48 @@ void Engine::render_default_gui()
 
             ImGui::EndMenu();
         }
+        if (ImGui::BeginMenu("Add"))
+        {
+            if (ImGui::BeginMenu("Mesh"))
+            {
+                auto create_mesh_instance = [&](Mesh* mesh) {
+                    auto boxMaterial = new Material();
+                    boxMaterial->set_shader(RendererStorage::get_shader_from_source(shaders::mesh_forward::source, shaders::mesh_forward::path, shaders::mesh_forward::libraries, boxMaterial));
+                    auto box = new MeshInstance3D();
+                    box->set_name(mesh->get_mesh_type());
+                    box->set_mesh(mesh);
+                    box->set_surface_material_override(box->get_surface(0), boxMaterial);
+                    main_scene->add_node(box);
+                };
+
+                if (ImGui::MenuItem("Box")) {
+                    create_mesh_instance(new BoxMesh());
+                }
+
+                if (ImGui::MenuItem("Capsule")) {
+                    create_mesh_instance(new CapsuleMesh());
+                }
+
+                if (ImGui::MenuItem("Cone")) {
+                    create_mesh_instance(new ConeMesh());
+                }
+
+                if (ImGui::MenuItem("Cylinder")) {
+                    create_mesh_instance(new CylinderMesh());
+                }
+
+                if (ImGui::MenuItem("Sphere")) {
+                    create_mesh_instance(new SphereMesh());
+                }
+
+                if (ImGui::MenuItem("Torus")) {
+                    create_mesh_instance(new TorusMesh());
+                }
+
+                ImGui::EndMenu();
+            }
+            ImGui::EndMenu();
+        }
         ImGui::EndMainMenuBar();
     }
 
@@ -556,7 +605,7 @@ void Engine::render_default_gui()
     }
 
     float right_panel_width = 350.0f; // px
-    float right_panel_height = 570.0f; // px
+    float right_panel_height = viewport->Size.y - height * 2.0f; // px
     WebGPUContext* webgpu_context = Renderer::instance->get_webgpu_context();
 
     ImGui::SetNextWindowPos({ static_cast<float>(webgpu_context->screen_width) - right_panel_width, 18.0f });
@@ -623,7 +672,7 @@ void Engine::render_default_gui()
 
 
     if (selected_node && scene_tab_open) {
-        ImGui::BeginChild("NodeProperties", ImVec2(0, 260), ImGuiChildFlags_Border, ImGuiWindowFlags_None);
+        ImGui::BeginChild("NodeProperties", ImVec2(0, right_panel_height - 310), ImGuiChildFlags_Border, ImGuiWindowFlags_None);
 
         selected_node->render_gui();
 
