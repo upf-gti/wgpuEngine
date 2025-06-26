@@ -166,36 +166,36 @@ void RendererStorage::register_material_bind_group(WebGPUContext* webgpu_context
             u->buffer_size = sizeof(glm::vec2);
             uniform_indices[eMaterialProperties::PROP_CLEARCOAT] = uniforms.size();
             uniforms.push_back(u);
-        }
 
-        Texture* clearcoat_texture = material->get_clearcoat_texture();
-        if (clearcoat_texture) {
-            Uniform* u = new Uniform();
-            u->data = clearcoat_texture->get_view(WGPUTextureViewDimension_2D, 0, clearcoat_texture->get_mipmap_count());
-            u->binding = 13;
-            uniforms.push_back(u);
-            uses_textures |= true;
-            texture_ref = clearcoat_texture;
-        }
+            Texture* clearcoat_texture = material->get_clearcoat_texture();
+            if (clearcoat_texture) {
+                Uniform* u = new Uniform();
+                u->data = clearcoat_texture->get_view(WGPUTextureViewDimension_2D, 0, clearcoat_texture->get_mipmap_count());
+                u->binding = 13;
+                uniforms.push_back(u);
+                uses_textures |= true;
+                texture_ref = clearcoat_texture;
+            }
 
-        Texture* clearcoat_roughness_texture = material->get_clearcoat_roughness_texture();
-        if (clearcoat_roughness_texture) {
-            Uniform* u = new Uniform();
-            u->data = clearcoat_roughness_texture->get_view(WGPUTextureViewDimension_2D, 0, clearcoat_roughness_texture->get_mipmap_count());
-            u->binding = 14;
-            uniforms.push_back(u);
-            uses_textures |= true;
-            texture_ref = clearcoat_roughness_texture;
-        }
+            Texture* clearcoat_roughness_texture = material->get_clearcoat_roughness_texture();
+            if (clearcoat_roughness_texture) {
+                Uniform* u = new Uniform();
+                u->data = clearcoat_roughness_texture->get_view(WGPUTextureViewDimension_2D, 0, clearcoat_roughness_texture->get_mipmap_count());
+                u->binding = 14;
+                uniforms.push_back(u);
+                uses_textures |= true;
+                texture_ref = clearcoat_roughness_texture;
+            }
 
-        Texture* clearcoat_normal_texture = material->get_clearcoat_normal_texture();
-        if (clearcoat_normal_texture) {
-            Uniform* u = new Uniform();
-            u->data = clearcoat_normal_texture->get_view(WGPUTextureViewDimension_2D, 0, clearcoat_normal_texture->get_mipmap_count());
-            u->binding = 15;
-            uniforms.push_back(u);
-            uses_textures |= true;
-            texture_ref = clearcoat_normal_texture;
+            Texture* clearcoat_normal_texture = material->get_clearcoat_normal_texture();
+            if (clearcoat_normal_texture) {
+                Uniform* u = new Uniform();
+                u->data = clearcoat_normal_texture->get_view(WGPUTextureViewDimension_2D, 0, clearcoat_normal_texture->get_mipmap_count());
+                u->binding = 15;
+                uniforms.push_back(u);
+                uses_textures |= true;
+                texture_ref = clearcoat_normal_texture;
+            }
         }
 
         /*
@@ -210,6 +210,26 @@ void RendererStorage::register_material_bind_group(WebGPUContext* webgpu_context
             u->buffer_size = sizeof(glm::vec4);
             uniform_indices[eMaterialProperties::PROP_IRIDESCENCE] = uniforms.size();
             uniforms.push_back(u);
+
+            Texture* iridescence_texture = material->get_iridescence_texture();
+            if (iridescence_texture) {
+                Uniform* u = new Uniform();
+                u->data = iridescence_texture->get_view(WGPUTextureViewDimension_2D, 0, iridescence_texture->get_mipmap_count());
+                u->binding = 17;
+                uniforms.push_back(u);
+                uses_textures |= true;
+                texture_ref = iridescence_texture;
+            }
+
+            Texture* iridescence_thickness_texture = material->get_iridescence_thickness_texture();
+            if (iridescence_thickness_texture) {
+                Uniform* u = new Uniform();
+                u->data = iridescence_thickness_texture->get_view(WGPUTextureViewDimension_2D, 0, iridescence_thickness_texture->get_mipmap_count());
+                u->binding = 18;
+                uniforms.push_back(u);
+                uses_textures |= true;
+                texture_ref = iridescence_thickness_texture;
+            }
         }
     }
 
@@ -227,7 +247,7 @@ void RendererStorage::register_material_bind_group(WebGPUContext* webgpu_context
             Uniform* u = new Uniform();
             float normal_scale = material->get_normal_scale();
             u->data = webgpu_context->create_buffer(sizeof(float), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform, &normal_scale, "mat_normal_scale");
-            u->binding = 17;
+            u->binding = 19;
             u->buffer_size = sizeof(float);
             uniform_indices[eMaterialProperties::PROP_NORMAL_SCALE] = uniforms.size();
             uniforms.push_back(u);
@@ -361,7 +381,7 @@ void RendererStorage::update_material_bind_group(WebGPUContext* webgpu_context, 
         webgpu_context->update_buffer(std::get<WGPUBuffer>(u->data), 0, &alpha_mask, sizeof(float));
     }
 
-    if (dirty_flags & eMaterialProperties::PROP_NORMAL_SCALE) {
+    if (dirty_flags & eMaterialProperties::PROP_NORMAL_SCALE && material->get_normal_texture()) {
         Uniform* u = uniforms[uniform_indices[eMaterialProperties::PROP_NORMAL_SCALE]];
         float normal_scale = material->get_normal_scale();
         webgpu_context->update_buffer(std::get<WGPUBuffer>(u->data), 0, &normal_scale, sizeof(float));
@@ -701,24 +721,32 @@ std::vector<std::string> RendererStorage::get_common_define_specializations(cons
         define_specializations.push_back("OCLUSSION_TEXTURE");
     }
 
-    if (material->get_clearcoat_texture()) {
-        define_specializations.push_back("CLEARCOAT_TEXTURE");
-    }
-
-    if (material->get_clearcoat_roughness_texture()) {
-        define_specializations.push_back("CLEARCOAT_ROUGHNESS_TEXTURE");
-    }
-
-    if (material->get_clearcoat_normal_texture()) {
-        define_specializations.push_back("CLEARCOAT_NORMAL_TEXTURE");
-    }
-
     if (material->get_clearcoat_factor() > 0.0f) {
         define_specializations.push_back("CLEARCOAT_MATERIAL");
+
+        if (material->get_clearcoat_texture()) {
+            define_specializations.push_back("CLEARCOAT_TEXTURE");
+        }
+
+        if (material->get_clearcoat_roughness_texture()) {
+            define_specializations.push_back("CLEARCOAT_ROUGHNESS_TEXTURE");
+        }
+
+        if (material->get_clearcoat_normal_texture()) {
+            define_specializations.push_back("CLEARCOAT_NORMAL_TEXTURE");
+        }
     }
 
     if (material->get_iridescence_factor() > 0.0f) {
         define_specializations.push_back("IRIDESCENCE_MATERIAL");
+
+        if (material->get_iridescence_texture()) {
+            define_specializations.push_back("IRIDESCENCE_TEXTURE");
+        }
+
+        if (material->get_iridescence_thickness_texture()) {
+            define_specializations.push_back("IRIDESCENCE_THICKNESS_TEXTURE");
+        }
     }
 
     if (!define_specializations.empty()) {

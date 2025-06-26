@@ -46,7 +46,6 @@
 
 #ifdef CLEARCOAT_MATERIAL
 @group(2) @binding(12) var<uniform> clearcoat_data: vec2f;
-#endif
 
 #ifdef CLEARCOAT_TEXTURE
 @group(2) @binding(13) var clearcoat_texture: texture_2d<f32>;
@@ -60,15 +59,26 @@
 @group(2) @binding(15) var clearcoat_normal_texture: texture_2d<f32>;
 #endif
 
+#endif // CLEARCOAT_MATERIAL
+
 #ifdef IRIDESCENCE_MATERIAL
 @group(2) @binding(16) var<uniform> iridescence_data: vec4f;
+
+#ifdef IRIDESCENCE_TEXTURE
+@group(2) @binding(17) var iridescence_texture: texture_2d<f32>;
 #endif
 
+#ifdef IRIDESCENCE_THICKNESS_TEXTURE
+@group(2) @binding(18) var iridescence_thickness_texture: texture_2d<f32>;
 #endif
+
+#endif // IRIDESCENCE_MATERIAL
+
+#endif // UNLIT_MATERIAL
 
 #ifdef NORMAL_TEXTURE
 @group(2) @binding(4) var normal_texture: texture_2d<f32>;
-@group(2) @binding(17) var<uniform> normal_scale: f32;
+@group(2) @binding(19) var<uniform> normal_scale: f32;
 #endif
 
 #ifdef USE_SAMPLER
@@ -159,7 +169,7 @@ fn fs_main(in: VertexOutput, @builtin(front_facing) is_front_facing: bool) -> Fr
 #endif
 #else
     m.normal = m.normal_g;
-#endif
+#endif // NORMAL_TEXTURE
 
     m.n_dot_v = clamp(dot(m.normal, m.view_dir), 0.0, 1.0);
     m.reflected_dir = normalize(reflect(-m.view_dir, m.normal));
@@ -173,7 +183,7 @@ fn fs_main(in: VertexOutput, @builtin(front_facing) is_front_facing: bool) -> Fr
 #else
     m.albedo = in.color.rgb;
     alpha = in.color.a;
-#endif
+#endif // ALBEDO_TEXTURE
 
 #ifdef ALPHA_MASK
     if (alpha < alpha_cutoff) {
@@ -200,7 +210,7 @@ fn fs_main(in: VertexOutput, @builtin(front_facing) is_front_facing: bool) -> Fr
     m.ao = m.ao * occlusion_roughness_metallic.r;
 #else
     m.ao = 1.0;
-#endif
+#endif // OCLUSSION_TEXTURE
 
 #ifdef METALLIC_ROUGHNESS_TEXTURE
     var metal_rough : vec3f = textureSample(metallic_roughness_texture, sampler_2d, in.uv).rgb;
@@ -224,16 +234,17 @@ fn fs_main(in: VertexOutput, @builtin(front_facing) is_front_facing: bool) -> Fr
     m.iridescence_thickness = iridescence_data.w;
 
 #ifdef IRIDESCENCE_TEXTURE
-    // info.iridescence_factor *= texture(u_IridescenceSampler, getIridescenceUV()).r;
+    let iridescence_uv : vec2f = in.uv;//getIridescenceUV();
+    m.iridescence_factor *= textureSample(iridescence_texture, sampler_2d, iridescence_uv).r;
 #endif
 
 #ifdef IRIDESCENCE_THICKNESS_TEXTURE
-    // let thickness_sampled : f32 = texture(u_IridescenceThicknessSampler, getIridescenceThicknessUV()).g;
-    // let thickness : f32 = mix(u_IridescenceThicknessMinimum, u_IridescenceThicknessMaximum, thickness_sampled);
-    // m.iridescence_thickness = thickness;
+    let iridescence_thickness_uv : vec2f = in.uv;//getIridescenceThicknessUV();
+    let thickness_sampled : f32 = textureSample(iridescence_thickness_texture, sampler_2d, iridescence_thickness_uv).g;
+    m.iridescence_thickness = mix(iridescence_data.z, iridescence_data.w, thickness_sampled);
 #endif
 
-#endif
+#endif // IRIDESCENCE_MATERIAL
 
 #ifdef CLEARCOAT_MATERIAL
 
@@ -266,11 +277,11 @@ fn fs_main(in: VertexOutput, @builtin(front_facing) is_front_facing: bool) -> Fr
 #endif
 #else
     m.clearcoat_normal = m.normal_g;
-#endif
+#endif // CLEARCOAT_NORMAL_TEXTURE
 
     m.clearcoat_roughness = clamp(m.clearcoat_roughness, 0.04, 1.0);
 
-#endif
+#endif // CLEARCOAT_MATERIAL
 
     final_color = get_indirect_light(&m);
 
@@ -279,7 +290,7 @@ fn fs_main(in: VertexOutput, @builtin(front_facing) is_front_facing: bool) -> Fr
     final_color += m.emissive * (1.0 - m.clearcoat_factor * m.clearcoat_fresnel);
 #else
     final_color += m.albedo;
-#endif
+#endif // UNLIT_MATERIAL
 
     final_color *= camera_data.exposure;
     final_color = tonemap_khronos_pbr_neutral(final_color);

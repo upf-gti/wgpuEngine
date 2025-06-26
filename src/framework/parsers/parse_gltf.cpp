@@ -743,13 +743,13 @@ void read_mesh(const tinygltf::Model& model, const tinygltf::Node& node, Node3D*
                     int iridescence_texture_index = tex.Get("index").Get<int>();
                     if (iridescence_texture_index >= 0) {
                         if (texture_cache.contains(iridescence_texture_index)) {
-                            //material->set_iridescence_texture(texture_cache[iridescence_texture_index]);
+                            material->set_iridescence_texture(texture_cache[iridescence_texture_index]);
                         }
                         else {
                             Texture* iridescence_texture = nullptr;
                             create_material_texture(model, iridescence_texture_index, &iridescence_texture, false, false, async_load);
                             texture_cache[iridescence_texture_index] = iridescence_texture;
-                            //material->set_iridescence_texture(iridescence_texture);
+                            material->set_iridescence_texture(iridescence_texture);
                         }
                     }
                 }
@@ -760,13 +760,13 @@ void read_mesh(const tinygltf::Model& model, const tinygltf::Node& node, Node3D*
                     int iridescence_thickness_texture_index = tex.Get("index").Get<int>();
                     if (iridescence_thickness_texture_index >= 0) {
                         if (texture_cache.contains(iridescence_thickness_texture_index)) {
-                            // material->set_iridescence_thickness_texture(texture_cache[iridescence_thickness_texture_index]);
+                            material->set_iridescence_thickness_texture(texture_cache[iridescence_thickness_texture_index]);
                         }
                         else {
                             Texture* iridescence_thickness_texture = nullptr;
                             create_material_texture(model, iridescence_thickness_texture_index, &iridescence_thickness_texture, false, false, async_load);
                             texture_cache[iridescence_thickness_texture_index] = iridescence_thickness_texture;
-                            //material->set_iridescence_thickness_texture(iridescence_thickness_texture);
+                            material->set_iridescence_thickness_texture(iridescence_thickness_texture);
                         }
                     }
                 }

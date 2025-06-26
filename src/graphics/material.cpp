@@ -275,6 +275,38 @@ void Material::set_clearcoat_normal_texture(Texture* clearcoat_normal_texture)
     dirty_flags |= eMaterialProperties::PROP_CLEARCOAT_NORMAL_TEXTURE;
 }
 
+void Material::set_iridescence_texture(Texture* iridescence_texture)
+{
+    if (this->iridescence_texture != iridescence_texture) {
+
+        if (this->iridescence_texture) {
+            this->iridescence_texture->unref();
+        }
+
+        iridescence_texture->ref();
+    }
+
+    this->iridescence_texture = iridescence_texture;
+
+    dirty_flags |= eMaterialProperties::PROP_IRIDESCENCE_TEXTURE;
+}
+
+void Material::set_iridescence_thickness_texture(Texture* iridescence_thickness_texture)
+{
+    if (this->iridescence_thickness_texture != iridescence_thickness_texture) {
+
+        if (this->iridescence_thickness_texture) {
+            this->iridescence_thickness_texture->unref();
+        }
+
+        iridescence_thickness_texture->ref();
+    }
+
+    this->iridescence_thickness_texture = iridescence_thickness_texture;
+
+    dirty_flags |= eMaterialProperties::PROP_IRIDESCENCE_THICKNESS_TEXTURE;
+}
+
 void Material::set_alpha_mask(float alpha_mask)
 {
     this->alpha_mask = alpha_mask;
@@ -454,6 +486,16 @@ const Texture* Material::get_clearcoat_roughness_texture() const
 const Texture* Material::get_clearcoat_normal_texture() const
 {
     return clearcoat_normal_texture;
+}
+
+const Texture* Material::get_iridescence_texture() const
+{
+    return iridescence_texture;
+}
+
+const Texture* Material::get_iridescence_thickness_texture() const
+{
+    return iridescence_thickness_texture;
 }
 
 float Material::get_alpha_mask() const
@@ -737,4 +779,14 @@ Texture* Material::get_clearcoat_roughness_texture()
 Texture* Material::get_clearcoat_normal_texture()
 {
     return clearcoat_normal_texture;
+}
+
+Texture* Material::get_iridescence_texture()
+{
+    return iridescence_texture;
+}
+
+Texture* Material::get_iridescence_thickness_texture()
+{
+    return iridescence_thickness_texture;
 }

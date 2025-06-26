@@ -53,24 +53,27 @@ enum eMaterialProperties : uint32_t {
     PROP_CLEARCOAT_TEXTURE              = 1 << 10,
     PROP_CLEARCOAT_ROUGHNESS_TEXTURE    = 1 << 11,
     PROP_CLEARCOAT_NORMAL_TEXTURE       = 1 << 12,
-    PROP_DEPTH_READ                     = 1 << 13,
-    PROP_DEPTH_WRITE                    = 1 << 14,
-    PROP_FRAGMENT_WRITE                 = 1 << 15,
-    PROP_USE_SKINNING                   = 1 << 16,
-    PROP_TRANSPARENCY_TYPE              = 1 << 17,
-    PROP_TOPOLOGY_TYPE                  = 1 << 18,
-    PROP_CULL_TYPE                      = 1 << 19,
-    PROP_TYPE                           = 1 << 20,
-    PROP_PRIORITY                       = 1 << 21,
-    PROP_ALPHA_MASK                     = 1 << 22,
-    PROP_NORMAL_SCALE                   = 1 << 23,
-    PROP_SHADER                         = 1 << 24,
-    PROP_CLEARCOAT_TOGGLE               = 1 << 25,
-    PROP_IRIDESCENCE_TOGGLE             = 1 << 26,
+    PROP_IRIDESCENCE_TEXTURE            = 1 << 13,
+    PROP_IRIDESCENCE_THICKNESS_TEXTURE  = 1 << 14,
+    PROP_DEPTH_READ                     = 1 << 15,
+    PROP_DEPTH_WRITE                    = 1 << 16,
+    PROP_FRAGMENT_WRITE                 = 1 << 17,
+    PROP_USE_SKINNING                   = 1 << 18,
+    PROP_TRANSPARENCY_TYPE              = 1 << 19,
+    PROP_TOPOLOGY_TYPE                  = 1 << 20,
+    PROP_CULL_TYPE                      = 1 << 21,
+    PROP_TYPE                           = 1 << 22,
+    PROP_PRIORITY                       = 1 << 23,
+    PROP_ALPHA_MASK                     = 1 << 24,
+    PROP_NORMAL_SCALE                   = 1 << 25,
+    PROP_SHADER                         = 1 << 26,
+    PROP_CLEARCOAT_TOGGLE               = 1 << 27,
+    PROP_IRIDESCENCE_TOGGLE             = 1 << 28,
 
     PROP_RELOAD_NEEDED                  = PROP_DIFFUSE_TEXTURE | PROP_METALLIC_ROUGHNESS_TEXTURE | PROP_NORMAL_TEXTURE | PROP_EMISSIVE_TEXTURE | PROP_TRANSPARENCY_TYPE |
-                                          PROP_OCLUSSION_TEXTURE | PROP_CLEARCOAT_TEXTURE | PROP_CLEARCOAT_ROUGHNESS_TEXTURE | PROP_CLEARCOAT_NORMAL_TEXTURE | PROP_DEPTH_READ |
-                                          PROP_DEPTH_WRITE | PROP_FRAGMENT_WRITE | PROP_TOPOLOGY_TYPE | PROP_CULL_TYPE | PROP_TYPE | PROP_CLEARCOAT_TOGGLE | PROP_IRIDESCENCE_TOGGLE,
+                                          PROP_OCLUSSION_TEXTURE | PROP_CLEARCOAT_TEXTURE | PROP_CLEARCOAT_ROUGHNESS_TEXTURE | PROP_CLEARCOAT_NORMAL_TEXTURE | PROP_IRIDESCENCE_TEXTURE |
+                                          PROP_IRIDESCENCE_THICKNESS_TEXTURE | PROP_DEPTH_READ | PROP_DEPTH_WRITE | PROP_FRAGMENT_WRITE | PROP_TOPOLOGY_TYPE | PROP_CULL_TYPE | PROP_TYPE |
+                                          PROP_CLEARCOAT_TOGGLE | PROP_IRIDESCENCE_TOGGLE,
 
     PROP_UPDATE_NEEDED                  = PROP_COLOR | PROP_OCLUSSION_ROUGHNESS_METALLIC | PROP_EMISSIVE | PROP_CLEARCOAT | PROP_IRIDESCENCE | PROP_ALPHA_MASK | PROP_NORMAL_SCALE
 };
@@ -104,6 +107,8 @@ public:
     void set_clearcoat_texture(Texture* clearcoat_texture);
     void set_clearcoat_roughness_texture(Texture* clearcoat_roughness_texture);
     void set_clearcoat_normal_texture(Texture* clearcoat_normal_texture);
+    void set_iridescence_texture(Texture* iridescence_texture);
+    void set_iridescence_thickness_texture(Texture* iridescence_thickness_texture);
 
     void set_alpha_mask(float alpha_mask);
     void set_depth_read_write(bool value);
@@ -144,6 +149,8 @@ public:
     const Texture* get_clearcoat_texture() const;
     const Texture* get_clearcoat_roughness_texture() const;
     const Texture* get_clearcoat_normal_texture() const;
+    const Texture* get_iridescence_texture() const;
+    const Texture* get_iridescence_thickness_texture() const;
 
     Texture* get_diffuse_texture();
     Texture* get_metallic_roughness_texture();
@@ -153,6 +160,8 @@ public:
     Texture* get_clearcoat_texture();
     Texture* get_clearcoat_roughness_texture();
     Texture* get_clearcoat_normal_texture();
+    Texture* get_iridescence_texture();
+    Texture* get_iridescence_thickness_texture();
 
     float get_alpha_mask() const;
 
@@ -192,6 +201,8 @@ private:
     Texture* clearcoat_texture = nullptr;
     Texture* clearcoat_roughness_texture = nullptr;
     Texture* clearcoat_normal_texture = nullptr;
+    Texture* iridescence_texture = nullptr;
+    Texture* iridescence_thickness_texture = nullptr;
 
     glm::vec4 color = { 1.0f, 1.0f, 1.0f, 1.0f };
     float roughness = 1.0f;
