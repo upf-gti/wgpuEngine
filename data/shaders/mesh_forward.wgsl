@@ -35,50 +35,59 @@
 @group(2) @binding(3) var<uniform> occlusion_roughness_metallic: vec3f;
 
 #ifdef EMISSIVE_TEXTURE
-@group(2) @binding(5) var emissive_texture: texture_2d<f32>;
+@group(2) @binding(6) var emissive_texture: texture_2d<f32>;
 #endif
 
-@group(2) @binding(6) var<uniform> emissive: vec3f;
+@group(2) @binding(8) var<uniform> emissive: vec3f;
 
 #ifdef OCLUSSION_TEXTURE
-@group(2) @binding(9) var oclussion_texture: texture_2d<f32>;
+@group(2) @binding(12) var oclussion_texture: texture_2d<f32>;
 #endif
 
 #ifdef CLEARCOAT_MATERIAL
-@group(2) @binding(12) var<uniform> clearcoat_data: vec2f;
+@group(2) @binding(13) var<uniform> clearcoat_data: vec2f;
 
 #ifdef CLEARCOAT_TEXTURE
-@group(2) @binding(13) var clearcoat_texture: texture_2d<f32>;
+@group(2) @binding(14) var clearcoat_texture: texture_2d<f32>;
 #endif
 
 #ifdef CLEARCOAT_ROUGHNESS_TEXTURE
-@group(2) @binding(14) var clearcoat_roughness_texture: texture_2d<f32>;
+@group(2) @binding(15) var clearcoat_roughness_texture: texture_2d<f32>;
 #endif
 
 #ifdef CLEARCOAT_NORMAL_TEXTURE
-@group(2) @binding(15) var clearcoat_normal_texture: texture_2d<f32>;
+@group(2) @binding(16) var clearcoat_normal_texture: texture_2d<f32>;
 #endif
 
 #endif // CLEARCOAT_MATERIAL
 
 #ifdef IRIDESCENCE_MATERIAL
-@group(2) @binding(16) var<uniform> iridescence_data: vec4f;
+@group(2) @binding(17) var<uniform> iridescence_data: vec4f;
 
 #ifdef IRIDESCENCE_TEXTURE
-@group(2) @binding(17) var iridescence_texture: texture_2d<f32>;
+@group(2) @binding(18) var iridescence_texture: texture_2d<f32>;
 #endif
 
 #ifdef IRIDESCENCE_THICKNESS_TEXTURE
-@group(2) @binding(18) var iridescence_thickness_texture: texture_2d<f32>;
+@group(2) @binding(19) var iridescence_thickness_texture: texture_2d<f32>;
 #endif
 
 #endif // IRIDESCENCE_MATERIAL
+
+#ifdef ANISOTROPY_MATERIAL
+@group(2) @binding(20) var<uniform> anisotropy_data: vec3f;
+
+#ifdef ANISOTROPY_TEXTURE
+@group(2) @binding(21) var anisotropy_texture: texture_2d<f32>;
+#endif
+
+#endif // ANISOTROPY_MATERIAL
 
 #endif // UNLIT_MATERIAL
 
 #ifdef NORMAL_TEXTURE
 @group(2) @binding(4) var normal_texture: texture_2d<f32>;
-@group(2) @binding(19) var<uniform> normal_scale: f32;
+@group(2) @binding(5) var<uniform> normal_scale: f32;
 #endif
 
 #ifdef USE_SAMPLER
@@ -86,7 +95,7 @@
 #endif
 
 #ifdef ALPHA_MASK
-@group(2) @binding(8) var<uniform> alpha_cutoff: f32;
+@group(2) @binding(9) var<uniform> alpha_cutoff: f32;
 #endif
 
 #ifdef USE_SKINNING
@@ -282,6 +291,25 @@ fn fs_main(in: VertexOutput, @builtin(front_facing) is_front_facing: bool) -> Fr
     m.clearcoat_roughness = clamp(m.clearcoat_roughness, 0.04, 1.0);
 
 #endif // CLEARCOAT_MATERIAL
+
+#ifdef ANISOTROPY_MATERIAL
+    var direction : vec2f = vec2f(1.0, 0.0);
+    var anisotropy_factor : f32 = 1.0;
+    
+#ifdef ANISOTROPY_TEXTURE
+    let anisotropy_uv : vec2f = in.uv;//getAnisotropyUV();
+    let anisotropy_sample : vec3f = textureSample(anisotropy_texture, sampler_2d, anisotropy_uv).xyz;
+    direction = anisotropy_sample.xy * 2.0 - vec2f(1.0);
+    anisotropy_factor = anisotropy_sample.z;
+#endif
+    let direction_rotation : vec2f = anisotropy_data.xy; // cos(theta), sin(theta)
+    let rotation_matrix : mat2x2f = mat2x2f(direction_rotation.x, direction_rotation.y, -direction_rotation.y, direction_rotation.x);
+    direction = rotation_matrix * direction.xy;
+
+    m.anisotropy_tangent = mat3x3f(in.tangent, in.bitangent, m.normal) * normalize(vec3f(direction, 0.0));
+    m.anisotropy_bitangent = cross(m.normal_g, m.anisotropy_tangent);
+    m.anisotropy_factor = clamp(anisotropy_data.z * anisotropy_factor, 0.0, 1.0);
+#endif // ANISOTROPY_MATERIAL
 
     final_color = get_indirect_light(&m);
 

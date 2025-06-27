@@ -124,22 +124,16 @@ fn get_direct_light( m : ptr<function, PbrMaterial> ) -> vec3f
 // https://github.com/KhronosGroup/glTF-Sample-Viewer/blob/main/source/Renderer/shaders/ibl.glsl
 fn get_indirect_light( m : ptr<function, PbrMaterial> ) -> vec3f
 {
-    let max_mipmap : f32 = 5.0;
-
-    let roughness : f32 = m.roughness;
-    let n_dot_v : f32 = m.n_dot_v;
-
-    let lod : f32 = roughness * max_mipmap;
-
     // IBL
     // Specular + Diffuse
 
-    // Mixing the reflection with the normal is more accurate and keeps rough objects from gathering light from behind their tangent plane
-    // https://github.com/mrdoob/three.js/blob/c48f842f5d0fdff950c1a004803e659171bbcb85/src/renderers/shaders/ShaderChunk/envmap_physical_pars_fragment.glsl.js#L29
-    let reflected_dir : vec3f = normalize( mix( m.reflected_dir, m.normal, roughness * roughness) );
-    
-    var radiance : vec3f = textureSampleLevel(irradiance_texture, sampler_clamp, reflected_dir, lod).rgb * camera_data.ibl_intensity;
-    var irradiance : vec3f = textureSampleLevel(irradiance_texture, sampler_clamp, m.normal, max_mipmap).rgb * camera_data.ibl_intensity;// * PI;
+    var irradiance : vec3f = get_ibl_diffuse_light(m.normal);
+
+#ifdef ANISOTROPY_MATERIAL
+    var radiance : vec3f = get_ibl_radiance_anisotropy(m);
+#else
+    var radiance : vec3f = get_ibl_radiance_ggx(m.normal, m.view_dir, m.roughness);
+#endif
 
     // White furnace test
     // radiance = vec3f(1.0);
@@ -147,8 +141,6 @@ fn get_indirect_light( m : ptr<function, PbrMaterial> ) -> vec3f
 
     // Combined dielectric and metallic IBL
     // https://github.com/mrdoob/three.js/blob/c48f842f5d0fdff950c1a004803e659171bbcb85/src/renderers/shaders/ShaderChunk/lights_physical_pars_fragment.glsl.js#L543
-
-    // let cosine_weight_irradiance : vec3f = irradiance;// / PI;
 
     // let brdf_coords : vec2f = clamp(vec2f(n_dot_v, roughness), vec2f(0.0, 0.0), vec2f(1.0, 1.0));
     // let brdf_lut : vec2f = textureSampleLevel(brdf_lut_texture, sampler_clamp, brdf_coords, 0.0).rg;
@@ -161,8 +153,8 @@ fn get_indirect_light( m : ptr<function, PbrMaterial> ) -> vec3f
     // let multi_scatter = Fms * Ems;
 
     // let total_scattering : vec3f = single_scatter + multi_scatter;
-    // var diffuse : vec3f = cosine_weight_irradiance * (m.diffuse / PI) + m.diffuse * (1.0 - max(max(total_scattering.r, total_scattering.g), total_scattering.b)) * cosine_weight_irradiance;
-    // var specular : vec3f = single_scatter * radiance + multi_scatter * cosine_weight_irradiance;
+    // var diffuse : vec3f = irradiance * (m.diffuse / PI) + m.diffuse * (1.0 - max(max(total_scattering.r, total_scattering.g), total_scattering.b)) * irradiance;
+    // var specular : vec3f = single_scatter * radiance + multi_scatter * irradiance;
     // var total_indirect : vec3f = diffuse + specular;
 
     // Separate Fresnel for metallic and dielectric materials
@@ -209,17 +201,27 @@ fn get_indirect_light( m : ptr<function, PbrMaterial> ) -> vec3f
     return total_indirect * m.ao;
 }
 
+fn get_ibl_diffuse_light( n : vec3f ) -> vec3f
+{
+    let max_mipmap : f32 = 5.0;
+
+    var irradiance : vec3f = textureSampleLevel(irradiance_texture, sampler_clamp, n, max_mipmap).rgb * camera_data.ibl_intensity;
+
+    return irradiance;
+}
+
 fn get_ibl_radiance_ggx( n : vec3f, v : vec3f, roughness : f32 ) -> vec3f
 {
     let n_dot_v = clamp(dot(n, v), 0.0, 1.0);
     let max_mipmap : f32 = 5.0;
     let lod : f32 = roughness * max_mipmap;
 
+    // Mixing the reflection with the normal is more accurate and keeps rough objects from gathering light from behind their tangent plane
+    // https://github.com/mrdoob/three.js/blob/c48f842f5d0fdff950c1a004803e659171bbcb85/src/renderers/shaders/ShaderChunk/envmap_physical_pars_fragment.glsl.js#L29
     let reflection : vec3f = normalize(reflect(-v, n));
     let reflected_dir : vec3f = normalize( mix( reflection, n, roughness * roughness) );
 
-    var specular_sample : vec3f = textureSampleLevel(irradiance_texture, sampler_clamp, reflected_dir, lod).rgb;
-    specular_sample *= camera_data.ibl_intensity;
+    var specular_sample : vec3f = textureSampleLevel(irradiance_texture, sampler_clamp, reflected_dir, lod).rgb * camera_data.ibl_intensity;
 
     return specular_sample;
 }
@@ -250,3 +252,31 @@ fn get_ibl_ggx_fresnel( m : ptr<function, PbrMaterial>, F0 : vec3f ) -> vec3f
 
     return FssEss + FmsEms;
 }
+
+#ifdef ANISOTROPY_MATERIAL
+fn get_ibl_radiance_anisotropy( m : ptr<function, PbrMaterial> ) -> vec3f
+{
+    let n : vec3f = m.normal;
+    let v : vec3f = m.view_dir;
+    let roughness : f32 = m.roughness;
+    let anisotropy : f32 = m.anisotropy_factor;
+    let direction : vec3f = m.anisotropy_bitangent;
+    let n_dot_v : f32 = m.n_dot_v;
+
+    let tangent_roughness : f32 = mix(roughness, 1.0, anisotropy * anisotropy);
+    let anisotropic_tangent : vec3f = cross(direction, v);
+    let anisotropic_normal   = cross(anisotropic_tangent, direction);
+    let bend_factor : f32 = 1.0 - anisotropy * (1.0 - roughness);
+    let bend_factor_pow4 : f32 = bend_factor * bend_factor * bend_factor * bend_factor;
+    let bent_normal : vec3f = normalize(mix(anisotropic_normal, n, bend_factor_pow4));
+
+    let max_mipmap : f32 = 5.0;
+    let lod : f32 = roughness * max_mipmap;
+
+    let reflection : vec3f = normalize(reflect(-v, bent_normal));
+
+    var specular_sample : vec3f = textureSampleLevel(irradiance_texture, sampler_clamp, reflection, lod).rgb * camera_data.ibl_intensity;
+
+    return specular_sample;
+}
+#endif

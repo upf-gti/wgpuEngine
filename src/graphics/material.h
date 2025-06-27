@@ -40,42 +40,46 @@ enum eCullType {
 };
 
 enum eMaterialProperties : uint32_t {
-    PROP_COLOR                          = 1 << 0,
-    PROP_OCLUSSION_ROUGHNESS_METALLIC   = 1 << 1,
-    PROP_EMISSIVE                       = 1 << 2,
-    PROP_CLEARCOAT                      = 1 << 3,
-    PROP_IRIDESCENCE                    = 1 << 4,
-    PROP_DIFFUSE_TEXTURE                = 1 << 5,
-    PROP_METALLIC_ROUGHNESS_TEXTURE     = 1 << 6,
-    PROP_NORMAL_TEXTURE                 = 1 << 7,
-    PROP_EMISSIVE_TEXTURE               = 1 << 8,
-    PROP_OCLUSSION_TEXTURE              = 1 << 9,
-    PROP_CLEARCOAT_TEXTURE              = 1 << 10,
-    PROP_CLEARCOAT_ROUGHNESS_TEXTURE    = 1 << 11,
-    PROP_CLEARCOAT_NORMAL_TEXTURE       = 1 << 12,
-    PROP_IRIDESCENCE_TEXTURE            = 1 << 13,
-    PROP_IRIDESCENCE_THICKNESS_TEXTURE  = 1 << 14,
-    PROP_DEPTH_READ                     = 1 << 15,
-    PROP_DEPTH_WRITE                    = 1 << 16,
-    PROP_FRAGMENT_WRITE                 = 1 << 17,
-    PROP_USE_SKINNING                   = 1 << 18,
-    PROP_TRANSPARENCY_TYPE              = 1 << 19,
-    PROP_TOPOLOGY_TYPE                  = 1 << 20,
-    PROP_CULL_TYPE                      = 1 << 21,
-    PROP_TYPE                           = 1 << 22,
-    PROP_PRIORITY                       = 1 << 23,
-    PROP_ALPHA_MASK                     = 1 << 24,
-    PROP_NORMAL_SCALE                   = 1 << 25,
-    PROP_SHADER                         = 1 << 26,
-    PROP_CLEARCOAT_TOGGLE               = 1 << 27,
+    PROP_TYPE                           = 1 << 0,
+    PROP_TOPOLOGY_TYPE                  = 1 << 1,
+    PROP_CULL_TYPE                      = 1 << 2,
+    PROP_PRIORITY                       = 1 << 3,
+    PROP_DEPTH_READ                     = 1 << 4,
+    PROP_DEPTH_WRITE                    = 1 << 5,
+    PROP_FRAGMENT_WRITE                 = 1 << 6,
+    PROP_USE_SKINNING                   = 1 << 7,
+    PROP_SHADER                         = 1 << 8,
+    PROP_COLOR                          = 1 << 9,
+    PROP_DIFFUSE_TEXTURE                = 1 << 10,
+    PROP_OCLUSSION_ROUGHNESS_METALLIC   = 1 << 11,
+    PROP_METALLIC_ROUGHNESS_TEXTURE     = 1 << 12,
+    PROP_OCLUSSION_TEXTURE              = 1 << 13,
+    PROP_EMISSIVE                       = 1 << 14,
+    PROP_EMISSIVE_TEXTURE               = 1 << 15,
+    PROP_NORMAL_TEXTURE                 = 1 << 16,
+    PROP_NORMAL_SCALE                   = 1 << 17,
+    PROP_TRANSPARENCY_TYPE              = 1 << 18,
+    PROP_ALPHA_MASK                     = 1 << 19,
+    PROP_CLEARCOAT                      = 1 << 20,
+    PROP_CLEARCOAT_TEXTURE              = 1 << 21,
+    PROP_CLEARCOAT_ROUGHNESS_TEXTURE    = 1 << 22,
+    PROP_CLEARCOAT_NORMAL_TEXTURE       = 1 << 23,
+    PROP_CLEARCOAT_TOGGLE               = 1 << 24,
+    PROP_IRIDESCENCE                    = 1 << 25,
+    PROP_IRIDESCENCE_TEXTURE            = 1 << 26,
+    PROP_IRIDESCENCE_THICKNESS_TEXTURE  = 1 << 27,
     PROP_IRIDESCENCE_TOGGLE             = 1 << 28,
+    PROP_ANISOTROPY                     = 1 << 29,
+    PROP_ANISOTROPY_TEXTURE             = 1 << 30,
+    PROP_ANISOTROPY_TOGGLE              = 1 << 31,
 
-    PROP_RELOAD_NEEDED                  = PROP_DIFFUSE_TEXTURE | PROP_METALLIC_ROUGHNESS_TEXTURE | PROP_NORMAL_TEXTURE | PROP_EMISSIVE_TEXTURE | PROP_TRANSPARENCY_TYPE |
-                                          PROP_OCLUSSION_TEXTURE | PROP_CLEARCOAT_TEXTURE | PROP_CLEARCOAT_ROUGHNESS_TEXTURE | PROP_CLEARCOAT_NORMAL_TEXTURE | PROP_IRIDESCENCE_TEXTURE |
-                                          PROP_IRIDESCENCE_THICKNESS_TEXTURE | PROP_DEPTH_READ | PROP_DEPTH_WRITE | PROP_FRAGMENT_WRITE | PROP_TOPOLOGY_TYPE | PROP_CULL_TYPE | PROP_TYPE |
-                                          PROP_CLEARCOAT_TOGGLE | PROP_IRIDESCENCE_TOGGLE,
+    PROP_RELOAD_NEEDED                  = PROP_TYPE | PROP_TOPOLOGY_TYPE | PROP_CULL_TYPE | PROP_DEPTH_READ | PROP_DEPTH_WRITE | PROP_FRAGMENT_WRITE | PROP_DIFFUSE_TEXTURE |
+                                        PROP_METALLIC_ROUGHNESS_TEXTURE | PROP_OCLUSSION_TEXTURE | PROP_EMISSIVE_TEXTURE | PROP_NORMAL_TEXTURE | PROP_TRANSPARENCY_TYPE |
+                                        PROP_CLEARCOAT_TEXTURE | PROP_CLEARCOAT_ROUGHNESS_TEXTURE | PROP_CLEARCOAT_NORMAL_TEXTURE | PROP_CLEARCOAT_TOGGLE | PROP_IRIDESCENCE_TEXTURE |
+                                        PROP_IRIDESCENCE_THICKNESS_TEXTURE | PROP_IRIDESCENCE_TOGGLE | PROP_ANISOTROPY_TEXTURE | PROP_ANISOTROPY_TOGGLE,
 
-    PROP_UPDATE_NEEDED                  = PROP_COLOR | PROP_OCLUSSION_ROUGHNESS_METALLIC | PROP_EMISSIVE | PROP_CLEARCOAT | PROP_IRIDESCENCE | PROP_ALPHA_MASK | PROP_NORMAL_SCALE
+    PROP_UPDATE_NEEDED                  = PROP_COLOR | PROP_OCLUSSION_ROUGHNESS_METALLIC | PROP_EMISSIVE | PROP_NORMAL_SCALE | PROP_ALPHA_MASK | PROP_CLEARCOAT | PROP_IRIDESCENCE |
+                                        PROP_ANISOTROPY
 };
 
 class Material : public Resource
@@ -98,6 +102,8 @@ public:
     void set_iridescence_ior(float new_iridescence_ior);
     void set_iridescence_thickness_min(float new_iridescence_thickness_min);
     void set_iridescence_thickness_max(float new_iridescence_thickness_max);
+    void set_anisotropy_factor(float new_anisotropy_factor);
+    void set_anisotropy_rotation(float new_anisotropy_rotation);
 
     void set_diffuse_texture(Texture* diffuse_texture);
     void set_metallic_roughness_texture(Texture* metallic_roughness_texture);
@@ -109,6 +115,7 @@ public:
     void set_clearcoat_normal_texture(Texture* clearcoat_normal_texture);
     void set_iridescence_texture(Texture* iridescence_texture);
     void set_iridescence_thickness_texture(Texture* iridescence_thickness_texture);
+    void set_anisotropy_texture(Texture* anisotropy_texture);
 
     void set_alpha_mask(float alpha_mask);
     void set_depth_read_write(bool value);
@@ -140,6 +147,8 @@ public:
     float get_iridescence_ior() const;
     float get_iridescence_thickness_min() const;
     float get_iridescence_thickness_max() const;
+    float get_anisotropy_factor() const;
+    float get_anisotropy_rotation() const;
 
     const Texture* get_diffuse_texture() const;
     const Texture* get_metallic_roughness_texture() const;
@@ -151,6 +160,7 @@ public:
     const Texture* get_clearcoat_normal_texture() const;
     const Texture* get_iridescence_texture() const;
     const Texture* get_iridescence_thickness_texture() const;
+    const Texture* get_anisotropy_texture() const;
 
     Texture* get_diffuse_texture();
     Texture* get_metallic_roughness_texture();
@@ -162,6 +172,7 @@ public:
     Texture* get_clearcoat_normal_texture();
     Texture* get_iridescence_texture();
     Texture* get_iridescence_thickness_texture();
+    Texture* get_anisotropy_texture();
 
     float get_alpha_mask() const;
 
@@ -203,6 +214,7 @@ private:
     Texture* clearcoat_normal_texture = nullptr;
     Texture* iridescence_texture = nullptr;
     Texture* iridescence_thickness_texture = nullptr;
+    Texture* anisotropy_texture = nullptr;
 
     glm::vec4 color = { 1.0f, 1.0f, 1.0f, 1.0f };
     float roughness = 1.0f;
@@ -219,6 +231,9 @@ private:
     float iridescence_ior = 1.3f;
     float iridescence_thickness_min = 100.0f;
     float iridescence_thickness_max = 400.0f; // nanometers
+
+    float anisotropy_factor = 0.0f;
+    float anisotropy_rotation = 0.0f;
 
     bool depth_read = true;
     bool depth_write = true;

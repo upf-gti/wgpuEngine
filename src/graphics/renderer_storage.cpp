@@ -127,7 +127,7 @@ void RendererStorage::register_material_bind_group(WebGPUContext* webgpu_context
         if (emissive_texture) {
             Uniform* u = new Uniform();
             u->data = emissive_texture->get_view(WGPUTextureViewDimension_2D, 0, emissive_texture->get_mipmap_count());
-            u->binding = 5;
+            u->binding = 6;
             uniforms.push_back(u);
             uses_textures |= true;
             texture_ref = emissive_texture;
@@ -138,7 +138,7 @@ void RendererStorage::register_material_bind_group(WebGPUContext* webgpu_context
             Uniform* u = new Uniform();
             const glm::vec3& emissive = material->get_emissive();
             u->data = webgpu_context->create_buffer(sizeof(glm::vec3), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform, &emissive, "mat_emissive");
-            u->binding = 6;
+            u->binding = 8;
             u->buffer_size = sizeof(glm::vec3);
             uniform_indices[eMaterialProperties::PROP_EMISSIVE] = uniforms.size();
             uniforms.push_back(u);
@@ -148,7 +148,7 @@ void RendererStorage::register_material_bind_group(WebGPUContext* webgpu_context
         if (occlusion_texture) {
             Uniform* u = new Uniform();
             u->data = occlusion_texture->get_view(WGPUTextureViewDimension_2D, 0, occlusion_texture->get_mipmap_count());
-            u->binding = 9;
+            u->binding = 12;
             uniforms.push_back(u);
             uses_textures |= true;
             texture_ref = occlusion_texture;
@@ -162,7 +162,7 @@ void RendererStorage::register_material_bind_group(WebGPUContext* webgpu_context
             Uniform* u = new Uniform();
             glm::vec2 clearcoat_data = { material->get_clearcoat_factor(), material->get_clearcoat_roughness() };
             u->data = webgpu_context->create_buffer(sizeof(glm::vec2), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform, &clearcoat_data, "mat_clearcoat");
-            u->binding = 12;
+            u->binding = 13;
             u->buffer_size = sizeof(glm::vec2);
             uniform_indices[eMaterialProperties::PROP_CLEARCOAT] = uniforms.size();
             uniforms.push_back(u);
@@ -171,7 +171,7 @@ void RendererStorage::register_material_bind_group(WebGPUContext* webgpu_context
             if (clearcoat_texture) {
                 Uniform* u = new Uniform();
                 u->data = clearcoat_texture->get_view(WGPUTextureViewDimension_2D, 0, clearcoat_texture->get_mipmap_count());
-                u->binding = 13;
+                u->binding = 14;
                 uniforms.push_back(u);
                 uses_textures |= true;
                 texture_ref = clearcoat_texture;
@@ -181,7 +181,7 @@ void RendererStorage::register_material_bind_group(WebGPUContext* webgpu_context
             if (clearcoat_roughness_texture) {
                 Uniform* u = new Uniform();
                 u->data = clearcoat_roughness_texture->get_view(WGPUTextureViewDimension_2D, 0, clearcoat_roughness_texture->get_mipmap_count());
-                u->binding = 14;
+                u->binding = 15;
                 uniforms.push_back(u);
                 uses_textures |= true;
                 texture_ref = clearcoat_roughness_texture;
@@ -191,7 +191,7 @@ void RendererStorage::register_material_bind_group(WebGPUContext* webgpu_context
             if (clearcoat_normal_texture) {
                 Uniform* u = new Uniform();
                 u->data = clearcoat_normal_texture->get_view(WGPUTextureViewDimension_2D, 0, clearcoat_normal_texture->get_mipmap_count());
-                u->binding = 15;
+                u->binding = 16;
                 uniforms.push_back(u);
                 uses_textures |= true;
                 texture_ref = clearcoat_normal_texture;
@@ -206,7 +206,7 @@ void RendererStorage::register_material_bind_group(WebGPUContext* webgpu_context
             Uniform* u = new Uniform();
             glm::vec4 iridescence_data = { material->get_iridescence_factor(), material->get_iridescence_ior(), material->get_iridescence_thickness_min(), material->get_iridescence_thickness_max() };
             u->data = webgpu_context->create_buffer(sizeof(glm::vec4), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform, &iridescence_data, "mat_iridescence");
-            u->binding = 16;
+            u->binding = 17;
             u->buffer_size = sizeof(glm::vec4);
             uniform_indices[eMaterialProperties::PROP_IRIDESCENCE] = uniforms.size();
             uniforms.push_back(u);
@@ -215,7 +215,7 @@ void RendererStorage::register_material_bind_group(WebGPUContext* webgpu_context
             if (iridescence_texture) {
                 Uniform* u = new Uniform();
                 u->data = iridescence_texture->get_view(WGPUTextureViewDimension_2D, 0, iridescence_texture->get_mipmap_count());
-                u->binding = 17;
+                u->binding = 18;
                 uniforms.push_back(u);
                 uses_textures |= true;
                 texture_ref = iridescence_texture;
@@ -225,10 +225,35 @@ void RendererStorage::register_material_bind_group(WebGPUContext* webgpu_context
             if (iridescence_thickness_texture) {
                 Uniform* u = new Uniform();
                 u->data = iridescence_thickness_texture->get_view(WGPUTextureViewDimension_2D, 0, iridescence_thickness_texture->get_mipmap_count());
-                u->binding = 18;
+                u->binding = 19;
                 uniforms.push_back(u);
                 uses_textures |= true;
                 texture_ref = iridescence_thickness_texture;
+            }
+        }
+
+        /*
+        *   Anisotropy
+        */
+
+        if (material->get_anisotropy_factor() > 0.0f) {
+            Uniform* u = new Uniform();
+            float rotation = material->get_anisotropy_rotation();
+            glm::vec3 anisotropy_data = { material->get_anisotropy_factor(), cosf(rotation), sinf(rotation) };
+            u->data = webgpu_context->create_buffer(sizeof(glm::vec3), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform, &anisotropy_data, "mat_anisotropy");
+            u->binding = 20;
+            u->buffer_size = sizeof(glm::vec3);
+            uniform_indices[eMaterialProperties::PROP_ANISOTROPY] = uniforms.size();
+            uniforms.push_back(u);
+
+            Texture* anisotropy_texture = material->get_anisotropy_texture();
+            if (anisotropy_texture) {
+                Uniform* u = new Uniform();
+                u->data = anisotropy_texture->get_view(WGPUTextureViewDimension_2D, 0, anisotropy_texture->get_mipmap_count());
+                u->binding = 21;
+                uniforms.push_back(u);
+                uses_textures |= true;
+                texture_ref = anisotropy_texture;
             }
         }
     }
@@ -247,7 +272,7 @@ void RendererStorage::register_material_bind_group(WebGPUContext* webgpu_context
             Uniform* u = new Uniform();
             float normal_scale = material->get_normal_scale();
             u->data = webgpu_context->create_buffer(sizeof(float), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform, &normal_scale, "mat_normal_scale");
-            u->binding = 19;
+            u->binding = 5;
             u->buffer_size = sizeof(float);
             uniform_indices[eMaterialProperties::PROP_NORMAL_SCALE] = uniforms.size();
             uniforms.push_back(u);
@@ -276,7 +301,7 @@ void RendererStorage::register_material_bind_group(WebGPUContext* webgpu_context
         Uniform* u = new Uniform();
         float alpha_mask = material->get_alpha_mask();
         u->data = webgpu_context->create_buffer(sizeof(float), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform, &alpha_mask, "mat_alpha_cutoff");
-        u->binding = 8;
+        u->binding = 9;
         u->buffer_size = sizeof(float);
         uniform_indices[eMaterialProperties::PROP_ALPHA_MASK] = uniforms.size();
         uniforms.push_back(u);
@@ -397,6 +422,13 @@ void RendererStorage::update_material_bind_group(WebGPUContext* webgpu_context, 
         Uniform* u = uniforms[uniform_indices[eMaterialProperties::PROP_IRIDESCENCE]];
         glm::vec4 iridescence_data = { material->get_iridescence_factor(), material->get_iridescence_ior(), material->get_iridescence_thickness_min(), material->get_iridescence_thickness_max() };
         webgpu_context->update_buffer(std::get<WGPUBuffer>(u->data), 0, &iridescence_data, sizeof(glm::vec4));
+    }
+
+    if (dirty_flags & eMaterialProperties::PROP_ANISOTROPY && material->get_type() == MATERIAL_PBR) {
+        Uniform* u = uniforms[uniform_indices[eMaterialProperties::PROP_ANISOTROPY]];
+        float rotation = material->get_anisotropy_rotation();
+        glm::vec3 anisotropy_data = { material->get_anisotropy_factor(), cosf(rotation), sinf(rotation) };
+        webgpu_context->update_buffer(std::get<WGPUBuffer>(u->data), 0, &anisotropy_data, sizeof(glm::vec4));
     }
 
     material->reset_dirty_flags();
@@ -746,6 +778,14 @@ std::vector<std::string> RendererStorage::get_common_define_specializations(cons
 
         if (material->get_iridescence_thickness_texture()) {
             define_specializations.push_back("IRIDESCENCE_THICKNESS_TEXTURE");
+        }
+    }
+
+    if (material->get_anisotropy_factor() > 0.0f) {
+        define_specializations.push_back("ANISOTROPY_MATERIAL");
+
+        if (material->get_anisotropy_texture()) {
+            define_specializations.push_back("ANISOTROPY_TEXTURE");
         }
     }
 

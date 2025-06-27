@@ -28,6 +28,11 @@ struct PbrMaterial
     iridescence_ior : f32,
     iridescence_thickness : f32,
 
+    // KHR_materials_anisotropy
+    anisotropy_factor : f32,
+    anisotropy_tangent : vec3f,
+    anisotropy_bitangent : vec3f,
+
     n_dot_v : f32,
     view_dir : vec3f,
     reflected_dir : vec3f

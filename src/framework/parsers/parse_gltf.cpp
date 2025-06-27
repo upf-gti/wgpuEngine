@@ -772,6 +772,36 @@ void read_mesh(const tinygltf::Model& model, const tinygltf::Node& node, Node3D*
                 }
             }
 
+            it = gltf_material.extensions.find("KHR_materials_anisotropy");
+            if (it != gltf_material.extensions.end()) {
+                const tinygltf::Value& ext = it->second;
+
+                if (ext.Has("anisotropyStrength")) {
+                    material->set_anisotropy_factor(static_cast<float>(ext.Get("anisotropyStrength").GetNumberAsDouble()));
+                }
+
+                if (ext.Has("anisotropyRotation")) {
+                    material->set_anisotropy_rotation(static_cast<float>(ext.Get("anisotropyRotation").GetNumberAsDouble()));
+                }
+
+                if (ext.Has("anisotropyTexture")) {
+                    const auto& tex = ext.Get("anisotropyTexture");
+                    assert(tex.Has("index"));
+                    int anisotropy_texture_index = tex.Get("index").Get<int>();
+                    if (anisotropy_texture_index >= 0) {
+                        if (texture_cache.contains(anisotropy_texture_index)) {
+                            material->set_anisotropy_texture(texture_cache[anisotropy_texture_index]);
+                        }
+                        else {
+                            Texture* anisotropy_texture = nullptr;
+                            create_material_texture(model, anisotropy_texture_index, &anisotropy_texture, false, false, async_load);
+                            texture_cache[anisotropy_texture_index] = anisotropy_texture;
+                            material->set_anisotropy_texture(anisotropy_texture);
+                        }
+                    }
+                }
+            }
+
             if (gltf_material.doubleSided) {
                 material->set_cull_type(CULL_NONE);
             }

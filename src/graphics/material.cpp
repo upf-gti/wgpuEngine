@@ -145,6 +145,28 @@ void Material::set_iridescence_thickness_max(float new_iridescence_thickness_max
     dirty_flags |= eMaterialProperties::PROP_IRIDESCENCE;
 }
 
+void Material::set_anisotropy_factor(float new_anisotropy_factor)
+{
+    if (anisotropy_factor == new_anisotropy_factor) {
+        return;
+    }
+
+    if (new_anisotropy_factor == 0.0f || anisotropy_factor == 0.0f) {
+        dirty_flags |= eMaterialProperties::PROP_ANISOTROPY_TOGGLE;
+    }
+    else {
+        dirty_flags |= eMaterialProperties::PROP_ANISOTROPY;
+    }
+
+    anisotropy_factor = new_anisotropy_factor;
+}
+
+void Material::set_anisotropy_rotation(float new_anisotropy_rotation)
+{
+    this->anisotropy_rotation = new_anisotropy_rotation;
+    dirty_flags |= eMaterialProperties::PROP_ANISOTROPY;
+}
+
 void Material::set_diffuse_texture(Texture* diffuse_texture)
 {
     if (this->diffuse_texture != diffuse_texture) {
@@ -307,6 +329,22 @@ void Material::set_iridescence_thickness_texture(Texture* iridescence_thickness_
     dirty_flags |= eMaterialProperties::PROP_IRIDESCENCE_THICKNESS_TEXTURE;
 }
 
+void Material::set_anisotropy_texture(Texture* anisotropy_texture)
+{
+    if (this->anisotropy_texture != anisotropy_texture) {
+
+        if (this->anisotropy_texture) {
+            this->anisotropy_texture->unref();
+        }
+
+        anisotropy_texture->ref();
+    }
+
+    this->anisotropy_texture = iridescence_thickness_texture;
+
+    dirty_flags |= eMaterialProperties::PROP_ANISOTROPY_TEXTURE;
+}
+
 void Material::set_alpha_mask(float alpha_mask)
 {
     this->alpha_mask = alpha_mask;
@@ -448,6 +486,16 @@ float Material::get_iridescence_thickness_max() const
     return iridescence_thickness_max;
 }
 
+float Material::get_anisotropy_factor() const
+{
+    return anisotropy_factor;
+}
+
+float Material::get_anisotropy_rotation() const
+{
+    return anisotropy_rotation;
+}
+
 const Texture* Material::get_diffuse_texture() const
 {
     return diffuse_texture;
@@ -496,6 +544,11 @@ const Texture* Material::get_iridescence_texture() const
 const Texture* Material::get_iridescence_thickness_texture() const
 {
     return iridescence_thickness_texture;
+}
+
+const Texture* Material::get_anisotropy_texture() const
+{
+    return anisotropy_texture;
 }
 
 float Material::get_alpha_mask() const
@@ -699,6 +752,27 @@ void Material::render_gui()
             ImGui::TreePop();
         }
 
+        // Anisotropy
+        if (ImGui::TreeNodeEx("Anisotropy")) {
+
+            ImGui::Text("Factor");
+            ImGui::SameLine(200);
+            ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
+            float factor = anisotropy_factor;
+            if (ImGui::DragFloat("##Factor", &factor, 0.01f, 0.0f, 1.0f)) {
+                set_anisotropy_factor(factor);
+            }
+
+            ImGui::Text("Rotation");
+            ImGui::SameLine(200);
+            ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
+            if (ImGui::DragFloat("##Rotation", &anisotropy_rotation, 0.01f, 0.0f, 3.1415f)) {
+                dirty_flags |= eMaterialProperties::PROP_ANISOTROPY;
+            }
+
+            ImGui::TreePop();
+        }
+
         ImGui::Text("Topology Type");
         ImGui::SameLine(200);
         static const char* topology_types[] = { "TOPOLOGY_POINT_LIST", "TOPOLOGY_LINE_LIST", "TOPOLOGY_LINE_STRIP", "TOPOLOGY_TRIANGLE_LIST", "TOPOLOGY_TRIANGLE_STRIP" };
@@ -790,3 +864,9 @@ Texture* Material::get_iridescence_thickness_texture()
 {
     return iridescence_thickness_texture;
 }
+
+Texture* Material::get_anisotropy_texture()
+{
+    return anisotropy_texture;
+}
+
