@@ -24,6 +24,7 @@ public:
 
 	void reload(const std::string& engine_shader_path = "");
 
+    const std::vector<std::string>& get_define_specializations() const { return define_specializations; }
     void set_define_specializations(std::vector<std::string> define_specializations);
 
 	WGPUShaderModule get_module() const;

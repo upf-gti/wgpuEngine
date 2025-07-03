@@ -35,6 +35,7 @@ struct sSurfaceData {
     uint32_t size() const;
     void resize(uint32_t size);
     void append(const sSurfaceData& surface_data);
+    void unweld();
     void clear();
 };
 

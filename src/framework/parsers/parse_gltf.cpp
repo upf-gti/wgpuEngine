@@ -196,6 +196,40 @@ void parse_attribute(tinygltf::Buffer const& buffer, size_t buffer_start, size_t
     }
 }
 
+void read_texture_uv_transform_ext(Material* material, const tinygltf::Value& ext, uint32_t uv_transform_index, std::vector<std::string>& custom_defines, const std::string& texture_name)
+{
+    glm::vec2 scale = { 1.0f, 1.0f };
+    glm::vec2 offset = { 0.0f, 0.0f };
+    float rotation = 0.0f;
+
+    if (ext.Has("rotation")) {
+        rotation = static_cast<float>(ext.Get("rotation").GetNumberAsDouble());
+    }
+
+    if (ext.Has("offset")) {
+        const auto& offset2 = ext.Get("offset");
+        if (offset2.IsArray() && offset2.Size() == 2) {
+            offset.x = static_cast<float>(offset2.Get(0).GetNumberAsDouble());
+            offset.y = static_cast<float>(offset2.Get(1).GetNumberAsDouble());
+        }
+    }
+
+    if (ext.Has("scale")) {
+        const auto& scale2 = ext.Get("scale");
+        if (scale2.IsArray() && scale2.Size() == 2) {
+            scale.x = static_cast<float>(scale2.Get(0).GetNumberAsDouble());
+            scale.y = static_cast<float>(scale2.Get(1).GetNumberAsDouble());
+        }
+    }
+
+    glm::mat3x3 m_translation = glm::mat3x3(1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, offset.x, offset.y, 1.0f);
+    glm::mat3x3 m_rotation = glm::mat3x3(cosf(rotation), -sinf(rotation), 0.0f, sinf(rotation), cosf(rotation), 0.0f, 0.0f, 0.0f, 1.0f);
+    glm::mat3x3 m_scale = glm::mat3x3(scale.x, 0.0f, 0.0f, 0.0f, scale.y, 0.0f, 0.0f, 0.0f, 1.0f);
+    glm::mat3x3 matrix = m_translation * m_rotation * m_scale;
+    material->set_uv_transform(uv_transform_index, m_translation * m_rotation * m_scale);
+    custom_defines.push_back("HAS_" + texture_name + "_UV_TRANSFORM");
+}
+
 void read_mesh(const tinygltf::Model& model, const tinygltf::Node& node, Node3D* entity, std::map<uint32_t, Texture*>& texture_cache, std::map<size_t, Surface*>& mesh_cache, bool fill_surface_data, bool async_load)
 {
     const tinygltf::Mesh& mesh = model.meshes[node.mesh];
@@ -567,6 +601,8 @@ void read_mesh(const tinygltf::Model& model, const tinygltf::Node& node, Node3D*
             tangents_generated = surface->generate_tangents(&vertices);
         }
 
+        std::vector<std::string> custom_defines;
+
         if (primitive.material >= 0) {
 
             const tinygltf::Material& gltf_material = model.materials[primitive.material];
@@ -590,6 +626,11 @@ void read_mesh(const tinygltf::Model& model, const tinygltf::Node& node, Node3D*
                     texture_cache[pbrMetallicRoughness.baseColorTexture.index] = diffuse_texture;
                     material->set_diffuse_texture(diffuse_texture);
                 }
+
+                auto it = pbrMetallicRoughness.baseColorTexture.extensions.find("KHR_texture_transform");
+                if (it != pbrMetallicRoughness.baseColorTexture.extensions.end()) {
+                    read_texture_uv_transform_ext(material, it->second, DIFFUSE_UV_TRANSFORM, custom_defines, "DIFFUSE");
+                }
             }
             material->set_name(gltf_material.name);
             material->set_color(glm::vec4(
@@ -609,6 +650,11 @@ void read_mesh(const tinygltf::Model& model, const tinygltf::Node& node, Node3D*
                     texture_cache[pbrMetallicRoughness.metallicRoughnessTexture.index] = metallic_roughness_texture;
                     material->set_metallic_roughness_texture(metallic_roughness_texture);
                 }
+
+                auto it = pbrMetallicRoughness.metallicRoughnessTexture.extensions.find("KHR_texture_transform");
+                if (it != pbrMetallicRoughness.metallicRoughnessTexture.extensions.end()) {
+                    read_texture_uv_transform_ext(material, it->second, METALLIC_ROUGHNESS_UV_TRANSFORM, custom_defines, "METALLIC_ROUGHNESS");
+                }
             }
 
             material->set_roughness(static_cast<float>(pbrMetallicRoughness.roughnessFactor));
@@ -624,6 +670,11 @@ void read_mesh(const tinygltf::Model& model, const tinygltf::Node& node, Node3D*
                     texture_cache[gltf_material.normalTexture.index] = normal_texture;
                     material->set_normal_texture(normal_texture);
                 }
+
+                auto it = gltf_material.normalTexture.extensions.find("KHR_texture_transform");
+                if (it != gltf_material.normalTexture.extensions.end()) {
+                    read_texture_uv_transform_ext(material, it->second, NORMAL_UV_TRANSFORM, custom_defines, "NORMAL");
+                }
             }
 
             if (gltf_material.emissiveTexture.index >= 0) {
@@ -635,6 +686,11 @@ void read_mesh(const tinygltf::Model& model, const tinygltf::Node& node, Node3D*
                     create_material_texture(model, gltf_material.emissiveTexture.index, &emissive_texture, true, false, async_load);
                     texture_cache[gltf_material.emissiveTexture.index] = emissive_texture;
                     material->set_emissive_texture(emissive_texture);
+                }
+
+                auto it = gltf_material.emissiveTexture.extensions.find("KHR_texture_transform");
+                if (it != gltf_material.emissiveTexture.extensions.end()) {
+                    read_texture_uv_transform_ext(material, it->second, EMISSIVE_UV_TRANSFORM, custom_defines, "EMISSIVE");
                 }
             }
 
@@ -649,6 +705,11 @@ void read_mesh(const tinygltf::Model& model, const tinygltf::Node& node, Node3D*
                     texture_cache[gltf_material.occlusionTexture.index] = occlusion_texture;
                     material->set_occlusion_texture(occlusion_texture);
                 }
+
+                auto it = gltf_material.occlusionTexture.extensions.find("KHR_texture_transform");
+                if (it != gltf_material.occlusionTexture.extensions.end()) {
+                    read_texture_uv_transform_ext(material, it->second, OCCLUSION_UV_TRANSFORM, custom_defines, "OCCLUSION");
+                }
             }
 
             material->set_emissive({ gltf_material.emissiveFactor[0], gltf_material.emissiveFactor[1], gltf_material.emissiveFactor[2] });
@@ -656,6 +717,8 @@ void read_mesh(const tinygltf::Model& model, const tinygltf::Node& node, Node3D*
             auto it = gltf_material.extensions.find("KHR_materials_clearcoat");
             if (it != gltf_material.extensions.end()) {
                 const tinygltf::Value& ext = it->second;
+
+                material->set_use_clearcoat(true);
 
                 if (ext.Has("clearcoatFactor")) {
                     material->set_clearcoat_factor(static_cast<float>(ext.Get("clearcoatFactor").GetNumberAsDouble()));
@@ -680,6 +743,14 @@ void read_mesh(const tinygltf::Model& model, const tinygltf::Node& node, Node3D*
                             material->set_clearcoat_texture(clearcoat_texture);
                         }
                     }
+
+                    if (tex.Has("extensions")) {
+                        const auto& tex_ext = tex.Get("extensions");
+                        if (tex_ext.Has("KHR_texture_transform")) {
+                            const auto& transform = tex_ext.Get("KHR_texture_transform");
+                            read_texture_uv_transform_ext(material, transform, CLEARCOAT_UV_TRANSFORM, custom_defines, "CLEARCOAT");
+                        }
+                    }
                 }
 
                 if (ext.Has("clearcoatRoughnessTexture")) {
@@ -695,6 +766,14 @@ void read_mesh(const tinygltf::Model& model, const tinygltf::Node& node, Node3D*
                             create_material_texture(model, clearcoat_roughness_texture_index, &clearcoat_roughness_texture, false, false, async_load);
                             texture_cache[clearcoat_roughness_texture_index] = clearcoat_roughness_texture;
                             material->set_clearcoat_roughness_texture(clearcoat_roughness_texture);
+                        }
+                    }
+
+                    if (tex.Has("extensions")) {
+                        const auto& tex_ext = tex.Get("extensions");
+                        if (tex_ext.Has("KHR_texture_transform")) {
+                            const auto& transform = tex_ext.Get("KHR_texture_transform");
+                            read_texture_uv_transform_ext(material, transform, CLEARCOAT_ROUGHNESS_UV_TRANSFORM, custom_defines, "CLEARCOAT_ROUGHNESS");
                         }
                     }
                 }
@@ -714,12 +793,22 @@ void read_mesh(const tinygltf::Model& model, const tinygltf::Node& node, Node3D*
                             material->set_clearcoat_normal_texture(clearcoat_texture);
                         }
                     }
+
+                    if (tex.Has("extensions")) {
+                        const auto& tex_ext = tex.Get("extensions");
+                        if (tex_ext.Has("KHR_texture_transform")) {
+                            const auto& transform = tex_ext.Get("KHR_texture_transform");
+                            read_texture_uv_transform_ext(material, transform, CLEARCOAT_NORMAL_UV_TRANSFORM, custom_defines, "CLEARCOAT_NORMAL");
+                        }
+                    }
                 }
             }
 
             it = gltf_material.extensions.find("KHR_materials_iridescence");
             if (it != gltf_material.extensions.end()) {
                 const tinygltf::Value& ext = it->second;
+
+                material->set_use_iridescence(true);
 
                 if (ext.Has("iridescenceFactor")) {
                     material->set_iridescence_factor(static_cast<float>(ext.Get("iridescenceFactor").GetNumberAsDouble()));
@@ -752,6 +841,14 @@ void read_mesh(const tinygltf::Model& model, const tinygltf::Node& node, Node3D*
                             material->set_iridescence_texture(iridescence_texture);
                         }
                     }
+
+                    if (tex.Has("extensions")) {
+                        const auto& tex_ext = tex.Get("extensions");
+                        if (tex_ext.Has("KHR_texture_transform")) {
+                            const auto& transform = tex_ext.Get("KHR_texture_transform");
+                            read_texture_uv_transform_ext(material, transform, IRIDESCENCE_UV_TRANSFORM, custom_defines, "IRIDESCENCE");
+                        }
+                    }
                 }
 
                 if (ext.Has("iridescenceThicknessTexture")) {
@@ -769,12 +866,22 @@ void read_mesh(const tinygltf::Model& model, const tinygltf::Node& node, Node3D*
                             material->set_iridescence_thickness_texture(iridescence_thickness_texture);
                         }
                     }
+
+                    if (tex.Has("extensions")) {
+                        const auto& tex_ext = tex.Get("extensions");
+                        if (tex_ext.Has("KHR_texture_transform")) {
+                            const auto& transform = tex_ext.Get("KHR_texture_transform");
+                            read_texture_uv_transform_ext(material, transform, IRIDESCENCE_THICKNESS_UV_TRANSFORM, custom_defines, "IRIDESCENCE_THICKNESS");
+                        }
+                    }
                 }
             }
 
             it = gltf_material.extensions.find("KHR_materials_anisotropy");
             if (it != gltf_material.extensions.end()) {
                 const tinygltf::Value& ext = it->second;
+
+                material->set_use_anisotropy(true);
 
                 if (ext.Has("anisotropyStrength")) {
                     material->set_anisotropy_factor(static_cast<float>(ext.Get("anisotropyStrength").GetNumberAsDouble()));
@@ -797,6 +904,14 @@ void read_mesh(const tinygltf::Model& model, const tinygltf::Node& node, Node3D*
                             create_material_texture(model, anisotropy_texture_index, &anisotropy_texture, false, false, async_load);
                             texture_cache[anisotropy_texture_index] = anisotropy_texture;
                             material->set_anisotropy_texture(anisotropy_texture);
+                        }
+                    }
+
+                    if (tex.Has("extensions")) {
+                        const auto& tex_ext = tex.Get("extensions");
+                        if (tex_ext.Has("KHR_texture_transform")) {
+                            const auto& transform = tex_ext.Get("KHR_texture_transform");
+                            read_texture_uv_transform_ext(material, transform, ANISOTROPY_UV_TRANSFORM, custom_defines, "ANISOTROPY");
                         }
                     }
                 }
@@ -838,10 +953,8 @@ void read_mesh(const tinygltf::Model& model, const tinygltf::Node& node, Node3D*
         if (!async_load) {
             surface->create_surface_data(vertices, fill_surface_data);
 
-            std::vector<std::string> custom_defines;
-
             if (tangents_generated || primitive.attributes.contains("TANGENT")) {
-                custom_defines.push_back("HAS_TANGENTS");
+                material->set_use_tangents(true);
             }
 
             material->set_shader(RendererStorage::get_shader_from_source(shaders::mesh_forward::source, shaders::mesh_forward::path, shaders::mesh_forward::libraries, material, custom_defines));
@@ -1732,13 +1845,11 @@ void GltfParser::on_async_finished()
 
         mesh.second->create_surface_data(surface_data, false);
 
-        std::vector<std::string> custom_defines;
-
         if (!surface_data.tangents.empty()) {
-            custom_defines.push_back("HAS_TANGENTS");
+            material->set_use_tangents(true);
         }
 
-        material->set_shader(RendererStorage::get_shader_from_source(shaders::mesh_forward::source, shaders::mesh_forward::path, shaders::mesh_forward::libraries, material, custom_defines));
+        material->set_shader(RendererStorage::get_shader_from_source(shaders::mesh_forward::source, shaders::mesh_forward::path, shaders::mesh_forward::libraries, material));
     }
 
     // Initialize nodes after async parsing

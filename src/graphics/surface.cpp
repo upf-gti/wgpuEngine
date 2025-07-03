@@ -1328,6 +1328,8 @@ void Surface::mikkt_set_tspace_basic(const SMikkTSpaceContext* pContext, const f
 
 bool Surface::generate_tangents(sSurfaceData* vertices_data)
 {
+    // vertices_data->unweld();
+
     vertices_data->tangents.resize(vertices_data->vertices.size());
 
     SMikkTSpaceInterface mkif;
@@ -1394,6 +1396,34 @@ void sSurfaceData::append(const sSurfaceData& surface_data)
     colors.insert(colors.end(), surface_data.colors.begin(), surface_data.colors.end());
     weights.insert(weights.end(), surface_data.weights.begin(), surface_data.weights.end());
     joints.insert(joints.end(), surface_data.joints.begin(), surface_data.joints.end());
+}
+
+void sSurfaceData::unweld()
+{
+    if (indices.empty()) return;
+
+    sSurfaceData new_data;
+    size_t count = indices.size();
+    new_data.vertices.reserve(count);
+    new_data.uvs.reserve(count);
+    new_data.normals.reserve(count);
+    new_data.tangents.reserve(count);
+    new_data.colors.reserve(count);
+    new_data.weights.reserve(count);
+    new_data.joints.reserve(count);
+
+    for (uint32_t i = 0; i < indices.size(); ++i) {
+        uint32_t idx = indices[i];
+        new_data.vertices.push_back(vertices[idx]);
+        if (!uvs.empty()) new_data.uvs.push_back(uvs[idx]);
+        if (!normals.empty()) new_data.normals.push_back(normals[idx]);
+        if (!tangents.empty()) new_data.tangents.push_back(tangents[idx]);
+        if (!colors.empty()) new_data.colors.push_back(colors[idx]);
+        if (!weights.empty()) new_data.weights.push_back(weights[idx]);
+        if (!joints.empty()) new_data.joints.push_back(joints[idx]);
+    }
+
+    *this = std::move(new_data);
 }
 
 void sSurfaceData::clear()

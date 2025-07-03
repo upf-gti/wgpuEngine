@@ -6,6 +6,8 @@
 
 #include "imgui.h"
 
+#define UNREF_TEXTURE(x) if(x) { x->unref(); }
+
 Material::Material()
 {
     properties["color"] = &color;
@@ -16,41 +18,25 @@ Material::Material()
     properties["alpha_mask"] = &alpha_mask;
     properties["clear_coat_factor"] = &clearcoat_factor;
     properties["clear_coat_roughness"] = &clearcoat_roughness;
+
+    uv_transforms.resize(MAX_UV_TRANSFORMS);
+    for (auto& t : uv_transforms) {
+        t = glm::mat4x4(1.0f);
+    }
 }
 
 Material::~Material()
 {
-    if (diffuse_texture) {
-        diffuse_texture->unref();
-    }
-
-    if (metallic_roughness_texture) {
-        metallic_roughness_texture->unref();
-    }
-
-    if (normal_texture) {
-        normal_texture->unref();
-    }
-
-    if (emissive_texture) {
-        emissive_texture->unref();
-    }
-
-    if (occlusion_texture) {
-        occlusion_texture->unref();
-    }
-
-    if (clearcoat_texture) {
-        clearcoat_texture->unref();
-    }
-
-    if (clearcoat_roughness_texture) {
-        clearcoat_roughness_texture->unref();
-    }
-
-    if (clearcoat_normal_texture) {
-        clearcoat_normal_texture->unref();
-    }
+    UNREF_TEXTURE(diffuse_texture);
+    UNREF_TEXTURE(metallic_roughness_texture);
+    UNREF_TEXTURE(normal_texture);
+    UNREF_TEXTURE(emissive_texture);
+    UNREF_TEXTURE(occlusion_texture);
+    UNREF_TEXTURE(clearcoat_texture);
+    UNREF_TEXTURE(clearcoat_roughness_texture);
+    UNREF_TEXTURE(clearcoat_normal_texture);
+    UNREF_TEXTURE(iridescence_texture);
+    UNREF_TEXTURE(iridescence_thickness_texture);
 }
 
 void Material::set_color(const glm::vec4& color)
@@ -91,18 +77,8 @@ void Material::set_emissive(const glm::vec3& emissive)
 
 void Material::set_clearcoat_factor(float new_clearcoat_factor)
 {
-    if (clearcoat_factor == new_clearcoat_factor) {
-        return;
-    }
-
-    if (new_clearcoat_factor == 0.0f || clearcoat_factor == 0.0f) {
-        dirty_flags |= eMaterialProperties::PROP_CLEARCOAT_TOGGLE;
-    }
-    else {
-        dirty_flags |= eMaterialProperties::PROP_CLEARCOAT;
-    }
-
     clearcoat_factor = new_clearcoat_factor;
+    dirty_flags |= eMaterialProperties::PROP_CLEARCOAT;
 }
 
 void Material::set_clearcoat_roughness(float new_clearcoat_roughness)
@@ -113,18 +89,8 @@ void Material::set_clearcoat_roughness(float new_clearcoat_roughness)
 
 void Material::set_iridescence_factor(float new_iridescence_factor)
 {
-    if (iridescence_factor == new_iridescence_factor) {
-        return;
-    }
-
-    if (new_iridescence_factor == 0.0f || iridescence_factor == 0.0f) {
-        dirty_flags |= eMaterialProperties::PROP_IRIDESCENCE_TOGGLE;
-    }
-    else {
-        dirty_flags |= eMaterialProperties::PROP_IRIDESCENCE;
-    }
-
     iridescence_factor = new_iridescence_factor;
+    dirty_flags |= eMaterialProperties::PROP_IRIDESCENCE;
 }
 
 void Material::set_iridescence_ior(float new_iridescence_ior)
@@ -147,24 +113,20 @@ void Material::set_iridescence_thickness_max(float new_iridescence_thickness_max
 
 void Material::set_anisotropy_factor(float new_anisotropy_factor)
 {
-    if (anisotropy_factor == new_anisotropy_factor) {
-        return;
-    }
-
-    if (new_anisotropy_factor == 0.0f || anisotropy_factor == 0.0f) {
-        dirty_flags |= eMaterialProperties::PROP_ANISOTROPY_TOGGLE;
-    }
-    else {
-        dirty_flags |= eMaterialProperties::PROP_ANISOTROPY;
-    }
-
     anisotropy_factor = new_anisotropy_factor;
+    dirty_flags |= eMaterialProperties::PROP_ANISOTROPY;
 }
 
 void Material::set_anisotropy_rotation(float new_anisotropy_rotation)
 {
     this->anisotropy_rotation = new_anisotropy_rotation;
     dirty_flags |= eMaterialProperties::PROP_ANISOTROPY;
+}
+
+void Material::set_uv_transform(uint8_t index, const glm::mat3x3& matrix)
+{
+    use_uv_transforms = true;
+    uv_transforms[index] = matrix;
 }
 
 void Material::set_diffuse_texture(Texture* diffuse_texture)
@@ -340,7 +302,7 @@ void Material::set_anisotropy_texture(Texture* anisotropy_texture)
         anisotropy_texture->ref();
     }
 
-    this->anisotropy_texture = iridescence_thickness_texture;
+    this->anisotropy_texture = anisotropy_texture;
 
     dirty_flags |= eMaterialProperties::PROP_ANISOTROPY_TEXTURE;
 }
@@ -413,6 +375,29 @@ void Material::set_priority(uint8_t priority)
 {
     this->priority = priority;
     dirty_flags |= eMaterialProperties::PROP_PRIORITY;
+}
+
+void Material::set_use_tangents(bool value)
+{
+    use_tangents = value;
+}
+
+void Material::set_use_clearcoat(bool value)
+{
+    use_clearcoat = value;
+    dirty_flags |= eMaterialProperties::PROP_CLEARCOAT_TOGGLE;
+}
+
+void Material::set_use_iridescence(bool value)
+{
+    use_iridescence = value;
+    dirty_flags |= eMaterialProperties::PROP_IRIDESCENCE_TOGGLE;
+}
+
+void Material::set_use_anisotropy(bool value)
+{
+    use_anisotropy = value;
+    dirty_flags |= eMaterialProperties::PROP_ANISOTROPY_TOGGLE;
 }
 
 void Material::set_shader(Shader* shader)
@@ -494,6 +479,11 @@ float Material::get_anisotropy_factor() const
 float Material::get_anisotropy_rotation() const
 {
     return anisotropy_rotation;
+}
+
+const std::vector<glm::mat4x4>& Material::get_uv_transforms() const
+{
+    return uv_transforms;
 }
 
 const Texture* Material::get_diffuse_texture() const
@@ -579,6 +569,11 @@ bool Material::get_is_2D() const
 bool Material::get_fragment_write() const
 {
     return fragment_write;
+}
+
+bool Material::get_use_uv_transforms() const
+{
+    return use_uv_transforms;
 }
 
 eTransparencyType Material::get_transparency_type() const
@@ -702,41 +697,49 @@ void Material::render_gui()
         }
 
         // Clear coat
-        if (ImGui::TreeNodeEx("ClearCoat")) {
+        bool uses_clearcoat = use_clearcoat;
+        if (ImGui::Checkbox("Uses ClearCoat", &uses_clearcoat)) {
+            set_use_clearcoat(uses_clearcoat);
+        }
 
+        if (use_clearcoat) {
             ImGui::Text("Factor");
             ImGui::SameLine(200);
             ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
             float factor = clearcoat_factor;
-            if (ImGui::DragFloat("##Factor", &factor, 0.01f, 0.0f, 1.0f)) {
+            if (ImGui::DragFloat("##CC_Factor", &factor, 0.01f, 0.0f, 1.0f)) {
                 set_clearcoat_factor(factor);
             }
 
             ImGui::Text("Roughness");
             ImGui::SameLine(200);
             ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
-            if (ImGui::DragFloat("##Roughness", &clearcoat_roughness, 0.01f, 0.0f, 1.0f)) {
+            if (ImGui::DragFloat("##CC_Roughness", &clearcoat_roughness, 0.01f, 0.0f, 1.0f)) {
                 dirty_flags |= eMaterialProperties::PROP_CLEARCOAT;
             }
 
-            ImGui::TreePop();
+            ImGui::Separator();
         }
 
         // Iridescence
-        if (ImGui::TreeNodeEx("Iridescence")) {
+        bool uses_iridescence = use_iridescence;
+        if (ImGui::Checkbox("Uses Iridescence", &uses_iridescence)) {
+            set_use_iridescence(uses_iridescence);
+        }
 
+        if (use_iridescence) {
             ImGui::Text("Factor");
             ImGui::SameLine(200);
             ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
             float factor = iridescence_factor;
-            if (ImGui::DragFloat("##Factor", &factor, 0.01f, 0.0f, 1.0f)) {
+            if (ImGui::DragFloat("##I_Factor", &factor, 0.01f, 0.0f, 1.0f)) {
                 set_iridescence_factor(factor);
             }
 
             ImGui::Text("IOR");
             ImGui::SameLine(200);
             ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
-            if (ImGui::DragFloat("##IOR", &iridescence_ior, 0.01f, 0.0f, 2.0f)) {
+            if (ImGui::DragFloat("##I_IOR", &iridescence_ior, 0.01f, 0.0f, 2.0f)) {
                 dirty_flags |= eMaterialProperties::PROP_IRIDESCENCE;
             }
 
@@ -744,33 +747,37 @@ void Material::render_gui()
             ImGui::SameLine(200);
             ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
             glm::vec2 iridescence_thickness = { get_iridescence_thickness_min(), get_iridescence_thickness_max() };
-            if (ImGui::DragFloat2("##Thickness", &iridescence_thickness.x, 1.0f, 0.0f, 600.0f)) {
+            if (ImGui::DragFloat2("##I_Thickness", &iridescence_thickness.x, 1.0f, 0.0f, 600.0f)) {
                 set_iridescence_thickness_min(iridescence_thickness.x);
                 set_iridescence_thickness_max(iridescence_thickness.y);
             }
 
-            ImGui::TreePop();
+            ImGui::Separator();
         }
 
         // Anisotropy
-        if (ImGui::TreeNodeEx("Anisotropy")) {
+        bool uses_anisotropy = use_anisotropy;
+        if (ImGui::Checkbox("Uses Anisotropy", &uses_anisotropy)) {
+            set_use_anisotropy(uses_anisotropy);
+        }
 
+        if (use_anisotropy) {
             ImGui::Text("Factor");
             ImGui::SameLine(200);
             ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
             float factor = anisotropy_factor;
-            if (ImGui::DragFloat("##Factor", &factor, 0.01f, 0.0f, 1.0f)) {
+            if (ImGui::DragFloat("##A_Factor", &factor, 0.01f, 0.0f, 1.0f)) {
                 set_anisotropy_factor(factor);
             }
 
             ImGui::Text("Rotation");
             ImGui::SameLine(200);
             ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
-            if (ImGui::DragFloat("##Rotation", &anisotropy_rotation, 0.01f, 0.0f, 3.1415f)) {
+            if (ImGui::DragFloat("##A_Rotation", &anisotropy_rotation, 0.01f, 0.0f, 3.1415f)) {
                 dirty_flags |= eMaterialProperties::PROP_ANISOTROPY;
             }
 
-            ImGui::TreePop();
+            ImGui::Separator();
         }
 
         ImGui::Text("Topology Type");

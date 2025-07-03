@@ -1,18 +1,6 @@
 #include math.wgsl
 #include mesh_includes.wgsl
-#include pbr_functions.wgsl
 #include tonemappers.wgsl
-#include pbr_material.wgsl
-
-#define MAX_LIGHTS
-
-#ifdef IRIDESCENCE_MATERIAL
-#include pbr_iridescence.wgsl
-#endif
-
-#ifndef UNLIT_MATERIAL
-#include pbr_light.wgsl
-#endif
 
 #define GAMMA_CORRECTION
 
@@ -26,73 +14,14 @@
 
 @group(2) @binding(1) var<uniform> albedo: vec4f;
 
-#ifndef UNLIT_MATERIAL
-
-#ifdef METALLIC_ROUGHNESS_TEXTURE
-@group(2) @binding(2) var metallic_roughness_texture: texture_2d<f32>;
-#endif
-
-@group(2) @binding(3) var<uniform> occlusion_roughness_metallic: vec3f;
-
-#ifdef EMISSIVE_TEXTURE
-@group(2) @binding(6) var emissive_texture: texture_2d<f32>;
-#endif
-
-@group(2) @binding(8) var<uniform> emissive: vec3f;
-
-#ifdef OCLUSSION_TEXTURE
-@group(2) @binding(12) var oclussion_texture: texture_2d<f32>;
-#endif
-
-#ifdef CLEARCOAT_MATERIAL
-@group(2) @binding(13) var<uniform> clearcoat_data: vec2f;
-
-#ifdef CLEARCOAT_TEXTURE
-@group(2) @binding(14) var clearcoat_texture: texture_2d<f32>;
-#endif
-
-#ifdef CLEARCOAT_ROUGHNESS_TEXTURE
-@group(2) @binding(15) var clearcoat_roughness_texture: texture_2d<f32>;
-#endif
-
-#ifdef CLEARCOAT_NORMAL_TEXTURE
-@group(2) @binding(16) var clearcoat_normal_texture: texture_2d<f32>;
-#endif
-
-#endif // CLEARCOAT_MATERIAL
-
-#ifdef IRIDESCENCE_MATERIAL
-@group(2) @binding(17) var<uniform> iridescence_data: vec4f;
-
-#ifdef IRIDESCENCE_TEXTURE
-@group(2) @binding(18) var iridescence_texture: texture_2d<f32>;
-#endif
-
-#ifdef IRIDESCENCE_THICKNESS_TEXTURE
-@group(2) @binding(19) var iridescence_thickness_texture: texture_2d<f32>;
-#endif
-
-#endif // IRIDESCENCE_MATERIAL
-
-#ifdef ANISOTROPY_MATERIAL
-@group(2) @binding(20) var<uniform> anisotropy_data: vec3f;
-
-#ifdef ANISOTROPY_TEXTURE
-@group(2) @binding(21) var anisotropy_texture: texture_2d<f32>;
-#endif
-
-#endif // ANISOTROPY_MATERIAL
-
-#endif // UNLIT_MATERIAL
-
-#ifdef NORMAL_TEXTURE
-@group(2) @binding(4) var normal_texture: texture_2d<f32>;
-@group(2) @binding(5) var<uniform> normal_scale: f32;
-#endif
-
 #ifdef USE_SAMPLER
 @group(2) @binding(7) var sampler_2d : sampler;
+
+#ifdef USE_UV_TRANSFORMS
+@group(2) @binding(12) var<uniform> uv_transform_data : array<mat4x4f, 12>;
 #endif
+
+#endif // USE_SAMPLER
 
 #ifdef ALPHA_MASK
 @group(2) @binding(9) var<uniform> alpha_cutoff: f32;
@@ -104,12 +33,86 @@
 #endif
 
 #ifndef UNLIT_MATERIAL
+
+#ifdef METALLIC_ROUGHNESS_TEXTURE
+@group(2) @binding(2) var metallic_roughness_texture: texture_2d<f32>;
+#endif
+
+@group(2) @binding(3) var<uniform> occlusion_roughness_metallic: vec3f;
+
+#ifdef NORMAL_TEXTURE
+@group(2) @binding(4) var normal_texture: texture_2d<f32>;
+@group(2) @binding(5) var<uniform> normal_scale: f32;
+#endif
+
+#ifdef EMISSIVE_TEXTURE
+@group(2) @binding(6) var emissive_texture: texture_2d<f32>;
+#endif
+
+@group(2) @binding(8) var<uniform> emissive: vec3f;
+
+#ifdef OCLUSSION_TEXTURE
+@group(2) @binding(13) var oclussion_texture: texture_2d<f32>;
+#endif
+
+#ifdef CLEARCOAT_MATERIAL
+@group(2) @binding(14) var<uniform> clearcoat_data: vec2f;
+
+#ifdef CLEARCOAT_TEXTURE
+@group(2) @binding(15) var clearcoat_texture: texture_2d<f32>;
+#endif
+
+#ifdef CLEARCOAT_ROUGHNESS_TEXTURE
+@group(2) @binding(16) var clearcoat_roughness_texture: texture_2d<f32>;
+#endif
+
+#ifdef CLEARCOAT_NORMAL_TEXTURE
+@group(2) @binding(17) var clearcoat_normal_texture: texture_2d<f32>;
+#endif
+
+#endif // CLEARCOAT_MATERIAL
+
+#ifdef IRIDESCENCE_MATERIAL
+@group(2) @binding(18) var<uniform> iridescence_data: vec4f;
+
+#ifdef IRIDESCENCE_TEXTURE
+@group(2) @binding(19) var iridescence_texture: texture_2d<f32>;
+#endif
+
+#ifdef IRIDESCENCE_THICKNESS_TEXTURE
+@group(2) @binding(20) var iridescence_thickness_texture: texture_2d<f32>;
+#endif
+
+#endif // IRIDESCENCE_MATERIAL
+
+#ifdef ANISOTROPY_MATERIAL
+@group(2) @binding(21) var<uniform> anisotropy_data: vec3f;
+
+#ifdef ANISOTROPY_TEXTURE
+@group(2) @binding(22) var anisotropy_texture: texture_2d<f32>;
+#endif
+
+#endif // ANISOTROPY_MATERIAL
+
+#include pbr_material.wgsl
+#include pbr_functions.wgsl
+#include pbr_light.wgsl
+
+#ifdef IRIDESCENCE_MATERIAL
+#include pbr_iridescence.wgsl
+#endif
+
+#define MAX_LIGHTS
+
 @group(3) @binding(0) var irradiance_texture: texture_cube<f32>;
 @group(3) @binding(1) var brdf_lut_texture: texture_2d<f32>;
 @group(3) @binding(2) var sampler_clamp: sampler;
 @group(3) @binding(3) var<uniform> lights : array<Light, MAX_LIGHTS>;
 @group(3) @binding(4) var<uniform> num_lights : u32;
-#endif
+
+#endif // UNLIT_MATERIAL
+
+#include mesh_material_info.wgsl
 
 @vertex
 fn vs_main(in: VertexInput) -> VertexOutput {
@@ -130,7 +133,7 @@ fn vs_main(in: VertexInput) -> VertexOutput {
 
     var out: VertexOutput;
     var world_position = instance_data.model * position;
-    out.world_position = world_position.xyz;
+    out.world_position = world_position.xyz / world_position.w;
     out.position = camera_data.view_projection * world_position;
     out.uv = in.uv; // forward to the fragment shader
     out.color = vec4f(in.color, 1.0) * albedo;
@@ -140,8 +143,15 @@ fn vs_main(in: VertexInput) -> VertexOutput {
     out.normal = normalize(adjoint(instance_data.model) * normals.xyz);
 
 #ifdef HAS_TANGENTS
-    out.tangent = normalize((instance_data.model * vec4(in.tangent.xyz, 0.0)).xyz);
+    let tangent : vec3f = normalize(in.tangent.xyz);
+    out.tangent = normalize((instance_data.model * vec4f(tangent, 0.0)).xyz);
     out.bitangent = normalize(cross(out.normal, out.tangent) * in.tangent.w);
+
+#ifdef HAS_NORMAL_UV_TRANSFORM
+    out.tangent = normalize((uv_transform_data[NORMAL_UV_TRANSFORM] * vec4f(out.tangent, 0.0)).xyz);
+    out.bitangent = normalize((uv_transform_data[NORMAL_UV_TRANSFORM] * vec4f(out.bitangent, 0.0)).xyz);
+#endif
+
 #endif
 
     return out;
@@ -155,42 +165,18 @@ struct FragmentOutput {
 fn fs_main(in: VertexOutput, @builtin(front_facing) is_front_facing: bool) -> FragmentOutput {
 
     var out: FragmentOutput;
-    var dummy = camera_data.eye;
-    var m : PbrMaterial;
-
-    m.pos = in.world_position;
-    m.view_dir = normalize(camera_data.eye - m.pos);
-    m.normal_g = normalize(in.normal);
-
-    if (!is_front_facing) {
-        m.normal_g = -m.normal_g;
-    }
-
-#ifdef NORMAL_TEXTURE
-    var normal_color = textureSample(normal_texture, sampler_2d, in.uv).rgb * 2.0 - 1.0;
-    normal_color *= vec3f(normal_scale, normal_scale, 1.0);
-
-#ifdef HAS_TANGENTS
-    let TBN : mat3x3f = mat3x3f(in.tangent, in.bitangent, m.normal_g);
-    m.normal = normalize(TBN * normalize(normal_color));
-#else
-    m.normal = perturb_normal(m.normal_g, m.view_dir, in.uv, normal_color);
-#endif
-#else
-    m.normal = m.normal_g;
-#endif // NORMAL_TEXTURE
-
-    m.n_dot_v = clamp(dot(m.normal, m.view_dir), 0.0, 1.0);
-    m.reflected_dir = normalize(reflect(-m.view_dir, m.normal));
 
     var alpha : f32 = 1.0;
+    var albedo_color : vec3f = vec3f(0.0);
+    var final_color : vec3f = vec3f(0.0);
 
 #ifdef ALBEDO_TEXTURE
-    let albedo_texture : vec4f = textureSample(albedo_texture, sampler_2d, in.uv);
-    m.albedo = albedo_texture.rgb * in.color.rgb;
+    let albedo_uv : vec2f = get_albedo_uv(in.uv);
+    let albedo_texture : vec4f = textureSample(albedo_texture, sampler_2d, albedo_uv);
+    albedo_color = albedo_texture.rgb * in.color.rgb;
     alpha = albedo_texture.a * in.color.a;
 #else
-    m.albedo = in.color.rgb;
+    albedo_color = in.color.rgb;
     alpha = in.color.a;
 #endif // ALBEDO_TEXTURE
 
@@ -200,35 +186,44 @@ fn fs_main(in: VertexOutput, @builtin(front_facing) is_front_facing: bool) -> Fr
     }
 #endif
 
-    var final_color : vec3f = vec3f(0.0);
-
 #ifndef UNLIT_MATERIAL
 
+    var m : PbrMaterial;
+    m.pos = in.world_position;
+    m.view_dir = normalize(camera_data.eye - m.pos);
+
+    get_normal_info(&m, in, is_front_facing);
+
+    m.reflected_dir = normalize(reflect(-m.view_dir, m.normal));
+    m.albedo = albedo_color;
     m.f90 = vec3f(1.0);
     m.ior = 1.5; // default IOR for most materials
     m.specular_weight = 1.0;
 
-#ifdef EMISSIVE_TEXTURE
-    m.emissive = textureSample(emissive_texture, sampler_2d, in.uv).rgb * emissive;
-#else
-    m.emissive = emissive;
-#endif
-
-#ifdef OCLUSSION_TEXTURE
-    m.ao = textureSample(oclussion_texture, sampler_2d, in.uv).r;
-    m.ao = m.ao * occlusion_roughness_metallic.r;
-#else
-    m.ao = 1.0;
-#endif // OCLUSSION_TEXTURE
-
 #ifdef METALLIC_ROUGHNESS_TEXTURE
-    var metal_rough : vec3f = textureSample(metallic_roughness_texture, sampler_2d, in.uv).rgb;
+    let metallic_roughness_uv : vec2f = get_metallic_roughness_uv(in.uv);
+    var metal_rough : vec3f = textureSample(metallic_roughness_texture, sampler_2d, metallic_roughness_uv).rgb;
     m.roughness = metal_rough.g * occlusion_roughness_metallic.g;
     m.metallic = metal_rough.b * occlusion_roughness_metallic.b;
 #else
     m.roughness = occlusion_roughness_metallic.g;
     m.metallic = occlusion_roughness_metallic.b;
 #endif
+
+#ifdef EMISSIVE_TEXTURE
+    let emissive_uv : vec2f = get_emissive_uv(in.uv);
+    m.emissive = textureSample(emissive_texture, sampler_2d, emissive_uv).rgb * emissive;
+#else
+    m.emissive = emissive;
+#endif
+
+#ifdef OCLUSSION_TEXTURE
+    let occlusion_uv : vec2f = get_occlusion_uv(in.uv);
+    m.ao = textureSample(oclussion_texture, sampler_2d, occlusion_uv).r;
+    m.ao = m.ao * occlusion_roughness_metallic.r;
+#else
+    m.ao = 1.0;
+#endif // OCLUSSION_TEXTURE
 
     m.roughness = max(m.roughness, 0.04);
     m.diffuse = mix(m.albedo, vec3f(0.0), m.metallic);
@@ -237,87 +232,20 @@ fn fs_main(in: VertexOutput, @builtin(front_facing) is_front_facing: bool) -> Fr
     m.clearcoat_fresnel = vec3f(0.0);
 
 #ifdef IRIDESCENCE_MATERIAL
-
-    m.iridescence_factor = iridescence_data.x;
-    m.iridescence_ior = iridescence_data.y;
-    m.iridescence_thickness = iridescence_data.w;
-
-#ifdef IRIDESCENCE_TEXTURE
-    let iridescence_uv : vec2f = in.uv;//getIridescenceUV();
-    m.iridescence_factor *= textureSample(iridescence_texture, sampler_2d, iridescence_uv).r;
+    get_iridescence_info(&m, in);
 #endif
-
-#ifdef IRIDESCENCE_THICKNESS_TEXTURE
-    let iridescence_thickness_uv : vec2f = in.uv;//getIridescenceThicknessUV();
-    let thickness_sampled : f32 = textureSample(iridescence_thickness_texture, sampler_2d, iridescence_thickness_uv).g;
-    m.iridescence_thickness = mix(iridescence_data.z, iridescence_data.w, thickness_sampled);
-#endif
-
-#endif // IRIDESCENCE_MATERIAL
-
 #ifdef CLEARCOAT_MATERIAL
-
-    m.clearcoat_factor = clearcoat_data.x;
-    m.clearcoat_roughness = clearcoat_data.y;
-    m.clearcoat_f0 = vec3f(pow((m.ior - 1.0) / (m.ior + 1.0), 2.0));
-    m.clearcoat_f90 = vec3f(1.0);
-
-#ifdef CLEARCOAT_TEXTURE
-    let clearcoat_uv : vec2f = in.uv;//getClearcoatUV();
-    let clearcoat_sample : vec4f = textureSample(clearcoat_texture, sampler_2d, clearcoat_uv);
-    m.clearcoat_factor *= clearcoat_sample.r;
+    get_clearcoat_info(&m, in);
 #endif
-
-#ifdef CLEARCOAT_ROUGHNESS_TEXTURE
-    let clearcoat_roughness_uv : vec2f = in.uv;//getClearcoatRoughnessUV();
-    let clearcoat_sample_roughness : vec4f = textureSample(clearcoat_roughness_texture, sampler_2d, clearcoat_roughness_uv);
-    m.clearcoat_roughness *= clearcoat_sample_roughness.g;
-#endif
-
-#ifdef CLEARCOAT_NORMAL_TEXTURE
-    let clearcoat_normal_uv : vec2f = in.uv;//getClearcoatNormalUV();
-    var clearcoat_normal : vec3f = textureSample(clearcoat_normal_texture, sampler_2d, clearcoat_normal_uv).rgb * 2.0 - vec3(1.0);
-
-#ifdef HAS_TANGENTS
-    let cc_TBN : mat3x3f = mat3x3f(in.tangent, in.bitangent, m.normal_g);
-    m.clearcoat_normal = normalize(cc_TBN * normalize(clearcoat_normal));
-#else
-    m.clearcoat_normal = perturb_normal(m.normal_g, m.view_dir, clearcoat_normal_uv, clearcoat_normal);
-#endif
-#else
-    m.clearcoat_normal = m.normal_g;
-#endif // CLEARCOAT_NORMAL_TEXTURE
-
-    m.clearcoat_roughness = clamp(m.clearcoat_roughness, 0.04, 1.0);
-
-#endif // CLEARCOAT_MATERIAL
-
 #ifdef ANISOTROPY_MATERIAL
-    var direction : vec2f = vec2f(1.0, 0.0);
-    var anisotropy_factor : f32 = 1.0;
-    
-#ifdef ANISOTROPY_TEXTURE
-    let anisotropy_uv : vec2f = in.uv;//getAnisotropyUV();
-    let anisotropy_sample : vec3f = textureSample(anisotropy_texture, sampler_2d, anisotropy_uv).xyz;
-    direction = anisotropy_sample.xy * 2.0 - vec2f(1.0);
-    anisotropy_factor = anisotropy_sample.z;
+    get_anisotropy_info(&m, in);
 #endif
-    let direction_rotation : vec2f = anisotropy_data.xy; // cos(theta), sin(theta)
-    let rotation_matrix : mat2x2f = mat2x2f(direction_rotation.x, direction_rotation.y, -direction_rotation.y, direction_rotation.x);
-    direction = rotation_matrix * direction.xy;
-
-    m.anisotropy_tangent = mat3x3f(in.tangent, in.bitangent, m.normal) * normalize(vec3f(direction, 0.0));
-    m.anisotropy_bitangent = cross(m.normal_g, m.anisotropy_tangent);
-    m.anisotropy_factor = clamp(anisotropy_data.z * anisotropy_factor, 0.0, 1.0);
-#endif // ANISOTROPY_MATERIAL
 
     final_color = get_indirect_light(&m);
-
     final_color += get_direct_light(&m);
-
     final_color += m.emissive * (1.0 - m.clearcoat_factor * m.clearcoat_fresnel);
 #else
-    final_color += m.albedo;
+    final_color += albedo_color;
 #endif // UNLIT_MATERIAL
 
     final_color *= camera_data.exposure;
@@ -328,9 +256,6 @@ fn fs_main(in: VertexOutput, @builtin(front_facing) is_front_facing: bool) -> Fr
     }
 
     out.color = vec4f(final_color, alpha);
-    //out.color = vec4f(pow(vec3f(m.albedo), vec3(1.0 / 2.2)), alpha);
-    //out.color = vec4f(vec3f(m.metallic), alpha);
-    //out.color = vec4f((m.normal + vec3f(1.0)) * 0.5, alpha);
 
     return out;
 }

@@ -71,3 +71,26 @@ fn adjoint( m : mat4x4f ) -> mat3x3f
                   cross(m[2].xyz, m[0].xyz),
                   cross(m[0].xyz, m[1].xyz));
 }
+
+// http://www.thetenthplanet.de/archives/1180
+fn cotangent_frame( normal : vec3f, p : vec3f, uv : vec2f ) -> mat3x3f
+{
+    let pos_dx : vec3f = dpdx(p);
+    let pos_dy : vec3f = dpdy(p);
+    let tex_dx : vec3f = dpdx(vec3f(uv, 0.0));
+    let tex_dy : vec3f = dpdy(vec3f(uv, 0.0));
+    var t : vec3f = (tex_dy.y * pos_dx - tex_dx.y * pos_dy) / (tex_dx.x * tex_dy.y - tex_dy.x * tex_dx.y);
+
+    t = normalize(t - normal * dot(normal, t));
+    let b : vec3f = normalize(cross(normal, t));
+
+    return mat3x3(t, b, normal);
+}
+
+fn perturb_normal( N : vec3f, V : vec3f, texcoord : vec2f, normal_color : vec3f ) -> vec3f
+{
+    // assume N, the interpolated vertex normal and
+    // V, the view vector (vertex to eye)
+    var TBN : mat3x3f = cotangent_frame(N, -V, texcoord);
+    return normalize(TBN * normal_color);
+}

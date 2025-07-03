@@ -3,10 +3,13 @@
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
+#include <glm/mat3x3.hpp>
 
 #include "framework/resources/resource.h"
 
 #include <string>
+
+#define MAX_UV_TRANSFORMS 12u
 
 class Shader;
 class Texture;
@@ -37,6 +40,20 @@ enum eCullType {
     CULL_NONE,
     CULL_BACK,
     CULL_FRONT
+};
+
+enum eTextureUVTransform {
+    DIFFUSE_UV_TRANSFORM,
+    NORMAL_UV_TRANSFORM,
+    METALLIC_ROUGHNESS_UV_TRANSFORM,
+    EMISSIVE_UV_TRANSFORM,
+    OCCLUSION_UV_TRANSFORM,
+    CLEARCOAT_UV_TRANSFORM,
+    CLEARCOAT_ROUGHNESS_UV_TRANSFORM,
+    CLEARCOAT_NORMAL_UV_TRANSFORM,
+    IRIDESCENCE_UV_TRANSFORM,
+    IRIDESCENCE_THICKNESS_UV_TRANSFORM,
+    ANISOTROPY_UV_TRANSFORM,
 };
 
 enum eMaterialProperties : uint32_t {
@@ -104,6 +121,7 @@ public:
     void set_iridescence_thickness_max(float new_iridescence_thickness_max);
     void set_anisotropy_factor(float new_anisotropy_factor);
     void set_anisotropy_rotation(float new_anisotropy_rotation);
+    void set_uv_transform(uint8_t index, const glm::mat3x3& matrix);
 
     void set_diffuse_texture(Texture* diffuse_texture);
     void set_metallic_roughness_texture(Texture* metallic_roughness_texture);
@@ -128,9 +146,13 @@ public:
     void set_transparency_type(eTransparencyType transparency_type);
     void set_topology_type(eTopologyType topology_type);
     void set_cull_type(eCullType cull_type);
-
     void set_type(eMaterialType type);
     void set_priority(uint8_t priority);
+
+    void set_use_tangents(bool value);
+    void set_use_clearcoat(bool value);
+    void set_use_iridescence(bool value);
+    void set_use_anisotropy(bool value);
 
     void set_shader(Shader* shader);
     void set_shader_pipeline(Pipeline* pipeline);
@@ -149,6 +171,7 @@ public:
     float get_iridescence_thickness_max() const;
     float get_anisotropy_factor() const;
     float get_anisotropy_rotation() const;
+    const std::vector<glm::mat4x4>& get_uv_transforms() const;
 
     const Texture* get_diffuse_texture() const;
     const Texture* get_metallic_roughness_texture() const;
@@ -181,11 +204,11 @@ public:
     bool get_use_skinning() const;
     bool get_is_2D() const;
     bool get_fragment_write() const;
+    bool get_use_uv_transforms() const;
 
     eTransparencyType get_transparency_type() const;
     eTopologyType get_topology_type() const;
     eCullType get_cull_type() const;
-
     eMaterialType get_type() const;
     uint8_t get_priority() const;
 
@@ -195,6 +218,11 @@ public:
     void set_dirty_flag(eMaterialProperties property_flag);
     void reset_dirty_flags();
     uint32_t get_dirty_flags() const;
+
+    bool has_tangents() const { return use_tangents; }
+    bool has_anisotropy() const { return use_anisotropy; }
+    bool has_iridescence() const { return use_iridescence; }
+    bool has_clearcoat() const { return use_clearcoat; }
 
     void render_gui();
 
@@ -216,6 +244,8 @@ private:
     Texture* iridescence_thickness_texture = nullptr;
     Texture* anisotropy_texture = nullptr;
 
+    std::vector<glm::mat4x4> uv_transforms;
+
     glm::vec4 color = { 1.0f, 1.0f, 1.0f, 1.0f };
     float roughness = 1.0f;
     float metallic = 0.0f;
@@ -235,11 +265,17 @@ private:
     float anisotropy_factor = 0.0f;
     float anisotropy_rotation = 0.0f;
 
+    bool use_tangents = false;
+    bool use_clearcoat = false;
+    bool use_iridescence = false;
+    bool use_anisotropy = false;
+
     bool depth_read = true;
     bool depth_write = true;
     bool use_skinning = false;
     bool is_2D = false;
     bool fragment_write = true;
+    bool use_uv_transforms = false;
 
     eTransparencyType transparency_type = ALPHA_OPAQUE;
     eTopologyType topology_type = TOPOLOGY_TRIANGLE_LIST;
