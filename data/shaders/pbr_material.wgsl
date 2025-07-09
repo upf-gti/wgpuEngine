@@ -33,6 +33,9 @@ struct PbrMaterial
     anisotropy_tangent : vec3f,
     anisotropy_bitangent : vec3f,
 
+    // KHR_materials_transmission
+    transmission_factor : f32,
+
     n_dot_v : f32,
     view_dir : vec3f,
     reflected_dir : vec3f

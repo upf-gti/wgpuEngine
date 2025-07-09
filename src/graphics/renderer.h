@@ -96,6 +96,9 @@ protected:
     Texture* multisample_textures;
     WGPUTextureView multisample_textures_views[EYE_COUNT] = {};
 
+    Texture* color_textures;
+    WGPUTextureView color_textures_views[EYE_COUNT] = {};
+
     RendererStorage* renderer_storage;
 
 #ifndef __EMSCRIPTEN__
@@ -160,6 +163,19 @@ protected:
 
         glm::vec2 screen_size;
         glm::vec2 dummy;
+    };
+
+    struct RenderCameraPass {
+        WGPUTextureView msaa_view;
+        WGPUTextureView resolve_view;
+        WGPUTextureView depth_view;
+        WGPUBindGroup camera_bind_group;
+        bool render_opaques = true;
+        bool render_transparents = true;
+        bool clear_render_target = true;
+        std::string pass_name = "";
+        // uint32_t eye_idx;
+        uint32_t camera_offset = 0;
     };
 
     eCameraType camera_type = CAMERA_FLYOVER;
@@ -254,8 +270,7 @@ public:
     virtual void update(float delta_time);
     virtual void render();
 
-    void render_camera(const std::vector<std::vector<sRenderData>>& render_lists, WGPUTextureView framebuffer_view, WGPUTextureView depth_view,
-        const sInstanceData& instance_data, WGPUBindGroup camera_bind_group, bool render_transparents = true, const std::string& pass_name = "", uint32_t eye_idx = 0, uint32_t camera_offset = 0);
+    void render_camera(const std::vector<std::vector<sRenderData>>& render_lists, const sInstanceData& instance_data, const RenderCameraPass& camera_pass);
 
     void process_events();
 
@@ -275,6 +290,7 @@ public:
     WGPUBindGroup get_compute_camera_bind_group() { return compute_camera_bind_group; }
 
     void init_depth_buffers();
+    void init_color_textures();
     void init_multisample_textures();
     void init_timestamp_queries();
 
@@ -363,6 +379,7 @@ public:
 
     void set_irradiance_texture(Texture* texture);
     Texture* get_irradiance_texture() { return irradiance_texture; }
+    //Texture* get_transmission_color_texture(uint8_t eye_idx = EYE_LEFT) { return &color_textures[eye_idx]; }
 
     Camera* get_camera() { return camera_3d; }
 };

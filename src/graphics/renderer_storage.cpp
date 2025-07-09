@@ -277,6 +277,30 @@ void RendererStorage::register_material_bind_group(WebGPUContext* webgpu_context
                 texture_ref = anisotropy_texture;
             }
         }
+
+        /*
+        *   Anisotropy
+        */
+
+        if (material->has_transmission()) {
+            Uniform* u = new Uniform();
+            float transmission_factor = material->get_transmission_factor();
+            u->data = webgpu_context->create_buffer(sizeof(float), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform, &transmission_factor, "mat_transmission");
+            u->binding = 23;
+            u->buffer_size = sizeof(float);
+            uniform_indices[eMaterialProperties::PROP_TRANSMISSION] = uniforms.size();
+            uniforms.push_back(u);
+
+            Texture* transmission_texture = material->get_transmission_texture();
+            if (transmission_texture) {
+                Uniform* u = new Uniform();
+                u->data = transmission_texture->get_view(WGPUTextureViewDimension_2D, 0, transmission_texture->get_mipmap_count());
+                u->binding = 24;
+                uniforms.push_back(u);
+                uses_textures |= true;
+                texture_ref = transmission_texture;
+            }
+        }
     }
 
     // Add a sampler for basic 2d textures if there's any texture as uniforms
@@ -440,6 +464,12 @@ void RendererStorage::update_material_bind_group(WebGPUContext* webgpu_context, 
         float rotation = material->get_anisotropy_rotation();
         glm::vec3 anisotropy_data = { cosf(rotation), sinf(rotation), material->get_anisotropy_factor() };
         webgpu_context->update_buffer(std::get<WGPUBuffer>(u->data), 0, &anisotropy_data, sizeof(glm::vec3));
+    }
+
+    if (dirty_flags & eMaterialProperties::PROP_TRANSMISSION && material->get_type() == MATERIAL_PBR) {
+        Uniform* u = uniforms[uniform_indices[eMaterialProperties::PROP_TRANSMISSION]];
+        float factor = material->get_transmission_factor();
+        webgpu_context->update_buffer(std::get<WGPUBuffer>(u->data), 0, &factor, sizeof(float));
     }
 
     material->reset_dirty_flags();
@@ -797,6 +827,14 @@ std::vector<std::string> RendererStorage::get_common_define_specializations(cons
 
         if (material->get_anisotropy_texture()) {
             define_specializations.push_back("ANISOTROPY_TEXTURE");
+        }
+    }
+
+    if (material->has_transmission()) {
+        define_specializations.push_back("TRANSMISSION_MATERIAL");
+
+        if (material->get_transmission_texture()) {
+            define_specializations.push_back("TRANSMISSION_TEXTURE");
         }
     }
 

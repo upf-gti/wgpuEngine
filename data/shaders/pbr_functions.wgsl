@@ -84,3 +84,8 @@ fn BRDF_lambertian(f0 : vec3f, f90 : vec3f, diffuse_color : vec3f, specular_weig
     // see https://seblagarde.wordpress.com/2012/01/08/pi-or-not-to-pi-in-game-lighting-equation/
     return (1.0 - specular_weight * F_Schlick(f0, f90, VdotH)) * (diffuse_color / PI);
 }
+
+fn apply_ior_to_roughness(roughness : f32, ior : f32) -> f32
+{
+    return roughness * clamp(ior*2.0-2.0, 0.0, 1.0);
+}

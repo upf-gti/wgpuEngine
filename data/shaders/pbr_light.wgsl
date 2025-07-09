@@ -128,6 +128,14 @@ fn get_indirect_light( m : ptr<function, PbrMaterial> ) -> vec3f
     // Specular + Diffuse
 
     var irradiance : vec3f = get_ibl_diffuse_light(m.normal);
+    var f_diffuse : vec3f = irradiance * m.albedo;
+
+#ifdef TRANSMISSION_MATERIAL
+    var f_specular_transmission : vec3f = vec3f(1.0);
+    // get_ibl_volume_refraction(m.normal, m.view_dir, m.roughness, m.albedo, v_Position, u_ModelMatrix, u_ViewMatrix, 
+    // u_ProjectionMatrix, m.ior, materialInfo.thickness, m.attenuationColor, m.attenuationDistance, m.dispersion );
+    f_diffuse = mix(f_diffuse, f_specular_transmission, m.transmission_factor);
+#endif
 
 #ifdef ANISOTROPY_MATERIAL
     var radiance : vec3f = get_ibl_radiance_anisotropy(m);
@@ -163,7 +171,6 @@ fn get_indirect_light( m : ptr<function, PbrMaterial> ) -> vec3f
     var f_metal_fresnel_ibl : vec3f = get_ibl_ggx_fresnel(m, m.albedo);
     var f_metal_brdf_ibl : vec3f = f_metal_fresnel_ibl * radiance;
 
-    let f_diffuse : vec3f = irradiance * m.albedo;
     var f_dielectric_fresnel_ibl : vec3f = get_ibl_ggx_fresnel(m, m.f0_dielectric);
     var f_dielectric_brdf_ibl : vec3f = mix(f_diffuse, radiance, f_dielectric_fresnel_ibl);
 
@@ -279,4 +286,41 @@ fn get_ibl_radiance_anisotropy( m : ptr<function, PbrMaterial> ) -> vec3f
 
     return specular_sample;
 }
+#endif
+
+#ifdef TRANSMISSION_MATERIAL
+
+fn get_transmission_sample( uvs : vec2f, roughness : f32, ior : f32 ) -> vec3f
+{
+    let framebuffer_lod : f32 = log2(f32(u_TransmissionFramebufferSize.x)) * apply_ior_to_roughness(roughness, ior);
+    // return textureSampleLevel(u_TransmissionFramebufferSampler, uvs, framebuffer_lod).rgb;
+    return vec3f(1.0);
+}
+
+fn get_ibl_volume_refraction( n : vec3f, v : vec3f, roughness : f32, base_color : vec3f, position : vec3f, 
+    model_matrix : mat4x4f, view_matrix : mat4x4f, proj_matrix : mat4x4f, ior : f32, thickness : f32, att_color : vec3f,
+    att_distance : f32, dispersion : f32 ) -> vec3f
+{
+
+#ifdef DISPERSION_MATERIAL
+    // ...
+#else
+
+    // let transmission_ray : vec3f = get_volume_transmission_ray(n, v, thickness, ior, model_matrix);
+    // let transmission_ray_length : f32 = length(transmission_ray);
+    // let refracted_ray_exit : vec3f = position + transmission_ray;
+
+    // let ndc_pos : vec4f = proj_matrix * view_matrix * vec4f(refracted_ray_exit, 1.0);
+    // var refraction_coords : vec2f = ndc_pos.xy / ndc_pos.w;
+    // refraction_coords += vec2f(1.0);
+    // refraction_coords /= 2.0;
+    // let transmitted_light : vec3f = get_transmission_sample(refraction_coords, roughness, ior);
+
+#endif // DISPERSION_MATERIAL
+
+    // let attenuated_color : vec3f = apply_volume_attenuation(transmitted_light, transmission_ray_length, att_color, att_distance);
+    // return attenuated_color * base_color;
+    return vec3f(1.0);
+}
+
 #endif

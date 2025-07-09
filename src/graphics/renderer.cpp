@@ -103,6 +103,7 @@ int Renderer::pre_initialize(GLFWwindow* window, bool use_mirror_screen)
 
     eye_depth_textures = new Texture[EYE_COUNT];
     multisample_textures = new Texture[EYE_COUNT];
+    color_textures = new Texture[EYE_COUNT];
 
 #ifndef __EMSCRIPTEN__
     renderdoc_capture = new RenderdocCapture();
@@ -197,6 +198,7 @@ int Renderer::post_initialize()
     init_lighting_bind_group();
     init_camera_bind_group();
 
+    init_color_textures();
     init_multisample_textures();
 
     init_timestamp_queries();
@@ -428,7 +430,28 @@ void Renderer::render()
 
         wgpuQueueWriteBuffer(webgpu_context->device_queue, std::get<WGPUBuffer>(camera_uniform.data), 0, &camera_data, sizeof(sCameraData));
 
-        render_camera(render_lists, screen_surface_texture_view, eye_depth_texture_view[EYE_LEFT], render_instances_data, render_camera_bind_group, true, "forward_render");
+        RenderCameraPass camera_pass = {
+                .msaa_view = multisample_textures_views[EYE_LEFT],
+                .resolve_view = screen_surface_texture_view,
+                .depth_view = eye_depth_texture_view[EYE_LEFT],
+                .camera_bind_group = render_camera_bind_group,
+                .render_transparents = false,
+                .pass_name = "forward_render_opaque"
+        };
+
+        render_camera(render_lists, render_instances_data, camera_pass);
+
+        // Copy swapchain texture to a new texture to use in the transmission pass
+        {
+            // webgpu_context->copy_texture_to_texture(color_textures[EYE_LEFT].get_texture(), screen_surface_texture.texture, 0, 0, { webgpu_context->screen_width, webgpu_context->screen_height }, get_global_command_encoder());
+        }
+
+        camera_pass.render_opaques = false;
+        camera_pass.render_transparents = true;
+        camera_pass.clear_render_target = false;
+        camera_pass.pass_name = "forward_render_transparent";
+
+        render_camera(render_lists, render_instances_data, camera_pass);
     }
 #ifdef XR_SUPPORT
     else {
@@ -481,7 +504,16 @@ void Renderer::render()
 
             wgpuQueueWriteBuffer(webgpu_context->device_queue, std::get<WGPUBuffer>(camera_uniform.data), eye_idx * camera_buffer_stride, &camera_data, sizeof(sCameraData));
 
-            render_camera(render_lists, xr_context->get_swapchain_view(eye_idx), eye_depth_texture_view[eye_idx], render_instances_data, render_camera_bind_group, true, "forward_render_xr", eye_idx, eye_idx);
+            RenderCameraPass camera_pass = {
+                .msaa_view = multisample_textures_views[eye_idx],
+                .resolve_view = xr_context->get_swapchain_view(eye_idx),
+                .depth_view = eye_depth_texture_view[eye_idx],
+                .camera_bind_group = render_camera_bind_group,
+                .pass_name = "forward_render_xr",
+                .camera_offset = eye_idx
+            };
+
+            render_camera(render_lists, render_instances_data, camera_pass);
 
             xr_context->release_swapchain(eye_idx);
         }
@@ -518,7 +550,7 @@ void Renderer::render()
         render_pass_color_attachment.loadOp = WGPULoadOp_Load;
         render_pass_color_attachment.storeOp = WGPUStoreOp_Store;
         render_pass_color_attachment.depthSlice = WGPU_DEPTH_SLICE_UNDEFINED;
-        render_pass_color_attachment.clearValue = WGPUColor{ clear_color.r, clear_color.g, clear_color.b, clear_color.a };
+        render_pass_color_attachment.clearValue = WGPUColor{ 1.0f, 0.0f, 0.0f, clear_color.a };
 
         WGPURenderPassDescriptor render_pass_descr = {};
         render_pass_descr.colorAttachmentCount = 1;
@@ -613,23 +645,29 @@ void Renderer::render()
     clear_renderables();
 }
 
-void Renderer::render_camera(const std::vector<std::vector<sRenderData>>& render_lists, WGPUTextureView framebuffer_view, WGPUTextureView depth_view,
-    const sInstanceData& instance_data, WGPUBindGroup camera_bind_group, bool render_transparents, const std::string& pass_name, uint32_t eye_idx, uint32_t camera_offset)
+void Renderer::render_camera(const std::vector<std::vector<sRenderData>>& render_lists, const sInstanceData& instance_data, const RenderCameraPass& camera_pass)
 {
+    WGPUTextureView resolve_view = camera_pass.resolve_view;
+    WGPUTextureView depth_view = camera_pass.depth_view;
+    WGPUBindGroup camera_bind_group = camera_pass.camera_bind_group;
+
+    const std::string& pass_name = camera_pass.pass_name;
+    uint32_t camera_offset = camera_pass.camera_offset;
+
     {
         // Prepare the color attachment
         WGPURenderPassColorAttachment render_pass_color_attachment = {};
 
-        if (framebuffer_view) {
+        if (resolve_view) {
             if (msaa_count > 1) {
-                render_pass_color_attachment.view = multisample_textures_views[eye_idx];
-                render_pass_color_attachment.resolveTarget = framebuffer_view;
+                render_pass_color_attachment.view = camera_pass.msaa_view;
+                render_pass_color_attachment.resolveTarget = resolve_view;
             }
             else {
-                render_pass_color_attachment.view = framebuffer_view;
+                render_pass_color_attachment.view = resolve_view;
             }
 
-            render_pass_color_attachment.loadOp = WGPULoadOp_Clear;
+            render_pass_color_attachment.loadOp = camera_pass.clear_render_target ? WGPULoadOp_Clear : WGPULoadOp_Load;
             render_pass_color_attachment.storeOp = WGPUStoreOp_Store;
             render_pass_color_attachment.depthSlice = WGPU_DEPTH_SLICE_UNDEFINED;
             render_pass_color_attachment.clearValue = WGPUColor{ clear_color.r, clear_color.g, clear_color.b, clear_color.a };
@@ -642,7 +680,7 @@ void Renderer::render_camera(const std::vector<std::vector<sRenderData>>& render
 
             render_pass_depth_attachment.view = depth_view;
             render_pass_depth_attachment.depthClearValue = 0.0f;
-            render_pass_depth_attachment.depthLoadOp = WGPULoadOp_Clear;
+            render_pass_depth_attachment.depthLoadOp = camera_pass.clear_render_target ? WGPULoadOp_Clear : WGPULoadOp_Load;
             render_pass_depth_attachment.depthStoreOp = WGPUStoreOp_Store;
             render_pass_depth_attachment.depthReadOnly = false;
             render_pass_depth_attachment.stencilClearValue = 0; // Stencil config necesary, even if unused
@@ -652,8 +690,8 @@ void Renderer::render_camera(const std::vector<std::vector<sRenderData>>& render
         }
 
         WGPURenderPassDescriptor render_pass_descr = {};
-        render_pass_descr.colorAttachmentCount = framebuffer_view ? 1 : 0;
-        render_pass_descr.colorAttachments = framebuffer_view ? &render_pass_color_attachment : nullptr;
+        render_pass_descr.colorAttachmentCount = resolve_view ? 1 : 0;
+        render_pass_descr.colorAttachments = resolve_view ? &render_pass_color_attachment : nullptr;
         render_pass_descr.depthStencilAttachment = depth_view ? &render_pass_depth_attachment : nullptr;
         render_pass_descr.label = { pass_name.c_str(), pass_name.length() };
 
@@ -672,17 +710,19 @@ void Renderer::render_camera(const std::vector<std::vector<sRenderData>>& render
         webgpu_context->push_debug_group(render_pass, { pass_name.c_str(), WGPU_STRLEN });
 #endif
 
-        if (custom_pre_opaque_pass) {
-            custom_pre_opaque_pass(render_pass, camera_bind_group, custom_pass_user_data, camera_offset * camera_buffer_stride);
+        if (camera_pass.render_opaques) {
+            if (custom_pre_opaque_pass) {
+                custom_pre_opaque_pass(render_pass, camera_bind_group, custom_pass_user_data, camera_offset * camera_buffer_stride);
+            }
+
+            render_opaque(render_pass, render_lists, instance_data, camera_bind_group, camera_offset * camera_buffer_stride);
+
+            if (custom_post_opaque_pass) {
+                custom_post_opaque_pass(render_pass, camera_bind_group, custom_pass_user_data, camera_offset * camera_buffer_stride);
+            }
         }
 
-        render_opaque(render_pass, render_lists, instance_data, camera_bind_group, camera_offset * camera_buffer_stride);
-
-        if (custom_post_opaque_pass) {
-            custom_post_opaque_pass(render_pass, camera_bind_group, custom_pass_user_data, camera_offset * camera_buffer_stride);
-        }
-
-        if (render_transparents) {
+        if (camera_pass.render_transparents) {
             if (custom_pre_transparent_pass) {
                 custom_pre_transparent_pass(render_pass, camera_bind_group, custom_pass_user_data, camera_offset * camera_buffer_stride);
             }
@@ -858,6 +898,32 @@ void Renderer::init_depth_buffers()
     }
 
     spdlog::trace("Depth buffers initialized with size ({}, {})", webgpu_context->render_width, webgpu_context->render_height);
+}
+
+void Renderer::init_color_textures()
+{
+    if (webgpu_context->render_width == 0 || webgpu_context->render_height == 0) {
+        spdlog::error("Can not color textures with size ({}, {})", webgpu_context->render_width, webgpu_context->render_height);
+        return;
+    }
+
+    WGPUTextureFormat swapchain_format = is_xr_available ? webgpu_context->xr_swapchain_format : webgpu_context->swapchain_format;
+
+    uint8_t num_textures = is_xr_available ? 2 : 1;
+    for (int i = 0; i < num_textures; ++i) {
+        color_textures[i].create(
+            WGPUTextureDimension_2D,
+            swapchain_format,
+            { webgpu_context->render_width, webgpu_context->render_height, 1 },
+            WGPUTextureUsage_TextureBinding | WGPUTextureUsage_RenderAttachment | WGPUTextureUsage_CopySrc,
+            1, 1, nullptr);
+
+        if (color_textures_views[i]) {
+            wgpuTextureViewRelease(color_textures_views[i]);
+        }
+
+        color_textures_views[i] = color_textures[i].get_view();
+    }
 }
 
 void Renderer::init_multisample_textures()
@@ -1172,7 +1238,15 @@ void Renderer::render_shadow_maps()
             light->create_shadow_data();
         }
 
-        render_camera(render_lists, nullptr, light->get_shadow_depth_texture_view(), shadow_instances_data, shadow_camera_bind_group, false, "shadow_map", 0, light_idx);
+        RenderCameraPass camera_pass = {
+            .depth_view = light->get_shadow_depth_texture_view(),
+            .camera_bind_group = shadow_camera_bind_group,
+            .render_transparents = false,
+            .pass_name = "shadow_map",
+            .camera_offset = light_idx
+        };
+
+        render_camera(render_lists, shadow_instances_data, camera_pass);
     }
 }
 
@@ -1426,6 +1500,7 @@ void Renderer::resize_window(int width, int height)
     }
 
     init_depth_buffers();
+    init_color_textures();
     init_multisample_textures();
 }
 

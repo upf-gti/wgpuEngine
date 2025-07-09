@@ -123,6 +123,12 @@ void Material::set_anisotropy_rotation(float new_anisotropy_rotation)
     dirty_flags |= eMaterialProperties::PROP_ANISOTROPY;
 }
 
+void Material::set_transmission_factor(float new_transmission_factor)
+{
+    transmission_factor = new_transmission_factor;
+    dirty_flags |= eMaterialProperties::PROP_TRANSMISSION;
+}
+
 void Material::set_uv_transform(uint8_t index, const glm::mat3x3& matrix)
 {
     use_uv_transforms = true;
@@ -307,6 +313,22 @@ void Material::set_anisotropy_texture(Texture* anisotropy_texture)
     dirty_flags |= eMaterialProperties::PROP_ANISOTROPY_TEXTURE;
 }
 
+void Material::set_transmission_texture(Texture* transmission_texture)
+{
+    if (this->transmission_texture != transmission_texture) {
+
+        if (this->transmission_texture) {
+            this->transmission_texture->unref();
+        }
+
+        transmission_texture->ref();
+    }
+
+    this->transmission_texture = transmission_texture;
+
+    dirty_flags |= eMaterialProperties::PROP_TRANSMISSION_TEXTURE;
+}
+
 void Material::set_alpha_mask(float alpha_mask)
 {
     this->alpha_mask = alpha_mask;
@@ -400,6 +422,12 @@ void Material::set_use_anisotropy(bool value)
     dirty_flags |= eMaterialProperties::PROP_ANISOTROPY_TOGGLE;
 }
 
+void Material::set_use_transmission(bool value)
+{
+    use_transmission = value;
+    dirty_flags |= eMaterialProperties::PROP_TRANSMISSION_TOGGLE;
+}
+
 void Material::set_shader(Shader* shader)
 {
     this->shader = shader;
@@ -481,6 +509,11 @@ float Material::get_anisotropy_rotation() const
     return anisotropy_rotation;
 }
 
+float Material::get_transmission_factor() const
+{
+    return transmission_factor;
+}
+
 const std::vector<glm::mat4x4>& Material::get_uv_transforms() const
 {
     return uv_transforms;
@@ -539,6 +572,11 @@ const Texture* Material::get_iridescence_thickness_texture() const
 const Texture* Material::get_anisotropy_texture() const
 {
     return anisotropy_texture;
+}
+
+const Texture* Material::get_transmission_texture() const
+{
+    return transmission_texture;
 }
 
 float Material::get_alpha_mask() const
@@ -875,5 +913,10 @@ Texture* Material::get_iridescence_thickness_texture()
 Texture* Material::get_anisotropy_texture()
 {
     return anisotropy_texture;
+}
+
+Texture* Material::get_transmission_texture()
+{
+    return transmission_texture;
 }
 

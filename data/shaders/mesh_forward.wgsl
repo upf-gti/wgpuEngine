@@ -94,6 +94,15 @@
 
 #endif // ANISOTROPY_MATERIAL
 
+#ifdef TRANSMISSION_MATERIAL
+@group(2) @binding(23) var<uniform> transmission_factor: f32;
+
+#ifdef TRANSMISSION_TEXTURE
+@group(2) @binding(24) var transmission_texture: texture_2d<f32>;
+#endif
+
+#endif // TRANSMISSION_MATERIAL
+
 #include pbr_material.wgsl
 #include pbr_functions.wgsl
 #include pbr_light.wgsl
@@ -239,6 +248,9 @@ fn fs_main(in: VertexOutput, @builtin(front_facing) is_front_facing: bool) -> Fr
 #endif
 #ifdef ANISOTROPY_MATERIAL
     get_anisotropy_info(&m, in);
+#endif
+#ifdef TRANSMISSION_MATERIAL
+    get_transmission_info(&m, in);
 #endif
 
     final_color = get_indirect_light(&m);

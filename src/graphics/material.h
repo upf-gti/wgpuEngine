@@ -54,9 +54,10 @@ enum eTextureUVTransform {
     IRIDESCENCE_UV_TRANSFORM,
     IRIDESCENCE_THICKNESS_UV_TRANSFORM,
     ANISOTROPY_UV_TRANSFORM,
+    TRANSMISSION_UV_TRANSFORM,
 };
 
-enum eMaterialProperties : uint32_t {
+enum eMaterialProperties : uint64_t {
     PROP_TYPE                           = 1 << 0,
     PROP_TOPOLOGY_TYPE                  = 1 << 1,
     PROP_CULL_TYPE                      = 1 << 2,
@@ -89,6 +90,9 @@ enum eMaterialProperties : uint32_t {
     PROP_ANISOTROPY                     = 1 << 29,
     PROP_ANISOTROPY_TEXTURE             = 1 << 30,
     PROP_ANISOTROPY_TOGGLE              = 1 << 31,
+    PROP_TRANSMISSION                   = 1 << 32,
+    PROP_TRANSMISSION_TEXTURE           = 1 << 33,
+    PROP_TRANSMISSION_TOGGLE            = 1 << 34,
 
     PROP_RELOAD_NEEDED                  = PROP_TYPE | PROP_TOPOLOGY_TYPE | PROP_CULL_TYPE | PROP_DEPTH_READ | PROP_DEPTH_WRITE | PROP_FRAGMENT_WRITE | PROP_DIFFUSE_TEXTURE |
                                         PROP_METALLIC_ROUGHNESS_TEXTURE | PROP_OCLUSSION_TEXTURE | PROP_EMISSIVE_TEXTURE | PROP_NORMAL_TEXTURE | PROP_TRANSPARENCY_TYPE |
@@ -121,6 +125,7 @@ public:
     void set_iridescence_thickness_max(float new_iridescence_thickness_max);
     void set_anisotropy_factor(float new_anisotropy_factor);
     void set_anisotropy_rotation(float new_anisotropy_rotation);
+    void set_transmission_factor(float new_transmission_factor);
     void set_uv_transform(uint8_t index, const glm::mat3x3& matrix);
 
     void set_diffuse_texture(Texture* diffuse_texture);
@@ -134,6 +139,7 @@ public:
     void set_iridescence_texture(Texture* iridescence_texture);
     void set_iridescence_thickness_texture(Texture* iridescence_thickness_texture);
     void set_anisotropy_texture(Texture* anisotropy_texture);
+    void set_transmission_texture(Texture* transmission_texture);
 
     void set_alpha_mask(float alpha_mask);
     void set_depth_read_write(bool value);
@@ -153,6 +159,7 @@ public:
     void set_use_clearcoat(bool value);
     void set_use_iridescence(bool value);
     void set_use_anisotropy(bool value);
+    void set_use_transmission(bool value);
 
     void set_shader(Shader* shader);
     void set_shader_pipeline(Pipeline* pipeline);
@@ -171,6 +178,7 @@ public:
     float get_iridescence_thickness_max() const;
     float get_anisotropy_factor() const;
     float get_anisotropy_rotation() const;
+    float get_transmission_factor() const;
     const std::vector<glm::mat4x4>& get_uv_transforms() const;
 
     const Texture* get_diffuse_texture() const;
@@ -184,6 +192,7 @@ public:
     const Texture* get_iridescence_texture() const;
     const Texture* get_iridescence_thickness_texture() const;
     const Texture* get_anisotropy_texture() const;
+    const Texture* get_transmission_texture() const;
 
     Texture* get_diffuse_texture();
     Texture* get_metallic_roughness_texture();
@@ -196,6 +205,7 @@ public:
     Texture* get_iridescence_texture();
     Texture* get_iridescence_thickness_texture();
     Texture* get_anisotropy_texture();
+    Texture* get_transmission_texture();
 
     float get_alpha_mask() const;
 
@@ -223,6 +233,7 @@ public:
     bool has_anisotropy() const { return use_anisotropy; }
     bool has_iridescence() const { return use_iridescence; }
     bool has_clearcoat() const { return use_clearcoat; }
+    bool has_transmission() const { return use_transmission; }
 
     void render_gui();
 
@@ -243,6 +254,7 @@ private:
     Texture* iridescence_texture = nullptr;
     Texture* iridescence_thickness_texture = nullptr;
     Texture* anisotropy_texture = nullptr;
+    Texture* transmission_texture = nullptr;
 
     std::vector<glm::mat4x4> uv_transforms;
 
@@ -265,10 +277,13 @@ private:
     float anisotropy_factor = 0.0f;
     float anisotropy_rotation = 0.0f;
 
+    float transmission_factor = 0.0f;
+
     bool use_tangents = false;
     bool use_clearcoat = false;
     bool use_iridescence = false;
     bool use_anisotropy = false;
+    bool use_transmission = false;
 
     bool depth_read = true;
     bool depth_write = true;

@@ -235,4 +235,29 @@ fn get_anisotropy_info( m : ptr<function, PbrMaterial>, in : VertexOutput )
 
 #endif // ANISOTROPY_MATERIAL
 
+#ifdef TRANSMISSION_MATERIAL
+
+#ifdef TRANSMISSION_TEXTURE
+fn get_transmission_uv( in_uv: vec2f ) -> vec2f {
+    var uv : vec4f = vec4f(in_uv, 1.0, 0.0);
+#ifdef HAS_TRANSMISSION_UV_TRANSFORM
+    uv = uv_transform_data[TRANSMISSION_UV_TRANSFORM] * uv;
+#endif
+    return uv.xy;
+}
+#endif
+
+fn get_transmission_info( m : ptr<function, PbrMaterial>, in : VertexOutput )
+{
+    m.transmission_factor = transmission_factor;
+
+#ifdef TRANSMISSION_TEXTURE
+    let transmission_uv : vec2f = get_transmission_uv(in.uv);
+    let transmission_sample : vec3f = textureSample(transmission_texture, sampler_2d, transmission_uv).xyz;
+    m.transmission_factor *= transmission_sample.r;
+#endif
+}
+
+#endif // TRANSMISSION_MATERIAL
+
 #endif // UNLIT_MATERIAL
