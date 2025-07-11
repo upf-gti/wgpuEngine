@@ -28,6 +28,7 @@ WGPUBindGroupEntry Uniform::get_bind_group_entry() const
 {
     // Create a binding
     WGPUBindGroupEntry bindingGroup = {};
+    bindingGroup.nextInChain = nullptr;
 
     // The index of the binding (the entries in bindGroupDesc can be in any order)
     bindingGroup.binding = binding;

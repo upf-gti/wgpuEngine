@@ -410,7 +410,7 @@ WGPUBuffer WebGPUContext::create_buffer(size_t size, int usage, const void* data
     return buffer;
 }
 
-WGPUTexture WebGPUContext::create_texture(WGPUTextureDimension dimension, WGPUTextureFormat format, WGPUExtent3D size, WGPUTextureUsage usage, uint32_t mipmaps, uint8_t sample_count)
+WGPUTexture WebGPUContext::create_texture(WGPUTextureDimension dimension, WGPUTextureFormat format, WGPUExtent3D size, WGPUTextureUsage usage, uint32_t mipmaps, uint8_t sample_count, const char* label)
 {
     WGPUTextureDescriptor textureDesc = {};
     textureDesc.dimension = dimension;
@@ -421,6 +421,7 @@ WGPUTexture WebGPUContext::create_texture(WGPUTextureDimension dimension, WGPUTe
     textureDesc.viewFormats = nullptr;
     textureDesc.usage = usage;
     textureDesc.mipLevelCount = mipmaps;
+    textureDesc.label = { label, WGPU_STRLEN };
 
     return wgpuDeviceCreateTexture(device, &textureDesc);
 }
@@ -440,7 +441,7 @@ WGPUTextureView WebGPUContext::create_texture_view(WGPUTexture texture, WGPUText
     return wgpuTextureCreateView(texture, &textureViewDesc);
 }
 
-WGPUSampler WebGPUContext::create_sampler(WGPUAddressMode wrap_u, WGPUAddressMode wrap_v, WGPUAddressMode wrap_w, WGPUFilterMode mag_filter, WGPUFilterMode min_filter, WGPUMipmapFilterMode mipmap_filter, float lod_max_clamp, uint16_t max_anisotropy)
+WGPUSampler WebGPUContext::create_sampler(WGPUAddressMode wrap_u, WGPUAddressMode wrap_v, WGPUAddressMode wrap_w, WGPUFilterMode mag_filter, WGPUFilterMode min_filter, WGPUMipmapFilterMode mipmap_filter, float lod_max_clamp, uint16_t max_anisotropy, WGPUCompareFunction compare_function)
 {
     WGPUSamplerDescriptor samplerDesc = {};
     samplerDesc.addressModeU = wrap_u;
@@ -451,7 +452,7 @@ WGPUSampler WebGPUContext::create_sampler(WGPUAddressMode wrap_u, WGPUAddressMod
     samplerDesc.mipmapFilter = mipmap_filter;
     samplerDesc.lodMinClamp = 0.0f;
     samplerDesc.lodMaxClamp = lod_max_clamp;
-    samplerDesc.compare = WGPUCompareFunction_Undefined;
+    samplerDesc.compare = compare_function;
     samplerDesc.maxAnisotropy = max_anisotropy;
 
     return wgpuDeviceCreateSampler(device, &samplerDesc);
@@ -1059,16 +1060,19 @@ WGPUPipelineLayout WebGPUContext::create_pipeline_layout(const std::vector<WGPUB
     return wgpuDeviceCreatePipelineLayout(device, &layout_descr);
 }
 
-void WebGPUContext::copy_texture_to_texture(WGPUTexture texture_src, WGPUTexture texture_dst, uint32_t src_mipmap_level, uint32_t dst_mipmap_level, const WGPUExtent3D& copy_size, WGPUCommandEncoder custom_command_encoder)
+void WebGPUContext::copy_texture_to_texture(WGPUTexture texture_src, WGPUTexture texture_dst, uint32_t src_mipmap_level, uint32_t dst_mipmap_level, const WGPUExtent3D& copy_size,
+    const WGPUOrigin3D& src_origin, const WGPUOrigin3D& dst_origin, WGPUCommandEncoder custom_command_encoder)
 {
     WGPUTexelCopyTextureInfo src_copy = {};
     src_copy.texture = texture_src;
     src_copy.mipLevel = src_mipmap_level;
+    src_copy.origin = src_origin;
     src_copy.aspect = WGPUTextureAspect_All;
 
     WGPUTexelCopyTextureInfo dst_copy = {};
     dst_copy.texture = texture_dst;
     dst_copy.mipLevel = dst_mipmap_level;
+    dst_copy.origin = dst_origin;
     dst_copy.aspect = WGPUTextureAspect_All;
 
     WGPUQueue copy_queue;
@@ -1407,7 +1411,7 @@ void WebGPUContext::generate_prefiltered_env_texture(Texture* prefiltered_env_te
     create_cubemap_mipmaps(cubemap_texture.get_texture(), cubemap_texture.get_size(), 6, WGPUTextureViewDimension_Cube, cubemap_texture.get_format(), { 0, 0, 0 }, command_encoder);
 
     // copy first cubemap mipmap to final texture
-    copy_texture_to_texture(cubemap_texture.get_texture(), prefiltered_env_texture->get_texture(), 0, 0, cubemap_texture.get_size(), command_encoder);
+    copy_texture_to_texture(cubemap_texture.get_texture(), prefiltered_env_texture->get_texture(), 0, 0, cubemap_texture.get_size(), { 0, 0, 0 }, { 0, 0, 0 }, command_encoder);
 
     // Prefilter cubemap
     {

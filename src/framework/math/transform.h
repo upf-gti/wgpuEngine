@@ -49,8 +49,8 @@ public:
     const glm::mat4x4& get_model();
     const glm::mat4x4 get_model() const;
 
-    glm::vec3 get_front();
-    glm::vec3 get_up();
+    glm::vec3 get_front() const;
+    glm::vec3 get_up() const;
 
     static Transform identity();
     static Transform combine(const Transform& a, const Transform& b);

@@ -76,15 +76,9 @@ void OmniLight3D::set_range(float value)
     Light3D::set_range(value);
 }
 
-sLightUniformData OmniLight3D::get_uniform_data()
+void OmniLight3D::get_uniform_data(sLightUniformData& data)
 {
-    return {
-        .position = get_translation(),
-        .type = type,
-        .color = color,
-        .intensity = intensity,
-        .range = range
-    };
+    Light3D::get_uniform_data(data);
 }
 
 void OmniLight3D::parse(std::ifstream& binary_scene_file)

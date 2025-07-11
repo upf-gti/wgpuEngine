@@ -24,7 +24,7 @@ public:
     void set_color(const glm::vec3& color) override;
     void set_range(float value) override;
 
-    sLightUniformData get_uniform_data() override;
+    void get_uniform_data(sLightUniformData& data) override;
 
     void parse(std::ifstream& binary_scene_file) override;
 

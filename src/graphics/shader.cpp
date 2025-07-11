@@ -545,7 +545,8 @@ void Shader::get_reflection_data(const std::string& shader_content)
 
 		bool has_sampler = false;
 
-		for (const auto& resource_binding : inspector.GetResourceBindings(entry_point.name)) {
+        const std::vector<ResourceBinding>& resource_bindings = inspector.GetResourceBindings(entry_point.name);
+		for (const ResourceBinding& resource_binding : resource_bindings) {
 
             if (max_bind_group_index < resource_binding.bind_group) {
                 max_bind_group_index = resource_binding.bind_group;
@@ -583,10 +584,18 @@ void Shader::get_reflection_data(const std::string& shader_content)
 			{
 			case ResourceBinding::ResourceType::kSampledTexture:
 				break;
+            case ResourceBinding::ResourceType::kDepthTexture:
+                entry.texture.sampleType = WGPUTextureSampleType_Depth;
+                entry.texture.multisampled = false;
+                break;
 			case ResourceBinding::ResourceType::kSampler:
 				has_sampler = true;
 				entry.sampler.type = WGPUSamplerBindingType_Filtering;
 				break;
+            case ResourceBinding::ResourceType::kComparisonSampler:
+                has_sampler = true;
+                entry.sampler.type = WGPUSamplerBindingType_Comparison;
+                break;
 			case ResourceBinding::ResourceType::kUniformBuffer:
 				entry.buffer.type = WGPUBufferBindingType_Uniform;
 				break;
@@ -611,25 +620,29 @@ void Shader::get_reflection_data(const std::string& shader_content)
 				break;
 			}
 
-			if (resource_binding.resource_type == ResourceBinding::ResourceType::kSampledTexture) {
-				switch (resource_binding.sampled_kind)
-				{
-				case ResourceBinding::SampledKind::kFloat:
-					if (has_sampler) {
-						entry.texture.sampleType = WGPUTextureSampleType_Float;
-					}
-					else {
-						entry.texture.sampleType = WGPUTextureSampleType_UnfilterableFloat;
-					}
-					break;
+            if (resource_binding.resource_type == ResourceBinding::ResourceType::kSampledTexture) {
+                switch (resource_binding.sampled_kind)
+                {
+                case ResourceBinding::SampledKind::kFloat:
+                    if (has_sampler) {
+                        entry.texture.sampleType = WGPUTextureSampleType_Float;
+                    }
+                    else {
+                        entry.texture.sampleType = WGPUTextureSampleType_UnfilterableFloat;
+                    }
+                    break;
                 case ResourceBinding::SampledKind::kUInt:
                     entry.texture.sampleType = WGPUTextureSampleType_Uint;
                     break;
-				default:
+                default:
                     spdlog::error("Shader reflection failed: sample kind not implemented");
-					assert(0);
-					break;
-				}
+                    assert(0);
+                    break;
+                }
+            }
+
+            if (resource_binding.resource_type == ResourceBinding::ResourceType::kSampledTexture ||
+                resource_binding.resource_type == ResourceBinding::ResourceType::kDepthTexture) {
 
 				switch (resource_binding.dim)
 				{
@@ -645,6 +658,9 @@ void Shader::get_reflection_data(const std::string& shader_content)
 				case ResourceBinding::TextureDimension::kCube:
 					entry.texture.viewDimension = WGPUTextureViewDimension_Cube;
 					break;
+                case ResourceBinding::TextureDimension::k2dArray:
+                    entry.texture.viewDimension = WGPUTextureViewDimension_2DArray;
+                    break;
 				default:
                     spdlog::error("Shader reflection failed: view dimension not implemented");
 					assert(0);

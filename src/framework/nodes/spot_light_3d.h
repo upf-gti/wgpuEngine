@@ -29,12 +29,13 @@ public:
 
     void render_gui() override;
 
-    sLightUniformData get_uniform_data() override;
+    void get_uniform_data(sLightUniformData& data) override;
 
     float get_inner_cone_angle() const { return inner_cone_angle; };
     float get_outer_cone_angle() const { return outer_cone_angle; };
 
     void set_range(float value) override;
+    void on_set_range() override;
 
     void set_inner_cone_angle(float value);
     void set_outer_cone_angle(float value);

@@ -6,6 +6,8 @@ const LIGHT_SPOT        = 3;
 
 struct Light
 {
+    view_proj : mat4x4f,
+
     position : vec3f,
     ltype : u32,
 
@@ -15,8 +17,8 @@ struct Light
     direction : vec3f,
     range : f32,
 
-    // spots
-    dummy: vec2f,
+    shadow_bias : f32,
+    cast_shadows : i32,
     inner_cone_cos : f32,
     outer_cone_cos : f32
 };
@@ -85,9 +87,9 @@ fn get_direct_light( m : ptr<function, PbrMaterial> ) -> vec3f
 
     let num_lights_clamped : u32 = clamp(num_lights, 0u, MAX_LIGHTS);
 
-    for (var i : u32 = 0; i < num_lights_clamped; i++)
+    for (var light_idx : u32 = 0; light_idx < num_lights_clamped; light_idx++)
     {
-        var light : Light = lights[i];
+        var light : Light = lights[light_idx];
 
         var point_to_light : vec3f;
 
@@ -107,21 +109,40 @@ fn get_direct_light( m : ptr<function, PbrMaterial> ) -> vec3f
         let LdotH : f32 = clamp(dot(l, h), 0.0, 1.0);
         let VdotH : f32 = clamp(dot(v, h), 0.0, 1.0);
 
-        if (NdotL > 0.0 || m.n_dot_v > 0.0)
-        {
+        let light_space = light.view_proj * vec4f(m.pos, 1.0);
+        let proj = light_space.xyz / light_space.w;
+
+        var uv : vec2f = proj.xy * vec2f(0.5, -0.5) + vec2f(0.5);
+
+        var depth : f32 = proj.z;
+
+        var shadow_vis : f32 = textureSampleCompare(
+            lights_shadow_maps,
+            shadow_sampler,
+            uv,
+            light_idx,
+            depth + light.shadow_bias
+        );
+
+        if(light.cast_shadows == 0) {
+            shadow_vis = 1.0;
+        }
+
+        //if (NdotL > 0.0 || m.n_dot_v > 0.0)
+        //{
             // Calculation of analytical light
             // https://github.com/KhronosGroup/glTF/tree/master/specification/2.0#acknowledgments AppendixB
 
-            let intensity : vec3f = get_light_intensity(light, point_to_light);
-            f_diffuse += intensity * NdotL * BRDF_lambertian(m.f0, m.f90, m.diffuse, m.specular_weight, VdotH);
-            f_specular += intensity * NdotL * BRDF_specularGGX(m.f0, m.f90, m.roughness * m.roughness, m.specular_weight, VdotH, NdotL, m.n_dot_v, NdotH);
-        }
+            let intensity : vec3f = shadow_vis * NdotL * get_light_intensity(light, point_to_light);
+            f_diffuse += intensity * BRDF_lambertian(m.f0, m.f90, m.diffuse, m.specular_weight, VdotH);
+            f_specular += intensity * BRDF_specularGGX(m.f0, m.f90, m.roughness * m.roughness, m.specular_weight, VdotH, NdotL, m.n_dot_v, NdotH);
+        //}
     }
 
     return f_diffuse + f_specular;
 }
 
-// https://github.com/KhronosGroup/glTF-Sample-Viewer/blob/main/source/Renderer/shaders/ibl.glsl
+// https://github.com/KhronosGroup/glTF-Sample-Renderer/blob/fe6ee033f6ad33e21085452a23e284d589c18271/source/Renderer/shaders/ibl.glsl
 fn get_indirect_light( m : ptr<function, PbrMaterial> ) -> vec3f
 {
     // IBL

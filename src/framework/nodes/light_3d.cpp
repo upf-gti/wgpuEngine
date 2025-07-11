@@ -9,7 +9,7 @@
 Light3D::Light3D() : Node3D()
 {
     animatable_properties["intensity"] = { AnimatablePropertyType::FLOAT32, &intensity };
-    animatable_properties["range"] = { AnimatablePropertyType::FLOAT32, &range };
+    animatable_properties["range"] = { AnimatablePropertyType::FLOAT32, &range, std::bind(&Light3D::on_set_range, this) };
     animatable_properties["color"] = { AnimatablePropertyType::FVEC4, &color, std::bind(&Light3D::on_set_color, this) };
 
     collider_shape = COLLIDER_SHAPE_SPHERE;
@@ -59,22 +59,42 @@ void Light3D::clone(Node* new_node, bool copy)
     }
 }
 
+void Light3D::get_uniform_data(sLightUniformData& data)
+{
+    const Transform& global_transform = get_global_transform();
+
+    light_camera.set_orthographic(-10.0f, 10.0f, -10.0f, 10.0f, 20.0f, 0.1f);
+    light_camera.look_at(get_global_transform().get_position(),
+        global_transform.get_position() + global_transform.get_front(),
+        glm::vec3(0.0f, 1.0f, 0.0f));
+
+    data.position = global_transform.get_position();
+    data.view_proj = light_camera.get_view_projection();
+    data.type = type;
+    data.color = color;
+    data.intensity = intensity;
+    data.range = range;
+    data.shadow_bias = shadow_bias;
+    data.cast_shadows = cast_shadows ? 1 : 0;
+}
+
 void Light3D::render_gui()
 {
     if (ImGui::TreeNodeEx("Light3D", ImGuiTreeNodeFlags_DefaultOpen))
     {
-        bool changed = false;
-
         glm::vec3 gui_color = color;
         if (ImGui::ColorEdit3("Color", &gui_color[0])) {
             set_color(gui_color);
         }
 
-        ImGui::SliderFloat("Intensity", &intensity, 0.f, 100.0f);
+        ImGui::DragFloat("Intensity", &intensity, 0.1f, 0.f, 100.0f);
+        if (ImGui::DragFloat("Range", &range, 0.1f, 0.f, 10.0f)) {
+            on_set_range();
+        }
         ImGui::Checkbox("Cast Shadows", &cast_shadows);
 
         if (cast_shadows) {
-            ImGui::SliderFloat("Shadow Bias", &shadow_bias, 0.0f, 0.001f);
+            ImGui::DragFloat("Shadow Bias", &shadow_bias, 0.0001f, 0.0f, 0.01f);
         }
 
         ImGui::TreePop();
@@ -125,8 +145,8 @@ void Light3D::create_shadow_data()
     shadow_depth_texture = webgpu_context->create_texture(
         WGPUTextureDimension_2D,
         WGPUTextureFormat_Depth32Float,
-        { 1024, 1024, 1 },
-        WGPUTextureUsage_RenderAttachment | WGPUTextureUsage_TextureBinding,
+        { SHADOW_MAP_SIZE, SHADOW_MAP_SIZE, 1 },
+        WGPUTextureUsage_RenderAttachment | WGPUTextureUsage_CopySrc,
         1,
         1
     );

@@ -17,6 +17,7 @@
 #include <string>
 
 #define MAX_LIGHTS 32u
+#define SHADOW_MAP_SIZE 1024
 
 class Camera;
 class Texture;
@@ -204,6 +205,9 @@ protected:
 
     Uniform lights_buffer;
     Uniform num_lights_buffer;
+    Uniform shadow_maps_array;
+    Uniform shadow_sampler;
+    WGPUTexture shadow_array_texture;
 
     // Shadows
 

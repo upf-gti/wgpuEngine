@@ -17,6 +17,10 @@
 #include "graphics/primitives/capsule_mesh.h"
 #include "graphics/primitives/torus_mesh.h"
 
+#include "framework/nodes/directional_light_3d.h"
+#include "framework/nodes/omni_light_3d.h"
+#include "framework/nodes/spot_light_3d.h"
+
 #if defined(OPENXR_SUPPORT)
 #include "xr/openxr/openxr_context.h"
 #elif defined(WEBXR_SUPPORT)
@@ -587,6 +591,29 @@ void Engine::render_default_gui()
 
                 ImGui::EndMenu();
             }
+
+            if (ImGui::BeginMenu("Light"))
+            {
+                auto create_light_instance = [&](Light3D* light) {
+                    light->create_debug_meshes();
+                    main_scene->add_node(light);
+                };
+
+                if (ImGui::MenuItem("DirectionalLight")) {
+                    create_light_instance(new DirectionalLight3D());
+                }
+
+                if (ImGui::MenuItem("SpotLight")) {
+                    create_light_instance(new SpotLight3D());
+                }
+
+                if (ImGui::MenuItem("OmniLight")) {
+                    create_light_instance(new OmniLight3D());
+                }
+
+                ImGui::EndMenu();
+            }
+
             ImGui::EndMenu();
         }
         ImGui::EndMainMenuBar();

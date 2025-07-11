@@ -5,6 +5,7 @@
 #include "node_3d.h"
 
 #include "graphics/uniforms_structs.h"
+#include "framework/camera/camera.h"
 
 enum LightType {
     LIGHT_UNDEFINED,
@@ -30,6 +31,7 @@ protected:
     float fade_length = 1.0f;
 
     // Shadows
+    Camera light_camera;
     bool cast_shadows = false;
     float shadow_bias = 0.001f;
 
@@ -47,7 +49,7 @@ public:
 
     void render_gui() override;
 
-    virtual sLightUniformData get_uniform_data() = 0;
+    virtual void get_uniform_data(sLightUniformData& data);
     LightType get_type() const { return type; }
     float get_intensity() const { return intensity; }
     const glm::vec3& get_color() { return color; }
@@ -67,7 +69,9 @@ public:
     void create_shadow_data();
 
     void on_set_color();
+    virtual void on_set_range() {};
 
+    const Camera& get_light_camera() { return light_camera; }
     WGPUTexture get_shadow_depth_texture() { return shadow_depth_texture; }
     WGPUTextureView get_shadow_depth_texture_view() { return shadow_depth_texture_view; }
 

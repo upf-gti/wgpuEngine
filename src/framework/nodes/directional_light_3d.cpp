@@ -41,13 +41,8 @@ void DirectionalLight3D::render()
 
 void DirectionalLight3D::render_gui()
 {
-    bool changed = false;
-
     if (ImGui::TreeNodeEx("DirectionalLight3D"))
     {
-        if (ImGui::SliderFloat("Range", &range, 0.f, 10.0f)) {
-        }
-
         ImGui::TreePop();
     }
 
@@ -63,15 +58,12 @@ void DirectionalLight3D::set_color(const glm::vec3& color)
     Light3D::set_color(color);
 }
 
-sLightUniformData DirectionalLight3D::get_uniform_data()
+void DirectionalLight3D::get_uniform_data(sLightUniformData& data)
 {
-    return {
-        .position = get_translation(),
-        .type = type,
-        .color = color,
-        .intensity = intensity,
-        .direction = -get_global_model()[2]
-    };
+    Light3D::get_uniform_data(data);
+
+    const Transform& global_transform = get_global_transform();
+    data.direction = global_transform.get_front();
 }
 
 void DirectionalLight3D::parse(std::ifstream& binary_scene_file)

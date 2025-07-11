@@ -68,12 +68,6 @@ void SpotLight3D::render_gui()
 
     if (ImGui::TreeNodeEx("SpotLight3D"))
     {
-        if (ImGui::SliderFloat("Range", &range, 0.f, 10.0f)) {
-            if (debug_material) {
-                create_debug_render_cone();
-            }
-        }
-
         ImGui::SliderFloat("Inner Angle", &inner_cone_angle, 0.f, pi_2);
 
         if (ImGui::SliderFloat("Outer Angle", &outer_cone_angle, 0.f, pi_2)) {
@@ -88,18 +82,13 @@ void SpotLight3D::render_gui()
     Light3D::render_gui();
 }
 
-sLightUniformData SpotLight3D::get_uniform_data()
+void SpotLight3D::get_uniform_data(sLightUniformData& data)
 {
-    return {
-        .position = get_translation(),
-        .type = type,
-        .color = color,
-        .intensity = intensity,
-        .direction = -get_global_model()[2],
-        .range = range,
-        .inner_cone_cos = cosf(inner_cone_angle),
-        .outer_cone_cos = cosf(outer_cone_angle)
-    };
+    Light3D::get_uniform_data(data);
+
+    data.direction = -get_global_model()[2];
+    data.inner_cone_cos = cosf(inner_cone_angle);
+    data.outer_cone_cos = cosf(outer_cone_angle);
 }
 
 void SpotLight3D::set_range(float value)
@@ -109,6 +98,11 @@ void SpotLight3D::set_range(float value)
     }
 
     Light3D::set_range(value);
+}
+
+void SpotLight3D::on_set_range()
+{
+    set_range(range);
 }
 
 void SpotLight3D::set_inner_cone_angle(float value)

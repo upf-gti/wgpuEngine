@@ -130,12 +130,12 @@ const glm::mat4x4 Transform::get_model() const
     return dirty ? Transform::transform_to_mat4(*this) : model;
 }
 
-glm::vec3 Transform::get_front()
+glm::vec3 Transform::get_front() const
 {
     return -glm::normalize(get_model()[2]);
 }
 
-glm::vec3 Transform::get_up()
+glm::vec3 Transform::get_up() const
 {
     return glm::normalize(get_model() * glm::vec4(0.0f, 1.0f, 0.0f, 0.0f));
 }

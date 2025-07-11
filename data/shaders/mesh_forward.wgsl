@@ -109,6 +109,8 @@
 @group(3) @binding(2) var sampler_clamp: sampler;
 @group(3) @binding(3) var<uniform> lights : array<Light, MAX_LIGHTS>;
 @group(3) @binding(4) var<uniform> num_lights : u32;
+@group(3) @binding(5) var lights_shadow_maps: texture_depth_2d_array;
+@group(3) @binding(6) var shadow_sampler: sampler_comparison;
 
 #endif // UNLIT_MATERIAL
 
@@ -133,7 +135,7 @@ fn vs_main(in: VertexInput) -> VertexOutput {
 
     var out: VertexOutput;
     var world_position = instance_data.model * position;
-    out.world_position = world_position.xyz / world_position.w;
+    out.world_position = world_position.xyz;
     out.position = camera_data.view_projection * world_position;
     out.uv = in.uv; // forward to the fragment shader
     out.color = vec4f(in.color, 1.0) * albedo;

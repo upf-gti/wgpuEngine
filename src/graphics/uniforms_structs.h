@@ -3,16 +3,18 @@
 #include "glm/vec2.hpp"
 #include "glm/vec3.hpp"
 #include "glm/vec4.hpp"
+#include "glm/mat4x4.hpp"
 
 struct sLightUniformData {
+    glm::mat4x4 view_proj;
     glm::vec3 position;
     int type = 0;
     glm::vec3 color = { 0.0f, 0.0f, 0.0f };
     float intensity = 0.0f;
     glm::vec3 direction = { 0.0f, 0.0f, 0.0f };
     float range = 0.0f;
-    glm::vec2 dummy = { 0.0f, 0.0f };
-    // spots
+    float shadow_bias = 0.001f;
+    int cast_shadows = 0;
     float inner_cone_cos = 0.0f;
     float outer_cone_cos = 0.0f;
 };

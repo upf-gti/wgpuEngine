@@ -408,7 +408,7 @@ void Renderer::render()
 
     update_lights();
 
-    //render_shadow_maps();
+    render_shadow_maps();
 
     camera_data.exposure = exposure;
     camera_data.ibl_intensity = ibl_intensity;
@@ -639,7 +639,6 @@ void Renderer::render_camera(const std::vector<std::vector<sRenderData>>& render
         WGPURenderPassDepthStencilAttachment render_pass_depth_attachment = {};
 
         if (depth_view) {
-
             render_pass_depth_attachment.view = depth_view;
             render_pass_depth_attachment.depthClearValue = 0.0f;
             render_pass_depth_attachment.depthLoadOp = WGPULoadOp_Clear;
@@ -828,7 +827,47 @@ void Renderer::init_lighting_bind_group()
     num_lights_buffer.binding = 4;
     num_lights_buffer.buffer_size = sizeof(int);
 
-    std::vector<Uniform*> uniforms = { &irradiance_texture_uniform, &brdf_lut_uniform, &ibl_sampler_uniform, &lights_buffer, &num_lights_buffer };
+    // Shadow maps
+    {
+        shadow_array_texture = webgpu_context->create_texture(
+            WGPUTextureDimension_2D,
+            WGPUTextureFormat_Depth32Float,
+            { SHADOW_MAP_SIZE, SHADOW_MAP_SIZE, MAX_LIGHTS },
+            WGPUTextureUsage_TextureBinding | WGPUTextureUsage_CopyDst,
+            1,
+            1,
+            "shadow_array_texture"
+        );
+
+        shadow_maps_array.data = webgpu_context->create_texture_view(
+            shadow_array_texture,
+            WGPUTextureViewDimension_2DArray,
+            WGPUTextureFormat_Depth32Float,
+            WGPUTextureAspect_DepthOnly,
+            0,
+            1,
+            0,
+            MAX_LIGHTS,
+            "shadow_depth_texture_view"
+        );
+        shadow_maps_array.binding = 5;
+
+        // Shadowmap sampler
+        shadow_sampler.data = webgpu_context->create_sampler(
+            WGPUAddressMode_ClampToEdge,
+            WGPUAddressMode_ClampToEdge,
+            WGPUAddressMode_ClampToEdge,
+            WGPUFilterMode_Linear,
+            WGPUFilterMode_Linear,
+            WGPUMipmapFilterMode_Linear,
+            1.0f,
+            1u,
+            WGPUCompareFunction_Greater // reverse Z
+        );
+        shadow_sampler.binding = 6;
+    }
+
+    std::vector<Uniform*> uniforms = { &irradiance_texture_uniform, &brdf_lut_uniform, &ibl_sampler_uniform, &lights_buffer, &num_lights_buffer, &shadow_maps_array, &shadow_sampler };
     lighting_bind_group = webgpu_context->create_bind_group(uniforms, RendererStorage::get_shader_from_source(shaders::mesh_forward::source, shaders::mesh_forward::path, shaders::mesh_forward::libraries), 3);
 }
 
@@ -1147,24 +1186,19 @@ void Renderer::render_shadow_maps()
     std::vector<std::vector<sRenderData>> render_lists(RENDER_LIST_COUNT);
 
     for (uint32_t light_idx = 0; light_idx < lights_with_shadow.size(); ++light_idx) {
+
         Light3D* light = lights_with_shadow[light_idx];
 
-        Transform global_transform = light->get_global_transform();
+        const Camera& light_camera = light->get_light_camera();
 
-        Camera2D light_camera;
-        light_camera.set_orthographic(-10.0f, 10.0f, -10.0f, 10.0f, 20.0f, 0.1f);
-        light_camera.look_at(global_transform.get_position(),
-            global_transform.get_position() + global_transform.get_front(),
-            glm::vec3(0.0f, 1.0f, 0.0f));
-
-        prepare_cull_instancing(light_camera, render_lists, shadow_instances_data, true);
+        prepare_cull_instancing(light->get_light_camera(), render_lists, shadow_instances_data, true);
 
         // Update main 3d camera
 
         camera_data.eye = light_camera.get_eye();
-        camera_data.view_projection = light_camera.get_view_projection();
         camera_data.view = light_camera.get_view();
         camera_data.projection = light_camera.get_projection();
+        camera_data.view_projection = light_camera.get_view_projection();
 
         wgpuQueueWriteBuffer(webgpu_context->device_queue, std::get<WGPUBuffer>(shadow_camera_uniform.data), light_idx * camera_buffer_stride, &camera_data, sizeof(sCameraData));
 
@@ -1173,6 +1207,16 @@ void Renderer::render_shadow_maps()
         }
 
         render_camera(render_lists, nullptr, light->get_shadow_depth_texture_view(), shadow_instances_data, shadow_camera_bind_group, false, "shadow_map", 0, light_idx);
+    }
+
+
+    // copy shadow maps (temp solution)
+    {
+        for (uint32_t light_idx = 0; light_idx < lights_with_shadow.size(); ++light_idx) {
+            Light3D* light = lights_with_shadow[light_idx];
+            const WGPUExtent3D& size = { SHADOW_MAP_SIZE, SHADOW_MAP_SIZE, 1 };
+            webgpu_context->copy_texture_to_texture(light->get_shadow_depth_texture(), shadow_array_texture, 0, 0, size, { 0, 0, 0 }, { 0, 0, light_idx }, get_global_command_encoder());
+        }
     }
 }
 
@@ -1392,7 +1436,9 @@ void Renderer::update_lights()
 
 void Renderer::add_light(Light3D* new_light)
 {
-    lights_uniform_data[num_lights] = new_light->get_uniform_data();
+    sLightUniformData data;
+    new_light->get_uniform_data(data);
+    lights_uniform_data[num_lights] = data;
     num_lights++;
 
     const LightType light_type = new_light->get_type();
