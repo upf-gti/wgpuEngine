@@ -57,6 +57,7 @@ public:
     bool get_fading_enabled() const { return fading_enabled; }
     bool get_cast_shadows() const { return cast_shadows; }
     float get_range() const { return range; }
+    float get_shadow_bias() const { return shadow_bias; }
 
     virtual void create_debug_meshes() = 0;
 
@@ -65,6 +66,7 @@ public:
     virtual void set_range(float value);
     void set_fading_enabled(bool value);
     void set_cast_shadows(bool value);
+    void set_shadow_bias(float new_shadow_bias);
 
     void create_shadow_data();
 

@@ -149,9 +149,14 @@ void Light3D::on_set_color()
     set_color(color);
 }
 
-void Light3D::set_cast_shadows(bool value)
+void Light3D::set_cast_shadows(bool new_cast_shadows)
 {
-    this->cast_shadows = value;
+    this->cast_shadows = new_cast_shadows;
+}
+
+void Light3D::set_shadow_bias(float new_shadow_bias)
+{
+    this->shadow_bias = new_shadow_bias;
 }
 
 void Light3D::create_shadow_data()

@@ -582,6 +582,7 @@ EMSCRIPTEN_BINDINGS(wgpuEngine_bindings) {
         .property("intensity", &Light3D::get_intensity, &Light3D::set_intensity)
         .property("range", &Light3D::get_range, &Light3D::set_range)
         .property("type", &Light3D::get_type)
+        .property("shadowBias", &Light3D::get_shadow_bias, &Light3D::set_shadow_bias)
         .function("render", &Light3D::render);
 
     class_<DirectionalLight3D, base<Light3D>>("DirectionalLight3D")
