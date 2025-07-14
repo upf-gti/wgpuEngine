@@ -33,7 +33,7 @@ protected:
     // Shadows
     Camera light_camera;
     bool cast_shadows = false;
-    float shadow_bias = 0.001f;
+    float shadow_bias = 0.0001f;
 
     WGPUTexture shadow_depth_texture = nullptr;
     WGPUTextureView shadow_depth_texture_view = nullptr;

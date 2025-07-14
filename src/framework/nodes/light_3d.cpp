@@ -13,6 +13,8 @@ Light3D::Light3D() : Node3D()
     animatable_properties["color"] = { AnimatablePropertyType::FVEC4, &color, std::bind(&Light3D::on_set_color, this) };
 
     collider_shape = COLLIDER_SHAPE_SPHERE;
+
+    light_camera.set_orthographic(-10.0f, 10.0f, -10.0f, 10.0f, 20.0f, 0.1f);
 }
 
 Light3D::~Light3D()
@@ -63,7 +65,7 @@ void Light3D::get_uniform_data(sLightUniformData& data)
 {
     const Transform& global_transform = get_global_transform();
 
-    light_camera.set_orthographic(-10.0f, 10.0f, -10.0f, 10.0f, 20.0f, 0.1f);
+    // By now all light cameras will be orthographic
     light_camera.look_at(get_global_transform().get_position(),
         global_transform.get_position() + global_transform.get_front(),
         glm::vec3(0.0f, 1.0f, 0.0f));
@@ -94,7 +96,26 @@ void Light3D::render_gui()
         ImGui::Checkbox("Cast Shadows", &cast_shadows);
 
         if (cast_shadows) {
+
             ImGui::DragFloat("Shadow Bias", &shadow_bias, 0.0001f, 0.0f, 0.01f);
+
+            if (ImGui::TreeNodeEx("Shadow Camera", ImGuiTreeNodeFlags_DefaultOpen))
+            {
+                bool frustum_changed = false;
+
+                glm::vec4 ortho_f = { light_camera.get_left(), light_camera.get_right(), light_camera.get_bottom(), light_camera.get_top() };
+                frustum_changed |= ImGui::DragFloat4("Frustum plane", &ortho_f.x, 0.1f, -60.f, 60.0f);
+                float near = light_camera.get_near();
+                frustum_changed |= ImGui::DragFloat("Near", &near, 0.1f, -60.f, 60.0f);
+                float far = light_camera.get_far();
+                frustum_changed |= ImGui::DragFloat("Far", &far, 0.1f, -60.f, 60.0f);
+
+                if (frustum_changed) {
+                    light_camera.set_orthographic(ortho_f.x, ortho_f.y, ortho_f.z, ortho_f.w, near, far);
+                }
+
+                ImGui::TreePop();
+            }
         }
 
         ImGui::TreePop();

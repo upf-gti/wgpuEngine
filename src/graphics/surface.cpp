@@ -202,7 +202,7 @@ sSurfaceData Surface::generate_quad(float w, float h, const glm::vec3& position,
         for (unsigned short i2 = 0; i2 <= 1; i2++)
         {
             points.vertices.push_back(position - (orig + float(i1) * delta1 + float(i2) * delta2));
-            points.normals.push_back(n);
+            points.normals.push_back(-n);
             points.uvs.push_back(glm::vec2(i1, flip_y ? (1.0f - i2) : i2));
             points.colors.push_back(color);
         }

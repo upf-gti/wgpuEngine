@@ -51,6 +51,10 @@ public:
     float get_aspect() const { return aspect; }
     float get_near() const { return z_near; }
     float get_far() const { return z_far; }
+    float get_left() const { return left; }
+    float get_right() const { return right; }
+    float get_top() const { return top; }
+    float get_bottom() const { return bottom; }
     float get_speed() const { return speed; }
     float get_mouse_sensitivity() const { return mouse_sensitivity; }
 

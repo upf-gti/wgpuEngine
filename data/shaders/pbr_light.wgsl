@@ -111,32 +111,44 @@ fn get_direct_light( m : ptr<function, PbrMaterial> ) -> vec3f
 
         let light_space = light.view_proj * vec4f(m.pos, 1.0);
         let proj = light_space.xyz / light_space.w;
-
         var uv : vec2f = proj.xy * vec2f(0.5, -0.5) + vec2f(0.5);
-
         var depth : f32 = proj.z;
 
-        var shadow_vis : f32 = textureSampleCompare(
-            lights_shadow_maps,
-            shadow_sampler,
-            uv,
-            light_idx,
-            depth + light.shadow_bias
-        );
+        // Percentage-closer filtering. Sample texels in the region
+        // to smooth the result.
+        // https://webgpu.github.io/webgpu-samples/?sample=shadowMapping#fragment.wgsl
 
-        if(light.cast_shadows == 0) {
-            shadow_vis = 1.0;
+        var visibility : f32 = 0.0;
+        let i_map_size = 1.0 / 1024.0; // 1024x1024 shadow map
+
+        for (var y = -1; y <= 1; y++) {
+            for (var x = -1; x <= 1; x++) {
+                let offset : vec2f = vec2f(f32(x), f32(y)) * i_map_size;
+                visibility += textureSampleCompare(
+                    lights_shadow_maps,
+                    shadow_sampler,
+                    uv + offset,
+                    light_idx,
+                    depth + light.shadow_bias
+                );
+            }
         }
 
-        //if (NdotL > 0.0 || m.n_dot_v > 0.0)
-        //{
+        visibility /= 9.0;
+
+        if(light.cast_shadows == 0) {
+            visibility = 1.0;
+        }
+
+        if (NdotL > 0.0)
+        {
             // Calculation of analytical light
             // https://github.com/KhronosGroup/glTF/tree/master/specification/2.0#acknowledgments AppendixB
 
-            let intensity : vec3f = shadow_vis * NdotL * get_light_intensity(light, point_to_light);
+            let intensity : vec3f = visibility * NdotL * get_light_intensity(light, point_to_light);
             f_diffuse += intensity * BRDF_lambertian(m.f0, m.f90, m.diffuse, m.specular_weight, VdotH);
             f_specular += intensity * BRDF_specularGGX(m.f0, m.f90, m.roughness * m.roughness, m.specular_weight, VdotH, NdotL, m.n_dot_v, NdotH);
-        //}
+        }
     }
 
     return f_diffuse + f_specular;

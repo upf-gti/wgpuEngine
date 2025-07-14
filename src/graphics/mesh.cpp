@@ -114,6 +114,9 @@ void Mesh::render_gui()
 
                 surface->render_gui();
 
+                ImGui::Checkbox("Receive Shadows", &receive_shadows);
+                ImGui::Checkbox("Frustum Culling", &frustum_culling_enabled);
+
                 Material* material = get_surface_material_override(surface);
                 if (!material) {
                     material = surface->get_material();

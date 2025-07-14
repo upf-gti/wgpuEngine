@@ -1209,7 +1209,6 @@ void Renderer::render_shadow_maps()
         render_camera(render_lists, nullptr, light->get_shadow_depth_texture_view(), shadow_instances_data, shadow_camera_bind_group, false, "shadow_map", 0, light_idx);
     }
 
-
     // copy shadow maps (temp solution)
     {
         for (uint32_t light_idx = 0; light_idx < lights_with_shadow.size(); ++light_idx) {
