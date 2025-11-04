@@ -17,16 +17,14 @@ MAKE_CODE( `@int@ @[mtd]main@()
     };
 
     @if@ (@[var]engine_instance@->@[mtd]initialize@(@[var]renderer_instance@, @[var]configuration@)) {
-        @[com]// Exit application if misconfigured@
+        @[com]// Exit application if failed to initialize engine@
         @return@ @1@;
     }
 
     @[var]engine@->@[mtd]start_loop@();
 
     @[var]engine@->@[mtd]clean@();
-
     @delete@ @[var]engine@;
-
     @delete@ @[var]renderer@;
 
     @return@ @0@;
@@ -68,5 +66,8 @@ MAKE_HEADER( "Main loop", "h2", "main-loop" );
 MAKE_PARAGRAPH( `The method ${ INLINE_CODE( "start_loop" ) } will start the main application loop, configuring a new frame (with its own ${ INLINE_CODE( "update" ) } and ${ INLINE_CODE( "render" ) } calls) and 
 submitting it. This is handled automatically for the engine, and if you want to change this behavior, changing the order, adding extra logic or render passes, that can be done by overloading 
 the update & render functions of the engine, a scene or a node.` );
+
+MAKE_LINE_BREAK();
+MAKE_LINE_BREAK();
 
 </script>

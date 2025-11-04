@@ -1,11 +1,12 @@
-# wgpuEngine: WebGPU Cross-platform 3D engine
+# wgpuEngine: a Cross-Platform, WebGPU-based 3D Engine
 
-`wgpuEngine` is an open-source cross-platform engine designed for creating desktop, XR (extended reality), and 3D web applications. Built on top of the newest graphics API  WebGPU, it provides a solution to render complex scenes, animations, and immersive experiences. 
+`wgpuEngine` is an open-source cross-platform engine designed for creating desktop, XR (extended reality), and 3D web applications. Built on top of the newest graphics API WebGPU, it provides a solution to render complex scenes, animations, and immersive experiences within web browsers. 
 
 It uses Dawn, which provides WebGPU for desktop and web (via [emscripten](https://emscripten.org/)). We are still using a [forked version](https://github.com/blitz-research/dawn) until the official one adds XR support. It supports XR via OpenXR for desktop and WebXR for web environments.
 
 > [!IMPORTANT]
-> Support for Web XR is already available via new WebGPU-WebXR binding!
+> You can also read our most recent publication ***"A Cross-Platform, WebGPU-Based 3D Engine for Real-Time Rendering and XR Applications"***, from the *Web3D '25: Proceedings of the 30th International Conference on 3D Web Technology*.
+[doi/10.1145/3746237.3746305](https://dl.acm.org/doi/10.1145/3746237.3746305)
 
 glTF scene showcasing PBR  |  Gaussian Splatting scan (by [FABW](https://animationsinstitut.de/de/))
 :-------------------------:|:-------------------------:
@@ -20,6 +21,7 @@ For an example of how to use this engine, check out [Rooms](https://github.com/u
 
 - Web export
 - Flat screen + VR Rendering Supported
+  - Support for Web XR is already available via new WebGPU-WebXR binding!
 - Supported platforms:
     - **Windows**
     - **Web Browsers**
