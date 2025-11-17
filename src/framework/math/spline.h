@@ -43,7 +43,7 @@ public:
 
     virtual void clear();
 
-    uint32_t size() const { return knots.size(); }
+    size_t size() const { return knots.size(); }
 
     void set_density(uint32_t new_density) { density = new_density; }
 };

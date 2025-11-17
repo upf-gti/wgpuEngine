@@ -101,10 +101,10 @@ bool Texture::convert_to_rgba8unorm(uint32_t width, uint32_t height, WGPUTexture
             {
                 uint8_t* src_converted = reinterpret_cast<uint8_t*>(src);
                 uint32_t pixel_pos = (j * 4) + (i * 4 * width);
-                dst[pixel_pos + 0] = std::pow(static_cast<uint8_t>((src_converted[pixel_pos + 0] / 255.0f) * 255.0f), 2.2);
-                dst[pixel_pos + 1] = std::pow(static_cast<uint8_t>((src_converted[pixel_pos + 1] / 255.0f) * 255.0f), 2.2);
-                dst[pixel_pos + 2] = std::pow(static_cast<uint8_t>((src_converted[pixel_pos + 2] / 255.0f) * 255.0f), 2.2);
-                dst[pixel_pos + 3] = std::pow(static_cast<uint8_t>((src_converted[pixel_pos + 3] / 255.0f) * 255.0f), 2.2);
+                dst[pixel_pos + 0] = static_cast<uint8_t>(std::pow(src_converted[pixel_pos + 0], 2.2));
+                dst[pixel_pos + 1] = static_cast<uint8_t>(std::pow(src_converted[pixel_pos + 1], 2.2));
+                dst[pixel_pos + 2] = static_cast<uint8_t>(std::pow(src_converted[pixel_pos + 2], 2.2));
+                dst[pixel_pos + 3] = static_cast<uint8_t>(std::pow(src_converted[pixel_pos + 3], 2.2));
                 break;
             }
             default:
@@ -226,7 +226,7 @@ void Texture::set_texture_parameters(const std::string& name, WGPUTextureDimensi
     this->format = p_format;
     this->size = { (unsigned int)width, (unsigned int)height, (unsigned int)array_layers };
     this->usage = static_cast<WGPUTextureUsage>(WGPUTextureUsage_TextureBinding | WGPUTextureUsage_CopyDst);
-    this->mipmaps = create_mipmaps ? (1 + std::floor(std::log2(std::max(std::max(width, height), array_layers)))) : 1;
+    this->mipmaps = create_mipmaps ? (1u + static_cast<uint32_t>(std::floor(std::log2(std::max(std::max(width, height), array_layers))))) : 1u;
 }
 
 void Texture::load_from_data(void* data)

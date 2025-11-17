@@ -99,7 +99,7 @@ void Skeleton::parse(std::ifstream& binary_scene_file)
         // ID
         size_t joint_id = 0;
         binary_scene_file.read(reinterpret_cast<char*>(&joint_id), sizeof(size_t));
-        joint_ids[i] = joint_id;
+        joint_ids[i] = static_cast<uint32_t>(joint_id);
         // Parent
         int parent_id = 0;
         binary_scene_file.read(reinterpret_cast<char*>(&parent_id), sizeof(int));

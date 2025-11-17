@@ -12,8 +12,8 @@ void FABRIKSolver::resize(size_t new_size)
 
 void FABRIKSolver::ik_chain_to_world()
 {
-    size_t chain_size = size();
-    for (size_t i = 0; i < chain_size; ++i) {
+    uint32_t chain_size = static_cast<uint32_t>(size());
+    for (uint32_t i = 0; i < chain_size; ++i) {
         Transform world = get_global_transform(i);
         world_chain[i] = world.get_position();
         if (i >= 1) {
@@ -56,7 +56,7 @@ void FABRIKSolver::iterate_backward(const glm::vec3& goal)
     if (chain_size > 0) {
         world_chain[chain_size - 1] = goal;
     }
-    for (int i = chain_size - 2; i >= 0; --i) {
+    for (int i = static_cast<int>(chain_size - 2); i >= 0; --i) {
         glm::vec3 direction = normalize(world_chain[i] - world_chain[i + 1]);
         glm::vec3 offset = direction * lengths[i + 1];
         world_chain[i] = world_chain[i + 1] + offset;
@@ -79,7 +79,7 @@ void FABRIKSolver::iterate_forward(const glm::vec3& base)
 bool FABRIKSolver::solve(const Transform& target)
 {
     // Local variables and size check
-    size_t chain_size = size();
+    uint32_t chain_size = static_cast<uint32_t>(size());
     if (chain_size == 0) {
         return false;
     }

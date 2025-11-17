@@ -106,7 +106,7 @@ std::string generate_unique_id(uint32_t num_characters)
     static std::random_device random_device;
     static std::mt19937 generator(random_device());
 
-    std::uniform_int_distribution<> distribution(0, characters.size() - 1);
+    std::uniform_int_distribution<> distribution(0, static_cast<int>(characters.size() - 1));
     std::string unique_id = "";
 
     for (uint32_t i = 0; i < num_characters; i++) {

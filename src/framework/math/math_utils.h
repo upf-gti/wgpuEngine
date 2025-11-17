@@ -9,8 +9,12 @@
 #include <string>
 
 #define PI 3.14159265358979323846264338327950288
-#define PI_2 (0.5f * PI)
-#define PI_4 (0.5f * PI_2)
+#define PI_2 (0.5 * PI)
+#define PI_4 (0.5 * PI_2)
+
+#define PI_F 3.14159265358979323846264338327950288f
+#define PI_2_F (0.5f * PI_F)
+#define PI_4_F (0.5f * PI_2_F)
 
 #ifdef __EMSCRIPTEN__
 float radians(float degrees);
@@ -36,7 +40,7 @@ glm::vec3 rotate_point_by_quat(const glm::vec3& v, const glm::vec4& q);
 glm::vec3 rgb2hsv(glm::vec3 rgb);
 glm::vec3 hsv2rgb(glm::vec3 c);
 
-float random_i(int min = 0.0f, int max = 1.0f);
+int random_i(int min = 0.0f, int max = 1.0f);
 float random_f(float min = 0.0f, float max = 1.0f);
 double random_d(double min = 0.0, double max = 1.0);
 

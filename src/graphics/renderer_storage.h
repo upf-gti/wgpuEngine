@@ -49,6 +49,7 @@ public:
 
     struct sBindingData {
         std::vector<Uniform*> uniforms;
+        // Depending on material properties, uniforms will have different indices in the array
         std::unordered_map<eMaterialProperties, uint8_t> uniform_indices;
         WGPUBindGroup bind_group;
     };

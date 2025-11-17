@@ -47,7 +47,7 @@ void PrefixSumKernel::create_pass_recursive(WGPUBuffer data, uint32_t data_byte_
 {
     WebGPUContext* webgpu_context = Renderer::instance->get_webgpu_context();
 
-    const uint32_t workgroup_count = ceil(count / static_cast<float>(items_per_workgroup));
+    const uint32_t workgroup_count = static_cast<const uint32_t>(ceil(count / static_cast<float>(items_per_workgroup)));
 
     PipelineData* pipeline_data = new PipelineData();
 
