@@ -12,8 +12,8 @@ void FABRIKSolver::resize(size_t new_size)
 
 void FABRIKSolver::ik_chain_to_world()
 {
-    size_t chain_size = size();
-    for (size_t i = 0; i < chain_size; ++i) {
+    uint32_t chain_size = static_cast<uint32_t>(size());
+    for (uint32_t i = 0; i < chain_size; ++i) {
         Transform world = get_global_transform(i);
         world_chain[i] = world.get_position();
         if (i >= 1) {
@@ -28,13 +28,13 @@ void FABRIKSolver::ik_chain_to_world()
 
 void FABRIKSolver::world_to_ik_chain()
 {
-    size_t chain_size = size();
+    uint32_t chain_size = static_cast<uint32_t>(size());
 
     if (chain_size == 0) {
         return;
     }
 
-    for (int i = 0; i < chain_size - 1; ++i) {
+    for (uint32_t i = 0; i < chain_size - 1; ++i) {
         Transform world = get_global_transform(i);
         Transform next = get_global_transform(i + 1);
         glm::vec3 position = world.get_position();
@@ -52,11 +52,11 @@ void FABRIKSolver::world_to_ik_chain()
 
 void FABRIKSolver::iterate_backward(const glm::vec3& goal)
 {
-    size_t chain_size = size();
+    uint32_t chain_size = static_cast<uint32_t>(size());
     if (chain_size > 0) {
         world_chain[chain_size - 1] = goal;
     }
-    for (int i = chain_size - 2; i >= 0; --i) {
+    for (uint32_t i = chain_size - 2u; i != (uint32_t)-1; --i) {
         glm::vec3 direction = normalize(world_chain[i] - world_chain[i + 1]);
         glm::vec3 offset = direction * lengths[i + 1];
         world_chain[i] = world_chain[i + 1] + offset;
@@ -69,7 +69,7 @@ void FABRIKSolver::iterate_forward(const glm::vec3& base)
     if (chain_size > 0) {
         world_chain[0] = base;
     }
-    for (int i = 1; i < chain_size; ++i) {
+    for (size_t i = 1; i < chain_size; ++i) {
         glm::vec3 direction = normalize(world_chain[i] - world_chain[i - 1]);
         glm::vec3 offset = direction * lengths[i];
         world_chain[i] = world_chain[i - 1] + offset;
@@ -79,7 +79,7 @@ void FABRIKSolver::iterate_forward(const glm::vec3& base)
 bool FABRIKSolver::solve(const Transform& target)
 {
     // Local variables and size check
-    size_t chain_size = size();
+    uint32_t chain_size = static_cast<uint32_t>(size());
     if (chain_size == 0) {
         return false;
     }

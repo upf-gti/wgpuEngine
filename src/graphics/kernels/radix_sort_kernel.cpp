@@ -13,7 +13,7 @@ RadixSortKernel::RadixSortKernel(WGPUBuffer keys_buffer, uint32_t keys_byte_size
     count(count), bit_count(bit_count), workgroup_size(workgroup_size)
 {
     threads_per_workgroup = workgroup_size.x * workgroup_size.y;
-    workgroup_count = ceil(count / static_cast<float>(threads_per_workgroup));
+    workgroup_count = static_cast<uint32_t>(ceil(count / static_cast<float>(threads_per_workgroup)));
     prefix_block_workgroup_count = 4 * workgroup_count;
 
     block_sum_shader = RendererStorage::get_shader_from_source(shaders::radix_sort::source, shaders::radix_sort::path, shaders::radix_sort::libraries);

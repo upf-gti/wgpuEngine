@@ -17,7 +17,7 @@
 class Renderer;
 
 #ifdef XR_SUPPORT
-class XRContext;
+struct XRContext;
 #endif
 
 class Input {

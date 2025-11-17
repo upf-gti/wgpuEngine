@@ -14,7 +14,7 @@ bool PlyParser::parse(std::string file_path, std::vector<Node*>& entities, uint3
 
     happly::PLYData ply_file(file_path);
 
-    uint32_t splats_count = ply_file.getElement("vertex").count;
+    uint32_t splats_count = static_cast<uint32_t>(ply_file.getElement("vertex").count);
 
     gs_node->initialize(splats_count);
     gs_node->set_name("gs_node");

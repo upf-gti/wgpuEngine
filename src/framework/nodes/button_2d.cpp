@@ -258,7 +258,7 @@ namespace ui {
         if (!desc.path.size()) {
             label_as_background = true;
             text_2d = new Text2D(name, {0.0f, size.y * 0.5f - 9.0f}, 18.f, SKIP_TEXT_RECT);
-            float w = text_2d->text_entity->get_text_width(name);
+            float w = static_cast<float>(text_2d->text_entity->get_text_width(name));
             text_2d->translate({ size.x * 0.5f - w * 0.5f, 0.0f });
             add_child(text_2d);
         }
@@ -282,7 +282,7 @@ namespace ui {
         texture_path = desc.path;
 
         confirm_text_2d = new Text2D("ok", { 0.0f, size.y * 0.5f - 9.0f }, 18.f, SKIP_TEXT_RECT);
-        float w = confirm_text_2d->text_entity->get_text_width("ok");
+        float w = static_cast<float>(confirm_text_2d->text_entity->get_text_width("ok"));
         confirm_text_2d->translate({ size.x * 0.5f - w * 0.5f, 0.0f });
         confirm_text_2d->set_visibility(false);
         add_child(confirm_text_2d);

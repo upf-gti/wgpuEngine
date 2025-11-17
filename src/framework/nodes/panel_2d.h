@@ -73,8 +73,8 @@ namespace ui {
         bool is_button = false;
         bool fullscreen = false;
 
-        glm::vec2 button_position;
-        glm::vec2 button_size;
+        glm::vec2 button_position = {};
+        glm::vec2 button_size = {};
 
     public:
 

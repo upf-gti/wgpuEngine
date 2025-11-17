@@ -56,7 +56,7 @@ void Surface::update_vertex_buffer(const std::vector<glm::vec3>& vertices)
         wgpuBufferDestroy(vertex_pos_buffer);
         vertex_pos_buffer = nullptr;
 
-        vertex_count = vertices.size();
+        vertex_count = static_cast<uint32_t>(vertices.size());
     }
 
     if (!vertex_pos_buffer) {
@@ -82,7 +82,7 @@ void Surface::update_surface_data(const sSurfaceData& vertices_data, bool store_
         create_surface_data(vertices_data);
     }
     else {
-        vertex_count = vertices_data.vertices.size();
+        vertex_count = static_cast<uint32_t>(vertices_data.vertices.size());
         webgpu_context->update_buffer(vertex_pos_buffer, 0, vertices_data.vertices.data(), get_vertices_byte_size());
 
         const std::vector<sInterleavedData>& interleaved_data = create_interleaved_data(vertices_data);
@@ -96,7 +96,7 @@ void Surface::create_surface_data(const sSurfaceData& vertices_data, bool store_
         surface_data = vertices_data;
     }
 
-    vertex_count = vertices_data.vertices.size();
+    vertex_count = static_cast<uint32_t>(vertices_data.vertices.size());
     vertex_pos_buffer = webgpu_context->create_buffer(get_vertices_byte_size(), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Vertex, vertices_data.vertices.data(), ("vertex_buffer_" + name).c_str());
 
     const std::vector<sInterleavedData>& interleaved_data = create_interleaved_data(vertices_data);
@@ -114,7 +114,7 @@ void Surface::set_surface_data(const sSurfaceData& vertices_data)
 
 void Surface::create_index_buffer(const std::vector<uint32_t>& indices)
 {
-    index_count = indices.size();
+    index_count = static_cast<uint32_t>(indices.size());
     index_buffer = webgpu_context->create_buffer(get_indices_byte_size(), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Index, indices.data(), ("index_buffer_" + name).c_str());
 }
 
@@ -283,10 +283,10 @@ void Surface::create_subdivided_quad(float w, float h, bool flip_y, uint32_t sub
     }
 
     // Generate vertices with positions and UVs
-    for (int i = 0; i < subdivisions; ++i) {
-        for (int j = 0; j < subdivisions; ++j) {
+    for (uint32_t i = 0; i < subdivisions; ++i) {
+        for (uint32_t j = 0; j < subdivisions; ++j) {
 
-            const glm::vec3& new_origin = origin + glm::vec3(j * step_x, -i * step_y, 0.0f) + glm::vec3(step_x * 0.5f, -step_y * 0.5f, 0.0f);
+            const glm::vec3& new_origin = origin + glm::vec3(static_cast<float>(j) * step_x, -static_cast<float>(i) * step_y, 0.0f) + glm::vec3(step_x * 0.5f, -step_y * 0.5f, 0.0f);
             sSurfaceData vtxs = generate_quad(step_x, step_y, new_origin, normals::pZ, color, flip_y);
 
             const glm::vec2& uv0 = { static_cast<float>(j) / subdivisions, static_cast<float>(i) / subdivisions };
@@ -762,11 +762,11 @@ void Surface::create_cylinder(float top_radius, float bottom_radius, float heigh
 
     const float side_normal_y = (bottom_radius - top_radius) / height;
 
-    int i, j, prevrow = 0, thisrow = 0, point = 0;
+    uint32_t i, j, prevrow = 0, thisrow = 0, point = 0;
     float x, y, z, u, v, radius, radius_h;
 
     for (j = 0; j <= (rings + 1); j++) {
-        v = j;
+        v = static_cast<float>(j);
         v /= (rings + 1);
 
         radius = top_radius + ((bottom_radius - top_radius) * v);
@@ -776,7 +776,7 @@ void Surface::create_cylinder(float top_radius, float bottom_radius, float heigh
         y = (height * 0.5f) - y;
 
         for (i = 0; i <= ring_segments; i++) {
-            u = i;
+            u = static_cast<float>(i);
             u /= ring_segments;
 
             if (i == ring_segments) {
@@ -815,7 +815,7 @@ void Surface::create_cylinder(float top_radius, float bottom_radius, float heigh
 
     // Add top.
     if (cap_top && top_radius > 0.0) {
-        y = height * 0.5;
+        y = height * 0.5f;
 
         thisrow = point;
 
@@ -823,7 +823,7 @@ void Surface::create_cylinder(float top_radius, float bottom_radius, float heigh
         point++;
 
         for (i = 0; i <= ring_segments; i++) {
-            float r = i;
+            float r = static_cast<float>(i);
             r /= ring_segments;
 
             if (i == ring_segments) {
@@ -835,8 +835,8 @@ void Surface::create_cylinder(float top_radius, float bottom_radius, float heigh
                 z = cosf(r * tau);
             }
 
-            u = ((x + 1.0) * 0.25);
-            v = 0.5 + ((z + 1.0) * 0.25);
+            u = ((x + 1.0f) * 0.25f);
+            v = 0.5f + ((z + 1.0f) * 0.25f);
 
             add_vertex(glm::vec3(x * top_radius, y, z * top_radius), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(u, v), color);
             point++;
@@ -851,7 +851,7 @@ void Surface::create_cylinder(float top_radius, float bottom_radius, float heigh
 
     // Add bottom.
     if (cap_bottom && bottom_radius > 0.0) {
-        y = height * -0.5;
+        y = height * -0.5f;
 
         thisrow = point;
 
@@ -859,7 +859,7 @@ void Surface::create_cylinder(float top_radius, float bottom_radius, float heigh
         point++;
 
         for (i = 0; i <= ring_segments; i++) {
-            float r = i;
+            float r = static_cast<float>(i);
             r /= ring_segments;
 
             if (i == ring_segments) {
@@ -871,8 +871,8 @@ void Surface::create_cylinder(float top_radius, float bottom_radius, float heigh
                 z = cosf(r * tau);
             }
 
-            u = 0.5 + ((x + 1.0) * 0.25);
-            v = 1.0 - ((z + 1.0) * 0.25);
+            u = 0.5f + ((x + 1.0f) * 0.25f);
+            v = 1.0f - ((z + 1.0f) * 0.25f);
 
             add_vertex(glm::vec3(x* bottom_radius, y, z* bottom_radius), glm::vec3(0.0f, -1.0f, 0.0f), glm::vec2(u, v), color);
             point++;
@@ -1045,11 +1045,11 @@ void Surface::create_torus(float ring_radius, float tube_radius, uint32_t rings,
 
     float tau = glm::tau<float>();
 
-    for (int i = 0; i <= rings; i++) {
+    for (uint32_t i = 0; i <= rings; i++) {
         float theta = (float)i / rings * tau;  // around the main ring
         float cosTheta = cos(theta);
         float sinTheta = sin(theta);
-        for (int j = 0; j <= ring_segments; j++) {
+        for (uint32_t j = 0; j <= ring_segments; j++) {
             float phi = (float)j / ring_segments * tau;  // around the tube
             float cosPhi = cos(phi);
             float sinPhi = sin(phi);
@@ -1253,10 +1253,10 @@ int Surface::mikkt_get_num_faces(const SMikkTSpaceContext* pContext)
     sSurfaceData& triangle_data = *reinterpret_cast<sSurfaceData*>(pContext->m_pUserData);
 
     if (!triangle_data.indices.empty()) {
-        return triangle_data.indices.size() / 3;
+        return static_cast<int>(triangle_data.indices.size() / 3);
     }
     else {
-        return triangle_data.vertices.size() / 3;
+        return static_cast<int>(triangle_data.vertices.size() / 3);
     }
 }
 
@@ -1371,7 +1371,7 @@ void Surface::set_aabb(const AABB& aabb)
 
 uint32_t sSurfaceData::size() const
 {
-    return vertices.size();
+    return static_cast<uint32_t>(vertices.size());
 }
 
 void sSurfaceData::resize(uint32_t size)

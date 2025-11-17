@@ -5,9 +5,9 @@
 bool CCDSolver::solve(const Transform& target)
 {
     // Local variables and chain_size check
-    size_t chain_size = size();
+    uint32_t chain_size = static_cast<uint32_t>(size());
 
-    if (chain_size == 0u) {
+    if (chain_size <= 1u) {
         return false;
     }
 
@@ -21,7 +21,7 @@ bool CCDSolver::solve(const Transform& target)
         if (glm::length2(goal - effector) < threshold_sq) {
             return true;
         }
-        for (int j = chain_size - 2; j >= 0; --j) {
+        for (uint32_t j = chain_size - 2; j != (uint32_t)-1; --j) {
             effector = get_global_transform(last).get_position();
 
             const Transform world = get_global_transform(j);

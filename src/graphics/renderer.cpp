@@ -249,7 +249,7 @@ int Renderer::post_initialize()
     // Orthographic camera for ui rendering
 
     camera_2d = new Camera2D();
-    camera_2d->set_orthographic(0.0f, webgpu_context->render_width, webgpu_context->render_height, 0.0f, -1.0f, 1.0f);
+    camera_2d->set_orthographic(0.0f, static_cast<float>(webgpu_context->render_width), static_cast<float>(webgpu_context->render_height), 0.0f, -1.0f, 1.0f);
 
     //selected_mesh_aabb = parse_mesh("data/meshes/cube/aabb_cube.obj", false);
 
@@ -950,7 +950,7 @@ void Renderer::get_timestamps()
         std::vector<float> time_diffs;
         for (int i = 0; i < *query_index_cpy; i += 2) {
             uint64_t diff = timestamps_buffer[i + 1] - timestamps_buffer[i];
-            float milliseconds = (float)diff * 1e-6;
+            float milliseconds = (float)diff * 1e-6f;
             time_diffs.push_back(milliseconds);
         }
 
@@ -1466,7 +1466,7 @@ void Renderer::resize_window(int width, int height)
         }
 
         if (camera_2d) {
-            camera_2d->set_orthographic(0.0f, webgpu_context->render_width, webgpu_context->render_height, 0.0f, -1.0f, 1.0f);
+            camera_2d->set_orthographic(0.0f, static_cast<float>(webgpu_context->render_width), static_cast<float>(webgpu_context->render_height), 0.0f, -1.0f, 1.0f);
         }
     }
 
