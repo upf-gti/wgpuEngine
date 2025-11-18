@@ -255,7 +255,7 @@ namespace ui {
     bool Panel2D::on_input(sInputData data)
     {
         if (data.was_pressed) {
-            last_press_time = glfwGetTime();
+            last_press_time = static_cast<float>(glfwGetTime());
         }
 
         if (data.is_pressed && (parameter_flags & LONG_CLICK) && (glfwGetTime() - last_press_time) > 0.5f) {
@@ -271,7 +271,7 @@ namespace ui {
 
     bool Panel2D::on_pressed()
     {
-        float now = glfwGetTime();
+        float now = static_cast<float>(glfwGetTime());
 
         bool skip = false;
 

@@ -41,8 +41,8 @@ class HDRE {
 private:
 
 	float* data = nullptr; // only f32 now
-	float* pixels[N_LEVELS][N_FACES]; // Xpos, Xneg, Ypos, Yneg, Zpos, Zneg
-	float* faces_array[N_LEVELS];
+    float* pixels[N_LEVELS][N_FACES] = {}; // Xpos, Xneg, Ypos, Yneg, Zpos, Zneg
+    float* faces_array[N_LEVELS] = {};
 
 	sHDREHeader header;
 
@@ -51,18 +51,18 @@ private:
 
 public:
 
-	int width;
-	int height;
+	int width = 0;
+	int height = 0;
 
     std::string name;
-	float version;
-	short numChannels;
-	short bitsPerChannel;
-	float maxLuminance;
+	float version = 0.0f;
+	short numChannels = 0;
+	short bitsPerChannel = 0;
+	float maxLuminance = 0;
 
-	short type;
-	float numCoeffs;
-	float* coeffs;
+	short type = 0;
+	float numCoeffs = 0.0f;
+	float* coeffs = nullptr;
 
     HDRE() {};
 	~HDRE();

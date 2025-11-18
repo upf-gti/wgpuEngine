@@ -95,8 +95,8 @@ namespace intersection {
         const glm::vec3& centered_quad_origin = quad_origin - glm::vec3((subdivisions - 1u) * step.x, (subdivisions - 1u) * step.y, 0.0f);
 
         // Generate vertices with positions and UVs
-        for (int i = 0; i < subdivisions; ++i) {
-            for (int j = 0; j < subdivisions; ++j) {
+        for (uint32_t i = 0; i < subdivisions; ++i) {
+            for (uint32_t j = 0; j < subdivisions; ++j) {
 
                 glm::vec3 new_quad_origin = centered_quad_origin + glm::vec3(j * step.x * 2.f, i * step.y * 2.0f, 0.0f);
                 glm::quat rot = { 0.0f, 0.0f, 0.0f, 1.0f };
@@ -110,7 +110,7 @@ namespace intersection {
                 if (fabsf(z0 - z1) > 0.001f) {
 
                     glm::vec3 quad_corner;
-                    float sign = z1 > z0 ? 1.0f : -1.0;
+                    float sign = z1 > z0 ? 1.0f : -1.0f;
 
                     // opens.. so get the min
                     if (z1 > z0) {
@@ -202,11 +202,11 @@ namespace intersection {
         float* collision_distance) {
 
         const glm::vec3 origin_to_center = sphere_center - ray_origin;
-        const double a = glm::length2(ray_direction);
-        const double h = glm::dot(ray_direction, origin_to_center);
-        const double c = glm::length2(origin_to_center) - sphere_radius * sphere_radius;
+        const float a = glm::length2(ray_direction);
+        const float h = glm::dot(ray_direction, origin_to_center);
+        const float c = glm::length2(origin_to_center) - sphere_radius * sphere_radius;
 
-        const double discriminant = h * h - a * c;
+        const float discriminant = h * h - a * c;
 
         if (discriminant < 0) {
             return false;

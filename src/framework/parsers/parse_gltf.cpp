@@ -1539,7 +1539,7 @@ void track_from_channel(Track& track, const tinygltf::AnimationChannel& channel,
     // Parse the time and value arrays into frame structures
     for (size_t baseIndex = 0; baseIndex < num_frames; ++baseIndex) {
 
-        Keyframe& frame = track[baseIndex];
+        Keyframe& frame = track[static_cast<uint32_t>(baseIndex)];
         frame.time = std::get<float>(time[baseIndex]);
 
         // offset used to deal with cubic tracks since the input and output tangents are as large as the number of components

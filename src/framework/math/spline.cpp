@@ -55,7 +55,7 @@ void BezierSpline::compute_luts(uint32_t segments)
 void BezierSpline::fill_lut(uint32_t idx, uint32_t segments, Knot& start_point)
 {
     std::vector<float>& lut = luts[idx];
-    uint32_t n = luts.size();
+    size_t n = luts.size();
 
     // Segmentate the curve and fill the LUT with the aproximated lengths of the segments
     float step = 1.0f / segments;
@@ -86,10 +86,10 @@ float BezierSpline::sample_lut(uint32_t idx, float f)
     std::vector<float>& lut = luts[idx];
     float arc_length = lut.back(); // total arc length
     float distance = f * arc_length;
-    uint32_t n = lut.size();
+    size_t n = lut.size();
 
     if (distance > 0.0f && distance < arc_length) {
-        for (uint32_t i = 0; i < n - 1; i++) {
+        for (size_t i = 0; i < n - 1; i++) {
             if (distance > lut[i] && distance < lut[i + 1]) {
                 return remap_range(distance, lut[i], lut[i + 1], i / (n - 1.0f), (i + 1) / (n - 1.0f));
             }
@@ -106,7 +106,7 @@ std::vector<Knot> BezierSpline::construct_target_vector(uint32_t n)
 
     result[0] = knots.at(0u) + 2.0f * knots.at(1u);
 
-    for (int i = 1; i < n - 1; i++) {
+    for (uint32_t i = 1; i < n - 1; i++) {
         result[i] = (knots.at(i) * 2.0f + knots.at(i + 1u)) * 2.0f;
     }
 
@@ -231,12 +231,12 @@ void BezierSpline::clear()
 
 void BezierSpline::for_each(std::function<void(const Knot&)> fn)
 {
-    int n = knots.size();
+    size_t n = knots.size();
     if (!n) {
         return;
     }
 
-    uint32_t segments = knots.size() - 1;
+    uint32_t segments = static_cast<uint32_t>(n - 1);
 
     Knot start_point = knots.front();
 
@@ -255,7 +255,7 @@ void BezierSpline::for_each(std::function<void(const Knot&)> fn)
         }
         uint32_t number_of_edits = (uint32_t)glm::ceil(distance / k_distance);
 
-        for (int j = 0; j < number_of_edits; ++j) {
+        for (uint32_t j = 0; j < number_of_edits; ++j) {
             float t = static_cast<float>(j) / number_of_edits;
             const Knot& point = start_point * (1.0f - t) + end_point * t;
             fn(point);
@@ -291,7 +291,7 @@ void BezierSpline::for_each(std::function<void(const Knot&)> fn)
 
             const Knot& end_point = knots.at(i + 1u);
 
-            for (int j = 0; j < number_of_edits; ++j) {
+            for (uint32_t j = 0; j < number_of_edits; ++j) {
                 // Non-uniform space between knots..
                 float t = static_cast<float>(j) / number_of_edits;
                 // Use arc length approximation to compute the evenly distributed distances

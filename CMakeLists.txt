@@ -111,7 +111,7 @@ endif()
 
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${WGPU_SOURCES} ${WGPU_HEADERS})
 
-find_package(PythonInterp 3 REQUIRED)
+find_package(Python3 REQUIRED)
 
 file(GLOB_RECURSE
     SHADERS
@@ -238,6 +238,7 @@ if (NOT EMSCRIPTEN)
         endif()
 
         if(NOT WGPUENGINE_DISABLE_XR)
+            set(BUILD_LOADER_WITH_EXCEPTION_HANDLING OFF)
             # openxr
             add_subdirectory(libraries/openxr)
             target_link_libraries(${PROJECT_NAME} PUBLIC openxr_loader)
