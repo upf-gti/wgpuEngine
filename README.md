@@ -123,14 +123,15 @@ You will need to install the following tools:
 - [CMake](https://cmake.org/download/)
 - [Python](https://www.python.org/) (added to your PATH)
 
-and clone the Github repository, also initializing the submodules:
+Next step is to add the engine as a submodule of your project and initialize the submodules::
 
 ```bash
-git clone https://github.com/upf-gti/wgpuEngine.git
 git submodule update --init --recursive
 ```
 
 ### Desktop
+
+Create the build folder and run the **CMakeLists.txt** file using CMake:
 
 ```bash
 mkdir build

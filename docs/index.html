@@ -4,13 +4,13 @@
     <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
     <meta name="viewport" content="width=device-width,initial-scale=1.0">
     <title>wgpuEngine Docs</title>
-    <link rel="stylesheet" href="https://cdn.skypack.dev/lexgui@^0.7.10/build/lexgui.css">
-    <link rel="stylesheet" href="https://cdn.skypack.dev/lexgui@^0.7.10/build/lexgui-docs.css">
+    <link rel="stylesheet" href="https://cdn.skypack.dev/lexgui@^0.7.15/build/lexgui.css">
+    <link rel="stylesheet" href="https://cdn.skypack.dev/lexgui@^0.7.15/build/lexgui-docs.css">
     <script type="importmap">
         {
           "imports": {
-            "lexgui": "https://cdn.skypack.dev/lexgui@^0.7.10/build/lexgui.module.js",
-            "lexgui/extensions/": "https://cdn.skypack.dev/lexgui@^0.7.10/build/extensions/"
+            "lexgui": "https://cdn.skypack.dev/lexgui@^0.7.15/build/lexgui.module.js",
+            "lexgui/extensions/": "https://cdn.skypack.dev/lexgui@^0.7.15/build/extensions/"
           }
         }
     </script>
@@ -21,6 +21,7 @@
 
         import { LX } from 'lexgui';
         import 'lexgui/extensions/docmaker.js';
+        import 'lexgui/extensions/codeeditor.js';
 
         window.LX = LX;
 
@@ -87,7 +88,7 @@
             }
         ];
 
-        const customFooter = LX.makeContainer( ["100%", "32px"], "", "<p>Site created with _</p><span><a href='https://github.com/jxarco/lexgui.js/'>LexGUI.js</a></span>_" );
+        const customFooter = LX.makeContainer( ["100%", "32px"], "", `Site created with <span class="ml-1"><a href='https://github.com/jxarco/lexgui.js/'>LexGUI</a></span>` );
 
         const sidebarOptions = {
             headerTitle: "wgpuEngine (Docs)",
