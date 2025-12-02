@@ -126,7 +126,7 @@ You will need to install the following tools:
 and clone the Github repository, also initializing the submodules:
 
 ```bash
-git clone https://github.com/upf-gti/rooms.git
+git clone https://github.com/upf-gti/wgpuEngine.git
 git submodule update --init --recursive
 ```
 
