@@ -8,7 +8,7 @@ class MeshInstance3D;
 
 class Joint3D : public Node3D {
 
-    int32_t index = -1;
+    uint32_t index = 0;
     Pose* pose = nullptr;
 
     MeshInstance3D* mesh_instance = nullptr;
@@ -22,7 +22,7 @@ public:
     ~Joint3D();
 
     Transform get_global_transform() override;
-    int32_t get_index() { return index; }
+    uint32_t get_index() { return index; }
 
     void set_index(int32_t new_index) { index = new_index; }
     void set_pose(Pose* ref_pose) { pose = ref_pose; };

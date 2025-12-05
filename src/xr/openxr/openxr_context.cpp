@@ -943,7 +943,7 @@ void OpenXRContext::apply_haptics(uint8_t controller, float amplitude, float dur
 {
     XrHapticVibration vibration = { XR_TYPE_HAPTIC_VIBRATION };
     vibration.amplitude = amplitude;
-    vibration.duration = duration * 1e9; // Convert duration to nanoseconds
+    vibration.duration = static_cast<XrDuration>(duration * 1e9); // Convert duration to nanoseconds
     vibration.frequency = XR_FREQUENCY_UNSPECIFIED;
 
     XrHapticActionInfo hapticActionInfo = { XR_TYPE_HAPTIC_ACTION_INFO };
@@ -1121,7 +1121,7 @@ void OpenXRContext::end_frame()
 
 uint32_t OpenXRContext::get_num_images_per_swapchain()
 {
-    return swapchains[0].images.size();
+    return static_cast<uint32_t>(swapchains[0].images.size());
 }
 
 void OpenXRContext::update()

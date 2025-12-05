@@ -36,6 +36,6 @@ private:
 	template<Planes a, Planes b, Planes c>
 	glm::vec3 intersection(const glm::vec3* crosses) const;
 	
-	glm::vec4   m_planes[Count];
-	glm::vec3   m_points[8];
+    glm::vec4   m_planes[Count] = {};
+    glm::vec3   m_points[8] = {};
 };

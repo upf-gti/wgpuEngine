@@ -266,7 +266,7 @@ namespace ui {
         float value = remap_range(current_value, min_value, max_value, 0.0f, 1.0f);
 
         if (parameter_flags & USER_RANGE) {
-            float fprecision = 1.0f / glm::pow(10.0f, precision);
+            float fprecision = 1.0f / glm::pow(10.0f, static_cast<float>(precision));
             value = std::roundf(current_value / fprecision) * fprecision;
         }
 
@@ -424,7 +424,7 @@ namespace ui {
             // This is at range 0..1
             float normalized_value = glm::clamp(local_point / real_size, 0.f, 1.f) * 100.f;
             // Set in range min-max
-            current_value = remap_range(static_cast<int>(normalized_value), 0, 100, min_value, max_value);
+            current_value = static_cast<int>(remap_range(normalized_value, 0.f, 100.f, static_cast<float>(min_value), static_cast<float>(max_value)));
             // Make sure it reaches min, max values
             if (current_value < min_value) current_value = min_value;
             else if (current_value > max_value) current_value = max_value;
@@ -435,7 +435,7 @@ namespace ui {
 
             // Use curve if needed
             if (parameter_flags & CURVE_INV_POW) {
-                current_value = 1.0f / glm::pow(2.0f, current_value);
+                current_value = static_cast<int>(1.0f / glm::pow(2.0f, static_cast<float>(current_value)));
             }
 
             Node::emit_signal(name, current_value);

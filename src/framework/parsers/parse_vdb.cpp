@@ -28,22 +28,22 @@ Material* create_material_volume(easyVDB::OpenVDBReader* vdbReader)
     material->set_type(MATERIAL_UNLIT);
     material->set_shader(RendererStorage::get_shader_from_source(shaders::volumetrics::source, shaders::volumetrics::path, shaders::volumetrics::libraries, material));
 
-    uint32_t resolution = 100;
-    float radius = 3.0;
+    int32_t resolution = 100;
+    float radius = 3.0f;
 
     // now, read the grid from the vdbReader and store the data in a 3D texture
     int convertedGrids = 0;
     int convertedVoxels = 0;
 
-    int totalGrids = vdbReader->gridsSize;
-    int totalVoxels = totalGrids * pow(resolution, 3);
+    uint32_t totalGrids = vdbReader->gridsSize;
+    uint32_t totalVoxels = static_cast<uint32_t>(totalGrids * pow(resolution, 3));
 
     float resolutionInv = 1.0f / resolution;
-    int resolutionPow2 = pow(resolution, 2);
-    int resolutionPow3 = pow(resolution, 3);
+    uint32_t resolutionPow2 = static_cast<uint32_t>(pow(resolution, 2));
+    uint32_t resolutionPow3 = static_cast<uint32_t>(pow(resolution, 3));
 
     // read all grids data and convert to texture
-    for (unsigned int i = 0; i < totalGrids; i++) {
+    for (uint32_t i = 0; i < totalGrids; i++) {
         easyVDB::Grid& grid = vdbReader->grids[i];
         float* data = new float[resolutionPow3];
         memset(data, 0, sizeof(float) * resolutionPow3);
@@ -76,7 +76,7 @@ Material* create_material_volume(easyVDB::OpenVDBReader* vdbReader)
 
             float value = grid.getValue(target);
 
-            int cellBleed = radius;
+            int cellBleed = static_cast<int>(radius);
 
             if (cellBleed) {
                 for (int sx = -cellBleed; sx < cellBleed; sx++) {
@@ -90,7 +90,7 @@ Material* create_material_volume(easyVDB::OpenVDBReader* vdbReader)
 
                             int targetIndex = baseIndex + sx + sy * resolution + sz * resolutionPow2;
 
-                            float offset = std::max(0.0, std::min(1.0, 1.0 - std::hypot(sx, sy, sz) / (radius / 2.0)));
+                            float offset = std::max(0.0f, std::min(1.0f, 1.0f - static_cast<float>(std::hypot(sx, sy, sz)) / (radius / 2.0f)));
                             float dataValue = offset * value;
 
                             data[targetIndex] += dataValue;
