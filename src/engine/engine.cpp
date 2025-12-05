@@ -105,6 +105,11 @@ static EM_BOOL on_web_display_size_changed(int event_type,
 }
 #endif
 
+extern void app_post_initialize();
+extern void app_pre_update(float); // Updated before main scene
+extern void app_post_update(float); // Updated after main scene
+extern void app_render();
+
 Engine* Engine::instance = nullptr;
 
 void glfw_resize_callback(GLFWwindow* window, int width, int height)
@@ -201,6 +206,8 @@ int Engine::initialize(Renderer* renderer, const sEngineConfiguration& configura
 int Engine::post_initialize()
 {
     main_scene = new Scene("main_scene");
+
+    app_post_initialize();
 
     return 0;
 }
@@ -493,6 +500,8 @@ void Engine::on_frame()
 
 void Engine::update(float delta_time)
 {
+    app_pre_update(delta_time);
+
 #ifndef NDEBUG
     shader_reload_watcher->update(delta_time);
     engine_shader_reload_watcher->update(delta_time);
@@ -501,6 +510,10 @@ void Engine::update(float delta_time)
     if (Input::was_key_pressed(GLFW_KEY_G)) {
         show_imgui = !show_imgui;
     }
+
+    main_scene->update(delta_time);
+
+    app_post_update(delta_time);
 
     renderer->update(delta_time);
 
@@ -511,9 +524,13 @@ void Engine::update(float delta_time)
 
 void Engine::render()
 {
+    app_render();
+
 #ifdef __EMSCRIPTEN__
     on_render();
 #endif
+
+    main_scene->render();
 
     renderer->render();
 }
