@@ -108,9 +108,9 @@ struct CurveEdit : public ImCurveEdit::Delegate
         }
     }
     size_t max_point_count = 200;
-    size_t point_count[4];
-    ImVec2* points[4];
-    bool is_visible[4];
+    size_t point_count[4] = {};
+    ImVec2* points[4] = {};
+    bool is_visible[4] = {};
     ImVec2 min;
     ImVec2 max;
 
@@ -136,7 +136,7 @@ struct ImGuiTimeline : public ImSequencer::SequenceInterface
     }
     virtual int GetItemCount() const { return (int)tracks.size(); }
 
-    virtual int GetItemTypeCount() const { return TrackTypes.size(); }
+    virtual int GetItemTypeCount() const { return static_cast<int>(TrackTypes.size()); }
     virtual const char* GetItemTypeName(int typeIndex) const { return TrackTypes[typeIndex].c_str(); }
     virtual const char* GetItemLabel(int index) const
     {
@@ -299,7 +299,7 @@ struct ImGuiTimeline : public ImSequencer::SequenceInterface
             //draw_list->AddLine(ImVec2(x, rc.Min.y + 6), ImVec2(x, rc.Max.y - 4), 0xAA000000, 4.f);
             const int drawState = DrawPoint(draw_list, ImVec2(x, rc.Min.y), ImVec2(1,1), ImVec2(0, 10), tracks[index].type, false, selected);
             if (drawState == 2) {
-                selected_point = ImVec2(index, j);
+                selected_point = ImVec2(static_cast<float>(index), static_cast<float>(j));
                 std::cout << "Frame " << j << "selected: " << tracks[index].name << std::endl;
             }
         }

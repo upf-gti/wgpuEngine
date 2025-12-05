@@ -56,7 +56,7 @@ void AnimationPlayer::play(Animation* animation, float start_time, float custom_
     current_animation_name = animation->get_name();
 
     // sequence with default values
-    imgui_timeline.frame_max = animation->get_track(0)->size();
+    imgui_timeline.frame_max = static_cast<int>(animation->get_track(0)->size());
     selected_track = -1;
 
     generate_track_data();
@@ -106,12 +106,13 @@ void AnimationPlayer::generate_track_data()
         imgui_timeline.curve_editor.SetPointsCount(animation->get_track(i)->size());
         
         for (uint32_t j = 0; j < animation->get_track(i)->size(); j++) {
+            float j_f = static_cast<float>(j);
             if (type == 0 || type == 2) {
                 glm::vec3 p = std::get<glm::vec3>(animation->get_track(i)->get_keyframe(j).value);
 
-                points[0].push_back(ImVec2(j, p.x));
-                points[1].push_back(ImVec2(j, p.y));
-                points[2].push_back(ImVec2(j, p.z));
+                points[0].push_back(ImVec2(j_f, p.x));
+                points[1].push_back(ImVec2(j_f, p.y));
+                points[2].push_back(ImVec2(j_f, p.z));
 
                 imgui_timeline.curve_editor.point_count[0] = points[0].size();
                 imgui_timeline.curve_editor.point_count[1] = points[1].size();
@@ -119,10 +120,10 @@ void AnimationPlayer::generate_track_data()
             }
             else if (type == 1) {
                 glm::quat p = std::get<glm::quat>(animation->get_track(i)->get_keyframe(j).value);
-                points[0].push_back(ImVec2(j, p.x));
-                points[1].push_back(ImVec2(j, p.y));
-                points[2].push_back(ImVec2(j, p.z));
-                points[3].push_back(ImVec2(j, p.w));
+                points[0].push_back(ImVec2(j_f, p.x));
+                points[1].push_back(ImVec2(j_f, p.y));
+                points[2].push_back(ImVec2(j_f, p.z));
+                points[3].push_back(ImVec2(j_f, p.w));
 
                 imgui_timeline.curve_editor.point_count[0] = points[0].size();
                 imgui_timeline.curve_editor.point_count[1] = points[1].size();
@@ -236,7 +237,7 @@ void AnimationPlayer::render_gui()
         static int selected_entry = selected_track;
         static int first_frame = 0;
         static bool expanded = true;
-        int current_frame = playback * (imgui_timeline.frame_max - imgui_timeline.frame_min) / current_animation->get_duration();
+        int current_frame = static_cast<int>(playback * (imgui_timeline.frame_max - imgui_timeline.frame_min) / current_animation->get_duration());
         int new_current_frame = current_frame;
         // Control buttons
         ImGui::PushItemWidth(180);

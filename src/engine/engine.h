@@ -17,6 +17,10 @@ struct sEngineConfiguration {
     glm::vec3 camera_center = { 0.0f, 0.75f, 0.0f };
     uint8_t msaa_count = 1;
     bool fullscreen = false;
+
+    // To allow deprecated inheritance behavior
+    void* custom_engine_instance = nullptr;
+    void* custom_renderer_instance = nullptr;
 };
 
 class Engine {

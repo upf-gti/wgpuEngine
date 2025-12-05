@@ -111,7 +111,7 @@ endif()
 
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${WGPU_SOURCES} ${WGPU_HEADERS})
 
-find_package(PythonInterp 3 REQUIRED)
+find_package(Python3 REQUIRED)
 
 file(GLOB_RECURSE
     SHADERS
@@ -137,7 +137,7 @@ FOREACH(SHADER ${SHADERS})
 
     add_custom_command (
         OUTPUT ${WGPU_DIR_SOURCES}/shaders/${SHADER}.gen.h
-	    COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/glsl_builder.py ${SHADER}
+	    COMMAND ${PYTHON3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/glsl_builder.py ${SHADER}
         DEPENDS ${WGPU_DIR_SHADERS}/${SHADER} ${WGPU_SHADER_LIBS}
 	    WORKING_DIRECTORY ${WGPU_DIR_SHADERS}
         VERBATIM
@@ -166,6 +166,70 @@ if (EMSCRIPTEN)
         "-fno-exceptions"
         "$<$<CONFIG:Release>:-flto>"
     )
+
+    set(SHELL_FILE shell.html)
+
+    include_directories(BEFORE
+        "${CMAKE_BINARY_DIR}/_deps/emdawn-src/include/"
+    )
+
+    add_library(webgpu_layer
+        "${CMAKE_BINARY_DIR}/_deps/emdawn-src/webgpu.cpp"
+    )
+
+    target_link_libraries(${PROJECT_NAME} PRIVATE
+        webgpu_layer
+    )
+
+    # See https://github.com/kainino0x/webgpu-cross-platform-demo/tree/dawnwasm for a sample setup
+
+    # Add Embind bindings to JS from the engine's binding file
+    target_sources(${PROJECT_NAME} PRIVATE embind_bindings.cpp)
+
+    target_link_options(${PROJECT_NAME} PRIVATE
+
+        # -sVERBOSE
+
+        # We are using Dawn-generated bindings, not built-in ones
+        -sUSE_WEBGPU=0
+        # The JS libraries needed for bindings
+        "--js-library=${CMAKE_BINARY_DIR}/_deps/emdawn-src/library_webgpu_enum_tables.js"
+        "--js-library=${CMAKE_BINARY_DIR}/_deps/emdawn-src/library_webgpu_generated_struct_info.js"
+        "--js-library=${CMAKE_BINARY_DIR}/_deps/emdawn-src/library_webgpu_generated_sig_info.js"
+        "--js-library=${CMAKE_BINARY_DIR}/_deps/emdawn-src/library_webgpu.js"
+        "--closure-args=--externs=${CMAKE_BINARY_DIR}/_deps/emdawn-src/webgpu-externs.js"
+
+        -sEXPORTED_FUNCTIONS=_main,_malloc,_free
+        -sUSE_GLFW=3
+        -sALLOW_MEMORY_GROWTH
+        -sASYNCIFY
+#        -sASSERTIONS
+#        -fsanitize=address
+        -Wdeprecated-literal-operator
+        -sSTACK_SIZE=5MB
+        -sASYNCIFY_STACK_SIZE=10000
+        -lembind # to bind functions from c++ to javascript
+        -sWASM_BIGINT
+
+        # only for dev
+        #-sERROR_ON_WASM_CHANGES_AFTER_LINK
+        #-sWASM=0
+        # For faster debug builds
+        -O1
+        # ------------
+        #--post-js "${CMAKE_BINARY_DIR}/glue.js"
+        --shell-file "${WGPU_DIR_ROOT}/${SHELL_FILE}"
+        --preload-file "${WGPU_DIR_ROOT}/data@/data"
+	)
+
+	# Make sure to re-link when the shell file changes
+    set_property(
+        TARGET ${PROJECT_NAME}
+        PROPERTY LINK_DEPENDS
+        "${WGPU_DIR_ROOT}/${SHELL_FILE}"
+    )
+
+    set_target_properties(${PROJECT_NAME} PROPERTIES SUFFIX ".html")
 
     # needed to compile tint on web
     add_compile_options(-w)
@@ -238,6 +302,7 @@ if (NOT EMSCRIPTEN)
         endif()
 
         if(NOT WGPUENGINE_DISABLE_XR)
+            set(BUILD_LOADER_WITH_EXCEPTION_HANDLING OFF)
             # openxr
             add_subdirectory(libraries/openxr)
             target_link_libraries(${PROJECT_NAME} PUBLIC openxr_loader)
