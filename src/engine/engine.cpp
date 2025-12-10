@@ -107,6 +107,12 @@ static EM_BOOL on_web_display_size_changed(int event_type,
 
 Engine* Engine::instance = nullptr;
 
+// Called when callbacks are not provided by user
+void dummy_engine_post_initialize() {}
+void dummy_engine_pre_update(float delta_time) {}
+void dummy_engine_post_update(float delta_time) {}
+void dummy_engine_render() {}
+
 void glfw_resize_callback(GLFWwindow* window, int width, int height)
 {
     Engine* engine = reinterpret_cast<Engine*>(glfwGetWindowUserPointer(window));
@@ -137,6 +143,15 @@ int Engine::initialize(Renderer* renderer, const sEngineConfiguration& configura
 {
     spdlog::set_pattern("[%^%l%$] %v");
     spdlog::set_level(spdlog::level::debug);
+
+    engine_post_initialize = configuration.engine_post_initialize ?
+        configuration.engine_post_initialize : dummy_engine_post_initialize;
+    engine_pre_update = configuration.engine_pre_update ?
+        configuration.engine_pre_update : dummy_engine_pre_update;
+    engine_post_update = configuration.engine_post_update ?
+        configuration.engine_post_update : dummy_engine_post_update;
+    engine_render = configuration.engine_render ?
+        configuration.engine_render : dummy_engine_render;
 
 #ifdef __EMSCRIPTEN__
     on_engine_pre_initialized();
@@ -201,6 +216,8 @@ int Engine::initialize(Renderer* renderer, const sEngineConfiguration& configura
 int Engine::post_initialize()
 {
     main_scene = new Scene("main_scene");
+
+    engine_post_initialize();
 
     return 0;
 }
@@ -493,6 +510,8 @@ void Engine::on_frame()
 
 void Engine::update(float delta_time)
 {
+    engine_pre_update(delta_time);
+
 #ifndef NDEBUG
     shader_reload_watcher->update(delta_time);
     engine_shader_reload_watcher->update(delta_time);
@@ -501,6 +520,10 @@ void Engine::update(float delta_time)
     if (Input::was_key_pressed(GLFW_KEY_G)) {
         show_imgui = !show_imgui;
     }
+
+    main_scene->update(delta_time);
+
+    engine_post_update(delta_time);
 
     renderer->update(delta_time);
 
@@ -511,9 +534,13 @@ void Engine::update(float delta_time)
 
 void Engine::render()
 {
+    engine_render();
+
 #ifdef __EMSCRIPTEN__
     on_render();
 #endif
+
+    main_scene->render();
 
     renderer->render();
 }
