@@ -22,28 +22,28 @@ class GSNode : public Node3D {
     uint32_t workgroup_size = 0;
 
     WGPUBuffer render_buffer = nullptr;
-    WGPUBuffer ids_buffer;
+    WGPUBuffer ids_buffer = nullptr;
 
     // Render
     Uniform model_uniform;
     Uniform centroid_uniform;
     Uniform basis_uniform;
     Uniform color_uniform;
-    WGPUBindGroup render_bindgroup;
+    WGPUBindGroup render_bindgroup = nullptr;
 
     // Covariance
     Uniform rotations_uniform;
     Uniform scales_uniform;
     Uniform covariance_uniform;
     Uniform splat_count_uniform;
-    WGPUBindGroup covariance_bindgroup;
+    WGPUBindGroup covariance_bindgroup = nullptr;
 
     // Basis
-    WGPUBuffer distances_buffer;
+    WGPUBuffer distances_buffer = nullptr;
 
     Uniform basis_distances_uniform;
     Uniform ids_basis_uniform;
-    WGPUBindGroup basis_uniform_bindgroup;
+    WGPUBindGroup basis_uniform_bindgroup = nullptr;
 
     RadixSortKernel* radix_sort_kernel = nullptr;
 

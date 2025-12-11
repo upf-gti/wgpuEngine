@@ -532,7 +532,7 @@ void Engine::render_default_gui()
                 char const* open_file_name = tinyfd_openFileDialog(
                     "Scene loader",
                     "",
-                    filter_patterns.size(),
+                    static_cast<int>(filter_patterns.size()),
                     filter_patterns.data(),
                     "Scene formats",
                     0

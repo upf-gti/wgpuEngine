@@ -291,7 +291,7 @@ namespace ui {
                 size_t child_count = childs.size();
                 float angle = ui_data.data_vec.r - 65.f;
                 if (angle < 0.0f) angle += 360.f;
-                size_t index = angle / 360.f * child_count;
+                size_t index = static_cast<size_t>(angle / 360.f * child_count);
                 assert(index >= 0 && index < child_count);
 
                 Node2D* element = static_cast<Node2D*>(childs[index]);

@@ -57,13 +57,13 @@ public:
     void set_name(const std::string& new_name);
     void set_path(const std::string& new_path);
 
-    uint32_t size();
-    void resize(uint32_t size);
+    size_t size();
+    void resize(size_t size);
 
     float get_end_time() const;
     float get_start_time() const;
     Keyframe& get_keyframe(uint32_t index);
-    int get_keyframe_index(float time);
+    uint32_t get_keyframe_index(float time);
     uint32_t add_keyframe(const Keyframe& k, bool sort = false);
     void delete_keyframe(int keyframe_idx);
 
