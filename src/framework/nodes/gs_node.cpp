@@ -33,8 +33,8 @@ GSNode::~GSNode()
 void GSNode::initialize(uint32_t splat_count)
 {
     this->splat_count = splat_count;
-    this->padded_splat_count = ceil(static_cast<float>(splat_count) / 512.0f) * 512;
-    this->workgroup_size = ceil(static_cast<float>(padded_splat_count) / 256.0f);
+    this->padded_splat_count = static_cast<uint32_t>(ceil(static_cast<float>(splat_count) / 512.0f) * 512);
+    this->workgroup_size = static_cast<uint32_t>(ceil(static_cast<float>(padded_splat_count) / 256.0f));
 
     WebGPUContext* webgpu_context = Renderer::instance->get_webgpu_context();
 

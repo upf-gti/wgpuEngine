@@ -22,7 +22,7 @@ public:
 
     float get_width() const { return width; }
     float get_height() const { return height; }
-    float get_subdivisions() const { return subdivisions; }
+    uint32_t get_subdivisions() const { return subdivisions; }
     bool get_flip_y() const { return flip_y; }
     bool get_centered() const { return centered; }
 

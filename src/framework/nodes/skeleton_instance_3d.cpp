@@ -141,11 +141,11 @@ void SkeletonInstance3D::generate_joints_from_pose()
     Pose& pose = skeleton->get_rest_pose();
     const auto& indices = skeleton->get_joint_indices();
     const auto& names = skeleton->get_joint_names();
-    uint32_t joint_count = indices.size();
+    size_t joint_count = indices.size();
 
     joint_nodes.resize(joint_count);
 
-    for (size_t i = 0; i < joint_count; i++) {
+    for (uint32_t i = 0; i < joint_count; i++) {
 
         Joint3D* joint_3d = new Joint3D();
         joint_3d->set_node_type("Joint3D");

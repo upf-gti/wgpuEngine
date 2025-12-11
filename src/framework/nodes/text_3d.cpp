@@ -73,7 +73,7 @@ void Text3D::generate_mesh()
         // process the current word on "space" or end of the word
         if (c == ' ' || c == '\0') {
             if (!word.empty()) {
-                float word_size = get_text_width(word);
+                float word_size = static_cast<float>(get_text_width(word));
 
                 // We must decide prior to draw the word if it fits on this line or has to go on the next one.
                 if (wrap && word_count > 0 && ((pos.x - initial_pos.x) * scale + word_size > box_size.x)) {
@@ -173,7 +173,7 @@ int Text3D::get_text_width(const std::string& text)
         size += c == ' ' ? 16 : (ch.xadvance + kern);
     }
 
-    return size * scale;
+    return static_cast<int>(size * scale);
 }
 
 int Text3D::get_text_height(const std::string& text)
@@ -187,7 +187,7 @@ int Text3D::get_text_height(const std::string& text)
         size = std::max(ch.size.y, size);
     }
 
-    return size * scale;
+    return static_cast<int>(size * scale);
 }
 
 void Text3D::render_gui()

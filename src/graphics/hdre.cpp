@@ -18,7 +18,7 @@ sHDRELevel HDRE::getLevel(int n)
 {
 	sHDRELevel level;
 
-	float size = (static_cast<float>(this->width) / pow(2.0f, n));
+	float size = (static_cast<float>(this->width / pow(2, n)));
 
 	level.width = static_cast<int>(size);
 	level.height = static_cast<int>(size); // cubemap sizes!

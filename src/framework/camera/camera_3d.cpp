@@ -19,12 +19,12 @@ void Camera3D::apply_movement(const glm::vec2& movement)
 
     float max_offset = 0.25f;
 
-    if (delta_pitch >= PI_2 - max_offset && delta_pitch < PI) {
-        delta_pitch = PI_2 - 0.001f - max_offset;
+    if (delta_pitch >= PI_2_F - max_offset && delta_pitch < PI) {
+        delta_pitch = PI_2_F - 0.001f - max_offset;
     }
 
-    if (delta_pitch > PI && delta_pitch <= 3.0f * PI_2 + max_offset) {
-        delta_pitch = 3.0f * PI_2 + 0.001f + max_offset;
+    if (delta_pitch > PI_F && delta_pitch <= 3.0f * PI_2_F + max_offset) {
+        delta_pitch = 3.0f * PI_2_F + 0.001f + max_offset;
     }
 }
 

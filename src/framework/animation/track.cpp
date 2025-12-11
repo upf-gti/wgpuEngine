@@ -59,23 +59,24 @@ Keyframe& Track::get_keyframe(uint32_t index)
     return keyframes[index];
 }
 
-int Track::get_keyframe_index(float time)
+uint32_t Track::get_keyframe_index(float time)
 {
     auto it = std::find_if(keyframes.begin(), keyframes.end(), [time](const Keyframe& kf) {
         return std::abs(time - kf.time) < 0.00001f;
     });
 
     if (it == keyframes.end()) {
-        return -1;
+        assert(0);
+        return 0;
     }
 
-    uint32_t idx = it - keyframes.begin();
-    return idx;
+    int64_t idx = it - keyframes.begin();
+    return static_cast<uint32_t>(idx);
 }
 
 uint32_t Track::add_keyframe(const Keyframe& k, bool sort)
 {
-    uint32_t idx = keyframes.size();
+    uint32_t idx = static_cast<uint32_t>(keyframes.size());
 
     keyframes.push_back(k);
 
@@ -171,14 +172,14 @@ Keyframe& Track::operator[](uint32_t index)
 }
 
 // Size of the keyframes vector
-void Track::resize(uint32_t size)
+void Track::resize(size_t size)
 {
     keyframes.resize(size);
 }
 
-uint32_t Track::size()
+size_t Track::size()
 {
-    return (uint32_t)keyframes.size();
+    return keyframes.size();
 }
 
 // Return the frame immediately before that time (on the left)

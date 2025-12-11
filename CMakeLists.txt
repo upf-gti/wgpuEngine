@@ -111,8 +111,6 @@ endif()
 
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${WGPU_SOURCES} ${WGPU_HEADERS})
 
-find_package(PythonInterp 3 REQUIRED)
-
 file(GLOB_RECURSE
     SHADERS
     CONFIGURE_DEPENDS
@@ -133,11 +131,13 @@ list(APPEND WGPU_SHADER_LIBS ${WGPU_DIR_SHADERS}/pbr_iridescence.wgsl)
 list(APPEND WGPU_SHADER_LIBS ${WGPU_DIR_SHADERS}/tonemappers.wgsl)
 list(APPEND WGPU_SHADER_LIBS ${WGPU_DIR_SHADERS}/ui/ui_includes.wgsl)
 
+find_package(Python3 REQUIRED)
+
 FOREACH(SHADER ${SHADERS})
 
     add_custom_command (
         OUTPUT ${WGPU_DIR_SOURCES}/shaders/${SHADER}.gen.h
-	    COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/glsl_builder.py ${SHADER}
+	    COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/glsl_builder.py ${SHADER}
         DEPENDS ${WGPU_DIR_SHADERS}/${SHADER} ${WGPU_SHADER_LIBS}
 	    WORKING_DIRECTORY ${WGPU_DIR_SHADERS}
         VERBATIM
@@ -238,6 +238,7 @@ if (NOT EMSCRIPTEN)
         endif()
 
         if(NOT WGPUENGINE_DISABLE_XR)
+            set(BUILD_LOADER_WITH_EXCEPTION_HANDLING OFF)
             # openxr
             add_subdirectory(libraries/openxr)
             target_link_libraries(${PROJECT_NAME} PUBLIC openxr_loader)

@@ -96,7 +96,7 @@ void RendererStorage::register_material_bind_group(WebGPUContext* webgpu_context
         u->data = webgpu_context->create_buffer(sizeof(glm::vec4), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform, &color, "mat_albedo");
         u->binding = 1;
         u->buffer_size = sizeof(glm::vec4);
-        uniform_indices[eMaterialProperties::PROP_COLOR] = uniforms.size();
+        uniform_indices[eMaterialProperties::PROP_COLOR] = static_cast<uint8_t>(uniforms.size());
         uniforms.push_back(u);
     }
 
@@ -119,7 +119,7 @@ void RendererStorage::register_material_bind_group(WebGPUContext* webgpu_context
             u->data = webgpu_context->create_buffer(sizeof(glm::vec3), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform, &occlusion_roughness_metallic, "mat_occlusion_roughness_metallic");
             u->binding = 3;
             u->buffer_size = sizeof(glm::vec3);
-            uniform_indices[eMaterialProperties::PROP_OCLUSSION_ROUGHNESS_METALLIC] = uniforms.size();
+            uniform_indices[eMaterialProperties::PROP_OCLUSSION_ROUGHNESS_METALLIC] = static_cast<uint8_t>(uniforms.size());
             uniforms.push_back(u);
         }
 
@@ -139,7 +139,7 @@ void RendererStorage::register_material_bind_group(WebGPUContext* webgpu_context
                 u->data = webgpu_context->create_buffer(sizeof(float), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform, &normal_scale, "mat_normal_scale");
                 u->binding = 5;
                 u->buffer_size = sizeof(float);
-                uniform_indices[eMaterialProperties::PROP_NORMAL_SCALE] = uniforms.size();
+                uniform_indices[eMaterialProperties::PROP_NORMAL_SCALE] = static_cast<uint8_t>(uniforms.size());
                 uniforms.push_back(u);
             }
         }
@@ -161,7 +161,7 @@ void RendererStorage::register_material_bind_group(WebGPUContext* webgpu_context
             u->data = webgpu_context->create_buffer(sizeof(glm::vec3), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform, &emissive, "mat_emissive");
             u->binding = 8;
             u->buffer_size = sizeof(glm::vec3);
-            uniform_indices[eMaterialProperties::PROP_EMISSIVE] = uniforms.size();
+            uniform_indices[eMaterialProperties::PROP_EMISSIVE] = static_cast<uint8_t>(uniforms.size());
             uniforms.push_back(u);
         }
 
@@ -185,7 +185,7 @@ void RendererStorage::register_material_bind_group(WebGPUContext* webgpu_context
             u->data = webgpu_context->create_buffer(sizeof(glm::vec2), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform, &clearcoat_data, "mat_clearcoat");
             u->binding = 14;
             u->buffer_size = sizeof(glm::vec2);
-            uniform_indices[eMaterialProperties::PROP_CLEARCOAT] = uniforms.size();
+            uniform_indices[eMaterialProperties::PROP_CLEARCOAT] = static_cast<uint8_t>(uniforms.size());
             uniforms.push_back(u);
 
             Texture* clearcoat_texture = material->get_clearcoat_texture();
@@ -229,7 +229,7 @@ void RendererStorage::register_material_bind_group(WebGPUContext* webgpu_context
             u->data = webgpu_context->create_buffer(sizeof(glm::vec4), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform, &iridescence_data, "mat_iridescence");
             u->binding = 18;
             u->buffer_size = sizeof(glm::vec4);
-            uniform_indices[eMaterialProperties::PROP_IRIDESCENCE] = uniforms.size();
+            uniform_indices[eMaterialProperties::PROP_IRIDESCENCE] = static_cast<uint8_t>(uniforms.size());
             uniforms.push_back(u);
 
             Texture* iridescence_texture = material->get_iridescence_texture();
@@ -264,7 +264,7 @@ void RendererStorage::register_material_bind_group(WebGPUContext* webgpu_context
             u->data = webgpu_context->create_buffer(sizeof(glm::vec3), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform, &anisotropy_data, "mat_anisotropy");
             u->binding = 21;
             u->buffer_size = sizeof(glm::vec3);
-            uniform_indices[eMaterialProperties::PROP_ANISOTROPY] = uniforms.size();
+            uniform_indices[eMaterialProperties::PROP_ANISOTROPY] = static_cast<uint8_t>(uniforms.size());
             uniforms.push_back(u);
 
             Texture* anisotropy_texture = material->get_anisotropy_texture();
@@ -314,7 +314,7 @@ void RendererStorage::register_material_bind_group(WebGPUContext* webgpu_context
         u->data = webgpu_context->create_buffer(sizeof(float), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform, &alpha_mask, "mat_alpha_cutoff");
         u->binding = 9;
         u->buffer_size = sizeof(float);
-        uniform_indices[eMaterialProperties::PROP_ALPHA_MASK] = uniforms.size();
+        uniform_indices[eMaterialProperties::PROP_ALPHA_MASK] = static_cast<uint8_t>(uniforms.size());
         uniforms.push_back(u);
     }
 
