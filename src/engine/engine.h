@@ -7,6 +7,12 @@ class FileWatcher;
 class Renderer;
 class Scene;
 class Node;
+class Engine;
+class Renderer;
+
+typedef void (*EnginePostInitializeFunc)(void);
+typedef void (*EngineUpdateFunc)(float);
+typedef void (*EngineRenderFunc)(void);
 
 struct sEngineConfiguration {
     uint16_t window_width = 1600;
@@ -17,12 +23,26 @@ struct sEngineConfiguration {
     glm::vec3 camera_center = { 0.0f, 0.75f, 0.0f };
     uint8_t msaa_count = 1;
     bool fullscreen = false;
+
+    EnginePostInitializeFunc engine_post_initialize = nullptr;
+	EngineUpdateFunc engine_pre_update = nullptr; // Updated before main scene
+	EngineUpdateFunc engine_post_update = nullptr; // Updated after main scene
+	EngineRenderFunc engine_render = nullptr;
+
+    // To allow deprecated inheritance behavior
+    Engine* custom_engine_instance = nullptr;
+    Renderer* custom_renderer_instance = nullptr;
 };
 
 class Engine {
 
     void init_imgui(GLFWwindow* window);
     void init_shader_watchers();
+
+    EnginePostInitializeFunc engine_post_initialize = nullptr;
+	EngineUpdateFunc engine_pre_update = nullptr;
+	EngineUpdateFunc engine_post_update = nullptr;
+	EngineRenderFunc engine_render = nullptr;
 
 protected:
 
