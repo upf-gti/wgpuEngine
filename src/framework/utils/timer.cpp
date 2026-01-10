@@ -4,12 +4,12 @@
 
 void Timer::start()
 {
-    begin = std::chrono::steady_clock::now();
+    begin = std::chrono::high_resolution_clock::now();
 }
 
 void Timer::print_elapsed_time_s()
 {
-    if (begin == std::chrono::steady_clock::time_point()) {
+    if (begin == std::chrono::high_resolution_clock::time_point()) {
         spdlog::error("Timer was not started!");
     }
 
@@ -18,7 +18,7 @@ void Timer::print_elapsed_time_s()
 
 void Timer::print_elapsed_time_ms()
 {
-    if (begin == std::chrono::steady_clock::time_point()) {
+    if (begin == std::chrono::high_resolution_clock::time_point()) {
         spdlog::error("Timer was not started!");
     }
 
@@ -27,7 +27,7 @@ void Timer::print_elapsed_time_ms()
 
 void Timer::print_elapsed_time_ns()
 {
-    if (begin == std::chrono::steady_clock::time_point()) {
+    if (begin == std::chrono::high_resolution_clock::time_point()) {
         spdlog::error("Timer was not started!");
     }
 
