@@ -161,8 +161,10 @@ void Texture::load_hdr(const std::string& texture_path, bool store_texture_data)
     int width, height, channels;
     float* data = stbi_loadf(texture_path.c_str(), &width, &height, &channels, 4);
 
-    if (!data)
+    if (!data) {
+        spdlog::error("Could not load hdr: {}", texture_path);
         return;
+    }
 
     path = texture_path;
 

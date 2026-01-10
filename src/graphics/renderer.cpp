@@ -461,7 +461,7 @@ void Renderer::render()
         {
             glm::mat4 left_proj = xr_context->per_view_data[EYE_LEFT].projection_matrix;
             float aspect = left_proj[1][1] / left_proj[0][0];
-            if (!isnan(aspect)) {
+            if (!std::isnan(aspect)) {
                 float eye_fov = 2.0f * atan(1.0f / left_proj[1][1]);
                 float combined_eye_tan = tan(eye_fov / 2.0f) * 2.0f; // assuming same fov for both eyes
                 float combined_fov = 2.0f * atan(combined_eye_tan);

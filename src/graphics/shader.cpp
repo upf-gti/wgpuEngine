@@ -583,6 +583,7 @@ void Shader::get_reflection_data(const std::string& shader_content)
 			switch (resource_binding.resource_type)
 			{
 			case ResourceBinding::ResourceType::kSampledTexture:
+				has_sampler = true;
 				break;
             case ResourceBinding::ResourceType::kDepthTexture:
                 entry.texture.sampleType = WGPUTextureSampleType_Depth;

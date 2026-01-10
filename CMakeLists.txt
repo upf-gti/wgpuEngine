@@ -16,6 +16,7 @@ SET(WGPUENGINE_DISABLE_XR OFF CACHE BOOL "Disable XR functionalities")
 if(MSVC)
     add_definitions(/MP)
     add_definitions(/arch:AVX2)
+    add_definitions(/Zc:preprocessor)
 
     # enable link time optimization
     if (CMAKE_BUILD_TYPE STREQUAL "Release")
@@ -101,7 +102,7 @@ WGPU_SOURCES_APPEND(${WGPU_DIR_SOURCES}/engine)
 if(NOT WGPUENGINE_DISABLE_XR)
     WGPU_SOURCES_APPEND(${WGPU_DIR_SOURCES}/xr)
 
-    if (NOT EMSCRIPTEN AND NOT APPLE AND NOT UNIX)
+    if (NOT EMSCRIPTEN)
         WGPU_SOURCES_APPEND(${WGPU_DIR_SOURCES}/xr/openxr)
         WGPU_SOURCES_APPEND(${WGPU_DIR_SOURCES}/xr/dawnxr)
     else()
@@ -147,6 +148,11 @@ FOREACH(SHADER ${SHADERS})
 ENDFOREACH()
 
 add_library(${PROJECT_NAME} ${WGPU_SOURCES} ${WGPU_HEADERS})
+
+# Needed for D3D12
+if (MSVC)
+    target_link_libraries(${PROJECT_NAME} PRIVATE mincore.lib)
+endif()
 
 target_include_directories(${PROJECT_NAME} PUBLIC ${WGPU_DIR_SOURCES})
 
@@ -259,7 +265,22 @@ if(NOT WGPUENGINE_DISABLE_XR)
 endif()
 
 
-# INSTALL(FILES ${WGPU_HEADERS} DESTINATION ${CMAKE_BINARY_DIR})
+set(WGPU_USE_X11 OFF)
+set(WGPU_USE_WAYLAND OFF)
+
+# Check if display server is x11 or wayland
+if (UNIX)
+	execute_process(
+		COMMAND bash -c [=[loginctl show-session $(loginctl user-status $USER | grep -E -m 1 'session-[0-9]+\.scope' | sed -E 's/^.*?session-([0-9]+)\.scope.*$/\1/') -p Type | grep -ic wayland]=]
+		OUTPUT_VARIABLE is_wayland
+	)
+
+	if ("${is_wayland}" EQUAL "1")
+		set(WGPU_USE_WAYLAND TRUE)
+	else ()
+		set(WGPU_USE_X11 TRUE)
+	endif()
+endif()
 
 # dawn
 add_subdirectory(libraries/webgpu)
@@ -304,6 +325,11 @@ if (NOT EMSCRIPTEN)
         if(NOT WGPUENGINE_DISABLE_XR)
             set(BUILD_LOADER_WITH_EXCEPTION_HANDLING OFF)
             # openxr
+
+            if (WGPU_USE_WAYLAND)
+                set(PRESENTATION_BACKEND wayland)
+            endif()
+
             add_subdirectory(libraries/openxr)
             target_link_libraries(${PROJECT_NAME} PUBLIC openxr_loader)
             #target_link_libraries(openxr_loader PUBLIC Vulkan-Headers)
