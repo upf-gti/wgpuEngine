@@ -70,15 +70,15 @@ WGPUSurface glfwGetWGPUSurface(WGPUInstance instance, GLFWwindow* window) {
         Display* x11_display = glfwGetX11Display();
         Window x11_window = glfwGetX11Window(window);
 
-        WGPUSurfaceDescriptorFromXlibWindow fromXlibWindow;
+        WGPUSurfaceSourceXlibWindow fromXlibWindow;
         fromXlibWindow.chain.next = NULL;
-        fromXlibWindow.chain.sType = WGPUSType_SurfaceDescriptorFromXlibWindow;
+        fromXlibWindow.chain.sType = WGPUSType_SurfaceSourceXlibWindow;
         fromXlibWindow.display = x11_display;
         fromXlibWindow.window = x11_window;
 
         WGPUSurfaceDescriptor surfaceDescriptor;
         surfaceDescriptor.nextInChain = &fromXlibWindow.chain;
-        surfaceDescriptor.label = NULL;
+        surfaceDescriptor.label = { NULL , 0u};
 
         return wgpuInstanceCreateSurface(instance, &surfaceDescriptor);
     }
@@ -89,15 +89,15 @@ WGPUSurface glfwGetWGPUSurface(WGPUInstance instance, GLFWwindow* window) {
         struct wl_display* wayland_display = glfwGetWaylandDisplay();
         struct wl_surface* wayland_surface = glfwGetWaylandWindow(window);
 
-        WGPUSurfaceDescriptorFromWaylandSurface fromWaylandSurface;
+        WGPUSurfaceSourceWaylandSurface fromWaylandSurface;
         fromWaylandSurface.chain.next = NULL;
-        fromWaylandSurface.chain.sType = WGPUSType_SurfaceDescriptorFromWaylandSurface;
+        fromWaylandSurface.chain.sType = WGPUSType_SurfaceSourceWaylandSurface;
         fromWaylandSurface.display = wayland_display;
         fromWaylandSurface.surface = wayland_surface;
 
         WGPUSurfaceDescriptor surfaceDescriptor;
         surfaceDescriptor.nextInChain = &fromWaylandSurface.chain;
-        surfaceDescriptor.label = NULL;
+        surfaceDescriptor.label = { NULL , 0u};
 
         return wgpuInstanceCreateSurface(instance, &surfaceDescriptor);
     }
@@ -128,7 +128,7 @@ WGPUSurface glfwGetWGPUSurface(WGPUInstance instance, GLFWwindow* window) {
         HWND hwnd = glfwGetWin32Window(window);
         HINSTANCE hinstance = GetModuleHandle(NULL);
 
-        WGPUSurfaceDescriptorFromWindowsHWND fromWindowsHWND;
+        WGPUSurfaceSourceWindowsHWND fromWindowsHWND;
         fromWindowsHWND.chain.next = NULL;
         fromWindowsHWND.chain.sType = WGPUSType_SurfaceSourceWindowsHWND;
         fromWindowsHWND.hinstance = hinstance;
@@ -139,7 +139,7 @@ WGPUSurface glfwGetWGPUSurface(WGPUInstance instance, GLFWwindow* window) {
 
         return wgpuInstanceCreateSurface(instance, &surfaceDescriptor);
     }
-#endif // GLFW_EXPOSE_NATIVE_X11
+#endif // GLFW_EXPOSE_NATIVE_WIN32
 
 #ifdef GLFW_EXPOSE_NATIVE_EMSCRIPTEN
     case GLFW_PLATFORM_EMSCRIPTEN: {
@@ -154,7 +154,7 @@ WGPUSurface glfwGetWGPUSurface(WGPUInstance instance, GLFWwindow* window) {
 
         return wgpuInstanceCreateSurface(instance, &surfaceDescriptor);
     }
-#endif // GLFW_EXPOSE_NATIVE_X11
+#endif // GLFW_EXPOSE_NATIVE_EMSCRIPTEN
 
     default:
         // Unsupported platform
