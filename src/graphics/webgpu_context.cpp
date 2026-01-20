@@ -139,8 +139,8 @@ WGPUFuture WebGPUContext::request_adapter(XRContext* xr_context, bool is_openxr_
             case WGPURequestAdapterStatus_Error:
                 error_str += "Error";
                 break;
-            case WGPURequestAdapterStatus_InstanceDropped:
-                error_str += "Instace Dropped";
+            case WGPURequestAdapterStatus_CallbackCancelled:
+                error_str += "Callback Cancelled";
                 break;
             case WGPURequestAdapterStatus_Unavailable:
                 error_str += "Unavailable";
@@ -382,7 +382,7 @@ void WebGPUContext::create_instance()
 
 WGPUShaderModule WebGPUContext::create_shader_module(char const* code)
 {
-    WGPUShaderModuleWGSLDescriptor shader_code_desc = {};
+    WGPUShaderSourceWGSL shader_code_desc = {};
     shader_code_desc.chain.sType = WGPUSType_ShaderSourceWGSL;
     shader_code_desc.code = get_string_view(code);
 
