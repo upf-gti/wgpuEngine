@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en-us">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title>Web-wgpuEngine</title>
+    <link rel="stylesheet" href="https://cdn.skypack.dev/lexgui@0.7.15/build/lexgui.css">
+    <script src="https://mrdoob.github.io/stats.js/build/stats.min.js"></script>
+    <script type="importmap">
+        {
+          "imports": {
+            "lexgui": "https://cdn.skypack.dev/lexgui@0.7.15/build/lexgui.module.js",
+            "lexgui/extensions/": "https://cdn.skypack.dev/lexgui@0.7.15/build/extensions/"
+          }
+        }
+    </script>
+</head>
+
+<body>
+    <button id="xr-button" style="z-index:10;position:absolute;top:1%;left:30%" disabled>WebXR or WebGPU not supported</button>
+    <canvas class="emscripten" id="canvas" oncontextmenu="event.preventDefault()" tabindex=-1
+            style="height:100%;width:100%;resize:both;outline:none;position:relative;"></canvas>
+    <template id="main-script">
+        {{{ SCRIPT }}}
+    </template>
+    <script type='text/javascript'>
+
+        var Module = {
+            html5ResizeTarget: "#canvas-area",
+            preRun: [],
+            postRun: [],
+            canvas: (function () {
+                var canvas = document.getElementById('canvas');
+
+                // Event handler to resize the canvas when the document view is changed
+                // window.addEventListener('resize', () => {
+                //     canvas.width = window.innerWidth;
+                //     canvas.height = window.innerHeight;
+                // }, false);
+
+                return canvas;
+            })(),
+            totalDependencies: 0
+        };
+
+        async function onEnginePreInitialized() {
+
+            await Promise.resolve(Module.Engine.getInstance()).then(result => {
+
+                if (!result) {
+                    console.error("Module Instance is null");
+                }
+
+                window.engineInstance = result;
+
+            }).catch(error => {
+                console.log(error);
+            });
+
+            Promise.resolve(window.engineInstance.setWasmModuleInitialized(true)).then().catch(error => {
+                console.log(error);
+            });
+        }
+
+        function onEngineInitialized() {
+            var script = document.createElement('script');
+            script.type = 'module';
+            script.src = "./script.js";
+            script.async = false;
+            document.getElementsByTagName('head')[0].appendChild(script);
+        }
+
+        (async () => {
+            // Custom for WebGPU
+            if (!navigator.gpu) {
+                console.error("Sorry, WebGPU is not supported by your browser.");
+                const msg = document.createElement("div");
+                Object.assign(msg.style, {
+                    width: "50%",
+                    fontSize: "36px",
+                    fontWeight: "500",
+                    textAlign: "center",
+                    margin: "0 auto",
+                    marginTop: "25%"
+                });
+                msg.innerText = "Sorry, WebGPU is not supported by your browser.";
+                document.body.appendChild(msg);
+                return;
+            } else {
+                const jsTemplate = document.getElementById("main-script");
+                const js = jsTemplate.content.cloneNode(true);
+                document.body.appendChild(js);
+            }
+        })();
+    </script>
+</body>
+
+</html>
