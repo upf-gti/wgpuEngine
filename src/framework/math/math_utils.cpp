@@ -139,12 +139,12 @@ int random_i(int min, int max) {
 }
 
 float random_f(float min, float max) {
-    return (std::rand() / (RAND_MAX + 1.0f)) * (max - min) + min;
+    return (std::rand() / (static_cast<float>(RAND_MAX) + 1)) * (max - min) + min;
 }
 
 double random_d(double min, double max)
 {
-    return (std::rand() / (RAND_MAX + 1.0)) * (max - min) + min;
+    return (std::rand() / (static_cast<double>(RAND_MAX) + 1)) * (max - min) + min;
 }
 
 glm::dvec3 random_direction()

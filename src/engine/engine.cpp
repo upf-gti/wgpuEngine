@@ -675,7 +675,7 @@ void Engine::render_default_gui()
         if (scene_tab_open)
         {
             ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 5.0f);
-            ImGui::BeginChild("SceneTree", ImVec2(0, 260), ImGuiChildFlags_Border, ImGuiWindowFlags_None);
+            ImGui::BeginChild("SceneTree", ImVec2(0, 260), ImGuiChildFlags_Borders, ImGuiWindowFlags_None);
 
             std::vector<Node*>& nodes = main_scene->get_nodes();
             std::vector<Node*>::iterator it = nodes.begin();
@@ -726,7 +726,7 @@ void Engine::render_default_gui()
 
 
     if (selected_node && scene_tab_open) {
-        ImGui::BeginChild("NodeProperties", ImVec2(0, right_panel_height - 310), ImGuiChildFlags_Border, ImGuiWindowFlags_None);
+        ImGui::BeginChild("NodeProperties", ImVec2(0, right_panel_height - 310), ImGuiChildFlags_Borders, ImGuiWindowFlags_None);
 
         selected_node->render_gui();
 
