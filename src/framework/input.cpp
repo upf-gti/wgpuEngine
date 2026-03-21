@@ -162,8 +162,6 @@ bool Input::init_xr(XRContext* context)
 
 void Input::update(float delta_time)
 {
-    glfwPollEvents();
-
     // Mouse  state
     if (use_glfw && window) {
 

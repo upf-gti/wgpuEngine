@@ -1,11 +1,11 @@
 #pragma once
 
-#include "includes.h"
-#include "graphics/uniforms_structs.h"
-#include "graphics/uniform.h"
 #include "framework/math/frustum_cull.h"
-#include "graphics/surface.h"
 #include "graphics/pipeline.h"
+#include "graphics/surface.h"
+#include "graphics/uniform.h"
+#include "graphics/uniforms_structs.h"
+#include "includes.h"
 
 #include "framework/camera/camera.h"
 
@@ -37,7 +37,8 @@ struct sRendererConfiguration {
     WGPULimits required_limits = {};
     std::vector<WGPUFeatureName> features;
 
-    sRendererConfiguration() {
+    sRendererConfiguration()
+    {
         required_limits.maxVertexAttributes = 4;
         required_limits.maxVertexBuffers = 1;
         required_limits.maxBindGroups = 2;
@@ -56,11 +57,9 @@ struct sRendererConfiguration {
 };
 
 class Renderer {
-
 protected:
-
-    XRContext*  xr_context;
-    WebGPUContext*  webgpu_context;
+    XRContext* xr_context;
+    WebGPUContext* webgpu_context;
 
     std::function<void(WGPURenderPassEncoder, WGPUBindGroup, void*, uint32_t)> custom_pre_opaque_pass = nullptr;
     std::function<void(WGPURenderPassEncoder, WGPUBindGroup, void*, uint32_t)> custom_post_opaque_pass = nullptr;
@@ -90,7 +89,7 @@ protected:
 
     Texture* irradiance_texture = nullptr;
 
-    Texture*        eye_depth_textures = nullptr;
+    Texture* eye_depth_textures = nullptr;
     WGPUTextureView eye_depth_texture_view[EYE_COUNT] = {};
 
     uint8_t msaa_count = 1;
@@ -106,9 +105,9 @@ protected:
     Frustum frustum_cull;
     MeshInstance3D* selected_mesh_aabb = nullptr;
 
-    bool is_xr_available        = false;
-    bool use_mirror_screen      = false;
-    bool use_custom_mirror      = false;
+    bool is_xr_available = false;
+    bool use_mirror_screen = false;
+    bool use_custom_mirror = false;
 
     glm::vec4 clear_color = { 0.0f, 0.0f, 0.0f, 1.0f };
 
@@ -144,7 +143,7 @@ protected:
 
     struct sInstanceData {
         std::vector<sUniformData> instances_data[RENDER_LIST_COUNT];
-        Uniform	instances_data_uniforms[RENDER_LIST_COUNT];
+        Uniform instances_data_uniforms[RENDER_LIST_COUNT];
         WGPUBindGroup instances_bind_groups[RENDER_LIST_COUNT] = {};
     };
 
@@ -179,7 +178,7 @@ protected:
     sInstanceData shadow_instances_data;
 
     std::vector<sUIData> instance_ui_data;
-    Uniform	instance_ui_data_uniform;
+    Uniform instance_ui_data_uniform;
 
     // Entities to be rendered this frame
     std::vector<sRenderListData> render_entity_list;
@@ -236,12 +235,11 @@ protected:
 
     bool initialized = false;
 
-    std::vector<WGPUFeatureName> required_features = { };
+    std::vector<WGPUFeatureName> required_features = {};
 
     uint32_t frame_counter = 0;
 
 public:
-
     // Singleton
     static Renderer* instance;
 
@@ -254,12 +252,12 @@ public:
     virtual void clean();
 
     bool is_initialized() { return initialized; }
-    
+
     virtual void update(float delta_time);
     virtual void render();
 
     void render_camera(const std::vector<std::vector<sRenderData>>& render_lists, WGPUTextureView framebuffer_view, WGPUTextureView depth_view,
-        const sInstanceData& instance_data, WGPUBindGroup camera_bind_group, bool render_transparents = true, const std::string& pass_name = "", uint32_t eye_idx = 0, uint32_t camera_offset = 0);
+            const sInstanceData& instance_data, WGPUBindGroup camera_bind_group, bool render_transparents = true, const std::string& pass_name = "", uint32_t eye_idx = 0, uint32_t camera_offset = 0);
 
     void process_events();
 
@@ -351,7 +349,7 @@ public:
 #endif
     WebGPUContext* get_webgpu_context();
 
-    void set_required_features(std::vector<WGPUFeatureName> new_required_features) { required_features = new_required_features; };
+    void set_required_features(std::vector<WGPUFeatureName> new_required_features) { required_features = new_required_features; }
     void set_required_limits(const WGPULimits& required_limits) { webgpu_context->required_limits = required_limits; }
 
     void add_renderable(Mesh* mesh_instance, const glm::mat4x4& global_matrix);
