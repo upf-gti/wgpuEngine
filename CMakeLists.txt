@@ -5,7 +5,7 @@ set(WGPU_DIR_SOURCES "${WGPU_DIR_ROOT}/src")
 set(WGPU_DIR_LIBS    "${WGPU_DIR_ROOT}/libraries")
 set(WGPU_DIR_SHADERS "${WGPU_DIR_ROOT}/data/shaders")
 
-project(webgpuEngine LANGUAGES C CXX)
+project(wgpuEngine LANGUAGES C CXX)
 set(CXX_STANDARD_REQUIRED ON)
 
 # Comand line variables
@@ -149,9 +149,11 @@ ENDFOREACH()
 
 add_library(${PROJECT_NAME} ${WGPU_SOURCES} ${WGPU_HEADERS})
 
-# Needed for D3D12
 if (MSVC)
+    # Needed for D3D12
     target_link_libraries(${PROJECT_NAME} PRIVATE mincore.lib)
+    # Ignore annoying warning
+    set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS "/ignore:4099")
 endif()
 
 target_include_directories(${PROJECT_NAME} PUBLIC ${WGPU_DIR_SOURCES})
@@ -175,7 +177,38 @@ if (EMSCRIPTEN)
         "$<$<CONFIG:Release>:-flto>"
     )
 
-    set(SHELL_FILE shell.html)
+    if(NOT DEFINED SHELL_FILE)
+        set(SHELL_FILE "${WGPU_DIR_ROOT}/shell.html")
+    endif()
+
+    if(NOT DEFINED WEB_ASSETS)
+        #set(WEB_ASSETS
+        #    script.js
+        #)
+    endif()
+
+    foreach(asset ${WEB_ASSETS})
+        add_custom_command(
+            OUTPUT ${CMAKE_BINARY_DIR}/${asset}
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                    ${CMAKE_CURRENT_SOURCE_DIR}/${asset}
+                    ${CMAKE_BINARY_DIR}/${asset}
+            DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/${asset}
+        )
+
+        list(APPEND WEB_ASSET_OUTPUTS
+            ${CMAKE_BINARY_DIR}/${asset})
+    endforeach()
+
+    add_custom_target(web_assets
+        DEPENDS ${WEB_ASSET_OUTPUTS}
+    )
+
+    add_dependencies(${PROJECT_NAME} web_assets)
+
+    set_property(TARGET ${PROJECT_NAME} PROPERTY
+        INTERFACE_LINK_DEPENDS ${SHELL_FILE}
+    )
 
     # Add Embind bindings to JS from the engine's binding file
     target_sources(${PROJECT_NAME} PUBLIC embind_bindings.cpp)
@@ -184,12 +217,15 @@ if (EMSCRIPTEN)
 
         # -sVERBOSE
 
+        # TODO: expose this to make it custom per project
         -sEXPORTED_FUNCTIONS=_main,_malloc,_free
         -sUSE_GLFW=3
         -sALLOW_MEMORY_GROWTH
+        #-sJSPI # Still experimental in Firefox, allows for way faster Linking and async calls
         -sASYNCIFY
-        #        -sASSERTIONS
-        #        -fsanitize=address
+        #-sASYNCIFY_ADVISE=1
+        #-sASSERTIONS
+        # -fsanitize=address
         -Wdeprecated-literal-operator
         -sSTACK_SIZE=5MB
         -sASYNCIFY_STACK_SIZE=10000
@@ -200,19 +236,16 @@ if (EMSCRIPTEN)
         #-sERROR_ON_WASM_CHANGES_AFTER_LINK
         #-sWASM=0
         # For faster debug builds
-        # -O1
+        #-O0
+        #-g
         # ------------
         #--post-js "${CMAKE_BINARY_DIR}/glue.js"
-        --shell-file "${WGPU_DIR_ROOT}/${SHELL_FILE}"
+        --shell-file ${SHELL_FILE}
         --preload-file "${WGPU_DIR_ROOT}/data@/data"
     )
 
-    # Make sure to re-link when the shell file changes
-    set_property(
-        TARGET ${PROJECT_NAME}
-        PROPERTY LINK_DEPENDS
-        "${WGPU_DIR_ROOT}/${SHELL_FILE}"
-    )
+    message(STATUS "WEB_ASSET_OUTPUTS: ${WEB_ASSET_OUTPUTS}")
+    message(STATUS "HTML Shell Path: ${SHELL_FILE}")
 
     # needed to compile tint on web
     add_compile_options(-w)
@@ -290,25 +323,23 @@ if (NOT EMSCRIPTEN)
 
             # Already included in dawn src
             if (DAWN_BUILD_U STREQUAL "STATIC")
+                set(VULKAN_HEADERS_ENABLE_MODULE OFF)
                 add_subdirectory(libraries/Vulkan-Headers)
             endif()
 
             target_link_libraries(${PROJECT_NAME} PUBLIC Vulkan-Headers)
-            # set_property(TARGET Vulkan-Module PROPERTY FOLDER "External/VulkanModule")
-
         endif()
 
         if(NOT WGPUENGINE_DISABLE_XR)
             set(BUILD_LOADER_WITH_EXCEPTION_HANDLING OFF)
-            # openxr
 
+            # openxr
             if (WGPU_USE_WAYLAND)
                 set(PRESENTATION_BACKEND wayland)
             endif()
 
             add_subdirectory(libraries/openxr)
             target_link_libraries(${PROJECT_NAME} PUBLIC openxr_loader)
-            #target_link_libraries(openxr_loader PUBLIC Vulkan-Headers)
             set_property(TARGET openxr_loader PROPERTY FOLDER "External/OpenXR")
             set_property(TARGET generate_openxr_header PROPERTY FOLDER "External/OpenXR")
             set_property(TARGET xr_global_generated_files PROPERTY FOLDER "External/OpenXR")
@@ -317,11 +348,9 @@ if (NOT EMSCRIPTEN)
 
     # glfw
     add_subdirectory(libraries/glfw)
-    add_subdirectory(libraries/glfw3webgpu)
-    target_link_libraries(${PROJECT_NAME} PUBLIC glfw glfw3webgpu)
+    target_link_libraries(${PROJECT_NAME} PUBLIC glfw)
     set_property(TARGET glfw PROPERTY FOLDER "External/GLFW3")
     set_property(TARGET update_mappings PROPERTY FOLDER "External/GLFW3")
-    set_property(TARGET glfw3webgpu PROPERTY FOLDER "External/GLFW3")
 
     # renderdoc
     target_include_directories(${PROJECT_NAME} PUBLIC ${WGPU_DIR_LIBS}/renderdoc)
@@ -335,6 +364,11 @@ else()
 endif()
 
 target_include_directories(${PROJECT_NAME} PUBLIC libraries/emscripten-webxr)
+
+# glfw3webgpu
+add_subdirectory(libraries/glfw3webgpu)
+target_link_libraries(${PROJECT_NAME} PUBLIC glfw3webgpu)
+set_property(TARGET glfw3webgpu PROPERTY FOLDER "External/GLFW3")
 
 # easyVDB
 add_subdirectory(libraries/easyVDB)

@@ -1,15 +1,15 @@
 #include "webgpu_context.h"
 
-#include "shader.h"
 #include "pipeline.h"
-#include "texture.h"
 #include "renderer_storage.h"
+#include "shader.h"
+#include "texture.h"
 
-#include "shaders/mipmaps.wgsl.gen.h"
+#include "shaders/brdf_lut_gen.wgsl.gen.h"
 #include "shaders/cubemap_downsampler.wgsl.gen.h"
+#include "shaders/mipmaps.wgsl.gen.h"
 #include "shaders/panorama_to_cubemap.wgsl.gen.h"
 #include "shaders/prefilter_env.wgsl.gen.h"
-#include "shaders/brdf_lut_gen.wgsl.gen.h"
 
 #include "framework/utils/utils.h"
 
@@ -31,9 +31,9 @@
 #include <GLFW/glfw3.h>
 #include <emscripten.h>
 #include <emscripten/html5.h>
-#else
-#include "glfw3webgpu.hpp"
 #endif
+
+#include "glfw3webgpu.hpp"
 
 WGPUTextureFormat WebGPUContext::swapchain_format = WGPUTextureFormat_BGRA8Unorm;
 
@@ -51,36 +51,39 @@ WGPUStringView get_string_view(const char* str)
     return { str, strlen(str) };
 }
 
-void PrintDeviceError(WGPUDevice const* device, WGPUErrorType type, struct WGPUStringView message, void* userdata1, void* userdata2) {
+void PrintDeviceError(WGPUDevice const* device, WGPUErrorType type, struct WGPUStringView message, void* userdata1, void* userdata2)
+{
     const char* errorTypeName = "";
     switch (type) {
-    case WGPUErrorType_Validation:
-        errorTypeName = "Validation";
-        break;
-    case WGPUErrorType_OutOfMemory:
-        errorTypeName = "Out of memory";
-        break;
-    case WGPUErrorType_Unknown:
-        errorTypeName = "Unknown";
-        break;
-    case WGPUErrorType_Internal:
-        errorTypeName = "Internal";
-        break;
-    default:
-        return;
+        case WGPUErrorType_Validation:
+            errorTypeName = "Validation";
+            break;
+        case WGPUErrorType_OutOfMemory:
+            errorTypeName = "Out of memory";
+            break;
+        case WGPUErrorType_Unknown:
+            errorTypeName = "Unknown";
+            break;
+        case WGPUErrorType_Internal:
+            errorTypeName = "Internal";
+            break;
+        default:
+            return;
     }
 
     spdlog::error("{} error: {}", errorTypeName, message.data);
     // assert(0);
 }
 
-void DeviceLostCallback(WGPUDevice const* device, WGPUDeviceLostReason reason, struct WGPUStringView message, void* userdata1, void* userdata2) {
+void DeviceLostCallback(WGPUDevice const* device, WGPUDeviceLostReason reason, struct WGPUStringView message, void* userdata1, void* userdata2)
+{
     if (reason != WGPUDeviceLostReason_Destroyed) {
         spdlog::error("Device lost: {}", message.data);
     }
 }
 
-void PrintGLFWError(int code, const char* message) {
+void PrintGLFWError(int code, const char* message)
+{
     spdlog::error("GLFW error: {} - {}", code, message);
 }
 
@@ -113,13 +116,11 @@ WGPUFuture WebGPUContext::request_adapter(XRContext* xr_context, bool is_openxr_
 
     // Create internal vulkan instance
     if (is_openxr_available) {
-
 #if defined(BACKEND_VULKAN)
         dawnxr::internal::createVulkanOpenXRConfig(openxr_context->instance, openxr_context->system_id, (void**)&adapter_opts_xr_config.openXRConfig);
         adapter_opts.nextInChain = reinterpret_cast<WGPUChainedStruct*>(&adapter_opts_xr_config);
 #endif
-    }
-    else {
+    } else {
         spdlog::warn("XR not available, fallback to desktop mode");
     }
 #endif // OPENXR_SUPPORT
@@ -132,22 +133,21 @@ WGPUFuture WebGPUContext::request_adapter(XRContext* xr_context, bool is_openxr_
         WGPUAdapter* out_adapter = reinterpret_cast<WGPUAdapter*>(userdata1);
         if (status == WGPURequestAdapterStatus_Success) {
             *out_adapter = adapter;
-        }
-        else {
+        } else {
             std::string error_str = "";
             switch (status) {
-            case WGPURequestAdapterStatus_Error:
-                error_str += "Error";
-                break;
-            case WGPURequestAdapterStatus_CallbackCancelled:
-                error_str += "Callback Cancelled";
-                break;
-            case WGPURequestAdapterStatus_Unavailable:
-                error_str += "Unavailable";
-                break;
-            default:
-                error_str += "Unknown";
-                break;
+                case WGPURequestAdapterStatus_Error:
+                    error_str += "Error";
+                    break;
+                case WGPURequestAdapterStatus_CallbackCancelled:
+                    error_str += "Callback Cancelled";
+                    break;
+                case WGPURequestAdapterStatus_Unavailable:
+                    error_str += "Unavailable";
+                    break;
+                default:
+                    error_str += "Unknown";
+                    break;
             }
 
             spdlog::error("Failed to get WebGPU adapter with \"{}\" status: {}", error_str, message.data);
@@ -156,10 +156,9 @@ WGPUFuture WebGPUContext::request_adapter(XRContext* xr_context, bool is_openxr_
 
     // Call to the WebGPU request adapter procedure
     return wgpuInstanceRequestAdapter(
-        instance,
-        &adapter_opts,
-        adapter_callback_info
-    );
+            instance,
+            &adapter_opts,
+            adapter_callback_info);
 }
 
 WGPUFuture WebGPUContext::request_device(const std::vector<WGPUFeatureName> required_features)
@@ -217,17 +216,15 @@ WGPUFuture WebGPUContext::request_device(const std::vector<WGPUFeatureName> requ
             WGPUDevice* out_device = reinterpret_cast<WGPUDevice*>(userdata1);
             if (status == WGPURequestDeviceStatus_Success) {
                 *out_device = device;
-            }
-            else {
+            } else {
                 spdlog::error("Could not get WebGPU device: {}", message.data);
             }
         };
 
         return wgpuAdapterRequestDevice(
-            adapter,
-            &device_desc,
-            device_callback_info
-        );
+                adapter,
+                &device_desc,
+                device_callback_info);
     }
 }
 
@@ -248,33 +245,14 @@ int WebGPUContext::initialize(bool create_screen_swapchain)
 {
     wgpuDeviceGetLimits(device, &supported_limits);
 
-#ifdef __EMSCRIPTEN__
-
-    // emscripten-specific extension not supported by webgpu.cpp
-    WGPUEmscriptenSurfaceSourceCanvasHTMLSelector canvDesc = {};
-    canvDesc.chain.sType = WGPUSType_EmscriptenSurfaceSourceCanvasHTMLSelector;
-    canvDesc.selector = { "canvas", WGPU_STRLEN };
-
-    WGPUSurfaceDescriptor surfDesc = {};
-    surfDesc.nextInChain = reinterpret_cast<WGPUChainedStruct*>(&canvDesc);
-
-    surface = wgpuInstanceCreateSurface(get_instance(), &surfDesc);
-#else
-
     if (create_screen_swapchain) {
         surface = glfwGetWGPUSurface(get_instance(), window);
     }
 
     process_events();
 
-#endif
-
     if (create_screen_swapchain) {
-        // Create the swapchain for mirror mode
-        int width, height;
-        glfwGetWindowSize(window, &width, &height);
-
-        create_swapchain(width, height);
+        create_swapchain(render_width, render_height);
     }
 
     device_queue = wgpuDeviceGetQueue(device);
@@ -315,7 +293,7 @@ int WebGPUContext::initialize(bool create_screen_swapchain)
 
         brdf_lut_texture = new Texture();
         brdf_lut_texture->create(WGPUTextureDimension_2D, WGPUTextureFormat_RG32Float, { 512, 512, 1 },
-            static_cast<WGPUTextureUsage>(WGPUTextureUsage_StorageBinding | WGPUTextureUsage_TextureBinding), 1, 1, nullptr);
+                static_cast<WGPUTextureUsage>(WGPUTextureUsage_StorageBinding | WGPUTextureUsage_TextureBinding), 1, 1, nullptr);
 
         generate_brdf_lut_texture();
     }
@@ -327,15 +305,16 @@ int WebGPUContext::initialize(bool create_screen_swapchain)
 
 void WebGPUContext::destroy()
 {
-    if (!is_initialized)
+    if (!is_initialized) {
         return;
+    }
 
     wgpuSurfaceRelease(surface);
     wgpuDeviceDestroy(device);
     wgpuQueueRelease(device_queue);
     wgpuInstanceRelease(instance);
 
-    for (auto &mipmap_struct : mipmap_pipelines) {
+    for (auto& mipmap_struct : mipmap_pipelines) {
         delete mipmap_struct.second.mipmap_pipeline;
     }
 
@@ -377,7 +356,6 @@ void WebGPUContext::create_instance()
 #else
     instance = wgpuCreateInstance(nullptr);
 #endif
-
 }
 
 WGPUShaderModule WebGPUContext::create_shader_module(char const* code)
@@ -475,7 +453,7 @@ void WebGPUContext::create_texture_mipmaps(WGPUTexture texture, WGPUExtent3D tex
     WGPUCommandEncoderDescriptor encoder_desc = {};
     WGPUCommandEncoder command_encoder = custom_command_encoder ? custom_command_encoder : wgpuDeviceCreateCommandEncoder(device, &encoder_desc);
 
-    WGPUComputePassDescriptor compute_pass_desc = { .label = { "texture_mipmaps_pass", WGPU_STRLEN} };
+    WGPUComputePassDescriptor compute_pass_desc = { .label = { "texture_mipmaps_pass", WGPU_STRLEN } };
     compute_pass_desc.timestampWrites = nullptr;
     WGPUComputePassEncoder compute_pass = wgpuCommandEncoderBeginComputePass(command_encoder, &compute_pass_desc);
 
@@ -484,8 +462,7 @@ void WebGPUContext::create_texture_mipmaps(WGPUTexture texture, WGPUExtent3D tex
     sampler.binding = 2;
 
     // For all layers and levels
-    for (uint32_t layer = 0; layer < texture_size.depthOrArrayLayers; ++layer)
-    {
+    for (uint32_t layer = 0; layer < texture_size.depthOrArrayLayers; ++layer) {
         std::vector<WGPUExtent3D> texture_mip_sizes;
         texture_mip_sizes.resize(mip_level_count);
         texture_mip_sizes[0] = texture_size;
@@ -493,12 +470,10 @@ void WebGPUContext::create_texture_mipmaps(WGPUTexture texture, WGPUExtent3D tex
         std::vector<WGPUTextureView> texture_mip_views;
         texture_mip_views.reserve(texture_mip_sizes.size());
 
-        for (uint32_t level = 0; level < texture_mip_sizes.size(); ++level)
-        {
+        for (uint32_t level = 0; level < texture_mip_sizes.size(); ++level) {
             std::string label = "MIP level #" + std::to_string(level);
             texture_mip_views.push_back(
-                create_texture_view(texture, view_dimension, format, WGPUTextureAspect_All, level, 1, layer, 1, label.c_str())
-            );
+                    create_texture_view(texture, view_dimension, format, WGPUTextureAspect_All, level, 1, layer, 1, label.c_str()));
 
             if (level > 0) {
                 WGPUExtent3D previous_size = texture_mip_sizes[level - 1];
@@ -513,7 +488,6 @@ void WebGPUContext::create_texture_mipmaps(WGPUTexture texture, WGPUExtent3D tex
         mipmap_pipeline.mipmap_pipeline->set(compute_pass);
 
         for (uint32_t nextLevel = 1; nextLevel < texture_mip_sizes.size(); ++nextLevel) {
-
             Uniform source_view;
             source_view.data = texture_mip_views[nextLevel - 1];
             source_view.binding = 0;
@@ -579,11 +553,11 @@ void WebGPUContext::create_cubemap_mipmaps(WGPUTexture texture, WGPUExtent3D tex
     WGPUCommandEncoderDescriptor encoder_desc = {};
     WGPUCommandEncoder command_encoder = custom_command_encoder ? custom_command_encoder : wgpuDeviceCreateCommandEncoder(device, &encoder_desc);
 
-    WGPUComputePassDescriptor compute_pass_desc = { .label = { "cubemap_mipmaps_pass", WGPU_STRLEN} };
+    WGPUComputePassDescriptor compute_pass_desc = { .label = { "cubemap_mipmaps_pass", WGPU_STRLEN } };
     compute_pass_desc.timestampWrites = nullptr;
     WGPUComputePassEncoder compute_pass = wgpuCommandEncoderBeginComputePass(command_encoder, &compute_pass_desc);
 
-    push_debug_group(compute_pass, { "Create Cubemap Mipmaps", WGPU_STRLEN } );
+    push_debug_group(compute_pass, { "Create Cubemap Mipmaps", WGPU_STRLEN });
 
     Uniform sampler;
     sampler.data = create_sampler(WGPUAddressMode_ClampToEdge, WGPUAddressMode_ClampToEdge, WGPUAddressMode_ClampToEdge, WGPUFilterMode_Linear, WGPUFilterMode_Linear);
@@ -602,16 +576,13 @@ void WebGPUContext::create_cubemap_mipmaps(WGPUTexture texture, WGPUExtent3D tex
 
     Uniform mipmaps_face_size_uniforms[5];
 
-    for (uint32_t level = 0; level < texture_mip_sizes.size(); ++level)
-    {
+    for (uint32_t level = 0; level < texture_mip_sizes.size(); ++level) {
         std::string label = "MIP level #" + std::to_string(level);
         texture_mip_views_read.push_back(
-            create_texture_view(texture, view_dimension, format, WGPUTextureAspect_All, level, 1, 0, 6, label.c_str())
-        );
+                create_texture_view(texture, view_dimension, format, WGPUTextureAspect_All, level, 1, 0, 6, label.c_str()));
 
         texture_mip_views_write.push_back(
-            create_texture_view(texture, WGPUTextureViewDimension_2DArray, format, WGPUTextureAspect_All, level, 1, 0, 6, label.c_str())
-        );
+                create_texture_view(texture, WGPUTextureViewDimension_2DArray, format, WGPUTextureAspect_All, level, 1, 0, 6, label.c_str()));
 
         if (level > 0) {
             WGPUExtent3D previous_size = texture_mip_sizes[level - 1];
@@ -631,7 +602,6 @@ void WebGPUContext::create_cubemap_mipmaps(WGPUTexture texture, WGPUExtent3D tex
     cubemap_mipmap_pipeline.mipmap_pipeline->set(compute_pass);
 
     for (uint32_t nextLevel = 1; nextLevel < texture_mip_sizes.size(); ++nextLevel) {
-
         Uniform source_view;
         source_view.data = texture_mip_views_read[nextLevel - 1];
         source_view.binding = 0;
@@ -640,7 +610,7 @@ void WebGPUContext::create_cubemap_mipmaps(WGPUTexture texture, WGPUExtent3D tex
         output_view.data = texture_mip_views_write[nextLevel];
         output_view.binding = 1;
 
-        std::vector<Uniform*> uniforms = { &source_view, &output_view, &sampler, &mipmaps_face_size_uniforms[nextLevel - 1]};
+        std::vector<Uniform*> uniforms = { &source_view, &output_view, &sampler, &mipmaps_face_size_uniforms[nextLevel - 1] };
         WGPUBindGroup mipmaps_bind_group = create_bind_group(uniforms, cubemap_mipmap_pipeline.mipmap_shader, 0);
 
         wgpuComputePassEncoderSetBindGroup(compute_pass, 0, mipmaps_bind_group, 0, nullptr);
@@ -691,7 +661,6 @@ void WebGPUContext::create_cubemap_mipmaps(WGPUTexture texture, WGPUExtent3D tex
     //for (int i = 0; i < mip_level_count - 1; ++i) {
     //    mipmaps_face_size_uniforms->destroy();
     //}
-
 }
 
 void WebGPUContext::upload_texture(WGPUTexture texture, WGPUTextureDimension dimension, WGPUExtent3D texture_size, uint32_t mip_level, WGPUTextureFormat format, const void* data, WGPUOrigin3D origin)
@@ -711,31 +680,33 @@ void WebGPUContext::upload_texture(WGPUTexture texture, WGPUTextureDimension dim
     uint32_t pixel_size = 0;
 
     switch (format) {
-    case WGPUTextureFormat_RGBA8Unorm:
-        pixel_size = 4 * sizeof(uint8_t);
-        break;
-    case WGPUTextureFormat_RGBA8UnormSrgb:
-        pixel_size = 4 * sizeof(uint8_t);
-        break;
-    case WGPUTextureFormat_RGBA16Uint:
-        pixel_size = 4 * sizeof(uint16_t);
-        break;
-    case WGPUTextureFormat_R32Float:
-        pixel_size = sizeof(float);
-        break;
-    case WGPUTextureFormat_RGBA32Float:
-        pixel_size = 4 * sizeof(float);
-        break;
-    case WGPUTextureFormat_RGBA32Sint:
-        pixel_size = 4 * sizeof(int32_t);
-        break;
-    default:
-        assert(false);
+        case WGPUTextureFormat_RGBA8Unorm:
+            pixel_size = 4 * sizeof(uint8_t);
+            break;
+        case WGPUTextureFormat_RGBA8UnormSrgb:
+            pixel_size = 4 * sizeof(uint8_t);
+            break;
+        case WGPUTextureFormat_RGBA16Uint:
+            pixel_size = 4 * sizeof(uint16_t);
+            break;
+        case WGPUTextureFormat_R32Float:
+            pixel_size = sizeof(float);
+            break;
+        case WGPUTextureFormat_RGBA32Float:
+            pixel_size = 4 * sizeof(float);
+            break;
+        case WGPUTextureFormat_RGBA32Sint:
+            pixel_size = 4 * sizeof(int32_t);
+            break;
+        default:
+            assert(false);
     }
 
     source.bytesPerRow = pixel_size * texture_size.width;
     byte_size = source.bytesPerRow * texture_size.height;
-    if (dimension == WGPUTextureDimension_3D) byte_size = byte_size * texture_size.depthOrArrayLayers;
+    if (dimension == WGPUTextureDimension_3D) {
+        byte_size = byte_size * texture_size.depthOrArrayLayers;
+    }
 
     source.rowsPerImage = texture_size.height;
 
@@ -745,7 +716,7 @@ void WebGPUContext::upload_texture(WGPUTexture texture, WGPUTextureDimension dim
     wgpuQueueRelease(mipmap_queue);
 }
 
-WGPUBindGroupLayout WebGPUContext::create_bind_group_layout(const std::vector<WGPUBindGroupLayoutEntry> &entries, char const* label)
+WGPUBindGroupLayout WebGPUContext::create_bind_group_layout(const std::vector<WGPUBindGroupLayoutEntry>& entries, char const* label)
 {
     // Create a bind group layout
     WGPUBindGroupLayoutDescriptor bindGroupLayoutDesc = {};
@@ -840,19 +811,16 @@ void WebGPUContext::read_buffer(WGPUBuffer buffer, size_t size, void* output_dat
     callback_info.userdata1 = &userdata;
 
     callback_info.callback = [](WGPUMapAsyncStatus status, struct WGPUStringView message, void* userdata1, void* userdata2) {
-
         BufferData* buffer_data = reinterpret_cast<BufferData*>(userdata1);
 
         if (status == WGPUMapAsyncStatus_Success) {
             memcpy(buffer_data->data, wgpuBufferGetConstMappedRange(buffer_data->output_buffer, 0, buffer_data->buffer_size), buffer_data->buffer_size);
             wgpuBufferUnmap(buffer_data->output_buffer);
-        }
-        else {
+        } else {
             //spdlog::error("Error reading buffer: {}", message);
         }
 
         buffer_data->finished = true;
-
     };
 
     bool finished = false;
@@ -902,15 +870,13 @@ void WebGPUContext::read_buffer_async(WGPUBuffer buffer, size_t size, const std:
     callback_info.userdata1 = userdata;
 
     callback_info.callback = [](WGPUMapAsyncStatus status, struct WGPUStringView message, void* userdata1, void* userdata2) {
-
         BufferData* buffer_data = reinterpret_cast<BufferData*>(userdata1);
 
         if (status == WGPUMapAsyncStatus_Success) {
             const void* read_data = wgpuBufferGetConstMappedRange(buffer_data->output_buffer, 0, buffer_data->buffer_size);
             buffer_data->read_callback(read_data, buffer_data->read_userdata);
             wgpuBufferUnmap(buffer_data->output_buffer);
-        }
-        else {
+        } else {
             //spdlog::error("Error reading buffer: {}", message);
         }
 
@@ -930,15 +896,15 @@ WebGPUContext::sMipmapPipeline WebGPUContext::get_mipmap_pipeline(WGPUTextureFor
     std::string custom_define;
 
     switch (texture_format) {
-    case WGPUTextureFormat_RGBA8Unorm:
-    case WGPUTextureFormat_RGBA8UnormSrgb:
-        custom_define = "RGBA8_UNORM";
-        break;
-    case WGPUTextureFormat_RGBA32Float:
-        custom_define = "RGBA32_FLOAT";
-        break;
-    default:
-        assert(false);
+        case WGPUTextureFormat_RGBA8Unorm:
+        case WGPUTextureFormat_RGBA8UnormSrgb:
+            custom_define = "RGBA8_UNORM";
+            break;
+        case WGPUTextureFormat_RGBA32Float:
+            custom_define = "RGBA32_FLOAT";
+            break;
+        default:
+            assert(false);
     }
 
     Shader* shader = RendererStorage::get_shader_from_source(shaders::mipmaps::source, shaders::mipmaps::path, shaders::mipmaps::libraries, { custom_define });
@@ -984,11 +950,11 @@ void WebGPUContext::process_events()
 {
     wgpuInstanceProcessEvents(instance);
 
-//#ifndef __EMSCRIPTEN__
-//    wgpuInstanceProcessEvents(instance);
-//#else
-//    emscripten_sleep(50);
-//#endif
+    //#ifndef __EMSCRIPTEN__
+    //    wgpuInstanceProcessEvents(instance);
+    //#else
+    //    emscripten_sleep(50);
+    //#endif
 }
 
 //WGPURenderPipelineDescriptor WebGPUContext::create_render_pipeline_common(WGPUShaderModule render_shader_module, WGPUPipelineLayout pipeline_layout, const std::vector<WGPUVertexBufferLayout>& vertex_attributes, WGPUColorTargetState color_target, bool use_depth, bool depth_read, bool depth_write, WGPUCullMode cull_mode, WGPUPrimitiveTopology topology, uint8_t sample_count, const char* vs_entry_point, const char* fs_entry_point)
@@ -1061,7 +1027,7 @@ WGPUPipelineLayout WebGPUContext::create_pipeline_layout(const std::vector<WGPUB
 }
 
 void WebGPUContext::copy_texture_to_texture(WGPUTexture texture_src, WGPUTexture texture_dst, uint32_t src_mipmap_level, uint32_t dst_mipmap_level, const WGPUExtent3D& copy_size,
-    const WGPUOrigin3D& src_origin, const WGPUOrigin3D& dst_origin, WGPUCommandEncoder custom_command_encoder)
+        const WGPUOrigin3D& src_origin, const WGPUOrigin3D& dst_origin, WGPUCommandEncoder custom_command_encoder)
 {
     WGPUTexelCopyTextureInfo src_copy = {};
     src_copy.texture = texture_src;
@@ -1102,68 +1068,7 @@ void WebGPUContext::copy_texture_to_texture(WGPUTexture texture_src, WGPUTexture
 }
 
 WGPURenderPipeline WebGPUContext::create_render_pipeline(WGPUShaderModule render_shader_module, WGPUPipelineLayout pipeline_layout, const std::vector<WGPUVertexBufferLayout>& vertex_attributes,
-    WGPUColorTargetState color_target, const RenderPipelineDescription& description, std::vector< WGPUConstantEntry> constants)
-{    
-    WGPUVertexState vertex_state = {};
-    vertex_state.module = render_shader_module;
-    vertex_state.entryPoint = { description.vs_entry_point.c_str(), description.vs_entry_point.size() };
-    vertex_state.constantCount = constants.size();
-    vertex_state.constants = constants.data();
-    vertex_state.bufferCount = static_cast<uint32_t>(vertex_attributes.size());
-    vertex_state.buffers = vertex_attributes.data();
-
-    WGPUFragmentState fragment_state = {};
-    fragment_state.module = render_shader_module;
-    fragment_state.entryPoint = { description.fs_entry_point.c_str(), description.fs_entry_point.size() };
-    fragment_state.constantCount = constants.size();
-    fragment_state.constants = constants.data();
-    fragment_state.targetCount = 1;
-    fragment_state.targets = &color_target;
-
-    WGPUDepthStencilState depth_state = {};
-    depth_state.depthCompare = description.depth_read ? description.depth_compare : WGPUCompareFunction_Always;
-    depth_state.depthWriteEnabled = description.depth_write;
-    depth_state.format = WGPUTextureFormat_Depth32Float;
-    depth_state.stencilReadMask = 0;
-    depth_state.stencilWriteMask = 0;
-    // Configure the stencils even if unused
-    depth_state.stencilFront.compare = WGPUCompareFunction_Always;
-    depth_state.stencilFront.failOp = WGPUStencilOperation_Keep;
-    depth_state.stencilFront.depthFailOp = WGPUStencilOperation_Keep;
-    depth_state.stencilFront.passOp = WGPUStencilOperation_Keep;
-    depth_state.stencilBack.compare = WGPUCompareFunction_Always;
-    depth_state.stencilBack.failOp = WGPUStencilOperation_Keep;
-    depth_state.stencilBack.depthFailOp = WGPUStencilOperation_Keep;
-    depth_state.stencilBack.passOp = WGPUStencilOperation_Keep;
-
-    WGPURenderPipelineDescriptor pipeline_descr = {};
-    pipeline_descr.nextInChain = NULL;
-    pipeline_descr.layout = pipeline_layout;
-    pipeline_descr.vertex = vertex_state;
-
-    bool strip_topology = (description.topology == WGPUPrimitiveTopology_TriangleStrip) || (description.topology == WGPUPrimitiveTopology_LineStrip);
-
-    pipeline_descr.primitive = {
-        .topology = description.topology,
-        .stripIndexFormat = strip_topology ? WGPUIndexFormat_Uint32 : WGPUIndexFormat_Undefined, // order of the connected vertices
-        .frontFace = WGPUFrontFace_CCW,
-        .cullMode = description.cull_mode
-    },
-
-    pipeline_descr.depthStencil = description.use_depth ? &depth_state : nullptr;
-    pipeline_descr.multisample = {
-            .count = description.sample_count,
-            .mask = ~0u,
-            .alphaToCoverageEnabled = false
-    };
-
-    pipeline_descr.fragment = &fragment_state;
- 
-    return wgpuDeviceCreateRenderPipeline(device, &pipeline_descr);
-}
-
-void WebGPUContext::create_render_pipeline_async(WGPUShaderModule render_shader_module, WGPUPipelineLayout pipeline_layout, const std::vector<WGPUVertexBufferLayout>& vertex_attributes,
-    WGPUColorTargetState color_target, WGPUCreateRenderPipelineAsyncCallbackInfo callback_info, const RenderPipelineDescription& description, std::vector< WGPUConstantEntry> constants)
+        WGPUColorTargetState color_target, const RenderPipelineDescription& description, std::vector<WGPUConstantEntry> constants)
 {
     WGPUVertexState vertex_state = {};
     vertex_state.module = render_shader_module;
@@ -1213,9 +1118,70 @@ void WebGPUContext::create_render_pipeline_async(WGPUShaderModule render_shader_
 
     pipeline_descr.depthStencil = description.use_depth ? &depth_state : nullptr;
     pipeline_descr.multisample = {
-            .count = description.sample_count,
-            .mask = ~0u,
-            .alphaToCoverageEnabled = false
+        .count = description.sample_count,
+        .mask = ~0u,
+        .alphaToCoverageEnabled = false
+    };
+
+    pipeline_descr.fragment = &fragment_state;
+
+    return wgpuDeviceCreateRenderPipeline(device, &pipeline_descr);
+}
+
+void WebGPUContext::create_render_pipeline_async(WGPUShaderModule render_shader_module, WGPUPipelineLayout pipeline_layout, const std::vector<WGPUVertexBufferLayout>& vertex_attributes,
+        WGPUColorTargetState color_target, WGPUCreateRenderPipelineAsyncCallbackInfo callback_info, const RenderPipelineDescription& description, std::vector<WGPUConstantEntry> constants)
+{
+    WGPUVertexState vertex_state = {};
+    vertex_state.module = render_shader_module;
+    vertex_state.entryPoint = { description.vs_entry_point.c_str(), description.vs_entry_point.size() };
+    vertex_state.constantCount = constants.size();
+    vertex_state.constants = constants.data();
+    vertex_state.bufferCount = static_cast<uint32_t>(vertex_attributes.size());
+    vertex_state.buffers = vertex_attributes.data();
+
+    WGPUFragmentState fragment_state = {};
+    fragment_state.module = render_shader_module;
+    fragment_state.entryPoint = { description.fs_entry_point.c_str(), description.fs_entry_point.size() };
+    fragment_state.constantCount = constants.size();
+    fragment_state.constants = constants.data();
+    fragment_state.targetCount = 1;
+    fragment_state.targets = &color_target;
+
+    WGPUDepthStencilState depth_state = {};
+    depth_state.depthCompare = description.depth_read ? description.depth_compare : WGPUCompareFunction_Always;
+    depth_state.depthWriteEnabled = description.depth_write;
+    depth_state.format = WGPUTextureFormat_Depth32Float;
+    depth_state.stencilReadMask = 0;
+    depth_state.stencilWriteMask = 0;
+    // Configure the stencils even if unused
+    depth_state.stencilFront.compare = WGPUCompareFunction_Always;
+    depth_state.stencilFront.failOp = WGPUStencilOperation_Keep;
+    depth_state.stencilFront.depthFailOp = WGPUStencilOperation_Keep;
+    depth_state.stencilFront.passOp = WGPUStencilOperation_Keep;
+    depth_state.stencilBack.compare = WGPUCompareFunction_Always;
+    depth_state.stencilBack.failOp = WGPUStencilOperation_Keep;
+    depth_state.stencilBack.depthFailOp = WGPUStencilOperation_Keep;
+    depth_state.stencilBack.passOp = WGPUStencilOperation_Keep;
+
+    WGPURenderPipelineDescriptor pipeline_descr = {};
+    pipeline_descr.nextInChain = NULL;
+    pipeline_descr.layout = pipeline_layout;
+    pipeline_descr.vertex = vertex_state;
+
+    bool strip_topology = (description.topology == WGPUPrimitiveTopology_TriangleStrip) || (description.topology == WGPUPrimitiveTopology_LineStrip);
+
+    pipeline_descr.primitive = {
+        .topology = description.topology,
+        .stripIndexFormat = strip_topology ? WGPUIndexFormat_Uint32 : WGPUIndexFormat_Undefined, // order of the connected vertices
+        .frontFace = WGPUFrontFace_CCW,
+        .cullMode = description.cull_mode
+    },
+
+    pipeline_descr.depthStencil = description.use_depth ? &depth_state : nullptr;
+    pipeline_descr.multisample = {
+        .count = description.sample_count,
+        .mask = ~0u,
+        .alphaToCoverageEnabled = false
     };
 
     if (description.has_fragment_state) {
@@ -1226,7 +1192,7 @@ void WebGPUContext::create_render_pipeline_async(WGPUShaderModule render_shader_
 }
 
 WGPUComputePipeline WebGPUContext::create_compute_pipeline(WGPUShaderModule compute_shader_module, WGPUPipelineLayout pipeline_layout,
-    const char* entry_point, std::vector< WGPUConstantEntry> constants)
+        const char* entry_point, std::vector<WGPUConstantEntry> constants)
 {
     WGPUComputePipelineDescriptor computePipelineDesc = {};
     computePipelineDesc.compute.nextInChain = nullptr;
@@ -1240,7 +1206,7 @@ WGPUComputePipeline WebGPUContext::create_compute_pipeline(WGPUShaderModule comp
 }
 
 void WebGPUContext::create_compute_pipeline_async(WGPUShaderModule compute_shader_module, WGPUPipelineLayout pipeline_layout,
-    WGPUCreateComputePipelineAsyncCallbackInfo callback_info, const char* entry_point, std::vector< WGPUConstantEntry> constants)
+        WGPUCreateComputePipelineAsyncCallbackInfo callback_info, const char* entry_point, std::vector<WGPUConstantEntry> constants)
 {
     WGPUComputePipelineDescriptor computePipelineDesc = {};
     computePipelineDesc.compute.nextInChain = nullptr;
@@ -1250,7 +1216,7 @@ void WebGPUContext::create_compute_pipeline_async(WGPUShaderModule compute_shade
     computePipelineDesc.compute.module = compute_shader_module;
     computePipelineDesc.layout = pipeline_layout;
 
-   wgpuDeviceCreateComputePipelineAsync(device, &computePipelineDesc, callback_info);
+    wgpuDeviceCreateComputePipelineAsync(device, &computePipelineDesc, callback_info);
 }
 
 WGPUVertexBufferLayout WebGPUContext::create_vertex_buffer_layout(const std::vector<WGPUVertexAttribute>& vertex_attributes, uint64_t stride, WGPUVertexStepMode step_mode)
@@ -1289,7 +1255,7 @@ void WebGPUContext::generate_brdf_lut_texture()
     WGPUCommandEncoderDescriptor encoder_desc = {};
     WGPUCommandEncoder command_encoder = wgpuDeviceCreateCommandEncoder(device, &encoder_desc);
 
-    WGPUComputePassDescriptor compute_pass_desc = { .label = { "brdf_lut_pass", WGPU_STRLEN} };
+    WGPUComputePassDescriptor compute_pass_desc = { .label = { "brdf_lut_pass", WGPU_STRLEN } };
     compute_pass_desc.timestampWrites = nullptr;
     WGPUComputePassEncoder compute_pass = wgpuCommandEncoderBeginComputePass(command_encoder, &compute_pass_desc);
 
@@ -1315,7 +1281,7 @@ void WebGPUContext::generate_brdf_lut_texture()
     wgpuCommandBufferRelease(commands);
     wgpuComputePassEncoderRelease(compute_pass);
     wgpuCommandEncoderRelease(command_encoder);
-    
+
     wgpuQueueRelease(brdf_queue);
 }
 
@@ -1326,7 +1292,7 @@ void WebGPUContext::generate_prefiltered_env_texture(Texture* prefiltered_env_te
     // temporal texture to store panorama to cubemap result and to generate mipmaps
     Texture cubemap_texture;
     cubemap_texture.create(WGPUTextureDimension_2D, WGPUTextureFormat_RGBA32Float, { ENVIRONMENT_RESOLUTION, ENVIRONMENT_RESOLUTION, 6 },
-        static_cast<WGPUTextureUsage>(WGPUTextureUsage_StorageBinding | WGPUTextureUsage_TextureBinding | WGPUTextureUsage_CopySrc), 6, 1, nullptr);
+            static_cast<WGPUTextureUsage>(WGPUTextureUsage_StorageBinding | WGPUTextureUsage_TextureBinding | WGPUTextureUsage_CopySrc), 6, 1, nullptr);
 
     Uniform mipmaps_face_size_uniforms[5];
     Uniform cubemap_mipmaps_uniforms[5];
@@ -1379,7 +1345,7 @@ void WebGPUContext::generate_prefiltered_env_texture(Texture* prefiltered_env_te
         std::vector<Uniform*> uniforms = { &hdr_uniform, &cubemap_all_faces_output_uniform, &sampler };
         WGPUBindGroup bind_group = create_bind_group(uniforms, panorama_to_cubemap_shader, 0);
 
-        WGPUComputePassDescriptor compute_pass_desc = { .label = { "panorama_to_cubemap_pass", WGPU_STRLEN} };
+        WGPUComputePassDescriptor compute_pass_desc = { .label = { "panorama_to_cubemap_pass", WGPU_STRLEN } };
         compute_pass_desc.timestampWrites = nullptr;
         WGPUComputePassEncoder compute_pass = wgpuCommandEncoderBeginComputePass(command_encoder, &compute_pass_desc);
 
@@ -1418,7 +1384,7 @@ void WebGPUContext::generate_prefiltered_env_texture(Texture* prefiltered_env_te
         WGPUBindGroup bind_groups[5];
 
         for (uint32_t i = 0; i < 5; ++i) {
-            std::vector<Uniform*> uniforms = { &cubemap_all_input_output_uniform, &cubemap_mipmaps_uniforms[i], &sampler, &current_level_uniform, &mipmaps_face_size_uniforms[i]};
+            std::vector<Uniform*> uniforms = { &cubemap_all_input_output_uniform, &cubemap_mipmaps_uniforms[i], &sampler, &current_level_uniform, &mipmaps_face_size_uniforms[i] };
             bind_groups[i] = create_bind_group(uniforms, prefiltered_env_shader, 0);
         }
 
@@ -1430,7 +1396,7 @@ void WebGPUContext::generate_prefiltered_env_texture(Texture* prefiltered_env_te
             wgpuQueueWriteBuffer(prefilter_queue, std::get<WGPUBuffer>(current_level_uniform.data), i * buffer_stride, &prefilter_env_uniform_data, sizeof(PrefilterEnvUniformData));
         }
 
-        WGPUComputePassDescriptor compute_pass_desc = { .label = { "prefilter_env_pass", WGPU_STRLEN} };
+        WGPUComputePassDescriptor compute_pass_desc = { .label = { "prefilter_env_pass", WGPU_STRLEN } };
         compute_pass_desc.timestampWrites = nullptr;
         WGPUComputePassEncoder compute_pass = wgpuCommandEncoderBeginComputePass(command_encoder, &compute_pass_desc);
 
@@ -1445,7 +1411,6 @@ void WebGPUContext::generate_prefiltered_env_texture(Texture* prefiltered_env_te
         uint32_t dynamicOffset = 0;
 
         for (uint32_t i = 0; i < 5; ++i) {
-
             dynamicOffset = i * buffer_stride;
 
             wgpuComputePassEncoderSetBindGroup(compute_pass, 0, bind_groups[i], 1, &dynamicOffset);

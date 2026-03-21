@@ -171,7 +171,7 @@ PackConstructorInitializers: NextLine
 # PenaltyExcessCharacter: 1000000
 # PenaltyIndentedWhitespace: 0
 # PenaltyReturnTypeOnItsOwnLine: 60
-# PointerAlignment: Right
+PointerAlignment: Left
 # QualifierAlignment: Leave
 # ReferenceAlignment: Pointer
 # ReflowComments: true
@@ -229,7 +229,20 @@ Standard: c++20
 #   - Q_UNUSED
 #   - QT_REQUIRE_VERSION
 TabWidth: 4
-UseTab: Always
+UseTab: Never
+BraceWrapping:
+  AfterClass:      false
+  AfterControlStatement: false
+  AfterEnum:       false
+  AfterFunction:   true
+  AfterNamespace:  true
+  AfterObjCDeclaration: false
+  AfterStruct:     false
+  AfterUnion:      false
+  BeforeCatch:     false
+  BeforeElse:      false
+  IndentBraces:    false
+BreakBeforeBraces: Custom
 # VerilogBreakBetweenInstancePorts: true
 # WhitespaceSensitiveMacros:
 #   - BOOST_PP_STRINGIZE

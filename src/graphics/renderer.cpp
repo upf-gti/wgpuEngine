@@ -16,36 +16,41 @@
 
 #endif
 
-#include "graphics/texture.h"
 #include "framework/camera/camera.h"
 #include "framework/nodes/light_3d.h"
+#include "graphics/debug/renderdoc_capture.h"
 #include "graphics/mesh.h"
 #include "graphics/pipeline.h"
-#include "graphics/shader.h"
-#include "graphics/debug/renderdoc_capture.h"
 #include "graphics/renderer_storage.h"
+#include "graphics/shader.h"
+#include "graphics/texture.h"
 
-#include "shaders/mesh_forward.wgsl.gen.h"
 #include "shaders/AABB_shader.wgsl.gen.h"
+#include "shaders/mesh_forward.wgsl.gen.h"
 #include "shaders/mesh_shadow.wgsl.gen.h"
 
-#include "framework/parsers/parse_scene.h"
-#include "framework/nodes/mesh_instance_3d.h"
-#include "framework/nodes/gs_node.h"
 #include "framework/camera/camera_2d.h"
 #include "framework/camera/flyover_camera.h"
 #include "framework/camera/orbit_camera.h"
 #include "framework/input.h"
+#include "framework/nodes/gs_node.h"
+#include "framework/nodes/mesh_instance_3d.h"
+#include "framework/parsers/parse_scene.h"
 #include "framework/ui/io.h"
 
 #include <algorithm>
 
-#include "shaders/quad_mirror.wgsl.gen.h"
 #include "shaders/gaussian_splatting/gs_render.wgsl.gen.h"
+#include "shaders/quad_mirror.wgsl.gen.h"
 
 #include "glm/gtx/quaternion.hpp"
 
 #include "spdlog/spdlog.h"
+
+#ifdef __EMSCRIPTEN__
+#include <emscripten/emscripten.h>
+#include <emscripten/html5.h>
+#endif
 
 Renderer* Renderer::instance = nullptr;
 
@@ -138,6 +143,29 @@ int Renderer::initialize()
         return 1;
     }
 
+#ifdef XR_SUPPORT
+
+    xr_context->z_near = z_near;
+    xr_context->z_far = z_far;
+
+    if (is_xr_available && !xr_context->init(webgpu_context)) {
+        spdlog::error("Could not initialize XR context");
+        is_xr_available = false;
+    }
+
+    if (is_xr_available) {
+        webgpu_context->render_width = xr_context->viewport.z;
+        webgpu_context->render_height = xr_context->viewport.w;
+    }
+#endif
+
+    //if (!is_xr_available) {
+    //    webgpu_context->render_width = webgpu_context->screen_width * screen_pixel_ratio;
+    //    webgpu_context->render_height = webgpu_context->screen_height * screen_pixel_ratio;
+    //}
+
+    spdlog::info("Render size: {}x{}", webgpu_context->render_width, webgpu_context->render_height);
+
     bool create_screen_swapchain = true;
 
     if (is_xr_available) {
@@ -162,27 +190,6 @@ int Renderer::initialize()
 int Renderer::post_initialize()
 {
     webgpu_context->print_device_info();
-
-#ifdef XR_SUPPORT
-
-    xr_context->z_near = z_near;
-    xr_context->z_far = z_far;
-
-    if (is_xr_available && !xr_context->init(webgpu_context)) {
-        spdlog::error("Could not initialize XR context");
-        is_xr_available = false;
-    }
-
-    if (is_xr_available) {
-        webgpu_context->render_width = xr_context->viewport.z;
-        webgpu_context->render_height = xr_context->viewport.w;
-    }
-#endif
-
-    if (!is_xr_available) {
-        webgpu_context->render_width = webgpu_context->screen_width;
-        webgpu_context->render_height = webgpu_context->screen_height;
-    }
 
     // Create the command encoder
     WGPUCommandEncoderDescriptor encoder_desc = {};
@@ -218,14 +225,14 @@ int Renderer::post_initialize()
 
     WGPUBlendState* blend_state = new WGPUBlendState;
     blend_state->color = {
-            .operation = WGPUBlendOperation_Add,
-            .srcFactor = WGPUBlendFactor_SrcAlpha,
-            .dstFactor = WGPUBlendFactor_OneMinusSrcAlpha,
+        .operation = WGPUBlendOperation_Add,
+        .srcFactor = WGPUBlendFactor_SrcAlpha,
+        .dstFactor = WGPUBlendFactor_OneMinusSrcAlpha,
     };
     blend_state->alpha = {
-            .operation = WGPUBlendOperation_Add,
-            .srcFactor = WGPUBlendFactor_Zero,
-            .dstFactor = WGPUBlendFactor_One,
+        .operation = WGPUBlendOperation_Add,
+        .srcFactor = WGPUBlendFactor_Zero,
+        .dstFactor = WGPUBlendFactor_One,
     };
 
     color_target.blend = blend_state;
@@ -266,7 +273,6 @@ int Renderer::post_initialize()
 
 void Renderer::clean()
 {
-
 #if defined(XR_SUPPORT)
 
     xr_context->clean();
@@ -283,8 +289,7 @@ void Renderer::clean()
 #endif // USE_MIRROR_WINDOW
 
     uint8_t num_textures = is_xr_available ? 2 : 1;
-    for (int i = 0; i < num_textures; ++i)
-    {
+    for (int i = 0; i < num_textures; ++i) {
         wgpuTextureViewRelease(eye_depth_texture_view[i]);
     }
 
@@ -356,8 +361,7 @@ void Renderer::update(float delta_time)
         if (!io.WantCaptureMouse && !io.WantCaptureKeyboard && !IO::any_focus()) {
             camera_3d->update(delta_time);
         }
-    }
-    else {
+    } else {
         camera_3d->update(delta_time);
     }
 }
@@ -377,7 +381,6 @@ void Renderer::render()
             glm::ivec4 viewport = xr_context->viewport;
 
             if (viewport.z != webgpu_context->render_width || viewport.w != webgpu_context->render_height) {
-
                 webgpu_context->render_width = viewport.z;
                 webgpu_context->render_height = viewport.w;
 
@@ -396,10 +399,10 @@ void Renderer::render()
     }
 
     if (!is_xr_available || use_mirror_screen) {
-
         wgpuSurfaceGetCurrentTexture(webgpu_context->surface, &screen_surface_texture);
         if (screen_surface_texture.status != WGPUSurfaceGetCurrentTextureStatus_SuccessOptimal) {
-            spdlog::error("Error getting swapchain texture");
+            // Probably minimized window
+            ImGui::EndFrame();
             return;
         }
 
@@ -496,7 +499,6 @@ void Renderer::render()
 
     // Render 2D
     if (!is_xr_available || use_mirror_screen) {
-
         camera_2d_data.eye = camera_2d->get_eye();
         camera_2d_data.view_projection = camera_2d->get_view_projection();
 
@@ -510,8 +512,7 @@ void Renderer::render()
         if (msaa_count > 1) {
             render_pass_color_attachment.view = multisample_textures_views[EYE_LEFT];
             render_pass_color_attachment.resolveTarget = screen_surface_texture_view;
-        }
-        else {
+        } else {
             render_pass_color_attachment.view = screen_surface_texture_view;
         }
 
@@ -545,7 +546,7 @@ void Renderer::render()
 
 // TODO: remove the ifdef, IMGui brings a viewport issue that can not be fixed by setting the viewport via webgpu
 #ifndef BACKEND_METAL
-    // render imgui
+        // render imgui
         {
             WGPURenderPassColorAttachment color_attachments = {};
             color_attachments.view = screen_surface_texture_view;
@@ -595,7 +596,6 @@ void Renderer::render()
             wgpuTextureViewRelease(xr_context->get_swapchain_view(eye_idx));
         }
 #endif // WEBXR_SUPPORT
-
     }
 #endif // XR_SUPPORT
 
@@ -614,7 +614,7 @@ void Renderer::render()
 }
 
 void Renderer::render_camera(const std::vector<std::vector<sRenderData>>& render_lists, WGPUTextureView framebuffer_view, WGPUTextureView depth_view,
-    const sInstanceData& instance_data, WGPUBindGroup camera_bind_group, bool render_transparents, const std::string& pass_name, uint32_t eye_idx, uint32_t camera_offset)
+        const sInstanceData& instance_data, WGPUBindGroup camera_bind_group, bool render_transparents, const std::string& pass_name, uint32_t eye_idx, uint32_t camera_offset)
 {
     {
         // Prepare the color attachment
@@ -624,8 +624,7 @@ void Renderer::render_camera(const std::vector<std::vector<sRenderData>>& render
             if (msaa_count > 1) {
                 render_pass_color_attachment.view = multisample_textures_views[eye_idx];
                 render_pass_color_attachment.resolveTarget = framebuffer_view;
-            }
-            else {
+            } else {
                 render_pass_color_attachment.view = framebuffer_view;
             }
 
@@ -742,7 +741,6 @@ void Renderer::submit_global_command_encoder()
 
     wgpuCommandBufferRelease(commands);
     wgpuCommandEncoderRelease(global_command_encoder);
-
 }
 
 void Renderer::set_camera_params(eCameraType camera_type, const glm::vec3& camera_eye, const glm::vec3& camera_center)
@@ -752,8 +750,7 @@ void Renderer::set_camera_params(eCameraType camera_type, const glm::vec3& camer
     Camera* old_camera = camera_3d;
     if (camera_type == CAMERA_FLYOVER) {
         camera_3d = new FlyoverCamera();
-    }
-    else if (camera_type == CAMERA_ORBIT) {
+    } else if (camera_type == CAMERA_ORBIT) {
         camera_3d = new OrbitCamera();
     }
 
@@ -761,8 +758,7 @@ void Renderer::set_camera_params(eCameraType camera_type, const glm::vec3& camer
 
     if (old_camera) {
         camera_3d->look_at(old_camera->get_eye(), old_camera->get_center(), old_camera->get_up());
-    }
-    else {
+    } else {
         camera_3d->look_at(camera_eye, camera_center, glm::vec3(0.0f, 1.0f, 0.0f));
     }
 
@@ -789,27 +785,24 @@ void Renderer::init_lighting_bind_group()
         wgpuTextureViewRelease(std::get<WGPUTextureView>(irradiance_texture_uniform.data));
         wgpuSamplerRelease(std::get<WGPUSampler>(ibl_sampler_uniform.data));
         wgpuBindGroupRelease(lighting_bind_group);
-    }
-    else {
+    } else {
         // only created once
         brdf_lut_uniform.data = webgpu_context->brdf_lut_texture->get_view();
         brdf_lut_uniform.binding = 1;
     }
 
     if (irradiance_texture) {
-
         irradiance_texture_uniform.data = irradiance_texture->get_view(WGPUTextureViewDimension_Cube, 0, 6, 0, 6);
         irradiance_texture_uniform.binding = 0;
 
         ibl_sampler_uniform.data = webgpu_context->create_sampler(
-            WGPUAddressMode_ClampToEdge,
-            WGPUAddressMode_ClampToEdge,
-            WGPUAddressMode_ClampToEdge,
-            WGPUFilterMode_Linear,
-            WGPUFilterMode_Linear,
-            WGPUMipmapFilterMode_Linear,
-            static_cast<float>(irradiance_texture->get_mipmap_count())
-        );
+                WGPUAddressMode_ClampToEdge,
+                WGPUAddressMode_ClampToEdge,
+                WGPUAddressMode_ClampToEdge,
+                WGPUFilterMode_Linear,
+                WGPUFilterMode_Linear,
+                WGPUMipmapFilterMode_Linear,
+                static_cast<float>(irradiance_texture->get_mipmap_count()));
 
         ibl_sampler_uniform.binding = 2;
     }
@@ -830,39 +823,37 @@ void Renderer::init_lighting_bind_group()
     // Shadow maps
     {
         shadow_array_texture = webgpu_context->create_texture(
-            WGPUTextureDimension_2D,
-            WGPUTextureFormat_Depth32Float,
-            { SHADOW_MAP_SIZE, SHADOW_MAP_SIZE, MAX_LIGHTS },
-            WGPUTextureUsage_TextureBinding | WGPUTextureUsage_CopyDst,
-            1,
-            1,
-            "shadow_array_texture"
-        );
+                WGPUTextureDimension_2D,
+                WGPUTextureFormat_Depth32Float,
+                { SHADOW_MAP_SIZE, SHADOW_MAP_SIZE, MAX_LIGHTS },
+                WGPUTextureUsage_TextureBinding | WGPUTextureUsage_CopyDst,
+                1,
+                1,
+                "shadow_array_texture");
 
         shadow_maps_array.data = webgpu_context->create_texture_view(
-            shadow_array_texture,
-            WGPUTextureViewDimension_2DArray,
-            WGPUTextureFormat_Depth32Float,
-            WGPUTextureAspect_DepthOnly,
-            0,
-            1,
-            0,
-            MAX_LIGHTS,
-            "shadow_depth_texture_view"
-        );
+                shadow_array_texture,
+                WGPUTextureViewDimension_2DArray,
+                WGPUTextureFormat_Depth32Float,
+                WGPUTextureAspect_DepthOnly,
+                0,
+                1,
+                0,
+                MAX_LIGHTS,
+                "shadow_depth_texture_view");
         shadow_maps_array.binding = 5;
 
         // Shadowmap sampler
         shadow_sampler.data = webgpu_context->create_sampler(
-            WGPUAddressMode_ClampToEdge,
-            WGPUAddressMode_ClampToEdge,
-            WGPUAddressMode_ClampToEdge,
-            WGPUFilterMode_Linear,
-            WGPUFilterMode_Linear,
-            WGPUMipmapFilterMode_Linear,
-            1.0f,
-            1u,
-            WGPUCompareFunction_Greater // reverse Z
+                WGPUAddressMode_ClampToEdge,
+                WGPUAddressMode_ClampToEdge,
+                WGPUAddressMode_ClampToEdge,
+                WGPUFilterMode_Linear,
+                WGPUFilterMode_Linear,
+                WGPUMipmapFilterMode_Linear,
+                1.0f,
+                1u,
+                WGPUCompareFunction_Greater // reverse Z
         );
         shadow_sampler.binding = 6;
     }
@@ -879,14 +870,13 @@ void Renderer::init_depth_buffers()
     }
 
     uint8_t num_textures = is_xr_available ? 2 : 1;
-    for (int i = 0; i < num_textures; ++i)
-    {
+    for (int i = 0; i < num_textures; ++i) {
         eye_depth_textures[i].create(
-            WGPUTextureDimension_2D,
-            WGPUTextureFormat_Depth32Float,
-            { webgpu_context->render_width, webgpu_context->render_height, 1 },
-            WGPUTextureUsage_RenderAttachment,
-            1, msaa_count, nullptr);
+                WGPUTextureDimension_2D,
+                WGPUTextureFormat_Depth32Float,
+                { webgpu_context->render_width, webgpu_context->render_height, 1 },
+                WGPUTextureUsage_RenderAttachment,
+                1, msaa_count, nullptr);
 
         if (eye_depth_texture_view[i]) {
             wgpuTextureViewRelease(eye_depth_texture_view[i]);
@@ -896,7 +886,7 @@ void Renderer::init_depth_buffers()
         eye_depth_texture_view[i] = eye_depth_textures[i].get_view();
     }
 
-    spdlog::trace("Depth buffers initialized with size ({}, {})", webgpu_context->render_width, webgpu_context->render_height);
+    spdlog::info("Depth buffers initialized with size ({}, {})", webgpu_context->render_width, webgpu_context->render_height);
 }
 
 void Renderer::init_multisample_textures()
@@ -911,11 +901,11 @@ void Renderer::init_multisample_textures()
     uint8_t num_textures = is_xr_available ? 2 : 1;
     for (int i = 0; i < num_textures; ++i) {
         multisample_textures[i].create(
-            WGPUTextureDimension_2D,
-            swapchain_format,
-            { webgpu_context->render_width, webgpu_context->render_height, 1 },
-            WGPUTextureUsage_RenderAttachment,
-            1, msaa_count, nullptr);
+                WGPUTextureDimension_2D,
+                swapchain_format,
+                { webgpu_context->render_width, webgpu_context->render_height, 1 },
+                WGPUTextureUsage_RenderAttachment,
+                1, msaa_count, nullptr);
 
         if (multisample_textures_views[i]) {
             wgpuTextureViewRelease(multisample_textures_views[i]);
@@ -923,6 +913,8 @@ void Renderer::init_multisample_textures()
 
         multisample_textures_views[i] = multisample_textures[i].get_view();
     }
+
+    spdlog::info("Multisample textures initialized with size ({}, {})", webgpu_context->render_width, webgpu_context->render_height);
 }
 
 void Renderer::init_timestamp_queries()
@@ -957,14 +949,13 @@ void Renderer::get_timestamps()
         last_frame_timestamps = time_diffs;
 
         delete query_index_cpy;
-        };
+    };
 
     // copy query_index, otherwise it'd have been already modified when reading
     uint8_t* query_index_cpy = new uint8_t();
     *query_index_cpy = query_index;
     webgpu_context->read_buffer_async(timestamp_query_buffer, sizeof(uint64_t) * maximum_query_sets, read_callback, query_index_cpy);
 #endif
-
 }
 
 void Renderer::set_msaa_count(uint8_t msaa_count, bool is_initial_value)
@@ -1008,15 +999,13 @@ void Renderer::prepare_cull_instancing(const Camera& camera, std::vector<std::ve
     }
 
     // Get all surfaces from entity meshes
-    for (auto render_list_data : render_entity_list)
-    {
+    for (auto render_list_data : render_entity_list) {
         Mesh* mesh = render_list_data.mesh;
         glm::mat4x4 global_matrix = render_list_data.global_matrix;
 
         const std::vector<Surface*>& surfaces = mesh->get_surfaces();
 
         for (Surface* surface : surfaces) {
-
             Material* material_override = mesh->get_surface_material_override(surface);
             Material* material = material_override ? material_override : surface->get_material();
 
@@ -1035,7 +1024,6 @@ void Renderer::prepare_cull_instancing(const Camera& camera, std::vector<std::ve
             }
 
             if (!material_is_2d && mesh->get_frustum_culling_enabled()) {
-
                 const AABB& surface_aabb = surface->get_aabb();
 
                 AABB aabb_transformed = surface_aabb.transform(global_matrix);
@@ -1053,8 +1041,7 @@ void Renderer::prepare_cull_instancing(const Camera& camera, std::vector<std::ve
 
             if (material_is_2d) {
                 list = material->get_transparency_type() == ALPHA_BLEND ? RENDER_LIST_2D_TRANSPARENT : RENDER_LIST_2D;
-            }
-            else if (material->get_transparency_type() == ALPHA_BLEND) {
+            } else if (material->get_transparency_type() == ALPHA_BLEND) {
                 list = RENDER_LIST_TRANSPARENT;
             }
 
@@ -1063,23 +1050,27 @@ void Renderer::prepare_cull_instancing(const Camera& camera, std::vector<std::ve
     }
 
     for (int i = 0; i < RENDER_LIST_COUNT; ++i) {
-
         instances_data.instances_data[i].clear();
         instances_data.instances_data[i].resize(render_lists[i].size());
 
         /*if (i != RENDER_LIST_TRANSPARENT)*/ {
             // Sort opaques render_list
             std::sort(render_lists[i].begin(), render_lists[i].end(), [](auto& lhs, auto& rhs) {
-
                 Material* lhs_mat = lhs.material;
                 Material* rhs_mat = rhs.material;
 
                 bool equal_priority = lhs_mat->get_priority() == rhs_mat->get_priority();
                 bool equal_surface = lhs.surface == rhs.surface;
 
-                if (lhs_mat->get_priority() > rhs_mat->get_priority()) return true;
-                if (equal_priority && lhs.surface > rhs.surface) return true;
-                if (equal_priority && equal_surface && lhs_mat > rhs_mat) return true;
+                if (lhs_mat->get_priority() > rhs_mat->get_priority()) {
+                    return true;
+                }
+                if (equal_priority && lhs.surface > rhs.surface) {
+                    return true;
+                }
+                if (equal_priority && equal_surface && lhs_mat > rhs_mat) {
+                    return true;
+                }
 
                 return false;
             });
@@ -1106,7 +1097,6 @@ void Renderer::prepare_cull_instancing(const Camera& camera, std::vector<std::ve
 
             uint32_t repeats = 0;
             for (uint32_t j = 0; j < render_lists[i].size(); ++j) {
-
                 const sRenderData& render_data = render_lists[i][j];
 
                 Material* material = render_data.material;
@@ -1114,8 +1104,7 @@ void Renderer::prepare_cull_instancing(const Camera& camera, std::vector<std::ve
                 // Repeated MeshInstance3D, must be instanced
                 if (prev_surface == render_data.surface && prev_material == material && !material->get_is_2D()) {
                     repeats++;
-                }
-                else {
+                } else {
                     if (repeats > 0) {
                         for (uint32_t k = 1; k <= repeats; k++) {
                             render_lists[i][j - k].repeat = k;
@@ -1142,7 +1131,6 @@ void Renderer::prepare_cull_instancing(const Camera& camera, std::vector<std::ve
         uint32_t instances = static_cast<uint32_t>(instances_data.instances_data[i].size());
 
         if (instances > (instances_data.instances_data_uniforms[i].buffer_size / sizeof(sUniformData))) {
-
             //std::vector<sUniformData> default_data = { instances, { glm::mat4x4(1.0f), glm::vec4(1.0f) } };
 
             if (std::holds_alternative<WGPUBuffer>(instances_data.instances_data_uniforms[i].data)) {
@@ -1156,8 +1144,7 @@ void Renderer::prepare_cull_instancing(const Camera& camera, std::vector<std::ve
             // Recreate bind groups
             std::vector<Uniform*> uniforms = { &instances_data.instances_data_uniforms[i] };
             Shader* prev_shader = nullptr;
-            for (uint32_t j = 0; j < render_lists[i].size(); ) {
-
+            for (uint32_t j = 0; j < render_lists[i].size();) {
                 const sRenderData& render_data = render_lists[i][j];
 
                 if (instances_data.instances_bind_groups[i]) {
@@ -1169,11 +1156,9 @@ void Renderer::prepare_cull_instancing(const Camera& camera, std::vector<std::ve
                 j += render_data.repeat;
             }
 
+        } else if (instances > 0) {
+            webgpu_context->update_buffer(std::get<WGPUBuffer>(instances_data.instances_data_uniforms[i].data), 0, instances_data.instances_data[i].data(), sizeof(sUniformData) * instances);
         }
-        else
-            if (instances > 0) {
-                webgpu_context->update_buffer(std::get<WGPUBuffer>(instances_data.instances_data_uniforms[i].data), 0, instances_data.instances_data[i].data(), sizeof(sUniformData) * instances);
-            }
     }
 }
 
@@ -1186,7 +1171,6 @@ void Renderer::render_shadow_maps()
     std::vector<std::vector<sRenderData>> render_lists(RENDER_LIST_COUNT);
 
     for (uint32_t light_idx = 0; light_idx < lights_with_shadow.size(); ++light_idx) {
-
         Light3D* light = lights_with_shadow[light_idx];
 
         const Camera& light_camera = light->get_light_camera();
@@ -1228,8 +1212,7 @@ void Renderer::render_render_list(WGPURenderPassEncoder render_pass, const std::
 
     const Material* prev_material = nullptr;
 
-    for (int i = 0; i < render_list.size(); ) {
-
+    for (int i = 0; i < render_list.size();) {
         const sRenderData& render_data = render_list[i];
 
         const Material* material = render_data.material;
@@ -1258,12 +1241,11 @@ void Renderer::render_render_list(WGPURenderPassEncoder render_pass, const std::
 
         // Set bind groups
 
-        if (material != prev_material && (material->get_fragment_write() || (!material->get_fragment_write() && material->get_use_skinning())))
-        {
+        if (material != prev_material && (material->get_fragment_write() || (!material->get_fragment_write() && material->get_use_skinning()))) {
             wgpuRenderPassEncoderSetBindGroup(render_pass, 2, renderer_storage->get_material_bind_group(material), 0, nullptr);
 
             if ((!prev_material && material->get_type() == MATERIAL_PBR) ||
-                (prev_material && prev_material->get_type() != MATERIAL_PBR && material->get_type() == MATERIAL_PBR)) {
+                    (prev_material && prev_material->get_type() != MATERIAL_PBR && material->get_type() == MATERIAL_PBR)) {
                 wgpuRenderPassEncoderSetBindGroup(render_pass, 3, lighting_bind_group, 0, nullptr);
             }
 
@@ -1294,11 +1276,9 @@ void Renderer::render_render_list(WGPURenderPassEncoder render_pass, const std::
             wgpuRenderPassEncoderSetIndexBuffer(render_pass, index_buffer, WGPUIndexFormat_Uint32, 0, render_data.surface->get_indices_byte_size());
 
             wgpuRenderPassEncoderDrawIndexed(render_pass, render_data.surface->get_index_count(), render_data.repeat, 0, 0, i);
-        }
-        else {
+        } else {
             wgpuRenderPassEncoderDraw(render_pass, render_data.surface->get_vertex_count(), render_data.repeat, 0, i);
         }
-
 
         //#ifndef NDEBUG
         //        webgpu_context->pop_debug_group(render_pass);
@@ -1343,7 +1323,6 @@ void Renderer::render_splats(WGPURenderPassEncoder render_pass, const std::vecto
 #endif
 
     for (GSNode* gs_node : gs_scenes_list) {
-
         if (!gs_render_pipeline.set(render_pass)) {
             continue;
         }
@@ -1453,13 +1432,23 @@ void Renderer::add_light(Light3D* new_light)
 
 void Renderer::resize_window(int width, int height)
 {
-    webgpu_context->create_swapchain(width, height);
+    if (width == 0 || height == 0) {
+        spdlog::error("Can not create swapchain with size ({}, {})", width, height);
+        return;
+    }
 
     if (!is_xr_available) {
+        double pixel_ratio = 1.0;
+
+#ifdef __EMSCRIPTEN__
+        pixel_ratio = emscripten_get_device_pixel_ratio();
+#endif
+
         webgpu_context->screen_width = width;
         webgpu_context->screen_height = height;
-        webgpu_context->render_width = width;
-        webgpu_context->render_height = height;
+
+        webgpu_context->render_width = static_cast<uint32_t>(width * pixel_ratio);
+        webgpu_context->render_height = static_cast<uint32_t>(height * pixel_ratio);
 
         if (camera_3d) {
             camera_3d->set_perspective(glm::radians(45.0f), webgpu_context->render_width / static_cast<float>(webgpu_context->render_height), z_near, z_far);
@@ -1469,6 +1458,8 @@ void Renderer::resize_window(int width, int height)
             camera_2d->set_orthographic(0.0f, static_cast<float>(webgpu_context->render_width), static_cast<float>(webgpu_context->render_height), 0.0f, -1.0f, 1.0f);
         }
     }
+
+    webgpu_context->create_swapchain(webgpu_context->render_width, webgpu_context->render_height);
 
     init_depth_buffers();
     init_multisample_textures();
@@ -1496,7 +1487,7 @@ WebGPUContext* Renderer::get_webgpu_context()
 GLFWwindow* Renderer::get_glfw_window()
 {
     return webgpu_context->window;
-};
+}
 
 #if defined(USE_MIRROR_WINDOW)
 

@@ -4,40 +4,46 @@
 <head>
     <meta charset="utf-8">
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <title>Web-wgpuEngine</title>
-    <link rel="stylesheet" href="https://cdn.skypack.dev/lexgui@0.7.15/build/lexgui.css">
+    <title>wgpuEngine (Web Build)</title>
     <script src="https://mrdoob.github.io/stats.js/build/stats.min.js"></script>
-    <script type="importmap">
-        {
-          "imports": {
-            "lexgui": "https://cdn.skypack.dev/lexgui@0.7.15/build/lexgui.module.js",
-            "lexgui/extensions/": "https://cdn.skypack.dev/lexgui@0.7.15/build/extensions/"
-          }
-        }
-    </script>
 </head>
 
 <body>
     <button id="xr-button" style="z-index:10;position:absolute;top:1%;left:30%" disabled>WebXR or WebGPU not supported</button>
     <canvas class="emscripten" id="canvas" oncontextmenu="event.preventDefault()" tabindex=-1
-            style="height:100%;width:100%;resize:both;outline:none;position:relative;"></canvas>
+            style="outline:none;position:absolute;"></canvas>
     <template id="main-script">
         {{{ SCRIPT }}}
     </template>
+    <style>
+        html, body, canvas {
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+    </style>
     <script type='text/javascript'>
 
         var Module = {
+            isHiDPIAware: true,
             html5ResizeTarget: "#canvas-area",
             preRun: [],
             postRun: [],
             canvas: (function () {
                 var canvas = document.getElementById('canvas');
 
+                canvas.width = window.innerWidth
+                canvas.height = window.innerHeight
+
+                function scaleCanvas() {
+                    const devicePixelRatio = window.devicePixelRatio;
+                    canvas.style.width = window.innerWidth + "px";
+                    canvas.style.height = window.innerHeight + "px";
+                    canvas.width = window.innerWidth * devicePixelRatio
+                    canvas.height = window.innerHeight * devicePixelRatio
+                }
+
                 // Event handler to resize the canvas when the document view is changed
-                // window.addEventListener('resize', () => {
-                //     canvas.width = window.innerWidth;
-                //     canvas.height = window.innerHeight;
-                // }, false);
+                window.addEventListener('resize', scaleCanvas, false);
 
                 return canvas;
             })(),
@@ -64,11 +70,7 @@
         }
 
         function onEngineInitialized() {
-            var script = document.createElement('script');
-            script.type = 'module';
-            script.src = "./script.js";
-            script.async = false;
-            document.getElementsByTagName('head')[0].appendChild(script);
+
         }
 
         (async () => {

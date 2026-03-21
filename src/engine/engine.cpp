@@ -1,21 +1,21 @@
 #include "engine.h"
 
 #include "framework/input.h"
-#include "framework/utils/file_watcher.h"
-#include "framework/ui/io.h"
-#include "framework/utils/tinyfiledialogs.h"
 #include "framework/nodes/mesh_instance_3d.h"
 #include "framework/parsers/parse_scene.h"
 #include "framework/parsers/parser.h"
+#include "framework/ui/io.h"
+#include "framework/utils/file_watcher.h"
+#include "framework/utils/tinyfiledialogs.h"
 
-#include "graphics/renderer_storage.h"
-#include "graphics/renderer.h"
 #include "graphics/primitives/box_mesh.h"
-#include "graphics/primitives/sphere_mesh.h"
+#include "graphics/primitives/capsule_mesh.h"
 #include "graphics/primitives/cone_mesh.h"
 #include "graphics/primitives/cylinder_mesh.h"
-#include "graphics/primitives/capsule_mesh.h"
+#include "graphics/primitives/sphere_mesh.h"
 #include "graphics/primitives/torus_mesh.h"
+#include "graphics/renderer.h"
+#include "graphics/renderer_storage.h"
 
 #include "framework/nodes/directional_light_3d.h"
 #include "framework/nodes/omni_light_3d.h"
@@ -30,11 +30,11 @@
 #include "shaders/mesh_forward.wgsl.gen.h"
 #include "shaders/mesh_grid.wgsl.gen.h"
 
+#include "backends/imgui_impl_glfw.h"
+#include "backends/imgui_impl_wgpu.h"
+#include "framework/utils/ImGuizmo.h"
 #include "imgui.h"
 #include "imgui_internal.h"
-#include "backends/imgui_impl_wgpu.h"
-#include "backends/imgui_impl_glfw.h"
-#include "framework/utils/ImGuizmo.h"
 
 #include "engine/scene.h"
 
@@ -43,8 +43,8 @@
 #ifdef __EMSCRIPTEN__
 
 #include <emscripten.h>
-#include <emscripten/html5.h>
 #include <emscripten/bind.h>
+#include <emscripten/html5.h>
 
 EM_JS(void, on_engine_pre_initialized, (), {
     onEnginePreInitialized();
@@ -73,11 +73,11 @@ EM_JS(void, on_update, (float delta_time), {
 });
 
 EM_JS(int, canvas_get_width, (), {
-  return canvas.clientWidth;
+    return canvas.clientWidth;
 });
 
 EM_JS(int, canvas_get_height, (), {
-  return canvas.clientHeight;
+    return canvas.clientHeight;
 });
 
 EM_JS(const char*, get_html5_resize_target, (), {
@@ -89,18 +89,10 @@ EM_JS(const char*, get_html5_resize_target, (), {
 });
 
 static EM_BOOL on_web_display_size_changed(int event_type,
-    const EmscriptenUiEvent* ui_event, void* user_data)
+        const EmscriptenUiEvent* ui_event, void* user_data)
 {
     Engine* engine = reinterpret_cast<Engine*>(user_data);
-    std::string target = get_html5_resize_target();
-    if (target.empty()) {
-        engine->resize_window(ui_event->windowInnerWidth, ui_event->windowInnerHeight);
-    }
-    else {
-        double width, height;
-        emscripten_get_element_css_size(target.c_str(), &width, &height);
-        engine->resize_window(width, height);
-    }
+    engine->resize_window(ui_event->windowInnerWidth, ui_event->windowInnerHeight);
     return EM_TRUE;
 }
 #endif
@@ -115,12 +107,14 @@ void dummy_engine_render() {}
 
 void glfw_resize_callback(GLFWwindow* window, int width, int height)
 {
-    Engine* engine = reinterpret_cast<Engine*>(glfwGetWindowUserPointer(window));
-
     // Minimized window
     if (width == 0 && height == 0) {
         return;
     }
+
+    spdlog::info("GLFW Window resized to ({}, {})", width, height);
+
+    Engine* engine = reinterpret_cast<Engine*>(glfwGetWindowUserPointer(window));
 
     if (!engine->get_xr_available()) {
         engine->resize_window(width, height);
@@ -144,14 +138,10 @@ int Engine::initialize(Renderer* renderer, const sEngineConfiguration& configura
     spdlog::set_pattern("[%^%l%$] %v");
     spdlog::set_level(spdlog::level::debug);
 
-    engine_post_initialize = configuration.engine_post_initialize ?
-        configuration.engine_post_initialize : dummy_engine_post_initialize;
-    engine_pre_update = configuration.engine_pre_update ?
-        configuration.engine_pre_update : dummy_engine_pre_update;
-    engine_post_update = configuration.engine_post_update ?
-        configuration.engine_post_update : dummy_engine_post_update;
-    engine_render = configuration.engine_render ?
-        configuration.engine_render : dummy_engine_render;
+    engine_post_initialize = configuration.engine_post_initialize ? configuration.engine_post_initialize : dummy_engine_post_initialize;
+    engine_pre_update = configuration.engine_pre_update ? configuration.engine_pre_update : dummy_engine_pre_update;
+    engine_post_update = configuration.engine_post_update ? configuration.engine_post_update : dummy_engine_post_update;
+    engine_render = configuration.engine_render ? configuration.engine_render : dummy_engine_render;
 
 #ifdef __EMSCRIPTEN__
     on_engine_pre_initialized();
@@ -228,10 +218,7 @@ bool Engine::pre_initialize_renderer()
     int screen_width = canvas_get_width();
     int screen_height = canvas_get_height();
 
-    emscripten_set_resize_callback(
-        EMSCRIPTEN_EVENT_TARGET_WINDOW,
-        (void*)this, 0, on_web_display_size_changed
-    );
+    emscripten_set_resize_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, (void*)this, false, on_web_display_size_changed);
 #else
     int screen_width = configuration.window_width;
     int screen_height = configuration.window_height;
@@ -262,6 +249,8 @@ bool Engine::pre_initialize_renderer()
 
         WebGPUContext* webgpu_context = renderer->get_webgpu_context();
 
+        glfwWindowHint(GLFW_SCALE_TO_MONITOR, GLFW_TRUE);
+
         if (configuration.fullscreen) {
             GLFWmonitor* monitor = glfwGetPrimaryMonitor();
             const GLFWvidmode* mode = glfwGetVideoMode(monitor);
@@ -276,19 +265,38 @@ bool Engine::pre_initialize_renderer()
 
             window = glfwCreateWindow(mode->width, mode->height, "wgpuEngine", monitor, nullptr);
         } else {
+            webgpu_context->dpi_scale = ImGui_ImplGlfw_GetContentScaleForMonitor(glfwGetPrimaryMonitor());
+            screen_width *= webgpu_context->dpi_scale;
+            screen_height *= webgpu_context->dpi_scale;
+
             webgpu_context->screen_width = screen_width;
             webgpu_context->screen_height = screen_height;
 
             window = glfwCreateWindow(screen_width, screen_height, "wgpuEngine", nullptr, nullptr);
         }
 
-        glfwSetWindowTitle(window, configuration.window_title.c_str());
-    }
+        int screen_width, screen_height;
+        int display_width, display_height;
+        glfwGetWindowSize(window, &screen_width, &screen_height);
+        glfwGetFramebufferSize(window, &display_width, &display_height);
 
+        webgpu_context->screen_width = screen_width;
+        webgpu_context->screen_height = screen_height;
+
+        webgpu_context->render_width = display_width;
+        webgpu_context->render_height = display_height;
+
+        glfwSetWindowTitle(window, configuration.window_title.c_str());
+
+        spdlog::info("Screen size: {}x{}", webgpu_context->screen_width, webgpu_context->screen_height);
+    }
 
     Input::init(window, use_mirror_screen, use_glfw);
     glfwSetWindowUserPointer(window, this);
+
+#ifndef __EMSCRIPTEN__
     glfwSetFramebufferSizeCallback(window, glfw_resize_callback);
+#endif
 
     renderer->pre_initialize(window, use_mirror_screen);
 
@@ -308,7 +316,33 @@ void Engine::init_imgui(GLFWwindow* window)
     ImGuiIO& io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
 
+    ImGuiStyle& style = ImGui::GetStyle();
+
+    ImGui::StyleColorsDark(&style);
+    // make it look a bit nicer with rounded edges
+    style.WindowRounding = 2.0f;
+    style.FrameRounding = 3.0f;
+    style.FramePadding = ImVec2(6.0f, 3.0f);
+    //style.ChildRounding = 6.0f;
+    style.ScrollbarRounding = 8.0f;
+    style.GrabRounding = 3.0f;
+    style.PopupRounding = 2.0f;
+
     ImGui::StyleColorsDark();
+
+    WebGPUContext* webgpu_context = renderer->get_webgpu_context();
+
+    style.ScaleAllSizes(webgpu_context->dpi_scale);
+    //style.FontScaleDpi = main_scale;
+
+    ImFontConfig fontCfg = {};
+    strcpy(fontCfg.Name, "ProggyForever.ttf");
+    float fontSize = 14.0f * webgpu_context->dpi_scale;
+    fontCfg.RasterizerDensity = std::max(webgpu_context->dpi_scale, webgpu_context->dpi_scale);
+    float fontSizeInt = std::max(1.0f, roundf(fontSize));
+    fontCfg.SizePixels = fontSizeInt;
+
+    io.Fonts->AddFontDefaultVector(&fontCfg);
 
     ImGui_ImplGlfw_InitForOther(window, true);
 
@@ -325,7 +359,6 @@ void Engine::init_imgui(GLFWwindow* window)
     io.IniFilename = nullptr;
     ImGui_ImplGlfw_InstallEmscriptenCallbacks(window, "#canvas");
 #endif
-
 }
 
 void Engine::init_shader_watchers()
@@ -334,38 +367,36 @@ void Engine::init_shader_watchers()
 
 #ifndef NDEBUG
     shader_reload_watcher = new FileWatcher({ "./data/shaders/" }, 1.0f, [](std::string path_to_watch, eFileStatus status) -> void {
-
         // Process only regular files, all other file types are ignored
         if (!std::filesystem::is_regular_file(std::filesystem::path(path_to_watch)) && status != eFileStatus::Erased) {
             return;
         }
 
         switch (status) {
-        case eFileStatus::Modified: {
-            spdlog::info("Shader modified: {}", path_to_watch);
-            RendererStorage::reload_shader(path_to_watch);
-            break;
+            case eFileStatus::Modified: {
+                spdlog::info("Shader modified: {}", path_to_watch);
+                RendererStorage::reload_shader(path_to_watch);
+                break;
+            }
+            default:
+                spdlog::error("Shader reload: Unknown file status");
         }
-        default:
-            spdlog::error("Shader reload: Unknown file status");
-        }
-        });
+    });
 
     engine_shader_reload_watcher = new FileWatcher({ engine_shaders }, 1.0f, [](std::string path_to_watch, eFileStatus status) -> void {
-
         // Process only regular files, all other file types are ignored
         if (!std::filesystem::is_regular_file(std::filesystem::path(path_to_watch)) && status != eFileStatus::Erased) {
             return;
         }
 
         switch (status) {
-        case eFileStatus::Modified: {
-            spdlog::info("Shader modified: {}", path_to_watch);
-            RendererStorage::reload_engine_shader(path_to_watch);
-            break;
-        }
-        default:
-            spdlog::error("Shader reload: Unknown file status");
+            case eFileStatus::Modified: {
+                spdlog::info("Shader modified: {}", path_to_watch);
+                RendererStorage::reload_engine_shader(path_to_watch);
+                break;
+            }
+            default:
+                spdlog::error("Shader reload: Unknown file status");
         }
     });
 #endif
@@ -388,19 +419,27 @@ void Engine::start_loop()
 
 #ifdef __EMSCRIPTEN__
     emscripten_set_main_loop_arg(
-        [](void* user_data) {
-            Engine* engine = reinterpret_cast<Engine*>(user_data);
-            engine->on_frame();
-        },
-        (void*)this,
-        0, true
-    );
+            [](void* user_data) {
+                Engine* engine = reinterpret_cast<Engine*>(user_data);
+                glfwPollEvents();
+                engine->on_frame();
+            },
+            (void*)this,
+            0, true);
 #else
     while (!stop_game_loop) {
+        GLFWwindow* window = renderer->get_glfw_window();
+
+        glfwPollEvents();
+
+        if (glfwGetWindowAttrib(window, GLFW_ICONIFIED) != 0) {
+            ImGui_ImplGlfw_Sleep(10);
+            continue;
+        }
 
         on_frame();
 
-        stop_game_loop = glfwWindowShouldClose(renderer->get_glfw_window());
+        stop_game_loop = glfwWindowShouldClose(window);
     }
 #endif
 }
@@ -455,8 +494,7 @@ void Engine::get_scene_ray(glm::vec3& ray_origin, glm::vec3& ray_direction)
         ray_origin = Input::get_controller_position(HAND_RIGHT, POSE_AIM);
         glm::mat4x4 select_hand_pose = Input::get_controller_pose(HAND_RIGHT, POSE_AIM);
         ray_direction = get_front(select_hand_pose);
-    }
-    else {
+    } else {
         Camera* camera = renderer->get_camera();
         glm::vec3 ray_dir = camera->screen_to_ray(Input::get_mouse_position());
         ray_origin = camera->get_eye();
@@ -489,6 +527,7 @@ void Engine::on_frame()
 
     ImGui_ImplWGPU_NewFrame();
     ImGui_ImplGlfw_NewFrame();
+
     ImGui::NewFrame();
 
     ImGuizmo::SetOrthographic(false);
@@ -549,21 +588,20 @@ void Engine::render_default_gui()
 {
     bool active = true;
 
-    if (ImGui::BeginMainMenuBar())
-    {
-        if (ImGui::BeginMenu("File"))
-        {
-            if (ImGui::MenuItem("Open scene (.gltf, .glb, .obj, .vdb, .ply)"))
-            {
+    float main_menu_height = 0.0f;
+
+    if (ImGui::BeginMainMenuBar()) {
+        main_menu_height = ImGui::GetFrameHeight();
+        if (ImGui::BeginMenu("File")) {
+            if (ImGui::MenuItem("Open scene (.gltf, .glb, .obj, .vdb, .ply)")) {
                 std::vector<const char*> filter_patterns = { "*.gltf", "*.glb", "*.obj", "*.vdb", "*.ply" };
                 char const* open_file_name = tinyfd_openFileDialog(
-                    "Scene loader",
-                    "",
-                    static_cast<int>(filter_patterns.size()),
-                    filter_patterns.data(),
-                    "Scene formats",
-                    0
-                );
+                        "Scene loader",
+                        "",
+                        static_cast<int>(filter_patterns.size()),
+                        filter_patterns.data(),
+                        "Scene formats",
+                        0);
 
                 if (open_file_name) {
                     std::vector<Node*> entities;
@@ -578,10 +616,8 @@ void Engine::render_default_gui()
 
             ImGui::EndMenu();
         }
-        if (ImGui::BeginMenu("Add"))
-        {
-            if (ImGui::BeginMenu("Mesh"))
-            {
+        if (ImGui::BeginMenu("Add")) {
+            if (ImGui::BeginMenu("Mesh")) {
                 auto create_mesh_instance = [&](Mesh* mesh) {
                     auto boxMaterial = new Material();
                     boxMaterial->set_shader(RendererStorage::get_shader_from_source(shaders::mesh_forward::source, shaders::mesh_forward::path, shaders::mesh_forward::libraries, boxMaterial));
@@ -619,8 +655,7 @@ void Engine::render_default_gui()
                 ImGui::EndMenu();
             }
 
-            if (ImGui::BeginMenu("Light"))
-            {
+            if (ImGui::BeginMenu("Light")) {
                 auto create_light_instance = [&](Light3D* light) {
                     light->create_debug_meshes();
                     main_scene->add_node(light);
@@ -646,7 +681,7 @@ void Engine::render_default_gui()
         ImGui::EndMainMenuBar();
     }
 
-    ImGuiViewportP* viewport = (ImGuiViewportP*)(void*)ImGui::GetMainViewport();
+    ImGuiViewport* viewport = ImGui::GetMainViewport();
     ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_MenuBar;
     float height = ImGui::GetFrameHeight();
     if (ImGui::BeginViewportSideBar("##SecondaryMenuBar", viewport, ImGuiDir_Down, height, window_flags)) {
@@ -658,37 +693,36 @@ void Engine::render_default_gui()
         ImGui::End();
     }
 
-    float right_panel_width = 350.0f; // px
-    float right_panel_height = viewport->Size.y - height * 2.0f; // px
+    float scene_tree_height = viewport->Size.y - height * 2.0f;
+
+    // Set position to top-left of the viewport
+    ImGui::SetNextWindowPos(viewport->WorkPos);
+
     WebGPUContext* webgpu_context = Renderer::instance->get_webgpu_context();
 
-    ImGui::SetNextWindowPos({ static_cast<float>(webgpu_context->screen_width) - right_panel_width, 18.0f });
-    ImGui::SetNextWindowSize({ right_panel_width, right_panel_height });
-    ImGui::Begin("Debug panel", &active, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize |
-        ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_AlwaysAutoResize);
+    float panelWidth = 350.0f * webgpu_context->dpi_scale;
+    ImGui::SetNextWindowSize({ panelWidth, scene_tree_height }, ImGuiCond_Once);
+
+    ImGui::Begin("Debug panel", &active, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoSavedSettings);
 
     ImGuiTabBarFlags tab_bar_flags = ImGuiTabBarFlags_None;
     bool scene_tab_open = false;
-    if (ImGui::BeginTabBar("TabBar", tab_bar_flags))
-    {
+    if (ImGui::BeginTabBar("TabBar", tab_bar_flags)) {
         scene_tab_open = ImGui::BeginTabItem("Scene");
-        if (scene_tab_open)
-        {
+        if (scene_tab_open) {
             ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 5.0f);
             ImGui::BeginChild("SceneTree", ImVec2(0, 260), ImGuiChildFlags_Borders, ImGuiWindowFlags_None);
 
             std::vector<Node*>& nodes = main_scene->get_nodes();
             std::vector<Node*>::iterator it = nodes.begin();
-            while (it != nodes.end())
-            {
+            while (it != nodes.end()) {
                 if (render_scene_tree_recursive(*it)) {
                     if (*it == selected_node) {
                         selected_node = nullptr;
                     }
-                    delete* it;
+                    delete *it;
                     it = nodes.erase(it);
-                }
-                else {
+                } else {
                     it++;
                 }
             }
@@ -698,15 +732,13 @@ void Engine::render_default_gui()
 
             ImGui::EndTabItem();
         }
-        if (ImGui::BeginTabItem("Debugger"))
-        {
+        if (ImGui::BeginTabItem("Debugger")) {
             bool msaa_enabled = Renderer::instance->get_msaa_count() != 1;
 
             if (ImGui::Checkbox("Enable MSAAx4", &msaa_enabled)) {
                 if (msaa_enabled) {
                     Renderer::instance->set_msaa_count(4);
-                }
-                else {
+                } else {
                     Renderer::instance->set_msaa_count(1);
                 }
             }
@@ -724,15 +756,13 @@ void Engine::render_default_gui()
 
     ImGui::Separator();
 
-
     if (selected_node && scene_tab_open) {
-        ImGui::BeginChild("NodeProperties", ImVec2(0, right_panel_height - 310), ImGuiChildFlags_Borders, ImGuiWindowFlags_None);
+        ImGui::BeginChild("NodeProperties", ImVec2(0, ImGui::GetContentRegionAvail().y), ImGuiChildFlags_Borders, ImGuiWindowFlags_None);
 
         selected_node->render_gui();
 
         ImGui::EndChild();
     }
-
 
     ImGui::End();
 }
@@ -751,15 +781,11 @@ bool Engine::render_scene_tree_recursive(Node* entity)
         flags |= ImGuiTreeNodeFlags_Selected;
     }
 
-    if (ImGui::TreeNodeEx(entity->get_name().c_str(), flags))
-    {
-
-        if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen())
-        {
+    if (ImGui::TreeNodeEx(entity->get_name().c_str(), flags)) {
+        if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen()) {
             if (selected_node != entity) {
                 selected_node = entity;
-            }
-            else {
+            } else {
                 selected_node = nullptr;
             }
         }
@@ -779,18 +805,15 @@ bool Engine::render_scene_tree_recursive(Node* entity)
 
         std::vector<Node*>::iterator it = children.begin();
 
-        while (it != children.end())
-        {
+        while (it != children.end()) {
             if (render_scene_tree_recursive(*it)) {
-
                 if (*it == selected_node) {
                     selected_node = nullptr;
                 }
 
                 delete *it;
                 it = children.erase(it);
-            }
-            else {
+            } else {
                 it++;
             }
         }
