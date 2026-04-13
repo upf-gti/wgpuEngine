@@ -118,27 +118,29 @@ fn get_direct_light( m : ptr<function, PbrMaterial> ) -> vec3f
         // to smooth the result.
         // https://webgpu.github.io/webgpu-samples/?sample=shadowMapping#fragment.wgsl
 
-        var visibility : f32 = 0.0;
-        let i_map_size = 1.0 / 1024.0; // 1024x1024 shadow map
+        var visibility : f32 = 1.0;
+        // var visibility : f32 = 0.0;
 
-        for (var y = -1; y <= 1; y++) {
-            for (var x = -1; x <= 1; x++) {
-                let offset : vec2f = vec2f(f32(x), f32(y)) * i_map_size;
-                visibility += textureSampleCompare(
-                    lights_shadow_maps,
-                    shadow_sampler,
-                    uv + offset,
-                    light_idx,
-                    depth + light.shadow_bias
-                );
-            }
-        }
+        // let i_map_size = 1.0 / 1024.0; // 1024x1024 shadow map
 
-        visibility /= 9.0;
+        // for (var y = -1; y <= 1; y++) {
+        //     for (var x = -1; x <= 1; x++) {
+        //         let offset : vec2f = vec2f(f32(x), f32(y)) * i_map_size;
+        //         visibility += textureSampleCompare(
+        //             lights_shadow_maps,
+        //             shadow_sampler,
+        //             uv + offset,
+        //             light_idx,
+        //             depth + light.shadow_bias
+        //         );
+        //     }
+        // }
 
-        if(light.cast_shadows == 0) {
-            visibility = 1.0;
-        }
+        // visibility /= 9.0;
+
+        // if(light.cast_shadows == 0) {
+        //     visibility = 1.0;
+        // }
 
         if (NdotL > 0.0)
         {

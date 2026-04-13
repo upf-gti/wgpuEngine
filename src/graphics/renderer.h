@@ -41,7 +41,7 @@ struct sRendererConfiguration {
     {
         required_limits.maxVertexAttributes = 4;
         required_limits.maxVertexBuffers = 1;
-        required_limits.maxBindGroups = 2;
+        required_limits.maxBindGroups = 4;
         required_limits.maxUniformBuffersPerShaderStage = 1;
         required_limits.maxUniformBufferBindingSize = 65536;
         required_limits.minUniformBufferOffsetAlignment = 256;
