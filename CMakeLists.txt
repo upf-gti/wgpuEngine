@@ -50,7 +50,7 @@ include(FetchContent)
 # download tinyobjloader
 FetchContent_Declare(
     tinyobjloader
-    URL https://raw.githubusercontent.com/tinyobjloader/tinyobjloader/release/tiny_obj_loader.h
+    URL https://raw.githubusercontent.com/tinyobjloader/tinyobjloader/a4e519b0a0f29c790464fcfeadfe25a7f9fa15ff/tiny_obj_loader.h
     DOWNLOAD_DIR ${WGPU_DIR_LIBS}/tinyobjloader
     DOWNLOAD_NO_EXTRACT TRUE
 )
