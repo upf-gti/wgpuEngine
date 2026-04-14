@@ -11,6 +11,7 @@ set(CXX_STANDARD_REQUIRED ON)
 # Comand line variables
 SET(WGPUENGINE_FORCE_DX12 OFF CACHE BOOL "Force a Dawn backend of DX12")
 SET(WGPUENGINE_DISABLE_XR OFF CACHE BOOL "Disable XR functionalities")
+SET(WGPUENGINE_ASSET_FOLDER "" CACHE STRING "Path to asset folder to be packed when building for web")
 
 # Enable multicore and simd compile on VS solution
 if(MSVC)
@@ -241,7 +242,7 @@ if (EMSCRIPTEN)
         # ------------
         #--post-js "${CMAKE_BINARY_DIR}/glue.js"
         --shell-file ${SHELL_FILE}
-        --preload-file "${WGPU_DIR_ROOT}/data@/data"
+        --preload-file "${WGPUENGINE_ASSET_FOLDER}@/data"
     )
 
     message(STATUS "WEB_ASSET_OUTPUTS: ${WEB_ASSET_OUTPUTS}")

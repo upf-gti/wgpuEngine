@@ -265,9 +265,13 @@ bool Engine::pre_initialize_renderer()
 
             window = glfwCreateWindow(mode->width, mode->height, "wgpuEngine", monitor, nullptr);
         } else {
+#ifndef __EMSCRIPTEN__
             webgpu_context->dpi_scale = ImGui_ImplGlfw_GetContentScaleForMonitor(glfwGetPrimaryMonitor());
             screen_width *= webgpu_context->dpi_scale;
             screen_height *= webgpu_context->dpi_scale;
+#else
+            webgpu_context->dpi_scale = emscripten_get_device_pixel_ratio();
+#endif
 
             webgpu_context->screen_width = screen_width;
             webgpu_context->screen_height = screen_height;

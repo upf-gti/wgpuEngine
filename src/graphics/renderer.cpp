@@ -1438,17 +1438,13 @@ void Renderer::resize_window(int width, int height)
     }
 
     if (!is_xr_available) {
-        double pixel_ratio = 1.0;
-
-#ifdef __EMSCRIPTEN__
-        pixel_ratio = emscripten_get_device_pixel_ratio();
-#endif
+        spdlog::info("pixel ratio: {}", webgpu_context->dpi_scale);
 
         webgpu_context->screen_width = width;
         webgpu_context->screen_height = height;
 
-        webgpu_context->render_width = static_cast<uint32_t>(width * pixel_ratio);
-        webgpu_context->render_height = static_cast<uint32_t>(height * pixel_ratio);
+        webgpu_context->render_width = static_cast<uint32_t>(width * webgpu_context->dpi_scale);
+        webgpu_context->render_height = static_cast<uint32_t>(height * webgpu_context->dpi_scale);
 
         if (camera_3d) {
             camera_3d->set_perspective(glm::radians(45.0f), webgpu_context->render_width / static_cast<float>(webgpu_context->render_height), z_near, z_far);

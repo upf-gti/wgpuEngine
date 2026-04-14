@@ -13,17 +13,20 @@
 
 #include <glm/gtc/type_ptr.hpp>
 
+#include "spdlog/spdlog.h"
+
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
-#include <emscripten/html5.h>
 #include <emscripten/bind.h>
+#include <emscripten/html5.h>
 
 EM_JS(bool, is_canvas_focused, (), {
     const el = document.activeElement;
     return !(el &&
-      (el.tagName == "INPUT" ||
-       el.tagName == "TEXTAREA" ||
-       el.isContentEditable)) && (el.tagName == "CANVAS");
+                   (el.tagName == "INPUT" ||
+                           el.tagName == "TEXTAREA" ||
+                           el.isContentEditable)) &&
+            (el.tagName == "CANVAS");
 });
 #endif
 
@@ -56,7 +59,9 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
     }
 #endif
 
-    if (key < 0) return;
+    if (key < 0) {
+        return;
+    }
 
     Input::set_key_state(key, action != GLFW_RELEASE);
 }
@@ -98,25 +103,32 @@ void Input::init(GLFWwindow* _window, bool use_mirror_screen, bool use_glfw)
         glfwSetScrollCallback(_window, mouse_scroll_callback);
     }
 
-	if (use_mirror_screen) {
-		double x, y;
-		glfwGetCursorPos(window, &x, &y);
-		Input::mouse_position.x = static_cast<float>(x);
-		Input::mouse_position.y = static_cast<float>(y);
-	}
+    if (use_mirror_screen) {
+        double x, y;
+        glfwGetCursorPos(window, &x, &y);
+
+        // Apply dpi on non Windows platforms (TODO: check linux/mac)
+#ifndef _WIN32
+        x *= Renderer::instance->get_webgpu_context()->dpi_scale;
+        y *= Renderer::instance->get_webgpu_context()->dpi_scale;
+#endif
+
+        Input::mouse_position.x = static_cast<float>(x);
+        Input::mouse_position.y = static_cast<float>(y);
+    }
 }
 
 #ifdef XR_SUPPORT
 bool Input::init_xr(XRContext* context)
 {
     if (!context) {
-		return 1;
+        return 1;
     }
 
 #if defined(OPENXR_SUPPORT)
 
     OpenXRContext* openxr_context = static_cast<OpenXRContext*>(context);
-	XrInstance* instance = openxr_context->get_instance();
+    XrInstance* instance = openxr_context->get_instance();
 
     // Add mapped buttons using enum order (input.h).
     XrMappedButtonState mb{ .name = "button_a", .hand = HAND_RIGHT };
@@ -164,9 +176,15 @@ void Input::update(float delta_time)
 {
     // Mouse  state
     if (use_glfw && window) {
-
         double x, y;
         glfwGetCursorPos(window, &x, &y);
+
+        // Apply dpi on non Windows platforms (TODO: check linux/mac)
+#ifndef _WIN32
+        x *= Renderer::instance->get_webgpu_context()->dpi_scale;
+        y *= Renderer::instance->get_webgpu_context()->dpi_scale;
+#endif
+
         mouse_delta.x = mouse_position.x - static_cast<float>(x);
         mouse_delta.y = mouse_position.y - static_cast<float>(y);
 
@@ -176,8 +194,9 @@ void Input::update(float delta_time)
 
 #ifdef OPENXR_SUPPORT
     // Sync XR Controllers
-    if (!xr_context)
+    if (!xr_context) {
         return;
+    }
 
     xr_context->poll_actions();
 #endif
@@ -185,14 +204,12 @@ void Input::update(float delta_time)
 
 void Input::center_mouse()
 {
-    if (!use_mirror_screen)
+    if (!use_mirror_screen) {
         return;
+    }
 
-    int screen_width, screen_height;
-    glfwGetWindowSize(window, &screen_width, &screen_height);
-
-    int center_x = (int)floor(screen_width * 0.5f);
-    int center_y = (int)floor(screen_height * 0.5f);
+    int center_x = (int)floor(Renderer::instance->get_webgpu_context()->screen_width * 0.5f);
+    int center_y = (int)floor(Renderer::instance->get_webgpu_context()->screen_height * 0.5f);
     glfwSetCursorPos(window, center_x, center_y);
     mouse_position.x = (float)center_x;
     mouse_position.y = (float)center_y;
@@ -247,10 +264,15 @@ void Input::set_mouse_wheel(float offset_x, float offset_y)
 glm::mat4x4 Input::get_controller_pose(uint8_t controller, uint8_t type, bool world_space)
 {
 #ifdef XR_SUPPORT
-    if (!xr_context) return glm::mat4x4(1.0f);
+    if (!xr_context) {
+        return glm::mat4x4(1.0f);
+    }
     glm::mat4 mat;
-    if (type == POSE_AIM) mat = xr_context->controllerAimPoseMatrices[controller];
-    else mat = xr_context->controllerGripPoseMatrices[controller];
+    if (type == POSE_AIM) {
+        mat = xr_context->controllerAimPoseMatrices[controller];
+    } else {
+        mat = xr_context->controllerGripPoseMatrices[controller];
+    }
 
     if (xr_context->root_transform && world_space) {
         return (xr_context->root_transform->get_model() * mat);
@@ -265,10 +287,15 @@ glm::mat4x4 Input::get_controller_pose(uint8_t controller, uint8_t type, bool wo
 glm::vec3 Input::get_controller_position(uint8_t controller, uint8_t type, bool world_space)
 {
 #ifdef XR_SUPPORT
-    if (!xr_context) return {};
+    if (!xr_context) {
+        return {};
+    }
     glm::vec3 pos;
-    if (type == POSE_AIM) pos = xr_context->controllerAimPoses[controller].position;
-    else pos = xr_context->controllerGripPoses[controller].position;
+    if (type == POSE_AIM) {
+        pos = xr_context->controllerAimPoses[controller].position;
+    } else {
+        pos = xr_context->controllerGripPoses[controller].position;
+    }
 
     if (xr_context->root_transform && world_space) {
         return (xr_context->root_transform->get_model() * glm::vec4(pos, 1.0f));
@@ -282,9 +309,14 @@ glm::vec3 Input::get_controller_position(uint8_t controller, uint8_t type, bool 
 glm::quat Input::get_controller_rotation(uint8_t controller, uint8_t type)
 {
 #ifdef XR_SUPPORT
-    if (!xr_context) return { 0.0f, 0.0f, 0.0f, 1.0f };
-    if (type == POSE_AIM) return xr_context->controllerAimPoses[controller].orientation;
-    else return xr_context->controllerGripPoses[controller].orientation;
+    if (!xr_context) {
+        return { 0.0f, 0.0f, 0.0f, 1.0f };
+    }
+    if (type == POSE_AIM) {
+        return xr_context->controllerAimPoses[controller].orientation;
+    } else {
+        return xr_context->controllerGripPoses[controller].orientation;
+    }
 #else
     return {};
 #endif
@@ -356,18 +388,22 @@ bool Input::was_button_touched(uint8_t button)
 }
 
 /*
-*	Triggers
-*/
+ *	Triggers
+ */
 
 float Input::get_trigger_value(uint8_t controller)
 {
 #if defined(OPENXR_SUPPORT)
     OpenXRContext* openxr_context = static_cast<OpenXRContext*>(xr_context);
-    if (!openxr_context) return 0.0f;
+    if (!openxr_context) {
+        return 0.0f;
+    }
     return openxr_context->triggerValueState[controller].currentState;
 #elif defined(WEBXR_SUPPORT)
     WebXRContext* webxr_context = static_cast<WebXRContext*>(xr_context);
-    if (!webxr_context) return 0.0f;
+    if (!webxr_context) {
+        return 0.0f;
+    }
     return webxr_context->handButtons[controller][WEBXR_BUTTON_TRIGGER].value;
 #else
     return 0.0f;
@@ -440,8 +476,8 @@ bool Input::was_trigger_touched(uint8_t controller)
 }
 
 /*
-*	Grabs
-*/
+ *	Grabs
+ */
 
 bool Input::is_grab_pressed(uint8_t controller)
 {
@@ -486,11 +522,15 @@ float Input::get_grab_value(uint8_t controller)
 {
 #if defined(OPENXR_SUPPORT)
     OpenXRContext* openxr_context = static_cast<OpenXRContext*>(xr_context);
-    if (!openxr_context) return 0.0f;
+    if (!openxr_context) {
+        return 0.0f;
+    }
     return openxr_context->grabState[controller].currentState;
 #elif defined(WEBXR_SUPPORT)
     WebXRContext* webxr_context = static_cast<WebXRContext*>(xr_context);
-    if (!webxr_context) return 0.0f;
+    if (!webxr_context) {
+        return 0.0f;
+    }
     return webxr_context->handButtons[controller][WEBXR_BUTTON_GRAB].value;
 #else
     return 0.0f;
@@ -498,18 +538,22 @@ float Input::get_grab_value(uint8_t controller)
 }
 
 /*
-*	Thumbsticks
-*/
+ *	Thumbsticks
+ */
 
 glm::vec2 Input::get_thumbstick_value(uint8_t controller)
 {
 #if defined(OPENXR_SUPPORT)
     OpenXRContext* openxr_context = static_cast<OpenXRContext*>(xr_context);
-    if (!openxr_context) return { 0.0f, 0.0f };
+    if (!openxr_context) {
+        return { 0.0f, 0.0f };
+    }
     return glm::make_vec2(&openxr_context->thumbStickValueState[controller].currentState.x);
 #elif defined(WEBXR_SUPPORT)
     WebXRContext* webxr_context = static_cast<WebXRContext*>(xr_context);
-    if (!webxr_context) return { 0.0f, 0.0f };
+    if (!webxr_context) {
+        return { 0.0f, 0.0f };
+    }
     return webxr_context->axisState[controller];
 #else
     return { 0.0f, 0.0f };
@@ -576,8 +620,7 @@ uint8_t Input::get_leading_thumbstick_axis(uint8_t controller)
     if (glm::abs(glm::length(abs_axis)) >= XR_THUMBSTICK_DEADZONE) {
         if (abs_axis.x > abs_axis.y) {
             return XR_THUMBSTICK_AXIS_X;
-        }
-        else {
+        } else {
             return XR_THUMBSTICK_AXIS_Y;
         }
     }
