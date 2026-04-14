@@ -411,7 +411,7 @@ void Renderer::render()
 
     update_lights();
 
-    render_shadow_maps();
+    //render_shadow_maps();
 
     camera_data.exposure = exposure;
     camera_data.ibl_intensity = ibl_intensity;
@@ -858,7 +858,7 @@ void Renderer::init_lighting_bind_group()
         shadow_sampler.binding = 6;
     }
 
-    std::vector<Uniform*> uniforms = { &irradiance_texture_uniform, &brdf_lut_uniform, &ibl_sampler_uniform, &lights_buffer, &num_lights_buffer, &shadow_maps_array, &shadow_sampler };
+    std::vector<Uniform*> uniforms = { &irradiance_texture_uniform, &brdf_lut_uniform, &ibl_sampler_uniform, &lights_buffer, &num_lights_buffer /*, &shadow_maps_array, &shadow_sampler*/ };
     lighting_bind_group = webgpu_context->create_bind_group(uniforms, RendererStorage::get_shader_from_source(shaders::mesh_forward::source, shaders::mesh_forward::path, shaders::mesh_forward::libraries), 3);
 }
 
