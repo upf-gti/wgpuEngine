@@ -436,5 +436,3 @@ add_library(mikktspace STATIC
 target_include_directories(mikktspace PUBLIC ${WGPU_DIR_LIBS}/mikktspace)
 target_link_libraries(${PROJECT_NAME} PUBLIC mikktspace)
 set_property(TARGET mikktspace PROPERTY FOLDER "External/mikktspace")
-
-target_copy_webgpu_binaries(${PROJECT_NAME})
