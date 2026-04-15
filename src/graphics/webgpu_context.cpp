@@ -866,6 +866,7 @@ void WebGPUContext::read_buffer_async(WGPUBuffer buffer, size_t size, const std:
     userdata->read_userdata = read_userdata;
 
     WGPUBufferMapCallbackInfo callback_info;
+    callback_info.nextInChain = nullptr;
     callback_info.mode = WGPUCallbackMode_AllowProcessEvents;
     callback_info.userdata1 = userdata;
 

@@ -50,9 +50,7 @@ struct sRendererConfiguration {
         required_limits.maxSamplersPerShaderStage = 1;
         required_limits.maxDynamicUniformBuffersPerPipelineLayout = 1;
 
-#if !defined(__EMSCRIPTEN__)
         features.push_back(WGPUFeatureName_TimestampQuery);
-#endif
     }
 };
 

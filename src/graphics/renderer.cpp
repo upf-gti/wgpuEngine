@@ -431,6 +431,9 @@ void Renderer::render()
 
         wgpuQueueWriteBuffer(webgpu_context->device_queue, std::get<WGPUBuffer>(camera_uniform.data), 0, &camera_data, sizeof(sCameraData));
 
+        //glm::vec3 eye = camera_3d->get_eye();
+        //glm::vec3 center = camera_3d->get_center();
+
         render_camera(render_lists, screen_surface_texture_view, eye_depth_texture_view[EYE_LEFT], render_instances_data, render_camera_bind_group, true, "forward_render");
     }
 #ifdef XR_SUPPORT
@@ -603,12 +606,12 @@ void Renderer::render()
     if (!is_xr_available || use_mirror_screen) {
         wgpuSurfacePresent(webgpu_context->surface);
     }
+#endif
 
     if (timestamps_requested) {
         get_timestamps();
         timestamps_requested = false;
     }
-#endif
 
     clear_renderables();
 }
@@ -655,14 +658,13 @@ void Renderer::render_camera(const std::vector<std::vector<sRenderData>>& render
         render_pass_descr.depthStencilAttachment = depth_view ? &render_pass_depth_attachment : nullptr;
         render_pass_descr.label = { pass_name.c_str(), pass_name.length() };
 
-#ifndef __EMSCRIPTEN__
         std::vector<WGPUPassTimestampWrites> timestampWrites(1);
         timestampWrites[0].beginningOfPassWriteIndex = timestamp(global_command_encoder, (pass_name + "_pre_render").c_str());
         timestampWrites[0].querySet = timestamp_query_set;
         timestampWrites[0].endOfPassWriteIndex = timestamp(global_command_encoder, (pass_name + "_render").c_str());
 
         render_pass_descr.timestampWrites = timestampWrites.data();
-#endif
+
         // Create & fill the render pass (encoder)
         WGPURenderPassEncoder render_pass = wgpuCommandEncoderBeginRenderPass(global_command_encoder, &render_pass_descr);
 
@@ -919,22 +921,17 @@ void Renderer::init_multisample_textures()
 
 void Renderer::init_timestamp_queries()
 {
-#ifndef __EMSCRIPTEN__
     timestamp_query_set = webgpu_context->create_query_set(maximum_query_sets);
     timestamp_query_buffer = webgpu_context->create_buffer(sizeof(uint64_t) * maximum_query_sets, WGPUBufferUsage_QueryResolve | WGPUBufferUsage_Storage | WGPUBufferUsage_CopySrc | WGPUBufferUsage_CopyDst, nullptr);
-#endif
 }
 
 void Renderer::resolve_query_set(WGPUCommandEncoder encoder, uint8_t first_query)
 {
-#ifndef __EMSCRIPTEN__
     wgpuCommandEncoderResolveQuerySet(encoder, timestamp_query_set, first_query, query_index, timestamp_query_buffer, 0);
-#endif
 }
 
 void Renderer::get_timestamps()
 {
-#ifndef __EMSCRIPTEN__
     auto read_callback = [&](const void* output_buffer, void* user_data) {
         const uint64_t* timestamps_buffer = reinterpret_cast<const uint64_t*>(output_buffer);
         uint8_t* query_index_cpy = static_cast<uint8_t*>(user_data);
@@ -955,7 +952,6 @@ void Renderer::get_timestamps()
     uint8_t* query_index_cpy = new uint8_t();
     *query_index_cpy = query_index;
     webgpu_context->read_buffer_async(timestamp_query_buffer, sizeof(uint64_t) * maximum_query_sets, read_callback, query_index_cpy);
-#endif
 }
 
 void Renderer::set_msaa_count(uint8_t msaa_count, bool is_initial_value)
@@ -1363,7 +1359,6 @@ bool Renderer::is_inside_frustum(const glm::vec3& minp, const glm::vec3& maxp) c
 
 uint8_t Renderer::timestamp(WGPUCommandEncoder encoder, const char* label)
 {
-    wgpuCommandEncoderWriteTimestamp(encoder, timestamp_query_set, query_index);
     queries_label_map[query_index] = std::string(label);
 
     assert(query_index + 1 < maximum_query_sets);
