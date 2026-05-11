@@ -278,8 +278,16 @@ endif()
 set(WGPU_USE_X11 OFF)
 set(WGPU_USE_WAYLAND OFF)
 
-# Check if display server is x11 or wayland
-if (UNIX)
+# Check if display server is x11 or wayland.
+# Gated on "NOT APPLE" because in CMake, APPLE is a subset of UNIX, but macOS
+# uses Metal (or Vulkan via MoltenVK) — never X11/Wayland. Without this guard,
+# `loginctl` is missing on macOS so the wayland probe returns empty, the
+# `else ()` branch fires, and WGPU_USE_X11 is set TRUE. That then propagates
+# into libraries/webgpu/cmake/FetchDawn.cmake which LOCAL-sets DAWN_USE_X11=ON,
+# overriding any cache-level setting. Downstream Dawn sources (e.g.
+# native/vulkan/Instance.cpp) then include X11Functions.h whose
+# xlib_with_undefs.h `#error`s on non-Linux, breaking the build.
+if (UNIX AND NOT APPLE)
 	execute_process(
 		COMMAND bash -c [=[loginctl show-session $(loginctl user-status $USER | grep -E -m 1 'session-[0-9]+\.scope' | sed -E 's/^.*?session-([0-9]+)\.scope.*$/\1/') -p Type | grep -ic wayland]=]
 		OUTPUT_VARIABLE is_wayland
