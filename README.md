@@ -15,7 +15,7 @@ glTF scene showcasing PBR  |  Gaussian Splatting scan (by [FABW](https://animati
 ## Documentation & Examples
 
 The documentation is still in progress, but you can find it [here](https://upf-gti.github.io/wgpuEngine/)!
-For an example of how to use this engine, check out [Rooms](https://github.com/upf-gti/rooms)!
+For an example of how to use this engine, check out [wgpuEngineSample](https://github.com/upf-gti/wgpuEngineSample) and [Rooms](https://github.com/upf-gti/rooms)!
 
 ## Features
 
@@ -58,62 +58,86 @@ For an example of how to use this engine, check out [Rooms](https://github.com/u
 
 ## Quick start
 
+> [!NOTE]
+> Many parts of the engine's API are still in the design phase. Although we try to minimize it, you should expect some level of compatibility breakage when updating.
+
+To start creating your application, just create the `get_engine_config` function:
+
 ```c++
-int main()
+void get_engine_config(sEngineConfiguration& out_config)
 {
-    Engine* engine = new Engine();
+    out_config.window_width = 1280;
+    out_config.window_height = 720;
 
-    Renderer* renderer = new Renderer();
+    out_config.window_title = "MyAPP";
 
-    if (engine->initialize(renderer)) {
-        return 1;
-    }
+    // Optional custom WebGPU limits
+    out_config.render_config.required_limits.maxVertexAttributes = 8;
+    out_config.render_config.required_limits.maxComputeInvocationsPerWorkgroup = 512;
 
-    engine->start_loop();
-
-    engine->clean();
-
-    delete engine;
-
-    delete renderer;
-
-    return 0;
+    // Optional callbacks
+    out_config.engine_post_initialize = nullptr;
+    out_config.engine_pre_update = nullptr;
+    out_config.engine_post_update = nullptr;
+    out_config.engine_render = nullptr;
 }
 ```
 
-To start creating your application, override the `Engine` class! You can also override the Renderer class to customize the following optional render passes:
+You can then fill the optional callbacks to start adding functionality:
+
+```c++
+#include "engine/scene.h"
+#include "graphics/renderer_storage.h"
+#include "framework/nodes/mesh_instance_3d.h"
+#include "shaders/mesh_forward.wgsl.gen.h"
+
+void custom_engine_post_initialize()
+{
+    Engine* engine = Engine::get_instance();
+    Scene* main_scene = engine->get_main_scene();
+
+    Material* box_material = new Material();
+    box_material->set_shader(RendererStorage::get_shader_from_source(shaders::mesh_forward::source, shaders::mesh_forward::path, shaders::mesh_forward::libraries, box_material));
+
+    Surface* box_surface = new Surface();
+    box_surface->create_box(1.0f, 1.0f, 1.0f);
+    box_surface->set_material(box_material);
+
+    MeshInstance3D* box_node = new MeshInstance3D();
+    box_node->add_surface(box_surface);
+
+    main_scene->add_node(box_node);
+}
+```
+
+Remember to fill the callback in the configuration!
+
+```c++
+void custom_engine_post_initialize()
+{
+    ...
+    out_config.engine_post_initialize = custom_engine_post_initialize;
+    ...
+}
+```
+
+You can also inherit from the Engine and Renderer classes and override them for more fine-grained control:
+
+```c++
+void custom_engine_post_initialize()
+{
+    ...
+    out_config.custom_engine_instance = new CustomEngine();
+    out_config.custom_renderer_instance = new CustomRenderer();
+    ...
+}
+```
+
+For instance, you can customize the following optional render passes:
 
 - custom_pre_opaque_pass, custom_post_opaque_pass
 - custom_pre_transparent_pass, custom_post_transparent_pass
 - custom_pre_2d_pass, custom_post_2d_pass
-
-### Engine configuration
-
-Customize engine parameters using `sEngineConfiguration` when calling `Engine::initialize`:
-
-```c++
-sEngineConfiguration engine_config = {
-    .window_title = "Application",
-    .fullscren = false
-};
-
-if (engine->initialize(renderer, engine_config)) {
-    return 1;
-}
-```
-
-### Renderer configuration
-
-Customize also renderer parameters using `sRendererConfiguration` when instancing your renderer to modify WebGPU context parameters. E.g. required limits or features:
-
-```c++
-sRendererConfiguration render_config;
-
-render_config.required_limits.limits.maxStorageBuffersPerShaderStage = 8;
-render_config.required_limits.limits.maxComputeInvocationsPerWorkgroup = 1024;
-
-Renderer* renderer = new Renderer(render_config);
-```
 
 ## How to build
 
