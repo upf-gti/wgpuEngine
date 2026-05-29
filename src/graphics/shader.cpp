@@ -563,11 +563,18 @@ void Shader::get_reflection_data(const std::string& shader_content)
                     break;
                 case ResourceBinding::ResourceType::kSampler:
                     has_sampler = true;
-                    entry.sampler.type = WGPUSamplerBindingType_Filtering;
-                    break;
-                case ResourceBinding::ResourceType::kComparisonSampler:
-                    has_sampler = true;
-                    entry.sampler.type = WGPUSamplerBindingType_Comparison;
+
+                    if (resource_binding.sampler_type == ResourceBinding::SamplerType::kFiltering) {
+                        entry.sampler.type = WGPUSamplerBindingType_Filtering;
+                    } else if (resource_binding.sampler_type == ResourceBinding::SamplerType::kComparison) {
+                        entry.sampler.type = WGPUSamplerBindingType_Comparison;
+                    } else if (resource_binding.sampler_type == ResourceBinding::SamplerType::kNonFiltering) {
+                        entry.sampler.type = WGPUSamplerBindingType_NonFiltering;
+                    } else if (resource_binding.sampler_type == ResourceBinding::SamplerType::kUnknownFiltering) {
+                        entry.sampler.type = WGPUSamplerBindingType_Filtering;
+                    } else {
+                        assert(0);
+                    }
                     break;
                 case ResourceBinding::ResourceType::kUniformBuffer:
                     entry.buffer.type = WGPUBufferBindingType_Uniform;
@@ -604,6 +611,10 @@ void Shader::get_reflection_data(const std::string& shader_content)
                         break;
                     case ResourceBinding::SampledKind::kUInt:
                         entry.texture.sampleType = WGPUTextureSampleType_Uint;
+                        break;
+                    case ResourceBinding::SampledKind::kUnknownFilterable:
+                        entry.texture.sampleType = WGPUTextureSampleType_Float;
+                        spdlog::warn("Texture SampledType is kUnknownFilterable for texture \"{}\" in shader \"{}\"", resource_binding.variable_name, path);
                         break;
                     default:
                         spdlog::error("Shader reflection failed: sample kind not implemented");
