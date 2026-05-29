@@ -54,7 +54,7 @@
 
 Renderer* Renderer::instance = nullptr;
 
-Renderer::Renderer(const sRendererConfiguration& config)
+Renderer::Renderer()
 {
     instance = this;
 
@@ -83,9 +83,6 @@ Renderer::Renderer(const sRendererConfiguration& config)
 
     xr_context = webxr_context;
 #endif
-
-    set_required_limits(config.required_limits);
-    set_required_features(config.features);
 }
 
 Renderer::~Renderer()
@@ -97,8 +94,11 @@ Renderer::~Renderer()
 #endif
 }
 
-int Renderer::pre_initialize(GLFWwindow* window, bool use_mirror_screen)
+int Renderer::pre_initialize(GLFWwindow* window, const sRendererConfiguration& config, bool use_mirror_screen)
 {
+    set_required_limits(config.required_limits);
+    set_required_features(config.features);
+
     this->use_mirror_screen = use_mirror_screen;
 
     webgpu_context->window = window;
@@ -1005,8 +1005,6 @@ void Renderer::prepare_cull_instancing(const Camera& camera, std::vector<std::ve
             Material* material_override = mesh->get_surface_material_override(surface);
             Material* material = material_override ? material_override : surface->get_material();
 
-            bool material_is_2d = material->get_is_2D();
-
             if (is_shadow_pass) {
                 material = shadow_material;
             }
@@ -1014,6 +1012,8 @@ void Renderer::prepare_cull_instancing(const Camera& camera, std::vector<std::ve
             if (!material || !material->get_shader()) {
                 continue;
             }
+
+            bool material_is_2d = material->get_is_2D();
 
             if (is_shadow_pass && (!mesh->get_receive_shadows() || material_is_2d || material->get_transparency_type() == ALPHA_BLEND)) {
                 continue;

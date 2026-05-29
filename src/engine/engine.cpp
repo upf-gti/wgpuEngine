@@ -302,7 +302,7 @@ bool Engine::pre_initialize_renderer()
     glfwSetFramebufferSizeCallback(window, glfw_resize_callback);
 #endif
 
-    renderer->pre_initialize(window, use_mirror_screen);
+    renderer->pre_initialize(window, configuration.render_config, use_mirror_screen);
 
     return 0;
 }

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "config_structs.h"
 #include "framework/math/frustum_cull.h"
 #include "graphics/pipeline.h"
 #include "graphics/surface.h"
@@ -32,27 +33,6 @@ struct GLFWwindow;
 struct WebGPUContext;
 struct XRContext;
 struct sLightUniformData;
-
-struct sRendererConfiguration {
-    WGPULimits required_limits = {};
-    std::vector<WGPUFeatureName> features;
-
-    sRendererConfiguration()
-    {
-        required_limits.maxVertexAttributes = 4;
-        required_limits.maxVertexBuffers = 1;
-        required_limits.maxBindGroups = 4;
-        required_limits.maxUniformBuffersPerShaderStage = 1;
-        required_limits.maxUniformBufferBindingSize = 65536;
-        required_limits.minUniformBufferOffsetAlignment = 256;
-        required_limits.minStorageBufferOffsetAlignment = 256;
-        required_limits.maxComputeInvocationsPerWorkgroup = 256;
-        required_limits.maxSamplersPerShaderStage = 1;
-        required_limits.maxDynamicUniformBuffersPerPipelineLayout = 1;
-
-        features.push_back(WGPUFeatureName_TimestampQuery);
-    }
-};
 
 class Renderer {
 protected:
@@ -241,10 +221,10 @@ public:
     // Singleton
     static Renderer* instance;
 
-    Renderer(const sRendererConfiguration& config = {});
+    Renderer();
     virtual ~Renderer();
 
-    virtual int pre_initialize(GLFWwindow* window, bool use_mirror_screen = false);
+    virtual int pre_initialize(GLFWwindow* window, const sRendererConfiguration& config, bool use_mirror_screen = false);
     virtual int initialize();
     virtual int post_initialize();
     virtual void clean();

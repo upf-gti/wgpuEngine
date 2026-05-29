@@ -1,5 +1,6 @@
 #pragma once
 
+#include "config_structs.h"
 #include "framework/camera/camera.h"
 
 struct GLFWwindow;
@@ -8,44 +9,17 @@ class Renderer;
 class Scene;
 class Node;
 class Engine;
-class Renderer;
-
-typedef void (*EnginePostInitializeFunc)(void);
-typedef void (*EngineUpdateFunc)(float);
-typedef void (*EngineRenderFunc)(void);
-
-struct sEngineConfiguration {
-    uint16_t window_width = 1600;
-    uint16_t window_height = 900;
-    std::string window_title = "wgpuEngine";
-    eCameraType camera_type = CAMERA_FLYOVER;
-    glm::vec3 camera_eye = { 0.0f, 0.75f, 2.0f };
-    glm::vec3 camera_center = { 0.0f, 0.75f, 0.0f };
-    uint8_t msaa_count = 1;
-    bool fullscreen = false;
-
-    EnginePostInitializeFunc engine_post_initialize = nullptr;
-	EngineUpdateFunc engine_pre_update = nullptr; // Updated before main scene
-	EngineUpdateFunc engine_post_update = nullptr; // Updated after main scene
-	EngineRenderFunc engine_render = nullptr;
-
-    // To allow deprecated inheritance behavior
-    Engine* custom_engine_instance = nullptr;
-    Renderer* custom_renderer_instance = nullptr;
-};
 
 class Engine {
-
     void init_imgui(GLFWwindow* window);
     void init_shader_watchers();
 
     EnginePostInitializeFunc engine_post_initialize = nullptr;
-	EngineUpdateFunc engine_pre_update = nullptr;
-	EngineUpdateFunc engine_post_update = nullptr;
-	EngineRenderFunc engine_render = nullptr;
+    EngineUpdateFunc engine_pre_update = nullptr;
+    EngineUpdateFunc engine_post_update = nullptr;
+    EngineRenderFunc engine_render = nullptr;
 
 protected:
-
     Renderer* renderer = nullptr;
     FileWatcher* shader_reload_watcher = nullptr;
     FileWatcher* engine_shader_reload_watcher = nullptr;
@@ -72,7 +46,6 @@ protected:
     bool initialize_step();
 
 public:
-
     static Engine* instance;
 
     Engine();
