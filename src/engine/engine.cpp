@@ -267,8 +267,8 @@ bool Engine::pre_initialize_renderer()
         } else {
 #ifndef __EMSCRIPTEN__
             webgpu_context->dpi_scale = ImGui_ImplGlfw_GetContentScaleForMonitor(glfwGetPrimaryMonitor());
-            screen_width *= webgpu_context->dpi_scale;
-            screen_height *= webgpu_context->dpi_scale;
+            //screen_width *= webgpu_context->dpi_scale;
+            //screen_height *= webgpu_context->dpi_scale;
 #else
             webgpu_context->dpi_scale = emscripten_get_device_pixel_ratio();
 #endif
@@ -341,7 +341,7 @@ void Engine::init_imgui(GLFWwindow* window)
 
     ImFontConfig fontCfg = {};
     strcpy(fontCfg.Name, "ProggyForever.ttf");
-    float fontSize = 14.0f * webgpu_context->dpi_scale;
+    float fontSize = 12.0f * webgpu_context->dpi_scale;
     fontCfg.RasterizerDensity = std::max(webgpu_context->dpi_scale, webgpu_context->dpi_scale);
     float fontSizeInt = std::max(1.0f, roundf(fontSize));
     fontCfg.SizePixels = fontSizeInt;
