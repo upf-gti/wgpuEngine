@@ -1,4 +1,4 @@
-
+const DIFFUSE_UV_TRANSFORM                  = 0;
 const NORMAL_UV_TRANSFORM                   = 1;
 const METALLIC_ROUGHNESS_UV_TRANSFORM       = 2;
 const EMISSIVE_UV_TRANSFORM                 = 3;
