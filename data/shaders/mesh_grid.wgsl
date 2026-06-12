@@ -35,10 +35,10 @@ struct FragmentOutput {
     @location(0) color: vec4f
 }
 
-const AXIS_LINE_WIDTH : f32 = 0.038;
+const AXIS_LINE_WIDTH : f32 = 0.02;
 const AXIS_DASH_SCALE : f32 = 1.0;
-const MAJOR_LINE_WIDTH : f32 = 0.035;
-const MINOR_LINE_WIDTH : f32 = 0.01;
+const MAJOR_LINE_WIDTH : f32 = 0.02;
+const MINOR_LINE_WIDTH : f32 = 0.005;
 
 // https://bgolus.medium.com/the-best-darn-grid-shader-yet-727f9278b9d8#5ef5
 // Based on this implementation: https://gist.github.com/bgolus/3a561077c86b5bfead0d6cc521097bae
@@ -47,7 +47,7 @@ fn pristine_grid(uv : vec4f, lineWidth : vec2f) -> vec4f
     let uvDDXY : vec4f = vec4f(dpdx(uv.xy), dpdy(uv.xy));
     let uvDeriv : vec2f = vec2f(length(uvDDXY.xz), length(uvDDXY.yw));
 
-    let axisLineWidth : vec2f = vec2f(max(MAJOR_LINE_WIDTH, AXIS_LINE_WIDTH));
+    let axisLineWidth : vec2f = vec2f(AXIS_LINE_WIDTH);
     let axisDrawWidth : vec2f = max(axisLineWidth, uvDeriv);
     let axisLineAA : vec2f = uvDeriv * 1.5;
     var axisLines2 : vec2f = smoothstep(axisDrawWidth + axisLineAA, axisDrawWidth - axisLineAA, abs(uv.zw * 2.0));
@@ -90,12 +90,12 @@ fn pristine_grid(uv : vec4f, lineWidth : vec2f) -> vec4f
     var axisDash : vec2f = smoothstep(-axisDashDeriv, axisDashDeriv, axisDashUV);
     axisDash = select(vec2f(1.0), axisDash, uv.zw < vec2f(0.0));
 
-    let xAxisColor : vec4f = vec4f(1.0, 0.2, 0.2, 1.0);
-    let yAxisColor : vec4f = vec4f(0.2, 1.0, 0.2, 1.0);
-    let zAxisColor : vec4f = vec4f(0.2, 0.2, 1.0, 1.0);
-    let xAxisDashColor : vec4f = vec4f(0.5, 0.2, 0.2, 1.0);
-    let yAxisDashColor : vec4f = vec4f(0.2, 0.5, 0.2, 1.0);
-    let zAxisDashColor : vec4f = vec4f(0.2, 0.2, 0.5, 1.0);
+    let xAxisColor : vec4f = vec4f(1.0, 0.0, 0.0, 1.0);
+    let yAxisColor : vec4f = vec4f(0.0, 1.0, 0.0, 1.0);
+    let zAxisColor : vec4f = vec4f(0.0, 0.0, 1.0, 1.0);
+    let xAxisDashColor : vec4f = vec4f(1.0, 0.6, 0.6, 1.0);
+    let yAxisDashColor : vec4f = vec4f(0.6, 1.0, 0.6, 1.0);
+    let zAxisDashColor : vec4f = vec4f(0.6, 0.6, 1.0, 1.0);
     let centerColor : vec4f = vec4f(1.0, 1.0, 1.0, 1.0);
     let majorLineColor : vec4f = vec4f(0.27, 0.27, 0.27, 1.0);
     let minorLineColor : vec4f = vec4f(0.44, 0.44, 0.44, 1.0);

@@ -35,8 +35,6 @@ protected:
 
     bool stop_game_loop = false;
 
-    bool show_imgui = true;
-
 #ifdef __EMSCRIPTEN__
     bool wasm_module_initialized = false;
 #endif
