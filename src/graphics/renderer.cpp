@@ -19,6 +19,7 @@
 #include "framework/camera/camera.h"
 #include "framework/nodes/light_3d.h"
 #include "graphics/debug/renderdoc_capture.h"
+#include "graphics/material.h"
 #include "graphics/mesh.h"
 #include "graphics/pipeline.h"
 #include "graphics/renderer_storage.h"
@@ -42,6 +43,7 @@
 #include <algorithm>
 
 #include "shaders/gaussian_splatting/gs_render.wgsl.gen.h"
+#include "shaders/mesh_texture_cube.wgsl.gen.h"
 #include "shaders/quad_mirror.wgsl.gen.h"
 
 #include "glm/gtx/quaternion.hpp"
@@ -269,6 +271,22 @@ int Renderer::post_initialize()
     //AABB_material->set_shader(RendererStorage::get_shader_from_source(shaders::AABB_shader::source, shaders::AABB_shader::path, AABB_material));
     //selected_mesh_aabb->set_surface_material_override(selected_mesh_aabb->get_surface(0), AABB_material);
 
+    skybox_material = new Material();
+    skybox_material->set_diffuse_texture(Renderer::instance->get_irradiance_texture());
+    skybox_material->set_cull_type(CULL_BACK);
+    skybox_material->set_type(MATERIAL_UNLIT);
+    skybox_material->set_depth_write(false);
+    skybox_material->set_priority(20);
+    skybox_material->set_shader(RendererStorage::get_shader_from_source(shaders::mesh_texture_cube::source, shaders::mesh_texture_cube::path, shaders::mesh_texture_cube::libraries, skybox_material));
+
+    skybox_surface = new Surface();
+    skybox_surface->create_skybox();
+    skybox_surface->set_material(skybox_material);
+
+    skybox_mesh = new Mesh();
+    skybox_mesh->add_surface(skybox_surface);
+    skybox_mesh->set_frustum_culling_enabled(false);
+
     return 0;
 }
 
@@ -332,13 +350,10 @@ void Renderer::clean()
     delete renderdoc_capture;
 #endif
 
-    if (camera_3d) {
-        delete camera_3d;
-    }
+    delete camera_3d;
+    delete camera_2d;
 
-    if (camera_2d) {
-        delete camera_2d;
-    }
+    delete skybox_mesh;
 }
 
 void Renderer::update(float delta_time)
@@ -997,6 +1012,8 @@ void Renderer::prepare_cull_instancing(const Camera& camera, std::vector<std::ve
         frustum_cull.set_view_projection(camera.get_view_projection());
     }
 
+    render_entity_list.push_back({ skybox_mesh, glm::translate(glm::mat4(1.0f), get_camera_eye()) });
+
     // Get all surfaces from entity meshes
     for (auto render_list_data : render_entity_list) {
         Mesh* mesh = render_list_data.mesh;
@@ -1467,6 +1484,7 @@ void Renderer::resize_window(int width, int height)
 void Renderer::set_irradiance_texture(Texture* texture)
 {
     irradiance_texture = texture;
+    skybox_material->set_diffuse_texture(irradiance_texture);
 
     init_lighting_bind_group();
 }

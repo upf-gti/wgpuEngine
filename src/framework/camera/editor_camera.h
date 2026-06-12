@@ -22,6 +22,4 @@ private:
     bool flyover_enabled = false;
     bool orbit_enabled = false;
     bool pan_enabled = false;
-
-    glm::vec3 eye_target;
 };

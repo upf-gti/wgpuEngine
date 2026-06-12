@@ -217,6 +217,10 @@ protected:
 
     uint32_t frame_counter = 0;
 
+    Mesh* skybox_mesh = nullptr;
+    Surface* skybox_surface = nullptr;
+    Material* skybox_material = nullptr;
+
 public:
     // Singleton
     static Renderer* instance;

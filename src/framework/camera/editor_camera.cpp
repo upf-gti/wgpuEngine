@@ -41,7 +41,7 @@ void EditorCamera::update(float delta_time)
         distance = 0.001f;
     }
 
-    distance_lerp.value = smooth_damp(distance_lerp.value, distance, &distance_lerp.velocity, 0.1f, 50.0f, delta_time);
+    distance_lerp.value = smooth_damp(distance_lerp.value, distance, &distance_lerp.velocity, 0.05f, 200.0f, delta_time);
 
     if (flyover_enabled) {
         if (Input::is_key_pressed(GLFW_KEY_W) || Input::is_key_pressed(GLFW_KEY_UP)) {
@@ -66,9 +66,8 @@ void EditorCamera::update(float delta_time)
 
         new_eye = new_eye + move_dir_lerp.value * delta_time;
         new_center = new_eye + new_forward * distance_lerp.value;
-
     } else if (orbit_enabled || pan_enabled || mouse_wheel_delta != 0.0f) {
-        if (pan_enabled) {
+        if (pan_enabled && mouse_wheel_delta == 0.0f) {
             glm::vec2 mouse_delta = Input::get_mouse_delta();
 
             glm::vec3 right = glm::normalize(glm::cross(new_forward, glm::vec3(0.0f, 1.0f, 0.0f)));
@@ -81,6 +80,8 @@ void EditorCamera::update(float delta_time)
         }
 
         new_eye = new_center - new_forward * distance_lerp.value;
+
+        move_dir_lerp.value = smooth_damp(move_dir_lerp.value, glm::vec3(0.0f), &move_dir_lerp.velocity, 0.05f, 500.0f, delta_time);
     }
 
     look_at(new_eye, new_center, glm::vec3(0.0f, 1.0f, 0.0f), false);
@@ -93,7 +94,6 @@ void EditorCamera::look_at(const glm::vec3& eye, const glm::vec3& center, const 
     if (reset_internals) {
         distance = glm::length(eye - center);
         distance_lerp.value = distance;
-        eye_target = eye;
     }
 }
 
@@ -113,17 +113,18 @@ void EditorCamera::check_update_mode()
         flyover_enabled = true;
         orbit_enabled = false;
         pan_enabled = false;
-    } else if (Input::is_mouse_pressed(GLFW_MOUSE_BUTTON_MIDDLE) || Input::get_mouse_wheel_delta() != 0.0f) {
-        flyover_enabled = false;
-
-        if (Input::is_key_pressed(GLFW_KEY_LEFT_SHIFT)) {
+    } else {
+        if (Input::is_mouse_pressed(GLFW_MOUSE_BUTTON_MIDDLE) && Input::is_key_pressed(GLFW_KEY_LEFT_SHIFT)) {
             pan_enabled = true;
             orbit_enabled = false;
-        } else {
+            flyover_enabled = false;
+
+        } else if (Input::is_mouse_pressed(GLFW_MOUSE_BUTTON_MIDDLE) || Input::get_mouse_wheel_delta() != 0.0f) {
             pan_enabled = false;
             orbit_enabled = true;
+            flyover_enabled = false;
+        } else {
+            pan_enabled = false;
         }
-    } else {
-        pan_enabled = false;
     }
 }
