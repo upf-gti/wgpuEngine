@@ -4,12 +4,12 @@
 
 enum eCameraType {
     CAMERA_ORBIT,
-    CAMERA_FLYOVER
+    CAMERA_FLYOVER,
+    CAMERA_EDITOR
 };
 
 class Camera {
 public:
-
     enum eCameraProjectionType {
         PERSPECTIVE,
         ORTHOGRAPHIC
@@ -17,7 +17,7 @@ public:
 
     Camera() = default;
 
-    virtual void update(float delta_time) {};
+    virtual void update(float delta_time) {}
 
     void update_view_matrix();
     void update_projection_matrix();
@@ -63,7 +63,6 @@ public:
     const glm::mat4x4& get_view_projection() const { return view_projection; }
 
 protected:
-
     glm::mat4x4 view;
     glm::mat4x4 projection;
     glm::mat4x4 view_projection;

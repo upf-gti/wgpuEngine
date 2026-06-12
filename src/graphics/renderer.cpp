@@ -30,6 +30,7 @@
 #include "shaders/mesh_shadow.wgsl.gen.h"
 
 #include "framework/camera/camera_2d.h"
+#include "framework/camera/editor_camera.h"
 #include "framework/camera/flyover_camera.h"
 #include "framework/camera/orbit_camera.h"
 #include "framework/input.h"
@@ -754,6 +755,8 @@ void Renderer::set_camera_params(eCameraType camera_type, const glm::vec3& camer
         camera_3d = new FlyoverCamera();
     } else if (camera_type == CAMERA_ORBIT) {
         camera_3d = new OrbitCamera();
+    } else if (camera_type == CAMERA_EDITOR) {
+        camera_3d = new EditorCamera();
     }
 
     camera_3d->set_perspective(glm::radians(45.0f), webgpu_context->screen_width / static_cast<float>(webgpu_context->screen_height), z_near, z_far);

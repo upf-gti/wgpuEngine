@@ -30,8 +30,7 @@ void Camera3D::apply_movement(const glm::vec2& movement)
 
 void Camera3D::update(float delta_time)
 {
-    if (Input::is_mouse_pressed(GLFW_MOUSE_BUTTON_LEFT))
-    {
+    if (Input::is_mouse_pressed(GLFW_MOUSE_BUTTON_LEFT)) {
         apply_movement(Input::get_mouse_delta());
     }
 

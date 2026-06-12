@@ -274,11 +274,11 @@ float remap_range(float old_value, float old_min, float old_max, float new_min, 
 
 glm::vec3 yaw_pitch_to_vector(float yaw, float pitch)
 {
-    return glm::vec3(
+    return glm::normalize(glm::vec3(
         sinf(yaw) * cosf(-pitch),
         sinf(-pitch),
         cosf(yaw) * cosf(-pitch)
-    );
+    ));
 }
 
 void vector_to_yaw_pitch(const glm::vec3& front, float* yaw, float* pitch)
