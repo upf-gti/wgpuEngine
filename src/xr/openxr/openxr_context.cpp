@@ -134,7 +134,6 @@ bool OpenXRContext::init(WebGPUContext* webgpu_context)
             return false;
         }
 
-        // these are wrappers for the actual OpenGL texture id
         swapchains[i].images.resize(swapchain_length);
         result = dawnxr::enumerateSwapchainImages(swapchains[i].swapchain, swapchain_length, &swapchain_length, (XrSwapchainImageBaseHeader*)swapchains[i].images.data());
 
@@ -1057,7 +1056,7 @@ void OpenXRContext::acquire_swapchain(int swapchain_index)
 
     XrSwapchainImageWaitInfo wait_info = {
       .type = XR_TYPE_SWAPCHAIN_IMAGE_WAIT_INFO,
-      .timeout = INT64_MAX,
+      .timeout = XR_INFINITE_DURATION,
     };
 
     result = xrWaitSwapchainImage(swapchains[swapchain_index].swapchain, &wait_info);

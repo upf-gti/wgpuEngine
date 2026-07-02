@@ -532,6 +532,10 @@ void Engine::on_frame()
     ImGui_ImplWGPU_NewFrame();
     ImGui_ImplGlfw_NewFrame();
 
+    WebGPUContext* webgpu_context = renderer->get_webgpu_context();
+
+    ImGuiIO& io = ImGui::GetIO();
+    io.DisplayFramebufferScale = ImVec2(webgpu_context->render_width / io.DisplaySize.x, webgpu_context->render_height / io.DisplaySize.y);
     ImGui::NewFrame();
 
     ImGuizmo::SetOrthographic(false);

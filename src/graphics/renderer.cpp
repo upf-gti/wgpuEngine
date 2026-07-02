@@ -162,11 +162,6 @@ int Renderer::initialize()
     }
 #endif
 
-    //if (!is_xr_available) {
-    //    webgpu_context->render_width = webgpu_context->screen_width * screen_pixel_ratio;
-    //    webgpu_context->render_height = webgpu_context->screen_height * screen_pixel_ratio;
-    //}
-
     spdlog::info("Render size: {}x{}", webgpu_context->render_width, webgpu_context->render_height);
 
     bool create_screen_swapchain = true;
@@ -561,12 +556,14 @@ void Renderer::render()
         wgpuRenderPassEncoderEnd(render_pass);
         wgpuRenderPassEncoderRelease(render_pass);
 
-        ImGui::Render();
+        if (!is_xr_available) {
+            ImGui::Render();
+        }
 
 // TODO: remove the ifdef, IMGui brings a viewport issue that can not be fixed by setting the viewport via webgpu
 #ifndef BACKEND_METAL
         // render imgui
-        {
+        if (!is_xr_available) {
             WGPURenderPassColorAttachment color_attachments = {};
             color_attachments.view = screen_surface_texture_view;
             color_attachments.loadOp = WGPULoadOp_Load;
@@ -580,8 +577,6 @@ void Renderer::render()
             render_pass_desc.depthStencilAttachment = nullptr;
 
             WGPURenderPassEncoder pass = wgpuCommandEncoderBeginRenderPass(global_command_encoder, &render_pass_desc);
-
-            //wgpuRenderPassEncoderSetViewport(render_pass, 0.0f,0.0f,1600.0f,900.0f,0.0f,1.0f);
 
             webgpu_context->push_debug_group(pass, { "ImGui", WGPU_STRLEN });
 
@@ -1568,6 +1563,8 @@ void Renderer::render_mirror(WGPUTextureView screen_surface_texture_view, WGPUBi
         {
             WGPURenderPassEncoder render_pass = wgpuCommandEncoderBeginRenderPass(global_command_encoder, &render_pass_descr);
 
+            webgpu_context->push_debug_group(render_pass, { "Mirror", WGPU_STRLEN });
+
             // Bind Pipeline
             if (!mirror_pipeline.set(render_pass)) {
                 wgpuRenderPassEncoderEnd(render_pass);
@@ -1584,6 +1581,8 @@ void Renderer::render_mirror(WGPUTextureView screen_surface_texture_view, WGPUBi
 
             // Submit drawcall
             wgpuRenderPassEncoderDraw(render_pass, 6, 1, 0, 0);
+
+            webgpu_context->pop_debug_group(render_pass);
 
             wgpuRenderPassEncoderEnd(render_pass);
             wgpuRenderPassEncoderRelease(render_pass);
@@ -1606,7 +1605,11 @@ void Renderer::render_mirror(WGPUTextureView screen_surface_texture_view, WGPUBi
 
         WGPURenderPassEncoder pass = wgpuCommandEncoderBeginRenderPass(global_command_encoder, &render_pass_desc);
 
+        webgpu_context->push_debug_group(pass, { "ImGui", WGPU_STRLEN });
+
         ImGui_ImplWGPU_RenderDrawData(ImGui::GetDrawData(), pass);
+
+        webgpu_context->pop_debug_group(pass);
 
         wgpuRenderPassEncoderEnd(pass);
         wgpuRenderPassEncoderRelease(pass);
