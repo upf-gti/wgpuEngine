@@ -814,7 +814,8 @@ void Text2D::disable_2d()
     if (material->get_is_2D()) {
         material->set_is_2D(false);
         material->set_depth_read(true);
-        //text_entity->generate_mesh(color, material->is_2D);
+
+        text_entity->set_is_2d(false);
     }
 
     Panel2D::disable_2d();

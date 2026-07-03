@@ -1,6 +1,7 @@
 #include "math_utils.h"
 
 #include <glm/gtx/projection.hpp>
+#include <glm/gtc/epsilon.hpp>
 
 #include <algorithm>
 #include <bit>
@@ -290,6 +291,11 @@ void vector_to_yaw_pitch(const glm::vec3& front, float* yaw, float* pitch)
 
 // Function to compute rotation quaternion to face the camera
 glm::quat get_rotation_to_face(const glm::vec3& position, const glm::vec3& target, const glm::vec3& up) {
+
+    if (glm::all(glm::epsilonEqual(position, target, 0.0001f))) {
+        return { 0.0f, 0.0f, 0.0f, 1.0f };
+    }
+
     // Compute direction from object to camera
     glm::vec3 direction = glm::normalize(position - target);
 
