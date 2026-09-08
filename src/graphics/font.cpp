@@ -1,6 +1,6 @@
 #include "font.h"
 
-#include "renderer_storage.h"
+#include "core/managers/render/render_storage.h"
 #include "graphics/texture.h"
 
 #include <filesystem>
@@ -20,8 +20,9 @@ Font* Font::get(const std::string& font_name)
 {
     // check if already loaded
     std::map<std::string, Font*>::iterator it = s_fonts.find(font_name);
-    if (it != s_fonts.end())
+    if (it != s_fonts.end()) {
         return it->second;
+    }
 
     Font* font = new Font();
     font->load(font_name);
@@ -35,15 +36,14 @@ void Font::load(const std::string& font_name)
     rapidjson::Document j = load_json("data/fonts/" + font_name + "/" + font_name + ".json");
 
     // Load all pages
-    {   
+    {
         const rapidjson::Value& font_pages = j["pages"];
-        for (rapidjson::SizeType i = 0; i < font_pages.Size(); i++)
-        {
+        for (rapidjson::SizeType i = 0; i < font_pages.Size(); i++) {
             fs::path page_path = fs::path(font_pages[i].GetString());
             page_path.replace_extension("png");
             std::string filename = "data/fonts/" + font_name + "/" + page_path.string();
 
-            Texture* tex = RendererStorage::get_texture(filename, TEXTURE_STORAGE_KEEP_MEMORY);
+            Texture* tex = RenderStorage::get_singleton()->get_texture(filename, TEXTURE_STORAGE_KEEP_MEMORY);
             textures.push_back(tex);
         }
     }
@@ -58,8 +58,7 @@ void Font::load(const std::string& font_name)
 
         const rapidjson::Value& font_charset = info["charset"];
         charset.resize(font_charset.Size());
-        for (rapidjson::SizeType i = 0; i < font_charset.Size(); i++)
-        {
+        for (rapidjson::SizeType i = 0; i < font_charset.Size(); i++) {
             charset.push_back(font_charset[i].GetString()[0]);
         }
 
@@ -94,23 +93,21 @@ void Font::load(const std::string& font_name)
     // Fill kernings multimap
     {
         const rapidjson::Value& _kernings = j["kernings"];
-        for (rapidjson::SizeType i = 0; i < _kernings.Size(); i++)
-        {
+        for (rapidjson::SizeType i = 0; i < _kernings.Size(); i++) {
             const rapidjson::Value& kerning = _kernings[i];
             CKerning k;
             k.first = kerning["first"].GetInt();
             k.second = kerning["second"].GetInt();
             k.amount = kerning["amount"].GetInt();
 
-            kernings.insert({ k.first,k });
+            kernings.insert({ k.first, k });
         }
     }
 
     // Fill character map with all its properties
     {
         const rapidjson::Value& _characters = j["chars"];
-        for (rapidjson::SizeType i = 0; i < _characters.Size(); i++)
-        {
+        for (rapidjson::SizeType i = 0; i < _characters.Size(); i++) {
             const rapidjson::Value& character = _characters[i];
 
             Character new_character;
@@ -121,9 +118,9 @@ void Font::load(const std::string& font_name)
             glm::vec2 pos = new_character.pos = glm::vec2(character["x"].GetInt(), character["y"].GetInt()) + glm::vec2(0.5f);
             glm::vec2 size = new_character.size = glm::vec2(character["width"].GetInt(), character["height"].GetInt());
             glm::vec2 off = new_character.offset = glm::vec2(character["xoffset"].GetInt(), character["yoffset"].GetInt());
-            int  adv = new_character.xadvance = character["xadvance"].GetInt();
-            int  chnl = new_character.chnl = character["chnl"].GetInt();
-            int  pg = new_character.page = character["page"].GetInt();
+            int adv = new_character.xadvance = character["xadvance"].GetInt();
+            int chnl = new_character.chnl = character["chnl"].GetInt();
+            int pg = new_character.page = character["page"].GetInt();
 
             //A:00 C:10
             //B:01 D:11
@@ -135,7 +132,7 @@ void Font::load(const std::string& font_name)
             glm::vec3 A = glm::vec3(off, 0.f);
             glm::vec3 B = glm::vec3(off + glm::vec2(0.f, size.y), 0.f);
             glm::vec3 C = glm::vec3(off + glm::vec2(size.x, 0.f), 0.f);
-            glm::vec3 D = glm::vec3(off + size, 0.f)             ;
+            glm::vec3 D = glm::vec3(off + size, 0.f);
 
             glm::vec2 uvA = pos;
             glm::vec2 uvB = pos + glm::vec2(0.f, size.y);
@@ -161,16 +158,16 @@ void Font::load(const std::string& font_name)
     }
 }
 
-float Font::adjust_kerning_pairs(int first, int second) {
-
+float Font::adjust_kerning_pairs(int first, int second)
+{
     typedef std::multimap<int, CKerning>::iterator kiterator;
-    if (!kernings.count(first))
+    if (!kernings.count(first)) {
         return 0.f;
+    }
 
     std::pair<kiterator, kiterator> result = kernings.equal_range(first);
 
-    for (kiterator it = result.first; it != result.second; ++it)
-    {
+    for (kiterator it = result.first; it != result.second; ++it) {
         CKerning& k = it->second;
         if (k.second == second) {
             return (float)k.amount;

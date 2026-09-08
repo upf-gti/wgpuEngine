@@ -5,7 +5,7 @@
 
 #include "hdre.h"
 
-#include "spdlog/spdlog.h"
+#include "core/managers/debug/debug_manager.h"
 
 std::map<std::string, HDRE*> HDRE::sHDRELoaded;
 
@@ -122,14 +122,14 @@ bool HDRE::process_header()
 {
     if (header.type != 3)
     {
-        spdlog::error("ArrayType not supported. Please export in Float32Array");
+        LOG_ERROR("ArrayType not supported. Please export in Float32Array");
         return false;
     }
 
 
     if (header.version < 2.0)
     {
-        spdlog::error("Versions below 2.0 are no longer supported. Please, reexport the environment");
+        LOG_ERROR("Versions below 2.0 are no longer supported. Please, reexport the environment");
         return false;
     }
 
@@ -237,7 +237,7 @@ bool HDRE::load(const std::string& filename)
 		w = (int)(width / pow(2.0, mip_level));
 	}
 
-    spdlog::info("HDRE loaded: {} (v{})", filename, version);
+    LOG_INFO("HDRE loaded: {} (v{})", filename, version);
 
 	return true;
 }

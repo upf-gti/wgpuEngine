@@ -3,9 +3,9 @@
 #include "framework/math/math_utils.h"
 #include "framework/colors.h"
 
-#include "graphics/renderer_storage.h"
+#include "core/managers/render/render_storage.h"
 
-#include "spdlog/spdlog.h"
+#include "core/managers/debug/debug_manager.h"
 #include "imgui.h"
 
 CylinderMesh::CylinderMesh(float top_radius, float bottom_radius, float height, uint32_t rings, uint32_t ring_segments, bool cap_top, bool cap_bottom, const glm::vec3& color)

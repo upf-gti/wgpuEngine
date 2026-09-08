@@ -1,7 +1,7 @@
 #include "parse_ply.h"
 
-#include "framework/nodes/gs_node.h"
 #include "framework/math/math_utils.h"
+#include "scene/3d/gs_node.h"
 
 #include "happly.h"
 
@@ -44,8 +44,7 @@ bool PlyParser::parse(std::string file_path, std::vector<Node*>& entities, uint3
     std::vector<glm::quat> rotations;
     std::vector<glm::vec4> scales;
 
-    for (uint32_t i = 0; i < splats_count; ++i)
-    {
+    for (uint32_t i = 0; i < splats_count; ++i) {
         const double SH_C0 = 0.28209479177387814;
 
         glm::vec4 position = { x[i], y[i], z[i], 0.0f };

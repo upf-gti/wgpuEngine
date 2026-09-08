@@ -2,12 +2,11 @@
 
 #include "includes.h"
 
-#include "framework/nodes/node_2d.h"
+#include "scene/2d/node_2d.h"
 
 class Node2D;
 
 class IO {
-
     static std::vector<std::pair<Node2D*, sInputData>> frame_inputs;
 
     static bool want_capture_input;
@@ -22,20 +21,19 @@ class IO {
     static glm::vec3 xr_world_position;
 
 public:
-
     static void initialize();
     static void start_frame();
     static void end_frame();
     static void update(float delta_time);
 
-    static void set_xr_ray_distance(float d) { xr_ray_distance = d; };
-    static void set_xr_position(const glm::vec2& p) { xr_position = p; };
-    static void set_xr_world_position(const glm::vec3& p) { xr_world_position = p; };
+    static void set_xr_ray_distance(float d) { xr_ray_distance = d; }
+    static void set_xr_position(const glm::vec2& p) { xr_position = p; }
+    static void set_xr_world_position(const glm::vec3& p) { xr_world_position = p; }
 
     static void set_focus(Node2D* node);
     static void set_hover(Node2D* node, const sInputData& data);
 
-    static void set_want_capture_input(bool value) { want_capture_input = value; };
+    static void set_want_capture_input(bool value) { want_capture_input = value; }
 
     static void blur();
 
@@ -59,8 +57,8 @@ public:
     static const float get_xr_ray_distance() { return last_xr_ray_distance; }
 
     /*
-    *   Input management
-    */
+     *   Input management
+     */
 
     static void push_input(Node2D* node, sInputData data);
 };
