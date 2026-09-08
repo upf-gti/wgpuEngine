@@ -1,6 +1,6 @@
 #include "orbit_camera.h"
 
-#include "framework/input.h"
+#include "core/managers/input/input_manager.h"
 
 #include "glm/gtx/norm.hpp"
 
@@ -11,7 +11,7 @@ OrbitCamera::OrbitCamera() : Camera3D()
 
 void OrbitCamera::update(float delta_time)
 {
-    bool pan_enabled = Input::is_mouse_pressed(GLFW_MOUSE_BUTTON_RIGHT) || Input::is_mouse_pressed(GLFW_MOUSE_BUTTON_MIDDLE);
+    bool pan_enabled = InputManager::get_singleton()->is_mouse_pressed(GLFW_MOUSE_BUTTON_RIGHT) || InputManager::get_singleton()->is_mouse_pressed(GLFW_MOUSE_BUTTON_MIDDLE);
 
     glm::vec3 new_forward;
 
@@ -21,7 +21,7 @@ void OrbitCamera::update(float delta_time)
         new_forward = glm::normalize(yaw_pitch_to_vector(delta_yaw_lerp.value, delta_pitch_lerp.value));
 
     } else {
-        glm::vec2 mouse_delta = Input::get_mouse_delta();
+        glm::vec2 mouse_delta = InputManager::get_singleton()->get_mouse_delta();
 
         new_forward = glm::normalize(yaw_pitch_to_vector(delta_yaw, delta_pitch));
 
@@ -37,10 +37,10 @@ void OrbitCamera::update(float delta_time)
 
     float final_speed = speed;
 
-    if (Input::is_key_pressed(GLFW_KEY_LEFT_SHIFT)) final_speed *= 10.0f;
-    if (Input::is_key_pressed(GLFW_KEY_LEFT_CONTROL)) final_speed *= 0.1f;
+    if (InputManager::get_singleton()->is_key_pressed(GLFW_KEY_LEFT_SHIFT)) final_speed *= 10.0f;
+    if (InputManager::get_singleton()->is_key_pressed(GLFW_KEY_LEFT_CONTROL)) final_speed *= 0.1f;
 
-    distance -= Input::get_mouse_wheel_delta() * final_speed;
+    distance -= InputManager::get_singleton()->get_mouse_wheel_delta() * final_speed;
 
     if (distance < 0.001f) {
         distance = 0.001f;

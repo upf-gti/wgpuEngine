@@ -1,6 +1,6 @@
 #include "font.h"
 
-#include "renderer_storage.h"
+#include "render_storage.h"
 #include "graphics/texture.h"
 
 #include <filesystem>
@@ -43,7 +43,7 @@ void Font::load(const std::string& font_name)
             page_path.replace_extension("png");
             std::string filename = "data/fonts/" + font_name + "/" + page_path.string();
 
-            Texture* tex = RendererStorage::get_texture(filename, TEXTURE_STORAGE_KEEP_MEMORY);
+            Texture* tex = RenderStorage::get_texture(filename, TEXTURE_STORAGE_KEEP_MEMORY);
             textures.push_back(tex);
         }
     }

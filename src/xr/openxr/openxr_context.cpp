@@ -4,16 +4,16 @@
 
 #include <cstdarg>
 
-#include "framework/input.h"
-#include "framework/math/transform.h"
+#include "core/managers/input/input_manager.h"
+#include "core/managers/render/render_manager.h"
 
-#include "graphics/webgpu_context.h"
+#include "framework/math/transform.h"
 
 #include "spdlog/spdlog.h"
 
 // we need an identity pose for creating spaces without offsets
-static XrPosef identity_pose = { .orientation = {.x = 0, .y = 0, .z = 0, .w = 1.0},
-                                 .position = {.x = 0, .y = 0, .z = 0} };
+static XrPosef identity_pose = { .orientation = { .x = 0, .y = 0, .z = 0, .w = 1.0 },
+    .position = { .x = 0, .y = 0, .z = 0 } };
 
 // Helper functions for pose to GLM
 glm::mat4x4 OpenXRProjection_to_glm(const XrFovf& fov, float nearZ, float farZ);
@@ -22,42 +22,40 @@ inline XrInputPose OpenXRPose_to_XrInputPose(const XrPosef& xrPosef);
 glm::quat slerp(const glm::quat& start, const glm::quat& end, float percent);
 glm::vec3 slerp(const glm::vec3& start, const glm::vec3& end, float percent);
 
-OpenXRContext::~OpenXRContext() {
+OpenXRContext::~OpenXRContext()
+{
 }
 
-bool OpenXRContext::init(WebGPUContext* webgpu_context)
+Error OpenXRContext::initialize()
 {
     XrResult result;
 
     uint32_t blend_modes_count = 0;
     result = xrEnumerateEnvironmentBlendModes(instance, system_id, XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO, 0, &blend_modes_count, NULL);
 
-    if (!XR_SUCCEEDED(result))
-    {
+    if (!XR_SUCCEEDED(result)) {
         spdlog::error("Failed to enumerate number of blend modes");
-        return false;
+        return Error::FAILED;
     }
 
     std::vector<XrEnvironmentBlendMode> blendModes(blend_modes_count);
     result = xrEnumerateEnvironmentBlendModes(instance, system_id, XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO, blend_modes_count, &blend_modes_count, blendModes.data());
 
-    if (!XR_SUCCEEDED(result))
-    {
+    if (!XR_SUCCEEDED(result)) {
         spdlog::error("Failed to enumerate blend modes");
-        return false;
+        return Error::FAILED;
     }
 
-    if (check_backend_requirements()) {
-        return 1;
+    if (check_backend_requirements() == Error::FAILED) {
+        return Error::FAILED;
     }
 
     view_count = 0;
     result = xrEnumerateViewConfigurationViews(instance, system_id, XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO, 0, &view_count, NULL);
 
-    if (!XR_SUCCEEDED(result))
-    {
+    if (!XR_SUCCEEDED(result)) {
         spdlog::error("Failed to get view configuration count");
-        return false;
+        return Error::FAILED;
     }
 
     views.resize(view_count, { XR_TYPE_VIEW });
@@ -67,15 +65,14 @@ bool OpenXRContext::init(WebGPUContext* webgpu_context)
 
     result = xrEnumerateViewConfigurationViews(instance, system_id, XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO, view_count, &view_count, viewconfig_views.data());
 
-    if (!XR_SUCCEEDED(result))
-    {
+    if (!XR_SUCCEEDED(result)) {
         spdlog::error("Failed to enumerate view configuration views!");
-        return false;
+        return Error::FAILED;
     }
 
     print_viewconfig_view_info();
 
-    dawnxr::GraphicsBindingDawn binding = { .device = webgpu_context->device };
+    dawnxr::GraphicsBindingDawn binding = { .device = RenderAPI::get_singleton()->get_device() };
 
     XrSessionCreateInfo xrCreateInfo = {
         .type = XR_TYPE_SESSION_CREATE_INFO,
@@ -87,23 +84,19 @@ bool OpenXRContext::init(WebGPUContext* webgpu_context)
     uint32_t swapchain_format_count;
     result = dawnxr::enumerateSwapchainFormats(session, 0, &swapchain_format_count, NULL);
 
-    if (!XR_SUCCEEDED(result))
-    {
+    if (!XR_SUCCEEDED(result)) {
         spdlog::error("Failed to get number of supported swapchain formats");
-        return false;
+        return Error::FAILED;
     }
 
     printf("Runtime supports %d swapchain formats\n", swapchain_format_count);
     swapchain_formats.resize(swapchain_format_count);
     result = dawnxr::enumerateSwapchainFormats(session, swapchain_format_count, &swapchain_format_count, swapchain_formats.data());
 
-    if (!XR_SUCCEEDED(result))
-    {
+    if (!XR_SUCCEEDED(result)) {
         spdlog::error("Failed to enumerate swapchain formats");
-        return false;
+        return Error::FAILED;
     }
-
-    //webgpu_context->swapchain_format = static_cast<WGPUTextureFormat>(swapchain_formats[0]);
 
     //config_render_pipeline();
 
@@ -121,6 +114,8 @@ bool OpenXRContext::init(WebGPUContext* webgpu_context)
         .mipCount = 1
     };
 
+    swapchain_format = WGPUTextureFormat_BGRA8UnormSrgb; // TODO: match value in swapchain_formats
+
     swapchains.resize(view_count);
 
     for (uint32_t i = 0; i < view_count; i++) {
@@ -128,19 +123,17 @@ bool OpenXRContext::init(WebGPUContext* webgpu_context)
 
         result = dawnxr::enumerateSwapchainImages(swapchains[i].swapchain, 0, &swapchain_length, nullptr);
 
-        if (!XR_SUCCEEDED(result))
-        {
+        if (!XR_SUCCEEDED(result)) {
             spdlog::error("Failed to enumerate swapchains");
-            return false;
+            return Error::FAILED;
         }
 
         swapchains[i].images.resize(swapchain_length);
         result = dawnxr::enumerateSwapchainImages(swapchains[i].swapchain, swapchain_length, &swapchain_length, (XrSwapchainImageBaseHeader*)swapchains[i].images.data());
 
-        if (!XR_SUCCEEDED(result))
-        {
+        if (!XR_SUCCEEDED(result)) {
             spdlog::error("Failed to enumerate swapchain images");
-            return false;
+            return Error::FAILED;
         }
     }
 
@@ -156,10 +149,9 @@ bool OpenXRContext::init(WebGPUContext* webgpu_context)
 
     result = xrCreateReferenceSpace(session, &play_space_create_info, &play_space);
 
-    if (!XR_SUCCEEDED(result))
-    {
+    if (!XR_SUCCEEDED(result)) {
         spdlog::error("Failed to create play space!");
-        return false;
+        return Error::FAILED;
     }
 
     projection_views.resize(view_count);
@@ -179,22 +171,11 @@ bool OpenXRContext::init(WebGPUContext* webgpu_context)
 
     viewport = glm::ivec4(0, 0, viewconfig_views[0].recommendedImageRectWidth, viewconfig_views[0].recommendedImageRectHeight);
 
-    if (Input::init_xr(this)) {
-        spdlog::error("Can't initialize OpenXR input");
-        return 1;
-    }
-
-    initialized = true;
-
-    return true;
+    return Error::OK;
 }
 
-void OpenXRContext::clean()
+void OpenXRContext::finalize()
 {
-    if (!initialized) {
-        return;
-    }
-
     for (uint32_t i = 0; i < view_count; ++i) {
         xrDestroySwapchain(swapchains[i].swapchain);
     }
@@ -204,44 +185,40 @@ void OpenXRContext::clean()
     xrDestroyInstance(instance);
 }
 
-bool OpenXRContext::create_instance()
+Error OpenXRContext::create_instance()
 {
     XrResult result;
 
     uint32_t extension_count = 0;
     result = xrEnumerateInstanceExtensionProperties(NULL, 0, &extension_count, NULL);
 
-    if (!XR_SUCCEEDED(result))
-    {
+    if (!XR_SUCCEEDED(result)) {
         spdlog::error("Could not initilize OpenXR: Failed to enumerate number of extension properties");
-        return false;
+        return Error::FAILED;
     }
 
     std::vector<XrExtensionProperties> extensionProperties(extension_count, { XR_TYPE_EXTENSION_PROPERTIES, nullptr });
     result = xrEnumerateInstanceExtensionProperties(NULL, extension_count, &extension_count, extensionProperties.data());
 
-    if (!XR_SUCCEEDED(result))
-    {
+    if (!XR_SUCCEEDED(result)) {
         spdlog::error("Failed to enumerate extension properties");
-        return false;
+        return Error::FAILED;
     }
 
     uint32_t layer_count = 0;
     result = xrEnumerateApiLayerProperties(0, &layer_count, NULL);
 
-    if (!XR_SUCCEEDED(result))
-    {
+    if (!XR_SUCCEEDED(result)) {
         spdlog::error("Failed to enumerate layer properties");
-        return false;
+        return Error::FAILED;
     }
 
     std::vector<XrApiLayerProperties> layerProperties(layer_count, { XR_TYPE_API_LAYER_PROPERTIES, nullptr });
     result = xrEnumerateApiLayerProperties(layer_count, &layer_count, layerProperties.data());
 
-    if (!XR_SUCCEEDED(result))
-    {
+    if (!XR_SUCCEEDED(result)) {
         spdlog::error("Failed to enumerate extension properties");
-        return false;
+        return Error::FAILED;
     }
 
     bool vulkan_ext = false;
@@ -281,7 +258,7 @@ bool OpenXRContext::create_instance()
 #if defined(BACKEND_VULKAN)
     if (!vulkan_ext) {
         spdlog::error("Runtime does not support Vulkan extension!");
-        return false;
+        return Error::FAILED;
     }
 
     const char* enabled_exts[3] = { "XR_KHR_vulkan_enable2" };
@@ -289,7 +266,7 @@ bool OpenXRContext::create_instance()
 #elif defined(BACKEND_DX12)
     if (!dx12_ext) {
         spdlog::error("Runtime does not support DX12 extension!");
-        return false;
+        return Error::FAILED;
     }
 
     const char* enabled_exts[3] = { "XR_KHR_D3D12_enable" };
@@ -308,9 +285,11 @@ bool OpenXRContext::create_instance()
         .next = nullptr,
         .createFlags = 0,
         .applicationInfo = {
-            "wgpuEngine", 1,
-            "Custom", 0,
-            XR_API_VERSION_1_0,
+                "wgpuEngine",
+                1,
+                "Custom",
+                0,
+                XR_API_VERSION_1_0,
         },
         .enabledApiLayerCount = 0,
         .enabledApiLayerNames = NULL,
@@ -320,10 +299,9 @@ bool OpenXRContext::create_instance()
 
     result = xrCreateInstance(&instance_create_info, &instance);
 
-    if (!XR_SUCCEEDED(result))
-    {
+    if (!XR_SUCCEEDED(result)) {
         spdlog::error("Failed to create XR instance");
-        return false;
+        return Error::FAILED;
     }
 
     XrInstanceProperties instance_props = {
@@ -333,30 +311,28 @@ bool OpenXRContext::create_instance()
 
     result = xrGetInstanceProperties(instance, &instance_props);
 
-    if (!XR_SUCCEEDED(result))
-    {
+    if (!XR_SUCCEEDED(result)) {
         spdlog::error("Failed to get instance info");
-        return false;
+        return Error::FAILED;
     }
 
     spdlog::info("Runtime Name: {}", instance_props.runtimeName);
     spdlog::info("Runtime Version: {}.{}.{}", XR_VERSION_MAJOR(instance_props.runtimeVersion),
-        XR_VERSION_MINOR(instance_props.runtimeVersion),
-        XR_VERSION_PATCH(instance_props.runtimeVersion));
+            XR_VERSION_MINOR(instance_props.runtimeVersion),
+            XR_VERSION_PATCH(instance_props.runtimeVersion));
 
     XrSystemGetInfo system_get_info = { .type = XR_TYPE_SYSTEM_GET_INFO, .next = NULL, .formFactor = XR_FORM_FACTOR_HEAD_MOUNTED_DISPLAY };
     result = xrGetSystem(instance, &system_get_info, &system_id);
 
-    if (!XR_SUCCEEDED(result))
-    {
+    if (!XR_SUCCEEDED(result)) {
         spdlog::warn("Failed to get system for HMD form factor. Make sure the headset is properly connected");
-        return false;
+        return Error::FAILED;
     }
 
-    return true;
+    return Error::OK;
 }
 
-bool OpenXRContext::begin_session()
+Error OpenXRContext::begin_session()
 {
     // Start the session
     XrSessionBeginInfo session_begin_info = {
@@ -365,26 +341,24 @@ bool OpenXRContext::begin_session()
         .primaryViewConfigurationType = XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO
     };
     const XrResult result = xrBeginSession(session, &session_begin_info);
-    if (!XR_SUCCEEDED(result))
-    {
+    if (!XR_SUCCEEDED(result)) {
         spdlog::error("Failed to begin session!");
-        return false;
+        return Error::FAILED;
     }
 
-    return true;
+    return Error::OK;
 }
 
-bool OpenXRContext::end_session()
+Error OpenXRContext::end_session()
 {
     // End the session
     const XrResult result = xrEndSession(session);
-    if (!XR_SUCCEEDED(result))
-    {
+    if (!XR_SUCCEEDED(result)) {
         spdlog::error("Failed to end session!");
-        return false;
+        return Error::FAILED;
     }
 
-    return true;
+    return Error::OK;
 }
 
 WGPUTextureView OpenXRContext::get_swapchain_view(uint8_t eye_idx, uint32_t image_idx)
@@ -409,17 +383,17 @@ void OpenXRContext::print_viewconfig_view_info()
     for (uint32_t i = 0; i < viewconfig_views.size(); i++) {
         printf("View Configuration View %d:\n", i);
         printf("\tResolution       : Recommended %dx%d, Max: %dx%d\n",
-            viewconfig_views[0].recommendedImageRectWidth,
-            viewconfig_views[0].recommendedImageRectHeight,
-            viewconfig_views[0].maxImageRectWidth,
-            viewconfig_views[0].maxImageRectHeight);
+                viewconfig_views[0].recommendedImageRectWidth,
+                viewconfig_views[0].recommendedImageRectHeight,
+                viewconfig_views[0].maxImageRectWidth,
+                viewconfig_views[0].maxImageRectHeight);
         printf("\tSwapchain Samples: Recommended: %d, Max: %d)\n",
-            viewconfig_views[0].recommendedSwapchainSampleCount,
-            viewconfig_views[0].maxSwapchainSampleCount);
+                viewconfig_views[0].recommendedSwapchainSampleCount,
+                viewconfig_views[0].maxSwapchainSampleCount);
     }
 }
 
-int OpenXRContext::check_backend_requirements()
+Error OpenXRContext::check_backend_requirements()
 {
     XrResult result;
 
@@ -429,10 +403,9 @@ int OpenXRContext::check_backend_requirements()
     PFN_xrGetVulkanGraphicsRequirements2KHR pfnGetVulkanGraphicsRequirements2KHR = NULL;
     {
         result = xrGetInstanceProcAddr(instance, "xrGetVulkanGraphicsRequirements2KHR", (PFN_xrVoidFunction*)&pfnGetVulkanGraphicsRequirements2KHR);
-        if (!XR_SUCCEEDED(result))
-        {
+        if (!XR_SUCCEEDED(result)) {
             spdlog::error("Failed to get Vulkan graphics requirements function!");
-            return false;
+            return Error::FAILED;
         }
     }
 
@@ -446,10 +419,9 @@ int OpenXRContext::check_backend_requirements()
     PFN_xrGetD3D12GraphicsRequirementsKHR pfnGetD3D12GraphicsRequirements2KHR = NULL;
     {
         result = xrGetInstanceProcAddr(instance, "xrGetD3D12GraphicsRequirementsKHR", (PFN_xrVoidFunction*)&pfnGetD3D12GraphicsRequirements2KHR);
-        if (!XR_SUCCEEDED(result))
-        {
+        if (!XR_SUCCEEDED(result)) {
             spdlog::error("Failed to get DX12 graphics requirements function!");
-            return false;
+            return Error::FAILED;
         }
     }
 
@@ -458,28 +430,28 @@ int OpenXRContext::check_backend_requirements()
     check_dx12_version(&dx12_reqs);
 #endif
 
-    return 0;
+    return Error::OK;
 }
 
 #if defined(BACKEND_VULKAN)
-bool OpenXRContext::check_vulkan_version(XrGraphicsRequirementsVulkanKHR* vulkan_reqs)
+Error OpenXRContext::check_vulkan_version(XrGraphicsRequirementsVulkanKHR* vulkan_reqs)
 {
     XrVersion desired_vulkan_version = XR_MAKE_VERSION(1, 0, 0);
     if (desired_vulkan_version > vulkan_reqs->maxApiVersionSupported ||
-        desired_vulkan_version < vulkan_reqs->minApiVersionSupported) {
+            desired_vulkan_version < vulkan_reqs->minApiVersionSupported) {
         printf(
-            "We want Vulkan %d.%d.%d, but runtime only supports Vulkan %d.%d.%d - %d.%d.%d!\n",
-            XR_VERSION_MAJOR(desired_vulkan_version), XR_VERSION_MINOR(desired_vulkan_version),
-            XR_VERSION_PATCH(desired_vulkan_version),
-            XR_VERSION_MAJOR(vulkan_reqs->minApiVersionSupported),
-            XR_VERSION_MINOR(vulkan_reqs->minApiVersionSupported),
-            XR_VERSION_PATCH(vulkan_reqs->minApiVersionSupported),
-            XR_VERSION_MAJOR(vulkan_reqs->maxApiVersionSupported),
-            XR_VERSION_MINOR(vulkan_reqs->maxApiVersionSupported),
-            XR_VERSION_PATCH(vulkan_reqs->maxApiVersionSupported));
-        return false;
+                "We want Vulkan %d.%d.%d, but runtime only supports Vulkan %d.%d.%d - %d.%d.%d!\n",
+                XR_VERSION_MAJOR(desired_vulkan_version), XR_VERSION_MINOR(desired_vulkan_version),
+                XR_VERSION_PATCH(desired_vulkan_version),
+                XR_VERSION_MAJOR(vulkan_reqs->minApiVersionSupported),
+                XR_VERSION_MINOR(vulkan_reqs->minApiVersionSupported),
+                XR_VERSION_PATCH(vulkan_reqs->minApiVersionSupported),
+                XR_VERSION_MAJOR(vulkan_reqs->maxApiVersionSupported),
+                XR_VERSION_MINOR(vulkan_reqs->maxApiVersionSupported),
+                XR_VERSION_PATCH(vulkan_reqs->maxApiVersionSupported));
+        return Error::FAILED;
     }
-    return true;
+    return Error::OK;
 }
 #endif
 
@@ -500,8 +472,7 @@ void OpenXRContext::print_reference_spaces()
     uint32_t ref_space_count;
     result = xrEnumerateReferenceSpaces(session, 0, &ref_space_count, NULL);
 
-    if (!XR_SUCCEEDED(result))
-    {
+    if (!XR_SUCCEEDED(result)) {
         spdlog::error("Getting number of reference spaces failed!");
         return;
     }
@@ -509,8 +480,7 @@ void OpenXRContext::print_reference_spaces()
     std::vector<XrReferenceSpaceType> ref_spaces(ref_space_count);
     result = xrEnumerateReferenceSpaces(session, ref_space_count, &ref_space_count, ref_spaces.data());
 
-    if (!XR_SUCCEEDED(result))
-    {
+    if (!XR_SUCCEEDED(result)) {
         spdlog::error("Enumerating reference spaces failed!");
         return;
     }
@@ -519,14 +489,11 @@ void OpenXRContext::print_reference_spaces()
     for (uint32_t i = 0; i < ref_space_count; i++) {
         if (ref_spaces[i] == XR_REFERENCE_SPACE_TYPE_LOCAL) {
             spdlog::info("\tXR_REFERENCE_SPACE_TYPE_LOCAL");
-        }
-        else if (ref_spaces[i] == XR_REFERENCE_SPACE_TYPE_STAGE) {
+        } else if (ref_spaces[i] == XR_REFERENCE_SPACE_TYPE_STAGE) {
             spdlog::info("\tXR_REFERENCE_SPACE_TYPE_STAGE");
-        }
-        else if (ref_spaces[i] == XR_REFERENCE_SPACE_TYPE_VIEW) {
+        } else if (ref_spaces[i] == XR_REFERENCE_SPACE_TYPE_VIEW) {
             spdlog::info("\tXR_REFERENCE_SPACE_TYPE_VIEW");
-        }
-        else {
+        } else {
             spdlog::info("\tOther (extension?) refspace %{}", static_cast<uint32_t>(ref_spaces[i]));
         }
     }
@@ -546,8 +513,7 @@ void OpenXRContext::init_actions()
         };
         result = xrCreateActionSet(instance, &actionSetInfo, &input_state.actionSet);
 
-        if (!XR_SUCCEEDED(result))
-        {
+        if (!XR_SUCCEEDED(result)) {
             spdlog::error("Cannot create Action Set");
             return;
         }
@@ -559,55 +525,55 @@ void OpenXRContext::init_actions()
 
     // Create actions.
     {
-        bool is_ok = true;
+        uint8_t is_ok = Error::OK;
 
         // Create an input action getting the left and right hand poses (aim)
-        is_ok &= create_action(input_state.actionSet, input_state.handSubactionPath, HAND_COUNT,
-            "hand_pose", "Hand Pose", XR_ACTION_TYPE_POSE_INPUT, input_state.aimPoseAction);
+        is_ok |= create_action(input_state.actionSet, input_state.handSubactionPath, HAND_COUNT,
+                "hand_pose", "Hand Pose", XR_ACTION_TYPE_POSE_INPUT, input_state.aimPoseAction);
 
         // (grip)
-        is_ok &= create_action(input_state.actionSet, input_state.handSubactionPath, HAND_COUNT,
-            "grip_pose", "Grip Pose", XR_ACTION_TYPE_POSE_INPUT, input_state.gripPoseAction);
+        is_ok |= create_action(input_state.actionSet, input_state.handSubactionPath, HAND_COUNT,
+                "grip_pose", "Grip Pose", XR_ACTION_TYPE_POSE_INPUT, input_state.gripPoseAction);
 
         // Create output actions for vibrating the left and right controller.
-        is_ok &= create_action(input_state.actionSet, input_state.handSubactionPath, HAND_COUNT,
-            "haptic_action", "Haptic Action", XR_ACTION_TYPE_VIBRATION_OUTPUT, input_state.vibrateAction);
+        is_ok |= create_action(input_state.actionSet, input_state.handSubactionPath, HAND_COUNT,
+                "haptic_action", "Haptic Action", XR_ACTION_TYPE_VIBRATION_OUTPUT, input_state.vibrateAction);
 
         // Create an input action for grabbing objects with the left and right hands.
-        is_ok &= create_action(input_state.actionSet, input_state.handSubactionPath, HAND_COUNT,
-            "grab_action", "Grab Action", XR_ACTION_TYPE_FLOAT_INPUT, input_state.grabAction);
+        is_ok |= create_action(input_state.actionSet, input_state.handSubactionPath, HAND_COUNT,
+                "grab_action", "Grab Action", XR_ACTION_TYPE_FLOAT_INPUT, input_state.grabAction);
 
         // Create an input action getting the left and right thumbsticks
-        is_ok &= create_action(input_state.actionSet, input_state.handSubactionPath, HAND_COUNT,
-            "thumbstick_action", "Thumbstick Action", XR_ACTION_TYPE_VECTOR2F_INPUT, input_state.thumbstickValueAction);
+        is_ok |= create_action(input_state.actionSet, input_state.handSubactionPath, HAND_COUNT,
+                "thumbstick_action", "Thumbstick Action", XR_ACTION_TYPE_VECTOR2F_INPUT, input_state.thumbstickValueAction);
 
         // thumbsticks (click)
-        is_ok &= create_action(input_state.actionSet, input_state.handSubactionPath, HAND_COUNT,
-            "thumbstick_click_action", "Thumbstick Click Action", XR_ACTION_TYPE_BOOLEAN_INPUT, input_state.thumbstickClickAction);
+        is_ok |= create_action(input_state.actionSet, input_state.handSubactionPath, HAND_COUNT,
+                "thumbstick_click_action", "Thumbstick Click Action", XR_ACTION_TYPE_BOOLEAN_INPUT, input_state.thumbstickClickAction);
 
         // thumbsticks (touch)
-        is_ok &= create_action(input_state.actionSet, input_state.handSubactionPath, HAND_COUNT,
-            "thumbstick_touch_action", "Thumbstick Touch Action", XR_ACTION_TYPE_BOOLEAN_INPUT, input_state.thumbstickTouchAction);
+        is_ok |= create_action(input_state.actionSet, input_state.handSubactionPath, HAND_COUNT,
+                "thumbstick_touch_action", "Thumbstick Touch Action", XR_ACTION_TYPE_BOOLEAN_INPUT, input_state.thumbstickTouchAction);
 
         // Create an input action getting the left and right triggers
-        is_ok &= create_action(input_state.actionSet, input_state.handSubactionPath, HAND_COUNT,
-            "trigger_action", "Trigger Action", XR_ACTION_TYPE_FLOAT_INPUT, input_state.triggerValueAction);
+        is_ok |= create_action(input_state.actionSet, input_state.handSubactionPath, HAND_COUNT,
+                "trigger_action", "Trigger Action", XR_ACTION_TYPE_FLOAT_INPUT, input_state.triggerValueAction);
 
         // triggers (touch)
-        is_ok &= create_action(input_state.actionSet, input_state.handSubactionPath, HAND_COUNT,
-            "trigger_touch_action", "Trigger Touch Action", XR_ACTION_TYPE_BOOLEAN_INPUT, input_state.triggerTouchAction);
+        is_ok |= create_action(input_state.actionSet, input_state.handSubactionPath, HAND_COUNT,
+                "trigger_touch_action", "Trigger Touch Action", XR_ACTION_TYPE_BOOLEAN_INPUT, input_state.triggerTouchAction);
 
         // Create an input actions getting button states
 
         for (auto& mb : buttonsState) {
             // Click action
             is_ok &= create_action(input_state.actionSet, &input_state.handSubactionPath[mb.hand], 1,
-                mb.name + "_click_action", mb.name + " Click Action", XR_ACTION_TYPE_BOOLEAN_INPUT, mb.click.action);
+                    mb.name + "_click_action", mb.name + " Click Action", XR_ACTION_TYPE_BOOLEAN_INPUT, mb.click.action);
 
             if (mb.touch.active) {
                 // Touch action
                 is_ok &= create_action(input_state.actionSet, &input_state.handSubactionPath[mb.hand], 1,
-                    mb.name + "_touch_action", mb.name + " Touch Action", XR_ACTION_TYPE_BOOLEAN_INPUT, mb.touch.action);
+                        mb.name + "_touch_action", mb.name + " Touch Action", XR_ACTION_TYPE_BOOLEAN_INPUT, mb.touch.action);
             }
         }
 
@@ -617,8 +583,7 @@ void OpenXRContext::init_actions()
         /*create_action(input_state.actionSet, nullptr, 0,
             "quit_session", "Quit Session", XR_ACTION_TYPE_BOOLEAN_INPUT, input_state.quitAction);*/
 
-        if (!is_ok)
-        {
+        if (is_ok != Error::OK) {
             spdlog::error("ERROR creating XR actions!");
             return;
         }
@@ -669,17 +634,18 @@ void OpenXRContext::init_actions()
     {
         XrPath khrSimpleInteractionProfilePath;
         xrStringToPath(instance, "/interaction_profiles/khr/simple_controller", &khrSimpleInteractionProfilePath);
-        std::vector<XrActionSuggestedBinding> bindings = {// Fall back to a click input for the grab action.
-                {input_state.grabAction,        selectPath[HAND_LEFT]},
-                {input_state.grabAction,        selectPath[HAND_RIGHT]},
-                {input_state.aimPoseAction,     aimPosePath[HAND_LEFT]},
-                {input_state.aimPoseAction,     aimPosePath[HAND_RIGHT]},
-                {input_state.gripPoseAction,    gripPosePath[HAND_LEFT]},
-                {input_state.gripPoseAction,    gripPosePath[HAND_RIGHT]},
-                /* {input_state.quitAction,      menuClickPath[HAND_LEFT]},
-                 {input_state.quitAction,        menuClickPath[HAND_RIGHT]},*/
-                 {input_state.vibrateAction,     hapticPath[HAND_LEFT]},
-                 {input_state.vibrateAction,     hapticPath[HAND_RIGHT]} };
+        std::vector<XrActionSuggestedBinding> bindings = { // Fall back to a click input for the grab action.
+            { input_state.grabAction, selectPath[HAND_LEFT] },
+            { input_state.grabAction, selectPath[HAND_RIGHT] },
+            { input_state.aimPoseAction, aimPosePath[HAND_LEFT] },
+            { input_state.aimPoseAction, aimPosePath[HAND_RIGHT] },
+            { input_state.gripPoseAction, gripPosePath[HAND_LEFT] },
+            { input_state.gripPoseAction, gripPosePath[HAND_RIGHT] },
+            /* {input_state.quitAction,      menuClickPath[HAND_LEFT]},
+             {input_state.quitAction,        menuClickPath[HAND_RIGHT]},*/
+            { input_state.vibrateAction, hapticPath[HAND_LEFT] },
+            { input_state.vibrateAction, hapticPath[HAND_RIGHT] }
+        };
 
         XrInteractionProfileSuggestedBinding suggestedBindings{ XR_TYPE_INTERACTION_PROFILE_SUGGESTED_BINDING };
         suggestedBindings.interactionProfile = khrSimpleInteractionProfilePath;
@@ -692,32 +658,33 @@ void OpenXRContext::init_actions()
         XrPath oculusTouchInteractionProfilePath;
         xrStringToPath(instance, "/interaction_profiles/oculus/touch_controller", &oculusTouchInteractionProfilePath);
         std::vector<XrActionSuggestedBinding> bindings = {
-            {input_state.grabAction,            squeezeValuePath[HAND_LEFT]},
-            {input_state.grabAction,            squeezeValuePath[HAND_RIGHT]},
-            {input_state.aimPoseAction,         aimPosePath[HAND_LEFT]},
-            {input_state.aimPoseAction,         aimPosePath[HAND_RIGHT]},
-            {input_state.gripPoseAction,        gripPosePath[HAND_LEFT]},
-            {input_state.gripPoseAction,        gripPosePath[HAND_RIGHT]},
+            { input_state.grabAction, squeezeValuePath[HAND_LEFT] },
+            { input_state.grabAction, squeezeValuePath[HAND_RIGHT] },
+            { input_state.aimPoseAction, aimPosePath[HAND_LEFT] },
+            { input_state.aimPoseAction, aimPosePath[HAND_RIGHT] },
+            { input_state.gripPoseAction, gripPosePath[HAND_LEFT] },
+            { input_state.gripPoseAction, gripPosePath[HAND_RIGHT] },
             //{input_state.quitAction,          menuClickPath[HAND_LEFT]},
-            {input_state.thumbstickValueAction, thumbstickValuePath[HAND_LEFT]},
-            {input_state.thumbstickValueAction, thumbstickValuePath[HAND_RIGHT]},
-            {input_state.thumbstickClickAction, thumbstickClickPath[HAND_LEFT]},
-            {input_state.thumbstickClickAction, thumbstickClickPath[HAND_RIGHT]},
-            {input_state.thumbstickTouchAction, thumbstickTouchPath[HAND_LEFT]},
-            {input_state.thumbstickTouchAction, thumbstickTouchPath[HAND_RIGHT]},
-            {input_state.triggerValueAction,    triggerValuePath[HAND_LEFT]},
-            {input_state.triggerValueAction,    triggerValuePath[HAND_RIGHT]},
-            {input_state.triggerTouchAction,    triggerTouchPath[HAND_LEFT]},
-            {input_state.triggerTouchAction,    triggerTouchPath[HAND_RIGHT]},
-            {input_state.vibrateAction,         hapticPath[HAND_LEFT]},
-            {input_state.vibrateAction,         hapticPath[HAND_RIGHT]}
+            { input_state.thumbstickValueAction, thumbstickValuePath[HAND_LEFT] },
+            { input_state.thumbstickValueAction, thumbstickValuePath[HAND_RIGHT] },
+            { input_state.thumbstickClickAction, thumbstickClickPath[HAND_LEFT] },
+            { input_state.thumbstickClickAction, thumbstickClickPath[HAND_RIGHT] },
+            { input_state.thumbstickTouchAction, thumbstickTouchPath[HAND_LEFT] },
+            { input_state.thumbstickTouchAction, thumbstickTouchPath[HAND_RIGHT] },
+            { input_state.triggerValueAction, triggerValuePath[HAND_LEFT] },
+            { input_state.triggerValueAction, triggerValuePath[HAND_RIGHT] },
+            { input_state.triggerTouchAction, triggerTouchPath[HAND_LEFT] },
+            { input_state.triggerTouchAction, triggerTouchPath[HAND_RIGHT] },
+            { input_state.vibrateAction, hapticPath[HAND_LEFT] },
+            { input_state.vibrateAction, hapticPath[HAND_RIGHT] }
         };
 
         // Add button mappings.
-        for (auto& mb : buttonsState)
-        {
+        for (auto& mb : buttonsState) {
             bindings.push_back({ mb.click.action, mb.click.path });
-            if (mb.touch.active) bindings.push_back({ mb.touch.action, mb.touch.path });
+            if (mb.touch.active) {
+                bindings.push_back({ mb.touch.action, mb.touch.path });
+            }
         }
 
         XrInteractionProfileSuggestedBinding suggestedBindings{ XR_TYPE_INTERACTION_PROFILE_SUGGESTED_BINDING };
@@ -787,8 +754,7 @@ void OpenXRContext::init_actions()
     }*/
 
     // Action Spaces for each controller. They will contain the controller poses.
-    for (int ci = 0u; ci < HAND_COUNT; ci++)
-    {
+    for (int ci = 0u; ci < HAND_COUNT; ci++) {
         XrActionSpaceCreateInfo actionSpaceInfo{
             .type = XR_TYPE_ACTION_SPACE_CREATE_INFO,
             .action = input_state.aimPoseAction,
@@ -799,8 +765,7 @@ void OpenXRContext::init_actions()
 
         XrResult result = xrCreateActionSpace(session, &actionSpaceInfo, &input_state.aimHandSpace[ci]);
 
-        if (!XR_SUCCEEDED(result))
-        {
+        if (!XR_SUCCEEDED(result)) {
             spdlog::error("Can't create aim action space for controller {}", ci);
             return;
         }
@@ -808,8 +773,7 @@ void OpenXRContext::init_actions()
         actionSpaceInfo.action = input_state.gripPoseAction;
         result = xrCreateActionSpace(session, &actionSpaceInfo, &input_state.gripHandSpace[ci]);
 
-        if (!XR_SUCCEEDED(result))
-        {
+        if (!XR_SUCCEEDED(result)) {
             spdlog::error("Can't create grip action space for controller {}", ci);
             return;
         }
@@ -823,8 +787,7 @@ void OpenXRContext::init_actions()
     };
     result = xrAttachSessionActionSets(session, &xrSessionAttachInfo);
 
-    if (!XR_SUCCEEDED(result))
-    {
+    if (!XR_SUCCEEDED(result)) {
         spdlog::error("Cannot attach Action Sets to session");
         return;
     }
@@ -832,18 +795,17 @@ void OpenXRContext::init_actions()
 
 void OpenXRContext::poll_actions()
 {
-    // Sync the actions 
+    // Sync the actions
     std::vector<XrActiveActionSet> activeActionSets = {
         { input_state.actionSet, XR_NULL_PATH }
     };
 
     XrActionsSyncInfo actionsSyncInfo = { .type = XR_TYPE_ACTIONS_SYNC_INFO,
-                                        .countActiveActionSets = 1u,
-                                        .activeActionSets = activeActionSets.data() };
+        .countActiveActionSets = 1u,
+        .activeActionSets = activeActionSets.data() };
 
     XrResult result = xrSyncActions(session, &actionsSyncInfo);
-    if (!XR_SUCCEEDED(result))
-    {
+    if (!XR_SUCCEEDED(result)) {
         spdlog::error("Cannot sync actions");
         return;
     }
@@ -864,20 +826,17 @@ void OpenXRContext::poll_actions()
     headsetActivityState = session_state;
 
     for (int i = 0u; i < HAND_COUNT; i++) {
-
         // Aim Pose
         XrActionStatePose aimPoseState = get_action_pose_state(input_state.aimPoseAction, i);
-        if (aimPoseState.isActive)
-        {
+        if (aimPoseState.isActive) {
             XrSpaceLocation spaceLocation{ .type = XR_TYPE_SPACE_LOCATION };
             result = xrLocateSpace(input_state.aimHandSpace[i], play_space, frame_state.predictedDisplayTime, &spaceLocation);
 
             // Check that the position and orientation are valid and tracked
             constexpr XrSpaceLocationFlags checkFlags =
-                XR_SPACE_LOCATION_POSITION_VALID_BIT | XR_SPACE_LOCATION_POSITION_TRACKED_BIT |
-                XR_SPACE_LOCATION_ORIENTATION_VALID_BIT | XR_SPACE_LOCATION_ORIENTATION_TRACKED_BIT;
-            if ((spaceLocation.locationFlags & checkFlags) == checkFlags)
-            {
+                    XR_SPACE_LOCATION_POSITION_VALID_BIT | XR_SPACE_LOCATION_POSITION_TRACKED_BIT |
+                    XR_SPACE_LOCATION_ORIENTATION_VALID_BIT | XR_SPACE_LOCATION_ORIENTATION_TRACKED_BIT;
+            if ((spaceLocation.locationFlags & checkFlags) == checkFlags) {
                 controllerAimPoseMatrices[i] = XrInputPose_to_glm(spaceLocation.pose);
                 controllerAimPoses[i] = OpenXRPose_to_XrInputPose(spaceLocation.pose);
             }
@@ -885,17 +844,15 @@ void OpenXRContext::poll_actions()
 
         // Grip Pose
         XrActionStatePose gripPoseState = get_action_pose_state(input_state.gripPoseAction, i);
-        if (gripPoseState.isActive)
-        {
+        if (gripPoseState.isActive) {
             XrSpaceLocation spaceLocation{ .type = XR_TYPE_SPACE_LOCATION };
             result = xrLocateSpace(input_state.gripHandSpace[i], play_space, frame_state.predictedDisplayTime, &spaceLocation);
 
             // Check that the position and orientation are valid and tracked
             constexpr XrSpaceLocationFlags checkFlags =
-                XR_SPACE_LOCATION_POSITION_VALID_BIT | XR_SPACE_LOCATION_POSITION_TRACKED_BIT |
-                XR_SPACE_LOCATION_ORIENTATION_VALID_BIT | XR_SPACE_LOCATION_ORIENTATION_TRACKED_BIT;
-            if ((spaceLocation.locationFlags & checkFlags) == checkFlags)
-            {
+                    XR_SPACE_LOCATION_POSITION_VALID_BIT | XR_SPACE_LOCATION_POSITION_TRACKED_BIT |
+                    XR_SPACE_LOCATION_ORIENTATION_VALID_BIT | XR_SPACE_LOCATION_ORIENTATION_TRACKED_BIT;
+            if ((spaceLocation.locationFlags & checkFlags) == checkFlags) {
                 controllerGripPoseMatrices[i] = XrInputPose_to_glm(spaceLocation.pose);
                 controllerGripPoses[i] = OpenXRPose_to_XrInputPose(spaceLocation.pose);
             }
@@ -930,13 +887,13 @@ void OpenXRContext::poll_actions()
     }
 
     // State (Buttons).
-    for (auto& mb : buttonsState)
-    {
+    for (auto& mb : buttonsState) {
         mb.click.state = get_action_boolean_state(mb.click.action, mb.hand);
-        if (mb.touch.active) mb.touch.state = get_action_boolean_state(mb.touch.action, mb.hand);
+        if (mb.touch.active) {
+            mb.touch.state = get_action_boolean_state(mb.touch.action, mb.hand);
+        }
     }
 }
-
 
 void OpenXRContext::apply_haptics(uint8_t controller, float amplitude, float duration)
 {
@@ -970,41 +927,31 @@ void OpenXRContext::init_frame()
 
     // Poll OpenXR events
     XrEventDataBuffer buffer{ XR_TYPE_EVENT_DATA_BUFFER };
-    while (xrPollEvent(instance, &buffer) == XR_SUCCESS)
-    {
-        switch (buffer.type)
-        {
-        case XR_TYPE_EVENT_DATA_INSTANCE_LOSS_PENDING:
-            /*exitRequested = true;
-            return BeginFrameResult::SkipFully;*/
-            break;
-        case XR_TYPE_EVENT_DATA_SESSION_STATE_CHANGED:
-        {
-            XrEventDataSessionStateChanged* event = reinterpret_cast<XrEventDataSessionStateChanged*>(&buffer);
-            session_state = event->state;
-
-            if (event->state == XR_SESSION_STATE_READY)
-            {
-                if (!begin_session())
-                {
-                    return;
-                }
-            }
-            else if (event->state == XR_SESSION_STATE_STOPPING)
-            {
-                if (!end_session())
-                {
-                    return;
-                }
-            }
-            else if (event->state == XR_SESSION_STATE_LOSS_PENDING || event->state == XR_SESSION_STATE_EXITING)
-            {
+    while (xrPollEvent(instance, &buffer) == XR_SUCCESS) {
+        switch (buffer.type) {
+            case XR_TYPE_EVENT_DATA_INSTANCE_LOSS_PENDING:
                 /*exitRequested = true;
                 return BeginFrameResult::SkipFully;*/
-            }
+                break;
+            case XR_TYPE_EVENT_DATA_SESSION_STATE_CHANGED: {
+                XrEventDataSessionStateChanged* event = reinterpret_cast<XrEventDataSessionStateChanged*>(&buffer);
+                session_state = event->state;
 
-            break;
-        }
+                if (event->state == XR_SESSION_STATE_READY) {
+                    if (!begin_session()) {
+                        return;
+                    }
+                } else if (event->state == XR_SESSION_STATE_STOPPING) {
+                    if (!end_session()) {
+                        return;
+                    }
+                } else if (event->state == XR_SESSION_STATE_LOSS_PENDING || event->state == XR_SESSION_STATE_EXITING) {
+                    /*exitRequested = true;
+                    return BeginFrameResult::SkipFully;*/
+                }
+
+                break;
+            }
         }
 
         buffer.type = XR_TYPE_EVENT_DATA_BUFFER;
@@ -1014,25 +961,23 @@ void OpenXRContext::init_frame()
     frame_state.type = XR_TYPE_FRAME_STATE;
 
     XrFrameWaitInfo frameWaitInfo = {
-      .type = XR_TYPE_FRAME_WAIT_INFO,
+        .type = XR_TYPE_FRAME_WAIT_INFO,
     };
 
     result = xrWaitFrame(session, &frameWaitInfo, &frame_state);
 
-    if (!XR_SUCCEEDED(result))
-    {
+    if (!XR_SUCCEEDED(result)) {
         spdlog::trace("xrWaitFrame() was not successful");
         return;
     }
 
     XrFrameBeginInfo frameBeginInfo = {
-      .type = XR_TYPE_FRAME_BEGIN_INFO,
+        .type = XR_TYPE_FRAME_BEGIN_INFO,
     };
 
     result = xrBeginFrame(session, &frameBeginInfo);
 
-    if (!XR_SUCCEEDED(result))
-    {
+    if (!XR_SUCCEEDED(result)) {
         spdlog::trace("Failed to begin frame!");
         return;
     }
@@ -1048,21 +993,19 @@ void OpenXRContext::acquire_swapchain(int swapchain_index)
 
     result = xrAcquireSwapchainImage(swapchains[swapchain_index].swapchain, &acquire_info, &swapchains[swapchain_index].image_index);
 
-    if (!XR_SUCCEEDED(result))
-    {
+    if (!XR_SUCCEEDED(result)) {
         spdlog::error("Failed to acquire swapchain image!");
         return;
     }
 
     XrSwapchainImageWaitInfo wait_info = {
-      .type = XR_TYPE_SWAPCHAIN_IMAGE_WAIT_INFO,
-      .timeout = XR_INFINITE_DURATION,
+        .type = XR_TYPE_SWAPCHAIN_IMAGE_WAIT_INFO,
+        .timeout = XR_INFINITE_DURATION,
     };
 
     result = xrWaitSwapchainImage(swapchains[swapchain_index].swapchain, &wait_info);
 
-    if (!XR_SUCCEEDED(result))
-    {
+    if (!XR_SUCCEEDED(result)) {
         spdlog::error("Failed to wait for swapchain image!");
         return;
     }
@@ -1073,13 +1016,12 @@ void OpenXRContext::release_swapchain(int swapchain_index)
     XrResult result;
 
     XrSwapchainImageReleaseInfo info = {
-    .type = XR_TYPE_SWAPCHAIN_IMAGE_RELEASE_INFO,
+        .type = XR_TYPE_SWAPCHAIN_IMAGE_RELEASE_INFO,
     };
 
     result = xrReleaseSwapchainImage(swapchains[swapchain_index].swapchain, &info);
 
-    if (!XR_SUCCEEDED(result))
-    {
+    if (!XR_SUCCEEDED(result)) {
         spdlog::error("Failed to release swapchain image!");
         return;
     }
@@ -1090,16 +1032,17 @@ void OpenXRContext::end_frame()
     XrResult result;
 
     XrCompositionLayerProjection projection_layer = {
-            .type = XR_TYPE_COMPOSITION_LAYER_PROJECTION,
-            .next = NULL,
-            .layerFlags = 0,
-            .space = play_space,
-            .viewCount = view_count,
-            .views = projection_views.data(),
+        .type = XR_TYPE_COMPOSITION_LAYER_PROJECTION,
+        .next = NULL,
+        .layerFlags = 0,
+        .space = play_space,
+        .viewCount = view_count,
+        .views = projection_views.data(),
     };
 
     const XrCompositionLayerBaseHeader* submittedLayers[1] = {
-            (const XrCompositionLayerBaseHeader* const)&projection_layer };
+        (const XrCompositionLayerBaseHeader* const)&projection_layer
+    };
 
     XrFrameEndInfo frameEndInfo = {
         .type = XR_TYPE_FRAME_END_INFO,
@@ -1111,8 +1054,7 @@ void OpenXRContext::end_frame()
 
     result = xrEndFrame(session, &frameEndInfo);
 
-    if (!XR_SUCCEEDED(result))
-    {
+    if (!XR_SUCCEEDED(result)) {
         spdlog::trace("Failed to end frame!");
         return;
     }
@@ -1145,8 +1087,7 @@ void OpenXRContext::update()
             const glm::mat4 root_model = root_transform->get_model();
             per_view_data[i].position = root_model * glm::vec4(per_view_data[i].position, 1.0);
             per_view_data[i].view_matrix = glm::inverse(root_model * XrInputPose_to_glm(views[i].pose));
-        }
-        else {
+        } else {
             per_view_data[i].view_matrix = glm::inverse(XrInputPose_to_glm(views[i].pose));
         }
 
@@ -1156,18 +1097,18 @@ void OpenXRContext::update()
     }
 
     if ((viewState.viewStateFlags & XR_VIEW_STATE_POSITION_VALID_BIT) == 0 ||
-        (viewState.viewStateFlags & XR_VIEW_STATE_ORIENTATION_VALID_BIT) == 0) {
-        return;  // There is no valid tracking poses for the views.
+            (viewState.viewStateFlags & XR_VIEW_STATE_ORIENTATION_VALID_BIT) == 0) {
+        return; // There is no valid tracking poses for the views.
     }
 }
 
-bool OpenXRContext::create_action(XrActionSet actionSet,
-    XrPath* paths,
-    uint32_t num_paths,
-    const std::string& actionName,
-    const std::string& localizedActionName,
-    XrActionType type,
-    XrAction& action)
+Error OpenXRContext::create_action(XrActionSet actionSet,
+        XrPath* paths,
+        uint32_t num_paths,
+        const std::string& actionName,
+        const std::string& localizedActionName,
+        XrActionType type,
+        XrAction& action)
 {
     XrActionCreateInfo actionCreateInfo{
         .type = XR_TYPE_ACTION_CREATE_INFO,
@@ -1183,30 +1124,28 @@ bool OpenXRContext::create_action(XrActionSet actionSet,
 
     XrResult result = xrCreateAction(actionSet, &actionCreateInfo, &action);
 
-    if (!XR_SUCCEEDED(result))
-    {
+    if (!XR_SUCCEEDED(result)) {
         spdlog::error("Can't create XrAction");
-        return false;
+        return Error::FAILED;
     }
 
-    return true;
+    return Error::OK;
 }
 
 XrActionStatePose OpenXRContext::get_action_pose_state(XrAction targetAction, uint8_t controller)
 {
-    XrPath path = XR_NULL_PATH;// Wildcard for all
+    XrPath path = XR_NULL_PATH; // Wildcard for all
     if (controller != HAND_COUNT) {
         path = input_state.handSubactionPath[controller];
     }
     XrActionStateGetInfo getInfo = { .type = XR_TYPE_ACTION_STATE_GET_INFO,
-                                    .action = targetAction,
-                                    .subactionPath = path };
+        .action = targetAction,
+        .subactionPath = path };
 
     XrActionStatePose poseState{ .type = XR_TYPE_ACTION_STATE_POSE };
     XrResult result = xrGetActionStatePose(session, &getInfo, &poseState);
 
-    if (!XR_SUCCEEDED(result))
-    {
+    if (!XR_SUCCEEDED(result)) {
         spdlog::error("Cannot get action pose state");
     }
 
@@ -1215,19 +1154,18 @@ XrActionStatePose OpenXRContext::get_action_pose_state(XrAction targetAction, ui
 
 XrActionStateBoolean OpenXRContext::get_action_boolean_state(XrAction targetAction, uint8_t controller)
 {
-    XrPath path = XR_NULL_PATH;// Wildcard for all
+    XrPath path = XR_NULL_PATH; // Wildcard for all
     if (controller != HAND_COUNT) {
         path = input_state.handSubactionPath[controller];
     }
     XrActionStateGetInfo getInfo = { .type = XR_TYPE_ACTION_STATE_GET_INFO,
-                                    .action = targetAction,
-                                    .subactionPath = path };
+        .action = targetAction,
+        .subactionPath = path };
 
     XrActionStateBoolean poseState{ .type = XR_TYPE_ACTION_STATE_BOOLEAN };
     XrResult result = xrGetActionStateBoolean(session, &getInfo, &poseState);
 
-    if (!XR_SUCCEEDED(result))
-    {
+    if (!XR_SUCCEEDED(result)) {
         spdlog::error("Cannot get action boolean state");
     }
 
@@ -1236,19 +1174,18 @@ XrActionStateBoolean OpenXRContext::get_action_boolean_state(XrAction targetActi
 
 XrActionStateFloat OpenXRContext::get_action_float_state(XrAction targetAction, uint8_t controller)
 {
-    XrPath path = XR_NULL_PATH;// Wildcard for all
+    XrPath path = XR_NULL_PATH; // Wildcard for all
     if (controller != HAND_COUNT) {
         path = input_state.handSubactionPath[controller];
     }
     XrActionStateGetInfo getInfo = { .type = XR_TYPE_ACTION_STATE_GET_INFO,
-                                    .action = targetAction,
-                                    .subactionPath = path };
+        .action = targetAction,
+        .subactionPath = path };
 
     XrActionStateFloat poseState{ .type = XR_TYPE_ACTION_STATE_FLOAT };
     XrResult result = xrGetActionStateFloat(session, &getInfo, &poseState);
 
-    if (!XR_SUCCEEDED(result))
-    {
+    if (!XR_SUCCEEDED(result)) {
         spdlog::error("Cannot get action float state");
     }
 
@@ -1257,19 +1194,18 @@ XrActionStateFloat OpenXRContext::get_action_float_state(XrAction targetAction, 
 
 XrActionStateVector2f OpenXRContext::get_action_vector2f_State(XrAction targetAction, uint8_t controller)
 {
-    XrPath path = XR_NULL_PATH;// Wildcard for all
+    XrPath path = XR_NULL_PATH; // Wildcard for all
     if (controller != HAND_COUNT) {
         path = input_state.handSubactionPath[controller];
     }
     XrActionStateGetInfo getInfo = { .type = XR_TYPE_ACTION_STATE_GET_INFO,
-                                    .action = targetAction,
-                                    .subactionPath = path };
+        .action = targetAction,
+        .subactionPath = path };
 
     XrActionStateVector2f poseState{ .type = XR_TYPE_ACTION_STATE_VECTOR2F };
     XrResult result = xrGetActionStateVector2f(session, &getInfo, &poseState);
 
-    if (!XR_SUCCEEDED(result))
-    {
+    if (!XR_SUCCEEDED(result)) {
         spdlog::error("Cannot get action vector2f state");
     }
 
@@ -1277,13 +1213,14 @@ XrActionStateVector2f OpenXRContext::get_action_vector2f_State(XrAction targetAc
 }
 
 /*
-    
+
     HELPER FUNCTIONS
-    
+
 */
 
 // From: https://github.com/jherico/OpenXR-Samples/blob/master/src/examples/sdl2_gl_single_file_example.cpp
-inline glm::mat4x4 OpenXRProjection_to_glm(const XrFovf& fov, float nearZ, float farZ) {
+inline glm::mat4x4 OpenXRProjection_to_glm(const XrFovf& fov, float nearZ, float farZ)
+{
     const auto& tanAngleRight = tanf(fov.angleRight);
     const auto& tanAngleLeft = tanf(fov.angleLeft);
     const auto& tanAngleUp = tanf(fov.angleUp);
@@ -1319,14 +1256,15 @@ inline glm::mat4x4 OpenXRProjection_to_glm(const XrFovf& fov, float nearZ, float
     return resultm;
 }
 
-inline glm::mat4x4 XrInputPose_to_glm(const XrPosef& p) {
+inline glm::mat4x4 XrInputPose_to_glm(const XrPosef& p)
+{
     glm::mat4 translation = glm::translate(glm::mat4{ 1.f }, glm::vec3(p.position.x, p.position.y, p.position.z));
     glm::mat4 orientation = glm::mat4_cast(glm::quat(p.orientation.x, p.orientation.y, p.orientation.z, p.orientation.w));
     return translation * orientation;
 }
 
-inline XrInputPose OpenXRPose_to_XrInputPose(const XrPosef& xrPosef) {
-    
+inline XrInputPose OpenXRPose_to_XrInputPose(const XrPosef& xrPosef)
+{
     return XrInputPose{
         .orientation = glm::quat(xrPosef.orientation.x, xrPosef.orientation.y, xrPosef.orientation.z, xrPosef.orientation.w),
         .position = glm::vec3(xrPosef.position.x, xrPosef.position.y, xrPosef.position.z)
@@ -1338,7 +1276,6 @@ glm::quat slerp(const glm::quat& start, const glm::quat& end, float percent)
     float cosTheta = glm::dot(start, end);
     glm::quat temp(end);
 
-
     if (cosTheta < 0.0f) {
         cosTheta *= -1.0f;
         temp = temp * -1.0f;
@@ -1347,10 +1284,9 @@ glm::quat slerp(const glm::quat& start, const glm::quat& end, float percent)
     float theta = glm::acos(cosTheta);
     float sinThetaDenom = 1.0f / glm::sin(theta);
 
-    glm::quat res = (
-        ((glm::quat)(start * glm::sin(theta * (1.0f - percent)))) +
-        ((glm::quat)(temp * glm::sin(percent * theta)))
-        ) / sinThetaDenom;
+    glm::quat res = (((glm::quat)(start * glm::sin(theta * (1.0f - percent)))) +
+                            ((glm::quat)(temp * glm::sin(percent * theta)))) /
+            sinThetaDenom;
 
     return res;
 }

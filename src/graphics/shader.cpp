@@ -2,6 +2,8 @@
 
 #include <filesystem>
 
+#include "core/managers/render/render_manager.h"
+
 #include "pipeline.h"
 
 #define TINT_BUILD_WGSL_READER 1
@@ -9,7 +11,7 @@
 #include "src/tint/lang/wgsl/reader/reader.h"
 
 #include "renderer.h"
-#include "renderer_storage.h"
+#include "render_storage.h"
 
 #include "framework/utils/utils.h"
 
@@ -101,7 +103,7 @@ bool Shader::load_from_source(const std::string& shader_source, const std::strin
     std::string shader_source_copy = shader_source;
 
     if (!libraries.empty()) {
-        auto& library_references = RendererStorage::instance->shader_library_references;
+        auto& library_references = RenderStorage::instance->shader_library_references;
         for (const std::string& library : libraries) {
             auto& references = library_references[library];
             if (!std::count(references.begin(), references.end(), name)) {
@@ -156,7 +158,7 @@ bool Shader::parse_preprocessor_line(std::istringstream& string_stream, std::str
             return false;
         }
 
-        auto& library_references = RendererStorage::instance->shader_library_references;
+        auto& library_references = RenderStorage::instance->shader_library_references;
 
         auto& references = library_references[include_path];
 
@@ -366,9 +368,7 @@ bool Shader::load(std::string& shader_source, std::vector<std::string> define_sp
         spdlog::trace("\t{}", specialization);
     }
 
-    WebGPUContext* webgpu_context = Renderer::instance->get_webgpu_context();
-
-    shader_module = webgpu_context->create_shader_module(shader_source_processed.c_str());
+    shader_module = RenderManager::get_singleton()->create_shader_module(shader_source_processed.c_str());
 
     struct UserData {
         bool any_error = false;
@@ -394,7 +394,7 @@ bool Shader::load(std::string& shader_source, std::vector<std::string> define_sp
         loaded = false;
     }
 
-    webgpu_context->process_events();
+    //webgpu_context->process_events();
 
     return loaded;
 }
@@ -737,8 +737,8 @@ void Shader::reload(const std::string& engine_shader_path)
 
     if (loaded_from_file || !engine_shader_path.empty()) {
         load_from_file(engine_shader_path.empty() ? path : engine_shader_path, specialized_path, define_specializations);
-    } else if (RendererStorage::engine_shaders_refs.contains(path)) {
-        load_from_source(RendererStorage::engine_shaders_refs[path], path, libraries, specialized_path, define_specializations);
+    } else if (RenderStorage::engine_shaders_refs.contains(path)) {
+        load_from_source(RenderStorage::engine_shaders_refs[path], path, libraries, specialized_path, define_specializations);
     }
 
     if (pipeline_ref) {

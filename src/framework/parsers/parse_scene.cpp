@@ -5,7 +5,7 @@
 #include "parse_vdb.h"
 #include "parse_ply.h"
 
-#include "framework/nodes/mesh_instance_3d.h"
+#include "scene/3d/mesh_instance_3d.h"
 
 #include "spdlog/spdlog.h"
 

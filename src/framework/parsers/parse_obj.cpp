@@ -5,9 +5,9 @@
 
 #include "graphics/texture.h"
 #include "graphics/shader.h"
-#include "graphics/renderer_storage.h"
+#include "core/managers/render/render_storage.h"
 
-#include "framework/nodes/mesh_instance_3d.h"
+#include "scene/3d/mesh_instance_3d.h"
 
 #include "shaders/mesh_forward.wgsl.gen.h"
 
@@ -62,11 +62,11 @@ void parse_obj(const std::string& obj_path, MeshInstance3D* entity_mesh, bool cr
                     material->set_color(glm::vec4(materials[material_id].diffuse[0], materials[material_id].diffuse[1], materials[material_id].diffuse[2], 1.0f));
                 }
                 else {
-                    material->set_diffuse_texture(RendererStorage::get_texture(obj_path_fs.parent_path().string() + "/" + materials[material_id].diffuse_texname, TEXTURE_STORAGE_SRGB));
+                    material->set_diffuse_texture(RenderStorage::get_texture(obj_path_fs.parent_path().string() + "/" + materials[material_id].diffuse_texname, TEXTURE_STORAGE_SRGB));
                 }
             }
 
-            material->set_shader(RendererStorage::get_shader_from_source(shaders::mesh_forward::source, shaders::mesh_forward::path, shaders::mesh_forward::libraries, material));
+            material->set_shader(RenderStorage::get_singleton()->get_shader_from_source(shaders::mesh_forward::source, shaders::mesh_forward::path, shaders::mesh_forward::libraries, material));
 
             new_surface->set_material(material);
         }

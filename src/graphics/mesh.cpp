@@ -1,6 +1,6 @@
 #include "mesh.h"
 
-#include "graphics/renderer_storage.h"
+#include "core/managers/render/render_storage.h"
 #include "graphics/renderer.h"
 
 Mesh::Mesh()
@@ -12,7 +12,7 @@ Mesh::~Mesh()
 {
     for (auto& material_override : material_overrides) {
         if (material_override.second->unref()) {
-            RendererStorage::delete_material_bind_group(Renderer::instance->get_webgpu_context(), material_override.second);
+            RenderStorage::delete_material_bind_group(material_override.second);
         }
     }
 

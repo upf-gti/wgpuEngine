@@ -1,55 +1,51 @@
 #pragma once
 
-#include <unordered_map>
 #include <string>
-#include <vector>
+#include <unordered_map>
 #include <variant>
-#include "graphics/webgpu_context.h"
+#include <vector>
 
 class Pipeline;
 
 typedef std::variant<bool, int32_t, uint32_t, float> custom_define_type;
 
 class Shader {
-
 public:
-
-	Shader();
-	~Shader();
+    Shader();
+    ~Shader();
 
     bool load_from_file(const std::string& shader_path, const std::string& specialized_path = "", std::vector<std::string> define_specializations = {});
     bool load_from_source(const std::string& shader_source, const std::string& name,
-        const std::vector<std::string>& libraries,
-        const std::string& specialized_path = "", std::vector<std::string> define_specializations = {});
+            const std::vector<std::string>& libraries,
+            const std::string& specialized_path = "", std::vector<std::string> define_specializations = {});
 
-	void reload(const std::string& engine_shader_path = "");
+    void reload(const std::string& engine_shader_path = "");
 
     const std::vector<std::string>& get_define_specializations() const { return define_specializations; }
     void set_define_specializations(std::vector<std::string> define_specializations);
 
-	WGPUShaderModule get_module() const;
+    WGPUShaderModule get_module() const;
 
-	void set_pipeline(Pipeline* pipeline);
-	const Pipeline* get_pipeline() const { return pipeline_ref; }
+    void set_pipeline(Pipeline* pipeline);
+    const Pipeline* get_pipeline() const { return pipeline_ref; }
 
-	const std::vector<WGPUBindGroupLayout>&    get_bind_group_layouts() const { return bind_group_layouts; }
-	const std::vector<WGPUVertexBufferLayout>& get_vertex_buffer_layouts() const { return vertex_buffer_layouts; }
+    const std::vector<WGPUBindGroupLayout>& get_bind_group_layouts() const { return bind_group_layouts; }
+    const std::vector<WGPUVertexBufferLayout>& get_vertex_buffer_layouts() const { return vertex_buffer_layouts; }
 
     const WGPUPipelineLayout get_pipeline_layout() const { return pipeline_layout; }
 
     static void reload_engine_library(const std::string& folder, const std::string& engine_library);
 
-	std::string get_path() const { return path; }
+    std::string get_path() const { return path; }
 
-	bool is_loaded() { return loaded; }
+    bool is_loaded() { return loaded; }
 
-    static void set_custom_define(const std::string &define_name, custom_define_type value);
+    static void set_custom_define(const std::string& define_name, custom_define_type value);
 
     bool is_loaded_from_file() { return loaded_from_file; }
 
 private:
-
-	void get_reflection_data(const std::string& shader_content);
+    void get_reflection_data(const std::string& shader_content);
 
     bool parse_preprocessor(std::string& shader_content, const std::string& shader_path);
     bool parse_preprocessor_line(std::istringstream& string_stream, std::string& shader_content, std::streampos& line_pos, std::string& line, const std::string& _directory);
@@ -59,19 +55,19 @@ private:
 
     bool load(std::string& shader_source, std::vector<std::string> define_specializations = {});
 
-	std::string path;
-	std::string specialized_path;
+    std::string path;
+    std::string specialized_path;
 
-	WGPUShaderModule shader_module = nullptr;
+    WGPUShaderModule shader_module = nullptr;
 
-	std::vector<WGPUBindGroupLayout> bind_group_layouts;
+    std::vector<WGPUBindGroupLayout> bind_group_layouts;
     WGPUPipelineLayout pipeline_layout = nullptr;
 
-	std::vector<std::vector<WGPUVertexAttribute>> vertex_attributes;
-	std::vector<WGPUVertexBufferLayout> vertex_buffer_layouts;
+    std::vector<std::vector<WGPUVertexAttribute>> vertex_attributes;
+    std::vector<WGPUVertexBufferLayout> vertex_buffer_layouts;
 
-	// Pipeline that uses this shader
-	Pipeline* pipeline_ref = nullptr;
+    // Pipeline that uses this shader
+    Pipeline* pipeline_ref = nullptr;
 
     static std::unordered_map<std::string, std::string> engine_libraries;
 
@@ -85,5 +81,5 @@ private:
     std::unordered_map<uint8_t, WGPUVertexStepMode> unique_vertex_buffers;
     std::vector<std::string> define_specializations;
 
-	bool loaded = false;
+    bool loaded = false;
 };

@@ -3,13 +3,12 @@
 #include "includes.h"
 
 #include <map>
-#include <unordered_map>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
-#include "webgpu_context.h"
-#include "graphics/uniforms_structs.h"
 #include "framework/utils/hash.h"
+#include "graphics/uniforms_structs.h"
 
 class Surface;
 class Texture;
@@ -28,9 +27,7 @@ enum TextureStorageFlags : uint8_t {
 };
 
 class RendererStorage {
-
 public:
-
     RendererStorage();
 
     // Singleton
@@ -57,21 +54,21 @@ public:
     static std::unordered_map<const Material*, sBindingData> material_bind_groups;
     static std::unordered_map<const void*, sBindingData> ui_widget_bind_groups;
 
-    static void register_material_bind_group(WebGPUContext* webgpu_context, Mesh* mesh, Material* material);
+    static void register_material_bind_group(Mesh* mesh, Material* material);
     static WGPUBindGroup get_material_bind_group(const Material* material);
 
-    static void delete_material_bind_group(WebGPUContext* webgpu_context, Material* material);
+    static void delete_material_bind_group(Material* material);
 
-    static void update_material_bind_group(WebGPUContext* webgpu_context, Mesh* mesh, Material* material);
+    static void update_material_bind_group(Mesh* mesh, Material* material);
 
-    static void register_ui_widget(WebGPUContext* webgpu_context, Shader* shader, void* widget, const sUIData& ui_data, uint8_t bind_group_id, bool force = false);
+    static void register_ui_widget(Shader* shader, void* widget, const sUIData& ui_data, uint8_t bind_group_id, bool force = false);
     static WGPUBindGroup get_ui_widget_bind_group(const void* widget);
-    static void update_ui_widget(WebGPUContext* webgpu_context, void* entity_mesh, const sUIData& ui_data);
+    static void update_ui_widget(void* entity_mesh, const sUIData& ui_data);
 
-    static void delete_ui_widget(WebGPUContext* webgpu_context, void* entity_mesh);
+    static void delete_ui_widget(void* entity_mesh);
 
     static Shader* get_shader(const std::string& shader_path, const Material* material = nullptr,
-        const std::vector<std::string>& custom_define_specializations = {});
+            const std::vector<std::string>& custom_define_specializations = {});
 
     static Shader* get_shader(const std::string& shader_path, const std::vector<std::string>& custom_define_specializations);
 
@@ -80,13 +77,13 @@ public:
 #endif
 
     static Shader* get_shader_from_source(const char* source, const std::string& name,
-        const std::vector<std::string>& libraries,
-        const Material* material = nullptr,
-        const std::vector<std::string>& custom_define_specializations = {});
+            const std::vector<std::string>& libraries,
+            const Material* material = nullptr,
+            const std::vector<std::string>& custom_define_specializations = {});
 
     static Shader* get_shader_from_source(const char* source, const std::string& name,
-        const std::vector<std::string>& libraries,
-        const std::vector<std::string>& custom_define_specializations);
+            const std::vector<std::string>& libraries,
+            const std::vector<std::string>& custom_define_specializations);
 
     static void reload_shader(const std::string& shader_path);
     static void reload_engine_shader(const std::string& shader_path);
@@ -106,5 +103,4 @@ public:
 
     static RenderPipelineKey get_render_pipeline_key(Material* material);
     static void clean_registered_pipelines();
-
 };

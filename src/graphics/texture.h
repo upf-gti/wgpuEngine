@@ -3,9 +3,7 @@
 #include <map>
 #include <string>
 
-#include "framework/resources/resource.h"
-
-#include "webgpu_context.h"
+#include "core/io/resource.h"
 
 #include "hdre.h"
 
@@ -43,8 +41,6 @@ class Texture : public Resource
 public:
 
 	~Texture();
-
-	static WebGPUContext* webgpu_context;
 
     void load(const std::string& texture_path, bool is_srgb, bool upload_to_vram = true, bool store_texture_data = false);
     void load_hdr(const std::string& texture_path, bool store_texture_data = false);

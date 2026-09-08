@@ -2,7 +2,7 @@
 
 #include "graphics/renderer.h"
 
-#include "framework/input.h"
+#include "core/managers/input/input_manager.h"
 #include "framework/camera/camera.h"
 
 #include <glm/gtc/type_ptr.hpp>

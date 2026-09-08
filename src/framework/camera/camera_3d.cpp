@@ -1,7 +1,7 @@
 #include "camera_3d.h"
 
-#include "framework/input.h"
-#include "framework/nodes/node_3d.h"
+#include "core/managers/input/input_manager.h"
+#include "scene/3d/node_3d.h"
 
 void Camera3D::apply_movement(const glm::vec2& movement)
 {
@@ -30,8 +30,8 @@ void Camera3D::apply_movement(const glm::vec2& movement)
 
 void Camera3D::update(float delta_time)
 {
-    if (Input::is_mouse_pressed(GLFW_MOUSE_BUTTON_LEFT)) {
-        apply_movement(Input::get_mouse_delta());
+    if (InputManager::get_singleton()->is_mouse_pressed(GLFW_MOUSE_BUTTON_LEFT)) {
+        apply_movement(InputManager::get_singleton()->get_mouse_delta());
     }
 
     delta_pitch_lerp.value = smooth_damp_angle(delta_pitch_lerp.value, delta_pitch, &delta_pitch_lerp.velocity, 0.05f, 40.0f, delta_time);

@@ -3,7 +3,7 @@
 #include "framework/math/math_utils.h"
 #include "framework/colors.h"
 
-#include "graphics/renderer_storage.h"
+#include "core/managers/render/render_storage.h"
 
 #include "spdlog/spdlog.h"
 #include "imgui.h"

@@ -34,3 +34,6 @@
 [submodule "libraries/emscripten-webxr"]
 	path = libraries/emscripten-webxr
 	url = https://github.com/upf-gti/emscripten-webxr.git
+[submodule "libraries/simplefilewatcher"]
+	path = libraries/simplefilewatcher
+	url = https://github.com/upf-gti/simplefilewatcher.git
