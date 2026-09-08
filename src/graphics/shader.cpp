@@ -2,18 +2,20 @@
 
 #include <filesystem>
 
+#include "core/managers/render/render_manager.h"
+#include "core/managers/xr/xr_manager.h"
+
 #include "pipeline.h"
 
 #define TINT_BUILD_WGSL_READER 1
 #include "src/tint/lang/wgsl/inspector/inspector.h"
 #include "src/tint/lang/wgsl/reader/reader.h"
 
-#include "renderer.h"
-#include "renderer_storage.h"
+#include "core/managers/render/render_storage.h"
 
 #include "framework/utils/utils.h"
 
-#include "spdlog/spdlog.h"
+#include "core/managers/debug/debug_manager.h"
 
 #include "shaders/math.wgsl.gen.h"
 #include "shaders/mesh_includes.wgsl.gen.h"
@@ -67,14 +69,14 @@ bool Shader::load_from_file(const std::string& shader_path, const std::string& s
     for (const std::string& define : define_specializations) {
         defines_str += define + ", ";
     }
-    spdlog::info("Loading shader: {} with defines: {}", path, defines_str);
+    LOG_INFO("Loading shader: {} with defines: {}", path, defines_str);
 #else
-    spdlog::info("Loading shader: {}", path);
+    LOG_INFO("Loading shader: {}", path);
 #endif
 
     std::string shader_content;
     if (!read_file(path, shader_content)) {
-        spdlog::error("\tError reading shader");
+        LOG_ERROR("\tError reading shader");
         return false;
     }
 
@@ -101,7 +103,7 @@ bool Shader::load_from_source(const std::string& shader_source, const std::strin
     std::string shader_source_copy = shader_source;
 
     if (!libraries.empty()) {
-        auto& library_references = RendererStorage::instance->shader_library_references;
+        auto& library_references = RenderStorage::get_singleton()->get_shader_library_references();
         for (const std::string& library : libraries) {
             auto& references = library_references[library];
             if (!std::count(references.begin(), references.end(), name)) {
@@ -144,7 +146,7 @@ bool Shader::parse_preprocessor_line(std::istringstream& string_stream, std::str
             include_path = std::filesystem::relative(std::filesystem::path(_directory + "/" + include_name)).string();
 
             if (!read_file(include_path, new_content)) {
-                spdlog::error("\tCould not load shader include: {}", include_path);
+                LOG_ERROR("\tCould not load shader include: {}", include_path);
                 return false;
             }
         } else {
@@ -156,7 +158,7 @@ bool Shader::parse_preprocessor_line(std::istringstream& string_stream, std::str
             return false;
         }
 
-        auto& library_references = RendererStorage::instance->shader_library_references;
+        auto& library_references = RenderStorage::get_singleton()->get_shader_library_references();
 
         auto& references = library_references[include_path];
 
@@ -168,7 +170,7 @@ bool Shader::parse_preprocessor_line(std::istringstream& string_stream, std::str
 
         //std::cout << " [" << include_name << "]";
         shader_content.replace(line_pos, line.length(), new_content);
-        //spdlog::info(shader_content);
+        //LOG_INFO(shader_content);
 
         line_pos += new_content.length();
     }
@@ -178,10 +180,8 @@ bool Shader::parse_preprocessor_line(std::istringstream& string_stream, std::str
 
         std::string final_value;
 
-        Renderer* renderer = Renderer::instance;
-
         if (define_name == "GAMMA_CORRECTION") {
-            final_value = renderer->get_xr_available() && WebGPUContext::xr_swapchain_format == WGPUTextureFormat_BGRA8UnormSrgb ? "0" : "1";
+            final_value = XR_MANAGER->is_xr_available() && XR_MANAGER->get_swapchain_format() == WGPUTextureFormat_BGRA8UnormSrgb ? "0" : "1";
         }
 
         for (const auto define : custom_defines) {
@@ -358,7 +358,7 @@ bool Shader::load(std::string& shader_source, std::vector<std::string> define_sp
     std::string& shader_source_processed = shader_source;
 
     if (!parse_preprocessor(shader_source_processed, path)) {
-        spdlog::error("\tPreprocessor parsing error");
+        LOG_ERROR("\tPreprocessor parsing error");
         return false;
     }
 
@@ -366,9 +366,7 @@ bool Shader::load(std::string& shader_source, std::vector<std::string> define_sp
         spdlog::trace("\t{}", specialization);
     }
 
-    WebGPUContext* webgpu_context = Renderer::instance->get_webgpu_context();
-
-    shader_module = webgpu_context->create_shader_module(shader_source_processed.c_str());
+    shader_module = RenderAPI::get_singleton()->create_shader_module(shader_source_processed.c_str());
 
     struct UserData {
         bool any_error = false;
@@ -394,7 +392,7 @@ bool Shader::load(std::string& shader_source, std::vector<std::string> define_sp
         loaded = false;
     }
 
-    webgpu_context->process_events();
+    //webgpu_context->process_events();
 
     return loaded;
 }
@@ -404,7 +402,7 @@ void Shader::reload_engine_library(const std::string& folder, const std::string&
     if (engine_libraries.contains(engine_library)) {
         std::string shader_content;
         if (!read_file(folder + "/" + engine_library, shader_content)) {
-            spdlog::error("\tError reading engine shader library");
+            LOG_ERROR("\tError reading engine shader library");
             return;
         }
 
@@ -430,8 +428,6 @@ void Shader::get_reflection_data(const std::string& shader_content)
     using ResourceBinding = tint::inspector::ResourceBinding;
 
     uint8_t max_bind_group_index = 0;
-
-    WebGPUContext* webgpu_context = Renderer::instance->get_webgpu_context();
 
     auto get_vertex_format_offset = [](WGPUVertexFormat format, uint16_t offset) -> WGPUVertexFormat {
         return static_cast<WGPUVertexFormat>(static_cast<int>(format + offset));
@@ -470,7 +466,7 @@ void Shader::get_reflection_data(const std::string& shader_content)
                     //	byte_size = sizeof(uint16_t);
                     //	break;
                     default:
-                        spdlog::error("Shader reflection failed: Vertex component type not implemented");
+                        LOG_ERROR("Shader reflection failed: Vertex component type not implemented");
                         break;
                 }
 
@@ -490,7 +486,7 @@ void Shader::get_reflection_data(const std::string& shader_content)
                         vertex_attribute.format = get_vertex_format_offset(vertex_attribute.format, 3);
                         break;
                     default:
-                        spdlog::error("Shader reflection failed: Vertex composition type not implemented");
+                        LOG_ERROR("Shader reflection failed: Vertex composition type not implemented");
                         break;
                 }
 
@@ -510,11 +506,11 @@ void Shader::get_reflection_data(const std::string& shader_content)
             }
 
             vertex_attributes.push_back(shared_buffer_vertex_attributes);
-            vertex_buffer_layouts.push_back(webgpu_context->create_vertex_buffer_layout(vertex_attributes.back(), offset, WGPUVertexStepMode_Vertex));
+            vertex_buffer_layouts.push_back(RenderAPI::get_singleton()->create_vertex_buffer_layout(vertex_attributes.back(), offset, WGPUVertexStepMode_Vertex));
 
             if (!unique_buffer_vertex_attributes.empty()) {
                 vertex_attributes.push_back(unique_buffer_vertex_attributes);
-                vertex_buffer_layouts.push_back(webgpu_context->create_vertex_buffer_layout(vertex_attributes.back(), unique_offset, unique_step_mode));
+                vertex_buffer_layouts.push_back(RenderAPI::get_singleton()->create_vertex_buffer_layout(vertex_attributes.back(), unique_offset, unique_step_mode));
             }
         }
 
@@ -595,7 +591,7 @@ void Shader::get_reflection_data(const std::string& shader_content)
                     entry.storageTexture.access = WGPUStorageTextureAccess_ReadWrite;
                     break;
                 default:
-                    spdlog::error("Shader reflection failed: Resource type not implemented");
+                    LOG_ERROR("Shader reflection failed: Resource type not implemented");
                     assert(0);
                     break;
             }
@@ -614,10 +610,10 @@ void Shader::get_reflection_data(const std::string& shader_content)
                         break;
                     case ResourceBinding::SampledKind::kUnknownFilterable:
                         entry.texture.sampleType = WGPUTextureSampleType_Float;
-                        spdlog::warn("Texture SampledType is kUnknownFilterable for texture \"{}\" in shader \"{}\"", resource_binding.variable_name, path);
+                        //LOG_WARN("Texture SampledType is kUnknownFilterable for texture \"{}\" in shader \"{}\"", resource_binding.variable_name, path);
                         break;
                     default:
-                        spdlog::error("Shader reflection failed: sample kind not implemented");
+                        LOG_ERROR("Shader reflection failed: sample kind not implemented");
                         assert(0);
                         break;
                 }
@@ -642,7 +638,7 @@ void Shader::get_reflection_data(const std::string& shader_content)
                         entry.texture.viewDimension = WGPUTextureViewDimension_2DArray;
                         break;
                     default:
-                        spdlog::error("Shader reflection failed: view dimension not implemented");
+                        LOG_ERROR("Shader reflection failed: view dimension not implemented");
                         assert(0);
                         break;
                 }
@@ -670,7 +666,7 @@ void Shader::get_reflection_data(const std::string& shader_content)
                         entry.storageTexture.format = WGPUTextureFormat_RG32Float;
                         break;
                     default:
-                        spdlog::error("Shader reflection failed: image format not implemented");
+                        LOG_ERROR("Shader reflection failed: image format not implemented");
                         assert(0);
                         break;
                 }
@@ -692,7 +688,7 @@ void Shader::get_reflection_data(const std::string& shader_content)
                         entry.storageTexture.viewDimension = WGPUTextureViewDimension_Cube;
                         break;
                     default:
-                        spdlog::error("Shader reflection failed: storage view dimension not implemented");
+                        LOG_ERROR("Shader reflection failed: storage view dimension not implemented");
                         assert(0);
                         break;
                 }
@@ -713,12 +709,12 @@ void Shader::get_reflection_data(const std::string& shader_content)
             entries.push_back(entry.second);
         }
 
-        bind_group_layouts[bind_group_index] = webgpu_context->create_bind_group_layout(entries, specialized_path.c_str());
+        bind_group_layouts[bind_group_index] = RenderAPI::get_singleton()->create_bind_group_layout(entries, specialized_path.c_str());
 
         entries.clear();
     }
 
-    pipeline_layout = webgpu_context->create_pipeline_layout(bind_group_layouts, path);
+    pipeline_layout = RenderAPI::get_singleton()->create_pipeline_layout(bind_group_layouts, path.c_str());
 }
 
 void Shader::reload(const std::string& engine_shader_path)
@@ -735,10 +731,12 @@ void Shader::reload(const std::string& engine_shader_path)
     vertex_attributes.clear();
     vertex_buffer_layouts.clear();
 
+    const auto& engine_shader_refs = RenderStorage::get_singleton()->get_engine_shader_references();
+
     if (loaded_from_file || !engine_shader_path.empty()) {
         load_from_file(engine_shader_path.empty() ? path : engine_shader_path, specialized_path, define_specializations);
-    } else if (RendererStorage::engine_shaders_refs.contains(path)) {
-        load_from_source(RendererStorage::engine_shaders_refs[path], path, libraries, specialized_path, define_specializations);
+    } else if (engine_shader_refs.contains(path)) {
+        load_from_source(engine_shader_refs.at(path), path, libraries, specialized_path, define_specializations);
     }
 
     if (pipeline_ref) {

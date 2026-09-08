@@ -1,29 +1,30 @@
 #pragma once
 
-#include <vector>
 #include <array>
+#include <vector>
 
 #include "includes.h"
 
+#include "core/error/error.h"
+
+#include "glm/gtc/quaternion.hpp"
+#include "glm/mat4x4.hpp"
 #include "glm/vec3.hpp"
 #include "glm/vec4.hpp"
-#include "glm/mat4x4.hpp"
-#include "glm/gtc/quaternion.hpp"
 
 // Small helper so we don't forget whether we treat 0 as left or right hand
-enum XR_HANDS
-{
+enum eXRHand {
     HAND_LEFT = 0,
     HAND_RIGHT = 1,
     HAND_COUNT
 };
 
-enum XR_POSES {
+enum eXRPose {
     POSE_GRIP = 0,
     POSE_AIM
 };
 
-enum XR_BUTTONS {
+enum eXRButton {
     XR_BUTTON_A = 0,
     XR_BUTTON_B,
     XR_BUTTON_X,
@@ -32,7 +33,7 @@ enum XR_BUTTONS {
     XR_BUTTON_COUNT,
 };
 
-enum XR_THUMBSTICK_AXIS : uint8_t {
+enum eXRThumbstickAxis : uint8_t {
     XR_THUMBSTICK_NO_AXIS = 0,
     XR_THUMBSTICK_AXIS_X,
     XR_THUMBSTICK_AXIS_Y
@@ -52,25 +53,20 @@ struct XrInputPose {
 glm::mat4x4 XrInputPose_to_glm(const XrInputPose& p);
 
 struct XRContext {
-
     virtual ~XRContext();
 
     Transform* root_transform = nullptr;
 
     /*
-    * XR General
-    */
+     * XR General
+     */
 
-    bool initialized = false;
-
-    virtual bool init(WebGPUContext* webgpu_context) = 0;
-    virtual void clean() = 0;
-
-    bool is_initialized() const { return initialized; }
+    virtual Error initialize() = 0;
+    virtual void finalize() = 0;
 
     /*
-    * XR Input
-    */
+     * XR Input
+     */
 
     // Poses
     glm::mat4x4 headPoseMatrix = glm::identity<glm::mat4x4>();
@@ -83,21 +79,23 @@ struct XRContext {
     //sInputState input_state;
 
     //virtual void init_actions(XrInputData& data) {};
-    virtual void poll_actions() {};
+    virtual void poll_actions() {}
 
-    //virtual void apply_haptics(uint8_t controller, float amplitude, float duration) {};
-    //virtual void stop_haptics(uint8_t controller) {};
-
-    /*
-    * XR Session
-    */
-
-    virtual bool begin_session() = 0;
-    virtual bool end_session() = 0;
+    virtual void apply_haptics(uint8_t controller, float amplitude, float duration) {}
+    virtual void stop_haptics(uint8_t controller) {}
 
     /*
-    * Render
-    */
+     * XR Session
+     */
+
+    virtual Error begin_session() = 0;
+    virtual Error end_session() = 0;
+
+    /*
+     * Render
+     */
+
+    WGPUTextureFormat swapchain_format = WGPUTextureFormat_Undefined;
 
     virtual WGPUTextureView get_swapchain_view(uint8_t eye_idx, uint32_t image_idx) = 0;
     virtual WGPUTextureView get_swapchain_view(uint8_t eye_idx) = 0;
@@ -110,7 +108,7 @@ struct XRContext {
     glm::ivec4 viewport;
 
     struct sViewData {
-        glm::vec3   position;
+        glm::vec3 position;
         glm::mat4x4 projection_matrix;
         glm::mat4x4 view_matrix;
         glm::mat4x4 view_projection_matrix;
@@ -128,21 +126,19 @@ struct XRContext {
     virtual void update() = 0;
 
     /*
-    * Debug & Errors
-    */
+     * Debug & Errors
+     */
 
     virtual void print_viewconfig_view_info() = 0;
 
     virtual void print_reference_spaces() = 0;
 
 private:
-
 };
 
 #else
 
 struct XRContext {
-
 };
 
 #endif

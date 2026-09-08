@@ -3,36 +3,36 @@
 #define TINYOBJLOADER_IMPLEMENTATION
 #include "tiny_obj_loader.h"
 
-#include "graphics/texture.h"
+#include "core/managers/render/render_storage.h"
 #include "graphics/shader.h"
-#include "graphics/renderer_storage.h"
+#include "graphics/texture.h"
 
-#include "framework/nodes/mesh_instance_3d.h"
+#include "scene/3d/mesh_instance_3d.h"
 
 #include "shaders/mesh_forward.wgsl.gen.h"
 
 #include <filesystem>
 
-#include "spdlog/spdlog.h"
+#include "core/managers/debug/debug_manager.h"
 
 void parse_obj(const std::string& obj_path, MeshInstance3D* entity_mesh, bool create_aabb)
 {
     if (!entity_mesh) {
         return;
     }
-        
+
     tinyobj::ObjReaderConfig reader_config;
     tinyobj::ObjReader reader;
 
     if (!reader.ParseFromFile(obj_path, reader_config)) {
         if (!reader.Error().empty()) {
-            spdlog::error("TinyObjReader: {}", reader.Error());
+            LOG_ERROR("TinyObjReader: {}", reader.Error());
         }
         return;
     }
 
     if (!reader.Warning().empty()) {
-        spdlog::warn("TinyObjReader: {}", reader.Warning());
+        LOG_WARN("TinyObjReader: {}", reader.Warning());
     }
 
     auto& attrib = reader.GetAttrib();
@@ -45,7 +45,6 @@ void parse_obj(const std::string& obj_path, MeshInstance3D* entity_mesh, bool cr
 
     // Loop over shapes
     for (size_t s = 0; s < shapes.size(); s++) {
-
         Surface* new_surface = new Surface();
 
         new_surface->set_name(shapes[s].name);
@@ -53,20 +52,18 @@ void parse_obj(const std::string& obj_path, MeshInstance3D* entity_mesh, bool cr
         Material* material = new_surface->get_material();
 
         if (!material) {
-
             material = new Material();
 
             if (!materials.empty()) {
                 uint32_t material_id = shapes[s].mesh.material_ids[0] == -1 ? 0 : shapes[s].mesh.material_ids[0];
                 if (materials[material_id].diffuse_texname.empty()) {
                     material->set_color(glm::vec4(materials[material_id].diffuse[0], materials[material_id].diffuse[1], materials[material_id].diffuse[2], 1.0f));
-                }
-                else {
-                    material->set_diffuse_texture(RendererStorage::get_texture(obj_path_fs.parent_path().string() + "/" + materials[material_id].diffuse_texname, TEXTURE_STORAGE_SRGB));
+                } else {
+                    material->set_diffuse_texture(RenderStorage::get_singleton()->get_texture(obj_path_fs.parent_path().string() + "/" + materials[material_id].diffuse_texname, TEXTURE_STORAGE_SRGB));
                 }
             }
 
-            material->set_shader(RendererStorage::get_shader_from_source(shaders::mesh_forward::source, shaders::mesh_forward::path, shaders::mesh_forward::libraries, material));
+            material->set_shader(RenderStorage::get_singleton()->get_shader_from_source(shaders::mesh_forward::source, shaders::mesh_forward::path, shaders::mesh_forward::libraries, material));
 
             new_surface->set_material(material);
         }
@@ -85,34 +82,27 @@ void parse_obj(const std::string& obj_path, MeshInstance3D* entity_mesh, bool cr
 
             // Loop over vertices in the face.
             for (size_t v = 0; v < fv; v++) {
-
                 tinyobj::index_t idx = shapes[s].mesh.indices[index_offset + v];
-                vertices.vertices.push_back({
-                    attrib.vertices[3 * size_t(idx.vertex_index) + 0],
-                    attrib.vertices[3 * size_t(idx.vertex_index) + 1],
-                    attrib.vertices[3 * size_t(idx.vertex_index) + 2]
-                });
+                vertices.vertices.push_back({ attrib.vertices[3 * size_t(idx.vertex_index) + 0],
+                        attrib.vertices[3 * size_t(idx.vertex_index) + 1],
+                        attrib.vertices[3 * size_t(idx.vertex_index) + 2] });
 
                 if (idx.normal_index >= 0) {
-                    vertices.normals.push_back({
-                        attrib.normals[3 * size_t(idx.normal_index) + 0],
-                        attrib.normals[3 * size_t(idx.normal_index) + 1],
-                        attrib.normals[3 * size_t(idx.normal_index) + 2]
-                    });
+                    vertices.normals.push_back({ attrib.normals[3 * size_t(idx.normal_index) + 0],
+                            attrib.normals[3 * size_t(idx.normal_index) + 1],
+                            attrib.normals[3 * size_t(idx.normal_index) + 2] });
                 }
 
                 if (idx.texcoord_index >= 0) {
                     vertices.uvs.push_back({
-                        attrib.texcoords[2 * size_t(idx.texcoord_index) + 0],
-                        1.0f - attrib.texcoords[2 * size_t(idx.texcoord_index) + 1],
+                            attrib.texcoords[2 * size_t(idx.texcoord_index) + 0],
+                            1.0f - attrib.texcoords[2 * size_t(idx.texcoord_index) + 1],
                     });
                 }
 
-                vertices.colors.push_back({
-                    attrib.colors[3 * size_t(idx.vertex_index) + 0],
-                    attrib.colors[3 * size_t(idx.vertex_index) + 1],
-                    attrib.colors[3 * size_t(idx.vertex_index) + 2]
-                });
+                vertices.colors.push_back({ attrib.colors[3 * size_t(idx.vertex_index) + 0],
+                        attrib.colors[3 * size_t(idx.vertex_index) + 1],
+                        attrib.colors[3 * size_t(idx.vertex_index) + 2] });
 
                 const glm::vec3& last_position = vertices.vertices.back();
 

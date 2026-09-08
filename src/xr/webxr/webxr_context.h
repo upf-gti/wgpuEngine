@@ -9,8 +9,7 @@
 #include "webxr.h"
 
 // WEBXR_BUTTON_THUMBSTICK,
-enum WEBXR_BUTTONS
-{
+enum WEBXR_BUTTONS {
     WEBXR_BUTTON_TRIGGER = 0,
     WEBXR_BUTTON_GRAB,
     WEBXR_BUTTON_TOUCHPAD,
@@ -21,22 +20,21 @@ enum WEBXR_BUTTONS
 };
 
 struct WebXRContext : public XRContext {
-
     virtual ~WebXRContext();
 
     /*
-    * XR General
-    */
+     * XR General
+     */
 
     bool session_queried = false;
     bool session_supported = false;
 
-    bool init(WebGPUContext* webgpu_context) override;
-    void clean() override;
+    Error initialize() override;
+    void finalize() override;
 
     /*
-    * XR Input
-    */
+     * XR Input
+     */
 
     // All buttons, Trigger and Grip
     std::vector<GamepadButton> handButtons[HAND_COUNT];
@@ -50,19 +48,19 @@ struct WebXRContext : public XRContext {
     //void stop_haptics(uint8_t controller);
 
     /*
-    * XR Session
-    */
+     * XR Session
+     */
 
     bool query_session_supported();
     bool is_session_supported() const { return session_supported; }
     void set_session_supported(bool value);
     void on_frame(WebXRRigidTransform* head_pose, WebXRView views[2], WGPUTextureView texture_view_left, WGPUTextureView texture_view_right);
-    bool begin_session() override;
-    bool end_session() override;
+    Error begin_session() override;
+    Error end_session() override;
 
     /*
-    * Render
-    */
+     * Render
+     */
 
     WGPUTextureView swapchain_views[2] = {};
 
@@ -78,8 +76,8 @@ struct WebXRContext : public XRContext {
     void update() override;
 
     /*
-    * Debug & Errors
-    */
+     * Debug & Errors
+     */
 
     void print_viewconfig_view_info() override;
 
@@ -88,13 +86,11 @@ struct WebXRContext : public XRContext {
     void print_error(int error);
 
 private:
-
 };
 
 #else
 
 struct WebXRContext {
-
 };
 
 #endif

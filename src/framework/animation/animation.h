@@ -2,7 +2,7 @@
 
 #include "track.h"
 
-#include "framework/resources/resource.h"
+#include "core/io/resource.h"
 
 #include <iostream>
 

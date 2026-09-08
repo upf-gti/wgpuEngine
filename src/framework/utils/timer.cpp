@@ -1,6 +1,6 @@
 #include "timer.h"
 
-#include "spdlog/spdlog.h"
+#include "core/managers/debug/debug_manager.h"
 
 void Timer::start()
 {
@@ -10,26 +10,26 @@ void Timer::start()
 void Timer::print_elapsed_time_s()
 {
     if (begin == std::chrono::high_resolution_clock::time_point()) {
-        spdlog::error("Timer was not started!");
+        LOG_ERROR("Timer was not started!");
     }
 
-    spdlog::info("Time elapsed: {} [s]", get_elapsed_time<std::ratio<1,1>>());
+    LOG_INFO("Time elapsed: {} [s]", get_elapsed_time<std::ratio<1,1>>());
 }
 
 void Timer::print_elapsed_time_ms()
 {
     if (begin == std::chrono::high_resolution_clock::time_point()) {
-        spdlog::error("Timer was not started!");
+        LOG_ERROR("Timer was not started!");
     }
 
-    spdlog::info("Time elapsed: {} [ms]", get_elapsed_time<std::milli>());
+    LOG_INFO("Time elapsed: {} [ms]", get_elapsed_time<std::milli>());
 }
 
 void Timer::print_elapsed_time_ns()
 {
     if (begin == std::chrono::high_resolution_clock::time_point()) {
-        spdlog::error("Timer was not started!");
+        LOG_ERROR("Timer was not started!");
     }
 
-    spdlog::info("Time elapsed: {} [ns]", get_elapsed_time<std::nano>());
+    LOG_INFO("Time elapsed: {} [ns]", get_elapsed_time<std::nano>());
 }
