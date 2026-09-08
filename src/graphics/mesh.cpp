@@ -1,7 +1,8 @@
 #include "mesh.h"
 
-#include "graphics/renderer_storage.h"
-#include "graphics/renderer.h"
+#include "core/managers/render/render_storage.h"
+
+#include "imgui.h"
 
 Mesh::Mesh()
 {
@@ -12,7 +13,7 @@ Mesh::~Mesh()
 {
     for (auto& material_override : material_overrides) {
         if (material_override.second->unref()) {
-            RendererStorage::delete_material_bind_group(Renderer::instance->get_webgpu_context(), material_override.second);
+            RenderStorage::get_singleton()->delete_material_bind_group(material_override.second);
         }
     }
 
@@ -104,14 +105,12 @@ void Mesh::render_gui()
     bool is_open = ImGui::TreeNodeEx("Surfaces");
     ImGui::PopStyleColor();
 
-    if (is_open)
-    {
+    if (is_open) {
         for (int i = 0; i < surfaces.size(); ++i) {
             Surface* surface = surfaces[i];
             std::string surface_name = surface->get_name();
             std::string final_surface_name = surface_name.empty() ? ("Surface " + std::to_string(i)).c_str() : surface_name;
             if (ImGui::TreeNodeEx(final_surface_name.c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
-
                 surface->render_gui();
 
                 ImGui::Checkbox("Receive Shadows", &receive_shadows);

@@ -1,0 +1,46 @@
+#include "flyover_camera_3d.h"
+
+#include "core/managers/input/input_manager.h"
+
+#include "glm/gtx/norm.hpp"
+
+FlyoverCamera::FlyoverCamera() :
+        Camera3D()
+{
+}
+
+void FlyoverCamera::update(float delta_time)
+{
+    Camera3D::update(delta_time);
+
+    float final_speed = speed;
+    glm::vec3 move_dir = glm::vec3(0.0f, 0.0f, 0.0f);
+    if (InputManager::get_singleton()->is_key_pressed(GLFW_KEY_LEFT_SHIFT)) {
+        final_speed *= 10.0f;
+    }
+    if (InputManager::get_singleton()->is_key_pressed(GLFW_KEY_LEFT_CONTROL)) {
+        final_speed *= 0.1f;
+    }
+    if (InputManager::get_singleton()->is_key_pressed(GLFW_KEY_W) || InputManager::get_singleton()->is_key_pressed(GLFW_KEY_UP)) {
+        move_dir += (glm::vec3(0.0f, 0.0f, -1.0f));
+    }
+    if (InputManager::get_singleton()->is_key_pressed(GLFW_KEY_S) || InputManager::get_singleton()->is_key_pressed(GLFW_KEY_DOWN)) {
+        move_dir += (glm::vec3(0.0f, 0.0f, 1.0f));
+    }
+    if (InputManager::get_singleton()->is_key_pressed(GLFW_KEY_A) || InputManager::get_singleton()->is_key_pressed(GLFW_KEY_LEFT)) {
+        move_dir += (glm::vec3(-1.0f, 0.0f, 0.0f));
+    }
+    if (InputManager::get_singleton()->is_key_pressed(GLFW_KEY_D) || InputManager::get_singleton()->is_key_pressed(GLFW_KEY_RIGHT)) {
+        move_dir += (glm::vec3(1.0f, 0.0f, 0.0f));
+    }
+
+    if (glm::length2(move_dir)) {
+        move_dir = get_local_vector(move_dir);
+        move_dir = normalize(move_dir) * final_speed;
+    }
+
+    glm::vec3 new_forward = yaw_pitch_to_vector(delta_yaw_lerp.value, delta_pitch_lerp.value);
+    eye_lerp.value = smooth_damp(eye_lerp.value, eye + move_dir, &eye_lerp.velocity, 0.3f, 500.0f, delta_time);
+
+    look_at(eye_lerp.value, eye_lerp.value + new_forward, glm::vec3(0.0f, 1.0f, 0.0f), false);
+}
