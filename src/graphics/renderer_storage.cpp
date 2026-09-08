@@ -1,16 +1,20 @@
 #include "renderer_storage.h"
 
-#include "surface.h"
-#include "texture.h"
-#include "shader.h"
-#include "uniform.h"
+#include "mesh.h"
 #include "pipeline.h"
 #include "renderer.h"
-#include "mesh.h"
+#include "shader.h"
+#include "surface.h"
+#include "texture.h"
+#include "uniform.h"
 
-#include "framework/nodes/mesh_instance_3d.h"
-#include "framework/nodes/skeleton_instance_3d.h"
+#include "core/managers/render/render_manager.h"
+#include "core/managers/render/render_methods/render_forward.h"
+#include "core/managers/xr/xr_manager.h"
+
 #include "framework/animation/animation.h"
+#include "scene/3d/mesh_instance_3d.h"
+#include "scene/animation/skeleton_instance_3d.h"
 
 #include <filesystem>
 
@@ -18,11 +22,11 @@
 
 #include "shaders/mesh_forward.wgsl.gen.h"
 #include "shaders/mesh_grid.wgsl.gen.h"
-#include "shaders/ui/ui_panel.wgsl.gen.h"
-#include "shaders/ui/ui_xr_panel.wgsl.gen.h"
 #include "shaders/ui/ui_color_picker.wgsl.gen.h"
-#include "shaders/ui/ui_texture.wgsl.gen.h"
+#include "shaders/ui/ui_panel.wgsl.gen.h"
 #include "shaders/ui/ui_text_shadow.wgsl.gen.h"
+#include "shaders/ui/ui_texture.wgsl.gen.h"
+#include "shaders/ui/ui_xr_panel.wgsl.gen.h"
 
 #endif
 
@@ -46,22 +50,19 @@ RendererStorage::RendererStorage()
     instance = this;
 }
 
-void RendererStorage::register_material_bind_group(WebGPUContext* webgpu_context, Mesh* mesh, Material* material)
+void RendererStorage::register_material_bind_group(Mesh* mesh, Material* material)
 {
     if (material_bind_groups.contains(material)) {
-
         if (material->get_dirty_flags() & PROP_RELOAD_NEEDED) {
-            delete_material_bind_group(webgpu_context, material);
+            delete_material_bind_group(material);
             const Shader* old_shader = material->get_shader();
             // TODO: try to cache shaders and use as resource
             auto& libraries = shader_library_references[old_shader->get_path()];
             material->set_shader(get_shader_from_source(engine_shaders_refs[old_shader->get_path()], old_shader->get_path(), libraries, material));
-        } else
-        if (material->get_dirty_flags() & PROP_UPDATE_NEEDED) {
-            update_material_bind_group(webgpu_context, mesh, material);
+        } else if (material->get_dirty_flags() & PROP_UPDATE_NEEDED) {
+            update_material_bind_group(mesh, material);
             return;
-        }
-        else {
+        } else {
             return;
         }
     }
@@ -93,7 +94,7 @@ void RendererStorage::register_material_bind_group(WebGPUContext* webgpu_context
     {
         Uniform* u = new Uniform();
         const glm::vec4& color = material->get_color();
-        u->data = webgpu_context->create_buffer(sizeof(glm::vec4), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform, &color, "mat_albedo");
+        u->data = RenderAPI::get_singleton()->buffer_create(sizeof(glm::vec4), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform, &color, "mat_albedo");
         u->binding = 1;
         u->buffer_size = sizeof(glm::vec4);
         uniform_indices[eMaterialProperties::PROP_COLOR] = static_cast<uint8_t>(uniforms.size());
@@ -101,7 +102,6 @@ void RendererStorage::register_material_bind_group(WebGPUContext* webgpu_context
     }
 
     if (material->get_type() == MATERIAL_PBR) {
-
         Texture* metallic_roughness_texture = material->get_metallic_roughness_texture();
         if (metallic_roughness_texture) {
             Uniform* u = new Uniform();
@@ -116,7 +116,7 @@ void RendererStorage::register_material_bind_group(WebGPUContext* webgpu_context
         {
             Uniform* u = new Uniform();
             glm::vec3 occlusion_roughness_metallic = { material->get_occlusion(), material->get_roughness(), material->get_metallic() };
-            u->data = webgpu_context->create_buffer(sizeof(glm::vec3), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform, &occlusion_roughness_metallic, "mat_occlusion_roughness_metallic");
+            u->data = RenderAPI::get_singleton()->buffer_create(sizeof(glm::vec3), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform, &occlusion_roughness_metallic, "mat_occlusion_roughness_metallic");
             u->binding = 3;
             u->buffer_size = sizeof(glm::vec3);
             uniform_indices[eMaterialProperties::PROP_OCLUSSION_ROUGHNESS_METALLIC] = static_cast<uint8_t>(uniforms.size());
@@ -136,7 +136,7 @@ void RendererStorage::register_material_bind_group(WebGPUContext* webgpu_context
             {
                 Uniform* u = new Uniform();
                 float normal_scale = material->get_normal_scale();
-                u->data = webgpu_context->create_buffer(sizeof(float), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform, &normal_scale, "mat_normal_scale");
+                u->data = RenderAPI::get_singleton()->buffer_create(sizeof(float), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform, &normal_scale, "mat_normal_scale");
                 u->binding = 5;
                 u->buffer_size = sizeof(float);
                 uniform_indices[eMaterialProperties::PROP_NORMAL_SCALE] = static_cast<uint8_t>(uniforms.size());
@@ -158,7 +158,7 @@ void RendererStorage::register_material_bind_group(WebGPUContext* webgpu_context
         {
             Uniform* u = new Uniform();
             const glm::vec3& emissive = material->get_emissive();
-            u->data = webgpu_context->create_buffer(sizeof(glm::vec3), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform, &emissive, "mat_emissive");
+            u->data = RenderAPI::get_singleton()->buffer_create(sizeof(glm::vec3), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform, &emissive, "mat_emissive");
             u->binding = 8;
             u->buffer_size = sizeof(glm::vec3);
             uniform_indices[eMaterialProperties::PROP_EMISSIVE] = static_cast<uint8_t>(uniforms.size());
@@ -176,13 +176,13 @@ void RendererStorage::register_material_bind_group(WebGPUContext* webgpu_context
         }
 
         /*
-        *   ClearCoat
-        */
+         *   ClearCoat
+         */
 
         if (material->has_clearcoat()) {
             Uniform* u = new Uniform();
             glm::vec2 clearcoat_data = { material->get_clearcoat_factor(), material->get_clearcoat_roughness() };
-            u->data = webgpu_context->create_buffer(sizeof(glm::vec2), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform, &clearcoat_data, "mat_clearcoat");
+            u->data = RenderAPI::get_singleton()->buffer_create(sizeof(glm::vec2), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform, &clearcoat_data, "mat_clearcoat");
             u->binding = 14;
             u->buffer_size = sizeof(glm::vec2);
             uniform_indices[eMaterialProperties::PROP_CLEARCOAT] = static_cast<uint8_t>(uniforms.size());
@@ -220,13 +220,13 @@ void RendererStorage::register_material_bind_group(WebGPUContext* webgpu_context
         }
 
         /*
-        *   Iridescence
-        */
+         *   Iridescence
+         */
 
         if (material->has_iridescence()) {
             Uniform* u = new Uniform();
             glm::vec4 iridescence_data = { material->get_iridescence_factor(), material->get_iridescence_ior(), material->get_iridescence_thickness_min(), material->get_iridescence_thickness_max() };
-            u->data = webgpu_context->create_buffer(sizeof(glm::vec4), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform, &iridescence_data, "mat_iridescence");
+            u->data = RenderAPI::get_singleton()->buffer_create(sizeof(glm::vec4), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform, &iridescence_data, "mat_iridescence");
             u->binding = 18;
             u->buffer_size = sizeof(glm::vec4);
             uniform_indices[eMaterialProperties::PROP_IRIDESCENCE] = static_cast<uint8_t>(uniforms.size());
@@ -254,14 +254,14 @@ void RendererStorage::register_material_bind_group(WebGPUContext* webgpu_context
         }
 
         /*
-        *   Anisotropy
-        */
+         *   Anisotropy
+         */
 
         if (material->has_anisotropy()) {
             Uniform* u = new Uniform();
             float rotation = material->get_anisotropy_rotation();
             glm::vec3 anisotropy_data = { cosf(rotation), sinf(rotation), material->get_anisotropy_factor() };
-            u->data = webgpu_context->create_buffer(sizeof(glm::vec3), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform, &anisotropy_data, "mat_anisotropy");
+            u->data = RenderAPI::get_singleton()->buffer_create(sizeof(glm::vec3), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform, &anisotropy_data, "mat_anisotropy");
             u->binding = 21;
             u->buffer_size = sizeof(glm::vec3);
             uniform_indices[eMaterialProperties::PROP_ANISOTROPY] = static_cast<uint8_t>(uniforms.size());
@@ -280,19 +280,17 @@ void RendererStorage::register_material_bind_group(WebGPUContext* webgpu_context
     }
 
     // Add a sampler for basic 2d textures if there's any texture as uniforms
-    if (uses_textures)
-    {
+    if (uses_textures) {
         Uniform* sampler_uniform = new Uniform();
-        sampler_uniform->data = webgpu_context->create_sampler(
-            texture_ref->get_wrap_u(),
-            texture_ref->get_wrap_v(),
-            WGPUAddressMode_ClampToEdge,
-            WGPUFilterMode_Linear,
-            WGPUFilterMode_Linear,
-            WGPUMipmapFilterMode_Linear,
-            static_cast<float>(texture_ref->get_mipmap_count()),
-            material->get_is_2D() ? 1 : 8
-        );
+        sampler_uniform->data = RenderAPI::get_singleton()->sampler_create(
+                texture_ref->get_wrap_u(),
+                texture_ref->get_wrap_v(),
+                WGPUAddressMode_ClampToEdge,
+                WGPUFilterMode_Linear,
+                WGPUFilterMode_Linear,
+                WGPUMipmapFilterMode_Linear,
+                static_cast<float>(texture_ref->get_mipmap_count()),
+                material->get_is_2D() ? 1 : 8);
         sampler_uniform->binding = 7;
         uniforms.push_back(sampler_uniform);
 
@@ -301,7 +299,7 @@ void RendererStorage::register_material_bind_group(WebGPUContext* webgpu_context
         if (material->get_use_uv_transforms()) {
             Uniform* u = new Uniform();
             const std::vector<glm::mat4x4>& uv_transforms = material->get_uv_transforms();
-            u->data = webgpu_context->create_buffer(sizeof(glm::mat4x4) * MAX_UV_TRANSFORMS, WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform, uv_transforms.data(), "uv_transforms_buffer");
+            u->data = RenderAPI::get_singleton()->buffer_create(sizeof(glm::mat4x4) * MAX_UV_TRANSFORMS, WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform, uv_transforms.data(), "uv_transforms_buffer");
             u->binding = 12;
             u->buffer_size = sizeof(glm::mat4x4) * MAX_UV_TRANSFORMS;
             uniforms.push_back(u);
@@ -311,7 +309,7 @@ void RendererStorage::register_material_bind_group(WebGPUContext* webgpu_context
     if (material->get_transparency_type() == ALPHA_MASK) {
         Uniform* u = new Uniform();
         float alpha_mask = material->get_alpha_mask();
-        u->data = webgpu_context->create_buffer(sizeof(float), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform, &alpha_mask, "mat_alpha_cutoff");
+        u->data = RenderAPI::get_singleton()->buffer_create(sizeof(float), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform, &alpha_mask, "mat_alpha_cutoff");
         u->binding = 9;
         u->buffer_size = sizeof(float);
         uniform_indices[eMaterialProperties::PROP_ALPHA_MASK] = static_cast<uint8_t>(uniforms.size());
@@ -319,7 +317,6 @@ void RendererStorage::register_material_bind_group(WebGPUContext* webgpu_context
     }
 
     if (material->get_use_skinning()) {
-
         MeshInstance3D* instance_3d = static_cast<MeshInstance3D*>(mesh->get_node_ref());
         SkeletonInstance3D* skeleton_instance = dynamic_cast<SkeletonInstance3D*>(instance_3d->get_parent());
         assert(skeleton_instance);
@@ -330,7 +327,7 @@ void RendererStorage::register_material_bind_group(WebGPUContext* webgpu_context
             // Send current animated bones matrices
             const std::vector<glm::mat4x4>& animated_matrices = skeleton_instance->get_animated_data();
 
-            anim_u->data = webgpu_context->create_buffer(sizeof(glm::mat4x4) * animated_matrices.size(), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Storage, animated_matrices.data(), "animated_buffer");
+            anim_u->data = RenderAPI::get_singleton()->buffer_create(sizeof(glm::mat4x4) * animated_matrices.size(), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Storage, animated_matrices.data(), "animated_buffer");
             anim_u->binding = 10;
             anim_u->buffer_size = sizeof(glm::mat4x4) * animated_matrices.size();
 
@@ -340,15 +337,14 @@ void RendererStorage::register_material_bind_group(WebGPUContext* webgpu_context
 
             // Send bind bones inverse matrices
             const std::vector<glm::mat4x4>& invbind_matrices = skeleton_instance->get_invbind_data();
-            invbind_u->data = webgpu_context->create_buffer(sizeof(glm::mat4x4) * invbind_matrices.size(), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Storage, invbind_matrices.data(), "invbind_buffer");
+            invbind_u->data = RenderAPI::get_singleton()->buffer_create(sizeof(glm::mat4x4) * invbind_matrices.size(), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Storage, invbind_matrices.data(), "invbind_buffer");
             invbind_u->binding = 11;
             invbind_u->buffer_size = sizeof(glm::mat4x4) * invbind_matrices.size();
 
             uniforms.push_back(invbind_u);
 
             skeleton_instance->set_uniform_data(anim_u, invbind_u);
-        }
-        else {
+        } else {
             uniforms.push_back(skeleton_instance->get_animated_uniform_data());
             uniforms.push_back(skeleton_instance->get_invbind_uniform_data());
         }
@@ -357,7 +353,7 @@ void RendererStorage::register_material_bind_group(WebGPUContext* webgpu_context
     material->reset_dirty_flags();
 
     if (material->get_fragment_write() || (!material->get_fragment_write() && material->get_use_skinning())) {
-        material_bind_groups[material].bind_group = webgpu_context->create_bind_group(uniforms, material->get_shader(), 2);
+        material_bind_groups[material].bind_group = RenderAPI::get_singleton()->bind_group_create(uniforms, material->get_shader(), 2);
     }
 }
 
@@ -371,7 +367,7 @@ WGPUBindGroup RendererStorage::get_material_bind_group(const Material* material)
     return it->second.bind_group;
 }
 
-void RendererStorage::delete_material_bind_group(WebGPUContext* webgpu_context, Material* material)
+void RendererStorage::delete_material_bind_group(Material* material)
 {
     auto it = material_bind_groups.find(material);
 
@@ -386,7 +382,7 @@ void RendererStorage::delete_material_bind_group(WebGPUContext* webgpu_context, 
     }
 }
 
-void RendererStorage::update_material_bind_group(WebGPUContext* webgpu_context, Mesh* mesh, Material* material)
+void RendererStorage::update_material_bind_group(Mesh* mesh, Material* material)
 {
     std::vector<Uniform*>& uniforms = material_bind_groups[material].uniforms;
     std::unordered_map<eMaterialProperties, uint8_t>& uniform_indices = material_bind_groups[material].uniform_indices;
@@ -396,69 +392,68 @@ void RendererStorage::update_material_bind_group(WebGPUContext* webgpu_context, 
     if (dirty_flags & eMaterialProperties::PROP_COLOR) {
         Uniform* u = uniforms[uniform_indices[eMaterialProperties::PROP_COLOR]];
         const glm::vec4& color = material->get_color();
-        webgpu_context->update_buffer(std::get<WGPUBuffer>(u->data), 0, &color, sizeof(glm::vec4));
+        RenderAPI::get_singleton()->buffer_update(std::get<WGPUBuffer>(u->data), 0, &color, sizeof(glm::vec4));
     }
 
     if (dirty_flags & eMaterialProperties::PROP_OCLUSSION_ROUGHNESS_METALLIC && material->get_type() == MATERIAL_PBR) {
         Uniform* u = uniforms[uniform_indices[eMaterialProperties::PROP_OCLUSSION_ROUGHNESS_METALLIC]];
         glm::vec3 occlusion_roughness_metallic = { material->get_occlusion(), material->get_roughness(), material->get_metallic() };
-        webgpu_context->update_buffer(std::get<WGPUBuffer>(u->data), 0, &occlusion_roughness_metallic, sizeof(glm::vec3));
+        RenderAPI::get_singleton()->buffer_update(std::get<WGPUBuffer>(u->data), 0, &occlusion_roughness_metallic, sizeof(glm::vec3));
     }
 
     if (dirty_flags & eMaterialProperties::PROP_EMISSIVE && material->get_type() == MATERIAL_PBR) {
         Uniform* u = uniforms[uniform_indices[eMaterialProperties::PROP_EMISSIVE]];
         const glm::vec3& emissive = material->get_emissive();
-        webgpu_context->update_buffer(std::get<WGPUBuffer>(u->data), 0, &emissive, sizeof(glm::vec3));
+        RenderAPI::get_singleton()->buffer_update(std::get<WGPUBuffer>(u->data), 0, &emissive, sizeof(glm::vec3));
     }
 
     if (dirty_flags & eMaterialProperties::PROP_ALPHA_MASK && material->get_transparency_type() == ALPHA_MASK) {
         Uniform* u = uniforms[uniform_indices[eMaterialProperties::PROP_ALPHA_MASK]];
         float alpha_mask = material->get_alpha_mask();
-        webgpu_context->update_buffer(std::get<WGPUBuffer>(u->data), 0, &alpha_mask, sizeof(float));
+        RenderAPI::get_singleton()->buffer_update(std::get<WGPUBuffer>(u->data), 0, &alpha_mask, sizeof(float));
     }
 
     if (dirty_flags & eMaterialProperties::PROP_NORMAL_SCALE && material->get_normal_texture()) {
         Uniform* u = uniforms[uniform_indices[eMaterialProperties::PROP_NORMAL_SCALE]];
         float normal_scale = material->get_normal_scale();
-        webgpu_context->update_buffer(std::get<WGPUBuffer>(u->data), 0, &normal_scale, sizeof(float));
+        RenderAPI::get_singleton()->buffer_update(std::get<WGPUBuffer>(u->data), 0, &normal_scale, sizeof(float));
     }
 
     if (dirty_flags & eMaterialProperties::PROP_CLEARCOAT && material->get_type() == MATERIAL_PBR) {
         Uniform* u = uniforms[uniform_indices[eMaterialProperties::PROP_CLEARCOAT]];
         glm::vec2 clearcoat_data = { material->get_clearcoat_factor(), material->get_clearcoat_roughness() };
-        webgpu_context->update_buffer(std::get<WGPUBuffer>(u->data), 0, &clearcoat_data, sizeof(glm::vec2));
+        RenderAPI::get_singleton()->buffer_update(std::get<WGPUBuffer>(u->data), 0, &clearcoat_data, sizeof(glm::vec2));
     }
 
     if (dirty_flags & eMaterialProperties::PROP_IRIDESCENCE && material->get_type() == MATERIAL_PBR) {
         Uniform* u = uniforms[uniform_indices[eMaterialProperties::PROP_IRIDESCENCE]];
         glm::vec4 iridescence_data = { material->get_iridescence_factor(), material->get_iridescence_ior(), material->get_iridescence_thickness_min(), material->get_iridescence_thickness_max() };
-        webgpu_context->update_buffer(std::get<WGPUBuffer>(u->data), 0, &iridescence_data, sizeof(glm::vec4));
+        RenderAPI::get_singleton()->buffer_update(std::get<WGPUBuffer>(u->data), 0, &iridescence_data, sizeof(glm::vec4));
     }
 
     if (dirty_flags & eMaterialProperties::PROP_ANISOTROPY && material->get_type() == MATERIAL_PBR) {
         Uniform* u = uniforms[uniform_indices[eMaterialProperties::PROP_ANISOTROPY]];
         float rotation = material->get_anisotropy_rotation();
         glm::vec3 anisotropy_data = { cosf(rotation), sinf(rotation), material->get_anisotropy_factor() };
-        webgpu_context->update_buffer(std::get<WGPUBuffer>(u->data), 0, &anisotropy_data, sizeof(glm::vec3));
+        RenderAPI::get_singleton()->buffer_update(std::get<WGPUBuffer>(u->data), 0, &anisotropy_data, sizeof(glm::vec3));
     }
 
     material->reset_dirty_flags();
 }
 
-void RendererStorage::register_ui_widget(WebGPUContext* webgpu_context, Shader* shader, void* entity_mesh, const sUIData& ui_data, uint8_t bind_group_id, bool force)
+void RendererStorage::register_ui_widget(Shader* shader, void* entity_mesh, const sUIData& ui_data, uint8_t bind_group_id, bool force)
 {
     if (ui_widget_bind_groups.contains(entity_mesh)) {
         if (force) {
-            delete_ui_widget(webgpu_context, entity_mesh);
-        }
-        else {
+            delete_ui_widget(entity_mesh);
+        } else {
             assert(false);
             return;
         }
     }
 
     Uniform* data_uniform = new Uniform();
-    data_uniform->data = webgpu_context->create_buffer(sizeof(sUIData), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform, &ui_data, "ui_buffer");
+    data_uniform->data = RenderAPI::get_singleton()->buffer_create(sizeof(sUIData), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform, &ui_data, "ui_buffer");
     data_uniform->binding = 0;
     data_uniform->buffer_size = sizeof(sUIData);
 
@@ -467,7 +462,7 @@ void RendererStorage::register_ui_widget(WebGPUContext* webgpu_context, Shader* 
 
     binding_data.uniforms.push_back(data_uniform);
 
-    binding_data.bind_group = webgpu_context->create_bind_group(binding_data.uniforms, shader, bind_group_id);
+    binding_data.bind_group = RenderAPI::get_singleton()->bind_group_create(binding_data.uniforms, shader, bind_group_id);
 }
 
 WGPUBindGroup RendererStorage::get_ui_widget_bind_group(const void* widget)
@@ -479,7 +474,7 @@ WGPUBindGroup RendererStorage::get_ui_widget_bind_group(const void* widget)
     return ui_widget_bind_groups[widget].bind_group;
 }
 
-void RendererStorage::update_ui_widget(WebGPUContext* webgpu_context, void* widget, const sUIData& ui_data)
+void RendererStorage::update_ui_widget(void* widget, const sUIData& ui_data)
 {
     if (!ui_widget_bind_groups.contains(widget)) {
         assert(false);
@@ -487,10 +482,10 @@ void RendererStorage::update_ui_widget(WebGPUContext* webgpu_context, void* widg
     }
 
     Uniform* data_uniform = ui_widget_bind_groups[widget].uniforms[0];
-    webgpu_context->update_buffer(std::get<WGPUBuffer>(data_uniform->data), 0, &ui_data, sizeof(sUIData));
+    RenderAPI::get_singleton()->buffer_update(std::get<WGPUBuffer>(data_uniform->data), 0, &ui_data, sizeof(sUIData));
 }
 
-void RendererStorage::delete_ui_widget(WebGPUContext* webgpu_context, void* entity_mesh)
+void RendererStorage::delete_ui_widget(void* entity_mesh)
 {
     auto it = ui_widget_bind_groups.find(entity_mesh);
 
@@ -506,7 +501,7 @@ void RendererStorage::delete_ui_widget(WebGPUContext* webgpu_context, void* enti
 }
 
 Shader* RendererStorage::get_shader(const std::string& shader_path, const Material* material,
-    const std::vector<std::string> &custom_define_specializations)
+        const std::vector<std::string>& custom_define_specializations)
 {
     std::vector<std::string> define_specializations = get_common_define_specializations(material);
 
@@ -527,8 +522,9 @@ Shader* RendererStorage::get_shader(const std::string& shader_path, const std::v
 
     // check if already loaded
     std::map<std::string, Shader*>::iterator it = shaders.find(specialized_name);
-    if (it != shaders.end())
+    if (it != shaders.end()) {
         return it->second;
+    }
 
     Shader* sh = new Shader();
 
@@ -545,21 +541,29 @@ Shader* RendererStorage::get_shader(const std::string& shader_path, const std::v
 #ifdef __EMSCRIPTEN__
 Shader* RendererStorage::get_shader_from_name(const std::string& name, const Material* material)
 {
-    if (name == "mesh_forward") return get_shader_from_source(shaders::mesh_forward::source, shaders::mesh_forward::path, shaders::mesh_forward::libraries, material);
-    else if (name == "mesh_grid") return get_shader_from_source(shaders::mesh_grid::source, shaders::mesh_grid::path, shaders::mesh_grid::libraries, material);
-    else if (name == "ui_panel") return get_shader_from_source(shaders::ui_panel::source, shaders::ui_panel::path, shaders::ui_panel::libraries, material);
-    else if (name == "ui_xr_panel") return get_shader_from_source(shaders::ui_xr_panel::source, shaders::ui_xr_panel::path, shaders::ui_xr_panel::libraries, material);
-    else if (name == "ui_color_picker") return get_shader_from_source(shaders::ui_color_picker::source, shaders::ui_color_picker::path, shaders::ui_color_picker::libraries, material);
-    else if (name == "ui_texture") return get_shader_from_source(shaders::ui_texture::source, shaders::ui_texture::path, shaders::ui_texture::libraries, material);
-    else if (name == "ui_text_shadow") return get_shader_from_source(shaders::ui_text_shadow::source, shaders::ui_text_shadow::path, shaders::ui_text_shadow::libraries, material);
+    if (name == "mesh_forward") {
+        return get_shader_from_source(shaders::mesh_forward::source, shaders::mesh_forward::path, shaders::mesh_forward::libraries, material);
+    } else if (name == "mesh_grid") {
+        return get_shader_from_source(shaders::mesh_grid::source, shaders::mesh_grid::path, shaders::mesh_grid::libraries, material);
+    } else if (name == "ui_panel") {
+        return get_shader_from_source(shaders::ui_panel::source, shaders::ui_panel::path, shaders::ui_panel::libraries, material);
+    } else if (name == "ui_xr_panel") {
+        return get_shader_from_source(shaders::ui_xr_panel::source, shaders::ui_xr_panel::path, shaders::ui_xr_panel::libraries, material);
+    } else if (name == "ui_color_picker") {
+        return get_shader_from_source(shaders::ui_color_picker::source, shaders::ui_color_picker::path, shaders::ui_color_picker::libraries, material);
+    } else if (name == "ui_texture") {
+        return get_shader_from_source(shaders::ui_texture::source, shaders::ui_texture::path, shaders::ui_texture::libraries, material);
+    } else if (name == "ui_text_shadow") {
+        return get_shader_from_source(shaders::ui_text_shadow::source, shaders::ui_text_shadow::path, shaders::ui_text_shadow::libraries, material);
+    }
     return nullptr;
 }
 #endif
 
 Shader* RendererStorage::get_shader_from_source(const char* source, const std::string& name,
-    const std::vector<std::string>& libraries,
-    const Material* material,
-    const std::vector<std::string>& custom_define_specializations)
+        const std::vector<std::string>& libraries,
+        const Material* material,
+        const std::vector<std::string>& custom_define_specializations)
 {
     std::vector<std::string> define_specializations = get_common_define_specializations(material);
 
@@ -570,8 +574,8 @@ Shader* RendererStorage::get_shader_from_source(const char* source, const std::s
 }
 
 Shader* RendererStorage::get_shader_from_source(const char* source, const std::string& name,
-    const std::vector<std::string>& libraries,
-    const std::vector<std::string>& custom_define_specializations)
+        const std::vector<std::string>& libraries,
+        const std::vector<std::string>& custom_define_specializations)
 {
     std::string specialized_name = name;
     for (const std::string& specialization : custom_define_specializations) {
@@ -580,8 +584,9 @@ Shader* RendererStorage::get_shader_from_source(const char* source, const std::s
 
     // check if already loaded
     std::map<std::string, Shader*>::iterator it = shaders.find(specialized_name);
-    if (it != shaders.end())
+    if (it != shaders.end()) {
         return it->second;
+    }
 
     Shader* sh = new Shader();
 
@@ -609,15 +614,13 @@ void RendererStorage::reload_shader(const std::string& shader_path)
 
     // If it is not a shader, check if it is a library
     auto it1 = shader_library_references.find(shader_path);
-    if (it1 != shader_library_references.end())
-    {
+    if (it1 != shader_library_references.end()) {
         for (auto& shader_name : shader_library_references[shader_path]) {
             for (auto& cached_shader : shaders) {
                 if (cached_shader.second->get_path().find(shader_name) != std::string::npos) {
                     cached_shader.second->reload();
                 }
             }
-
         }
     }
 }
@@ -639,8 +642,7 @@ void RendererStorage::reload_engine_shader(const std::string& shader_path)
     Shader::reload_engine_library(folder, name);
 
     auto it1 = shader_library_references.find(name);
-    if (it1 != shader_library_references.end())
-    {
+    if (it1 != shader_library_references.end()) {
         const std::vector<std::string> library_refs = shader_library_references[name];
         shader_library_references.erase(it1);
         for (auto& library_ref : library_refs) {
@@ -649,8 +651,7 @@ void RendererStorage::reload_engine_shader(const std::string& shader_path)
                     if (shader->is_loaded_from_file()) {
                         // project shader
                         shader->reload();
-                    }
-                    else {
+                    } else {
                         // engine shader
                         shader->reload(fs_shader_path.parent_path().string() + "/" + library_ref);
                     }
@@ -666,34 +667,30 @@ Texture* RendererStorage::get_texture(const std::string& texture_path, TextureSt
 
     // check if already loaded
     std::map<std::string, Texture*>::iterator it = textures.find(texture_path);
-    if (it != textures.end())
+    if (it != textures.end()) {
         return it->second;
+    }
 
     Texture* tx = new Texture();
 
     std::string extension = texture_path.substr(texture_path.find_last_of(".") + 1);
 
-    if (extension == "hdr")
-    {
+    if (extension == "hdr") {
         Texture* hdr_texture = new Texture();
         hdr_texture->load_hdr(texture_path, flags & TEXTURE_STORAGE_STORE_DATA);
 
         tx->create(WGPUTextureDimension_2D, WGPUTextureFormat_RGBA32Float, { ENVIRONMENT_RESOLUTION, ENVIRONMENT_RESOLUTION, 6 },
-            static_cast<WGPUTextureUsage>(WGPUTextureUsage_StorageBinding | WGPUTextureUsage_TextureBinding | WGPUTextureUsage_CopyDst), 6, 1, nullptr);
+                static_cast<WGPUTextureUsage>(WGPUTextureUsage_StorageBinding | WGPUTextureUsage_TextureBinding | WGPUTextureUsage_CopyDst), 6, 1, nullptr);
 
-        Renderer::instance->get_webgpu_context()->generate_prefiltered_env_texture(tx, hdr_texture);
-    } else
-    if (extension == "hdre")
-    {
+        //Renderer::instance->get_webgpu_context()->generate_prefiltered_env_texture(tx, hdr_texture);
+    } else if (extension == "hdre") {
         HDRE* hdre = HDRE::Get(texture_path.c_str());
         if (!hdre) {
             return nullptr;
         }
         tx->load_from_hdre(hdre);
         current_skybox_texture = tx;
-    }
-    else
-    {
+    } else {
         bool is_srgb = flags & TEXTURE_STORAGE_SRGB;
         tx->load(texture_path, is_srgb, true, flags & TEXTURE_STORAGE_STORE_DATA);
 
@@ -727,8 +724,9 @@ Animation* RendererStorage::get_animation(const std::string& animation_path)
 {
     // check if already loaded
     std::map<std::string, Animation*>::iterator it = animations.find(animation_path);
-    if (it != animations.end())
-        return it->second;    
+    if (it != animations.end()) {
+        return it->second;
+    }
 
     return nullptr;
 }
@@ -813,52 +811,52 @@ std::vector<std::string> RendererStorage::get_common_define_specializations(cons
     }
 
     switch (material->get_topology_type()) {
-    case TOPOLOGY_TRIANGLE_LIST:
-        define_specializations.push_back("TRIANGLE_LIST");
-        break;
-    case TOPOLOGY_TRIANGLE_STRIP:
-        define_specializations.push_back("TRIANGLE_STRIP");
-        break;
-    case TOPOLOGY_LINE_LIST:
-        define_specializations.push_back("LINE_LIST");
-        break;
-    case TOPOLOGY_LINE_STRIP:
-        define_specializations.push_back("LINE_STRIP");
-        break;
-    case TOPOLOGY_POINT_LIST:
-        define_specializations.push_back("POINT_LIST");
-        break;
-    default:
-        assert(0);
+        case TOPOLOGY_TRIANGLE_LIST:
+            define_specializations.push_back("TRIANGLE_LIST");
+            break;
+        case TOPOLOGY_TRIANGLE_STRIP:
+            define_specializations.push_back("TRIANGLE_STRIP");
+            break;
+        case TOPOLOGY_LINE_LIST:
+            define_specializations.push_back("LINE_LIST");
+            break;
+        case TOPOLOGY_LINE_STRIP:
+            define_specializations.push_back("LINE_STRIP");
+            break;
+        case TOPOLOGY_POINT_LIST:
+            define_specializations.push_back("POINT_LIST");
+            break;
+        default:
+            assert(0);
     }
 
     switch (material->get_cull_type()) {
-    case CULL_NONE:
-        define_specializations.push_back("CULL_NONE");
-        break;
-    case CULL_BACK:
-        define_specializations.push_back("CULL_BACK");
-        break;
-    case CULL_FRONT:
-        define_specializations.push_back("CULL_FRONT");
-        break;
-    default:
-        assert(0);
+        case CULL_NONE:
+            define_specializations.push_back("CULL_NONE");
+            break;
+        case CULL_BACK:
+            define_specializations.push_back("CULL_BACK");
+            break;
+        case CULL_FRONT:
+            define_specializations.push_back("CULL_FRONT");
+            break;
+        default:
+            assert(0);
     }
 
     switch (material->get_transparency_type()) {
-    case ALPHA_OPAQUE:
-        define_specializations.push_back("ALPHA_OPAQUE");
-        break;
-    case ALPHA_BLEND:
-        define_specializations.push_back("ALPHA_BLEND");
-        break;
-    case ALPHA_MASK:
-        define_specializations.push_back("ALPHA_MASK");
-        break;
-    case ALPHA_HASH:
-        define_specializations.push_back("ALPHA_HASH");
-        break;
+        case ALPHA_OPAQUE:
+            define_specializations.push_back("ALPHA_OPAQUE");
+            break;
+        case ALPHA_BLEND:
+            define_specializations.push_back("ALPHA_BLEND");
+            break;
+        case ALPHA_MASK:
+            define_specializations.push_back("ALPHA_MASK");
+            break;
+        case ALPHA_HASH:
+            define_specializations.push_back("ALPHA_HASH");
+            break;
     }
 
     if (material->get_depth_read()) {
@@ -891,7 +889,6 @@ std::vector<std::string> RendererStorage::get_common_define_specializations(cons
 void RendererStorage::reload_all_render_pipelines()
 {
     for (auto& shader_pair : shaders) {
-
         Shader* shader = shader_pair.second;
         const Pipeline* pipeline = shader->get_pipeline();
 
@@ -928,86 +925,84 @@ void RendererStorage::register_render_pipeline(Material* material)
 
 RenderPipelineKey RendererStorage::get_render_pipeline_key(Material* material)
 {
-
     WebGPUContext* webgpu_context = Renderer::instance->get_webgpu_context();
 
     RenderPipelineDescription description = {};
 
     switch (material->get_topology_type()) {
-    case TOPOLOGY_TRIANGLE_LIST:
-        description.topology = WGPUPrimitiveTopology_TriangleList;
-        break;
-    case TOPOLOGY_TRIANGLE_STRIP:
-        description.topology = WGPUPrimitiveTopology_TriangleStrip;
-        break;
-    case TOPOLOGY_LINE_LIST:
-        description.topology = WGPUPrimitiveTopology_LineList;
-        break;
-    case TOPOLOGY_LINE_STRIP:
-        description.topology = WGPUPrimitiveTopology_LineStrip;
-        break;
-    case TOPOLOGY_POINT_LIST:
-        description.topology = WGPUPrimitiveTopology_PointList;
-        break;
-    default:
-        assert(0);
+        case TOPOLOGY_TRIANGLE_LIST:
+            description.topology = WGPUPrimitiveTopology_TriangleList;
+            break;
+        case TOPOLOGY_TRIANGLE_STRIP:
+            description.topology = WGPUPrimitiveTopology_TriangleStrip;
+            break;
+        case TOPOLOGY_LINE_LIST:
+            description.topology = WGPUPrimitiveTopology_LineList;
+            break;
+        case TOPOLOGY_LINE_STRIP:
+            description.topology = WGPUPrimitiveTopology_LineStrip;
+            break;
+        case TOPOLOGY_POINT_LIST:
+            description.topology = WGPUPrimitiveTopology_PointList;
+            break;
+        default:
+            assert(0);
     }
 
     if (material->get_is_2D()) {
         description.depth_write = WGPUOptionalBool_False;
         description.use_depth = false;
-    }
-    else {
+    } else {
         description.depth_write = material->get_depth_write() ? WGPUOptionalBool_True : WGPUOptionalBool_False;
     }
 
     switch (material->get_cull_type()) {
-    case CULL_NONE:
-        description.cull_mode = WGPUCullMode_None;
-        break;
-    case CULL_BACK:
-        description.cull_mode = WGPUCullMode_Back;
-        break;
-    case CULL_FRONT:
-        description.cull_mode = WGPUCullMode_Front;
-        break;
-    default:
-        assert(0);
+        case CULL_NONE:
+            description.cull_mode = WGPUCullMode_None;
+            break;
+        case CULL_BACK:
+            description.cull_mode = WGPUCullMode_Back;
+            break;
+        case CULL_FRONT:
+            description.cull_mode = WGPUCullMode_Front;
+            break;
+        default:
+            assert(0);
     }
 
-    bool is_openxr_available = Renderer::instance->get_xr_available();
-    WGPUTextureFormat swapchain_format = is_openxr_available ? webgpu_context->xr_swapchain_format : webgpu_context->swapchain_format;
+    bool is_openxr_available = XRManager::get_singleton()->is_xr_available();
+    WGPUTextureFormat swapchain_format = is_openxr_available ? XRManager::get_singleton()->get_swapchain_format() : RenderManager::get_singleton()->get_surface_format();
 
     WGPUColorTargetState color_target = {};
     color_target.format = swapchain_format;
     color_target.writeMask = WGPUColorWriteMask_All;
 
     switch (material->get_transparency_type()) {
-    case ALPHA_OPAQUE:
-        break;
-    case ALPHA_BLEND: {
-        WGPUBlendState* blend_state = new WGPUBlendState;
-        blend_state->color = {
+        case ALPHA_OPAQUE:
+            break;
+        case ALPHA_BLEND: {
+            WGPUBlendState* blend_state = new WGPUBlendState;
+            blend_state->color = {
                 .operation = WGPUBlendOperation_Add,
                 .srcFactor = WGPUBlendFactor_SrcAlpha,
                 .dstFactor = WGPUBlendFactor_OneMinusSrcAlpha,
-        };
-        blend_state->alpha = {
+            };
+            blend_state->alpha = {
                 .operation = WGPUBlendOperation_Add,
                 .srcFactor = WGPUBlendFactor_Zero,
                 .dstFactor = WGPUBlendFactor_One,
-        };
+            };
 
-        color_target.blend = blend_state;
+            color_target.blend = blend_state;
 
-        description.depth_write = WGPUOptionalBool_False;
-        description.blending_enabled = true;
-        break;
-    }
-    case ALPHA_MASK:
-        break;
-    case ALPHA_HASH:
-        break;
+            description.depth_write = WGPUOptionalBool_False;
+            description.blending_enabled = true;
+            break;
+        }
+        case ALPHA_MASK:
+            break;
+        case ALPHA_HASH:
+            break;
     }
 
     description.depth_read = material->get_depth_read();

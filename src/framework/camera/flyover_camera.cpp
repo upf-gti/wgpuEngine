@@ -1,6 +1,6 @@
 #include "flyover_camera.h"
 
-#include "framework/input.h"
+#include "core/managers/input/input_manager.h"
 
 #include "glm/gtx/norm.hpp"
 
@@ -15,22 +15,22 @@ void FlyoverCamera::update(float delta_time)
 
     float final_speed = speed;
     glm::vec3 move_dir = glm::vec3(0.0f, 0.0f, 0.0f);
-    if (Input::is_key_pressed(GLFW_KEY_LEFT_SHIFT)) {
+    if (InputManager::get_singleton()->is_key_pressed(GLFW_KEY_LEFT_SHIFT)) {
         final_speed *= 10.0f;
     }
-    if (Input::is_key_pressed(GLFW_KEY_LEFT_CONTROL)) {
+    if (InputManager::get_singleton()->is_key_pressed(GLFW_KEY_LEFT_CONTROL)) {
         final_speed *= 0.1f;
     }
-    if (Input::is_key_pressed(GLFW_KEY_W) || Input::is_key_pressed(GLFW_KEY_UP)) {
+    if (InputManager::get_singleton()->is_key_pressed(GLFW_KEY_W) || InputManager::get_singleton()->is_key_pressed(GLFW_KEY_UP)) {
         move_dir += (glm::vec3(0.0f, 0.0f, -1.0f));
     }
-    if (Input::is_key_pressed(GLFW_KEY_S) || Input::is_key_pressed(GLFW_KEY_DOWN)) {
+    if (InputManager::get_singleton()->is_key_pressed(GLFW_KEY_S) || InputManager::get_singleton()->is_key_pressed(GLFW_KEY_DOWN)) {
         move_dir += (glm::vec3(0.0f, 0.0f, 1.0f));
     }
-    if (Input::is_key_pressed(GLFW_KEY_A) || Input::is_key_pressed(GLFW_KEY_LEFT)) {
+    if (InputManager::get_singleton()->is_key_pressed(GLFW_KEY_A) || InputManager::get_singleton()->is_key_pressed(GLFW_KEY_LEFT)) {
         move_dir += (glm::vec3(-1.0f, 0.0f, 0.0f));
     }
-    if (Input::is_key_pressed(GLFW_KEY_D) || Input::is_key_pressed(GLFW_KEY_RIGHT)) {
+    if (InputManager::get_singleton()->is_key_pressed(GLFW_KEY_D) || InputManager::get_singleton()->is_key_pressed(GLFW_KEY_RIGHT)) {
         move_dir += (glm::vec3(1.0f, 0.0f, 0.0f));
     }
 

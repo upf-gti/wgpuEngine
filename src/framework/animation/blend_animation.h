@@ -3,7 +3,7 @@
 #include "animation.h"
 #include "pose.h"
 
-#include "framework/nodes/node.h"
+#include "scene/main/node.h"
 
 struct BlendTarget {
     Animation* animation = nullptr;

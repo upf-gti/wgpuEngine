@@ -7,7 +7,7 @@
 #include "graphics/shader.h"
 #include "graphics/renderer_storage.h"
 
-#include "framework/nodes/mesh_instance_3d.h"
+#include "scene/3d/mesh_instance_3d.h"
 
 #include "shaders/mesh_forward.wgsl.gen.h"
 

@@ -65,20 +65,11 @@ protected:
 
     uint32_t camera_buffer_stride = 0;
 
-    Texture* irradiance_texture = nullptr;
 
     Texture* eye_depth_textures = nullptr;
     WGPUTextureView eye_depth_texture_view[EYE_COUNT] = {};
 
-    uint8_t msaa_count = 1;
-    Texture* multisample_textures;
-    WGPUTextureView multisample_textures_views[EYE_COUNT] = {};
-
     RendererStorage* renderer_storage;
-
-#ifndef __EMSCRIPTEN__
-    RenderdocCapture* renderdoc_capture;
-#endif
 
     Frustum frustum_cull;
     MeshInstance3D* selected_mesh_aabb = nullptr;
@@ -165,32 +156,6 @@ protected:
     // Gaussian Splatting scenes to render
     std::vector<GSNode*> gs_scenes_list;
 
-    // Bind group for lighting
-
-    WGPUBindGroup lighting_bind_group;
-
-    // Indirect lighting
-
-    Uniform irradiance_texture_uniform;
-    Uniform brdf_lut_uniform;
-    Uniform ibl_sampler_uniform;
-
-    // Direct lighting
-
-    sLightUniformData lights_uniform_data[MAX_LIGHTS];
-    int num_lights = 0;
-
-    Uniform lights_buffer;
-    Uniform num_lights_buffer;
-    Uniform shadow_maps_array;
-    Uniform shadow_sampler;
-    WGPUTexture shadow_array_texture;
-
-    // Shadows
-
-    uint32_t shadow_uniform_buffer_size = MAX_LIGHTS;
-    std::vector<Light3D*> lights_with_shadow;
-
     Material* shadow_material;
 
     Pipeline gs_render_pipeline;
@@ -213,10 +178,6 @@ protected:
 
     bool initialized = false;
 
-    std::vector<WGPUFeatureName> required_features = {};
-
-    uint32_t frame_counter = 0;
-
     Mesh* skybox_mesh = nullptr;
     Surface* skybox_surface = nullptr;
     Material* skybox_material = nullptr;
@@ -228,7 +189,7 @@ public:
     Renderer();
     virtual ~Renderer();
 
-    virtual int pre_initialize(GLFWwindow* window, const sRendererConfiguration& config, bool use_mirror_screen = false);
+    virtual int pre_initialize(GLFWwindow* window, const sRendererConfig& config, bool use_mirror_screen = false);
     virtual int initialize();
     virtual int post_initialize();
     virtual void clean();
@@ -250,16 +211,10 @@ public:
 
     void set_custom_pass_user_data(void* user_data);
 
-    void increase_frame_counter() { frame_counter++; }
-    uint32_t get_frame_counter() { return frame_counter; }
-
-    void init_lighting_bind_group();
     WGPUBindGroup get_lighting_bind_group() { return lighting_bind_group; }
     WGPUBindGroup get_render_camera_bind_group() { return render_camera_bind_group; }
     WGPUBindGroup get_compute_camera_bind_group() { return compute_camera_bind_group; }
 
-    void init_depth_buffers();
-    void init_multisample_textures();
     void init_timestamp_queries();
 
     void set_frustum_camera_paused(bool value);
@@ -331,9 +286,6 @@ public:
 #endif
     WebGPUContext* get_webgpu_context();
 
-    void set_required_features(std::vector<WGPUFeatureName> new_required_features) { required_features = new_required_features; }
-    void set_required_limits(const WGPULimits& required_limits) { webgpu_context->required_limits = required_limits; }
-
     void add_renderable(Mesh* mesh_instance, const glm::mat4x4& global_matrix);
     void add_splat_scene(GSNode* gs_scene);
     void clear_renderables();
@@ -342,8 +294,6 @@ public:
     void add_light(Light3D* new_light);
 
     virtual void resize_window(int width, int height);
-
-    GLFWwindow* get_glfw_window();
 
     void set_irradiance_texture(Texture* texture);
     Texture* get_irradiance_texture() { return irradiance_texture; }

@@ -42,8 +42,10 @@ endif()
 add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
 add_compile_definitions(_SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING)
 add_compile_definitions(WEBGPU_BACKEND=DAWN)
-add_compile_definitions(WGPUENGINE_PATH="${WGPU_DIR_ROOT}")
 add_compile_definitions(_HAS_EXCEPTIONS=0)
+
+add_compile_definitions(WGPUENGINE_FOLDER="${WGPU_DIR_ROOT}")
+add_compile_definitions(WGPUENGINE_ASSET_FOLDER="${WGPUENGINE_ASSET_FOLDER}")
 
 # enable FetchContent
 include(FetchContent)
@@ -67,7 +69,7 @@ FetchContent_Declare(
 # download tiny_gltf
 FetchContent_Declare(
     tiny_gltf
-    URL https://raw.githubusercontent.com/syoyo/tinygltf/refs/heads/release/tiny_gltf.h
+    URL https://raw.githubusercontent.com/syoyo/tinygltf/0d9ce1a9561688c6c6e7471430d15a50a0b15f1a/attic/tiny_gltf.h
     DOWNLOAD_DIR ${WGPU_DIR_LIBS}/tiny_gltf
     DOWNLOAD_NO_EXTRACT TRUE
 )
@@ -84,21 +86,42 @@ macro(WGPU_SOURCES_APPEND)
 endmacro()
 
 WGPU_SOURCES_APPEND(${WGPU_DIR_SOURCES})
+WGPU_SOURCES_APPEND(${WGPU_DIR_SOURCES}/core)
+WGPU_SOURCES_APPEND(${WGPU_DIR_SOURCES}/core/object)
+WGPU_SOURCES_APPEND(${WGPU_DIR_SOURCES}/core/managers)
+WGPU_SOURCES_APPEND(${WGPU_DIR_SOURCES}/core/managers/engine)
+WGPU_SOURCES_APPEND(${WGPU_DIR_SOURCES}/core/managers/render)
+WGPU_SOURCES_APPEND(${WGPU_DIR_SOURCES}/core/managers/render/render_methods)
+WGPU_SOURCES_APPEND(${WGPU_DIR_SOURCES}/core/managers/render/kernels)
+WGPU_SOURCES_APPEND(${WGPU_DIR_SOURCES}/core/managers/simulation)
+WGPU_SOURCES_APPEND(${WGPU_DIR_SOURCES}/core/managers/display)
+WGPU_SOURCES_APPEND(${WGPU_DIR_SOURCES}/core/managers/input)
+WGPU_SOURCES_APPEND(${WGPU_DIR_SOURCES}/core/managers/xr)
+WGPU_SOURCES_APPEND(${WGPU_DIR_SOURCES}/core/managers/debug)
+WGPU_SOURCES_APPEND(${WGPU_DIR_SOURCES}/core/managers/fs)
+WGPU_SOURCES_APPEND(${WGPU_DIR_SOURCES}/core/io)
+WGPU_SOURCES_APPEND(${WGPU_DIR_SOURCES}/core/error)
+
+WGPU_SOURCES_APPEND(${WGPU_DIR_SOURCES}/scene)
+WGPU_SOURCES_APPEND(${WGPU_DIR_SOURCES}/scene/main)
+WGPU_SOURCES_APPEND(${WGPU_DIR_SOURCES}/scene/resources)
+WGPU_SOURCES_APPEND(${WGPU_DIR_SOURCES}/scene/2d)
+WGPU_SOURCES_APPEND(${WGPU_DIR_SOURCES}/scene/3d)
+WGPU_SOURCES_APPEND(${WGPU_DIR_SOURCES}/scene/animation)
+
 WGPU_SOURCES_APPEND(${WGPU_DIR_SOURCES}/framework)
 WGPU_SOURCES_APPEND(${WGPU_DIR_SOURCES}/framework/camera)
-WGPU_SOURCES_APPEND(${WGPU_DIR_SOURCES}/framework/nodes)
-WGPU_SOURCES_APPEND(${WGPU_DIR_SOURCES}/framework/resources)
 WGPU_SOURCES_APPEND(${WGPU_DIR_SOURCES}/framework/parsers)
 WGPU_SOURCES_APPEND(${WGPU_DIR_SOURCES}/framework/ui)
 WGPU_SOURCES_APPEND(${WGPU_DIR_SOURCES}/framework/utils)
 WGPU_SOURCES_APPEND(${WGPU_DIR_SOURCES}/framework/animation)
 WGPU_SOURCES_APPEND(${WGPU_DIR_SOURCES}/framework/animation/solvers)
 WGPU_SOURCES_APPEND(${WGPU_DIR_SOURCES}/framework/math)
+
 WGPU_SOURCES_APPEND(${WGPU_DIR_SOURCES}/graphics)
 WGPU_SOURCES_APPEND(${WGPU_DIR_SOURCES}/graphics/kernels)
 WGPU_SOURCES_APPEND(${WGPU_DIR_SOURCES}/graphics/debug)
 WGPU_SOURCES_APPEND(${WGPU_DIR_SOURCES}/graphics/primitives)
-WGPU_SOURCES_APPEND(${WGPU_DIR_SOURCES}/engine)
 
 if(NOT WGPUENGINE_DISABLE_XR)
     WGPU_SOURCES_APPEND(${WGPU_DIR_SOURCES}/xr)
@@ -222,25 +245,19 @@ if (EMSCRIPTEN)
         -sEXPORTED_FUNCTIONS=_main,_malloc,_free
         -sUSE_GLFW=3
         -sALLOW_MEMORY_GROWTH
-        #-sJSPI # Still experimental in Firefox, allows for way faster Linking and async calls
-        -sASYNCIFY
+        -sJSPI
+        #-sASYNCIFY
         #-sASYNCIFY_ADVISE=1
         #-sASSERTIONS
         # -fsanitize=address
         -Wdeprecated-literal-operator
         -sSTACK_SIZE=5MB
-        -sASYNCIFY_STACK_SIZE=10000
         -lembind # to bind functions from c++ to javascript
         -sWASM_BIGINT
 
         # only for dev
         #-sERROR_ON_WASM_CHANGES_AFTER_LINK
         #-sWASM=0
-        # For faster debug builds
-        #-O0
-        #-g
-        # ------------
-        #--post-js "${CMAKE_BINARY_DIR}/glue.js"
         --shell-file ${SHELL_FILE}
         --preload-file "${WGPUENGINE_ASSET_FOLDER}@/data"
     )
@@ -437,3 +454,22 @@ add_library(mikktspace STATIC
 target_include_directories(mikktspace PUBLIC ${WGPU_DIR_LIBS}/mikktspace)
 target_link_libraries(${PROJECT_NAME} PUBLIC mikktspace)
 set_property(TARGET mikktspace PROPERTY FOLDER "External/mikktspace")
+
+# simplefilewatcher
+
+add_library(simplefilewatcher STATIC
+    ${WGPU_DIR_LIBS}/simplefilewatcher/include/FileWatcher/FileWatcher.h
+    ${WGPU_DIR_LIBS}/simplefilewatcher/include/FileWatcher/FileWatcherImpl.h
+    ${WGPU_DIR_LIBS}/simplefilewatcher/include/FileWatcher/FileWatcherLinux.h
+    ${WGPU_DIR_LIBS}/simplefilewatcher/include/FileWatcher/FileWatcherOSX.h
+    ${WGPU_DIR_LIBS}/simplefilewatcher/include/FileWatcher/FileWatcherWin32.h
+    ${WGPU_DIR_LIBS}/simplefilewatcher/source/FileWatcher.cpp
+    ${WGPU_DIR_LIBS}/simplefilewatcher/source/FileWatcherLinux.cpp
+    ${WGPU_DIR_LIBS}/simplefilewatcher/source/FileWatcherOSX.cpp
+    ${WGPU_DIR_LIBS}/simplefilewatcher/source/FileWatcherWin32.cpp
+)
+
+set_property(TARGET simplefilewatcher PROPERTY CXX_STANDARD 20)
+target_include_directories(simplefilewatcher PUBLIC ${WGPU_DIR_LIBS}/simplefilewatcher/include)
+target_link_libraries(${PROJECT_NAME} PUBLIC simplefilewatcher)
+set_property(TARGET simplefilewatcher PROPERTY FOLDER "External/simplefilewatcher")

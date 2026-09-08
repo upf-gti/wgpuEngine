@@ -1,17 +1,19 @@
 #include "io.h"
 
-#include "framework/nodes/panel_2d.h"
-#include "framework/nodes/node_2d.h"
-#include "framework/nodes/button_2d.h"
-#include "framework/nodes/viewport_3d.h"
+#include "core/managers/input/input_manager.h"
+#include "core/managers/xr/xr_manager.h"
+
 #include "framework/parsers/parse_scene.h"
-#include "framework/input.h"
+#include "scene/2d/button_2d.h"
+#include "scene/2d/node_2d.h"
+#include "scene/2d/panel_2d.h"
+#include "scene/3d/viewport_3d.h"
 
 #include "graphics/renderer.h"
 
-#include <algorithm>
 #include "imgui.h"
 #include "spdlog/spdlog.h"
+#include <algorithm>
 
 bool IO::want_capture_input = false;
 
@@ -46,7 +48,6 @@ void IO::end_frame()
 void IO::update(float delta_time)
 {
     if (!frame_inputs.size()) {
-
         IO::blur();
         return;
     }
@@ -54,15 +55,13 @@ void IO::update(float delta_time)
     // xr: sort inputs by ray distance and later by priority
     // flat screen: sort by priority
 
-    bool is_xr = Renderer::instance->get_xr_available();
+    bool is_xr = XRManager::get_singleton()->is_xr_available();
 
     std::sort(frame_inputs.begin(), frame_inputs.end(), [xr = is_xr](auto& lhs, auto& rhs) {
-
         Node2D* lhs_node = lhs.first;
         Node2D* rhs_node = rhs.first;
 
         if (xr) {
-
             float dt = glm::abs(lhs.second.ray_distance - rhs.second.ray_distance);
             if (dt < 0.01f) {
                 return lhs_node->get_class_type() < rhs_node->get_class_type();
@@ -77,7 +76,6 @@ void IO::update(float delta_time)
     // call on_input functions..
 
     for (const auto& i : frame_inputs) {
-
         bool event_processed = i.first->on_input(i.second);
         if (event_processed) {
             break;
@@ -108,9 +106,9 @@ void IO::blur()
     hovered = nullptr;
 
     // If actions are pressed, we are still focusing something..
-    bool should_remove_focus = Renderer::instance->get_xr_available() ?
-        (Input::get_trigger_value(HAND_RIGHT) <= XR_THUMBSTICK_DEADZONE) :
-        !Input::is_mouse_pressed(GLFW_MOUSE_BUTTON_LEFT);
+    bool xr_available = XRManager::get_singleton()->is_xr_available();
+    float thumbstick_deadzone = XRManager::get_singleton()->get_thumbstick_deadzone();
+    bool should_remove_focus = xr_available ? (XRManager::get_singleton()->get_trigger_value(HAND_RIGHT) <= thumbstick_deadzone) : !InputManager::get_singleton()->is_mouse_pressed(GLFW_MOUSE_BUTTON_LEFT);
 
     if (should_remove_focus) {
         focused = nullptr;
@@ -123,7 +121,7 @@ bool IO::is_hover_disabled()
         return false;
     }
 
-    ui::Button2D* button = dynamic_cast<ui::Button2D*>(hovered);
+    Button2D* button = dynamic_cast<Button2D*>(hovered);
     if (!button) {
         return false;
     }
@@ -161,7 +159,7 @@ bool IO::is_hover_type(uint32_t type, uint32_t flag)
         return false;
     }
 
-    ui::Panel2D* root = dynamic_cast<ui::Panel2D*>(hovered);
+    Panel2D* root = dynamic_cast<Panel2D*>(hovered);
     if (!root) {
         return false;
     }

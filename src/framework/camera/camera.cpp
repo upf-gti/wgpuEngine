@@ -1,7 +1,7 @@
 #include "camera.h"
-#include "framework/input.h"
-#include "graphics/renderer.h"
-#include "graphics/webgpu_context.h"
+
+#include "core/managers/input/input_manager.h"
+#include "core/managers/render/render_manager.h"
 
 void Camera::set_perspective(float fov, float aspect, float z_near, float z_far)
 {
@@ -31,13 +31,12 @@ void Camera::set_orthographic(float left, float right, float bottom, float top, 
 
 glm::vec3 Camera::screen_to_ray(const glm::vec2& mouse_position)
 {
-    WebGPUContext* webgpu_context = Renderer::instance->get_webgpu_context();
     const glm::mat4x4& view_projection_inv = glm::inverse(get_view_projection());
 
-    glm::vec2 mouse_pos = Input::get_mouse_position();
+    glm::vec2 mouse_pos = InputManager::get_singleton()->get_mouse_position();
     glm::vec3 mouse_pos_ndc;
-    mouse_pos_ndc.x = (mouse_pos.x / webgpu_context->render_width) * 2.0f - 1.0f;
-    mouse_pos_ndc.y = -((mouse_pos.y / webgpu_context->render_height) * 2.0f - 1.0f);
+    mouse_pos_ndc.x = (mouse_pos.x / RenderManager::get_singleton()->get_render_width()) * 2.0f - 1.0f;
+    mouse_pos_ndc.y = -((mouse_pos.y / RenderManager::get_singleton()->get_render_height()) * 2.0f - 1.0f);
     mouse_pos_ndc.z = 0.0f;
 
     glm::vec4 ray_dir = view_projection_inv * glm::vec4(mouse_pos_ndc, 1.0f);
@@ -109,10 +108,11 @@ void Camera::update_view_matrix()
 
 void Camera::update_projection_matrix()
 {
-    if (type == ORTHOGRAPHIC)
+    if (type == ORTHOGRAPHIC) {
         projection = glm::ortho(left, right, bottom, top, z_near, z_far);
-    else
+    } else {
         projection = glm::perspective(fov, aspect, z_near, z_far);
+    }
 
     view_projection = projection * view;
 }

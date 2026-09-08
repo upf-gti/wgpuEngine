@@ -1,14 +1,14 @@
 #include "texture.h"
 #include "renderer_storage.h"
 
+#include "core/managers/render/render_api.h"
+
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
 #include <algorithm>
 
 #include "spdlog/spdlog.h"
-
-WebGPUContext* Texture::webgpu_context = nullptr;
 
 Texture::~Texture() {
     if (texture) {
@@ -29,7 +29,7 @@ void Texture::create(WGPUTextureDimension dimension, WGPUTextureFormat format, W
         wgpuTextureDestroy(texture);
     }
 
-    texture = webgpu_context->create_texture(dimension, format, size, usage, mipmaps, sample_count);
+    texture = RenderAPI::get_singleton()->texture_create(dimension, format, size, usage, mipmaps, sample_count);
 
     if (data != nullptr) {
         // For the rest of the mipmaps
@@ -39,7 +39,7 @@ void Texture::create(WGPUTextureDimension dimension, WGPUTextureFormat format, W
 
 void Texture::update(void* data, uint32_t mip_level, WGPUOrigin3D origin)
 {
-    webgpu_context->upload_texture(texture, dimension, size, mip_level, format, data, origin);
+    RenderAPI::get_singleton()->texture_upload(texture, dimension, size, mip_level, format, data, origin);
 }
 
 void Texture::generate_mipmaps(const void* data)
@@ -53,9 +53,9 @@ void Texture::generate_mipmaps(const void* data)
 
     // Needed because WEBGPU does not support rgb8unorm-srgb as storage binding
     // also prevents all textures having storage binding
-    WGPUTexture texture_temp = webgpu_context->create_texture(dimension, final_format, size, mipmaps_usage, mipmaps, 1);
-    webgpu_context->upload_texture(texture_temp, dimension, size, 0, final_format, data, { 0, 0, 0 });
-    webgpu_context->create_texture_mipmaps(texture_temp, size, mipmaps, WGPUTextureViewDimension_2D, final_format);
+    WGPUTexture texture_temp = RenderAPI::get_singleton()->texture_create(dimension, final_format, size, mipmaps_usage, mipmaps, 1);
+    RenderAPI::get_singleton()->texture_upload(texture_temp, dimension, size, 0, final_format, data, { 0, 0, 0 });
+    RenderAPI::get_singleton()->texture_mipmaps_create(texture_temp, size, mipmaps, WGPUTextureViewDimension_2D, final_format);
 
     for (uint32_t i = 0; i < mipmaps; ++i) {
         WGPUExtent3D mipmap_size;
@@ -71,7 +71,7 @@ void Texture::generate_mipmaps(const void* data)
             mipmap_size = size;
         }
 
-        webgpu_context->copy_texture_to_texture(texture_temp, texture, i, i, mipmap_size);
+        RenderAPI::get_singleton()->texture_copy(texture_temp, texture, i, i, mipmap_size);
     }
 
     wgpuTextureRelease(texture_temp);
@@ -201,7 +201,7 @@ void Texture::load_from_hdre(HDRE* hdre)
     usage = static_cast<WGPUTextureUsage>(WGPUTextureUsage_TextureBinding | WGPUTextureUsage_CopyDst);
     mipmaps = 6; // num generated levels
 
-    texture = webgpu_context->create_texture(dimension, format, size, usage, mipmaps, 1);
+    texture = RenderAPI::get_singleton()->texture_create(dimension, format, size, usage, mipmaps, 1);
 
     for (uint32_t level = 0; level < 6; ++level)
     {
@@ -211,14 +211,18 @@ void Texture::load_from_hdre(HDRE* hdre)
             void* data = hdre_level.faces[face];
             WGPUOrigin3D origin = { 0, 0, face };
             WGPUExtent3D tex_size = { (unsigned int)hdre_level.width, (unsigned int)hdre_level.height, 1 };
-            webgpu_context->upload_texture(texture, dimension, tex_size, level, format, data, origin);
+            RenderAPI::get_singleton()->texture_upload(texture, dimension, tex_size, level, format, data, origin);
         }
     }
 }
 
 WGPUTextureView Texture::get_view(WGPUTextureViewDimension view_dimension, uint32_t base_mip_level, uint32_t mip_level_count, uint32_t base_array_layer, uint32_t array_layer_count) const
 {
-    return webgpu_context->create_texture_view(texture, view_dimension, format, WGPUTextureAspect_All, base_mip_level, mip_level_count, base_array_layer, array_layer_count);
+    if (!texture) {
+        return nullptr;
+    }
+
+    return RenderAPI::get_singleton()->texture_view_create(texture, view_dimension, format, WGPUTextureAspect_All, base_mip_level, mip_level_count, base_array_layer, array_layer_count);
 }
 
 void Texture::set_texture_parameters(const std::string& name, WGPUTextureDimension dimension, int width, int height, int array_layers, bool create_mipmaps, WGPUTextureFormat p_format)
@@ -233,14 +237,14 @@ void Texture::set_texture_parameters(const std::string& name, WGPUTextureDimensi
 
 void Texture::load_from_data(void* data)
 {
-    this->texture = webgpu_context->create_texture(dimension, format, size, usage, mipmaps, 1);
+    this->texture = RenderAPI::get_singleton()->texture_create(dimension, format, size, usage, mipmaps, 1);
 
     // Create mipmaps
     if (mipmaps > 1) {
         generate_mipmaps(data);
     }
     else {
-        webgpu_context->upload_texture(texture, dimension, size, 0, format, data, { 0, 0, 0 });
+        RenderAPI::get_singleton()->texture_upload(texture, dimension, size, 0, format, data, { 0, 0, 0 });
     }
 
     RendererStorage::textures[name] = this;

@@ -2,6 +2,8 @@
 
 #include <filesystem>
 
+#include "core/managers/render/render_manager.h"
+
 #include "pipeline.h"
 
 #define TINT_BUILD_WGSL_READER 1
@@ -366,9 +368,7 @@ bool Shader::load(std::string& shader_source, std::vector<std::string> define_sp
         spdlog::trace("\t{}", specialization);
     }
 
-    WebGPUContext* webgpu_context = Renderer::instance->get_webgpu_context();
-
-    shader_module = webgpu_context->create_shader_module(shader_source_processed.c_str());
+    shader_module = RenderManager::get_singleton()->create_shader_module(shader_source_processed.c_str());
 
     struct UserData {
         bool any_error = false;
@@ -394,7 +394,7 @@ bool Shader::load(std::string& shader_source, std::vector<std::string> define_sp
         loaded = false;
     }
 
-    webgpu_context->process_events();
+    //webgpu_context->process_events();
 
     return loaded;
 }

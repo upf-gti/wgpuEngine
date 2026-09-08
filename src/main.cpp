@@ -1,40 +1,54 @@
-#include "engine/engine.h"
-#include "graphics/renderer.h"
+#include "core/managers/debug/debug_manager.h"
+#include "core/managers/display/display_manager.h"
+#include "core/managers/engine/engine_manager.h"
+#include "core/managers/fs/file_system_manager.h"
+#include "core/managers/input/input_manager.h"
+#include "core/managers/render/render_manager.h"
+#include "core/managers/simulation/simulation_manager.h"
+#include "core/managers/xr/xr_manager.h"
 
-extern void get_engine_config(sEngineConfiguration& out_config);
+extern void get_engine_config(sEngineConfig& out_config);
 
-int main()
+int main(int argc, char** argv)
 {
-    sEngineConfiguration configuration;
+    // Create managers
+    SimulationManager simulation_manager;
+    RenderManager render_manager;
+    DisplayManager display_manager;
+    XRManager xr_manager;
+    InputManager input_manager;
+    FileSystemManager file_system_manager;
+    DebugManager debug_manager;
+    EngineManager engine_manager;
 
+    engine_manager.initialize();
+
+    sEngineConfig configuration = {};
     get_engine_config(configuration);
 
-    Engine* engine;
-    if (configuration.custom_engine_instance) {
-        engine = configuration.custom_engine_instance;
-    }
-    else {
-        engine = new Engine();
-    }
+    engine_manager.set_configuration(configuration);
 
-    Renderer* renderer;
-    if (configuration.custom_renderer_instance) {
-        renderer = configuration.custom_renderer_instance;
-    }
-    else {
-        renderer = new Renderer();
-    }
+    xr_manager.initialize();
+    xr_manager.create_xr_instance();
 
-    if (engine->initialize(renderer, configuration)) {
-        return 1;
-    }
+    render_manager.initialize();
+    xr_manager.create_xr_context();
 
-    engine->start_loop();
+    simulation_manager.initialize();
+    display_manager.initialize();
+    input_manager.initialize();
+    file_system_manager.initialize();
+    debug_manager.initialize();
 
-    engine->clean();
+    simulation_manager.start_main_loop();
 
-    delete renderer;
-    delete engine;
+    debug_manager.finalize();
+    file_system_manager.finalize();
+    input_manager.finalize();
+    display_manager.finalize();
+    xr_manager.finalize();
+    render_manager.finalize();
+    simulation_manager.finalize();
 
     return 0;
 }

@@ -1,21 +1,22 @@
 #include "gizmo_3d.h"
 
-#include "framework/camera/camera.h"
+#include "core/managers/xr/xr_manager.h"
+
+#include "graphics/primitives/sphere_mesh.h"
 #include "graphics/renderer.h"
 #include "graphics/renderer_storage.h"
-#include <graphics/primitives/sphere_mesh.h>
-#include <graphics/shader.h>
+#include "graphics/shader.h"
 
+#include "framework/camera/camera.h"
+#include "framework/math/intersections.h"
+#include "framework/math/math_utils.h"
 #include "framework/parsers/parse_scene.h"
 #include "framework/ui/io.h"
-#include <framework/input.h>
-#include <framework/math/intersections.h>
-#include <framework/math/math_utils.h>
-#include <framework/nodes/mesh_instance_3d.h>
 
-#include "shaders/mesh_forward.wgsl.gen.h"
+#include "scene/3d/mesh_instance_3d.h"
 
 #include "shaders/AABB_shader.wgsl.gen.h"
+#include "shaders/mesh_forward.wgsl.gen.h"
 
 #include "spdlog/spdlog.h"
 
@@ -29,7 +30,7 @@ void Gizmo3D::initialize(const eGizmoOp& new_operation, const glm::vec3& positio
 {
     operation = new_operation;
 
-    xr_enabled = Renderer::instance->get_xr_available();
+    xr_enabled = XRManager::get_singleton()->is_xr_available();
 
     if (xr_enabled) {
         Material* material = new Material();
@@ -368,9 +369,9 @@ bool Gizmo3D::update(glm::vec3& new_position, const glm::vec3& controller_positi
     const bool is_active = free_hand_selected || glm::any(position_axis_selected) || glm::any(scale_axis_selected) || glm::any(rotation_axis_selected);
 
     // Calculate the movement vector for the gizmo
-    if (Input::get_trigger_value(HAND_RIGHT) > 0.5f) {
-        glm::quat current_hand_rotation = Input::get_controller_rotation(HAND_RIGHT);
-        glm::vec3 current_hand_translation = Input::get_controller_position(HAND_RIGHT);
+    if (XRManager::get_singleton()->get_trigger_value(HAND_RIGHT) > 0.5f) {
+        glm::quat current_hand_rotation = XRManager::get_singleton()->get_controller_rotation(HAND_RIGHT);
+        glm::vec3 current_hand_translation = XRManager::get_singleton()->get_controller_position(HAND_RIGHT);
 
         if (!has_graved) {
             start_hand_translation = current_hand_translation;

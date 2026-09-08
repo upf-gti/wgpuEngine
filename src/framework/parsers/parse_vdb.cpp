@@ -2,14 +2,14 @@
 
 #include "glm/glm.hpp"
 
-#include "framework/nodes/camera.h"
-#include "framework/nodes/mesh_instance_3d.h"
+#include "scene/3d/camera.h"
+#include "scene/3d/mesh_instance_3d.h"
 
-#include "graphics/texture.h"
-#include "graphics/shader.h"
 #include "graphics/renderer_storage.h"
+#include "graphics/shader.h"
+#include "graphics/texture.h"
 
-#include "engine/scene.h"
+#include "scene/main/scene.h"
 
 #include "spdlog/spdlog.h"
 
@@ -17,9 +17,9 @@
 
 #include <fstream>
 
-#include <openvdbReader.h>
 #include <bbox.h>
 #include <grid.h>
+#include <openvdbReader.h>
 
 Material* create_material_volume(easyVDB::OpenVDBReader* vdbReader)
 {
@@ -83,8 +83,8 @@ Material* create_material_volume(easyVDB::OpenVDBReader* vdbReader)
                     for (int sy = -cellBleed; sy < cellBleed; sy++) {
                         for (int sz = -cellBleed; sz < cellBleed; sz++) {
                             if (x + sx < 0.0 || x + sx >= resolution ||
-                                y + sy < 0.0 || y + sy >= resolution ||
-                                z + sz < 0.0 || z + sz >= resolution) {
+                                    y + sy < 0.0 || y + sy >= resolution ||
+                                    z + sz < 0.0 || z + sz >= resolution) {
                                 continue;
                             }
 
@@ -98,8 +98,7 @@ Material* create_material_volume(easyVDB::OpenVDBReader* vdbReader)
                         }
                     }
                 }
-            }
-            else {
+            } else {
                 float dataValue = value;
 
                 data[baseIndex] += dataValue;

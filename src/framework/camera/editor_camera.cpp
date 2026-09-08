@@ -1,10 +1,8 @@
 #include "editor_camera.h"
 
-#include "framework/input.h"
+#include "core/managers/input/input_manager.h"
 
 #include "glm/gtx/norm.hpp"
-
-#include <spdlog/spdlog.h>
 
 EditorCamera::EditorCamera() :
         Camera3D()
@@ -20,10 +18,10 @@ void EditorCamera::update(float delta_time)
 
     float final_speed = speed;
 
-    if (Input::is_key_pressed(GLFW_KEY_LEFT_SHIFT)) {
+    if (InputManager::get_singleton()->is_key_pressed(GLFW_KEY_LEFT_SHIFT)) {
         final_speed *= 10.0f;
     }
-    if (Input::is_key_pressed(GLFW_KEY_LEFT_CONTROL)) {
+    if (InputManager::get_singleton()->is_key_pressed(GLFW_KEY_LEFT_CONTROL)) {
         final_speed *= 0.1f;
     }
 
@@ -33,9 +31,9 @@ void EditorCamera::update(float delta_time)
     glm::vec3 new_eye = eye;
     glm::vec3 new_center = center;
 
-    float mouse_wheel_delta = Input::get_mouse_wheel_delta();
+    float mouse_wheel_delta = InputManager::get_singleton()->get_mouse_wheel_delta();
 
-    distance -= Input::get_mouse_wheel_delta() * final_speed;
+    distance -= InputManager::get_singleton()->get_mouse_wheel_delta() * final_speed;
 
     if (distance < 0.001f) {
         distance = 0.001f;
@@ -44,16 +42,16 @@ void EditorCamera::update(float delta_time)
     distance_lerp.value = smooth_damp(distance_lerp.value, distance, &distance_lerp.velocity, 0.05f, 200.0f, delta_time);
 
     if (flyover_enabled) {
-        if (Input::is_key_pressed(GLFW_KEY_W) || Input::is_key_pressed(GLFW_KEY_UP)) {
+        if (InputManager::get_singleton()->is_key_pressed(GLFW_KEY_W) || InputManager::get_singleton()->is_key_pressed(GLFW_KEY_UP)) {
             move_dir += (glm::vec3(0.0f, 0.0f, -1.0f));
         }
-        if (Input::is_key_pressed(GLFW_KEY_S) || Input::is_key_pressed(GLFW_KEY_DOWN)) {
+        if (InputManager::get_singleton()->is_key_pressed(GLFW_KEY_S) || InputManager::get_singleton()->is_key_pressed(GLFW_KEY_DOWN)) {
             move_dir += (glm::vec3(0.0f, 0.0f, 1.0f));
         }
-        if (Input::is_key_pressed(GLFW_KEY_A) || Input::is_key_pressed(GLFW_KEY_LEFT)) {
+        if (InputManager::get_singleton()->is_key_pressed(GLFW_KEY_A) || InputManager::get_singleton()->is_key_pressed(GLFW_KEY_LEFT)) {
             move_dir += (glm::vec3(-1.0f, 0.0f, 0.0f));
         }
-        if (Input::is_key_pressed(GLFW_KEY_D) || Input::is_key_pressed(GLFW_KEY_RIGHT)) {
+        if (InputManager::get_singleton()->is_key_pressed(GLFW_KEY_D) || InputManager::get_singleton()->is_key_pressed(GLFW_KEY_RIGHT)) {
             move_dir += (glm::vec3(1.0f, 0.0f, 0.0f));
         }
 
@@ -68,7 +66,7 @@ void EditorCamera::update(float delta_time)
         new_center = new_eye + new_forward * distance_lerp.value;
     } else if (orbit_enabled || pan_enabled || mouse_wheel_delta != 0.0f) {
         if (pan_enabled && mouse_wheel_delta == 0.0f) {
-            glm::vec2 mouse_delta = Input::get_mouse_delta();
+            glm::vec2 mouse_delta = InputManager::get_singleton()->get_mouse_delta();
 
             glm::vec3 right = glm::normalize(glm::cross(new_forward, glm::vec3(0.0f, 1.0f, 0.0f)));
             glm::vec3 up = glm::normalize(glm::cross(new_forward, right));
@@ -99,8 +97,8 @@ void EditorCamera::look_at(const glm::vec3& eye, const glm::vec3& center, const 
 
 void EditorCamera::custom_update(float delta_time)
 {
-    if ((Input::is_mouse_pressed(GLFW_MOUSE_BUTTON_MIDDLE) && !Input::is_key_pressed(GLFW_KEY_LEFT_SHIFT)) || Input::is_mouse_pressed(GLFW_MOUSE_BUTTON_RIGHT)) {
-        apply_movement(Input::get_mouse_delta());
+    if ((InputManager::get_singleton()->is_mouse_pressed(GLFW_MOUSE_BUTTON_MIDDLE) && !InputManager::get_singleton()->is_key_pressed(GLFW_KEY_LEFT_SHIFT)) || InputManager::get_singleton()->is_mouse_pressed(GLFW_MOUSE_BUTTON_RIGHT)) {
+        apply_movement(InputManager::get_singleton()->get_mouse_delta());
     }
 
     delta_pitch_lerp.value = smooth_damp_angle(delta_pitch_lerp.value, delta_pitch, &delta_pitch_lerp.velocity, 0.05f, 40.0f, delta_time);
@@ -109,17 +107,17 @@ void EditorCamera::custom_update(float delta_time)
 
 void EditorCamera::check_update_mode()
 {
-    if (Input::is_mouse_pressed(GLFW_MOUSE_BUTTON_RIGHT)) {
+    if (InputManager::get_singleton()->is_mouse_pressed(GLFW_MOUSE_BUTTON_RIGHT)) {
         flyover_enabled = true;
         orbit_enabled = false;
         pan_enabled = false;
     } else {
-        if (Input::is_mouse_pressed(GLFW_MOUSE_BUTTON_MIDDLE) && Input::is_key_pressed(GLFW_KEY_LEFT_SHIFT)) {
+        if (InputManager::get_singleton()->is_mouse_pressed(GLFW_MOUSE_BUTTON_MIDDLE) && InputManager::get_singleton()->is_key_pressed(GLFW_KEY_LEFT_SHIFT)) {
             pan_enabled = true;
             orbit_enabled = false;
             flyover_enabled = false;
 
-        } else if (Input::is_mouse_pressed(GLFW_MOUSE_BUTTON_MIDDLE) || Input::get_mouse_wheel_delta() != 0.0f) {
+        } else if (InputManager::get_singleton()->is_mouse_pressed(GLFW_MOUSE_BUTTON_MIDDLE) || InputManager::get_singleton()->get_mouse_wheel_delta() != 0.0f) {
             pan_enabled = false;
             orbit_enabled = true;
             flyover_enabled = false;
