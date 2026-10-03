@@ -67,7 +67,7 @@ FetchContent_Declare(
 # download tiny_gltf
 FetchContent_Declare(
     tiny_gltf
-    URL https://raw.githubusercontent.com/syoyo/tinygltf/refs/heads/release/tiny_gltf.h
+    URL https://raw.githubusercontent.com/syoyo/tinygltf/0d9ce1a9561688c6c6e7471430d15a50a0b15f1a/attic/tiny_gltf.h
     DOWNLOAD_DIR ${WGPU_DIR_LIBS}/tiny_gltf
     DOWNLOAD_NO_EXTRACT TRUE
 )
