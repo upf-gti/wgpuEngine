@@ -1,7 +1,7 @@
 #pragma once
 
 #include "includes.h"
-#include "spdlog/spdlog.h"
+#include "core/managers/debug/debug_manager.h"
 
 #include "aabb.h"
 

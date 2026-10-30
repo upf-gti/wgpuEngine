@@ -5,16 +5,16 @@
 #include "parse_vdb.h"
 #include "parse_ply.h"
 
-#include "framework/nodes/mesh_instance_3d.h"
+#include "scene/3d/mesh_instance_3d.h"
 
-#include "spdlog/spdlog.h"
+#include "core/managers/debug/debug_manager.h"
 
 bool parse_scene(const char* scene_path, std::vector<Node*>& entities, bool fill_surface_data, Node3D* root)
 {
     std::string scene_path_str = std::string(scene_path);
     std::string extension = scene_path_str.substr(scene_path_str.find_last_of(".") + 1);
 
-    spdlog::info("Parsing scene: {}", scene_path);
+    LOG_INFO("Parsing scene: {}", scene_path);
 
     if (extension == "obj") {
         entities.push_back(parse_obj(scene_path));
@@ -25,7 +25,7 @@ bool parse_scene(const char* scene_path, std::vector<Node*>& entities, bool fill
     uint32_t flags = 0u;
 
     if (extension == "gltf" || extension == "glb") {
-        spdlog::info("Parsing a GLTF/GLB file");
+        LOG_INFO("Parsing a GLTF/GLB file");
         parser = new GltfParser();
         static_cast<GltfParser*>(parser)->push_scene_root(root);
         if (fill_surface_data) {
@@ -33,15 +33,15 @@ bool parse_scene(const char* scene_path, std::vector<Node*>& entities, bool fill
         }
     }
     else if (extension == "vdb") {
-        spdlog::info("Parsing a VDB file (WIP)");
+        LOG_INFO("Parsing a VDB file (WIP)");
         parser = new VdbParser();
     }
     else if (extension == "ply") {
-        spdlog::info("Parsing a PLY file");
+        LOG_INFO("Parsing a PLY file");
         parser = new PlyParser();
     }
     else {
-        spdlog::error("Scene extension .{} not supported", extension);
+        LOG_ERROR("Scene extension .{} not supported", extension);
         assert(0);
         return false;
     }
@@ -64,7 +64,7 @@ MeshInstance3D* parse_mesh(const char* mesh_path, bool create_aabb, bool fill_su
         return parse_obj(mesh_path, create_aabb);
     }
     else {
-        spdlog::error("Mesh extension .{} not supported", extension);
+        LOG_ERROR("Mesh extension .{} not supported", extension);
         assert(0);
     }
 

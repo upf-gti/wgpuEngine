@@ -4,7 +4,7 @@
 
 #include "glm/vec2.hpp"
 
-#include "framework/nodes/node.h"
+#include "scene/main/node.h"
 
 enum eTrackType {
     TYPE_UNDEFINED,

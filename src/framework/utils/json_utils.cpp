@@ -2,7 +2,7 @@
 
 #include <fstream>
 
-#include "spdlog/spdlog.h"
+#include "core/managers/debug/debug_manager.h"
 
 #include "rapidjson/document.h"
 #include "rapidjson/istreamwrapper.h"
@@ -15,7 +15,7 @@ rapidjson::Document load_json(const std::string& filename) {
 
         std::ifstream ifs(filename.c_str());
         if (!ifs.is_open()) {
-            spdlog::error("Failed to open json file {}", filename);
+            LOG_ERROR("Failed to open json file {}", filename);
             continue;
         }
 
@@ -25,7 +25,7 @@ rapidjson::Document load_json(const std::string& filename) {
         j.ParseStream(isw);
         if (j.HasParseError()) {
             ifs.close();
-            spdlog::error("Failed to parse json file {}", filename);
+            LOG_ERROR("Failed to parse json file {}", filename);
             continue;
         }
 

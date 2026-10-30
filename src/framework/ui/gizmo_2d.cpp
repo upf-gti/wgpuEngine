@@ -1,9 +1,9 @@
 #include "gizmo_2d.h"
 
-#include "graphics/renderer.h"
 
-#include "framework/input.h"
-#include "framework/camera/camera.h"
+
+#include "core/managers/input/input_manager.h"
+#include "scene/3d/camera_3d.h"
 
 #include <glm/gtc/type_ptr.hpp>
 

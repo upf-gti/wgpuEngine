@@ -1,7 +1,7 @@
 #pragma once
 
 #include "pose.h"
-#include "framework/resources/resource.h"
+#include "core/io/resource.h"
 
 class Skeleton : public Resource
 {
