@@ -13,7 +13,7 @@
 #include <emscripten/emscripten.h>
 #endif
 
-enum eEYE {
+enum EYE {
     EYE_LEFT,
     EYE_RIGHT,
     EYE_COUNT // Let's assume this will never be different to 2...

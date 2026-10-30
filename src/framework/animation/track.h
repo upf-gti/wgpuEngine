@@ -4,9 +4,9 @@
 
 #include "glm/vec2.hpp"
 
-#include "framework/nodes/node.h"
+#include "scene/main/node.h"
 
-enum eTrackType {
+enum TrackType {
     TYPE_UNDEFINED,
     TYPE_FLOAT, // Set a value in a property, can be interpolated.
     TYPE_VECTOR2, // Vector3 track, can be compressed.
@@ -19,7 +19,7 @@ enum eTrackType {
     TYPE_SCALE
 };
 
-enum eLoopType : uint8_t {
+enum LoopType : uint8_t {
     ANIMATION_LOOP_NONE,
     ANIMATION_LOOP_DEFAULT,
     ANIMATION_LOOP_REVERSE,
@@ -28,10 +28,9 @@ enum eLoopType : uint8_t {
 
 // Collection of keyframes
 class Track {
-
     int id = 0;
     std::vector<Keyframe> keyframes;
-    eTrackType type = eTrackType::TYPE_UNDEFINED;
+    TrackType type = TrackType::TYPE_UNDEFINED;
     std::string name = "";
     std::string path = "";
 
@@ -43,17 +42,16 @@ class Track {
     float adjust_time_to_fit_track(float time, bool loop);
 
 public:
-
     Track();
 
     int get_id() const;
-    eTrackType get_type() const { return type; };
+    TrackType get_type() const { return type; }
     const std::string& get_name() const;
     const std::string& get_path() const;
     Interpolator& get_interpolator() { return interpolator; }
 
     void set_id(int id);
-    void set_type(eTrackType new_type) { type = new_type; };
+    void set_type(TrackType new_type) { type = new_type; }
     void set_name(const std::string& new_name);
     void set_path(const std::string& new_path);
 
@@ -71,6 +69,6 @@ public:
     void parse(std::ifstream& binary_scene_file);
 
     // Prameters: time value, if the track is looping or not
-    TrackType sample(float time, bool looping, Node::AnimatableProperty* out = nullptr, eInterpolationType interpolation_type = INTERPOLATION_UNSET);
+    TrackT sample(float time, bool looping, Node::AnimatableProperty* out = nullptr, InterpolationType interpolation_type = INTERPOLATION_UNSET);
     Keyframe& operator[](uint32_t index);
 };

@@ -7,7 +7,6 @@
 
 Track::Track()
 {
-    
 }
 
 int Track::get_id() const
@@ -89,16 +88,13 @@ uint32_t Track::add_keyframe(const Keyframe& k, bool sort)
     }
 
     if (std::holds_alternative<float>(k.value)) {
-        type = eTrackType::TYPE_FLOAT;
-    }
-    else if (std::holds_alternative<glm::vec3>(k.value)) {
-        type = eTrackType::TYPE_VECTOR3;
-    }
-    else if (std::holds_alternative<glm::vec4>(k.value)) {
-        type = eTrackType::TYPE_VECTOR4;
-    }
-    else if (std::holds_alternative<glm::quat>(k.value)) {
-        type = eTrackType::TYPE_ROTATION;
+        type = TrackType::TYPE_FLOAT;
+    } else if (std::holds_alternative<glm::vec3>(k.value)) {
+        type = TrackType::TYPE_VECTOR3;
+    } else if (std::holds_alternative<glm::vec4>(k.value)) {
+        type = TrackType::TYPE_VECTOR4;
+    } else if (std::holds_alternative<glm::quat>(k.value)) {
+        type = TrackType::TYPE_ROTATION;
     }
 
     return idx;
@@ -110,23 +106,22 @@ void Track::delete_keyframe(int keyframe_idx)
 }
 
 // call sample_constant, sample_linear, or sample_cubic, depending on the track type.
-TrackType Track::sample(float time, bool looping, Node::AnimatableProperty* out, eInterpolationType interpolation_type)
+TrackT Track::sample(float time, bool looping, Node::AnimatableProperty* out, InterpolationType interpolation_type)
 {
     float track_time = adjust_time_to_fit_track(time, looping);
     int frame_idx = frame_index(time);
 
-    eInterpolationType prev_type = interpolator.get_type();
+    InterpolationType prev_type = interpolator.get_type();
 
     if (interpolation_type != INTERPOLATION_UNSET) {
         interpolator.set_type(interpolation_type);
     }
 
-    TrackType r = interpolator.interpolate(keyframes, track_time, frame_idx, looping);
+    TrackT r = interpolator.interpolate(keyframes, track_time, frame_idx, looping);
 
     interpolator.set_type(prev_type);
 
-    if (out)
-    {
+    if (out) {
         void* property = out->property;
 
         bool changed = false;
@@ -138,20 +133,17 @@ TrackType Track::sample(float time, bool looping, Node::AnimatableProperty* out,
             float old_value = *p;
             *p = std::get<float>(r);
             changed |= (old_value != *p);
-        }
-        else if (std::holds_alternative<glm::vec3>(r)) {
+        } else if (std::holds_alternative<glm::vec3>(r)) {
             glm::vec3* p = reinterpret_cast<glm::vec3*>(property);
             glm::vec3 old_value = *p;
             *p = std::get<glm::vec3>(r);
             changed |= (old_value != *p);
-        }
-        else if (std::holds_alternative<glm::vec4>(r)) {
+        } else if (std::holds_alternative<glm::vec4>(r)) {
             glm::vec4* p = reinterpret_cast<glm::vec4*>(property);
             glm::vec4 old_value = *p;
             *p = std::get<glm::vec4>(r);
             changed |= (old_value != *p);
-        }
-        else if (std::holds_alternative<glm::quat>(r)) {
+        } else if (std::holds_alternative<glm::quat>(r)) {
             glm::quat* p = reinterpret_cast<glm::quat*>(property);
             glm::quat old_value = *p;
             *p = std::get<glm::quat>(r);
@@ -224,8 +216,7 @@ float Track::adjust_time_to_fit_track(float time, bool looping)
             time += end_time - start_time;
         }
         time = time + start_time;
-    }
-    else {
+    } else {
         if (time <= keyframes[0].time) {
             time = start_time;
         }
@@ -248,10 +239,10 @@ void Track::serialize(std::ofstream& binary_scene_file)
     binary_scene_file.write(path.c_str(), path_size);
 
     binary_scene_file.write(reinterpret_cast<char*>(&id), sizeof(int));
-    binary_scene_file.write(reinterpret_cast<char*>(&type), sizeof(eTrackType));
+    binary_scene_file.write(reinterpret_cast<char*>(&type), sizeof(TrackType));
 
-    eInterpolationType interpolator_type = interpolator.get_type();
-    binary_scene_file.write(reinterpret_cast<char*>(&interpolator_type), sizeof(eInterpolationType));
+    InterpolationType interpolator_type = interpolator.get_type();
+    binary_scene_file.write(reinterpret_cast<char*>(&interpolator_type), sizeof(InterpolationType));
 
     size_t keyframes_count = keyframes.size();
     binary_scene_file.write(reinterpret_cast<char*>(&keyframes_count), sizeof(size_t));
@@ -265,16 +256,13 @@ void Track::serialize(std::ofstream& binary_scene_file)
         if (std::holds_alternative<float>(t.value)) {
             float value = std::get<float>(t.value);
             binary_scene_file.write(reinterpret_cast<char*>(&value), sizeof(float));
-        }
-        else if (std::holds_alternative<glm::vec3>(t.value)) {
+        } else if (std::holds_alternative<glm::vec3>(t.value)) {
             glm::vec3 value = std::get<glm::vec3>(t.value);
             binary_scene_file.write(reinterpret_cast<char*>(&value), sizeof(glm::vec3));
-        }
-        else if (std::holds_alternative<glm::vec4>(t.value)) {
+        } else if (std::holds_alternative<glm::vec4>(t.value)) {
             glm::vec4 value = std::get<glm::vec4>(t.value);
             binary_scene_file.write(reinterpret_cast<char*>(&value), sizeof(glm::vec4));
-        }
-        else if (std::holds_alternative<glm::quat>(t.value)) {
+        } else if (std::holds_alternative<glm::quat>(t.value)) {
             glm::quat value = std::get<glm::quat>(t.value);
             binary_scene_file.write(reinterpret_cast<char*>(&value), sizeof(glm::quat));
         }
@@ -282,16 +270,13 @@ void Track::serialize(std::ofstream& binary_scene_file)
         if (std::holds_alternative<float>(t.in)) {
             float in = std::get<float>(t.in);
             binary_scene_file.write(reinterpret_cast<char*>(&in), sizeof(float));
-        }
-        else if (std::holds_alternative<glm::vec3>(t.in)) {
+        } else if (std::holds_alternative<glm::vec3>(t.in)) {
             glm::vec3 in = std::get<glm::vec3>(t.in);
             binary_scene_file.write(reinterpret_cast<char*>(&in), sizeof(glm::vec3));
-        }
-        else if (std::holds_alternative<glm::vec4>(t.in)) {
+        } else if (std::holds_alternative<glm::vec4>(t.in)) {
             glm::vec4 in = std::get<glm::vec4>(t.in);
             binary_scene_file.write(reinterpret_cast<char*>(&in), sizeof(glm::vec4));
-        }
-        else if (std::holds_alternative<glm::quat>(t.in)) {
+        } else if (std::holds_alternative<glm::quat>(t.in)) {
             glm::quat in = std::get<glm::quat>(t.in);
             binary_scene_file.write(reinterpret_cast<char*>(&in), sizeof(glm::quat));
         }
@@ -299,16 +284,13 @@ void Track::serialize(std::ofstream& binary_scene_file)
         if (std::holds_alternative<float>(t.out)) {
             float out = std::get<float>(t.out);
             binary_scene_file.write(reinterpret_cast<char*>(&out), sizeof(float));
-        }
-        else if (std::holds_alternative<glm::vec3>(t.out)) {
+        } else if (std::holds_alternative<glm::vec3>(t.out)) {
             glm::vec3 out = std::get<glm::vec3>(t.out);
             binary_scene_file.write(reinterpret_cast<char*>(&out), sizeof(glm::vec3));
-        }
-        else if (std::holds_alternative<glm::vec4>(t.out)) {
+        } else if (std::holds_alternative<glm::vec4>(t.out)) {
             glm::vec4 out = std::get<glm::vec4>(t.out);
             binary_scene_file.write(reinterpret_cast<char*>(&out), sizeof(glm::vec4));
-        }
-        else if (std::holds_alternative<glm::quat>(t.out)) {
+        } else if (std::holds_alternative<glm::quat>(t.out)) {
             glm::quat out = std::get<glm::quat>(t.out);
             binary_scene_file.write(reinterpret_cast<char*>(&out), sizeof(glm::quat));
         }
@@ -328,10 +310,10 @@ void Track::parse(std::ifstream& binary_scene_file)
     binary_scene_file.read(&path[0], path_size);
 
     binary_scene_file.read(reinterpret_cast<char*>(&id), sizeof(int));
-    binary_scene_file.read(reinterpret_cast<char*>(&type), sizeof(eTrackType));
+    binary_scene_file.read(reinterpret_cast<char*>(&type), sizeof(TrackType));
 
-    eInterpolationType interpolator_type = INTERPOLATION_UNSET;
-    binary_scene_file.read(reinterpret_cast<char*>(&interpolator_type), sizeof(eInterpolationType));
+    InterpolationType interpolator_type = INTERPOLATION_UNSET;
+    binary_scene_file.read(reinterpret_cast<char*>(&interpolator_type), sizeof(InterpolationType));
     interpolator.set_type(interpolator_type);
 
     size_t keyframes_count = 0;
@@ -343,22 +325,19 @@ void Track::parse(std::ifstream& binary_scene_file)
 
         binary_scene_file.read(reinterpret_cast<char*>(&t.time), sizeof(float));
 
-        if (type == eTrackType::TYPE_FLOAT) {
+        if (type == TrackType::TYPE_FLOAT) {
             float value = 0.0f;
             binary_scene_file.read(reinterpret_cast<char*>(&value), sizeof(float));
             t.value = value;
-        }
-        else if (type == eTrackType::TYPE_POSITION || type == eTrackType::TYPE_SCALE || type == eTrackType::TYPE_VECTOR3) {
+        } else if (type == TrackType::TYPE_POSITION || type == TrackType::TYPE_SCALE || type == TrackType::TYPE_VECTOR3) {
             glm::vec3 value = {};
             binary_scene_file.read(reinterpret_cast<char*>(&value), sizeof(glm::vec3));
             t.value = value;
-        }
-        else if (type == eTrackType::TYPE_VECTOR4) {
+        } else if (type == TrackType::TYPE_VECTOR4) {
             glm::vec4 value = {};
             binary_scene_file.read(reinterpret_cast<char*>(&value), sizeof(glm::vec4));
             t.value = value;
-        }
-        else if (type == eTrackType::TYPE_ROTATION) {
+        } else if (type == TrackType::TYPE_ROTATION) {
             glm::quat value = {};
             binary_scene_file.read(reinterpret_cast<char*>(&value), sizeof(glm::quat));
             t.value = value;

@@ -1,30 +1,30 @@
 #pragma once
 
+#include "glm/gtc/quaternion.hpp"
 #include "glm/vec2.hpp"
 #include "glm/vec3.hpp"
 #include "glm/vec4.hpp"
-#include "glm/gtc/quaternion.hpp"
 
-#include <vector>
-#include <variant>
 #include <string>
+#include <variant>
+#include <vector>
 
-typedef std::variant<int8_t, int16_t, int32_t, uint8_t, uint16_t, uint32_t, float, glm::vec2, glm::vec3, glm::vec4, glm::uvec2, glm::uvec3, glm::uvec4, glm::ivec2, glm::ivec3, glm::ivec4, glm::quat> TrackType;
+typedef std::variant<int8_t, int16_t, int32_t, uint8_t, uint16_t, uint32_t, float, glm::vec2, glm::vec3, glm::vec4, glm::uvec2, glm::uvec3, glm::uvec4, glm::ivec2, glm::ivec3, glm::ivec4, glm::quat> TrackT;
 
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
-#include <emscripten/html5.h>
 #include <emscripten/bind.h>
+#include <emscripten/html5.h>
 
-TrackType from_val(const emscripten::val& v);
-emscripten::val to_val(const TrackType& v);
+TrackT from_val(const emscripten::val& v);
+emscripten::val to_val(const TrackT& v);
 #endif
 
 class Keyframe {
 public:
-    TrackType value;//value
-    TrackType in; //in tangent
-    TrackType out; //out tangent
+    TrackT value; //value
+    TrackT in; //in tangent
+    TrackT out; //out tangent
     float time; //frame time
 
 #ifdef __EMSCRIPTEN__
@@ -39,7 +39,7 @@ public:
 #endif
 };
 
-enum eInterpolationType {
+enum InterpolationType {
     INTERPOLATION_UNSET,
     INTERPOLATION_STEP,
     INTERPOLATION_LINEAR,
@@ -47,38 +47,35 @@ enum eInterpolationType {
 };
 
 class Interpolator {
+    InterpolationType type = INTERPOLATION_LINEAR;
 
-    eInterpolationType type = INTERPOLATION_LINEAR;
-
-    TrackType step(const std::vector<Keyframe>& keyframes, int frame_idx, bool looping);
-    TrackType linear(const std::vector<Keyframe>& keyframes, float time, int frame_idx, bool looping);
-    TrackType cubic(const std::vector<Keyframe>& keyframes, float time, int frame_idx, bool looping);
-
+    TrackT step(const std::vector<Keyframe>& keyframes, int frame_idx, bool looping);
+    TrackT linear(const std::vector<Keyframe>& keyframes, float time, int frame_idx, bool looping);
+    TrackT cubic(const std::vector<Keyframe>& keyframes, float time, int frame_idx, bool looping);
 
     /*
-    *   Linear interpolation
-    */
+     *   Linear interpolation
+     */
 
-    TrackType linear_interpolate(TrackType a, TrackType b, float t);
+    TrackT linear_interpolate(TrackT a, TrackT b, float t);
 
     /*
-    *   Cubic spline interpolation
-    */
+     *   Cubic spline interpolation
+     */
 
-    TrackType hermite(float time, float delta_time, const TrackType& p1, const TrackType& s1, const TrackType& p2, const TrackType& s2);
-    TrackType adjust_hermite_result(const TrackType& r);
-    void neighborhood(const TrackType& a, TrackType& b);
+    TrackT hermite(float time, float delta_time, const TrackT& p1, const TrackT& s1, const TrackT& p2, const TrackT& s2);
+    TrackT adjust_hermite_result(const TrackT& r);
+    void neighborhood(const TrackT& a, TrackT& b);
 
-    template<typename Tn>
-    TrackType cubic_interpolate(const TrackType& p1, const TrackType& s1, const TrackType& p2, const TrackType& s2, float h1, float h2, float h3, float h4);
+    template <typename Tn>
+    TrackT cubic_interpolate(const TrackT& p1, const TrackT& s1, const TrackT& p2, const TrackT& s2, float h1, float h2, float h3, float h4);
 
 public:
-
     Interpolator();
-    Interpolator(eInterpolationType new_type);
+    Interpolator(InterpolationType new_type);
 
-    TrackType interpolate(const std::vector<Keyframe>& keyframes, float time, int frame_idx, bool looping);
+    TrackT interpolate(const std::vector<Keyframe>& keyframes, float time, int frame_idx, bool looping);
 
-    eInterpolationType get_type() const;
-    void set_type(eInterpolationType new_type);
+    InterpolationType get_type() const;
+    void set_type(InterpolationType new_type);
 };

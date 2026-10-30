@@ -1,11 +1,11 @@
 #pragma once
 
+#include <glm/mat3x3.hpp>
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
-#include <glm/mat3x3.hpp>
 
-#include "framework/resources/resource.h"
+#include "core/io/resource.h"
 
 #include <string>
 
@@ -15,20 +15,20 @@ class Shader;
 class Texture;
 class Pipeline;
 
-enum eMaterialType {
+enum MaterialType {
     MATERIAL_PBR,
     MATERIAL_UNLIT,
     MATERIAL_UI
 };
 
-enum eTransparencyType {
+enum TransparencyType {
     ALPHA_OPAQUE,
     ALPHA_BLEND,
     ALPHA_MASK,
     ALPHA_HASH // TODO
 };
 
-enum eTopologyType {
+enum TopologyType {
     TOPOLOGY_POINT_LIST,
     TOPOLOGY_LINE_LIST,
     TOPOLOGY_LINE_STRIP,
@@ -36,13 +36,13 @@ enum eTopologyType {
     TOPOLOGY_TRIANGLE_STRIP
 };
 
-enum eCullType {
+enum CullType {
     CULL_NONE,
     CULL_BACK,
     CULL_FRONT
 };
 
-enum eTextureUVTransform {
+enum TextureUVTransform {
     DIFFUSE_UV_TRANSFORM,
     NORMAL_UV_TRANSFORM,
     METALLIC_ROUGHNESS_UV_TRANSFORM,
@@ -56,57 +56,52 @@ enum eTextureUVTransform {
     ANISOTROPY_UV_TRANSFORM,
 };
 
-enum eMaterialProperties : uint32_t {
-    PROP_TYPE                           = 1 << 0,
-    PROP_TOPOLOGY_TYPE                  = 1 << 1,
-    PROP_CULL_TYPE                      = 1 << 2,
-    PROP_PRIORITY                       = 1 << 3,
-    PROP_DEPTH_READ                     = 1 << 4,
-    PROP_DEPTH_WRITE                    = 1 << 5,
-    PROP_FRAGMENT_WRITE                 = 1 << 6,
-    PROP_USE_SKINNING                   = 1 << 7,
-    PROP_SHADER                         = 1 << 8,
-    PROP_COLOR                          = 1 << 9,
-    PROP_DIFFUSE_TEXTURE                = 1 << 10,
-    PROP_OCLUSSION_ROUGHNESS_METALLIC   = 1 << 11,
-    PROP_METALLIC_ROUGHNESS_TEXTURE     = 1 << 12,
-    PROP_OCLUSSION_TEXTURE              = 1 << 13,
-    PROP_EMISSIVE                       = 1 << 14,
-    PROP_EMISSIVE_TEXTURE               = 1 << 15,
-    PROP_NORMAL_TEXTURE                 = 1 << 16,
-    PROP_NORMAL_SCALE                   = 1 << 17,
-    PROP_TRANSPARENCY_TYPE              = 1 << 18,
-    PROP_ALPHA_MASK                     = 1 << 19,
-    PROP_CLEARCOAT                      = 1 << 20,
-    PROP_CLEARCOAT_TEXTURE              = 1 << 21,
-    PROP_CLEARCOAT_ROUGHNESS_TEXTURE    = 1 << 22,
-    PROP_CLEARCOAT_NORMAL_TEXTURE       = 1 << 23,
-    PROP_IRIDESCENCE                    = 1 << 24,
-    PROP_IRIDESCENCE_TEXTURE            = 1 << 25,
-    PROP_IRIDESCENCE_THICKNESS_TEXTURE  = 1 << 26,
-    PROP_ANISOTROPY                     = 1 << 27,
-    PROP_ANISOTROPY_TEXTURE             = 1 << 28,
+enum MaterialProperties : uint32_t {
+    PROP_TYPE = 1 << 0,
+    PROP_TOPOLOGY_TYPE = 1 << 1,
+    PROP_CULL_TYPE = 1 << 2,
+    PROP_PRIORITY = 1 << 3,
+    PROP_DEPTH_READ = 1 << 4,
+    PROP_DEPTH_WRITE = 1 << 5,
+    PROP_FRAGMENT_WRITE = 1 << 6,
+    PROP_USE_SKINNING = 1 << 7,
+    PROP_SHADER = 1 << 8,
+    PROP_COLOR = 1 << 9,
+    PROP_DIFFUSE_TEXTURE = 1 << 10,
+    PROP_OCLUSSION_ROUGHNESS_METALLIC = 1 << 11,
+    PROP_METALLIC_ROUGHNESS_TEXTURE = 1 << 12,
+    PROP_OCLUSSION_TEXTURE = 1 << 13,
+    PROP_EMISSIVE = 1 << 14,
+    PROP_EMISSIVE_TEXTURE = 1 << 15,
+    PROP_NORMAL_TEXTURE = 1 << 16,
+    PROP_NORMAL_SCALE = 1 << 17,
+    PROP_TRANSPARENCY_TYPE = 1 << 18,
+    PROP_ALPHA_MASK = 1 << 19,
+    PROP_CLEARCOAT = 1 << 20,
+    PROP_CLEARCOAT_TEXTURE = 1 << 21,
+    PROP_CLEARCOAT_ROUGHNESS_TEXTURE = 1 << 22,
+    PROP_CLEARCOAT_NORMAL_TEXTURE = 1 << 23,
+    PROP_IRIDESCENCE = 1 << 24,
+    PROP_IRIDESCENCE_TEXTURE = 1 << 25,
+    PROP_IRIDESCENCE_THICKNESS_TEXTURE = 1 << 26,
+    PROP_ANISOTROPY = 1 << 27,
+    PROP_ANISOTROPY_TEXTURE = 1 << 28,
 
+    PROP_CLEARCOAT_TOGGLE = PROP_CLEARCOAT | PROP_CLEARCOAT_TEXTURE | PROP_CLEARCOAT_ROUGHNESS_TEXTURE | PROP_CLEARCOAT_NORMAL_TEXTURE,
+    PROP_IRIDESCENCE_TOGGLE = PROP_IRIDESCENCE | PROP_IRIDESCENCE_TEXTURE | PROP_IRIDESCENCE_THICKNESS_TEXTURE,
+    PROP_ANISOTROPY_TOGGLE = PROP_ANISOTROPY | PROP_ANISOTROPY_TEXTURE,
 
-    PROP_CLEARCOAT_TOGGLE               = PROP_CLEARCOAT | PROP_CLEARCOAT_TEXTURE | PROP_CLEARCOAT_ROUGHNESS_TEXTURE | PROP_CLEARCOAT_NORMAL_TEXTURE,
-    PROP_IRIDESCENCE_TOGGLE             = PROP_IRIDESCENCE | PROP_IRIDESCENCE_TEXTURE | PROP_IRIDESCENCE_THICKNESS_TEXTURE,
-    PROP_ANISOTROPY_TOGGLE              = PROP_ANISOTROPY | PROP_ANISOTROPY_TEXTURE,
+    PROP_RELOAD_NEEDED = PROP_TYPE | PROP_TOPOLOGY_TYPE | PROP_CULL_TYPE | PROP_DEPTH_READ | PROP_DEPTH_WRITE | PROP_FRAGMENT_WRITE | PROP_DIFFUSE_TEXTURE |
+            PROP_METALLIC_ROUGHNESS_TEXTURE | PROP_OCLUSSION_TEXTURE | PROP_EMISSIVE_TEXTURE | PROP_NORMAL_TEXTURE | PROP_TRANSPARENCY_TYPE |
+            PROP_CLEARCOAT_TEXTURE | PROP_CLEARCOAT_ROUGHNESS_TEXTURE | PROP_CLEARCOAT_NORMAL_TEXTURE | PROP_CLEARCOAT_TOGGLE | PROP_IRIDESCENCE_TEXTURE |
+            PROP_IRIDESCENCE_THICKNESS_TEXTURE | PROP_IRIDESCENCE_TOGGLE | PROP_ANISOTROPY_TEXTURE | PROP_ANISOTROPY_TOGGLE,
 
-
-    PROP_RELOAD_NEEDED                  = PROP_TYPE | PROP_TOPOLOGY_TYPE | PROP_CULL_TYPE | PROP_DEPTH_READ | PROP_DEPTH_WRITE | PROP_FRAGMENT_WRITE | PROP_DIFFUSE_TEXTURE |
-                                        PROP_METALLIC_ROUGHNESS_TEXTURE | PROP_OCLUSSION_TEXTURE | PROP_EMISSIVE_TEXTURE | PROP_NORMAL_TEXTURE | PROP_TRANSPARENCY_TYPE |
-                                        PROP_CLEARCOAT_TEXTURE | PROP_CLEARCOAT_ROUGHNESS_TEXTURE | PROP_CLEARCOAT_NORMAL_TEXTURE | PROP_CLEARCOAT_TOGGLE | PROP_IRIDESCENCE_TEXTURE |
-                                        PROP_IRIDESCENCE_THICKNESS_TEXTURE | PROP_IRIDESCENCE_TOGGLE | PROP_ANISOTROPY_TEXTURE | PROP_ANISOTROPY_TOGGLE,
-
-    PROP_UPDATE_NEEDED                  = PROP_COLOR | PROP_OCLUSSION_ROUGHNESS_METALLIC | PROP_EMISSIVE | PROP_NORMAL_SCALE | PROP_ALPHA_MASK | PROP_CLEARCOAT | PROP_IRIDESCENCE |
-                                        PROP_ANISOTROPY
+    PROP_UPDATE_NEEDED = PROP_COLOR | PROP_OCLUSSION_ROUGHNESS_METALLIC | PROP_EMISSIVE | PROP_NORMAL_SCALE | PROP_ALPHA_MASK | PROP_CLEARCOAT | PROP_IRIDESCENCE |
+            PROP_ANISOTROPY
 };
 
-class Material : public Resource
-{
-
+class Material : public Resource {
 public:
-
     Material();
     ~Material();
 
@@ -146,10 +141,10 @@ public:
     void set_is_2D(bool is_2D);
     void set_fragment_write(bool fragment_write);
 
-    void set_transparency_type(eTransparencyType transparency_type);
-    void set_topology_type(eTopologyType topology_type);
-    void set_cull_type(eCullType cull_type);
-    void set_type(eMaterialType type);
+    void set_transparency_type(TransparencyType transparency_type);
+    void set_topology_type(TopologyType topology_type);
+    void set_cull_type(CullType cull_type);
+    void set_type(MaterialType type);
     void set_priority(uint8_t priority);
 
     void set_use_tangents(bool value);
@@ -209,16 +204,16 @@ public:
     bool get_fragment_write() const;
     bool get_use_uv_transforms() const;
 
-    eTransparencyType get_transparency_type() const;
-    eTopologyType get_topology_type() const;
-    eCullType get_cull_type() const;
-    eMaterialType get_type() const;
+    TransparencyType get_transparency_type() const;
+    TopologyType get_topology_type() const;
+    CullType get_cull_type() const;
+    MaterialType get_type() const;
     uint8_t get_priority() const;
 
     const Shader* get_shader() const;
     Shader* get_shader_ref();
 
-    void set_dirty_flag(eMaterialProperties property_flag);
+    void set_dirty_flag(MaterialProperties property_flag);
     void reset_dirty_flags();
     uint32_t get_dirty_flags() const;
 
@@ -230,7 +225,6 @@ public:
     void render_gui();
 
 private:
-
     uint32_t dirty_flags = 0;
 
     Shader* shader = nullptr;
@@ -280,10 +274,10 @@ private:
     bool fragment_write = true;
     bool use_uv_transforms = false;
 
-    eTransparencyType transparency_type = ALPHA_OPAQUE;
-    eTopologyType topology_type = TOPOLOGY_TRIANGLE_LIST;
-    eCullType cull_type = CULL_BACK;
+    TransparencyType transparency_type = ALPHA_OPAQUE;
+    TopologyType topology_type = TOPOLOGY_TRIANGLE_LIST;
+    CullType cull_type = CULL_BACK;
 
-    eMaterialType type = MATERIAL_PBR;
+    MaterialType type = MATERIAL_PBR;
     uint8_t priority = 10;
 };

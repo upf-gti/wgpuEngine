@@ -2,17 +2,17 @@
 
 #include "track.h"
 
-#include "framework/resources/resource.h"
+#include "core/io/resource.h"
 
 #include <iostream>
 
-enum eAnimationType {
+enum AnimationType {
     ANIMATION_TYPE_UNDEFINED,
     ANIMATION_TYPE_SIMPLE,
     ANIMATION_TYPE_SKELETON,
 };
 
-enum eBlendType : uint8_t {
+enum BlendType : uint8_t {
     ANIMATION_BLEND_CROSSFADE,
     ANIMATION_BLEND_ADDITIVE
 };
@@ -32,7 +32,7 @@ class Animation : public Resource {
 
     float adjust_time_to_fit_range(float time, uint8_t loop);
 
-    eAnimationType type = ANIMATION_TYPE_UNDEFINED;
+    AnimationType type = ANIMATION_TYPE_UNDEFINED;
 
 public:
 
@@ -46,7 +46,7 @@ public:
     void set_id_at_index(uint32_t index, int id);
 
     // Samples the animation clip at the provided time into the out reference
-    float sample(float time, uint32_t track_idx, uint8_t loop, Node::AnimatableProperty* out = nullptr, eInterpolationType interpolation_type = INTERPOLATION_UNSET);
+    float sample(float time, uint32_t track_idx, uint8_t loop, Node::AnimatableProperty* out = nullptr, InterpolationType interpolation_type = INTERPOLATION_UNSET);
 
     // Returns a transform track for the specified track position id
     Track* operator[](uint32_t index);
@@ -64,12 +64,12 @@ public:
     float get_duration();
     float get_start_time();
     float get_end_time();
-    eAnimationType get_type();
+    AnimationType get_type();
     bool is_reversed();
 
     void serialize(std::ofstream& binary_scene_file);
     void parse(std::ifstream& binary_scene_file);
 
-    void set_type(eAnimationType new_type);
+    void set_type(AnimationType new_type);
     void set_name(const std::string& new_name);
 };

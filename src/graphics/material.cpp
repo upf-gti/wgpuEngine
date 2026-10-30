@@ -42,85 +42,85 @@ Material::~Material()
 void Material::set_color(const glm::vec4& color)
 {
     this->color = color;
-    dirty_flags |= eMaterialProperties::PROP_COLOR;
+    dirty_flags |= MaterialProperties::PROP_COLOR;
 }
 
 void Material::set_roughness(float roughness)
 {
     this->roughness = roughness;
-    dirty_flags |= eMaterialProperties::PROP_OCLUSSION_ROUGHNESS_METALLIC;
+    dirty_flags |= MaterialProperties::PROP_OCLUSSION_ROUGHNESS_METALLIC;
 }
 
 void Material::set_metallic(float metallic)
 {
     this->metallic = metallic;
-    dirty_flags |= eMaterialProperties::PROP_OCLUSSION_ROUGHNESS_METALLIC;
+    dirty_flags |= MaterialProperties::PROP_OCLUSSION_ROUGHNESS_METALLIC;
 }
 
 void Material::set_occlusion(float occlusion)
 {
     this->occlusion = occlusion;
-    dirty_flags |= eMaterialProperties::PROP_OCLUSSION_ROUGHNESS_METALLIC;
+    dirty_flags |= MaterialProperties::PROP_OCLUSSION_ROUGHNESS_METALLIC;
 }
 
 void Material::set_normal_scale(float normal_scale)
 {
     this->normal_scale = normal_scale;
-    dirty_flags |= eMaterialProperties::PROP_OCLUSSION_ROUGHNESS_METALLIC;
+    dirty_flags |= MaterialProperties::PROP_OCLUSSION_ROUGHNESS_METALLIC;
 }
 
 void Material::set_emissive(const glm::vec3& emissive)
 {
     this->emissive = emissive;
-    dirty_flags |= eMaterialProperties::PROP_EMISSIVE;
+    dirty_flags |= MaterialProperties::PROP_EMISSIVE;
 }
 
 void Material::set_clearcoat_factor(float new_clearcoat_factor)
 {
     clearcoat_factor = new_clearcoat_factor;
-    dirty_flags |= eMaterialProperties::PROP_CLEARCOAT;
+    dirty_flags |= MaterialProperties::PROP_CLEARCOAT;
 }
 
 void Material::set_clearcoat_roughness(float new_clearcoat_roughness)
 {
     this->clearcoat_roughness = new_clearcoat_roughness;
-    dirty_flags |= eMaterialProperties::PROP_CLEARCOAT;
+    dirty_flags |= MaterialProperties::PROP_CLEARCOAT;
 }
 
 void Material::set_iridescence_factor(float new_iridescence_factor)
 {
     iridescence_factor = new_iridescence_factor;
-    dirty_flags |= eMaterialProperties::PROP_IRIDESCENCE;
+    dirty_flags |= MaterialProperties::PROP_IRIDESCENCE;
 }
 
 void Material::set_iridescence_ior(float new_iridescence_ior)
 {
     this->iridescence_ior = new_iridescence_ior;
-    dirty_flags |= eMaterialProperties::PROP_IRIDESCENCE;
+    dirty_flags |= MaterialProperties::PROP_IRIDESCENCE;
 }
 
 void Material::set_iridescence_thickness_min(float new_iridescence_thickness_min)
 {
     this->iridescence_thickness_min = new_iridescence_thickness_min;
-    dirty_flags |= eMaterialProperties::PROP_IRIDESCENCE;
+    dirty_flags |= MaterialProperties::PROP_IRIDESCENCE;
 }
 
 void Material::set_iridescence_thickness_max(float new_iridescence_thickness_max)
 {
     this->iridescence_thickness_max = new_iridescence_thickness_max;
-    dirty_flags |= eMaterialProperties::PROP_IRIDESCENCE;
+    dirty_flags |= MaterialProperties::PROP_IRIDESCENCE;
 }
 
 void Material::set_anisotropy_factor(float new_anisotropy_factor)
 {
     anisotropy_factor = new_anisotropy_factor;
-    dirty_flags |= eMaterialProperties::PROP_ANISOTROPY;
+    dirty_flags |= MaterialProperties::PROP_ANISOTROPY;
 }
 
 void Material::set_anisotropy_rotation(float new_anisotropy_rotation)
 {
     this->anisotropy_rotation = new_anisotropy_rotation;
-    dirty_flags |= eMaterialProperties::PROP_ANISOTROPY;
+    dirty_flags |= MaterialProperties::PROP_ANISOTROPY;
 }
 
 void Material::set_uv_transform(uint8_t index, const glm::mat3x3& matrix)
@@ -144,7 +144,7 @@ void Material::set_diffuse_texture(Texture* diffuse_texture)
 
     this->diffuse_texture = diffuse_texture;
 
-    dirty_flags |= eMaterialProperties::PROP_DIFFUSE_TEXTURE;
+    dirty_flags |= MaterialProperties::PROP_DIFFUSE_TEXTURE;
 }
 
 void Material::set_metallic_roughness_texture(Texture* metallic_roughness_texture)
@@ -160,7 +160,7 @@ void Material::set_metallic_roughness_texture(Texture* metallic_roughness_textur
 
     this->metallic_roughness_texture = metallic_roughness_texture;
 
-    dirty_flags |= eMaterialProperties::PROP_METALLIC_ROUGHNESS_TEXTURE;
+    dirty_flags |= MaterialProperties::PROP_METALLIC_ROUGHNESS_TEXTURE;
 }
 
 void Material::set_normal_texture(Texture* normal_texture)
@@ -176,7 +176,7 @@ void Material::set_normal_texture(Texture* normal_texture)
 
     this->normal_texture = normal_texture;
 
-    dirty_flags |= eMaterialProperties::PROP_NORMAL_TEXTURE;
+    dirty_flags |= MaterialProperties::PROP_NORMAL_TEXTURE;
 }
 
 void Material::set_emissive_texture(Texture* emissive_texture)
@@ -192,7 +192,7 @@ void Material::set_emissive_texture(Texture* emissive_texture)
 
     this->emissive_texture = emissive_texture;
 
-    dirty_flags |= eMaterialProperties::PROP_EMISSIVE_TEXTURE;
+    dirty_flags |= MaterialProperties::PROP_EMISSIVE_TEXTURE;
 }
 
 void Material::set_occlusion_texture(Texture* occlusion_texture)
@@ -208,7 +208,7 @@ void Material::set_occlusion_texture(Texture* occlusion_texture)
 
     this->occlusion_texture = occlusion_texture;
 
-    dirty_flags |= eMaterialProperties::PROP_OCLUSSION_TEXTURE;
+    dirty_flags |= MaterialProperties::PROP_OCLUSSION_TEXTURE;
 }
 
 void Material::set_clearcoat_texture(Texture* clearcoat_texture)
@@ -224,7 +224,7 @@ void Material::set_clearcoat_texture(Texture* clearcoat_texture)
 
     this->clearcoat_texture = clearcoat_texture;
 
-    dirty_flags |= eMaterialProperties::PROP_CLEARCOAT_TEXTURE;
+    dirty_flags |= MaterialProperties::PROP_CLEARCOAT_TEXTURE;
 }
 
 void Material::set_clearcoat_roughness_texture(Texture* clearcoat_roughness_texture)
@@ -240,7 +240,7 @@ void Material::set_clearcoat_roughness_texture(Texture* clearcoat_roughness_text
 
     this->clearcoat_roughness_texture = clearcoat_roughness_texture;
 
-    dirty_flags |= eMaterialProperties::PROP_CLEARCOAT_ROUGHNESS_TEXTURE;
+    dirty_flags |= MaterialProperties::PROP_CLEARCOAT_ROUGHNESS_TEXTURE;
 }
 
 void Material::set_clearcoat_normal_texture(Texture* clearcoat_normal_texture)
@@ -256,7 +256,7 @@ void Material::set_clearcoat_normal_texture(Texture* clearcoat_normal_texture)
 
     this->clearcoat_normal_texture = clearcoat_normal_texture;
 
-    dirty_flags |= eMaterialProperties::PROP_CLEARCOAT_NORMAL_TEXTURE;
+    dirty_flags |= MaterialProperties::PROP_CLEARCOAT_NORMAL_TEXTURE;
 }
 
 void Material::set_iridescence_texture(Texture* iridescence_texture)
@@ -272,7 +272,7 @@ void Material::set_iridescence_texture(Texture* iridescence_texture)
 
     this->iridescence_texture = iridescence_texture;
 
-    dirty_flags |= eMaterialProperties::PROP_IRIDESCENCE_TEXTURE;
+    dirty_flags |= MaterialProperties::PROP_IRIDESCENCE_TEXTURE;
 }
 
 void Material::set_iridescence_thickness_texture(Texture* iridescence_thickness_texture)
@@ -288,7 +288,7 @@ void Material::set_iridescence_thickness_texture(Texture* iridescence_thickness_
 
     this->iridescence_thickness_texture = iridescence_thickness_texture;
 
-    dirty_flags |= eMaterialProperties::PROP_IRIDESCENCE_THICKNESS_TEXTURE;
+    dirty_flags |= MaterialProperties::PROP_IRIDESCENCE_THICKNESS_TEXTURE;
 }
 
 void Material::set_anisotropy_texture(Texture* anisotropy_texture)
@@ -304,13 +304,13 @@ void Material::set_anisotropy_texture(Texture* anisotropy_texture)
 
     this->anisotropy_texture = anisotropy_texture;
 
-    dirty_flags |= eMaterialProperties::PROP_ANISOTROPY_TEXTURE;
+    dirty_flags |= MaterialProperties::PROP_ANISOTROPY_TEXTURE;
 }
 
 void Material::set_alpha_mask(float alpha_mask)
 {
     this->alpha_mask = alpha_mask;
-    dirty_flags |= eMaterialProperties::PROP_ALPHA_MASK;
+    dirty_flags |= MaterialProperties::PROP_ALPHA_MASK;
 }
 
 void Material::set_depth_read_write(bool value)
@@ -322,13 +322,13 @@ void Material::set_depth_read_write(bool value)
 void Material::set_depth_read(bool depth_read)
 {
     this->depth_read = depth_read;
-    dirty_flags |= eMaterialProperties::PROP_DEPTH_READ;
+    dirty_flags |= MaterialProperties::PROP_DEPTH_READ;
 }
 
 void Material::set_depth_write(bool depth_write)
 {
     this->depth_write = depth_write;
-    dirty_flags |= eMaterialProperties::PROP_DEPTH_WRITE;
+    dirty_flags |= MaterialProperties::PROP_DEPTH_WRITE;
 }
 
 void Material::set_use_skinning(bool use_skinning)
@@ -344,37 +344,37 @@ void Material::set_is_2D(bool is_2D)
 void Material::set_fragment_write(bool fragment_write)
 {
     this->fragment_write = fragment_write;
-    dirty_flags |= eMaterialProperties::PROP_FRAGMENT_WRITE;
+    dirty_flags |= MaterialProperties::PROP_FRAGMENT_WRITE;
 }
 
-void Material::set_transparency_type(eTransparencyType transparency_type)
+void Material::set_transparency_type(TransparencyType transparency_type)
 {
     this->transparency_type = transparency_type;
-    dirty_flags |= eMaterialProperties::PROP_TRANSPARENCY_TYPE;
+    dirty_flags |= MaterialProperties::PROP_TRANSPARENCY_TYPE;
 }
 
-void Material::set_topology_type(eTopologyType topology_type)
+void Material::set_topology_type(TopologyType topology_type)
 {
     this->topology_type = topology_type;
-    dirty_flags |= eMaterialProperties::PROP_TOPOLOGY_TYPE;
+    dirty_flags |= MaterialProperties::PROP_TOPOLOGY_TYPE;
 }
 
-void Material::set_cull_type(eCullType cull_type)
+void Material::set_cull_type(CullType cull_type)
 {
     this->cull_type = cull_type;
-    dirty_flags |= eMaterialProperties::PROP_CULL_TYPE;
+    dirty_flags |= MaterialProperties::PROP_CULL_TYPE;
 }
 
-void Material::set_type(eMaterialType type)
+void Material::set_type(MaterialType type)
 {
     this->type = type;
-    dirty_flags |= eMaterialProperties::PROP_TYPE;
+    dirty_flags |= MaterialProperties::PROP_TYPE;
 }
 
 void Material::set_priority(uint8_t priority)
 {
     this->priority = priority;
-    dirty_flags |= eMaterialProperties::PROP_PRIORITY;
+    dirty_flags |= MaterialProperties::PROP_PRIORITY;
 }
 
 void Material::set_use_tangents(bool value)
@@ -385,25 +385,25 @@ void Material::set_use_tangents(bool value)
 void Material::set_use_clearcoat(bool value)
 {
     use_clearcoat = value;
-    dirty_flags |= eMaterialProperties::PROP_CLEARCOAT_TOGGLE;
+    dirty_flags |= MaterialProperties::PROP_CLEARCOAT_TOGGLE;
 }
 
 void Material::set_use_iridescence(bool value)
 {
     use_iridescence = value;
-    dirty_flags |= eMaterialProperties::PROP_IRIDESCENCE_TOGGLE;
+    dirty_flags |= MaterialProperties::PROP_IRIDESCENCE_TOGGLE;
 }
 
 void Material::set_use_anisotropy(bool value)
 {
     use_anisotropy = value;
-    dirty_flags |= eMaterialProperties::PROP_ANISOTROPY_TOGGLE;
+    dirty_flags |= MaterialProperties::PROP_ANISOTROPY_TOGGLE;
 }
 
 void Material::set_shader(Shader* shader)
 {
     this->shader = shader;
-    dirty_flags |= eMaterialProperties::PROP_SHADER;
+    dirty_flags |= MaterialProperties::PROP_SHADER;
 }
 
 void Material::set_shader_pipeline(Pipeline* pipeline)
@@ -576,22 +576,22 @@ bool Material::get_use_uv_transforms() const
     return use_uv_transforms;
 }
 
-eTransparencyType Material::get_transparency_type() const
+TransparencyType Material::get_transparency_type() const
 {
     return transparency_type;
 }
 
-eTopologyType Material::get_topology_type() const
+TopologyType Material::get_topology_type() const
 {
     return topology_type;
 }
 
-eCullType Material::get_cull_type() const
+CullType Material::get_cull_type() const
 {
     return cull_type;
 }
 
-eMaterialType Material::get_type() const
+MaterialType Material::get_type() const
 {
     return type;
 }
@@ -611,7 +611,7 @@ Shader* Material::get_shader_ref()
     return shader;
 }
 
-void Material::set_dirty_flag(eMaterialProperties property_flag)
+void Material::set_dirty_flag(MaterialProperties property_flag)
 {
     dirty_flags |= property_flag;
 }
@@ -636,19 +636,19 @@ void Material::render_gui()
         static const char* types[] = { "MATERIAL_PBR", "MATERIAL_UNLIT" };
         int type_int = static_cast<int>(type);
         if (ImGui::Combo("##Type", &type_int, types, ((int)(sizeof(types) / sizeof(*(types)))))) {
-            set_type(static_cast<eMaterialType>(type_int));
+            set_type(static_cast<MaterialType>(type_int));
         }
 
         ImGui::Text("Diffuse Color");
         ImGui::SameLine(200);
         if (ImGui::ColorEdit4("##Color", &color[0], ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel)) {
-            dirty_flags |= eMaterialProperties::PROP_COLOR;
+            dirty_flags |= MaterialProperties::PROP_COLOR;
         }
 
         ImGui::Text("Emissive Color");
         ImGui::SameLine(200);
         if (ImGui::ColorEdit4("##Emissive", &emissive[0], ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel)) {
-            dirty_flags |= eMaterialProperties::PROP_EMISSIVE;
+            dirty_flags |= MaterialProperties::PROP_EMISSIVE;
         }
 
         ImGui::Text("Transparency Type");
@@ -656,7 +656,7 @@ void Material::render_gui()
         static const char* transparency_types[] = { "OPAQUE", "BLEND", "MASK", "HASH" };
         int transparency_type_int = static_cast<int>(transparency_type);
         if (ImGui::Combo("##Transparency", &transparency_type_int, transparency_types, ((int)(sizeof(transparency_types) / sizeof(*(transparency_types)))))) {
-            set_transparency_type(static_cast<eTransparencyType>(transparency_type_int));
+            set_transparency_type(static_cast<TransparencyType>(transparency_type_int));
         }
 
         if (transparency_type == ALPHA_MASK) {
@@ -664,7 +664,7 @@ void Material::render_gui()
             ImGui::SameLine(200);
             ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
             if (ImGui::DragFloat("##Alpha Mask", &alpha_mask, 0.01f, 0.0f, 1.0f)) {
-                dirty_flags |= eMaterialProperties::PROP_ALPHA_MASK;
+                dirty_flags |= MaterialProperties::PROP_ALPHA_MASK;
             }
         }
 
@@ -672,28 +672,28 @@ void Material::render_gui()
         ImGui::SameLine(200);
         ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
         if (ImGui::DragFloat("##Roughness", &roughness, 0.01f, 0.0f, 1.0f)) {
-            dirty_flags |= eMaterialProperties::PROP_OCLUSSION_ROUGHNESS_METALLIC;
+            dirty_flags |= MaterialProperties::PROP_OCLUSSION_ROUGHNESS_METALLIC;
         }
 
         ImGui::Text("Metallic");
         ImGui::SameLine(200);
         ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
         if (ImGui::DragFloat("##Metallic", &metallic, 0.01f, 0.0f, 1.0f)) {
-            dirty_flags |= eMaterialProperties::PROP_OCLUSSION_ROUGHNESS_METALLIC;
+            dirty_flags |= MaterialProperties::PROP_OCLUSSION_ROUGHNESS_METALLIC;
         }
 
         ImGui::Text("Oclussion");
         ImGui::SameLine(200);
         ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
         if (ImGui::DragFloat("##Oclussion", &occlusion, 0.01f, 0.0f, 1.0f)) {
-            dirty_flags |= eMaterialProperties::PROP_OCLUSSION_ROUGHNESS_METALLIC;
+            dirty_flags |= MaterialProperties::PROP_OCLUSSION_ROUGHNESS_METALLIC;
         }
 
         ImGui::Text("Normal Scale");
         ImGui::SameLine(200);
         ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
         if (ImGui::DragFloat("##Normal Scale", &normal_scale, 0.01f, 0.0f, 1.0f)) {
-            dirty_flags |= eMaterialProperties::PROP_NORMAL_SCALE;
+            dirty_flags |= MaterialProperties::PROP_NORMAL_SCALE;
         }
 
         // Clear coat
@@ -715,7 +715,7 @@ void Material::render_gui()
             ImGui::SameLine(200);
             ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
             if (ImGui::DragFloat("##CC_Roughness", &clearcoat_roughness, 0.01f, 0.0f, 1.0f)) {
-                dirty_flags |= eMaterialProperties::PROP_CLEARCOAT;
+                dirty_flags |= MaterialProperties::PROP_CLEARCOAT;
             }
 
             ImGui::Separator();
@@ -740,7 +740,7 @@ void Material::render_gui()
             ImGui::SameLine(200);
             ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
             if (ImGui::DragFloat("##I_IOR", &iridescence_ior, 0.01f, 0.0f, 2.0f)) {
-                dirty_flags |= eMaterialProperties::PROP_IRIDESCENCE;
+                dirty_flags |= MaterialProperties::PROP_IRIDESCENCE;
             }
 
             ImGui::Text("Thickness");
@@ -774,7 +774,7 @@ void Material::render_gui()
             ImGui::SameLine(200);
             ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
             if (ImGui::DragFloat("##A_Rotation", &anisotropy_rotation, 0.01f, 0.0f, 3.1415f)) {
-                dirty_flags |= eMaterialProperties::PROP_ANISOTROPY;
+                dirty_flags |= MaterialProperties::PROP_ANISOTROPY;
             }
 
             ImGui::Separator();
@@ -785,7 +785,7 @@ void Material::render_gui()
         static const char* topology_types[] = { "TOPOLOGY_POINT_LIST", "TOPOLOGY_LINE_LIST", "TOPOLOGY_LINE_STRIP", "TOPOLOGY_TRIANGLE_LIST", "TOPOLOGY_TRIANGLE_STRIP" };
         int topology_type_int = static_cast<int>(topology_type);
         if (ImGui::Combo("##Topology Type", &topology_type_int, topology_types, ((int)(sizeof(topology_types) / sizeof(*(topology_types)))))) {
-            set_topology_type(static_cast<eTopologyType>(topology_type_int));
+            set_topology_type(static_cast<TopologyType>(topology_type_int));
         }
 
         ImGui::Text("Cull Type");
@@ -793,21 +793,21 @@ void Material::render_gui()
         static const char* cull_types[] = { "NONE", "BACK", "FRONT" };
         int cull_type_int = static_cast<int>(cull_type);
         if (ImGui::Combo("##Cull Type", &cull_type_int, cull_types, ((int)(sizeof(cull_types) / sizeof(*(cull_types)))))) {
-            set_cull_type(static_cast<eCullType>(cull_type_int));
+            set_cull_type(static_cast<CullType>(cull_type_int));
         }
 
         ImGui::Text("Depth Read");
         ImGui::SameLine(200);
         ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
         if (ImGui::Checkbox("##Depth Read", &depth_read)) {
-            dirty_flags |= eMaterialProperties::PROP_DEPTH_READ;
+            dirty_flags |= MaterialProperties::PROP_DEPTH_READ;
         }
 
         ImGui::Text("Depth Write");
         ImGui::SameLine(200);
         ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
         if (ImGui::Checkbox("##Depth Write", &depth_write)) {
-            dirty_flags |= eMaterialProperties::PROP_DEPTH_WRITE;
+            dirty_flags |= MaterialProperties::PROP_DEPTH_WRITE;
         }
 
         ImGui::Text("Priority");

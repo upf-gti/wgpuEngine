@@ -222,14 +222,14 @@ struct ImGuiTimeline : public ImSequencer::SequenceInterface
         const ImRect anchor(ImVec2(center.x - 5, center.y - 5), ImVec2(center.x + 5, center.y + 5));
         ImColor fill_color = 0xAA000000;
         switch (type) {
-        case eTrackType::TYPE_POSITION:
+        case TrackType::TYPE_POSITION:
             fill_color = ImGui::GetColorU32(ImVec4(0.30f, 0.8f, 0.64f, 1.f));//0xE94560DD;//0xFFE94560;
             break;
 
-        case eTrackType::TYPE_ROTATION:
+        case TrackType::TYPE_ROTATION:
             fill_color = ImGui::GetColorU32(ImVec4(0.97f, 0.27f, 0.37f, 1.f));//0xAAFFD700;
             break;
-        case eTrackType::TYPE_SCALE:
+        case TrackType::TYPE_SCALE:
             fill_color = ImGui::GetColorU32(ImVec4(1.f, 0.84f, 0.f, 1.f));// 0xFFD700AA;// 0xFFFF5ADD;
             break;
         }

@@ -1,9 +1,10 @@
 #pragma once
 
-#include "graphics/webgpu_context.h"
+#include "core/io/resource.h"
+#include "core/managers/render/render_api.h"
+
 #include "framework/math/aabb.h"
 #include "material.h"
-#include "framework/resources/resource.h"
 
 #include "glm/vec2.hpp"
 #include "glm/vec3.hpp"
@@ -13,14 +14,15 @@
 
 #include <string>
 
-namespace normals {
-    const glm::vec3 pX = glm::vec3(1.f, 0.f, 0.0);
-    const glm::vec3 nX = glm::vec3(-1.f, 0.f, 0.0);
-    const glm::vec3 pY = glm::vec3(0.f, 1.f, 0.0);
-    const glm::vec3 nY = glm::vec3(0.f, -1.f, 0.0);
-    const glm::vec3 pZ = glm::vec3(0.f, 0.f, 1.0);
-    const glm::vec3 nZ = glm::vec3(0.f, 0.f, -1.0);
-}
+namespace normals
+{
+const glm::vec3 pX = glm::vec3(1.f, 0.f, 0.0);
+const glm::vec3 nX = glm::vec3(-1.f, 0.f, 0.0);
+const glm::vec3 pY = glm::vec3(0.f, 1.f, 0.0);
+const glm::vec3 nY = glm::vec3(0.f, -1.f, 0.0);
+const glm::vec3 pZ = glm::vec3(0.f, 0.f, 1.0);
+const glm::vec3 nZ = glm::vec3(0.f, 0.f, -1.0);
+} //namespace normals
 
 struct sSurfaceData {
     std::vector<glm::vec3> vertices;
@@ -48,8 +50,7 @@ struct sInterleavedData {
     glm::ivec4 joints;
 };
 
-class Surface : public Resource
-{
+class Surface : public Resource {
     uint32_t vertex_count = 0;
     uint32_t index_count = 0;
 
@@ -69,10 +70,7 @@ class Surface : public Resource
     void clean_buffers();
 
 public:
-
     ~Surface();
-
-    static WebGPUContext* webgpu_context;
 
     void set_material(Material* material);
 

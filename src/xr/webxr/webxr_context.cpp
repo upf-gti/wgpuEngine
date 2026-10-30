@@ -1,6 +1,7 @@
 #include "webxr_context.h"
 
-#include "engine/engine.h"
+#include "core/managers/engine/engine_manager.h"
+#include "core/managers/render/render_manager.h"
 
 #include "graphics/webgpu_context.h"
 
@@ -20,14 +21,11 @@ XrInputPose parse_WebXR_pose_to_XrInputPose(const WebXRRigidTransform& p);
 
 WebXRContext::~WebXRContext()
 {
-
 }
 
 bool WebXRContext::query_session_supported()
 {
-    webxr_is_session_supported(WEBXR_SESSION_MODE_IMMERSIVE_VR, [](void* userData, int mode, bool supported) {
-        static_cast<WebXRContext*>(userData)->set_session_supported(supported);
-    }, this);
+    webxr_is_session_supported(WEBXR_SESSION_MODE_IMMERSIVE_VR, [](void* userData, int mode, bool supported) { static_cast<WebXRContext*>(userData)->set_session_supported(supported); }, this);
 
     while (!session_queried) {
         emscripten_sleep(1); // Allows browser to run events
@@ -44,11 +42,13 @@ void WebXRContext::set_session_supported(bool value)
     session_queried = true;
 }
 
-bool WebXRContext::init(WebGPUContext* webgpu_context)
+Error WebXRContext::initialize()
 {
     spdlog::info("WebXR init");
 
-    webxr_set_device((webgpu_context->get_device()));
+    swapchain_format = WGPUTextureFormat_BGRA8Unorm;
+
+    webxr_set_device(RenderManager::get_singleton()->get_webgpu_context().device);
 
     per_view_data.resize(EYE_COUNT);
 
@@ -56,39 +56,38 @@ bool WebXRContext::init(WebGPUContext* webgpu_context)
     handButtons[HAND_LEFT].resize(WEBXR_BUTTON_COUNT);
 
     webxr_init(
-        /* Frame callback */
-        [](void* userData, int time, WebXRRigidTransform* head_pose, WebXRView views[2], WGPUTextureView texture_view_left, WGPUTextureView texture_view_right, int viewCount) {
-            static_cast<WebXRContext*>(userData)->on_frame(head_pose, views, texture_view_left, texture_view_right);
-        },
-        /* Session WebXR init callback */
-        [](void* userData) {
-            //webxr_request_session(WEBXR_SESSION_MODE_IMMERSIVE_VR, WEBXR_SESSION_FEATURE_WEBGPU);
-        },
-        /* Session begin callback */
-        [](void* userData, int mode) {
-            static_cast<WebXRContext*>(userData)->begin_session();
-        },
-        /* Session end callback */
-        [](void* userData, int mode) {
-            static_cast<WebXRContext*>(userData)->end_session();
-        },
-        /* Error callback */
-        [](void* userData, int error) {
-            static_cast<WebXRContext*>(userData)->print_error(error);
-        },
-        /* userData */
-        this
-    );
+            /* Frame callback */
+            [](void* userData, int time, WebXRRigidTransform* head_pose, WebXRView views[2], WGPUTextureView texture_view_left, WGPUTextureView texture_view_right, int viewCount) {
+                static_cast<WebXRContext*>(userData)->on_frame(head_pose, views, texture_view_left, texture_view_right);
+            },
+            /* Session WebXR init callback */
+            [](void* userData) {
+                //webxr_request_session(WEBXR_SESSION_MODE_IMMERSIVE_VR, WEBXR_SESSION_FEATURE_WEBGPU);
+            },
+            /* Session begin callback */
+            [](void* userData, int mode) {
+                static_cast<WebXRContext*>(userData)->begin_session();
+            },
+            /* Session end callback */
+            [](void* userData, int mode) {
+                static_cast<WebXRContext*>(userData)->end_session();
+            },
+            /* Error callback */
+            [](void* userData, int error) {
+                static_cast<WebXRContext*>(userData)->print_error(error);
+            },
+            /* userData */
+            this);
 
     if (Input::init_xr(this)) {
         spdlog::error("Can't initialize WebXR input");
-        return 1;
+        return Error::FAILED;
     }
 
-    return true;
+    return Error::OK;
 }
 
-void WebXRContext::clean()
+void WebXRContext::finalize()
 {
 }
 
@@ -101,18 +100,18 @@ void WebXRContext::on_frame(WebXRRigidTransform* head_pose, WebXRView views[2], 
     Engine::instance->on_frame(); // Make frame from here to synchronise render and xr session
 }
 
-bool WebXRContext::begin_session()
+Error WebXRContext::begin_session()
 {
     emscripten_pause_main_loop();
 
-    return false;
+    return Error::OK;
 }
 
-bool WebXRContext::end_session()
+Error WebXRContext::end_session()
 {
     emscripten_resume_main_loop();
 
-    return false;
+    return Error::OK;
 }
 
 void WebXRContext::update_views(WebXRRigidTransform* head_pose, WebXRView views[2], WGPUTextureView texture_view_left, WGPUTextureView texture_view_right)
@@ -126,7 +125,7 @@ void WebXRContext::update_views(WebXRRigidTransform* head_pose, WebXRView views[
     }
 
     viewport = glm::make_vec4(views[0].viewport);
-      
+
     swapchain_views[EYE_LEFT] = texture_view_left;
     swapchain_views[EYE_RIGHT] = texture_view_right;
 
@@ -155,8 +154,7 @@ void WebXRContext::poll_actions()
 
     WebXRRigidTransform webxr_transform;
 
-    for(int s = 0; s < sources_count; ++s) {
-
+    for (int s = 0; s < sources_count; ++s) {
         WebXRInputSource* source = &sources[s];
 
         WebXRHandedness hand = source->handedness;
@@ -197,7 +195,6 @@ void WebXRContext::poll_actions()
 
 void WebXRContext::update()
 {
-
 }
 
 void WebXRContext::print_viewconfig_view_info()
@@ -211,24 +208,25 @@ void WebXRContext::print_reference_spaces()
 void WebXRContext::print_error(int error)
 {
     switch (error) {
-    case WEBXR_ERR_WEBXR_UNSUPPORTED:
-        spdlog::error("WebXR unsupported in this browser");
-        break;
-    case WEBXR_ERR_WEBGPU_UNSUPPORTED:
-        spdlog::error("WebGPU unsupported in this browser");
-        break;
-    case WEBXR_ERR_XRGPU_BINDING_UNSUPPORTED:
-        spdlog::error("WebXR/WebGPU binding not supported on this device");
-        break;
-    case WEBXR_ERR_IMMERSIVE_XR_UNSUPPORTED:
-        spdlog::error("Immersive VR not supported. Missing Headset?");
-        break;
-    default:
-        spdlog::error("Unknown WebXR error with code: {}", error);
+        case WEBXR_ERR_WEBXR_UNSUPPORTED:
+            spdlog::error("WebXR unsupported in this browser");
+            break;
+        case WEBXR_ERR_WEBGPU_UNSUPPORTED:
+            spdlog::error("WebGPU unsupported in this browser");
+            break;
+        case WEBXR_ERR_XRGPU_BINDING_UNSUPPORTED:
+            spdlog::error("WebXR/WebGPU binding not supported on this device");
+            break;
+        case WEBXR_ERR_IMMERSIVE_XR_UNSUPPORTED:
+            spdlog::error("Immersive VR not supported. Missing Headset?");
+            break;
+        default:
+            spdlog::error("Unknown WebXR error with code: {}", error);
     }
 }
 
-inline XrInputPose parse_WebXR_pose_to_XrInputPose(const WebXRRigidTransform& p) {
+inline XrInputPose parse_WebXR_pose_to_XrInputPose(const WebXRRigidTransform& p)
+{
     return { glm::quat(p.orientation[0], p.orientation[1], p.orientation[2], p.orientation[3]), glm::vec3(p.position[0], p.position[1], p.position[2]) };
 }
 

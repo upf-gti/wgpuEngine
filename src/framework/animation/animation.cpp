@@ -11,7 +11,7 @@ Animation::Animation()
     end_time = 0.0f;
 }
 
-float Animation::sample(float time, uint32_t track_idx, uint8_t loop, Node::AnimatableProperty* out, eInterpolationType interpolation_type)
+float Animation::sample(float time, uint32_t track_idx, uint8_t loop, Node::AnimatableProperty* out, InterpolationType interpolation_type)
 {
     if (get_duration() == 0.0f) {
         return 0.0f;
@@ -166,7 +166,7 @@ float Animation::get_end_time()
     return end_time;
 }
 
-eAnimationType Animation::get_type()
+AnimationType Animation::get_type()
 {
     return type;
 }
@@ -186,7 +186,7 @@ void Animation::serialize(std::ofstream& binary_scene_file)
     binary_scene_file.write(reinterpret_cast<char*>(&end_time), sizeof(float));
     binary_scene_file.write(reinterpret_cast<char*>(&duration), sizeof(float));
     binary_scene_file.write(reinterpret_cast<char*>(&reversed), sizeof(bool));
-    binary_scene_file.write(reinterpret_cast<char*>(&type), sizeof(eAnimationType));
+    binary_scene_file.write(reinterpret_cast<char*>(&type), sizeof(AnimationType));
 
     size_t tracks_count = tracks.size();
     binary_scene_file.write(reinterpret_cast<char*>(&tracks_count), sizeof(size_t));
@@ -208,7 +208,7 @@ void Animation::parse(std::ifstream& binary_scene_file)
     binary_scene_file.read(reinterpret_cast<char*>(&end_time), sizeof(float));
     binary_scene_file.read(reinterpret_cast<char*>(&duration), sizeof(float));
     binary_scene_file.read(reinterpret_cast<char*>(&reversed), sizeof(bool));
-    binary_scene_file.read(reinterpret_cast<char*>(&type), sizeof(eAnimationType));
+    binary_scene_file.read(reinterpret_cast<char*>(&type), sizeof(AnimationType));
 
     size_t tracks_count = 0;
     binary_scene_file.read(reinterpret_cast<char*>(&tracks_count), sizeof(size_t));
@@ -222,7 +222,7 @@ void Animation::parse(std::ifstream& binary_scene_file)
 
 // setters
 
-void Animation::set_type(eAnimationType new_type)
+void Animation::set_type(AnimationType new_type)
 {
     type = new_type;
 }

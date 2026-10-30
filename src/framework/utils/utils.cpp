@@ -4,7 +4,7 @@
 #include <random>
 #include <algorithm>
 
-#include "spdlog/spdlog.h"
+#include "core/managers/debug/debug_manager.h"
 
 std::string remove_special_characters(const std::string& str)
 {
@@ -37,7 +37,7 @@ std::vector<std::string> tokenize(const std::string& str, char token)
 }
 
 void print_error(const char* p_function, const char* p_file, int p_line, const char* p_error, const char* p_message) {
-    spdlog::error("{}(line {}) at {}\n{} - {}", p_function, p_line, p_file, p_error, p_message);
+    LOG_ERROR("{}(line {}) at {}\n{} - {}", p_function, p_line, p_file, p_error, p_message);
 }
 
 void to_camel_case(std::string& str)
@@ -76,7 +76,7 @@ bool read_file(const std::string& filename, std::string& content)
 
 	std::ifstream file(filename);
 	if (!file.is_open()) {
-        spdlog::error("Error reading file ({}): {}", filename, strerror(errno));
+        LOG_ERROR("Error reading file ({}): {}", filename, strerror(errno));
 		return false;
 	}
 
