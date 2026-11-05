@@ -40,8 +40,6 @@ public:
     Light3D();
     ~Light3D();
 
-    virtual void render() override;
-
     void clone(Node* new_node, bool copy = true) override;
 
     void render_gui() override;

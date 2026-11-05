@@ -2,11 +2,11 @@
 
 #include "framework/math/aabb.h"
 
+#include <functional>
 #include <string>
-#include <vector>
 #include <unordered_map>
 #include <variant>
-#include <functional>
+#include <vector>
 
 #include "glm/vec2.hpp"
 #include "glm/vec3.hpp"
@@ -22,14 +22,19 @@ using FuncUVec2 = std::function<void(const std::string&, glm::u32vec2)>;
 using FuncVec3 = std::function<void(const std::string&, glm::vec3)>;
 using FuncVec4 = std::function<void(const std::string&, glm::vec4)>;
 
-using SignalType = std::variant <FuncInt, FuncFloat, FuncString, FuncVec2, FuncUVec2, FuncVec3, FuncVec4, FuncVoid>;
+using SignalType = std::variant<FuncInt, FuncFloat, FuncString, FuncVec2, FuncUVec2, FuncVec3, FuncVec4, FuncVoid>;
 
 class Node {
+    friend class Scene;
 
     static std::unordered_map<std::string, std::vector<SignalType>> mapping_signals;
     static std::unordered_map<uint8_t, std::vector<FuncEmpty>> controller_signals;
 
 public:
+    enum Notification {
+        NOTIFICATION_ENTERS_TREE,
+        NOTIFICATION_EXITS_TREE
+    };
 
     enum class AnimatablePropertyType {
         UNDEFINED,
@@ -62,7 +67,6 @@ public:
     };
 
 protected:
-
     static uint32_t last_node_id;
 
     std::string name;
@@ -76,12 +80,13 @@ protected:
     AABB aabb = {};
     std::unordered_map<std::string, AnimatableProperty> animatable_properties;
 
+    virtual void notification(int notification_id);
+
 public:
-
     Node();
-    virtual ~Node() {};
+    virtual ~Node() {}
 
-    virtual void initialize() {};
+    virtual void initialize() {}
 
     virtual void add_child(Node* child);
     virtual void add_children(std::vector<Node*> children);
@@ -89,7 +94,7 @@ public:
 
     virtual void render();
     virtual void update(float delta_time);
-    virtual void render_gui() {};
+    virtual void render_gui() {}
 
     virtual void serialize(std::ofstream& binary_scene_file);
     virtual void parse(std::ifstream& binary_scene_file);
@@ -109,9 +114,15 @@ public:
     const std::unordered_map<std::string, AnimatableProperty>& get_animatable_properties() const;
 
     template <typename T = Node*>
-    T get_parent() const { if (!parent) return nullptr;  return dynamic_cast<T>(parent); };
+    T get_parent() const
+    {
+        if (!parent) {
+            return nullptr;
+        }
+        return dynamic_cast<T>(parent);
+    }
 
-    Node* get_base_parent() const { return parent; };
+    Node* get_base_parent() const { return parent; }
 
     std::string find_path(const std::string& node_name, const std::string& current_path = "");
 
@@ -121,8 +132,8 @@ public:
     virtual void release();
 
     /*
-    *	Callbacks
-    */
+     *	Callbacks
+     */
 
     static void bind(const std::string& name, SignalType callback);
     static void bind_button(uint8_t button, FuncEmpty callback);
@@ -131,19 +142,19 @@ public:
 
     static void check_controller_signals();
 
-    template<typename T>
-    static bool emit_signal(const std::string& name, T value) {
-
+    template <typename T>
+    static bool emit_signal(const std::string& name, T value)
+    {
         if (!mapping_signals.contains(name)) {
             return false;
         }
 
         using FuncT = std::function<void(const std::string&, T)>;
 
-        for (auto& f : mapping_signals[name])
-        {
-            if (std::holds_alternative<FuncT>(f))
+        for (auto& f : mapping_signals[name]) {
+            if (std::holds_alternative<FuncT>(f)) {
                 std::get<FuncT>(f)(name, value);
+            }
         }
 
         return true;
@@ -151,20 +162,19 @@ public:
 };
 
 class NodeRegistry {
-
-    std::unordered_map<std::string, std::function<Node* ()>> registry;
+    std::unordered_map<std::string, std::function<Node*()>> registry;
 
 public:
-
     static NodeRegistry* instance;
 
     NodeRegistry();
 
-    void register_class(const std::string& name, std::function<Node* ()> constructor);
+    void register_class(const std::string& name, std::function<Node*()> constructor);
 
     Node* create_node(const std::string& name);
 
-    static NodeRegistry* get_instance() {
+    static NodeRegistry* get_instance()
+    {
         if (instance == nullptr) {
             instance = new NodeRegistry();
         }

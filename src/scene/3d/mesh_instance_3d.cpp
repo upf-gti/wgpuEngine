@@ -9,6 +9,18 @@
 
 REGISTER_NODE_CLASS(MeshInstance3D)
 
+void MeshInstance3D::notification(int notification_id)
+{
+    switch (notification_id) {
+        case NOTIFICATION_ENTERS_TREE:
+            render_list_idx = RENDER_MANAGER->add_renderable(mesh, get_global_transform().get_model());
+            break;
+        case NOTIFICATION_EXITS_TREE:
+            RENDER_MANAGER->remove_renderable(render_list_idx);
+            break;
+    }
+}
+
 MeshInstance3D::MeshInstance3D() : Node3D()
 {
     node_type = "MeshInstance3D";
@@ -33,15 +45,6 @@ void MeshInstance3D::update_aabb()
     }
 
     set_aabb(entity_aabb);
-}
-
-void MeshInstance3D::render()
-{
-    if (mesh) {
-        RENDER_MANAGER->add_renderable(mesh, get_global_transform().get_model());
-    }
-
-    Node3D::render();
 }
 
 void MeshInstance3D::update(float delta_time)

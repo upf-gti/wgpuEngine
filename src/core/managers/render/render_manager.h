@@ -34,7 +34,9 @@ public:
     WGPUTextureFormat get_surface_format();
     WGPUCommandEncoder get_main_command_encoder();
 
-    void add_renderable(Mesh* mesh_instance, const glm::mat4x4& global_matrix);
+    uint32_t add_renderable(Mesh* mesh_instance, const glm::mat4x4& global_matrix);
+    void remove_renderable(uint32_t idx);
+
     void add_light(Light3D* new_light);
 
     void set_clear_color(const glm::vec4& clear_color);

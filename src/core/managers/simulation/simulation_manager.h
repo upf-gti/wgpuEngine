@@ -22,6 +22,8 @@ public:
     void set_main_scene(Scene* scene);
     Scene* get_main_scene();
 
+    void notify(int notification);
+
     Camera3D* get_main_camera();
 
 private:

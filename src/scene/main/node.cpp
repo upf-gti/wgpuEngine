@@ -124,6 +124,13 @@ void Node::parse(std::ifstream& binary_scene_file)
     }
 }
 
+void Node::notification(int notification_id)
+{
+    for (Node* child : children) {
+        child->notification(notification_id);
+    }
+}
+
 AABB Node::get_aabb() const
 {
     AABB new_aabb = aabb;

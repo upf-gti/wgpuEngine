@@ -100,7 +100,7 @@ void Panel2D::render()
         glm::mat4x4 model = glm::translate(glm::mat4x4(1.0f), glm::vec3(position, -priority * 3e-5));
         model = glm::scale(model, glm::vec3(scale, 1.0f));
         model = get_global_viewport_model() * model;
-        RENDER_MANAGER->add_renderable(quad_mesh, model);
+        //RENDER_MANAGER->add_renderable(quad_mesh, model);
     }
 
     Node2D::render();

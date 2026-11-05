@@ -26,19 +26,19 @@ Light3D::~Light3D()
     }
 }
 
-void Light3D::render()
-{
-    if (intensity < 0.001f) {
-        return;
-    }
-    if (type != LIGHT_DIRECTIONAL && range == 0.0f) {
-        return;
-    }
-
-    RENDER_MANAGER->add_light(this);
-
-    Node3D::render();
-}
+//void Light3D::render()
+//{
+//    if (intensity < 0.001f) {
+//        return;
+//    }
+//    if (type != LIGHT_DIRECTIONAL && range == 0.0f) {
+//        return;
+//    }
+//
+//    RENDER_MANAGER->add_light(this);
+//
+//    Node3D::render();
+//}
 
 void Light3D::clone(Node* new_node, bool copy)
 {

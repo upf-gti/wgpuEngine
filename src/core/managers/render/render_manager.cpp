@@ -142,7 +142,7 @@ void RenderManager::render()
     render_compositor.render(render_entity_list, environment_data);
 
     frame_counter++;
-    clear_renderables();
+    query_index = 0;
 
     RENDER_API->command_encoder_release(command_encoder);
 }
@@ -207,20 +207,32 @@ WGPUCommandEncoder RenderManager::get_main_command_encoder()
     return command_encoder;
 }
 
-void RenderManager::add_renderable(Mesh* mesh_instance, const glm::mat4x4& global_matrix)
+uint32_t RenderManager::add_renderable(Mesh* mesh_instance, const glm::mat4x4& global_matrix)
 {
     if ((render_entity_list.size() + 1) >= current_render_list_size) {
         current_render_list_size <<= 1;
         render_entity_list.reserve(current_render_list_size);
     }
 
-    render_entity_list.push_back({ mesh_instance, global_matrix });
+    render_entity_list.emplace_back(mesh_instance, global_matrix, static_cast<uint32_t>(render_entity_list.size()));
+
+    return static_cast<uint32_t>(render_entity_list.size());
+}
+
+void RenderManager::remove_renderable(uint32_t idx)
+{
+    if (idx >= render_entity_list.size()) {
+        LOG_ERROR("Can not remove renderable with index ({})", idx);
+        assert(0);
+        return;
+    }
+
+    render_entity_list.erase(render_entity_list.begin() + idx);
 }
 
 void RenderManager::clear_renderables()
 {
     render_entity_list.clear();
-    query_index = 0;
 }
 
 void RenderManager::environment_data_set_irradiance_texture(Texture* irradiance_texture_panorama)

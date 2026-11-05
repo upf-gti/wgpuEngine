@@ -28,13 +28,13 @@ DirectionalLight3D::~DirectionalLight3D()
 
 void DirectionalLight3D::render()
 {
-#ifndef NDEBUG
-    if (debug_material) {
-        // Use light transform to simplify rotation logic
-        RENDER_MANAGER->add_renderable(debug_mesh_v->get_mesh(), get_global_model() * debug_mesh_v->get_global_model());
-        RENDER_MANAGER->add_renderable(debug_mesh_v->get_mesh(), get_global_model() * debug_mesh_h->get_global_model());
-    }
-#endif
+    //#ifndef NDEBUG
+    //    if (debug_material) {
+    //        // Use light transform to simplify rotation logic
+    //        RENDER_MANAGER->add_renderable(debug_mesh_v->get_mesh(), get_global_model() * debug_mesh_v->get_global_model());
+    //        RENDER_MANAGER->add_renderable(debug_mesh_v->get_mesh(), get_global_model() * debug_mesh_h->get_global_model());
+    //    }
+    //#endif
 
     Light3D::render();
 }

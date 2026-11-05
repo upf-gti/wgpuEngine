@@ -1,12 +1,12 @@
 #pragma once
 
-#include "scene/main/node.h"
 #include "framework/math/transform.h"
+#include "scene/main/node.h"
 
 #include <string>
 #include <vector>
 
-enum eColliderShape {
+enum ColliderShape {
     COLLIDER_SHAPE_NONE,
     COLLIDER_SHAPE_AABB,
     COLLIDER_SHAPE_SPHERE,
@@ -15,23 +15,19 @@ enum eColliderShape {
 };
 
 class Node3D : public Node {
-
 protected:
-
     Transform transform = {};
 
-    eColliderShape collider_shape = COLLIDER_SHAPE_AABB;
+    ColliderShape collider_shape = COLLIDER_SHAPE_AABB;
 
     bool selected = false;
 
 public:
-
     Node3D();
     virtual ~Node3D();
 
-    virtual void initialize() override {};
+    virtual void initialize() override {}
 
-    virtual void render() override;
     virtual void update(float delta_time) override;
     virtual void render_gui() override;
 

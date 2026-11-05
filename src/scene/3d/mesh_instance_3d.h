@@ -7,6 +7,10 @@ class MeshInstance3D : public Node3D {
 protected:
     Mesh* mesh = nullptr;
 
+    virtual void notification(int notification_id);
+
+    uint32_t render_list_idx = 0;
+
 public:
     bool is_skinned = false;
 
@@ -30,7 +34,6 @@ public:
 
     void add_surface(Surface* surface);
 
-    virtual void render() override;
     virtual void update(float delta_time) override;
 
     void render_gui() override;

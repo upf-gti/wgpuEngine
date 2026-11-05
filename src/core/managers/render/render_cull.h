@@ -20,6 +20,7 @@ class RenderMethod;
 struct sRenderableData {
     Mesh* mesh;
     glm::mat4x4 global_matrix;
+    uint32_t idx = 0;
 };
 
 class RenderCull {

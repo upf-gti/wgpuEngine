@@ -38,11 +38,6 @@ Node3D::~Node3D()
     children.clear();
 }
 
-void Node3D::render()
-{
-    Node::render();
-}
-
 void Node3D::update(float delta_time)
 {
     Node::update(delta_time);

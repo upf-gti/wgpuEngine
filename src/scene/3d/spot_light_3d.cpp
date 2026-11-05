@@ -39,11 +39,11 @@ void SpotLight3D::create_debug_render_cone()
 
 void SpotLight3D::render()
 {
-#ifndef NDEBUG
-    if (debug_material) {
-        RENDER_MANAGER->add_renderable(debug_mesh->get_mesh(), get_global_model() * debug_mesh->get_global_model());
-    }
-#endif
+    //#ifndef NDEBUG
+    //    if (debug_material) {
+    //        RENDER_MANAGER->add_renderable(debug_mesh->get_mesh(), get_global_model() * debug_mesh->get_global_model());
+    //    }
+    //#endif
 }
 
 void SpotLight3D::clone(Node* new_node, bool copy)

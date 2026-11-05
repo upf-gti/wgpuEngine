@@ -30,6 +30,8 @@ void Scene::add_node(Node* node, int idx)
         // TODO: add as a child with global idx
     }
 
+    node->notification(Node::NOTIFICATION_ENTERS_TREE);
+
     Node::emit_signal(name + "@nodes_added", (void*)nullptr);
 }
 
@@ -41,12 +43,18 @@ void Scene::add_nodes(const std::vector<Node*>& nodes_to_add, int idx)
         // TODO: add as a child with global idx
     }
 
+    for (Node* node : nodes_to_add) {
+        node->notification(Node::NOTIFICATION_ENTERS_TREE);
+    }
+
     Node::emit_signal(name + "@nodes_added", (void*)nullptr);
 }
 
 // TODO: extend to allow removing nodes inside the hierachy
 void Scene::remove_node(Node* node)
 {
+    node->notification(Node::NOTIFICATION_EXITS_TREE);
+
     // Checks if it's a child
     auto it = std::find(nodes.begin(), nodes.end(), node);
     if (it == nodes.end()) {
