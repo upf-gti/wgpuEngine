@@ -14,6 +14,8 @@
 #include <string>
 #include <vector>
 
+class Text2D;
+
 struct sButtonDescription {
     std::string path = "";
     uint32_t flags = 0u;

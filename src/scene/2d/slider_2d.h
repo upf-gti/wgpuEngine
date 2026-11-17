@@ -9,6 +9,8 @@
 #include <string>
 #include <vector>
 
+class Text2D;
+
 enum SliderMode {
     HORIZONTAL,
     VERTICAL

@@ -10,6 +10,8 @@
 #include "framework/utils/utils.h"
 
 #include "scene/2d/container_2d.h"
+#include "scene/2d/image_2d.h"
+#include "scene/2d/text_2d.h"
 #include "scene/3d/text_3d.h"
 
 #include "glm/gtx/compatibility.hpp"

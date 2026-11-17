@@ -10,6 +10,8 @@
 #include "framework/utils/utils.h"
 
 #include "scene/2d/button_2d.h"
+#include "scene/2d/image_2d.h"
+#include "scene/2d/text_2d.h"
 
 #include "shaders/mesh_forward.wgsl.gen.h"
 #include "shaders/ui/ui_group.wgsl.gen.h"
@@ -388,4 +390,9 @@ ImageLabel2D::ImageLabel2D(const std::string& p_text, const std::string& image_p
 
     text = new Text2D(p_text, glm::vec2(0.0f), text_scale);
     add_child(text);
+}
+
+void ImageLabel2D::set_text(const std::string& p_text)
+{
+    text->set_text(p_text);
 }

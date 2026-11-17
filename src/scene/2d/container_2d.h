@@ -1,14 +1,14 @@
 #pragma once
 
 #include "framework/colors.h"
-#include "framework/ui/ui_utils.h"
-#include "graphics/mesh.h"
 #include "scene/2d/panel_2d.h"
 
 #include <functional>
 #include <map>
 #include <string>
 #include <vector>
+
+class Text2D;
 
 class Container2D : public Panel2D {
 public:
@@ -77,7 +77,7 @@ public:
 
     ImageLabel2D(const std::string& p_text, const std::string& image_path, uint8_t mask = 0, const glm::vec2& scale = { 1.f, 1.f }, float text_scale = 16.0f, const glm::vec2& p = { 0.f, 0.f });
 
-    void set_text(const std::string& p_text) { text->set_text(p_text); }
+    void set_text(const std::string& p_text);
 
     uint8_t get_mask() { return mask; }
 };

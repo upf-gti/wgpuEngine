@@ -6,11 +6,13 @@
 #include "core/managers/input/input_manager.h"
 #include "core/managers/xr/xr_manager.h"
 
-#include "scene/3d/camera_3d.h"
 #include "framework/math/intersections.h"
 #include "framework/ui/io.h"
 #include "framework/utils/utils.h"
 
+#include "scene/2d/text_2d.h"
+
+#include "scene/3d/camera_3d.h"
 #include "scene/3d/text_3d.h"
 
 #include "glm/gtx/compatibility.hpp"
