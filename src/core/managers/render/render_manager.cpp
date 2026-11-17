@@ -216,7 +216,7 @@ uint32_t RenderManager::add_renderable(Mesh* mesh_instance, const glm::mat4x4& g
 
     render_entity_list.emplace_back(mesh_instance, global_matrix, static_cast<uint32_t>(render_entity_list.size()));
 
-    return static_cast<uint32_t>(render_entity_list.size());
+    return static_cast<uint32_t>(render_entity_list.size() - 1);
 }
 
 void RenderManager::remove_renderable(uint32_t idx)

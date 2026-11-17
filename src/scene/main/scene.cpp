@@ -25,7 +25,7 @@ Scene::~Scene()
 void Scene::add_node(Node* node, int idx)
 {
     if (idx == -1) {
-        nodes.push_back(node);
+        node_tree.push_back(node);
     } else {
         // TODO: add as a child with global idx
     }
@@ -38,7 +38,7 @@ void Scene::add_node(Node* node, int idx)
 void Scene::add_nodes(const std::vector<Node*>& nodes_to_add, int idx)
 {
     if (idx == -1) {
-        nodes.insert(nodes.end(), nodes_to_add.begin(), nodes_to_add.end());
+        node_tree.insert(node_tree.end(), nodes_to_add.begin(), nodes_to_add.end());
     } else {
         // TODO: add as a child with global idx
     }
@@ -50,18 +50,32 @@ void Scene::add_nodes(const std::vector<Node*>& nodes_to_add, int idx)
     Node::emit_signal(name + "@nodes_added", (void*)nullptr);
 }
 
-// TODO: extend to allow removing nodes inside the hierachy
 void Scene::remove_node(Node* node)
 {
-    node->notification(Node::NOTIFICATION_EXITS_TREE);
-
-    // Checks if it's a child
-    auto it = std::find(nodes.begin(), nodes.end(), node);
-    if (it == nodes.end()) {
+    if (!node) {
+        LOG_ERROR("Can not remove null node from tree");
         return;
     }
 
-    nodes.erase(it);
+    node->notification(Node::NOTIFICATION_EXITS_TREE);
+
+    std::vector<Node*>* node_list;
+
+    if (node->parent) {
+        node_list = &node->parent->children;
+    } else {
+        node_list = &node_tree;
+    }
+
+    // Checks if it's a child
+    auto it = std::find(node_list->begin(), node_list->end(), node);
+    if (it == node_list->end()) {
+        return;
+    }
+
+    delete *it;
+
+    node_list->erase(it);
 }
 
 void Scene::set_name(const std::string& name)
@@ -71,7 +85,7 @@ void Scene::set_name(const std::string& name)
 
 std::vector<Node*>& Scene::get_nodes()
 {
-    return nodes;
+    return node_tree;
 }
 
 void Scene::set_main_camera(Camera3D* camera)
@@ -86,11 +100,11 @@ Camera3D* Scene::get_main_camera()
 
 void Scene::delete_all()
 {
-    for (auto node : nodes) {
+    for (auto node : node_tree) {
         delete node;
     }
 
-    nodes.clear();
+    node_tree.clear();
 }
 
 void Scene::serialize(const std::string& path)
@@ -99,7 +113,7 @@ void Scene::serialize(const std::string& path)
 
     sSceneBinaryHeader header = {
         .version = 1,
-        .node_count = nodes.size(),
+        .node_count = node_tree.size(),
     };
 
     binary_scene_file.write(reinterpret_cast<char*>(&header), sizeof(sSceneBinaryHeader));
@@ -108,7 +122,7 @@ void Scene::serialize(const std::string& path)
     binary_scene_file.write(reinterpret_cast<char*>(&name_size), sizeof(size_t));
     binary_scene_file.write(name.c_str(), name_size);
 
-    for (auto node : nodes) {
+    for (auto node : node_tree) {
         node->serialize(binary_scene_file);
     }
 
@@ -160,14 +174,14 @@ void Scene::parse(const std::string& path)
 
 void Scene::update(float delta_time)
 {
-    for (auto node : nodes) {
+    for (auto node : node_tree) {
         node->update(delta_time);
     }
 }
 
 void Scene::render()
 {
-    for (auto node : nodes) {
+    for (auto node : node_tree) {
         node->render();
     }
 }

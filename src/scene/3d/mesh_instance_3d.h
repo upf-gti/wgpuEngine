@@ -15,7 +15,6 @@ public:
     bool is_skinned = false;
 
     MeshInstance3D();
-    ~MeshInstance3D();
 
     void update_aabb();
     void set_aabb(const AABB& new_aabb) override;

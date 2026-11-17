@@ -319,11 +319,8 @@ void DebugManager::render_default_gui()
             std::vector<Node*>::iterator it = nodes.begin();
             while (it != nodes.end()) {
                 if (render_scene_tree_recursive(*it)) {
-                    if (*it == selected_scene_node) {
-                        selected_scene_node = nullptr;
-                    }
-                    delete *it;
-                    it = nodes.erase(it);
+                    main_scene->remove_node(*it);
+                    break;
                 } else {
                     it++;
                 }
@@ -399,7 +396,6 @@ bool DebugManager::render_scene_tree_recursive(Node* entity)
                 ImGui::EndPopup();
                 ImGui::TreePop();
                 selected_scene_node = nullptr;
-                Node::emit_signal("@node_deleted", (void*)entity);
                 return true;
             }
             ImGui::EndPopup();
@@ -409,12 +405,9 @@ bool DebugManager::render_scene_tree_recursive(Node* entity)
 
         while (it != children.end()) {
             if (render_scene_tree_recursive(*it)) {
-                if (*it == selected_scene_node) {
-                    selected_scene_node = nullptr;
-                }
-
-                delete *it;
-                it = children.erase(it);
+                Scene* main_scene = SIMULATION_MANAGER->get_main_scene();
+                main_scene->remove_node(*it);
+                break;
             } else {
                 it++;
             }

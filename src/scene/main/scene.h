@@ -34,7 +34,7 @@ public:
     void render();
 
 private:
-    std::vector<Node*> nodes;
+    std::vector<Node*> node_tree;
 
     std::string name;
 

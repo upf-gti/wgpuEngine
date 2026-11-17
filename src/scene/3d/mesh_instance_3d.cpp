@@ -19,15 +19,13 @@ void MeshInstance3D::notification(int notification_id)
             RENDER_MANAGER->remove_renderable(render_list_idx);
             break;
     }
+
+    Node::notification(notification_id);
 }
 
 MeshInstance3D::MeshInstance3D() : Node3D()
 {
     node_type = "MeshInstance3D";
-}
-
-MeshInstance3D::~MeshInstance3D()
-{
 }
 
 void MeshInstance3D::set_aabb(const AABB& new_aabb)
