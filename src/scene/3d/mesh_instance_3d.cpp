@@ -13,10 +13,12 @@ void MeshInstance3D::notification(int notification_id)
 {
     switch (notification_id) {
         case NOTIFICATION_ENTERS_TREE:
-            render_list_idx = RENDER_MANAGER->add_renderable(mesh, get_global_transform().get_model());
+            renderable_data_ref.data.mesh = mesh;
+            renderable_data_ref.data.global_matrix = get_global_transform().get_model();
+            RENDER_MANAGER->add_renderable(&renderable_data_ref);
             break;
         case NOTIFICATION_EXITS_TREE:
-            RENDER_MANAGER->remove_renderable(render_list_idx);
+            RENDER_MANAGER->remove_renderable(renderable_data_ref.idx);
             break;
     }
 
@@ -35,9 +37,11 @@ void MeshInstance3D::set_aabb(const AABB& new_aabb)
 
 void MeshInstance3D::update_aabb()
 {
+    ERR_FAIL_NULL(mesh);
+
     AABB entity_aabb;
 
-    for (const Surface* surface : get_surfaces()) {
+    for (const Surface* surface : mesh->get_surfaces()) {
         const AABB& surface_aabb = surface->get_aabb(); //.transform(get_global_model());
         entity_aabb = merge_aabbs(entity_aabb, surface_aabb);
     }
@@ -52,19 +56,19 @@ void MeshInstance3D::update(float delta_time)
 
 void MeshInstance3D::set_surface_material_override(Surface* surface, Material* material)
 {
-    assert(mesh);
+    ERR_FAIL_NULL(mesh);
     mesh->set_surface_material_override(surface, material);
 }
 
 void MeshInstance3D::set_frustum_culling_enabled(bool enabled)
 {
-    assert(mesh);
+    ERR_FAIL_NULL(mesh);
     mesh->set_frustum_culling_enabled(enabled);
 }
 
 void MeshInstance3D::set_receive_shadows(bool new_receive_shadows)
 {
-    assert(mesh);
+    ERR_FAIL_NULL(mesh);
     mesh->set_receive_shadows(new_receive_shadows);
 }
 
@@ -76,37 +80,31 @@ void MeshInstance3D::set_mesh(Mesh* new_mesh)
 
 bool MeshInstance3D::get_frustum_culling_enabled()
 {
-    assert(mesh);
+    ERR_FAIL_NULL_VALUE(mesh);
     return mesh->get_frustum_culling_enabled();
 }
 
 Material* MeshInstance3D::get_surface_material(int surface_idx)
 {
-    assert(mesh);
+    ERR_FAIL_NULL_VALUE(mesh);
     return mesh->get_surface_material(surface_idx);
 }
 
 Material* MeshInstance3D::get_surface_material_override(Surface* surface)
 {
-    assert(mesh);
+    ERR_FAIL_NULL_VALUE(mesh);
     return mesh->get_surface_material_override(surface);
-}
-
-const std::vector<Surface*>& MeshInstance3D::get_surfaces() const
-{
-    assert(mesh);
-    return mesh->get_surfaces();
 }
 
 Surface* MeshInstance3D::get_surface(int surface_idx) const
 {
-    assert(mesh);
+    ERR_FAIL_NULL_VALUE(mesh);
     return mesh->get_surface(surface_idx);
 }
 
 uint32_t MeshInstance3D::get_surface_count() const
 {
-    assert(mesh);
+    ERR_FAIL_NULL_VALUE(mesh);
     return mesh->get_surface_count();
 }
 

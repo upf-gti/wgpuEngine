@@ -1,12 +1,13 @@
 #pragma once
 
 #include "core/managers/render/render_methods/render_method.h"
+#include "core/managers/render/uniforms_structs.h"
 
+#include "core/managers/render/uniforms_structs.h"
 #include "graphics/pipeline.h"
 #include "graphics/surface.h"
 #include "graphics/texture.h"
 #include "graphics/uniform.h"
-#include "graphics/uniforms_structs.h"
 
 #include <vector>
 
@@ -16,7 +17,7 @@ class Mesh;
 class GSNode;
 
 #define ENVIRONMENT_RESOLUTION 1024
-#define MAX_LIGHTS 32u
+#define MAX_LIGHTS 128u
 #define SHADOW_MAP_SIZE 1024
 
 class RenderForward : public RenderMethod {
@@ -33,7 +34,7 @@ class RenderForward : public RenderMethod {
     void set_custom_pass_user_data(void* user_data);
 
 public:
-    void render_scene(std::vector<std::vector<sRenderData>>& render_lists, const Camera3D* camera, const sEnvironmentData& environment_data, WGPUTextureView framebuffer_view, EYE eye_idx = EYE_LEFT);
+    void render_scene(std::vector<std::vector<RenderInstanceData>>& render_lists, const std::vector<LightData>& lights_list, const Camera3D* camera, const sEnvironmentData& environment_data, WGPUTextureView framebuffer_view, EYE eye_idx = EYE_LEFT);
 
     void set_render_size(int32_t width, int32_t height) override;
 
@@ -46,18 +47,18 @@ private:
     Error initialize() override;
     Error finalize() override;
 
-    void render_opaque(WGPURenderPassEncoder render_pass, const std::vector<std::vector<sRenderData>>& render_lists, const sInstanceData& instance_data, WGPUBindGroup camera_bind_group, uint32_t camera_buffer_stride = 0);
-    void render_transparent(WGPURenderPassEncoder render_pass, const std::vector<std::vector<sRenderData>>& render_lists, const sInstanceData& instance_data, WGPUBindGroup camera_bind_group, uint32_t camera_buffer_stride = 0);
-    void render_splats(WGPURenderPassEncoder render_pass, const std::vector<std::vector<sRenderData>>& render_lists, const sInstanceData& instance_data, WGPUBindGroup camera_bind_group, uint32_t camera_buffer_stride = 0);
-    void render_2D(WGPURenderPassEncoder render_pass, const std::vector<std::vector<sRenderData>>& render_lists, const sInstanceData& instance_data, WGPUBindGroup camera_bind_group);
+    void render_opaque(WGPURenderPassEncoder render_pass, const std::vector<std::vector<RenderInstanceData>>& render_lists, const sInstanceData& instance_data, WGPUBindGroup camera_bind_group, uint32_t camera_buffer_stride = 0);
+    void render_transparent(WGPURenderPassEncoder render_pass, const std::vector<std::vector<RenderInstanceData>>& render_lists, const sInstanceData& instance_data, WGPUBindGroup camera_bind_group, uint32_t camera_buffer_stride = 0);
+    void render_splats(WGPURenderPassEncoder render_pass, const std::vector<std::vector<RenderInstanceData>>& render_lists, const sInstanceData& instance_data, WGPUBindGroup camera_bind_group, uint32_t camera_buffer_stride = 0);
+    void render_2D(WGPURenderPassEncoder render_pass, const std::vector<std::vector<RenderInstanceData>>& render_lists, const sInstanceData& instance_data, WGPUBindGroup camera_bind_group);
 
-    void render_camera(const std::vector<std::vector<sRenderData>>& render_lists, WGPUTextureView framebuffer_view, WGPUTextureView multisample_framebufer_view, WGPUTextureView depth_view, bool render_transparents, EYE eye_idx = EYE_LEFT, const char* pass_name = "");
+    void render_camera(const std::vector<std::vector<RenderInstanceData>>& render_lists, WGPUTextureView framebuffer_view, WGPUTextureView multisample_framebufer_view, WGPUTextureView depth_view, bool render_transparents, EYE eye_idx = EYE_LEFT, const char* pass_name = "");
 
-    void render_render_list(WGPURenderPassEncoder render_pass, const std::vector<sRenderData>& render_list, int list_index, const sInstanceData& instance_data, WGPUBindGroup camera_bind_group, uint32_t camera_buffer_stride = 0);
+    void render_render_list(WGPURenderPassEncoder render_pass, const std::vector<RenderInstanceData>& render_list, int list_index, const sInstanceData& instance_data, WGPUBindGroup camera_bind_group, uint32_t camera_buffer_stride = 0);
 
     void render_sky(WGPURenderPassEncoder render_pass, WGPUBindGroup camera_bind_group);
 
-    void fill_instances_data(std::vector<std::vector<sRenderData>>& render_lists);
+    void fill_instances_data(std::vector<std::vector<RenderInstanceData>>& render_lists);
 
     sInstanceData render_instances_data;
     sInstanceData shadow_instances_data;
@@ -130,9 +131,6 @@ private:
     Uniform brdf_lut_uniform;
     Uniform ibl_sampler_uniform;
 
-    sLightUniformData lights_uniform_data[MAX_LIGHTS];
-    int num_lights = 0;
-
     Uniform lights_buffer;
     Uniform num_lights_buffer;
     Uniform shadow_maps_array;
@@ -160,5 +158,5 @@ private:
     // Gaussian Splatting scenes to render
     std::vector<GSNode*> gs_scenes_list;
 
-    void update_lights();
+    void update_lights(const std::vector<LightData>& lights_list);
 };

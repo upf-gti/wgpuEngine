@@ -57,14 +57,6 @@ void DirectionalLight3D::set_color(const glm::vec3& color)
     Light3D::set_color(color);
 }
 
-void DirectionalLight3D::get_uniform_data(sLightUniformData& data)
-{
-    Light3D::get_uniform_data(data);
-
-    const Transform& global_transform = get_global_transform();
-    data.direction = global_transform.get_front();
-}
-
 void DirectionalLight3D::parse(std::ifstream& binary_scene_file)
 {
     Light3D::parse(binary_scene_file);

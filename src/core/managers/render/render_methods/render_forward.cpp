@@ -139,7 +139,7 @@ Error RenderForward::finalize()
     return Error::OK;
 }
 
-void RenderForward::render_opaque(WGPURenderPassEncoder render_pass, const std::vector<std::vector<sRenderData>>& render_lists, const sInstanceData& instance_data, WGPUBindGroup camera_bind_group, uint32_t camera_buffer_stride)
+void RenderForward::render_opaque(WGPURenderPassEncoder render_pass, const std::vector<std::vector<RenderInstanceData>>& render_lists, const sInstanceData& instance_data, WGPUBindGroup camera_bind_group, uint32_t camera_buffer_stride)
 {
 #ifndef NDEBUG
     RENDER_API->push_debug_group(render_pass, "Opaque");
@@ -152,7 +152,7 @@ void RenderForward::render_opaque(WGPURenderPassEncoder render_pass, const std::
 #endif
 }
 
-void RenderForward::render_transparent(WGPURenderPassEncoder render_pass, const std::vector<std::vector<sRenderData>>& render_lists, const sInstanceData& instance_data, WGPUBindGroup camera_bind_group, uint32_t camera_buffer_stride)
+void RenderForward::render_transparent(WGPURenderPassEncoder render_pass, const std::vector<std::vector<RenderInstanceData>>& render_lists, const sInstanceData& instance_data, WGPUBindGroup camera_bind_group, uint32_t camera_buffer_stride)
 {
 #ifndef NDEBUG
     RENDER_API->push_debug_group(render_pass, "Transparent");
@@ -165,7 +165,7 @@ void RenderForward::render_transparent(WGPURenderPassEncoder render_pass, const 
 #endif
 }
 
-void RenderForward::render_splats(WGPURenderPassEncoder render_pass, const std::vector<std::vector<sRenderData>>& render_lists, const sInstanceData& instance_data, WGPUBindGroup camera_bind_group, uint32_t camera_buffer_stride)
+void RenderForward::render_splats(WGPURenderPassEncoder render_pass, const std::vector<std::vector<RenderInstanceData>>& render_lists, const sInstanceData& instance_data, WGPUBindGroup camera_bind_group, uint32_t camera_buffer_stride)
 {
 #ifndef NDEBUG
     RENDER_API->push_debug_group(render_pass, "Gaussian Splats");
@@ -190,7 +190,7 @@ void RenderForward::render_splats(WGPURenderPassEncoder render_pass, const std::
 #endif
 }
 
-void RenderForward::render_2D(WGPURenderPassEncoder render_pass, const std::vector<std::vector<sRenderData>>& render_lists, const sInstanceData& instance_data, WGPUBindGroup camera_bind_group)
+void RenderForward::render_2D(WGPURenderPassEncoder render_pass, const std::vector<std::vector<RenderInstanceData>>& render_lists, const sInstanceData& instance_data, WGPUBindGroup camera_bind_group)
 {
 #ifndef NDEBUG
     RENDER_API->push_debug_group(render_pass, "2D");
@@ -205,7 +205,7 @@ void RenderForward::render_2D(WGPURenderPassEncoder render_pass, const std::vect
 #endif
 }
 
-void RenderForward::render_scene(std::vector<std::vector<sRenderData>>& render_lists, const Camera3D* camera, const sEnvironmentData& environment_data, WGPUTextureView framebuffer_view, EYE eye_idx)
+void RenderForward::render_scene(std::vector<std::vector<RenderInstanceData>>& render_lists, const std::vector<LightData>& lights_list, const Camera3D* camera, const sEnvironmentData& environment_data, WGPUTextureView framebuffer_view, EYE eye_idx)
 {
     fill_instances_data(render_lists);
 
@@ -218,7 +218,7 @@ void RenderForward::render_scene(std::vector<std::vector<sRenderData>>& render_l
         skybox_material->set_diffuse_texture(irradiance_texture_cubemap);
     }
 
-    update_lights();
+    update_lights(lights_list);
 
     camera_data.exposure = 1.0;
     camera_data.ibl_intensity = 1.0;
@@ -235,7 +235,7 @@ void RenderForward::render_scene(std::vector<std::vector<sRenderData>>& render_l
     render_camera(render_lists, framebuffer_view, multisample_framebuffers_views[eye_idx], depth_buffers_views[eye_idx], true, eye_idx, "Forward Render");
 }
 
-void RenderForward::render_camera(const std::vector<std::vector<sRenderData>>& render_lists, WGPUTextureView framebuffer_view, WGPUTextureView multisample_framebuffer_view, WGPUTextureView depth_view, bool render_transparents, EYE eye_idx, const char* pass_name)
+void RenderForward::render_camera(const std::vector<std::vector<RenderInstanceData>>& render_lists, WGPUTextureView framebuffer_view, WGPUTextureView multisample_framebuffer_view, WGPUTextureView depth_view, bool render_transparents, EYE eye_idx, const char* pass_name)
 {
     // Prepare the color attachment
     WGPURenderPassColorAttachment render_pass_color_attachment = {};
@@ -326,7 +326,7 @@ void RenderForward::render_camera(const std::vector<std::vector<sRenderData>>& r
     RENDER_API->render_pass_encoder_release(render_pass);
 }
 
-void RenderForward::render_render_list(WGPURenderPassEncoder render_pass, const std::vector<sRenderData>& render_list, int list_index, const sInstanceData& instance_data, WGPUBindGroup camera_bind_group, uint32_t camera_buffer_stride)
+void RenderForward::render_render_list(WGPURenderPassEncoder render_pass, const std::vector<RenderInstanceData>& render_list, int list_index, const sInstanceData& instance_data, WGPUBindGroup camera_bind_group, uint32_t camera_buffer_stride)
 {
     const Pipeline* prev_pipeline = nullptr;
 
@@ -336,7 +336,7 @@ void RenderForward::render_render_list(WGPURenderPassEncoder render_pass, const 
     const Material* prev_material = nullptr;
 
     for (int i = 0; i < render_list.size();) {
-        const sRenderData& render_data = render_list[i];
+        const RenderInstanceData& render_data = render_list[i];
 
         const Material* material = render_data.material;
 
@@ -448,7 +448,7 @@ void RenderForward::render_sky(WGPURenderPassEncoder render_pass, WGPUBindGroup 
     RENDER_API->pop_debug_group(render_pass);
 }
 
-void RenderForward::fill_instances_data(std::vector<std::vector<sRenderData>>& render_lists)
+void RenderForward::fill_instances_data(std::vector<std::vector<RenderInstanceData>>& render_lists)
 {
     for (int i = 0; i < RENDER_LIST_COUNT; ++i) {
         render_instances_data.instances_data[i].clear();
@@ -498,7 +498,7 @@ void RenderForward::fill_instances_data(std::vector<std::vector<sRenderData>>& r
 
             uint32_t repeats = 0;
             for (uint32_t j = 0; j < render_lists[i].size(); ++j) {
-                const sRenderData& render_data = render_lists[i][j];
+                const RenderInstanceData& render_data = render_lists[i][j];
 
                 Material* material = render_data.material;
 
@@ -546,7 +546,7 @@ void RenderForward::fill_instances_data(std::vector<std::vector<sRenderData>>& r
             std::vector<Uniform*> uniforms = { &render_instances_data.instances_data_uniforms[i] };
             Shader* prev_shader = nullptr;
             for (uint32_t j = 0; j < render_lists[i].size();) {
-                const sRenderData& render_data = render_lists[i][j];
+                const RenderInstanceData& render_data = render_lists[i][j];
 
                 if (render_instances_data.instances_bind_groups[i]) {
                     wgpuBindGroupRelease(render_instances_data.instances_bind_groups[i]);
@@ -722,10 +722,11 @@ void RenderForward::init_lighting_bind_group()
         lights_buffer.data = {};
     }
 
-    lights_buffer.data = RENDER_API->buffer_create(sizeof(sLightUniformData) * MAX_LIGHTS, WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform, &lights_uniform_data[0], "lights_buffer");
+    lights_buffer.data = RENDER_API->buffer_create(sizeof(LightData) * MAX_LIGHTS, WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform, nullptr, "lights_buffer");
     lights_buffer.binding = 3;
-    lights_buffer.buffer_size = sizeof(sLightUniformData) * MAX_LIGHTS;
+    lights_buffer.buffer_size = sizeof(LightData) * MAX_LIGHTS;
 
+    uint32_t num_lights = 0;
     num_lights_buffer.data = RENDER_API->buffer_create(sizeof(int), WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform, &num_lights, "num_lights_buffer");
     num_lights_buffer.binding = 4;
     num_lights_buffer.buffer_size = sizeof(int);
@@ -1029,10 +1030,16 @@ void RenderForward::generate_prefiltered_env_texture(Texture* prefiltered_env_te
     current_level_uniform.destroy();
 }
 
-void RenderForward::update_lights()
+void RenderForward::update_lights(const std::vector<LightData>& lights_list)
 {
-    uint64_t buffer_size = sizeof(sLightUniformData) * num_lights;
+    uint32_t num_lights = lights_list.size();
+    size_t buffer_size = sizeof(LightData) * num_lights;
 
-    RENDER_API->buffer_update(std::get<WGPUBuffer>(lights_buffer.data), 0, &lights_uniform_data[0], buffer_size);
-    RENDER_API->buffer_update(std::get<WGPUBuffer>(num_lights_buffer.data), 0, &num_lights, sizeof(int));
+    if (num_lights > MAX_LIGHTS) {
+        num_lights = MAX_LIGHTS;
+        LOG_ERROR("Can not render more lights than MAX_LIGHTS ({})", MAX_LIGHTS);
+    }
+
+    RENDER_API->buffer_update(std::get<WGPUBuffer>(lights_buffer.data), 0, lights_list.data(), buffer_size);
+    RENDER_API->buffer_update(std::get<WGPUBuffer>(num_lights_buffer.data), 0, &num_lights, sizeof(uint32_t));
 }

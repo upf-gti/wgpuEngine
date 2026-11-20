@@ -26,19 +26,43 @@ Light3D::~Light3D()
     }
 }
 
-//void Light3D::render()
-//{
-//    if (intensity < 0.001f) {
-//        return;
-//    }
-//    if (type != LIGHT_DIRECTIONAL && range == 0.0f) {
-//        return;
-//    }
-//
-//    RENDER_MANAGER->add_light(this);
-//
-//    Node3D::render();
-//}
+void Light3D::notification(int notification_id)
+{
+    switch (notification_id) {
+        case NOTIFICATION_ENTERS_TREE: {
+            const Transform& global_transform = get_global_transform();
+
+            // By now all light cameras will be orthographic
+            light_camera.look_at(global_transform.get_position(),
+                    global_transform.get_position() + global_transform.get_front(),
+                    glm::vec3(0.0f, 1.0f, 0.0f));
+
+            light_data_ref.data.position = light_camera.get_eye();
+            light_data_ref.data.view_proj = light_camera.get_view_projection();
+            light_data_ref.data.type = type;
+            light_data_ref.data.color = color;
+            light_data_ref.data.intensity = intensity;
+            light_data_ref.data.range = range;
+            light_data_ref.data.shadow_bias = shadow_bias;
+            light_data_ref.data.cast_shadows = cast_shadows ? 1 : 0;
+
+            if (type == LIGHT_DIRECTIONAL) {
+                light_data_ref.data.direction = glm::normalize(light_camera.get_center() - light_camera.get_eye());
+            } else if (type == LIGHT_SPOT) {
+                get_uniform_data(light_data_ref.data);
+            }
+
+            RENDER_MANAGER->add_light(&light_data_ref);
+        }
+
+        break;
+        case NOTIFICATION_EXITS_TREE:
+            RENDER_MANAGER->remove_light(light_data_ref.idx);
+            break;
+    }
+
+    Node::notification(notification_id);
+}
 
 void Light3D::clone(Node* new_node, bool copy)
 {
@@ -59,23 +83,9 @@ void Light3D::clone(Node* new_node, bool copy)
     }
 }
 
-void Light3D::get_uniform_data(sLightUniformData& data)
+void Light3D::update(float delta_time)
 {
-    const Transform& global_transform = get_global_transform();
-
-    // By now all light cameras will be orthographic
-    light_camera.look_at(get_global_transform().get_position(),
-            global_transform.get_position() + global_transform.get_front(),
-            glm::vec3(0.0f, 1.0f, 0.0f));
-
-    data.position = global_transform.get_position();
-    data.view_proj = light_camera.get_view_projection();
-    data.type = type;
-    data.color = color;
-    data.intensity = intensity;
-    data.range = range;
-    data.shadow_bias = shadow_bias;
-    data.cast_shadows = cast_shadows ? 1 : 0;
+    Node3D::update(delta_time);
 }
 
 void Light3D::render_gui()
@@ -95,22 +105,22 @@ void Light3D::render_gui()
         if (cast_shadows) {
             ImGui::DragFloat("Shadow Bias", &shadow_bias, 0.0001f, 0.0f, 0.01f);
 
-            if (ImGui::TreeNodeEx("Shadow Camera", ImGuiTreeNodeFlags_DefaultOpen)) {
-                bool frustum_changed = false;
+            //if (ImGui::TreeNodeEx("Shadow Camera", ImGuiTreeNodeFlags_DefaultOpen)) {
+            //    bool frustum_changed = false;
 
-                glm::vec4 ortho_f = { light_camera.get_left(), light_camera.get_right(), light_camera.get_bottom(), light_camera.get_top() };
-                frustum_changed |= ImGui::DragFloat4("Frustum plane", &ortho_f.x, 0.1f, -60.f, 60.0f);
-                float near = light_camera.get_near();
-                frustum_changed |= ImGui::DragFloat("Near", &near, 0.1f, -60.f, 60.0f);
-                float far = light_camera.get_far();
-                frustum_changed |= ImGui::DragFloat("Far", &far, 0.1f, -60.f, 60.0f);
+            //    glm::vec4 ortho_f = { light_camera.get_left(), light_camera.get_right(), light_camera.get_bottom(), light_camera.get_top() };
+            //    frustum_changed |= ImGui::DragFloat4("Frustum plane", &ortho_f.x, 0.1f, -60.f, 60.0f);
+            //    float near = light_camera.get_near();
+            //    frustum_changed |= ImGui::DragFloat("Near", &near, 0.1f, -60.f, 60.0f);
+            //    float far = light_camera.get_far();
+            //    frustum_changed |= ImGui::DragFloat("Far", &far, 0.1f, -60.f, 60.0f);
 
-                if (frustum_changed) {
-                    light_camera.set_orthographic(ortho_f.x, ortho_f.y, ortho_f.z, ortho_f.w, near, far);
-                }
+            //    if (frustum_changed) {
+            //        light_camera.set_orthographic(ortho_f.x, ortho_f.y, ortho_f.z, ortho_f.w, near, far);
+            //    }
 
-                ImGui::TreePop();
-            }
+            //    ImGui::TreePop();
+            //}
         }
 
         ImGui::TreePop();

@@ -139,7 +139,7 @@ void RenderManager::render()
     WGPUCommandEncoderDescriptor encoder_desc = {};
     command_encoder = RENDER_API->command_encoder_create(&encoder_desc);
 
-    render_compositor.render(render_entity_list, environment_data);
+    render_compositor.render(renderables_list, lights_list, environment_data);
 
     frame_counter++;
     query_index = 0;
@@ -156,6 +156,11 @@ void RenderManager::resize_swapchain()
 {
     glm::ivec2 framebuffer_size = DISPLAY_MANAGER->window_get_framebuffer_size();
     RenderAPI::get_singleton()->surface_configure_swapchain(framebuffer_size.x, framebuffer_size.y);
+}
+
+void RenderManager::environment_data_set_irradiance_texture(Texture* irradiance_texture_panorama)
+{
+    environment_data.irradiance_texture_panorama = irradiance_texture_panorama;
 }
 
 void RenderManager::set_render_size(int32_t width, int32_t height)
@@ -207,55 +212,60 @@ WGPUCommandEncoder RenderManager::get_main_command_encoder()
     return command_encoder;
 }
 
-uint32_t RenderManager::add_renderable(Mesh* mesh_instance, const glm::mat4x4& global_matrix)
+void RenderManager::add_renderable(RenderableDataRef* renderable_data_ref)
 {
-    if ((render_entity_list.size() + 1) >= current_render_list_size) {
+    if ((renderables_list.size() + 1) >= current_render_list_size) {
         current_render_list_size <<= 1;
-        render_entity_list.reserve(current_render_list_size);
+        renderables_list.reserve(current_render_list_size);
     }
 
-    render_entity_list.emplace_back(mesh_instance, global_matrix, static_cast<uint32_t>(render_entity_list.size()));
+    renderables_list.push_back(renderable_data_ref);
 
-    return static_cast<uint32_t>(render_entity_list.size() - 1);
+    renderable_data_ref->idx = static_cast<uint32_t>(renderables_list.size() - 1);
 }
 
 void RenderManager::remove_renderable(uint32_t idx)
 {
-    if (idx >= render_entity_list.size()) {
+    if (idx >= renderables_list.size()) {
         LOG_ERROR("Can not remove renderable with index ({})", idx);
         assert(0);
         return;
     }
 
-    render_entity_list.erase(render_entity_list.begin() + idx);
+    renderables_list.erase(renderables_list.begin() + idx);
+
+    // Reassign indices
+    for (uint32_t i = idx; i < renderables_list.size(); ++i) {
+        renderables_list[i]->idx = i;
+    }
 }
 
-void RenderManager::clear_renderables()
+void RenderManager::add_light(LightDataRef* light_data_ref)
 {
-    render_entity_list.clear();
+    if ((lights_list.size() + 1) >= current_light_list_size) {
+        current_light_list_size <<= 1;
+        lights_list.reserve(current_light_list_size);
+    }
+
+    lights_list.push_back(light_data_ref);
+
+    light_data_ref->idx = static_cast<uint32_t>(lights_list.size() - 1);
 }
 
-void RenderManager::environment_data_set_irradiance_texture(Texture* irradiance_texture_panorama)
+void RenderManager::remove_light(uint32_t idx)
 {
-    environment_data.irradiance_texture_panorama = irradiance_texture_panorama;
-}
+    if (idx >= lights_list.size()) {
+        LOG_ERROR("Can not remove light with index ({})", idx);
+        assert(0);
+        return;
+    }
 
-void RenderManager::add_light(Light3D* new_light)
-{
-    //sLightUniformData data;
-    //new_light->get_uniform_data(data);
-    //lights_uniform_data[num_lights] = data;
-    //num_lights++;
+    lights_list.erase(lights_list.begin() + idx);
 
-    //const LightType light_type = new_light->get_type();
-
-    //if (!new_light->get_cast_shadows()) {
-    //    return;
-    //}
-
-    //if (light_type == LIGHT_DIRECTIONAL) {
-    //    lights_with_shadow.push_back(new_light);
-    //}
+    // Reassign indices
+    for (uint32_t i = idx; i < lights_list.size(); ++i) {
+        lights_list[i]->idx = i;
+    }
 }
 
 void RenderManager::set_clear_color(const glm::vec4& clear_color)

@@ -7,8 +7,8 @@
 #include <unordered_map>
 #include <vector>
 
+#include "core/managers/render/uniforms_structs.h"
 #include "framework/utils/hash.h"
-#include "graphics/uniforms_structs.h"
 
 class Surface;
 class Texture;

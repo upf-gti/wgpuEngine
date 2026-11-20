@@ -126,7 +126,7 @@ void parse_obj(const std::string& obj_path, MeshInstance3D* entity_mesh, bool cr
     }
 
     AABB entity_aabb;
-    for (const Surface* surface : entity_mesh->get_surfaces()) {
+    for (const Surface* surface : entity_mesh->get_mesh()->get_surfaces()) {
         const AABB& surface_aabb = surface->get_aabb();
 
         entity_aabb = merge_aabbs(entity_aabb, surface_aabb);

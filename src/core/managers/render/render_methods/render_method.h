@@ -1,6 +1,7 @@
 #pragma once
 
 #include "core/error/error.h"
+#include "core/managers/render/render_lists_data.h"
 
 #include "graphics/uniform.h"
 #include "scene/3d/camera_3d.h"
@@ -29,7 +30,7 @@ enum RenderListType {
     RENDER_LIST_COUNT
 };
 
-struct sRenderData {
+struct RenderInstanceData {
     Surface* surface;
     uint32_t repeat;
     glm::mat4x4 global_matrix;
@@ -55,7 +56,7 @@ class RenderMethod {
     friend class RenderManager;
 
 public:
-    virtual void render_scene(std::vector<std::vector<sRenderData>>& render_lists, const Camera3D* camera, const sEnvironmentData& environment_data, WGPUTextureView framebuffer_view, EYE eye_idx = EYE_LEFT) = 0;
+    virtual void render_scene(std::vector<std::vector<RenderInstanceData>>& render_lists, const std::vector<LightData>& lights_list, const Camera3D* camera, const sEnvironmentData& environment_data, WGPUTextureView framebuffer_view, EYE eye_idx = EYE_LEFT) = 0;
 
     virtual void set_render_size(int32_t width, int32_t height) = 0;
 

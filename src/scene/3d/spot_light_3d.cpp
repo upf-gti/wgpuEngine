@@ -80,10 +80,8 @@ void SpotLight3D::render_gui()
     Light3D::render_gui();
 }
 
-void SpotLight3D::get_uniform_data(sLightUniformData& data)
+void SpotLight3D::get_uniform_data(LightData& data)
 {
-    Light3D::get_uniform_data(data);
-
     data.direction = -get_global_model()[2];
     data.inner_cone_cos = cosf(inner_cone_angle);
     data.outer_cone_cos = cosf(outer_cone_angle);

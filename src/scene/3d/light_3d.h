@@ -1,10 +1,11 @@
 #pragma once
 
+#include "core/managers/render/render_lists_data.h"
+
 #include "includes.h"
 
 #include "node_3d.h"
 
-#include "graphics/uniforms_structs.h"
 #include "scene/3d/camera_3d.h"
 
 enum LightType {
@@ -15,6 +16,9 @@ enum LightType {
 };
 
 class Light3D : public Node3D {
+private:
+    LightDataRef light_data_ref;
+
 protected:
     LightType type = LIGHT_UNDEFINED;
 
@@ -40,11 +44,16 @@ public:
     Light3D();
     ~Light3D();
 
+    void notification(int notification_id);
+
     void clone(Node* new_node, bool copy = true) override;
+
+    virtual void update(float delta_time) override;
 
     void render_gui() override;
 
-    virtual void get_uniform_data(sLightUniformData& data);
+    virtual void get_uniform_data(LightData& data) {}
+
     LightType get_type() const { return type; }
     float get_intensity() const { return intensity; }
     const glm::vec3& get_color() { return color; }

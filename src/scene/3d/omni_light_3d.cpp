@@ -75,11 +75,6 @@ void OmniLight3D::set_range(float value)
     Light3D::set_range(value);
 }
 
-void OmniLight3D::get_uniform_data(sLightUniformData& data)
-{
-    Light3D::get_uniform_data(data);
-}
-
 void OmniLight3D::parse(std::ifstream& binary_scene_file)
 {
     Light3D::parse(binary_scene_file);

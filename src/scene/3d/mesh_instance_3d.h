@@ -1,5 +1,7 @@
 #pragma once
 
+#include "core/managers/render/render_lists_data.h"
+
 #include "graphics/mesh.h"
 #include "scene/3d/node_3d.h"
 
@@ -9,7 +11,7 @@ protected:
 
     virtual void notification(int notification_id);
 
-    uint32_t render_list_idx = 0;
+    RenderableDataRef renderable_data_ref;
 
 public:
     bool is_skinned = false;
@@ -27,7 +29,6 @@ public:
     bool get_frustum_culling_enabled();
     Material* get_surface_material(int surface_idx);
     Material* get_surface_material_override(Surface* surface);
-    const std::vector<Surface*>& get_surfaces() const;
     Surface* get_surface(int surface_idx) const;
     uint32_t get_surface_count() const;
 

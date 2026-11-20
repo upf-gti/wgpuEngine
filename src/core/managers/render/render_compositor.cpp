@@ -36,7 +36,7 @@ RenderMethod* RenderCompositor::get_render_method()
     return render_cull.get_render_method();
 }
 
-void RenderCompositor::render(const std::vector<sRenderableData>& renderables_list, const sEnvironmentData& environment_data)
+void RenderCompositor::render(const std::vector<RenderableDataRef*>& renderables_list, const std::vector<LightDataRef*>& lights_list, const sEnvironmentData& environment_data)
 {
     WGPUTextureView screen_surface_texture_view;
     WGPUSurfaceTexture screen_surface_texture;
@@ -54,7 +54,7 @@ void RenderCompositor::render(const std::vector<sRenderableData>& renderables_li
     XR_MANAGER->init_frame();
 
     // Render 3D elements
-    render_cull.render(renderables_list, render_fbo_view, environment_data);
+    render_cull.render(renderables_list, lights_list, render_fbo_view, environment_data);
 
     if (XR_MANAGER->is_xr_available()) {
         // TODO: this is internally recreating the bind group per frame, it's not terrible but we should think on a better way

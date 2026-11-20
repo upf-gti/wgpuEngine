@@ -932,7 +932,7 @@ void read_mesh(const tinygltf::Model& model, const tinygltf::Node& node, Node3D*
     }
 
     AABB entity_aabb;
-    for (const Surface* surface : entity_mesh->get_surfaces()) {
+    for (const Surface* surface : entity_mesh->get_mesh()->get_surfaces()) {
         const AABB& surface_aabb = surface->get_aabb().transform(entity_mesh->get_global_model());
         entity_aabb = merge_aabbs(entity_aabb, surface_aabb);
     }

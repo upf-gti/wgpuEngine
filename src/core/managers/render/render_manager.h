@@ -34,10 +34,11 @@ public:
     WGPUTextureFormat get_surface_format();
     WGPUCommandEncoder get_main_command_encoder();
 
-    uint32_t add_renderable(Mesh* mesh_instance, const glm::mat4x4& global_matrix);
+    void add_renderable(RenderableDataRef* renderable_data);
     void remove_renderable(uint32_t idx);
 
-    void add_light(Light3D* new_light);
+    void add_light(LightDataRef* light_data);
+    void remove_light(uint32_t idx);
 
     void set_clear_color(const glm::vec4& clear_color);
 
@@ -66,8 +67,6 @@ private:
 
     void resize_swapchain();
 
-    void clear_renderables();
-
     void environment_data_set_irradiance_texture(Texture* irradiance_texture_panorama);
 
     RenderAPI render_api;
@@ -83,9 +82,14 @@ private:
 
     WGPUCommandEncoder command_encoder = nullptr;
 
-    // Entities to be rendered this frame
+    // Entities to be rendered
     uint32_t current_render_list_size = 128;
-    std::vector<sRenderableData> render_entity_list;
+    std::vector<RenderableDataRef*> renderables_list;
+
+    // Lights to be rendered
+    uint32_t current_light_list_size = 64;
+    std::vector<LightDataRef*> lights_list;
+
     sEnvironmentData environment_data = {};
 
     // Timestamp queries

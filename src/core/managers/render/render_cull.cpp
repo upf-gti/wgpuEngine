@@ -46,11 +46,12 @@ void RenderCull::set_frustum_camera_paused(bool value)
     frustum_camera_paused = value;
 }
 
-void RenderCull::render(const std::vector<sRenderableData>& renderables_list, WGPUTextureView screen_surface_texture_view, const sEnvironmentData& environment_data)
+void RenderCull::render(const std::vector<RenderableDataRef*>& renderables_list, const std::vector<LightDataRef*>& lights_list, WGPUTextureView screen_surface_texture_view, const sEnvironmentData& environment_data)
 {
     bool xr_available = XR_MANAGER->is_xr_available();
 
-    std::vector<std::vector<sRenderData>> render_lists(RENDER_LIST_COUNT);
+    std::vector<std::vector<RenderInstanceData>> render_lists_culled(RENDER_LIST_COUNT);
+    std::vector<LightData> lights_list_culled;
 
     Camera3D* main_camera = nullptr;
 
@@ -97,10 +98,10 @@ void RenderCull::render(const std::vector<sRenderableData>& renderables_list, WG
     }
 
     if (main_camera) {
-        prepare_cull_instancing(main_camera, renderables_list, render_lists);
+        prepare_cull_instancing(main_camera, renderables_list, lights_list, render_lists_culled, lights_list_culled);
 
         if (!xr_available) {
-            render_method->render_scene(render_lists, main_camera, environment_data, screen_surface_texture_view, EYE_LEFT);
+            render_method->render_scene(render_lists_culled, lights_list_culled, main_camera, environment_data, screen_surface_texture_view, EYE_LEFT);
         } else {
             XRContext* xr_context = XR_MANAGER->xr_context;
             assert(xr_context);
@@ -108,7 +109,7 @@ void RenderCull::render(const std::vector<sRenderableData>& renderables_list, WG
             for (uint32_t i = 0; i < EYE_COUNT; i++) {
                 xr_context->acquire_swapchain(i);
 
-                render_method->render_scene(render_lists, &eye_camera[i], environment_data, xr_context->get_swapchain_view(i), static_cast<EYE>(i));
+                render_method->render_scene(render_lists_culled, lights_list_culled, &eye_camera[i], environment_data, xr_context->get_swapchain_view(i), static_cast<EYE>(i));
 
                 xr_context->release_swapchain(i);
             }
@@ -118,18 +119,16 @@ void RenderCull::render(const std::vector<sRenderableData>& renderables_list, WG
     }
 }
 
-void RenderCull::prepare_cull_instancing(const Camera3D* camera, const std::vector<sRenderableData>& renderables_list, std::vector<std::vector<sRenderData>>& render_lists)
+void RenderCull::prepare_cull_instancing(const Camera3D* camera, const std::vector<RenderableDataRef*>& renderables_list, const std::vector<LightDataRef*>& lights_list, std::vector<std::vector<RenderInstanceData>>& render_lists_culled, std::vector<LightData>& lights_list_culled)
 {
     if (!frustum_camera_paused) {
         frustum_cull.set_view_projection(camera->get_view_projection());
     }
 
-    //render_entity_list.push_back({ skybox_mesh, glm::translate(glm::mat4(1.0f), get_camera_eye()) });
-
     // Get all surfaces from entity meshes
-    for (auto render_list_data : renderables_list) {
-        Mesh* mesh = render_list_data.mesh;
-        glm::mat4x4 global_matrix = render_list_data.global_matrix;
+    for (RenderableDataRef* renderable_data : renderables_list) {
+        Mesh* mesh = renderable_data->data.mesh;
+        const glm::mat4x4& global_matrix = renderable_data->data.global_matrix;
 
         const std::vector<Surface*>& surfaces = mesh->get_surfaces();
 
@@ -172,7 +171,12 @@ void RenderCull::prepare_cull_instancing(const Camera3D* camera, const std::vect
                 list = RENDER_LIST_TRANSPARENT;
             }
 
-            render_lists[list].push_back({ surface, 1, global_matrix, mesh, material });
+            render_lists_culled[list].push_back({ surface, 1, global_matrix, mesh, material });
         }
+    }
+
+    // TODO: cull lights
+    for (LightDataRef* light_data_ref : lights_list) {
+        lights_list_culled.push_back(light_data_ref->data);
     }
 }

@@ -14,21 +14,28 @@ enum Error : uint8_t {
 void _err_print_error(const char* p_function, const char* p_file, int p_line, const char* p_error, const char* p_message = nullptr);
 
 #define ERROR_CHECK_INDEX(index, size)                                                                              \
-    if (unlikely((index) < 0 || (index) >= (size))) {                                                               \
+    if ((index) < 0 || (index) >= (size)) [[unlikely]] {                                                            \
         _err_print_error(__FUNCTION__, __FILE__, __LINE__, "Index \"" #index "\" is out of bounds [0, " #size "]"); \
         return;                                                                                                     \
     } else                                                                                                          \
         ((void)0)
 
 #define ERR_FAIL_NULL(param)                                                                     \
-    if (unlikely(param == nullptr)) {                                                            \
+    if (param == nullptr) [[unlikely]] {                                                         \
         _err_print_error(__FUNCTION__, __FILE__, __LINE__, "Parameter \"" #param "\" is null."); \
         return;                                                                                  \
     } else                                                                                       \
         ((void)0)
 
+#define ERR_FAIL_NULL_VALUE(param)                                                               \
+    if (param == nullptr) [[unlikely]] {                                                         \
+        _err_print_error(__FUNCTION__, __FILE__, __LINE__, "Parameter \"" #param "\" is null."); \
+        return {};                                                                               \
+    } else                                                                                       \
+        ((void)0)
+
 #define ERR_FAIL_NULL_MSG(param, msg)                                                                 \
-    if (unlikely(param == nullptr)) {                                                                 \
+    if (param == nullptr) [[unlikely]] {                                                              \
         _err_print_error(__FUNCTION__, __FILE__, __LINE__, "Parameter \"" #param "\" is null.", msg); \
         return;                                                                                       \
     } else                                                                                            \
