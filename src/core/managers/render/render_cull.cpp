@@ -46,7 +46,7 @@ void RenderCull::set_frustum_camera_paused(bool value)
     frustum_camera_paused = value;
 }
 
-void RenderCull::render(const std::vector<RenderableDataRef*>& renderables_list, const std::vector<LightDataRef*>& lights_list, WGPUTextureView screen_surface_texture_view, const sEnvironmentData& environment_data)
+void RenderCull::render(const std::vector<RenderableDataRef*>& renderables_list, const std::vector<LightDataRef*>& lights_list, WGPUTextureView screen_surface_texture_view, const sEnvironmentData& environment_data, uint32_t render_frame_flags)
 {
     bool xr_available = XR_MANAGER->is_xr_available();
 
@@ -101,7 +101,7 @@ void RenderCull::render(const std::vector<RenderableDataRef*>& renderables_list,
         prepare_cull_instancing(main_camera, renderables_list, lights_list, render_lists_culled, lights_list_culled);
 
         if (!xr_available) {
-            render_method->render_scene(render_lists_culled, lights_list_culled, main_camera, environment_data, screen_surface_texture_view, EYE_LEFT);
+            render_method->render_scene(render_lists_culled, lights_list_culled, main_camera, environment_data, screen_surface_texture_view, render_frame_flags, EYE_LEFT);
         } else {
             XRContext* xr_context = XR_MANAGER->xr_context;
             assert(xr_context);
@@ -109,7 +109,7 @@ void RenderCull::render(const std::vector<RenderableDataRef*>& renderables_list,
             for (uint32_t i = 0; i < EYE_COUNT; i++) {
                 xr_context->acquire_swapchain(i);
 
-                render_method->render_scene(render_lists_culled, lights_list_culled, &eye_camera[i], environment_data, xr_context->get_swapchain_view(i), static_cast<EYE>(i));
+                render_method->render_scene(render_lists_culled, lights_list_culled, &eye_camera[i], environment_data, xr_context->get_swapchain_view(i), render_frame_flags, static_cast<EYE>(i));
 
                 xr_context->release_swapchain(i);
             }

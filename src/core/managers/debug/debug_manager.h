@@ -10,6 +10,7 @@ struct RENDERDOC_API_1_6_0;
 
 #define DEBUG_MANAGER DebugManager::get_singleton()
 
+#define LOG_DEBUG(...) DEBUG_MANAGER->log_debug(__VA_ARGS__)
 #define LOG_INFO(...) DEBUG_MANAGER->log_info(__VA_ARGS__)
 #define LOG_WARN(...) DEBUG_MANAGER->log_warn(__VA_ARGS__)
 #define LOG_ERROR(...) DEBUG_MANAGER->log_error(__VA_ARGS__)
@@ -24,6 +25,12 @@ public:
 
     Error renderdoc_start_capture();
     Error renderdoc_end_capture();
+
+    template <typename T>
+    void log_debug(const T& msg)
+    {
+        logger->debug(msg);
+    }
 
     template <typename T>
     void log_info(const T& msg)
@@ -41,6 +48,12 @@ public:
     void log_error(const T& msg)
     {
         logger->error(msg);
+    }
+
+    template <typename... Args>
+    void log_debug(spdlog::format_string_t<Args...> fmt, Args&&... args)
+    {
+        logger->debug(fmt, std::forward<Args>(args)...);
     }
 
     template <typename... Args>

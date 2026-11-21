@@ -12,6 +12,11 @@ class Light3D;
 
 #define RENDER_MANAGER RenderManager::get_singleton()
 
+enum RenderFlags {
+    RENDER_MESHES_DIRTY = 1,
+    RENDER_LIGHTS_DIRTY = 1 << 1
+};
+
 class RenderManager : public Manager {
     MANAGER_DECLARE(RenderManager)
     friend class DebugManager;
@@ -34,11 +39,13 @@ public:
     WGPUTextureFormat get_surface_format();
     WGPUCommandEncoder get_main_command_encoder();
 
-    void add_renderable(RenderableDataRef* renderable_data);
+    void add_renderable(RenderableDataRef* renderable_data_ref);
     void remove_renderable(uint32_t idx);
+    void set_renderables_dirty();
 
     void add_light(LightDataRef* light_data);
     void remove_light(uint32_t idx);
+    void set_lights_dirty();
 
     void set_clear_color(const glm::vec4& clear_color);
 
@@ -81,6 +88,8 @@ private:
     std::vector<WGPUFeatureName> required_features = {};
 
     WGPUCommandEncoder command_encoder = nullptr;
+
+    uint32_t render_frame_flags = 0;
 
     // Entities to be rendered
     uint32_t current_render_list_size = 128;

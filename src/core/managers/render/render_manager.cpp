@@ -32,8 +32,6 @@ Error RenderManager::initialize_webgpu()
     render_api.api_instance_create();
     render_storage.initialize();
 
-    LOG_INFO("Render size: {}x{}", render_width, render_height);
-
     const sEngineConfig& config = EngineManager::get_singleton()->get_configuration();
     required_features = config.render_config.required_features;
 
@@ -139,10 +137,11 @@ void RenderManager::render()
     WGPUCommandEncoderDescriptor encoder_desc = {};
     command_encoder = RENDER_API->command_encoder_create(&encoder_desc);
 
-    render_compositor.render(renderables_list, lights_list, environment_data);
+    render_compositor.render(renderables_list, lights_list, environment_data, render_frame_flags);
 
     frame_counter++;
     query_index = 0;
+    render_frame_flags = 0;
 
     RENDER_API->command_encoder_release(command_encoder);
 }
@@ -240,6 +239,11 @@ void RenderManager::remove_renderable(uint32_t idx)
     }
 }
 
+void RenderManager::set_renderables_dirty()
+{
+    render_frame_flags |= RENDER_MESHES_DIRTY;
+}
+
 void RenderManager::add_light(LightDataRef* light_data_ref)
 {
     if ((lights_list.size() + 1) >= current_light_list_size) {
@@ -266,6 +270,11 @@ void RenderManager::remove_light(uint32_t idx)
     for (uint32_t i = idx; i < lights_list.size(); ++i) {
         lights_list[i]->idx = i;
     }
+}
+
+void RenderManager::set_lights_dirty()
+{
+    render_frame_flags |= RENDER_LIGHTS_DIRTY;
 }
 
 void RenderManager::set_clear_color(const glm::vec4& clear_color)

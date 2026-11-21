@@ -983,17 +983,17 @@ void OpenXRContext::init_frame()
                 session_state = event->state;
 
                 if (event->state == XR_SESSION_STATE_READY) {
-                    LOG_WARN("OpenXR session beginning");
+                    LOG_INFO("OpenXR session beginning");
                     if (!begin_session()) {
                         return;
                     }
                 } else if (event->state == XR_SESSION_STATE_STOPPING) {
-                    LOG_WARN("OpenXR session stopping");
+                    LOG_INFO("OpenXR session stopping");
                     if (!end_session()) {
                         return;
                     }
                 } else if (event->state == XR_SESSION_STATE_LOSS_PENDING || event->state == XR_SESSION_STATE_EXITING) {
-                    LOG_WARN("OpenXR exit requested");
+                    LOG_INFO("OpenXR exit requested");
                     exit_requested = true;
                     return;
                 }

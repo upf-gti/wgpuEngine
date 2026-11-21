@@ -33,7 +33,8 @@ class Node {
 public:
     enum Notification {
         NOTIFICATION_ENTERS_TREE,
-        NOTIFICATION_EXITS_TREE
+        NOTIFICATION_EXITS_TREE,
+        NOTIFICATION_TRANSFORM_DIRTY
     };
 
     enum class AnimatablePropertyType {

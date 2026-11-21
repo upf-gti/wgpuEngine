@@ -34,7 +34,7 @@ class RenderForward : public RenderMethod {
     void set_custom_pass_user_data(void* user_data);
 
 public:
-    void render_scene(std::vector<std::vector<RenderInstanceData>>& render_lists, const std::vector<LightData>& lights_list, const Camera3D* camera, const sEnvironmentData& environment_data, WGPUTextureView framebuffer_view, EYE eye_idx = EYE_LEFT);
+    void render_scene(std::vector<std::vector<RenderInstanceData>>& render_lists, const std::vector<LightData>& lights_list, const Camera3D* camera, const sEnvironmentData& environment_data, WGPUTextureView framebuffer_view, uint32_t render_frame_flags, EYE eye_idx = EYE_LEFT);
 
     void set_render_size(int32_t width, int32_t height) override;
 

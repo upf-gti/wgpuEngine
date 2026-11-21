@@ -205,7 +205,7 @@ void RenderForward::render_2D(WGPURenderPassEncoder render_pass, const std::vect
 #endif
 }
 
-void RenderForward::render_scene(std::vector<std::vector<RenderInstanceData>>& render_lists, const std::vector<LightData>& lights_list, const Camera3D* camera, const sEnvironmentData& environment_data, WGPUTextureView framebuffer_view, EYE eye_idx)
+void RenderForward::render_scene(std::vector<std::vector<RenderInstanceData>>& render_lists, const std::vector<LightData>& lights_list, const Camera3D* camera, const sEnvironmentData& environment_data, WGPUTextureView framebuffer_view, uint32_t render_frame_flags, EYE eye_idx)
 {
     fill_instances_data(render_lists);
 
@@ -218,7 +218,9 @@ void RenderForward::render_scene(std::vector<std::vector<RenderInstanceData>>& r
         skybox_material->set_diffuse_texture(irradiance_texture_cubemap);
     }
 
-    update_lights(lights_list);
+    if (render_frame_flags & RENDER_LIGHTS_DIRTY) {
+        update_lights(lights_list);
+    }
 
     camera_data.exposure = 1.0;
     camera_data.ibl_intensity = 1.0;
@@ -1032,7 +1034,7 @@ void RenderForward::generate_prefiltered_env_texture(Texture* prefiltered_env_te
 
 void RenderForward::update_lights(const std::vector<LightData>& lights_list)
 {
-    uint32_t num_lights = lights_list.size();
+    uint32_t num_lights = static_cast<uint32_t>(lights_list.size());
     size_t buffer_size = sizeof(LightData) * num_lights;
 
     if (num_lights > MAX_LIGHTS) {

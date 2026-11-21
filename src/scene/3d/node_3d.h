@@ -46,7 +46,7 @@ public:
     glm::mat4x4 get_model();
     glm::quat get_rotation() const;
     Transform get_transform() const;
-    Transform& get_transform();
+    //Transform& get_transform();
     virtual Transform get_global_transform();
 
     virtual void set_position(const glm::vec3& translation);

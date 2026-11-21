@@ -84,6 +84,7 @@ void SkeletonInstance3D::set_skeleton(Skeleton* new_skeleton, const std::vector<
 
     for (uint32_t i = 0u; i < joint_count; ++i) {
         auto joint = joint_nodes[i];
+        // TODO: do not use transform ref
         animatable_properties[joint->get_name() + "$translation"] = { AnimatablePropertyType::FVEC3, &joint->get_transform().get_position_ref() };
         animatable_properties[joint->get_name() + "$rotation"] = { AnimatablePropertyType::QUAT, &joint->get_transform().get_rotation_ref() };
         animatable_properties[joint->get_name() + "$scale"] = { AnimatablePropertyType::FVEC3, &joint->get_transform().get_scale_ref() };

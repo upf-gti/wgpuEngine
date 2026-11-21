@@ -96,14 +96,24 @@ void Light3D::render_gui()
             set_color(gui_color);
         }
 
-        ImGui::DragFloat("Intensity", &intensity, 0.1f, 0.f, 100.0f);
-        if (ImGui::DragFloat("Range", &range, 0.1f, 0.f, 10.0f)) {
-            on_set_range();
+        float gui_intensity = intensity;
+        if (ImGui::DragFloat("Intensity", &gui_intensity, 0.1f, 0.f, 100.0f)) {
+            set_intensity(gui_intensity);
         }
-        ImGui::Checkbox("Cast Shadows", &cast_shadows);
+
+        float gui_range = range;
+        if (ImGui::DragFloat("Range", &gui_range, 0.1f, 0.f, 10.0f)) {
+            set_range(gui_range);
+        }
+
+        bool gui_cast_shadows = cast_shadows;
+        if (ImGui::Checkbox("Cast Shadows", &gui_cast_shadows)) {
+            set_cast_shadows(gui_cast_shadows);
+        }
 
         if (cast_shadows) {
-            ImGui::DragFloat("Shadow Bias", &shadow_bias, 0.0001f, 0.0f, 0.01f);
+            float gui_shadow_bias = shadow_bias;
+            ImGui::DragFloat("Shadow Bias", &gui_shadow_bias, 0.0001f, 0.0f, 0.01f);
 
             //if (ImGui::TreeNodeEx("Shadow Camera", ImGuiTreeNodeFlags_DefaultOpen)) {
             //    bool frustum_changed = false;
@@ -132,36 +142,49 @@ void Light3D::render_gui()
 void Light3D::set_color(const glm::vec3& color)
 {
     this->color = color;
+    light_data_ref.data.color = color;
+    RENDER_MANAGER->set_lights_dirty();
 }
 
 void Light3D::set_intensity(float value)
 {
     this->intensity = value;
+    light_data_ref.data.intensity = value;
+    RENDER_MANAGER->set_lights_dirty();
 }
 
 void Light3D::set_range(float value)
 {
     this->range = value;
+    light_data_ref.data.range = value;
+    RENDER_MANAGER->set_lights_dirty();
 }
 
 void Light3D::set_fading_enabled(bool value)
 {
     this->fading_enabled = value;
+    //RENDER_MANAGER->set_lights_dirty();
 }
 
 void Light3D::on_set_color()
 {
     set_color(color);
+    light_data_ref.data.color = color;
+    RENDER_MANAGER->set_lights_dirty();
 }
 
-void Light3D::set_cast_shadows(bool new_cast_shadows)
+void Light3D::set_cast_shadows(bool value)
 {
-    this->cast_shadows = new_cast_shadows;
+    this->cast_shadows = value;
+    light_data_ref.data.cast_shadows = value;
+    RENDER_MANAGER->set_lights_dirty();
 }
 
-void Light3D::set_shadow_bias(float new_shadow_bias)
+void Light3D::set_shadow_bias(float value)
 {
-    this->shadow_bias = new_shadow_bias;
+    this->shadow_bias = value;
+    light_data_ref.data.shadow_bias = value;
+    RENDER_MANAGER->set_lights_dirty();
 }
 
 void Light3D::create_shadow_data()

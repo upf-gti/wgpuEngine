@@ -92,26 +92,31 @@ void Node3D::render_gui()
 void Node3D::translate(const glm::vec3& translation)
 {
     transform.translate(translation);
+    notification(NOTIFICATION_TRANSFORM_DIRTY);
 }
 
 void Node3D::rotate(float angle, const glm::vec3& axis)
 {
     transform.rotate(glm::angleAxis(angle, axis));
+    notification(NOTIFICATION_TRANSFORM_DIRTY);
 }
 
 void Node3D::rotate(const glm::quat& q)
 {
     transform.rotate(q);
+    notification(NOTIFICATION_TRANSFORM_DIRTY);
 }
 
 void Node3D::rotate_world(const glm::quat& q)
 {
     transform.rotate_world(q);
+    notification(NOTIFICATION_TRANSFORM_DIRTY);
 }
 
 void Node3D::scale(const glm::vec3& scale)
 {
     transform.scale(scale);
+    notification(NOTIFICATION_TRANSFORM_DIRTY);
 }
 
 void Node3D::serialize(std::ofstream& binary_scene_file)
@@ -149,22 +154,26 @@ void Node3D::set_transform_dirty(bool value)
 void Node3D::set_position(const glm::vec3& translation)
 {
     transform.set_position(translation);
+    notification(NOTIFICATION_TRANSFORM_DIRTY);
 }
 
 void Node3D::set_rotation(const glm::quat& rotation)
 {
     transform.set_rotation(rotation);
+    notification(NOTIFICATION_TRANSFORM_DIRTY);
 }
 
 void Node3D::set_scale(const glm::vec3& scale)
 {
     transform.set_scale(scale);
+    notification(NOTIFICATION_TRANSFORM_DIRTY);
 }
 
 void Node3D::set_transform(const Transform& new_transform)
 {
     transform = new_transform;
     set_transform_dirty(true);
+    notification(NOTIFICATION_TRANSFORM_DIRTY);
 }
 
 void Node3D::set_global_transform(const Transform& new_transform)
@@ -177,6 +186,7 @@ void Node3D::set_global_transform(const Transform& new_transform)
 
     set_transform(local_transform);
     set_transform_dirty(true);
+    notification(NOTIFICATION_TRANSFORM_DIRTY);
 }
 
 void Node3D::set_parent(Node3D* parent)
@@ -217,10 +227,10 @@ Transform Node3D::get_transform() const
     return transform;
 }
 
-Transform& Node3D::get_transform()
-{
-    return transform;
-}
+//Transform& Node3D::get_transform()
+//{
+//    return transform;
+//}
 
 Transform Node3D::get_global_transform()
 {

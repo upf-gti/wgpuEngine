@@ -70,7 +70,7 @@ public:
     virtual void set_range(float value);
     void set_fading_enabled(bool value);
     void set_cast_shadows(bool value);
-    void set_shadow_bias(float new_shadow_bias);
+    void set_shadow_bias(float value);
 
     void create_shadow_data();
 

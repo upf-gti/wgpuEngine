@@ -54,7 +54,11 @@ Error DebugManager::initialize()
     logger = new spdlog::logger("", dup_filter);
     dup_filter->set_pattern("[%^%L%$] [%H:%M:%S] %v");
 
+#ifdef NDEBUG
+    logger->set_level(spdlog::level::info);
+#else
     logger->set_level(spdlog::level::debug);
+#endif
 
     return Error::OK;
 }

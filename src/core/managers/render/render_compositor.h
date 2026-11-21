@@ -26,7 +26,7 @@ private:
     void set_render_method(RenderMethod* method);
     RenderMethod* get_render_method();
 
-    void render(const std::vector<RenderableDataRef*>& renderables_list, const std::vector<LightDataRef*>& lights_list, const sEnvironmentData& environment_data);
+    void render(const std::vector<RenderableDataRef*>& renderables_list, const std::vector<LightDataRef*>& lights_list, const sEnvironmentData& environment_data, uint32_t render_frame_flags);
 
     void set_render_size(int32_t width, int32_t height);
 

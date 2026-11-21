@@ -20,6 +20,10 @@ void MeshInstance3D::notification(int notification_id)
         case NOTIFICATION_EXITS_TREE:
             RENDER_MANAGER->remove_renderable(renderable_data_ref.idx);
             break;
+        case NOTIFICATION_TRANSFORM_DIRTY:
+            renderable_data_ref.data.global_matrix = get_global_transform().get_model();
+            RENDER_MANAGER->set_renderables_dirty();
+            break;
     }
 
     Node::notification(notification_id);
