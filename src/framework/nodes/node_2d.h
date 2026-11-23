@@ -25,7 +25,7 @@ enum Node2DClassType {
     HSLIDER,
     VSLIDER,
     COLOR_PICKER,
-    GROUP,
+    UI_NODE_GROUP,
     COMBO,
     CONTAINER,
     HCONTAINER,

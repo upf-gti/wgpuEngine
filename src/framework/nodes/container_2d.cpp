@@ -326,7 +326,7 @@ namespace ui {
     ItemGroup2D::ItemGroup2D(const std::string& name, uint32_t flags, const glm::vec2& pos, const Color& color)
         : HContainer2D(name, pos, flags, color) {
 
-        class_type = Node2DClassType::GROUP;
+        class_type = Node2DClassType::UI_NODE_GROUP;
 
         ui_data.data_value = 0;
 

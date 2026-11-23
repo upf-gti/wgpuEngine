@@ -280,7 +280,7 @@ bool Panel2D::on_pressed()
 
         if (parent_2d) {
             // Get parent of the group..
-            if (parent_2d->get_class_type() == GROUP) {
+            if (parent_2d->get_class_type() == UI_NODE_GROUP) {
                 parent_2d = parent_2d->get_parent<Node2D*>();
             }
 
