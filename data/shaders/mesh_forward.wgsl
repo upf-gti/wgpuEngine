@@ -257,7 +257,11 @@ fn fs_main(in: VertexOutput, @builtin(front_facing) is_front_facing: bool) -> Fr
         final_color = pow(final_color, vec3(1.0 / 2.2));
     }
 
+#ifdef ALPHA_OPAQUE
+    out.color = vec4f(final_color, 1.0);
+#else
     out.color = vec4f(final_color, alpha);
+#endif
 
     return out;
 }
