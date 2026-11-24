@@ -92,12 +92,16 @@ private:
     uint32_t render_frame_flags = 0;
 
     // Entities to be rendered
-    uint32_t current_render_list_size = 128;
+    uint32_t reserved_render_list_size = 128;
     std::vector<RenderableDataRef*> renderables_list;
 
     // Lights to be rendered
-    uint32_t current_light_list_size = 64;
+    uint32_t reserved_light_list_size = 64;
     std::vector<LightDataRef*> lights_list;
+
+    // Gaussian Splats to be rendered
+    uint32_t reserved_splat_list_size = 2;
+    std::vector<LightDataRef*> splats_list;
 
     sEnvironmentData environment_data = {};
 

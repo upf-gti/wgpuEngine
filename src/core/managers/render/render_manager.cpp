@@ -213,14 +213,16 @@ WGPUCommandEncoder RenderManager::get_main_command_encoder()
 
 void RenderManager::add_renderable(RenderableDataRef* renderable_data_ref)
 {
-    if ((renderables_list.size() + 1) >= current_render_list_size) {
-        current_render_list_size <<= 1;
-        renderables_list.reserve(current_render_list_size);
+    if ((renderables_list.size() + 1) >= reserved_render_list_size) {
+        reserved_render_list_size <<= 1;
+        renderables_list.reserve(reserved_render_list_size);
     }
 
     renderables_list.push_back(renderable_data_ref);
 
     renderable_data_ref->idx = static_cast<uint32_t>(renderables_list.size() - 1);
+
+    set_renderables_dirty();
 }
 
 void RenderManager::remove_renderable(uint32_t idx)
@@ -237,6 +239,8 @@ void RenderManager::remove_renderable(uint32_t idx)
     for (uint32_t i = idx; i < renderables_list.size(); ++i) {
         renderables_list[i]->idx = i;
     }
+
+    set_renderables_dirty();
 }
 
 void RenderManager::set_renderables_dirty()
@@ -246,14 +250,16 @@ void RenderManager::set_renderables_dirty()
 
 void RenderManager::add_light(LightDataRef* light_data_ref)
 {
-    if ((lights_list.size() + 1) >= current_light_list_size) {
-        current_light_list_size <<= 1;
-        lights_list.reserve(current_light_list_size);
+    if ((lights_list.size() + 1) >= reserved_light_list_size) {
+        reserved_light_list_size <<= 1;
+        lights_list.reserve(reserved_light_list_size);
     }
 
     lights_list.push_back(light_data_ref);
 
     light_data_ref->idx = static_cast<uint32_t>(lights_list.size() - 1);
+
+    set_lights_dirty();
 }
 
 void RenderManager::remove_light(uint32_t idx)
@@ -270,6 +276,8 @@ void RenderManager::remove_light(uint32_t idx)
     for (uint32_t i = idx; i < lights_list.size(); ++i) {
         lights_list[i]->idx = i;
     }
+
+    set_lights_dirty();
 }
 
 void RenderManager::set_lights_dirty()

@@ -1,4 +1,4 @@
-#include "gs_node.h"
+#include "gaussian_splatting_3d.h"
 
 #include "core/managers/render/render_api.h"
 #include "core/managers/render/render_manager.h"
@@ -11,9 +11,9 @@
 #include "shaders/gaussian_splatting/gs_covariance.wgsl.gen.h"
 #include "shaders/gaussian_splatting/gs_render.wgsl.gen.h"
 
-REGISTER_NODE_CLASS(GSNode)
+REGISTER_NODE_CLASS(GaussianSplatting3D)
 
-GSNode::GSNode()
+GaussianSplatting3D::GaussianSplatting3D()
 {
     covariance_shader = RenderStorage::get_singleton()->get_shader_from_source(shaders::gs_covariance::source, shaders::gs_covariance::path, shaders::gs_covariance::libraries);
     covariance_pipeline.create_compute_async(covariance_shader);
@@ -22,14 +22,14 @@ GSNode::GSNode()
     basis_pipeline.create_compute_async(basis_shader);
 }
 
-GSNode::~GSNode()
+GaussianSplatting3D::~GaussianSplatting3D()
 {
     if (radix_sort_kernel) {
         delete radix_sort_kernel;
     }
 }
 
-void GSNode::initialize(uint32_t splat_count)
+void GaussianSplatting3D::initialize(uint32_t splat_count)
 {
     this->splat_count = splat_count;
     this->padded_splat_count = static_cast<uint32_t>(ceil(static_cast<float>(splat_count) / 512.0f) * 512);
@@ -108,7 +108,7 @@ void GSNode::initialize(uint32_t splat_count)
     radix_sort_kernel = new RadixSortKernel(distances_buffer, sizeof(uint32_t) * padded_splat_count, ids_buffer, sizeof(uint32_t) * padded_splat_count, padded_splat_count);
 }
 
-void GSNode::render()
+void GaussianSplatting3D::render()
 {
     RenderAPI::get_singleton()->buffer_update(std::get<WGPUBuffer>(model_uniform.data), 0, &get_global_model()[0], sizeof(glm::mat4x4));
 
@@ -132,22 +132,34 @@ void GSNode::render()
     //RENDER_MANAGER->add_splat_scene(this);
 }
 
-void GSNode::update(float delta_time)
+void GaussianSplatting3D::update(float delta_time)
 {
 }
 
-void GSNode::sort(WGPUComputePassEncoder compute_pass)
+void GaussianSplatting3D::sort(WGPUComputePassEncoder compute_pass)
 {
     radix_sort_kernel->dispatch(compute_pass);
 }
 
-void GSNode::set_covariance_buffers(const std::vector<glm::quat>& rotations, const std::vector<glm::vec4>& scales)
+void GaussianSplatting3D::set_render_buffers(const std::vector<glm::vec4>& positions, const std::vector<glm::vec4>& colors)
 {
+    splat_data.positions = positions;
+    splat_data.colors = colors;
+
+    RenderAPI::get_singleton()->buffer_update(std::get<WGPUBuffer>(centroid_uniform.data), 0, positions.data(), sizeof(glm::vec4) * splat_count);
+    RenderAPI::get_singleton()->buffer_update(std::get<WGPUBuffer>(color_uniform.data), 0, colors.data(), sizeof(glm::vec4) * splat_count);
+}
+
+void GaussianSplatting3D::set_covariance_buffers(const std::vector<glm::quat>& rotations, const std::vector<glm::vec4>& scales)
+{
+    splat_data.rotations = rotations;
+    splat_data.scales = scales;
+
     RenderAPI::get_singleton()->buffer_update(std::get<WGPUBuffer>(rotations_uniform.data), 0, rotations.data(), sizeof(glm::quat) * splat_count);
     RenderAPI::get_singleton()->buffer_update(std::get<WGPUBuffer>(scales_uniform.data), 0, scales.data(), sizeof(glm::vec4) * splat_count);
 }
 
-void GSNode::calculate_covariance(WGPUComputePassEncoder compute_pass)
+void GaussianSplatting3D::calculate_covariance(WGPUComputePassEncoder compute_pass)
 {
     if (!covariance_pipeline.set(compute_pass)) {
         return;
@@ -159,7 +171,7 @@ void GSNode::calculate_covariance(WGPUComputePassEncoder compute_pass)
     covariance_calculated = true;
 }
 
-void GSNode::calculate_basis(WGPUComputePassEncoder compute_pass)
+void GaussianSplatting3D::calculate_basis(WGPUComputePassEncoder compute_pass)
 {
     uint32_t camera_stride_offset = 0;
 
@@ -175,28 +187,22 @@ void GSNode::calculate_basis(WGPUComputePassEncoder compute_pass)
     wgpuComputePassEncoderDispatchWorkgroups(compute_pass, workgroup_size, 1, 1);
 }
 
-void GSNode::set_render_buffers(const std::vector<glm::vec4>& positions, const std::vector<glm::vec4>& colors)
-{
-    RenderAPI::get_singleton()->buffer_update(std::get<WGPUBuffer>(centroid_uniform.data), 0, positions.data(), sizeof(glm::vec4) * splat_count);
-    RenderAPI::get_singleton()->buffer_update(std::get<WGPUBuffer>(color_uniform.data), 0, colors.data(), sizeof(glm::vec4) * splat_count);
-}
-
-uint32_t GSNode::get_splat_count()
+uint32_t GaussianSplatting3D::get_splat_count()
 {
     return splat_count;
 }
 
-uint32_t GSNode::get_padded_splat_count()
+uint32_t GaussianSplatting3D::get_padded_splat_count()
 {
     return padded_splat_count;
 }
 
-uint32_t GSNode::get_splats_render_bytes_size()
+uint32_t GaussianSplatting3D::get_splats_render_bytes_size()
 {
     return sizeof(float) * 8;
 }
 
-uint32_t GSNode::get_ids_render_bytes_size()
+uint32_t GaussianSplatting3D::get_ids_render_bytes_size()
 {
     return sizeof(uint32_t) * padded_splat_count;
 }

@@ -7,7 +7,7 @@
 #include "core/managers/render/render_storage.h"
 #include "core/managers/xr/xr_manager.h"
 
-#include "scene/3d/gs_node.h"
+#include "scene/3d/gaussian_splatting_3d.h"
 
 #include "graphics/mesh.h"
 #include "graphics/pipeline.h"
@@ -171,18 +171,18 @@ void RenderForward::render_splats(WGPURenderPassEncoder render_pass, const std::
     RENDER_API->push_debug_group(render_pass, "Gaussian Splats");
 #endif
 
-    for (GSNode* gs_node : gs_scenes_list) {
+    for (GaussianSplatting3D* gs_3d : gs_scenes_list) {
         if (!gs_render_pipeline.set(render_pass)) {
             continue;
         }
 
-        RENDER_API->render_pass_set_bind_group(render_pass, 0, gs_node->get_render_bindgroup(), 0, nullptr);
+        RENDER_API->render_pass_set_bind_group(render_pass, 0, gs_3d->get_render_bindgroup(), 0, nullptr);
         RENDER_API->render_pass_set_bind_group(render_pass, 1, camera_bind_group, 1, &camera_buffer_stride);
 
-        RENDER_API->render_pass_encoder_set_vertex_buffer(render_pass, 0, gs_node->get_render_buffer(), 0, gs_node->get_splats_render_bytes_size());
-        RENDER_API->render_pass_encoder_set_vertex_buffer(render_pass, 1, gs_node->get_ids_buffer(), 0, gs_node->get_ids_render_bytes_size());
+        RENDER_API->render_pass_encoder_set_vertex_buffer(render_pass, 0, gs_3d->get_render_buffer(), 0, gs_3d->get_splats_render_bytes_size());
+        RENDER_API->render_pass_encoder_set_vertex_buffer(render_pass, 1, gs_3d->get_ids_buffer(), 0, gs_3d->get_ids_render_bytes_size());
 
-        RENDER_API->render_pass_encoder_draw(render_pass, 4, gs_node->get_splat_count(), 0, 0);
+        RENDER_API->render_pass_encoder_draw(render_pass, 4, gs_3d->get_splat_count(), 0, 0);
     }
 
 #ifndef NDEBUG

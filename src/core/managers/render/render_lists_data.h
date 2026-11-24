@@ -1,6 +1,7 @@
 #pragma once
 
 #include "glm/mat4x4.hpp"
+#include <vector>
 
 class Mesh;
 
@@ -30,5 +31,17 @@ struct LightData {
 
 struct LightDataRef {
     LightData data;
+    uint32_t idx = 0;
+};
+
+struct SplatData {
+    std::vector<glm::vec4> positions;
+    std::vector<glm::vec4> colors;
+    std::vector<glm::quat> rotations;
+    std::vector<glm::vec4> scales;
+};
+
+struct SplatsDataRef {
+    SplatData data;
     uint32_t idx = 0;
 };

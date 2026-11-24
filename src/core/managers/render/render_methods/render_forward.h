@@ -14,7 +14,7 @@
 class Shader;
 class Light3D;
 class Mesh;
-class GSNode;
+class GaussianSplatting3D;
 
 #define ENVIRONMENT_RESOLUTION 1024
 #define MAX_LIGHTS 128u
@@ -156,7 +156,7 @@ private:
     void generate_prefiltered_env_texture(Texture* prefiltered_env_texture, Texture* hdr_texture);
 
     // Gaussian Splatting scenes to render
-    std::vector<GSNode*> gs_scenes_list;
+    std::vector<GaussianSplatting3D*> gs_scenes_list;
 
     void update_lights(const std::vector<LightData>& lights_list);
 };

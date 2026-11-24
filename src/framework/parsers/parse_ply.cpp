@@ -1,7 +1,7 @@
 #include "parse_ply.h"
 
 #include "framework/math/math_utils.h"
-#include "scene/3d/gs_node.h"
+#include "scene/3d/gaussian_splatting_3d.h"
 
 #include "happly.h"
 
@@ -10,18 +10,18 @@
 
 bool PlyParser::parse(std::string file_path, std::vector<Node*>& entities, uint32_t flags)
 {
-    GSNode* gs_node = new GSNode();
+    GaussianSplatting3D* gs_3d = new GaussianSplatting3D();
 
     happly::PLYData ply_file(file_path);
 
     uint32_t splats_count = static_cast<uint32_t>(ply_file.getElement("vertex").count);
 
-    gs_node->initialize(splats_count);
-    gs_node->set_name("gs_node");
+    gs_3d->initialize(splats_count);
+    gs_3d->set_name("GaussianSplatting");
 
     glm::quat default_quad = glm::quat(0.0f, 0.0f, 0.0f, 1.0f);
 
-    gs_node->set_rotation(glm::rotate(default_quad, static_cast<float>(PI), glm::vec3(1.0, 0.0, 0.0)));
+    gs_3d->set_rotation(glm::rotate(default_quad, static_cast<float>(PI), glm::vec3(1.0, 0.0, 0.0)));
 
     std::vector<float> opacity_v = ply_file.getElement("vertex").getProperty<float>("opacity");
     std::vector<float> scale0 = ply_file.getElement("vertex").getProperty<float>("scale_0");
@@ -61,10 +61,10 @@ bool PlyParser::parse(std::string file_path, std::vector<Node*>& entities, uint3
         scales.push_back(scale);
     }
 
-    gs_node->set_render_buffers(positions, colors);
-    gs_node->set_covariance_buffers(rotations, scales);
+    gs_3d->set_render_buffers(positions, colors);
+    gs_3d->set_covariance_buffers(rotations, scales);
 
-    entities.push_back(gs_node);
+    entities.push_back(gs_3d);
 
     return false;
 }

@@ -3,6 +3,8 @@
 #include "includes.h"
 
 #include "core/managers/render/kernels/radix_sort_kernel.h"
+#include "core/managers/render/render_lists_data.h"
+
 #include "graphics/pipeline.h"
 #include "graphics/uniform.h"
 
@@ -15,7 +17,10 @@ struct sGSRenderData {
     uint32_t id;
 };
 
-class GSNode : public Node3D {
+class GaussianSplatting3D : public Node3D {
+private:
+    SplatData splat_data;
+
     uint32_t splat_count = 0;
     uint32_t padded_splat_count = 0;
     uint32_t workgroup_size = 0;
@@ -57,8 +62,8 @@ class GSNode : public Node3D {
 public:
     bool is_skinned = false;
 
-    GSNode();
-    ~GSNode();
+    GaussianSplatting3D();
+    ~GaussianSplatting3D();
 
     void initialize(uint32_t splat_count);
 
