@@ -9,9 +9,13 @@ project(wgpuEngine LANGUAGES C CXX)
 set(CXX_STANDARD_REQUIRED ON)
 
 # Comand line variables
-SET(WGPUENGINE_FORCE_DX12 OFF CACHE BOOL "Force a Dawn backend of DX12")
+SET(WGPUENGINE_FORCE_VULKAN OFF CACHE BOOL "Force Vulkan as Dawn backend, only checked on Windows")
 SET(WGPUENGINE_DISABLE_XR OFF CACHE BOOL "Disable XR functionalities")
 SET(WGPUENGINE_ASSET_FOLDER "" CACHE STRING "Path to asset folder to be packed when building for web")
+
+if(UNIX AND NOT APPLE)
+    set(LINUX TRUE)
+endif()
 
 # Enable multicore and simd compile on VS solution
 if(MSVC)
@@ -33,7 +37,7 @@ if(MSVC)
 
 endif()
 
-if (WIN32 AND NOT WGPUENGINE_FORCE_DX12)
+if (WIN32)
     set(DAWN_BUILD "STATIC" CACHE STRING "Choose between SRC or STATIC to build from source (slower, better debugging) or download an static library (faster)")
 else()
     set(DAWN_BUILD "SRC")
@@ -94,6 +98,7 @@ WGPU_SOURCES_APPEND(${WGPU_DIR_SOURCES}/core/managers/render)
 WGPU_SOURCES_APPEND(${WGPU_DIR_SOURCES}/core/managers/render/render_methods)
 WGPU_SOURCES_APPEND(${WGPU_DIR_SOURCES}/core/managers/render/render_utils)
 WGPU_SOURCES_APPEND(${WGPU_DIR_SOURCES}/core/managers/render/kernels)
+WGPU_SOURCES_APPEND(${WGPU_DIR_SOURCES}/core/managers/render/storage)
 WGPU_SOURCES_APPEND(${WGPU_DIR_SOURCES}/core/managers/simulation)
 WGPU_SOURCES_APPEND(${WGPU_DIR_SOURCES}/core/managers/display)
 WGPU_SOURCES_APPEND(${WGPU_DIR_SOURCES}/core/managers/input)
@@ -274,10 +279,10 @@ elseif (APPLE)
     target_compile_definitions(${PROJECT_NAME} PUBLIC "DAWN_ENABLE_METAL")
 else()
     # WIN32 and Linux
-    if(WGPUENGINE_FORCE_DX12)
-        target_compile_definitions(${PROJECT_NAME} PUBLIC "BACKEND_DX12")
-    else()
+    if(LINUX OR (WIN32 AND WGPUENGINE_FORCE_VULKAN))
         target_compile_definitions(${PROJECT_NAME} PUBLIC "BACKEND_VULKAN")
+    elseif(WIN32)
+        target_compile_definitions(${PROJECT_NAME} PUBLIC "BACKEND_DX12")
     endif()
 endif()
 

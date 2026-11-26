@@ -1,6 +1,6 @@
 #include "prefix_sum_kernel.h"
 
-#include "core/managers/render/render_storage.h"
+#include "core/managers/render/storage/render_storage.h"
 #include "graphics/graphics_utils.h"
 
 #include "framework/math/math_utils.h"
@@ -54,12 +54,12 @@ void PrefixSumKernel::create_pass_recursive(WGPUBuffer data, uint32_t data_byte_
     pipeline_data->data_uniform.binding = 0;
     pipeline_data->data_uniform.buffer_size = data_byte_size;
 
-    pipeline_data->block_sum_uniform.data = RenderAPI::get_singleton()->buffer_create(sizeof(uint32_t) * workgroup_count, WGPUBufferUsage_CopySrc | WGPUBufferUsage_CopyDst | WGPUBufferUsage_Storage, nullptr, "prefix_sum_block_sum");
+    pipeline_data->block_sum_uniform.data = RENDER_API->buffer_create(sizeof(uint32_t) * workgroup_count, WGPUBufferUsage_CopySrc | WGPUBufferUsage_CopyDst | WGPUBufferUsage_Storage, nullptr, "prefix_sum_block_sum");
     pipeline_data->block_sum_uniform.binding = 1;
     pipeline_data->block_sum_uniform.buffer_size = sizeof(uint32_t) * workgroup_count;
 
     std::vector<Uniform*> uniforms = { &pipeline_data->data_uniform, &pipeline_data->block_sum_uniform };
-    pipeline_data->bind_group = RenderAPI::get_singleton()->bind_group_create(uniforms, shader, 0, "prefix_sum_bind_group");
+    pipeline_data->bind_group = RENDER_API->bind_group_create(uniforms, shader, 0, "prefix_sum_bind_group");
 
     std::vector<WGPUConstantEntry> constants = {
         { nullptr, get_string_view("WORKGROUP_SIZE_X"), static_cast<double>(workgroup_size.x) },

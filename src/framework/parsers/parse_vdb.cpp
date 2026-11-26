@@ -5,7 +5,7 @@
 #include "scene/3d/camera_3d.h"
 #include "scene/3d/mesh_instance_3d.h"
 
-#include "core/managers/render/render_storage.h"
+#include "core/managers/render/storage/render_storage.h"
 #include "graphics/shader.h"
 #include "graphics/texture.h"
 

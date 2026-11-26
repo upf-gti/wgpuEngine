@@ -1,7 +1,7 @@
 #include "skeleton_instance_3d.h"
 
 #include "core/managers/render/render_api.h"
-#include "core/managers/render/render_storage.h"
+#include "core/managers/render/storage/render_storage.h"
 #include "core/managers/simulation/simulation_manager.h"
 
 #include "graphics/surface.h"

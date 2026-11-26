@@ -11,7 +11,7 @@
 #include "src/tint/lang/wgsl/inspector/inspector.h"
 #include "src/tint/lang/wgsl/reader/reader.h"
 
-#include "core/managers/render/render_storage.h"
+#include "core/managers/render/storage/render_storage.h"
 
 #include "framework/utils/utils.h"
 

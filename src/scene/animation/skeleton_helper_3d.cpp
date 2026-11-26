@@ -1,6 +1,6 @@
 #include "skeleton_helper_3d.h"
 
-#include "core/managers/render/render_storage.h"
+#include "core/managers/render/storage/render_storage.h"
 
 #include "framework/animation/skeleton.h"
 

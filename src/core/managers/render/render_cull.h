@@ -32,9 +32,9 @@ private:
     void set_frustum_camera_paused(bool value);
     bool get_frustum_camera_paused();
 
-    void render(const std::vector<RenderableDataRef*>& renderables_list, const std::vector<LightDataRef*>& lights_list, WGPUTextureView screen_surface_texture_view, const sEnvironmentData& environment_data, uint32_t render_frame_flags);
+    void render(const std::vector<RenderableDataRef*>& renderables_list, const std::vector<LightDataRef*>& lights_list, const std::vector<SplatDataRef*>& splats_list, WGPUTextureView screen_surface_texture_view, const sEnvironmentData& environment_data, uint32_t render_frame_flags);
 
-    void prepare_cull_instancing(const Camera3D* camera, const std::vector<RenderableDataRef*>& renderables_list, const std::vector<LightDataRef*>& lights_list, std::vector<std::vector<RenderInstanceData>>& render_lists_culled, std::vector<LightData>& lights_list_culled);
+    void prepare_cull_instancing(const Camera3D* camera, const std::vector<RenderableDataRef*>& renderables_list, const std::vector<LightDataRef*>& lights_list, std::vector<std::vector<RenderInstanceData>>& render_lists_culled, std::vector<LightData*>& lights_list_culled, const std::vector<SplatDataRef*>& splats_list, std::vector<SplatData*>& splats_list_culled);
 
     Frustum frustum_cull;
 

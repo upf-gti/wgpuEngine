@@ -3,7 +3,7 @@
 #include "graphics/primitives/box_mesh.h"
 
 #include "core/managers/render/render_manager.h"
-#include "core/managers/render/render_storage.h"
+#include "core/managers/render/storage/render_storage.h"
 
 #include "framework/parsers/parse_obj.h"
 #include "scene/3d/mesh_instance_3d.h"

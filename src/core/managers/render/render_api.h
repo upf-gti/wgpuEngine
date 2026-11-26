@@ -84,6 +84,7 @@ public:
     // Buffers
     WGPUVertexBufferLayout create_vertex_buffer_layout(const std::vector<WGPUVertexAttribute>& vertex_attributes, uint64_t stride, WGPUVertexStepMode step_mode);
     WGPUBuffer buffer_create(size_t size, int usage, const void* data, const char* label = nullptr);
+    void buffer_release(WGPUBuffer buffer);
     void buffer_update(WGPUBuffer buffer, uint64_t buffer_offset, void const* data, size_t size);
     void buffer_read(WGPUBuffer buffer, size_t size, void* output_data);
     void buffer_read_async(WGPUBuffer buffer, size_t size, const std::function<void(const void* output_buffer, void* userdata)>& read_callback, void* read_userdata);
@@ -119,7 +120,8 @@ public:
     void compute_pipeline_create_async(WGPUShaderModule compute_shader_module, WGPUPipelineLayout pipeline_layout, WGPUCreateComputePipelineAsyncCallbackInfo callback_info,
             const char* entry_point = "compute", std::vector<WGPUConstantEntry> constants = {});
 
-    WGPUQuerySet create_query_set(uint8_t maximum_query_sets, char const* label = nullptr);
+    WGPUQuerySet query_set_create(uint8_t maximum_query_sets, char const* label = nullptr);
+    void query_set_destroy(WGPUQuerySet query_set);
 
     void push_debug_group(WGPURenderPassEncoder render_pass, char const* label = nullptr);
     void push_debug_group(WGPUComputePassEncoder compute_pass, char const* label = nullptr);

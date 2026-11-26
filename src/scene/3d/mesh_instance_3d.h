@@ -9,7 +9,7 @@ class MeshInstance3D : public Node3D {
 protected:
     Mesh* mesh = nullptr;
 
-    virtual void notification(int notification_id);
+    virtual void notification(int notification_id) override;
 
     RenderableDataRef renderable_data_ref;
 

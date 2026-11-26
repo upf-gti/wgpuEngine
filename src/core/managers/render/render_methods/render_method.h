@@ -17,7 +17,6 @@ class Texture;
 
 enum RenderMethods {
     FORWARD_RENDERER,
-    DEFERRED_RENDERER,
     CUSTOM_RENDERER
 };
 
@@ -56,7 +55,9 @@ class RenderMethod {
     friend class RenderManager;
 
 public:
-    virtual void render_scene(std::vector<std::vector<RenderInstanceData>>& render_lists, const std::vector<LightData>& lights_list, const Camera3D* camera, const sEnvironmentData& environment_data, WGPUTextureView framebuffer_view, uint32_t render_frame_flags, EYE eye_idx = EYE_LEFT) = 0;
+    virtual void begin_frame(std::vector<std::vector<RenderInstanceData>>& render_lists, const std::vector<LightData*>& lights_list, const std::vector<SplatData*>& splats_list, const sEnvironmentData& environment_data, uint32_t render_frame_flags) = 0;
+
+    virtual void render_frame(std::vector<std::vector<RenderInstanceData>>& render_lists, const Camera3D* camera, WGPUTextureView framebuffer_view, EYE eye_idx = EYE_LEFT) = 0;
 
     virtual void set_render_size(int32_t width, int32_t height) = 0;
 

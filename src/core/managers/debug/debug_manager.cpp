@@ -6,7 +6,7 @@
 #include "core/managers/simulation/simulation_manager.h"
 #include "core/managers/xr/xr_manager.h"
 
-#include "core/managers/render/render_storage.h"
+#include "core/managers/render/storage/render_storage.h"
 #include "graphics/primitives/box_mesh.h"
 #include "graphics/primitives/capsule_mesh.h"
 #include "graphics/primitives/cone_mesh.h"

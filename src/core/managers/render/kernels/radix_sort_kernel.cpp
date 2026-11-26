@@ -1,6 +1,6 @@
 #include "radix_sort_kernel.h"
 
-#include "core/managers/render/render_storage.h"
+#include "core/managers/render/storage/render_storage.h"
 #include "graphics/graphics_utils.h"
 
 #include "shaders/kernels/radix_sort.wgsl.gen.h"
@@ -53,7 +53,7 @@ void RadixSortKernel::calculate_dispatch_sizes()
 
 void RadixSortKernel::create_prefix_sum_kernel()
 {
-    prefix_block_sum_buffer = RenderAPI::get_singleton()->buffer_create(prefix_block_workgroup_count * 4,
+    prefix_block_sum_buffer = RENDER_API->buffer_create(prefix_block_workgroup_count * 4,
             WGPUBufferUsage_Storage | WGPUBufferUsage_CopySrc | WGPUBufferUsage_CopyDst, nullptr,
             "radix_sort_prefix_block_sum");
 
@@ -78,7 +78,7 @@ RadixSortKernel::PipelineData* RadixSortKernel::create_block_sum_pipeline(WGPUBu
 
     std::vector<Uniform*> uniforms = { &pipeline_data->in_keys_uniform, &pipeline_data->local_prefix_uniform, &pipeline_data->prefix_block_uniform };
 
-    pipeline_data->bind_group = RenderAPI::get_singleton()->bind_group_create(uniforms, block_sum_shader, 0, "radix_sort_block_sum_bind_group");
+    pipeline_data->bind_group = RENDER_API->bind_group_create(uniforms, block_sum_shader, 0, "radix_sort_block_sum_bind_group");
 
     std::vector<WGPUConstantEntry> constants = {
         { nullptr, get_string_view("WORKGROUP_SIZE_X"), static_cast<double>(workgroup_size.x) },
@@ -128,7 +128,7 @@ RadixSortKernel::PipelineData* RadixSortKernel::create_reorder_pipeline(WGPUBuff
         &pipeline_data->in_values_uniform, &pipeline_data->out_values_uniform
     };
 
-    pipeline_data->bind_group = RenderAPI::get_singleton()->bind_group_create(uniforms, reorder_shader, 0, "radix_sort_reorder_bind_group");
+    pipeline_data->bind_group = RENDER_API->bind_group_create(uniforms, reorder_shader, 0, "radix_sort_reorder_bind_group");
 
     std::vector<WGPUConstantEntry> constants = {
         { nullptr, get_string_view("WORKGROUP_SIZE_X"), static_cast<double>(workgroup_size.x) },
@@ -146,15 +146,15 @@ RadixSortKernel::PipelineData* RadixSortKernel::create_reorder_pipeline(WGPUBuff
 
 void RadixSortKernel::create_buffers()
 {
-    tmp_keys_buffer = RenderAPI::get_singleton()->buffer_create(keys_byte_size,
+    tmp_keys_buffer = RENDER_API->buffer_create(keys_byte_size,
             WGPUBufferUsage_Storage | WGPUBufferUsage_CopySrc | WGPUBufferUsage_CopyDst, nullptr,
             "radix_sort_tmp_keys");
 
-    tmp_values_buffer = RenderAPI::get_singleton()->buffer_create(values_byte_size,
+    tmp_values_buffer = RENDER_API->buffer_create(values_byte_size,
             WGPUBufferUsage_Storage | WGPUBufferUsage_CopySrc | WGPUBufferUsage_CopyDst, nullptr,
             "radix_sort_tmp_values");
 
-    local_prefix_sum_buffer = RenderAPI::get_singleton()->buffer_create(count * sizeof(uint32_t),
+    local_prefix_sum_buffer = RENDER_API->buffer_create(count * sizeof(uint32_t),
             WGPUBufferUsage_Storage | WGPUBufferUsage_CopySrc | WGPUBufferUsage_CopyDst, nullptr,
             "radix_sort_local_prefix_sum");
 }
@@ -174,9 +174,12 @@ RadixSortKernel::~RadixSortKernel()
         delete pipeline_data;
     }
 
-    if (prefix_sum_kernel) {
-        delete prefix_sum_kernel;
-    }
+    delete prefix_sum_kernel;
+
+    RENDER_API->buffer_release(prefix_block_sum_buffer);
+    RENDER_API->buffer_release(local_prefix_sum_buffer);
+    RENDER_API->buffer_release(tmp_keys_buffer);
+    RENDER_API->buffer_release(tmp_values_buffer);
 }
 
 void RadixSortKernel::dispatch(WGPUComputePassEncoder compute_pass)

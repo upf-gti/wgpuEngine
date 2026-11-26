@@ -502,12 +502,12 @@ Error OpenXRContext::check_vulkan_version(XrGraphicsRequirementsVulkanKHR* vulka
 #endif
 
 #if defined(BACKEND_DX12)
-bool OpenOpenXRContext::check_dx12_version(XrGraphicsRequirementsD3D12KHR* dx12_reqs)
+Error OpenXRContext::check_dx12_version(XrGraphicsRequirementsD3D12KHR* dx12_reqs)
 {
     LOG_INFO("### D3D12 graphics requirements minFeatureLevel: {}", static_cast<uint32_t>(dx12_reqs->minFeatureLevel));
     LOG_INFO("### D3D12 graphics requirements adapterLuid: {} {}", dx12_reqs->adapterLuid.HighPart, dx12_reqs->adapterLuid.LowPart);
 
-    return true;
+    return Error::OK;
 }
 #endif
 

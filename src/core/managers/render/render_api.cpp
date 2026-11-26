@@ -11,7 +11,7 @@
 #include "xr/openxr/openxr_context.h"
 #endif
 
-#include "core/managers/render/render_storage.h"
+#include "core/managers/render/storage/render_storage.h"
 #include "graphics/pipeline.h"
 #include "graphics/shader.h"
 #include "graphics/uniform.h"
@@ -124,14 +124,14 @@ WGPUFuture RenderAPI::request_adapter()
 #ifdef OPENXR_SUPPORT
     if (XR_MANAGER->is_xr_available()) {
         OpenXRContext* openxr_context = static_cast<OpenXRContext*>(XR_MANAGER->xr_context);
-        dawn::native::vulkan::RequestAdapterOptionsOpenXRConfig adapter_opts_xr_config = {};
 
 #if defined(BACKEND_DX12)
-        dawnxr::internal::createD3D12OpenXRConfig(openxr_context->instance, openxr_context->system_id, (void**)&adapter_opts_xr_config.openXRConfig);
+        dawnxr::internal::createD3D12OpenXRConfig(openxr_context->instance, openxr_context->system_id, nullptr);
 #elif defined(BACKEND_VULKAN)
+        dawn::native::vulkan::RequestAdapterOptionsOpenXRConfig adapter_opts_xr_config = {};
         dawnxr::internal::createVulkanOpenXRConfig(openxr_context->instance, openxr_context->system_id, (void**)&adapter_opts_xr_config.openXRConfig);
-#endif
         adapter_opts.nextInChain = reinterpret_cast<WGPUChainedStruct*>(&adapter_opts_xr_config);
+#endif
     } else {
         LOG_WARN("XR not available, fallback to desktop mode");
     }
@@ -230,6 +230,7 @@ WGPUFuture RenderAPI::request_device(const std::vector<WGPUFeatureName>& require
     enabled_toggles.push_back("use_dxc");
 
 #ifdef _DEBUG
+    enabled_toggles.push_back("dump_shaders");
     enabled_toggles.push_back("disable_symbol_renaming");
     enabled_toggles.push_back("emit_hlsl_debug_symbols");
     enabled_toggles.push_back("use_user_defined_labels_in_backend");
@@ -597,6 +598,11 @@ WGPUBuffer RenderAPI::buffer_create(size_t size, int usage, const void* data, co
     }
 
     return buffer;
+}
+
+void RenderAPI::buffer_release(WGPUBuffer buffer)
+{
+    wgpuBufferRelease(buffer);
 }
 
 void RenderAPI::buffer_update(WGPUBuffer buffer, uint64_t buffer_offset, void const* data, size_t size)
@@ -1328,7 +1334,7 @@ void RenderAPI::compute_pipeline_create_async(WGPUShaderModule compute_shader_mo
     wgpuDeviceCreateComputePipelineAsync(device, &computePipelineDesc, callback_info);
 }
 
-WGPUQuerySet RenderAPI::create_query_set(uint8_t maximum_query_sets, char const* label)
+WGPUQuerySet RenderAPI::query_set_create(uint8_t maximum_query_sets, char const* label)
 {
     WGPUQuerySetDescriptor query_set_descriptor = {};
     query_set_descriptor.count = maximum_query_sets;

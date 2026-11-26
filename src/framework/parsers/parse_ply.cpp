@@ -38,11 +38,11 @@ bool PlyParser::parse(std::string file_path, std::vector<Node*>& entities, uint3
     std::vector<float> f_dc_1 = ply_file.getElement("vertex").getProperty<float>("f_dc_1");
     std::vector<float> f_dc_2 = ply_file.getElement("vertex").getProperty<float>("f_dc_2");
 
-    std::vector<glm::vec4> positions;
-    std::vector<glm::vec4> colors;
+    std::vector<glm::vec4> positions(splats_count);
+    std::vector<glm::vec4> colors(splats_count);
 
-    std::vector<glm::quat> rotations;
-    std::vector<glm::vec4> scales;
+    std::vector<glm::quat> rotations(splats_count);
+    std::vector<glm::vec4> scales(splats_count);
 
     for (uint32_t i = 0; i < splats_count; ++i) {
         const double SH_C0 = 0.28209479177387814;

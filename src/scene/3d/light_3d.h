@@ -19,6 +19,8 @@ class Light3D : public Node3D {
 private:
     LightDataRef light_data_ref;
 
+    void notification(int notification_id) override;
+
 protected:
     LightType type = LIGHT_UNDEFINED;
 
@@ -43,8 +45,6 @@ protected:
 public:
     Light3D();
     ~Light3D();
-
-    void notification(int notification_id);
 
     void clone(Node* new_node, bool copy = true) override;
 

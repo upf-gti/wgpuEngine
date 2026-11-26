@@ -4,7 +4,7 @@
 #include "core/managers/engine/engine_manager.h"
 #include "core/managers/render/render_api.h"
 #include "core/managers/render/render_manager.h"
-#include "core/managers/render/render_storage.h"
+#include "core/managers/render/storage/render_storage.h"
 #include "core/managers/xr/xr_manager.h"
 
 #include "scene/3d/gaussian_splatting_3d.h"
@@ -84,38 +84,9 @@ Error RenderForward::initialize()
 
     init_lighting_bind_group();
 
-    bool xr_available = XR_MANAGER->is_xr_available();
-    WGPUTextureFormat swapchain_format = xr_available ? XR_MANAGER->get_swapchain_format() : RENDER_MANAGER->get_surface_format();
-
-    WGPUColorTargetState color_target = {};
-    color_target.format = swapchain_format;
-    color_target.blend = nullptr;
-    color_target.writeMask = WGPUColorWriteMask_All;
-
-    RenderPipelineDescription desc = { .topology = WGPUPrimitiveTopology_TriangleStrip };
-
-    WGPUBlendState* blend_state = new WGPUBlendState;
-    blend_state->color = {
-        .operation = WGPUBlendOperation_Add,
-        .srcFactor = WGPUBlendFactor_SrcAlpha,
-        .dstFactor = WGPUBlendFactor_OneMinusSrcAlpha,
-    };
-    blend_state->alpha = {
-        .operation = WGPUBlendOperation_Add,
-        .srcFactor = WGPUBlendFactor_Zero,
-        .dstFactor = WGPUBlendFactor_One,
-    };
-
-    color_target.blend = blend_state;
+    splats_storage.initialize();
 
     msaa_count = EngineManager::get_singleton()->get_configuration().render_config.msaa_count;
-
-    desc.depth_write = WGPUOptionalBool_False;
-    desc.blending_enabled = true;
-    desc.sample_count = msaa_count;
-
-    gs_render_shader = RenderStorage::get_singleton()->get_shader_from_source(shaders::gs_render::source, shaders::gs_render::path, shaders::gs_render::libraries);
-    gs_render_pipeline.create_render_async(gs_render_shader, color_target, desc);
 
     shadow_material = new Material();
     shadow_material->set_type(MATERIAL_UNLIT);
@@ -165,24 +136,30 @@ void RenderForward::render_transparent(WGPURenderPassEncoder render_pass, const 
 #endif
 }
 
-void RenderForward::render_splats(WGPURenderPassEncoder render_pass, const std::vector<std::vector<RenderInstanceData>>& render_lists, const sInstanceData& instance_data, WGPUBindGroup camera_bind_group, uint32_t camera_buffer_stride)
+void RenderForward::render_splats(WGPURenderPassEncoder render_pass, const std::vector<SplatData*>& splats_list, const sInstanceData& instance_data, WGPUBindGroup camera_bind_group, uint32_t camera_buffer_stride)
 {
 #ifndef NDEBUG
     RENDER_API->push_debug_group(render_pass, "Gaussian Splats");
 #endif
 
-    for (GaussianSplatting3D* gs_3d : gs_scenes_list) {
-        if (!gs_render_pipeline.set(render_pass)) {
+    for (SplatData* splat_data : splats_list) {
+        if (!splat_data->buffers) {
             continue;
         }
 
-        RENDER_API->render_pass_set_bind_group(render_pass, 0, gs_3d->get_render_bindgroup(), 0, nullptr);
+        if (!splats_storage.get_render_pipeline().set(render_pass)) {
+            continue;
+        }
+
+        GaussianSplatsStorage::SplatBuffers* splat_buffers = static_cast<GaussianSplatsStorage::SplatBuffers*>(splat_data->buffers);
+
+        RENDER_API->render_pass_set_bind_group(render_pass, 0, splat_buffers->render_bindgroup, 0, nullptr);
         RENDER_API->render_pass_set_bind_group(render_pass, 1, camera_bind_group, 1, &camera_buffer_stride);
 
-        RENDER_API->render_pass_encoder_set_vertex_buffer(render_pass, 0, gs_3d->get_render_buffer(), 0, gs_3d->get_splats_render_bytes_size());
-        RENDER_API->render_pass_encoder_set_vertex_buffer(render_pass, 1, gs_3d->get_ids_buffer(), 0, gs_3d->get_ids_render_bytes_size());
+        RENDER_API->render_pass_encoder_set_vertex_buffer(render_pass, 0, splat_buffers->render_buffer, 0, splat_buffers->get_splats_render_bytes_size());
+        RENDER_API->render_pass_encoder_set_vertex_buffer(render_pass, 1, splat_buffers->ids_buffer, 0, splat_buffers->get_ids_render_bytes_size());
 
-        RENDER_API->render_pass_encoder_draw(render_pass, 4, gs_3d->get_splat_count(), 0, 0);
+        RENDER_API->render_pass_encoder_draw(render_pass, 4, splat_buffers->get_splat_count(), 0, 0);
     }
 
 #ifndef NDEBUG
@@ -205,7 +182,7 @@ void RenderForward::render_2D(WGPURenderPassEncoder render_pass, const std::vect
 #endif
 }
 
-void RenderForward::render_scene(std::vector<std::vector<RenderInstanceData>>& render_lists, const std::vector<LightData>& lights_list, const Camera3D* camera, const sEnvironmentData& environment_data, WGPUTextureView framebuffer_view, uint32_t render_frame_flags, EYE eye_idx)
+void RenderForward::begin_frame(std::vector<std::vector<RenderInstanceData>>& render_lists, const std::vector<LightData*>& lights_list, const std::vector<SplatData*>& splats_list, const sEnvironmentData& environment_data, uint32_t render_frame_flags)
 {
     fill_instances_data(render_lists);
 
@@ -218,10 +195,17 @@ void RenderForward::render_scene(std::vector<std::vector<RenderInstanceData>>& r
         skybox_material->set_diffuse_texture(irradiance_texture_cubemap);
     }
 
-    if (render_frame_flags & RENDER_LIGHTS_DIRTY) {
-        update_lights(lights_list);
+    if (render_frame_flags & RenderManager::RENDER_LIGHTS_DIRTY) {
+        fill_lights_data(lights_list);
     }
 
+    if (render_frame_flags & RenderManager::RENDER_SPLATS_DIRTY) {
+        fill_splats_data(splats_list);
+    }
+}
+
+void RenderForward::render_frame(std::vector<std::vector<RenderInstanceData>>& render_lists, const std::vector<SplatData*>& splats_list, const Camera3D* camera, WGPUTextureView framebuffer_view, EYE eye_idx)
+{
     camera_data.exposure = 1.0;
     camera_data.ibl_intensity = 1.0;
     camera_data.screen_size = { DisplayManager::get_singleton()->window_get_width(), DisplayManager::get_singleton()->window_get_height() };
@@ -234,10 +218,12 @@ void RenderForward::render_scene(std::vector<std::vector<RenderInstanceData>>& r
 
     wgpuQueueWriteBuffer(RENDER_API->get_main_queue(), std::get<WGPUBuffer>(camera_uniform.data), eye_idx * camera_buffer_stride, &camera_data, sizeof(sCameraData));
 
-    render_camera(render_lists, framebuffer_view, multisample_framebuffers_views[eye_idx], depth_buffers_views[eye_idx], true, eye_idx, "Forward Render");
+    //compute_camera();
+
+    render_camera(render_lists, splats_list, framebuffer_view, multisample_framebuffers_views[eye_idx], depth_buffers_views[eye_idx], true, eye_idx, "Forward Render");
 }
 
-void RenderForward::render_camera(const std::vector<std::vector<RenderInstanceData>>& render_lists, WGPUTextureView framebuffer_view, WGPUTextureView multisample_framebuffer_view, WGPUTextureView depth_view, bool render_transparents, EYE eye_idx, const char* pass_name)
+void RenderForward::render_camera(const std::vector<std::vector<RenderInstanceData>>& render_lists, const std::vector<SplatData*>& splats_list, WGPUTextureView framebuffer_view, WGPUTextureView multisample_framebuffer_view, WGPUTextureView depth_view, bool render_transparents, EYE eye_idx, const char* pass_name)
 {
     // Prepare the color attachment
     WGPURenderPassColorAttachment render_pass_color_attachment = {};
@@ -316,7 +302,7 @@ void RenderForward::render_camera(const std::vector<std::vector<RenderInstanceDa
             custom_post_transparent_pass(render_pass, render_camera_bind_group, custom_pass_user_data, eye_idx * camera_buffer_stride);
         }
 
-        render_splats(render_pass, render_lists, render_instances_data, render_camera_bind_group, eye_idx * camera_buffer_stride);
+        render_splats(render_pass, splats_list, render_instances_data, render_camera_bind_group, eye_idx * camera_buffer_stride);
     }
 
 #ifndef NDEBUG
@@ -428,7 +414,6 @@ void RenderForward::render_sky(WGPURenderPassEncoder render_pass, WGPUBindGroup 
     RENDER_API->push_debug_group(render_pass, "Sky");
 
     // Set bind groups
-
     RENDER_API->render_pass_set_bind_group(render_pass, 0, sky_bind_group, 0, nullptr);
     uint32_t offset = 0;
     RENDER_API->render_pass_set_bind_group(render_pass, 1, camera_bind_group, 1, &offset);
@@ -1032,7 +1017,7 @@ void RenderForward::generate_prefiltered_env_texture(Texture* prefiltered_env_te
     current_level_uniform.destroy();
 }
 
-void RenderForward::update_lights(const std::vector<LightData>& lights_list)
+void RenderForward::fill_lights_data(const std::vector<LightData*>& lights_list)
 {
     uint32_t num_lights = static_cast<uint32_t>(lights_list.size());
     size_t buffer_size = sizeof(LightData) * num_lights;
@@ -1044,4 +1029,11 @@ void RenderForward::update_lights(const std::vector<LightData>& lights_list)
 
     RENDER_API->buffer_update(std::get<WGPUBuffer>(lights_buffer.data), 0, lights_list.data(), buffer_size);
     RENDER_API->buffer_update(std::get<WGPUBuffer>(num_lights_buffer.data), 0, &num_lights, sizeof(uint32_t));
+}
+
+void RenderForward::fill_splats_data(const std::vector<SplatData*>& splats_list)
+{
+    for (SplatData* splat_data : splats_list) {
+        splats_storage.create_buffers(splat_data);
+    }
 }

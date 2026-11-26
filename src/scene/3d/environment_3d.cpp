@@ -4,7 +4,7 @@
 #include "scene/main/node_factory.h"
 
 #include "core/managers/render/render_manager.h"
-#include "core/managers/render/render_storage.h"
+#include "core/managers/render/storage/render_storage.h"
 
 #include "shaders/mesh_texture_cube.wgsl.gen.h"
 

@@ -19,49 +19,11 @@ struct sGSRenderData {
 
 class GaussianSplatting3D : public Node3D {
 private:
-    SplatData splat_data;
+    void notification(int notification_id) override;
 
-    uint32_t splat_count = 0;
-    uint32_t padded_splat_count = 0;
-    uint32_t workgroup_size = 0;
-
-    WGPUBuffer render_buffer = nullptr;
-    WGPUBuffer ids_buffer = nullptr;
-
-    // Render
-    Uniform model_uniform;
-    Uniform centroid_uniform;
-    Uniform basis_uniform;
-    Uniform color_uniform;
-    WGPUBindGroup render_bindgroup = nullptr;
-
-    // Covariance
-    Uniform rotations_uniform;
-    Uniform scales_uniform;
-    Uniform covariance_uniform;
-    Uniform splat_count_uniform;
-    WGPUBindGroup covariance_bindgroup = nullptr;
-
-    // Basis
-    WGPUBuffer distances_buffer = nullptr;
-
-    Uniform basis_distances_uniform;
-    Uniform ids_basis_uniform;
-    WGPUBindGroup basis_uniform_bindgroup = nullptr;
-
-    RadixSortKernel* radix_sort_kernel = nullptr;
-
-    Shader* covariance_shader = nullptr;
-    Pipeline covariance_pipeline;
-
-    Shader* basis_shader = nullptr;
-    Pipeline basis_pipeline;
-
-    bool covariance_calculated = false;
+    SplatDataRef splat_data_ref;
 
 public:
-    bool is_skinned = false;
-
     GaussianSplatting3D();
     ~GaussianSplatting3D();
 

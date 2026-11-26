@@ -1,7 +1,7 @@
 #include "spot_light_3d.h"
 
 #include "core/managers/render/render_manager.h"
-#include "core/managers/render/render_storage.h"
+#include "core/managers/render/storage/render_storage.h"
 
 #include "framework/math/math_utils.h"
 

@@ -20,6 +20,9 @@ Error RenderManager::initialize()
 
 Error RenderManager::finalize()
 {
+    RENDER_API->buffer_release(timestamp_query_buffer);
+    RENDER_API->query_set_destroy(timestamp_query_set);
+
     render_storage.finalize();
     render_compositor.finalize();
 
@@ -98,8 +101,8 @@ Error RenderManager::initialize_step()
 
 Error RenderManager::initialize_timestamp_queries()
 {
-    timestamp_query_set = RenderAPI::get_singleton()->create_query_set(maximum_query_sets);
-    timestamp_query_buffer = RenderAPI::get_singleton()->buffer_create(sizeof(uint64_t) * maximum_query_sets, WGPUBufferUsage_QueryResolve | WGPUBufferUsage_Storage | WGPUBufferUsage_CopySrc | WGPUBufferUsage_CopyDst, nullptr);
+    timestamp_query_set = RENDER_API->query_set_create(maximum_query_sets);
+    timestamp_query_buffer = RENDER_API->buffer_create(sizeof(uint64_t) * maximum_query_sets, WGPUBufferUsage_QueryResolve | WGPUBufferUsage_Storage | WGPUBufferUsage_CopySrc | WGPUBufferUsage_CopyDst, nullptr);
 
     return Error::OK;
 }
@@ -137,7 +140,7 @@ void RenderManager::render()
     WGPUCommandEncoderDescriptor encoder_desc = {};
     command_encoder = RENDER_API->command_encoder_create(&encoder_desc);
 
-    render_compositor.render(renderables_list, lights_list, environment_data, render_frame_flags);
+    render_compositor.render(renderables_list, lights_list, splats_list, environment_data, render_frame_flags);
 
     frame_counter++;
     query_index = 0;
@@ -154,7 +157,7 @@ void RenderManager::set_required_features(std::vector<WGPUFeatureName> new_requi
 void RenderManager::resize_swapchain()
 {
     glm::ivec2 framebuffer_size = DISPLAY_MANAGER->window_get_framebuffer_size();
-    RenderAPI::get_singleton()->surface_configure_swapchain(framebuffer_size.x, framebuffer_size.y);
+    RENDER_API->surface_configure_swapchain(framebuffer_size.x, framebuffer_size.y);
 }
 
 void RenderManager::environment_data_set_irradiance_texture(Texture* irradiance_texture_panorama)
@@ -198,7 +201,7 @@ void RenderManager::get_timestamps()
     // copy query_index, otherwise it'd have been already modified when reading
     uint8_t* query_index_cpy = new uint8_t();
     *query_index_cpy = query_index;
-    RenderAPI::get_singleton()->buffer_read_async(timestamp_query_buffer, sizeof(uint64_t) * maximum_query_sets, read_callback, query_index_cpy);
+    RENDER_API->buffer_read_async(timestamp_query_buffer, sizeof(uint64_t) * maximum_query_sets, read_callback, query_index_cpy);
 }
 
 WGPUTextureFormat RenderManager::get_surface_format()
@@ -283,6 +286,43 @@ void RenderManager::remove_light(uint32_t idx)
 void RenderManager::set_lights_dirty()
 {
     render_frame_flags |= RENDER_LIGHTS_DIRTY;
+}
+
+void RenderManager::add_gaussian_splatting(SplatDataRef* splat_data_ref)
+{
+    if ((splats_list.size() + 1) >= reserved_splat_list_size) {
+        reserved_splat_list_size <<= 1;
+        splats_list.reserve(reserved_splat_list_size);
+    }
+
+    splats_list.push_back(splat_data_ref);
+
+    splat_data_ref->idx = static_cast<uint32_t>(splats_list.size() - 1);
+
+    set_gaussian_splattings_dirty();
+}
+
+void RenderManager::remove_gaussian_splatting(uint32_t idx)
+{
+    if (idx >= splats_list.size()) {
+        LOG_ERROR("Can not remove splat with index ({})", idx);
+        assert(0);
+        return;
+    }
+
+    splats_list.erase(splats_list.begin() + idx);
+
+    // Reassign indices
+    for (uint32_t i = idx; i < splats_list.size(); ++i) {
+        splats_list[i]->idx = i;
+    }
+
+    set_gaussian_splattings_dirty();
+}
+
+void RenderManager::set_gaussian_splattings_dirty()
+{
+    render_frame_flags |= RENDER_SPLATS_DIRTY;
 }
 
 void RenderManager::set_clear_color(const glm::vec4& clear_color)

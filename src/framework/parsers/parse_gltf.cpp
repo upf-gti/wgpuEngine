@@ -28,7 +28,7 @@
 #include "scene/animation/look_at_ik_3d.h"
 #include "scene/animation/skeleton_instance_3d.h"
 
-#include "core/managers/render/render_storage.h"
+#include "core/managers/render/storage/render_storage.h"
 #include "graphics/shader.h"
 #include "graphics/texture.h"
 

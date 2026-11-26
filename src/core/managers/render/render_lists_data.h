@@ -1,6 +1,8 @@
 #pragma once
 
+#include "glm/gtx/quaternion.hpp"
 #include "glm/mat4x4.hpp"
+
 #include <vector>
 
 class Mesh;
@@ -35,13 +37,16 @@ struct LightDataRef {
 };
 
 struct SplatData {
+    glm::mat4x4 global_matrix;
+    std::string_view name;
     std::vector<glm::vec4> positions;
     std::vector<glm::vec4> colors;
     std::vector<glm::quat> rotations;
     std::vector<glm::vec4> scales;
+    void* buffers = nullptr; // pointer to gpu buffers if needed
 };
 
-struct SplatsDataRef {
+struct SplatDataRef {
     SplatData data;
     uint32_t idx = 0;
 };

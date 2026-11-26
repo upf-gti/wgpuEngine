@@ -1,6 +1,7 @@
 #pragma once
 
 #include "core/managers/render/render_methods/render_method.h"
+#include "core/managers/render/storage/gaussian_splats_storage.h"
 #include "core/managers/render/uniforms_structs.h"
 
 #include "core/managers/render/uniforms_structs.h"
@@ -34,9 +35,12 @@ class RenderForward : public RenderMethod {
     void set_custom_pass_user_data(void* user_data);
 
 public:
-    void render_scene(std::vector<std::vector<RenderInstanceData>>& render_lists, const std::vector<LightData>& lights_list, const Camera3D* camera, const sEnvironmentData& environment_data, WGPUTextureView framebuffer_view, uint32_t render_frame_flags, EYE eye_idx = EYE_LEFT);
+    void begin_frame(std::vector<std::vector<RenderInstanceData>>& render_lists, const std::vector<LightData*>& lights_list, const std::vector<SplatData*>& splats_list, const sEnvironmentData& environment_data, uint32_t render_frame_flags) override;
 
-    void set_render_size(int32_t width, int32_t height) override;
+    void render_frame(std::vector<std::vector<RenderInstanceData>>& render_lists, const Camera3D* camera, WGPUTextureView framebuffer_view, EYE eye_idx = EYE_LEFT) override;
+
+    void
+    set_render_size(int32_t width, int32_t height) override;
 
     void set_msaa_count(uint8_t msaa_count);
 
@@ -49,19 +53,23 @@ private:
 
     void render_opaque(WGPURenderPassEncoder render_pass, const std::vector<std::vector<RenderInstanceData>>& render_lists, const sInstanceData& instance_data, WGPUBindGroup camera_bind_group, uint32_t camera_buffer_stride = 0);
     void render_transparent(WGPURenderPassEncoder render_pass, const std::vector<std::vector<RenderInstanceData>>& render_lists, const sInstanceData& instance_data, WGPUBindGroup camera_bind_group, uint32_t camera_buffer_stride = 0);
-    void render_splats(WGPURenderPassEncoder render_pass, const std::vector<std::vector<RenderInstanceData>>& render_lists, const sInstanceData& instance_data, WGPUBindGroup camera_bind_group, uint32_t camera_buffer_stride = 0);
     void render_2D(WGPURenderPassEncoder render_pass, const std::vector<std::vector<RenderInstanceData>>& render_lists, const sInstanceData& instance_data, WGPUBindGroup camera_bind_group);
+    void render_splats(WGPURenderPassEncoder render_pass, const std::vector<SplatData*>& splats_list, const sInstanceData& instance_data, WGPUBindGroup camera_bind_group, uint32_t camera_buffer_stride = 0);
 
-    void render_camera(const std::vector<std::vector<RenderInstanceData>>& render_lists, WGPUTextureView framebuffer_view, WGPUTextureView multisample_framebufer_view, WGPUTextureView depth_view, bool render_transparents, EYE eye_idx = EYE_LEFT, const char* pass_name = "");
+    void render_camera(const std::vector<std::vector<RenderInstanceData>>& render_lists, const std::vector<SplatData*>& splats_list, WGPUTextureView framebuffer_view, WGPUTextureView multisample_framebufer_view, WGPUTextureView depth_view, bool render_transparents, EYE eye_idx = EYE_LEFT, const char* pass_name = "");
 
     void render_render_list(WGPURenderPassEncoder render_pass, const std::vector<RenderInstanceData>& render_list, int list_index, const sInstanceData& instance_data, WGPUBindGroup camera_bind_group, uint32_t camera_buffer_stride = 0);
 
     void render_sky(WGPURenderPassEncoder render_pass, WGPUBindGroup camera_bind_group);
 
     void fill_instances_data(std::vector<std::vector<RenderInstanceData>>& render_lists);
+    void fill_lights_data(const std::vector<LightData*>& lights_list);
+    void fill_splats_data(const std::vector<SplatData*>& splats_list);
 
     sInstanceData render_instances_data;
     sInstanceData shadow_instances_data;
+
+    GaussianSplatsStorage splats_storage;
 
     Camera3D* camera_3d = nullptr;
     Camera3D* camera_2d = nullptr;
@@ -142,9 +150,6 @@ private:
 
     Material* shadow_material;
 
-    Pipeline gs_render_pipeline;
-    Shader* gs_render_shader = nullptr;
-
     void create_sky_bind_group();
 
     std::vector<Uniform*> sky_uniforms;
@@ -154,9 +159,4 @@ private:
 
     void generate_brdf_lut_texture();
     void generate_prefiltered_env_texture(Texture* prefiltered_env_texture, Texture* hdr_texture);
-
-    // Gaussian Splatting scenes to render
-    std::vector<GaussianSplatting3D*> gs_scenes_list;
-
-    void update_lights(const std::vector<LightData>& lights_list);
 };

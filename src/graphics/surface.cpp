@@ -4,7 +4,7 @@
 #include "framework/math/math_utils.h"
 
 #include "core/managers/render/render_api.h"
-#include "core/managers/render/render_storage.h"
+#include "core/managers/render/storage/render_storage.h"
 
 #include "core/managers/debug/debug_manager.h"
 

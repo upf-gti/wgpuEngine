@@ -4,18 +4,13 @@
 #include "core/managers/render/render_api.h"
 #include "core/managers/render/render_compositor.h"
 #include "core/managers/render/render_methods/render_method.h"
-#include "core/managers/render/render_storage.h"
+#include "core/managers/render/storage/render_storage.h"
 
 #include "glm/vec2.hpp"
 
 class Light3D;
 
 #define RENDER_MANAGER RenderManager::get_singleton()
-
-enum RenderFlags {
-    RENDER_MESHES_DIRTY = 1,
-    RENDER_LIGHTS_DIRTY = 1 << 1
-};
 
 class RenderManager : public Manager {
     MANAGER_DECLARE(RenderManager)
@@ -29,6 +24,12 @@ class RenderManager : public Manager {
     friend class Environment3D;
 
 public:
+    enum RenderFlags {
+        RENDER_MESHES_DIRTY = 1,
+        RENDER_LIGHTS_DIRTY = 1 << 1,
+        RENDER_SPLATS_DIRTY = 1 << 2
+    };
+
     void set_render_size(int32_t width, int32_t height);
 
     int32_t get_render_width() const { return render_width; }
@@ -39,13 +40,20 @@ public:
     WGPUTextureFormat get_surface_format();
     WGPUCommandEncoder get_main_command_encoder();
 
+    // Renderables list handling
     void add_renderable(RenderableDataRef* renderable_data_ref);
     void remove_renderable(uint32_t idx);
     void set_renderables_dirty();
 
-    void add_light(LightDataRef* light_data);
+    // Lights list handling
+    void add_light(LightDataRef* light_data_ref);
     void remove_light(uint32_t idx);
     void set_lights_dirty();
+
+    // Gaussians list handling
+    void add_gaussian_splatting(SplatDataRef* splat_data_ref);
+    void remove_gaussian_splatting(uint32_t idx);
+    void set_gaussian_splattings_dirty();
 
     void set_clear_color(const glm::vec4& clear_color);
 
@@ -101,7 +109,7 @@ private:
 
     // Gaussian Splats to be rendered
     uint32_t reserved_splat_list_size = 2;
-    std::vector<LightDataRef*> splats_list;
+    std::vector<SplatDataRef*> splats_list;
 
     sEnvironmentData environment_data = {};
 

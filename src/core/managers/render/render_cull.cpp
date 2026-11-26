@@ -5,7 +5,7 @@
 #include "core/managers/simulation/simulation_manager.h"
 #include "core/managers/xr/xr_manager.h"
 
-#include "core/managers/render/render_storage.h"
+#include "core/managers/render/storage/render_storage.h"
 #include "graphics/mesh.h"
 #include "graphics/uniform.h"
 
@@ -46,12 +46,14 @@ void RenderCull::set_frustum_camera_paused(bool value)
     frustum_camera_paused = value;
 }
 
-void RenderCull::render(const std::vector<RenderableDataRef*>& renderables_list, const std::vector<LightDataRef*>& lights_list, WGPUTextureView screen_surface_texture_view, const sEnvironmentData& environment_data, uint32_t render_frame_flags)
+void RenderCull::render(const std::vector<RenderableDataRef*>& renderables_list, const std::vector<LightDataRef*>& lights_list, const std::vector<SplatDataRef*>& splats_list, WGPUTextureView screen_surface_texture_view, const sEnvironmentData& environment_data, uint32_t render_frame_flags)
 {
     bool xr_available = XR_MANAGER->is_xr_available();
 
+    // TODO: cache these lists
     std::vector<std::vector<RenderInstanceData>> render_lists_culled(RENDER_LIST_COUNT);
-    std::vector<LightData> lights_list_culled;
+    std::vector<LightData*> lights_list_culled;
+    std::vector<SplatData*> splats_list_culled;
 
     Camera3D* main_camera = nullptr;
 
@@ -98,10 +100,12 @@ void RenderCull::render(const std::vector<RenderableDataRef*>& renderables_list,
     }
 
     if (main_camera) {
-        prepare_cull_instancing(main_camera, renderables_list, lights_list, render_lists_culled, lights_list_culled);
+        prepare_cull_instancing(main_camera, renderables_list, lights_list, render_lists_culled, lights_list_culled, splats_list, splats_list_culled);
+
+        render_method->begin_frame(render_lists_culled, lights_list_culled, splats_list_culled, environment_data, render_frame_flags);
 
         if (!xr_available) {
-            render_method->render_scene(render_lists_culled, lights_list_culled, main_camera, environment_data, screen_surface_texture_view, render_frame_flags, EYE_LEFT);
+            render_method->render_frame(main_camera, screen_surface_texture_view);
         } else {
             XRContext* xr_context = XR_MANAGER->xr_context;
             assert(xr_context);
@@ -109,7 +113,7 @@ void RenderCull::render(const std::vector<RenderableDataRef*>& renderables_list,
             for (uint32_t i = 0; i < EYE_COUNT; i++) {
                 xr_context->acquire_swapchain(i);
 
-                render_method->render_scene(render_lists_culled, lights_list_culled, &eye_camera[i], environment_data, xr_context->get_swapchain_view(i), render_frame_flags, static_cast<EYE>(i));
+                render_method->render_frame(&eye_camera[i], xr_context->get_swapchain_view(i), static_cast<EYE>(i));
 
                 xr_context->release_swapchain(i);
             }
@@ -119,7 +123,7 @@ void RenderCull::render(const std::vector<RenderableDataRef*>& renderables_list,
     }
 }
 
-void RenderCull::prepare_cull_instancing(const Camera3D* camera, const std::vector<RenderableDataRef*>& renderables_list, const std::vector<LightDataRef*>& lights_list, std::vector<std::vector<RenderInstanceData>>& render_lists_culled, std::vector<LightData>& lights_list_culled)
+void RenderCull::prepare_cull_instancing(const Camera3D* camera, const std::vector<RenderableDataRef*>& renderables_list, const std::vector<LightDataRef*>& lights_list, std::vector<std::vector<RenderInstanceData>>& render_lists_culled, std::vector<LightData*>& lights_list_culled, const std::vector<SplatDataRef*>& splats_list, std::vector<SplatData*>& splats_list_culled)
 {
     if (!frustum_camera_paused) {
         frustum_cull.set_view_projection(camera->get_view_projection());
@@ -177,6 +181,11 @@ void RenderCull::prepare_cull_instancing(const Camera3D* camera, const std::vect
 
     // TODO: cull lights
     for (LightDataRef* light_data_ref : lights_list) {
-        lights_list_culled.push_back(light_data_ref->data);
+        lights_list_culled.push_back(&light_data_ref->data);
+    }
+
+    // TODO: cull splats
+    for (SplatDataRef* splat_data_ref : splats_list) {
+        splats_list_culled.push_back(&splat_data_ref->data);
     }
 }
