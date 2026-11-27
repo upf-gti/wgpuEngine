@@ -77,7 +77,7 @@ Error Pipeline::create_render(Shader* shader, const WGPUColorTargetState& p_colo
 
     create_render_common(shader, p_color_target, desc);
 
-    LOG_INFO("Compiling render pipeline for shader {}", shader->get_path());
+    LOG_DEBUG("Compiling render pipeline for shader {}", shader->get_path());
 
     pipeline = RenderAPI::get_singleton()->render_pipeline_create(shader->get_module(), shader->get_pipeline_layout(), shader->get_vertex_buffer_layouts(), p_color_target, desc, constants);
 
@@ -97,7 +97,7 @@ Error Pipeline::create_render_async(Shader* shader, const WGPUColorTargetState& 
 
     create_render_common(shader, p_color_target, desc);
 
-    LOG_INFO("Compiling async render pipeline for shader {}", shader->get_path());
+    LOG_DEBUG("Compiling async render pipeline for shader {}", shader->get_path());
 
     WGPUCreateRenderPipelineAsyncCallbackInfo callback_info = {};
     callback_info.mode = WGPUCallbackMode_AllowProcessEvents;
@@ -123,7 +123,7 @@ Error Pipeline::create_compute(Shader* shader, const std::string& entry_point, c
 
     create_compute_common(shader);
 
-    LOG_INFO("Compiling compute pipeline for shader {}", shader->get_path());
+    LOG_DEBUG("Compiling compute pipeline for shader {}", shader->get_path());
 
     pipeline = RenderAPI::get_singleton()->compute_pipeline_create(shader->get_module(), shader->get_pipeline_layout(), entry_point.c_str(), constants);
 
@@ -143,7 +143,7 @@ Error Pipeline::create_compute_async(Shader* shader, const std::string& entry_po
 
     create_compute_common(shader);
 
-    LOG_INFO("Compiling async compute pipeline for shader {}", shader->get_path());
+    LOG_DEBUG("Compiling async compute pipeline for shader {}", shader->get_path());
 
     WGPUCreateComputePipelineAsyncCallbackInfo callback_info = {};
     callback_info.mode = WGPUCallbackMode_AllowProcessEvents;

@@ -105,7 +105,7 @@ void RenderCull::render(const std::vector<RenderableDataRef*>& renderables_list,
         render_method->begin_frame(render_lists_culled, lights_list_culled, splats_list_culled, environment_data, render_frame_flags);
 
         if (!xr_available) {
-            render_method->render_frame(main_camera, screen_surface_texture_view);
+            render_method->render_frame(render_lists_culled, lights_list_culled, splats_list_culled, main_camera, screen_surface_texture_view);
         } else {
             XRContext* xr_context = XR_MANAGER->xr_context;
             assert(xr_context);
@@ -113,7 +113,7 @@ void RenderCull::render(const std::vector<RenderableDataRef*>& renderables_list,
             for (uint32_t i = 0; i < EYE_COUNT; i++) {
                 xr_context->acquire_swapchain(i);
 
-                render_method->render_frame(&eye_camera[i], xr_context->get_swapchain_view(i), static_cast<EYE>(i));
+                render_method->render_frame(render_lists_culled, lights_list_culled, splats_list_culled, &eye_camera[i], xr_context->get_swapchain_view(i), static_cast<EYE>(i));
 
                 xr_context->release_swapchain(i);
             }

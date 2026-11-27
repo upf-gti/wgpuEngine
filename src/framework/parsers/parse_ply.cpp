@@ -16,7 +16,6 @@ bool PlyParser::parse(std::string file_path, std::vector<Node*>& entities, uint3
 
     uint32_t splats_count = static_cast<uint32_t>(ply_file.getElement("vertex").count);
 
-    gs_3d->initialize(splats_count);
     gs_3d->set_name("GaussianSplatting");
 
     glm::quat default_quad = glm::quat(0.0f, 0.0f, 0.0f, 1.0f);

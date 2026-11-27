@@ -37,7 +37,7 @@ class RenderForward : public RenderMethod {
 public:
     void begin_frame(std::vector<std::vector<RenderInstanceData>>& render_lists, const std::vector<LightData*>& lights_list, const std::vector<SplatData*>& splats_list, const sEnvironmentData& environment_data, uint32_t render_frame_flags) override;
 
-    void render_frame(std::vector<std::vector<RenderInstanceData>>& render_lists, const Camera3D* camera, WGPUTextureView framebuffer_view, EYE eye_idx = EYE_LEFT) override;
+    void render_frame(std::vector<std::vector<RenderInstanceData>>& render_lists, const std::vector<LightData*>& lights_list, const std::vector<SplatData*>& splats_list, const Camera3D* camera, WGPUTextureView framebuffer_view, EYE eye_idx = EYE_LEFT) override;
 
     void
     set_render_size(int32_t width, int32_t height) override;

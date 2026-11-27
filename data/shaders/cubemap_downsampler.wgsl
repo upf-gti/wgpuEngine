@@ -23,9 +23,7 @@
 @group(0) @binding(2) var texture_sampler : sampler;
 @group(0) @binding(3) var<uniform> face_size: u32;
 
-#ifdef METAL_CUBEMAP_HACK
 var<private> texture_dim : f32 = 0.0;
-#endif
 
 fn get_dir_0(u : f32, v : f32) -> vec3f 
 {
@@ -52,13 +50,12 @@ fn get_dir_2(u : f32, v : f32) -> vec3f
 	dir_out[1] = 1.0;
 	dir_out[2] = -v;
 
-#ifdef METAL_CUBEMAP_HACK
 	if (dot(normalize(dir_out), vec3f(0.0, 1.0, 0.0)) >= 0.9999) {
         let texel_uv_size : f32 = 3.0/texture_dim;
         //dir_out[0] = dir_out[0] + texel_uv_size;
         dir_out[2] = dir_out[2] + texel_uv_size;
     }
-#endif
+
 	return dir_out;
 }
 
@@ -69,13 +66,12 @@ fn get_dir_3(u : f32, v : f32) -> vec3f
 	dir_out[1] = -1.0;
 	dir_out[2] = v;
 
-#ifdef METAL_CUBEMAP_HACK
 	if (dot(normalize(dir_out), vec3f(0.0, -1.0, 0.0)) >= 0.9999) {
         let texel_uv_size : f32 = 3.0/texture_dim;
         //dir_out[0] = dir_out[0] + texel_uv_size;
         dir_out[2] = dir_out[2] + texel_uv_size;
     }
-#endif
+
 	return dir_out;
 }
 
@@ -108,9 +104,7 @@ fn calcWeight(u : f32, v : f32) -> f32
 
 fn compute(@builtin(global_invocation_id) id: vec3<u32>) {
 
-#ifdef METAL_CUBEMAP_HACK
 	texture_dim = f32(face_size);
-#endif
 
 	if (id.x < face_size && id.y < face_size) {
 		let inv_face_size : f32 = 1.0 / f32(face_size);

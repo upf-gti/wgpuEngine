@@ -95,10 +95,18 @@ void PrefixSumKernel::create_pass_recursive(WGPUBuffer data, uint32_t data_byte_
 
 void PrefixSumKernel::dispatch(WGPUComputePassEncoder compute_pass)
 {
+#ifndef NDEBUG
+    RENDER_API->push_debug_group(compute_pass, "Prefix Sum");
+#endif
+
     for (PipelineData* pipeline_data : pipelines) {
         pipeline_data->pipeline.set(compute_pass);
 
         wgpuComputePassEncoderSetBindGroup(compute_pass, 0, pipeline_data->bind_group, 0, nullptr);
         wgpuComputePassEncoderDispatchWorkgroups(compute_pass, pipeline_data->dispatch_size.x, pipeline_data->dispatch_size.y, 1);
     }
+
+#ifndef NDEBUG
+    RENDER_API->pop_debug_group(compute_pass);
+#endif
 }

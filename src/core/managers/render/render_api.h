@@ -121,7 +121,7 @@ public:
             const char* entry_point = "compute", std::vector<WGPUConstantEntry> constants = {});
 
     WGPUQuerySet query_set_create(uint8_t maximum_query_sets, char const* label = nullptr);
-    void query_set_destroy(WGPUQuerySet query_set);
+    void query_set_release(WGPUQuerySet query_set);
 
     void push_debug_group(WGPURenderPassEncoder render_pass, char const* label = nullptr);
     void push_debug_group(WGPUComputePassEncoder compute_pass, char const* label = nullptr);

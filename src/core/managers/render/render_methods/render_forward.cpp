@@ -44,11 +44,7 @@ Error RenderForward::initialize()
     }
 
     {
-        std::vector<std::string> defines;
-#if defined(BACKEND_METAL) || defined(BACKEND_EMSCRIPTEN)
-        defines.push_back("METAL_CUBEMAP_HACK");
-#endif
-        prefiltered_env_shader = RenderStorage::get_singleton()->get_shader_from_source(shaders::prefilter_env::source, shaders::prefilter_env::path, shaders::prefilter_env::libraries, defines);
+        prefiltered_env_shader = RenderStorage::get_singleton()->get_shader_from_source(shaders::prefilter_env::source, shaders::prefilter_env::path, shaders::prefilter_env::libraries);
         prefiltered_env_pipeline.create_compute(prefiltered_env_shader);
     }
 
@@ -202,9 +198,37 @@ void RenderForward::begin_frame(std::vector<std::vector<RenderInstanceData>>& re
     if (render_frame_flags & RenderManager::RENDER_SPLATS_DIRTY) {
         fill_splats_data(splats_list);
     }
+
+    for (SplatData* splat_data : splats_list) {
+        WGPUCommandEncoder command_encoder = RENDER_MANAGER->get_main_command_encoder();
+
+        WGPUComputePassDescriptor compute_pass_desc = {};
+        compute_pass_desc.timestampWrites = nullptr;
+
+        WGPUComputePassEncoder compute_pass = wgpuCommandEncoderBeginComputePass(command_encoder, &compute_pass_desc);
+
+        GaussianSplatsStorage::SplatBuffers* buffers = static_cast<GaussianSplatsStorage::SplatBuffers*>(splat_data->buffers);
+
+        // Calculate basis
+        if (!splats_storage.get_basis_pipeline().set(compute_pass)) {
+            return;
+        }
+
+        // Compute basis
+        wgpuComputePassEncoderSetBindGroup(compute_pass, 0, buffers->basis_uniform_bindgroup, 0, nullptr);
+        uint32_t offset = 0;
+        wgpuComputePassEncoderSetBindGroup(compute_pass, 1, compute_camera_bind_group, 1, &offset);
+        wgpuComputePassEncoderDispatchWorkgroups(compute_pass, buffers->workgroup_size, 1, 1);
+
+        // Sort
+        buffers->radix_sort_kernel->dispatch(compute_pass);
+
+        wgpuComputePassEncoderEnd(compute_pass);
+        wgpuComputePassEncoderRelease(compute_pass);
+    }
 }
 
-void RenderForward::render_frame(std::vector<std::vector<RenderInstanceData>>& render_lists, const std::vector<SplatData*>& splats_list, const Camera3D* camera, WGPUTextureView framebuffer_view, EYE eye_idx)
+void RenderForward::render_frame(std::vector<std::vector<RenderInstanceData>>& render_lists, const std::vector<LightData*>& lights_list, const std::vector<SplatData*>& splats_list, const Camera3D* camera, WGPUTextureView framebuffer_view, EYE eye_idx)
 {
     camera_data.exposure = 1.0;
     camera_data.ibl_intensity = 1.0;
@@ -1034,6 +1058,16 @@ void RenderForward::fill_lights_data(const std::vector<LightData*>& lights_list)
 void RenderForward::fill_splats_data(const std::vector<SplatData*>& splats_list)
 {
     for (SplatData* splat_data : splats_list) {
-        splats_storage.create_buffers(splat_data);
+        if (!splat_data->buffers) {
+            splats_storage.create_buffers(splat_data);
+        }
+
+        if (!splat_data->buffers) {
+            return;
+        }
+
+        GaussianSplatsStorage::SplatBuffers* buffers = static_cast<GaussianSplatsStorage::SplatBuffers*>(splat_data->buffers);
+
+        RENDER_API->buffer_update(std::get<WGPUBuffer>(buffers->model_uniform.data), 0, &splat_data->global_matrix[0], sizeof(glm::mat4x4));
     }
 }

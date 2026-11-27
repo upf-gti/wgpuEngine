@@ -52,7 +52,12 @@ fn compute(@builtin(global_invocation_id) id: vec3<u32>) {
 
     let uv = vec2f(id.xy) / vec2f(output_dimensions);
 
-    let direction = normalize(directionFromCubeMapUVL(uv, layer));
+    var direction = normalize(directionFromCubeMapUVL(uv, layer));
+
+    // Prevents undefined behavior for x = 0 (returns NaNs for atan2(0, 0))
+    if (abs(direction.z) < 0.0001) {
+        direction.z = 0.0001;
+    }
 
     let phi = 0.5 + 0.5 * atan2(-direction.x, direction.z) / M_PI;
     let theta = 1.0 - acos(direction.y) / M_PI;

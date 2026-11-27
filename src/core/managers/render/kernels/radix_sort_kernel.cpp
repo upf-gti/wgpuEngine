@@ -184,12 +184,16 @@ RadixSortKernel::~RadixSortKernel()
 
 void RadixSortKernel::dispatch(WGPUComputePassEncoder compute_pass)
 {
+#ifndef NDEBUG
+    RENDER_API->push_debug_group(compute_pass, "Radix Sort");
+#endif
+
     for (uint8_t i = 0; i < bit_count; i += 2) {
         PipelineData* block_sum_pipeline = pipelines[i];
         PipelineData* reorder_pipeline = pipelines[i + 1];
 
         if (!block_sum_pipeline->pipeline.set(compute_pass)) {
-            return;
+            continue;
         }
 
         wgpuComputePassEncoderSetBindGroup(compute_pass, 0, block_sum_pipeline->bind_group, 0, nullptr);
@@ -198,10 +202,14 @@ void RadixSortKernel::dispatch(WGPUComputePassEncoder compute_pass)
         prefix_sum_kernel->dispatch(compute_pass);
 
         if (!reorder_pipeline->pipeline.set(compute_pass)) {
-            return;
+            continue;
         }
 
         wgpuComputePassEncoderSetBindGroup(compute_pass, 0, reorder_pipeline->bind_group, 0, nullptr);
         wgpuComputePassEncoderDispatchWorkgroups(compute_pass, dispatch_size.x, dispatch_size.y, 1);
     }
+
+#ifndef NDEBUG
+    RENDER_API->pop_debug_group(compute_pass);
+#endif
 }

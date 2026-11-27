@@ -16,6 +16,8 @@ public:
     void create_buffers(SplatData* splat_data);
 
     const Pipeline& get_render_pipeline() const;
+    const Pipeline& get_basis_pipeline() const;
+    const Pipeline& get_covariance_pipeline() const;
 
     struct SplatBuffers {
         ~SplatBuffers();

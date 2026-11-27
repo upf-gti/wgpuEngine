@@ -15,13 +15,19 @@ Error RenderManager::initialize()
 {
     singleton_instance = this;
 
+#if defined(BACKEND_DX12)
+    LOG_INFO("Using DirectX12 backend");
+#elif defined(BACKEND_VULKAN)
+    LOG_INFO("Using Vulkan backend");
+#endif
+
     return Error::OK;
 }
 
 Error RenderManager::finalize()
 {
     RENDER_API->buffer_release(timestamp_query_buffer);
-    RENDER_API->query_set_destroy(timestamp_query_set);
+    RENDER_API->query_set_release(timestamp_query_set);
 
     render_storage.finalize();
     render_compositor.finalize();

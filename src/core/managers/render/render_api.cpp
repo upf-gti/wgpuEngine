@@ -45,11 +45,7 @@ Error RenderAPI::initialize()
     device_queue = wgpuDeviceGetQueue(device);
 
     {
-        std::vector<std::string> defines;
-#if defined(BACKEND_METAL) || defined(BACKEND_EMSCRIPTEN)
-        defines.push_back("METAL_CUBEMAP_HACK");
-#endif
-        cubemap_mipmap_pipeline.mipmap_shader = RenderStorage::get_singleton()->get_shader_from_source(shaders::cubemap_downsampler::source, shaders::cubemap_downsampler::path, shaders::cubemap_downsampler::libraries, defines);
+        cubemap_mipmap_pipeline.mipmap_shader = RenderStorage::get_singleton()->get_shader_from_source(shaders::cubemap_downsampler::source, shaders::cubemap_downsampler::path, shaders::cubemap_downsampler::libraries);
         cubemap_mipmap_pipeline.mipmap_pipeline = new Pipeline();
         cubemap_mipmap_pipeline.mipmap_pipeline->create_compute(cubemap_mipmap_pipeline.mipmap_shader);
     }
@@ -1342,6 +1338,11 @@ WGPUQuerySet RenderAPI::query_set_create(uint8_t maximum_query_sets, char const*
     query_set_descriptor.label = get_string_view(label);
 
     return wgpuDeviceCreateQuerySet(device, &query_set_descriptor);
+}
+
+void RenderAPI::query_set_release(WGPUQuerySet query_set)
+{
+    wgpuQuerySetRelease(query_set);
 }
 
 void RenderAPI::push_debug_group(WGPURenderPassEncoder render_pass, char const* label)

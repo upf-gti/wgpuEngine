@@ -3,6 +3,7 @@
 #include "glm/gtx/quaternion.hpp"
 #include "glm/mat4x4.hpp"
 
+#include <string_view>
 #include <vector>
 
 class Mesh;

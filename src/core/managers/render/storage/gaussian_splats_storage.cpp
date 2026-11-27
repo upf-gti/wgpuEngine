@@ -12,7 +12,7 @@
 Error GaussianSplatsStorage::initialize()
 {
     covariance_shader = RenderStorage::get_singleton()->get_shader_from_source(shaders::gs_covariance::source, shaders::gs_covariance::path, shaders::gs_covariance::libraries);
-    covariance_pipeline.create_compute_async(covariance_shader);
+    covariance_pipeline.create_compute(covariance_shader);
 
     basis_shader = RenderStorage::get_singleton()->get_shader_from_source(shaders::gs_basis::source, shaders::gs_basis::path, shaders::gs_basis::libraries);
     basis_pipeline.create_compute_async(basis_shader);
@@ -54,12 +54,39 @@ Error GaussianSplatsStorage::initialize()
 void GaussianSplatsStorage::create_buffers(SplatData* splat_data)
 {
     splat_data->buffers = new SplatBuffers();
-    static_cast<SplatBuffers*>(splat_data->buffers)->initialize(splat_data, covariance_shader, basis_shader, splats_render_shader);
+    SplatBuffers* buffers = static_cast<SplatBuffers*>(splat_data->buffers);
+    buffers->initialize(splat_data, covariance_shader, basis_shader, splats_render_shader);
+
+    WGPUCommandEncoder command_encoder = RENDER_MANAGER->get_main_command_encoder();
+
+    WGPUComputePassDescriptor compute_pass_desc = {};
+    compute_pass_desc.timestampWrites = nullptr;
+
+    WGPUComputePassEncoder compute_pass = wgpuCommandEncoderBeginComputePass(command_encoder, &compute_pass_desc);
+
+    covariance_pipeline.set(compute_pass);
+
+    // Calculate covariance
+    wgpuComputePassEncoderSetBindGroup(compute_pass, 0, buffers->covariance_bindgroup, 0, nullptr);
+    wgpuComputePassEncoderDispatchWorkgroups(compute_pass, buffers->workgroup_size, 1, 1);
+
+    wgpuComputePassEncoderEnd(compute_pass);
+    wgpuComputePassEncoderRelease(compute_pass);
 }
 
 const Pipeline& GaussianSplatsStorage::get_render_pipeline() const
 {
     return splats_render_pipeline;
+}
+
+const Pipeline& GaussianSplatsStorage::get_basis_pipeline() const
+{
+    return basis_pipeline;
+}
+
+const Pipeline& GaussianSplatsStorage::get_covariance_pipeline() const
+{
+    return covariance_pipeline;
 }
 
 GaussianSplatsStorage::SplatBuffers::~SplatBuffers()
@@ -76,7 +103,7 @@ GaussianSplatsStorage::SplatBuffers::~SplatBuffers()
 
 void GaussianSplatsStorage::SplatBuffers::initialize(SplatData* splat_data, Shader* covariance_shader, Shader* basis_shader, Shader* splats_render_shader)
 {
-    splat_count = splat_count;
+    splat_count = static_cast<uint32_t>(splat_data->positions.size());
     padded_splat_count = static_cast<uint32_t>(ceil(static_cast<float>(splat_count) / 512.0f) * 512);
     workgroup_size = static_cast<uint32_t>(ceil(static_cast<float>(padded_splat_count) / 256.0f));
 
@@ -93,11 +120,11 @@ void GaussianSplatsStorage::SplatBuffers::initialize(SplatData* splat_data, Shad
 
     // Covariance
     {
-        rotations_uniform.data = RenderAPI::get_singleton()->buffer_create(sizeof(glm::quat) * splat_count, WGPUBufferUsage_CopyDst | WGPUBufferUsage_Storage, nullptr, "rotations_buffer");
+        rotations_uniform.data = RenderAPI::get_singleton()->buffer_create(sizeof(glm::quat) * splat_count, WGPUBufferUsage_CopyDst | WGPUBufferUsage_Storage, splat_data->rotations.data(), "rotations_buffer");
         rotations_uniform.binding = 0;
         rotations_uniform.buffer_size = sizeof(glm::quat) * splat_count;
 
-        scales_uniform.data = RenderAPI::get_singleton()->buffer_create(sizeof(glm::vec4) * splat_count, WGPUBufferUsage_CopyDst | WGPUBufferUsage_Storage, nullptr, "scales_buffer");
+        scales_uniform.data = RenderAPI::get_singleton()->buffer_create(sizeof(glm::vec4) * splat_count, WGPUBufferUsage_CopyDst | WGPUBufferUsage_Storage, splat_data->scales.data(), "scales_buffer");
         scales_uniform.binding = 1;
         scales_uniform.buffer_size = sizeof(glm::vec4) * splat_count;
 
@@ -119,11 +146,11 @@ void GaussianSplatsStorage::SplatBuffers::initialize(SplatData* splat_data, Shad
         model_uniform.binding = 0;
         model_uniform.buffer_size = sizeof(glm::mat4x4);
 
-        centroid_uniform.data = RenderAPI::get_singleton()->buffer_create(sizeof(glm::vec4) * splat_count, WGPUBufferUsage_CopyDst | WGPUBufferUsage_Storage, nullptr, "centroids_buffer");
+        centroid_uniform.data = RenderAPI::get_singleton()->buffer_create(sizeof(glm::vec4) * splat_count, WGPUBufferUsage_CopyDst | WGPUBufferUsage_Storage, splat_data->positions.data(), "centroids_buffer");
         centroid_uniform.binding = 1;
         centroid_uniform.buffer_size = sizeof(glm::vec4) * splat_count;
 
-        color_uniform.data = RenderAPI::get_singleton()->buffer_create(sizeof(glm::vec4) * splat_count, WGPUBufferUsage_CopyDst | WGPUBufferUsage_Storage, nullptr, "colors_buffer");
+        color_uniform.data = RenderAPI::get_singleton()->buffer_create(sizeof(glm::vec4) * splat_count, WGPUBufferUsage_CopyDst | WGPUBufferUsage_Storage, splat_data->colors.data(), "colors_buffer");
         color_uniform.binding = 2;
         color_uniform.buffer_size = sizeof(glm::vec4) * splat_count;
 
