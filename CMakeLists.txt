@@ -347,6 +347,22 @@ if (NOT EMSCRIPTEN)
         endif()
     endif()
 
+    # On Apple, build openxr_loader as a target but do NOT add it to the
+    # PROJECT_NAME link surface — wgpuEngine on Apple historically built
+    # without XR and we don't want to silently extend its link contract.
+    # The Khronos OpenXR-SDK-Source (libraries/openxr) compiles cleanly
+    # on macOS; downstream projects that want OpenXR on Apple can link
+    # the resulting openxr_loader target directly. The outer
+    # `if (NOT APPLE)` block above stays as-is because the Vulkan-Headers
+    # branch references a target that isn't fetched on Apple.
+    if (APPLE AND NOT WGPUENGINE_DISABLE_XR)
+        set(BUILD_LOADER_WITH_EXCEPTION_HANDLING OFF)
+        add_subdirectory(libraries/openxr)
+        set_property(TARGET openxr_loader PROPERTY FOLDER "External/OpenXR")
+        set_property(TARGET generate_openxr_header PROPERTY FOLDER "External/OpenXR")
+        set_property(TARGET xr_global_generated_files PROPERTY FOLDER "External/OpenXR")
+    endif()
+
     # glfw
     add_subdirectory(libraries/glfw)
     target_link_libraries(${PROJECT_NAME} PUBLIC glfw)
